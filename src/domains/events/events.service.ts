@@ -1,0 +1,163 @@
+import { getServerClient } from '@/domains/resource/resource.server'
+import { EVENT_CONFIG } from './events.config'
+import type { EventType, GameEvent, CreateEventDTO } from './events.types'
+
+/**
+ * Создать новое событие для колонии
+ */
+export async function createEvent(data: CreateEventDTO): Promise<GameEvent | null> {
+  const supabase = getServerClient()
+  const config = EVENT_CONFIG[data.type]
+
+  const now = new Date()
+  const endsAt = data.duration_minutes
+    ? new Date(now.getTime() + data.duration_minutes * 60 * 1000).toISOString()
+    : undefined
+
+  const { data: event, error } = await supabase
+    .from('events')
+    .insert({
+      colony_id: data.colony_id,
+      type: data.type,
+      name: config.name,
+      description: config.description,
+      effect: config.effect,
+      duration_minutes: data.duration_minutes || config.default_duration_minutes,
+      is_active: true,
+      ends_at: endsAt,
+    })
+    .select('*')
+    .single()
+
+  if (error) {
+    console.error('createEvent error:', error)
+    return null
+  }
+
+  return event as unknown as GameEvent
+}
+
+/**
+ * Получить активные события колонии
+ */
+export async function getActiveEvents(colonyId: string): Promise<GameEvent[]> {
+  const supabase = getServerClient()
+
+  const { data, error } = await supabase
+    .from('events')
+    .select('*')
+    .eq('colony_id', colonyId)
+    .eq('is_active', true)
+    .or('ends_at.is.null,ends_at.gt.now()')
+
+  if (error) {
+    console.error('getActiveEvents error:', error)
+    return []
+  }
+
+  return (data || []) as unknown as GameEvent[]
+}
+
+/**
+ * Получить все события колонии
+ */
+export async function getAllEvents(colonyId: string): Promise<GameEvent[]> {
+  const supabase = getServerClient()
+
+  const { data, error } = await supabase
+    .from('events')
+    .select('*')
+    .eq('colony_id', colonyId)
+    .order('created_at', { ascending: false })
+
+  if (error) {
+    console.error('getAllEvents error:', error)
+    return []
+  }
+
+  return (data || []) as unknown as GameEvent[]
+}
+
+/**
+ * Обработать завершение событий (вызывается в recalculateResources)
+ */
+export async function processExpiredEvents(colonyId: string): Promise<void> {
+  const supabase = getServerClient()
+  const now = new Date().toISOString()
+
+  // Деактивировать события, у которых истекло время
+  await supabase
+    .from('events')
+    .update({ is_active: false })
+    .eq('colony_id', colonyId)
+    .eq('is_active', true)
+    .lt('ends_at', now)
+
+  // Выдать награды за мгновенные события (anomaly, resource_vein без длительности)
+  const { data: instantEvents } = await supabase
+    .from('events')
+    .select('*')
+    .eq('colony_id', colonyId)
+    .eq('is_active', true)
+    .is('ends_at', null)
+
+  if (instantEvents && instantEvents.length > 0) {
+    for (const event of instantEvents as unknown as GameEvent[]) {
+      await applyEventRewards(colonyId, event)
+      await supabase
+        .from('events')
+        .update({ is_active: false })
+        .eq('id', event.id)
+    }
+  }
+}
+
+/**
+ * Применить эффекты события к производству ресурсов
+ * Вызывается при расчёте ресурсов
+ */
+export function applyEventModifiers(
+  baseRates: Record<string, number>,
+  events: GameEvent[]
+): Record<string, number> {
+  const modifiedRate = { ...baseRates }
+
+  for (const event of events) {
+    const effect = event.effect
+    if (effect?.production_modifier) {
+      for (const [resource, modifier] of Object.entries(effect.production_modifier as Record<string, number>)) {
+        modifiedRate[resource] = (modifiedRate[resource] || 0) * (1 + modifier)
+      }
+    }
+  }
+
+  return modifiedRate
+}
+
+/**
+ * Выдать награды за событие (исследования, ресурсы)
+ */
+async function applyEventRewards(colonyId: string, event: GameEvent): Promise<void> {
+  const supabase = getServerClient()
+  const effect = event.effect
+
+  // Награда ресурсами
+  if (effect?.resource_bonus) {
+    for (const [resource, amount] of Object.entries(effect.resource_bonus as Record<string, number>)) {
+      await supabase.rpc('increment_resource', {
+        p_colony_id: colonyId,
+        p_type: resource,
+        p_amount: amount,
+      })
+    }
+  }
+
+  // Награда исследованиями
+  if (effect?.research_bonus) {
+    await supabase.rpc('increment_resource', {
+      p_colony_id: colonyId,
+      p_type: 'research_points',
+      p_amount: effect.research_bonus,
+    })
+  }
+}

@@ -1,0 +1,19 @@
+import { NextResponse } from 'next/server'
+import { attackSchema } from '@/domains/pvp/pvp.schemas'
+import { executeAttack } from '@/domains/pvp/pvp.service'
+
+/** POST /api/pvp/attack — attack another colony */
+export async function POST(request: Request) {
+  try {
+    const parsed = attackSchema.safeParse(await request.json())
+    if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
+
+    const { attackerColonyId, defenderColonyId, unitCount } = parsed.data
+    const result = await executeAttack(attackerColonyId, defenderColonyId, unitCount)
+
+    if (result.error) return NextResponse.json({ error: result.error }, { status: 400 })
+    return NextResponse.json(result)
+  } catch (err: unknown) {
+    return NextResponse.json({ error: err instanceof Error ? err.message : 'Unknown error' }, { status: 500 })
+  }
+}
