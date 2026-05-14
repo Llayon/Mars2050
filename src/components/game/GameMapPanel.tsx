@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { memo, useState, useCallback } from 'react'
 import { useMap, getExplorationCost } from '@/hooks/useMap'
 import { useToast } from '@/components/ui/toast'
 import { RESOURCE_NAMES } from '@/domains/resource/resource.types'
@@ -12,7 +12,7 @@ interface GameMapPanelProps {
   onDiscover: () => void
 }
 
-export function GameMapPanel({ colonyId, onDiscover }: GameMapPanelProps) {
+export const GameMapPanel = memo(function GameMapPanel({ colonyId, onDiscover }: GameMapPanelProps) {
   const { locations, loading, discoverLocation } = useMap()
   const { toast } = useToast()
   const [selected, setSelected] = useState<MapLocation | null>(null)
@@ -61,7 +61,7 @@ export function GameMapPanel({ colonyId, onDiscover }: GameMapPanelProps) {
       )}
     </div>
   )
-}
+})
 
 function LocationDetail({ location, onDiscover }: { location: MapLocation; onDiscover: (id: string) => void }) {
   const cost = getExplorationCost(location.difficulty)

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 
 interface GameEvent {
   id: string
@@ -25,8 +25,9 @@ export function useEvents(colonyId: string | null): UseEventsReturn {
   const [events, setEvents] = useState<GameEvent[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const mountedRef = useRef(true)
 
-  const fetchEvents = async () => {
+  const fetchEvents = useCallback(async () => {
     if (!colonyId) return
 
     setLoading(true)
@@ -36,20 +37,24 @@ export function useEvents(colonyId: string | null): UseEventsReturn {
       const res = await fetch(`/api/events?colony_id=${colonyId}&active_only=true`)
       if (!res.ok) throw new Error('Failed to fetch events')
       const data = await res.json()
-      setEvents(data)
+      if (mountedRef.current) setEvents(data)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error')
+      if (mountedRef.current) setError(err instanceof Error ? err.message : 'Unknown error')
     } finally {
-      setLoading(false)
+      if (mountedRef.current) setLoading(false)
     }
-  }
+  }, [colonyId])
+
+  useEffect(() => {
+    mountedRef.current = true
+    return () => { mountedRef.current = false }
+  }, [])
 
   useEffect(() => {
     fetchEvents()
-    // Poll every 60 seconds for event updates (was 30s before cache)
     const interval = setInterval(fetchEvents, 60000)
     return () => clearInterval(interval)
-  }, [colonyId])
+  }, [fetchEvents])
 
   const createEvent = async (
     colonyId: string,

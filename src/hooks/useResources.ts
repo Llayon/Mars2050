@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import type { ResourceRow } from '@/domains/resource/resource.types'
 
 /**
@@ -12,6 +12,7 @@ export function useResources(colonyId: string | null) {
   const [resources, setResources] = useState<ResourceRow[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const mountedRef = useRef(true)
 
   const fetchResources = useCallback(async () => {
     if (!colonyId) return
@@ -24,21 +25,28 @@ export function useResources(colonyId: string | null) {
         throw new Error(data.error || 'Failed to fetch resources')
       }
 
-      if (data.resources) {
+      if (mountedRef.current && data.resources) {
         setResources(data.resources)
       }
-      setError(null)
+      if (mountedRef.current) setError(null)
     } catch (err) {
-      console.error('useResources error:', err)
-      setError(String(err))
+      if (mountedRef.current) {
+        console.error('useResources error:', err)
+        setError(String(err))
+      }
     } finally {
-      setLoading(false)
+      if (mountedRef.current) setLoading(false)
     }
   }, [colonyId])
 
   useEffect(() => {
     fetchResources()
   }, [fetchResources])
+
+  useEffect(() => {
+    mountedRef.current = true
+    return () => { mountedRef.current = false }
+  }, [])
 
   // Simulate production growth between server refreshes
   useEffect(() => {
@@ -53,7 +61,6 @@ export function useResources(colonyId: string | null) {
       )
     }, 5000)
 
-    // Full refresh from server every 60 seconds
     const dbRefresh = setInterval(fetchResources, 60000)
 
     return () => {

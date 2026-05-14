@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { useResources } from '@/hooks/useResources'
 import { useBuildings } from '@/hooks/useBuildings'
@@ -21,6 +21,10 @@ function GameUI() {
   const { createEvent } = useEvents(colonyId)
 
   const [authMode, setAuthMode] = useState<'login' | 'register' | null>(null)
+
+  const handleBuild = useCallback((type: BuildingTypeKey) => buildStructure(type), [buildStructure])
+  const handleDemolish = useCallback((id: string) => demolishBuilding(id), [demolishBuilding])
+  const handleCreateTest = useCallback((id: string, type: string, dur: number) => createEvent(id, type, dur), [createEvent])
 
   if (loading) {
     return (
@@ -74,7 +78,7 @@ function GameUI() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <div className="lg:col-span-1 space-y-4">
             <ResourcePanel resources={resources} loading={resourcesLoading} />
-            <EventsPanel colonyId={colonyId} onCreateTest={(id, type, dur) => createEvent(id, type, dur)} />
+            <EventsPanel colonyId={colonyId} onCreateTest={handleCreateTest} />
           </div>
           <div className="lg:col-span-2">
             <GameMapPanel colonyId={colonyId} onDiscover={refetchResources} />
@@ -84,8 +88,8 @@ function GameUI() {
               buildings={buildings}
               colonyId={colonyId}
               resources={resources}
-              onBuild={(type) => buildStructure(type)}
-              onDemolish={(id) => demolishBuilding(id)}
+              onBuild={handleBuild}
+              onDemolish={handleDemolish}
               onRefresh={refetchResources}
             />
           </div>

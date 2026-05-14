@@ -1,5 +1,6 @@
 'use client'
 
+import { memo } from 'react'
 import { useEvents } from '@/hooks/useEvents'
 
 interface EventsPanelProps {
@@ -7,7 +8,7 @@ interface EventsPanelProps {
   onCreateTest?: (colonyId: string, type: string, duration: number) => Promise<boolean>
 }
 
-export function EventsPanel({ colonyId, onCreateTest }: EventsPanelProps) {
+export const EventsPanel = memo(function EventsPanel({ colonyId, onCreateTest }: EventsPanelProps) {
   const { events, loading, error } = useEvents(colonyId)
 
   if (loading) return <div className="p-4 text-gray-400">Загрузка событий...</div>
@@ -105,4 +106,4 @@ export function EventsPanel({ colonyId, onCreateTest }: EventsPanelProps) {
       </div>
     </div>
   )
-}
+})
