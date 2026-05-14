@@ -11,7 +11,7 @@ export async function processCompletedEvents(colonyId: string) {
 
   const { data: events, error } = await supabase
     .from('pending_events')
-    .select('*')
+    .select('id, colony_id, type, data, completes_at, processed')
     .eq('colony_id', colonyId)
     .eq('processed', false)
     .lte('completes_at', now)
@@ -61,7 +61,7 @@ async function processAttackArrive(event: any, supabase: SupabaseClient<any>) {
   if (attackerWins) {
     const { data: defenderResources } = await supabase
       .from('resources')
-      .select('*')
+      .select('type, amount')
       .eq('colony_id', defenderId)
 
     if (defenderResources) {

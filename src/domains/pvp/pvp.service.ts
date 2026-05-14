@@ -90,7 +90,7 @@ export async function executeAttack(
 
   const { data: defenderResources } = await supabase
     .from('resources')
-    .select('*')
+    .select('type, amount')
     .eq('colony_id', defenderColonyId)
 
   if (!defenderResources) {

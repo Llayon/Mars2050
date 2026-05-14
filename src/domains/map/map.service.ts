@@ -79,7 +79,7 @@ export async function discoverLocation(
   // 3. Check colony has enough resources
   const { data: resources, error: resError } = await supabase
     .from('resources')
-    .select('*')
+    .select('type, amount')
     .eq('colony_id', colonyId)
 
   if (resError || !resources) {

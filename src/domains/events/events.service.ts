@@ -85,30 +85,33 @@ export async function processExpiredEvents(colonyId: string): Promise<void> {
   const supabase = getServerClient()
   const now = new Date().toISOString()
 
-  // Деактивировать события, у которых истекло время
-  await supabase
-    .from('events')
-    .update({ is_active: false })
-    .eq('colony_id', colonyId)
-    .eq('is_active', true)
-    .lt('ends_at', now)
+  // Деактивировать истекшие события И получить мгновенные — параллельно
+  const [{ data: instantEvents }] = await Promise.all([
+    supabase
+      .from('events')
+      .select('*')
+      .eq('colony_id', colonyId)
+      .eq('is_active', true)
+      .is('ends_at', null),
+    supabase
+      .from('events')
+      .update({ is_active: false })
+      .eq('colony_id', colonyId)
+      .eq('is_active', true)
+      .lt('ends_at', now),
+  ])
 
-  // Выдать награды за мгновенные события (anomaly, resource_vein без длительности)
-  const { data: instantEvents } = await supabase
-    .from('events')
-    .select('*')
-    .eq('colony_id', colonyId)
-    .eq('is_active', true)
-    .is('ends_at', null)
-
+  // Выдать награды за мгновенные события параллельно
   if (instantEvents && instantEvents.length > 0) {
-    for (const event of instantEvents as unknown as GameEvent[]) {
-      await applyEventRewards(colonyId, event)
-      await supabase
-        .from('events')
-        .update({ is_active: false })
-        .eq('id', event.id)
-    }
+    await Promise.all(
+      instantEvents.map(async (event) => {
+        await applyEventRewards(colonyId, event as unknown as GameEvent)
+        return supabase
+          .from('events')
+          .update({ is_active: false })
+          .eq('id', event.id)
+      })
+    )
   }
 }
 

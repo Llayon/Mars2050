@@ -47,7 +47,7 @@ export function EventsPanel({ colonyId, onCreateTest }: EventsPanelProps) {
     return `${minutes} мин.`
   }
 
-  const hasProductionModifier = (effect: Record<string, unknown> | undefined): boolean => {
+  const hasProductionModifier = (effect: Record<string, unknown>): boolean => {
     return !!effect && typeof effect.production_modifier === 'object' && effect.production_modifier !== null
   }
 

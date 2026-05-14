@@ -18,7 +18,7 @@ export async function createBuilding(dto: BuildingCreateDTO): Promise<BuildingRe
   // 1. Check if colony has enough resources
   const { data: resources, error: resourcesError } = await supabase
     .from('resources')
-    .select('*')
+    .select('type, amount')
     .eq('colony_id', dto.colonyId)
 
   if (resourcesError || !resources) {

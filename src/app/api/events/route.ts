@@ -1,6 +1,7 @@
 import { getActiveEvents, getAllEvents, createEvent } from '@/domains/events/events.service'
 import { createEventSchema, eventQuerySchema } from '@/domains/events/events.schemas'
 import { NextResponse } from 'next/server'
+import { getCached, setCache, invalidateCache } from '@/lib/cache'
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
@@ -15,8 +16,15 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
   }
 
+  const cacheKey = `events:${parsed.data.colony_id}`
+
+  // Cache active events for 30 seconds
   if (parsed.data.active_only) {
+    const cached = getCached(cacheKey)
+    if (cached) return NextResponse.json(cached)
+
     const events = await getActiveEvents(parsed.data.colony_id)
+    setCache(cacheKey, events, 30)
     return NextResponse.json(events)
   }
 
@@ -37,6 +45,9 @@ export async function POST(request: Request) {
   if (!event) {
     return NextResponse.json({ error: 'Failed to create event' }, { status: 500 })
   }
+
+  // Invalidate cache for this colony's events
+  invalidateCache(`events:${parsed.data.colony_id}`)
 
   return NextResponse.json(event, { status: 201 })
 }

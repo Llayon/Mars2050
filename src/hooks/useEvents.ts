@@ -1,5 +1,17 @@
 import { useEffect, useState } from 'react'
-import type { GameEvent } from '@/domains/events/events.types'
+
+interface GameEvent {
+  id: string
+  colony_id: string
+  type: string
+  name: string
+  description: string
+  effect: Record<string, unknown>
+  duration_minutes?: number
+  is_active: boolean
+  created_at: string
+  ends_at?: string
+}
 
 interface UseEventsReturn {
   events: GameEvent[]
@@ -34,8 +46,8 @@ export function useEvents(colonyId: string | null): UseEventsReturn {
 
   useEffect(() => {
     fetchEvents()
-    // Poll every 30 seconds for event updates
-    const interval = setInterval(fetchEvents, 30000)
+    // Poll every 60 seconds for event updates (was 30s before cache)
+    const interval = setInterval(fetchEvents, 60000)
     return () => clearInterval(interval)
   }, [colonyId])
 

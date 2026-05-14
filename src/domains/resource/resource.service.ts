@@ -2,13 +2,11 @@ import { getServerClient } from '@/domains/resource/resource.server'
 import { getActiveEvents, applyEventModifiers, processExpiredEvents as processEvts } from '@/domains/events/events.service'
 import { processCompletedEvents } from './resource.events'
 import { generateRandomEvent } from '@/domains/events/events.generator'
+import type { ResourceRow } from './resource.types'
 
 /**
- * Lazy resource calculation.
- * Call before ANY game action (build, attack, trade, etc.)
- *
- * Formula: new_amount = amount + (production_rate - consumption_rate) * hours_elapsed
- * Modified by active events (dust storms, etc.)
+ * Lazy resource calculation — PostgreSQL RPC optimized.
+ * 1 RPC call instead of 10+ database roundtrips.
  *
  * @param colonyId - Colony ID to recalculate for
  * @returns Updated resources array
@@ -16,87 +14,42 @@ import { generateRandomEvent } from '@/domains/events/events.generator'
 export async function recalculateResources(colonyId: string) {
   const supabase = getServerClient()
 
-  // 1. Get colony's last_calc_at
-  const { data: colony, error: colonyError } = await supabase
-    .from('colonies')
-    .select('last_calc_at')
-    .eq('id', colonyId)
-    .single()
+  // 1. Recalculate resources via PostgreSQL RPC (single roundtrip)
+  const { data: resources, error: rpcError } = await supabase
+    .rpc('recalculate_resources', { p_colony_id: colonyId })
 
-  if (colonyError || !colony) {
-    console.error('recalculateResources: colony not found', colonyError)
+  if (rpcError) {
+    console.error('recalculateResources RPC error:', rpcError)
     return null
   }
 
-  // 2. Calculate elapsed time in hours
-  const lastCalcAt = new Date(colony.last_calc_at)
-  const now = new Date()
-  const elapsedMs = now.getTime() - lastCalcAt.getTime()
-  const elapsedHours = elapsedMs / (1000 * 60 * 60)
-
-  // Skip if less than 1 second elapsed (avoid unnecessary updates)
-  if (elapsedMs < 1000) {
-    const { data } = await supabase
-      .from('resources')
-      .select('*')
-      .eq('colony_id', colonyId)
-    return data
-  }
-
-  // 3. Get current resources
-  const { data: resources, error: resourcesError } = await supabase
-    .from('resources')
-    .select('*')
-    .eq('colony_id', colonyId)
-
-  if (resourcesError || !resources) {
-    console.error('recalculateResources: resources not found', resourcesError)
+  if (!resources || resources.length === 0) {
+    console.error('recalculateResources: no resources returned')
     return null
   }
 
-  // 4. Get active events and apply modifiers
-  const activeEvents = await getActiveEvents(colonyId)
+  // 2. Process events in parallel (non-blocking for resource display)
+  const [activeEvents] = await Promise.all([
+    getActiveEvents(colonyId).catch(() => []),
+    processEvts(colonyId).catch(() => {}),
+    processCompletedEvents(colonyId).catch(() => {}),
+  ])
+
+  // 3. Apply event modifiers to returned resources (client-side display)
   const baseRates: Record<string, number> = {}
   for (const r of resources) {
     baseRates[r.type] = r.production_rate - r.consumption_rate
   }
   const modifiedRates = applyEventModifiers(baseRates, activeEvents)
 
-  // 5. Update each resource
-  for (const r of resources) {
-    const rate = modifiedRates[r.type] || 0
-    const growth = rate * elapsedHours
-    const newAmount = Math.max(0, r.amount + growth)
-
-    await supabase
-      .from('resources')
-      .update({ amount: Math.round(newAmount * 100) / 100 })
-      .eq('colony_id', colonyId)
-      .eq('type', r.type)
-  }
-
-  // 6. Update last_calc_at on colony
-  await supabase
-    .from('colonies')
-    .update({ last_calc_at: now.toISOString() })
-    .eq('id', colonyId)
-
-  // 7. Process expired events (deactivate + instant rewards)
-  await processEvts(colonyId)
-
-  // 8. Process pending events that have completed
-  await processCompletedEvents(colonyId)
-
-  // 9. Random chance to trigger new event (5% per recalculation)
+  // 4. Random chance to trigger new event (fire-and-forget)
   if (Math.random() < 0.05) {
-    await generateRandomEvent(colonyId)
+    generateRandomEvent(colonyId).catch(() => {})
   }
 
-  // 10. Return updated resources
-  const { data: updatedResources } = await supabase
-    .from('resources')
-    .select('*')
-    .eq('colony_id', colonyId)
-
-  return updatedResources
+  // 5. Return resources with modified rates applied
+  return resources.map((r: ResourceRow) => ({
+    ...r,
+    amount: Math.round((r.amount + (modifiedRates[r.type] - baseRates[r.type]) || 0) * 100) / 100,
+  }))
 }

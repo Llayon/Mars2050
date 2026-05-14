@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { buildingCreateSchema } from '@/domains/building/building.schemas'
 import { createBuilding, deleteBuilding, getBuildings } from '@/domains/building/building.service'
 import { recalculateResources } from '@/domains/resource/resource.service'
+import { getCached, setCache, invalidateCache } from '@/lib/cache'
 
 function err(msg: string, status = 500) {
   return NextResponse.json({ error: msg }, { status })
@@ -13,12 +14,18 @@ export async function GET(request: Request) {
     const colonyId = new URL(request.url).searchParams.get('colonyId')
     if (!colonyId) return err('colonyId is required', 400)
 
+    const cacheKey = `buildings:${colonyId}`
+    const cached = getCached(cacheKey)
+    if (cached) return NextResponse.json({ buildings: cached })
+
     await recalculateResources(colonyId)
     const buildings = await getBuildings(colonyId)
+
+    setCache(cacheKey, buildings, 15)
     return NextResponse.json({ buildings })
-  } catch (e: any) {
+  } catch (e) {
     console.error('Buildings GET error:', e)
-    return err(e.message)
+    return err(String(e))
   }
 }
 
@@ -31,11 +38,15 @@ export async function POST(request: Request) {
     await recalculateResources(parsed.data.colonyId)
     const result = await createBuilding(parsed.data)
 
+    // Invalidate cache — data changed
+    invalidateCache(`resources:${parsed.data.colonyId}`)
+    invalidateCache(`buildings:${parsed.data.colonyId}`)
+
     if (result.error) return NextResponse.json({ error: result.error }, { status: result.status })
     return NextResponse.json({ building: result.building }, { status: 201 })
-  } catch (e: any) {
+  } catch (e) {
     console.error('Buildings POST error:', e)
-    return err(e.message)
+    return err(String(e))
   }
 }
 
@@ -50,10 +61,14 @@ export async function DELETE(request: Request) {
     await recalculateResources(colonyId)
     const result = await deleteBuilding(buildingId, colonyId)
 
+    // Invalidate cache — data changed
+    invalidateCache(`resources:${colonyId}`)
+    invalidateCache(`buildings:${colonyId}`)
+
     if (result.error) return err(result.error, 500)
     return NextResponse.json({ success: true })
-  } catch (e: any) {
+  } catch (e) {
     console.error('Buildings DELETE error:', e)
-    return err(e.message)
+    return err(String(e))
   }
 }
