@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { discoverLocationSchema } from '@/domains/map/map.schemas'
 import { discoverLocation, getMapLocations } from '@/domains/map/map.service'
 import { recalculateResources } from '@/domains/resource/resource.service'
+import { apiError, apiInternalError, apiValidationError } from '@/lib/api-error'
 
 /**
  * GET /api/map
@@ -11,16 +12,15 @@ export async function GET() {
   try {
     const locations = await getMapLocations()
     return NextResponse.json({ locations })
-  } catch (err: any) {
+  } catch (err) {
     console.error('Map GET error:', err)
-    return NextResponse.json({ error: err.message }, { status: 500 })
+    return apiInternalError(err)
   }
 }
 
 /**
  * POST /api/explore
  * Discovers a map location.
- * Recalculates resources first (lazy calculation), then deducts cost and grants rewards.
  * Body: { locationId: string, colonyId: string }
  */
 export async function POST(request: Request) {
@@ -29,10 +29,7 @@ export async function POST(request: Request) {
     const parsed = discoverLocationSchema.safeParse(body)
 
     if (!parsed.success) {
-      return NextResponse.json(
-        { error: parsed.error.flatten() },
-        { status: 400 }
-      )
+      return apiValidationError(parsed.error.flatten())
     }
 
     // Lazy recalculate resources before exploration
@@ -41,7 +38,7 @@ export async function POST(request: Request) {
     const result = await discoverLocation(parsed.data.locationId, parsed.data.colonyId)
 
     if (result.error) {
-      return NextResponse.json({ error: result.error }, { status: 400 })
+      return apiError('BAD_REQUEST', result.error)
     }
 
     return NextResponse.json({
@@ -51,8 +48,8 @@ export async function POST(request: Request) {
         ? `Локация исследована! Получено: ${Object.entries(result.rewards).map(([k, v]) => `${v} ${k}`).join(', ')}`
         : 'Локация исследована!'
     })
-  } catch (err: any) {
+  } catch (err) {
     console.error('Explore POST error:', err)
-    return NextResponse.json({ error: err.message }, { status: 500 })
+    return apiInternalError(err)
   }
 }

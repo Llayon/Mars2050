@@ -2,19 +2,24 @@
 
 import { useState, useCallback } from 'react'
 import { useAuth } from '@/hooks/useAuth'
+import { useColony } from '@/hooks/useColony'
 import { useResources } from '@/hooks/useResources'
 import { useBuildings } from '@/hooks/useBuildings'
 import { useEvents } from '@/hooks/useEvents'
 import { ToastProvider, useToast } from '@/components/ui/toast'
 import { AuthModal } from '@/components/game/AuthModal'
+import { ColonyPanel } from '@/components/game/ColonyPanel'
 import { ResourcePanel } from '@/components/game/ResourcePanel'
 import { GameMapPanel } from '@/components/game/GameMapPanel'
 import { BuildingsPanel } from '@/components/game/BuildingsPanel'
 import { EventsPanel } from '@/components/game/EventsPanel'
+import { LeaderboardPanel } from '@/components/game/LeaderboardPanel'
+import { PvpPanel } from '@/components/game/PvpPanel'
 import type { BuildingTypeKey } from '@/domains/building/building.types'
 
 function GameUI() {
   const { user, colonyId, loading, login, signup, logout } = useAuth()
+  const { colony, loading: colonyLoading } = useColony(colonyId)
   const { resources, loading: resourcesLoading, refetch: refetchResources } = useResources(colonyId)
   const { buildings, buildStructure, demolishBuilding } = useBuildings(colonyId)
   const { toast } = useToast()
@@ -68,17 +73,22 @@ function GameUI() {
       <header className="bg-gray-800 p-4 shadow-lg">
         <div className="container mx-auto flex justify-between items-center">
           <h1 className="text-2xl font-bold">🚀 Mars2050</h1>
-          <button onClick={logout} className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded text-sm">
-            Выйти ({user.email})
-          </button>
+          <div className="flex items-center gap-4">
+            <span className="text-sm text-gray-400">{colony?.name || 'Колония'} — Ур. {colony?.level || 1}</span>
+            <button onClick={logout} className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded text-sm">
+              Выйти ({user.email})
+            </button>
+          </div>
         </div>
       </header>
 
       <main className="container mx-auto p-4">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <div className="lg:col-span-1 space-y-4">
+            <ColonyPanel colony={colony} loading={colonyLoading} />
             <ResourcePanel resources={resources} loading={resourcesLoading} />
             <EventsPanel colonyId={colonyId} onCreateTest={handleCreateTest} />
+            <PvpPanel colonyId={colonyId} onResult={(msg) => toast(msg, 'info')} />
           </div>
           <div className="lg:col-span-2">
             <GameMapPanel colonyId={colonyId} onDiscover={refetchResources} />
@@ -92,6 +102,9 @@ function GameUI() {
               onDemolish={handleDemolish}
               onRefresh={refetchResources}
             />
+            <div className="mt-4">
+              <LeaderboardPanel />
+            </div>
           </div>
         </div>
       </main>

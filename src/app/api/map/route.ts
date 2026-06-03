@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getMapLocations } from '@/domains/map/map.service'
+import { apiInternalError } from '@/lib/api-error'
 
 /**
  * GET /api/map
@@ -9,8 +10,8 @@ export async function GET() {
   try {
     const locations = await getMapLocations()
     return NextResponse.json({ locations })
-  } catch (err: any) {
+  } catch (err) {
     console.error('Map GET error:', err)
-    return NextResponse.json({ error: err.message }, { status: 500 })
+    return apiInternalError(err)
   }
 }

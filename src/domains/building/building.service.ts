@@ -6,6 +6,8 @@ import { updateResourceRate, PRODUCTION_TYPE } from './building.utils'
 /**
  * Creates a new building for a colony.
  * Checks cost, deducts resources, creates building, updates rates.
+ * @param dto - Building creation data (colonyId, type, name)
+ * @returns Created building row or error
  */
 export async function createBuilding(dto: BuildingCreateDTO): Promise<BuildingResponse> {
   const supabase = getServerClient()
@@ -92,6 +94,9 @@ export async function createBuilding(dto: BuildingCreateDTO): Promise<BuildingRe
 
 /**
  * Deletes a building and reverts its production/consumption effects.
+ * @param buildingId - Building ID to delete
+ * @param colonyId - Colony ID owning the building
+ * @returns Success status or error message
  */
 export async function deleteBuilding(buildingId: string, colonyId: string): Promise<{ success: boolean; error: string | null }> {
   const supabase = getServerClient()
@@ -130,6 +135,8 @@ export async function deleteBuilding(buildingId: string, colonyId: string): Prom
 
 /**
  * Gets all buildings for a colony.
+ * @param colonyId - Colony ID
+ * @returns Array of building rows
  */
 export async function getBuildings(colonyId: string): Promise<BuildingRow[]> {
   const supabase = getServerClient()

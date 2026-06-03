@@ -24,6 +24,11 @@ const RESOURCE_MULTIPLIERS: Record<MapLocationType, Record<string, number>> = {
 
 const LOCATION_TYPES: MapLocationType[] = ['plains', 'mountains', 'canyon', 'crater', 'ice_cap']
 
+/**
+ * Generate a random Mars map with locations.
+ * @param config - Map configuration (width, height, location count)
+ * @returns Array of map locations without DB IDs
+ */
 export function generateMarsMap(config: MapConfig): Omit<MapLocation, 'id'>[] {
   const locations: Omit<MapLocation, 'id'>[] = []
   const usedPositions = new Set<string>()
@@ -63,6 +68,10 @@ export function generateMarsMap(config: MapConfig): Omit<MapLocation, 'id'>[] {
   return locations
 }
 
+/**
+ * Get default map configuration (20x20 grid, 50 locations).
+ * @returns Default MapConfig
+ */
 export function getDefaultMapConfig(): MapConfig {
   return {
     width: 20,

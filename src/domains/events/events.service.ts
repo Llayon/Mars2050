@@ -3,7 +3,9 @@ import { EVENT_CONFIG } from './events.config'
 import type { EventType, GameEvent, CreateEventDTO } from './events.types'
 
 /**
- * Создать новое событие для колонии
+ * Create a new event for a colony.
+ * @param data - Event creation DTO (colony_id, type, optional duration)
+ * @returns Created event or null on failure
  */
 export async function createEvent(data: CreateEventDTO): Promise<GameEvent | null> {
   const supabase = getServerClient()
@@ -38,7 +40,9 @@ export async function createEvent(data: CreateEventDTO): Promise<GameEvent | nul
 }
 
 /**
- * Получить активные события колонии
+ * Get active events for a colony (not expired).
+ * @param colonyId - Colony ID
+ * @returns Array of active events
  */
 export async function getActiveEvents(colonyId: string): Promise<GameEvent[]> {
   const supabase = getServerClient()
@@ -59,7 +63,9 @@ export async function getActiveEvents(colonyId: string): Promise<GameEvent[]> {
 }
 
 /**
- * Получить все события колонии
+ * Get all events for a colony (active and expired).
+ * @param colonyId - Colony ID
+ * @returns Array of all events sorted by date
  */
 export async function getAllEvents(colonyId: string): Promise<GameEvent[]> {
   const supabase = getServerClient()
@@ -79,7 +85,9 @@ export async function getAllEvents(colonyId: string): Promise<GameEvent[]> {
 }
 
 /**
- * Обработать завершение событий (вызывается в recalculateResources)
+ * Deactivate expired events and process instant event rewards.
+ * Called during recalculateResources.
+ * @param colonyId - Colony ID
  */
 export async function processExpiredEvents(colonyId: string): Promise<void> {
   const supabase = getServerClient()
@@ -116,8 +124,11 @@ export async function processExpiredEvents(colonyId: string): Promise<void> {
 }
 
 /**
- * Применить эффекты события к производству ресурсов
- * Вызывается при расчёте ресурсов
+ * Apply event effects (production_modifier) to resource rates.
+ * Called during resource calculation.
+ * @param baseRates - Base production rates per resource type
+ * @param events - Active events with modifiers
+ * @returns Modified resource rates with event effects applied
  */
 export function applyEventModifiers(
   baseRates: Record<string, number>,

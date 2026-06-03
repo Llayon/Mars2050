@@ -14,6 +14,10 @@
  *   9. MANUAL: No manual validation in API routes (ADR-002)
  *  10. IDIOM: Service/API idioms (ADR-001)
  *  11. PAGE: No raw logic in pages (ADR-007)
+ *  12. ERROR_HELPER: API routes must use apiError helper (ADR-002)
+ *  13. IMPORT_RULES: No cross-api imports, hooks don't import services (ADR-001, ADR-007)
+ *  14. EXPORT: Domains must have index.ts barrel export (ADR-001)
+ *  15. JSDOC: Public functions in services must have JSDoc (ADR-001)
  *
  * Usage:
  *   npx tsx scripts/check-limits.ts              # Check all files
@@ -66,6 +70,10 @@ const RULE_SEVERITY: Record<string, Severity> = {
   PAGE: 'warning',
   PASCAL: 'info',
   DOMAIN: 'warning',
+  ERROR_HELPER: 'warning',
+  IMPORT_RULES: 'warning',
+  EXPORT: 'info',
+  JSDOC: 'info',
 }
 
 const RULE_ADR: Record<string, string[]> = {
@@ -80,6 +88,10 @@ const RULE_ADR: Record<string, string[]> = {
   PAGE: ['ADR-007'],
   PASCAL: ['ADR-001'],
   DOMAIN: ['ADR-001'],
+  ERROR_HELPER: ['ADR-002'],
+  IMPORT_RULES: ['ADR-001', 'ADR-007'],
+  EXPORT: ['ADR-001'],
+  JSDOC: ['ADR-001'],
 }
 
 // ─── Limits ───────────────────────────────────────────────────
@@ -503,7 +515,128 @@ function checkNoRawLogicInPages(changedFiles?: Set<string>) {
   walkDir(pagesPath)
 }
 
-// ─── Rule 11: Domain completeness ──────────────────────────────
+// ─── Rule 11: API routes must use apiError helper ──────────────
+function checkApiErrorHelper(changedFiles?: Set<string>) {
+  const apiPath = join(SRC, 'app', 'api')
+  try { readdirSync(apiPath) } catch { return }
+
+  const walkDir = (d: string) => {
+    const entries = readdirSync(d, { withFileTypes: true })
+    for (const entry of entries) {
+      const fullPath = join(d, entry.name)
+      if (entry.isDirectory()) { walkDir(fullPath); continue }
+      if (entry.name !== 'route.ts') continue
+
+      const rel = relPath(fullPath)
+      if (changedFiles && !changedFiles.has(`src/${rel}`)) continue
+
+      const content = readFileContent(fullPath)
+      if (!content.includes('from \'@/lib/api-error\'') && !content.includes('from "@/lib/api-error"')) {
+        // Only flag routes with handlers (not empty route files)
+        if (content.includes('export async function')) {
+          addViolation('ERROR_HELPER', rel, 'missing apiError import — use apiError() from @/lib/api-error instead of NextResponse.json for errors')
+        }
+      }
+    }
+  }
+  walkDir(apiPath)
+}
+
+// ─── Rule 12: Import rules — no cross-api imports, hooks don't import services ──
+function checkImportRules(changedFiles?: Set<string>) {
+  const walkDir = (d: string) => {
+    const entries = readdirSync(d, { withFileTypes: true })
+    for (const entry of entries) {
+      const fullPath = join(d, entry.name)
+      if (entry.isDirectory()) { walkDir(fullPath); continue }
+      if (!['.ts', '.tsx'].includes(extname(entry.name))) continue
+
+      const rel = relPath(fullPath)
+      if (changedFiles && !changedFiles.has(`src/${rel}`)) continue
+
+      const content = readFileContent(fullPath)
+
+      // Hooks must not import services directly
+      if (rel.startsWith('hooks/') && content.includes("from '@/domains/") && content.includes('.service')) {
+        addViolation('IMPORT_RULES', rel, 'hook imports domain service directly — use API fetch instead')
+      }
+
+      // API routes must not import other API routes
+      if (rel.startsWith('app/api/') && /from ['"]\.\.\/.*\/route['"]/.test(content)) {
+        addViolation('IMPORT_RULES', rel, 'API route imports another API route — extract shared logic to service instead')
+      }
+    }
+  }
+  walkDir(SRC)
+}
+
+// ─── Rule 14: Domain barrel export ─────────────────────────────
+function checkDomainExports(changedFiles?: Set<string>) {
+  const domainsPath = join(SRC, 'domains')
+  try { readdirSync(domainsPath) } catch { return }
+
+  const entries = readdirSync(domainsPath, { withFileTypes: true })
+  for (const entry of entries) {
+    if (!entry.isDirectory()) continue
+
+    const domainDir = join(domainsPath, entry.name)
+    const files = readdirSync(domainDir)
+    const hasBarrel = files.includes('index.ts')
+    const hasSourceFiles = files.some(f => f.endsWith('.ts') && f !== 'index.ts')
+
+    if (hasSourceFiles && !hasBarrel) {
+      addViolation('EXPORT', `domains/${entry.name}/`, 'missing index.ts — every domain needs a barrel export')
+    }
+  }
+}
+
+// ─── Rule 15: JSDoc on public functions in services/generators/utils ──
+function checkJsDoc(changedFiles?: Set<string>) {
+  const filesToCheck: string[] = []
+  const jsDocPatterns = ['.service.ts', '.generator.ts', '.events.ts', '.utils.ts']
+
+  const walkDir = (d: string) => {
+    const entries = readdirSync(d, { withFileTypes: true })
+    for (const entry of entries) {
+      const fullPath = join(d, entry.name)
+      if (entry.isDirectory()) { walkDir(fullPath); continue }
+      if (jsDocPatterns.some(p => entry.name.endsWith(p))) filesToCheck.push(fullPath)
+    }
+  }
+  walkDir(join(SRC, 'domains'))
+
+  for (const filePath of filesToCheck) {
+    const rel = relPath(filePath)
+    if (changedFiles && !changedFiles.has(`src/${rel}`)) continue
+
+    const content = readFileContent(filePath)
+    const lines = content.split('\n')
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i]
+      const exportMatch = line.match(/^export (async )?function (\w+)/)
+
+      if (exportMatch) {
+        const fnName = exportMatch[2]
+        // Skip private/internal functions
+        if (fnName.startsWith('_')) continue
+
+        // Scan backward up to 10 lines for `/**`
+        let hasJsDoc = false
+        for (let j = i - 1; j >= 0 && j >= i - 10; j--) {
+          if (/^\s*\/\*\*/.test(lines[j].trim())) { hasJsDoc = true; break }
+          // Stop scanning if we hit another function or empty line with only braces
+          if (/^export (async )?function/.test(lines[j])) break
+        }
+        if (!hasJsDoc) {
+          addViolation('JSDOC', rel, `export function "${fnName}" missing JSDoc`, i + 1)
+        }
+      }
+    }
+  }
+}
+
+// ─── Rule 13: Domain completeness ──────────────────────────────
 function checkDomainCompleteness(changedFiles?: Set<string>) {
   const domainsPath = join(SRC, 'domains')
   try { readdirSync(domainsPath) } catch { return }
@@ -544,6 +677,10 @@ checkAnyTypes(changedFiles)
 checkServiceIdioms(changedFiles)
 checkApiRouteIdioms(changedFiles)
 checkNoRawLogicInPages(changedFiles)
+checkApiErrorHelper(changedFiles)
+checkImportRules(changedFiles)
+checkDomainExports(changedFiles)
+checkJsDoc(changedFiles)
 checkDomainCompleteness(changedFiles)
 
 // ─── Report ────────────────────────────────────────────────────
@@ -587,7 +724,8 @@ if (JSON_OUTPUT) {
 
     const ruleEmoji: Record<string, string> = {
       SIZE: '📏', NAMING: '📝', SECURITY: '🔒', ARCH: '🏗️', ZOD: '✅',
-      MANUAL: '🚫', ANY: '⚠️', IDIOM: '🎯', PAGE: '📄', PASCAL: '🔤', DOMAIN: '📁'
+      MANUAL: '🚫', ANY: '⚠️', IDIOM: '🎯', PAGE: '📄', PASCAL: '🔤', DOMAIN: '📁',
+      ERROR_HELPER: '🆘', IMPORT_RULES: '🔗', EXPORT: '📦', JSDOC: '📝'
     }
 
     const severityEmoji: Record<Severity, string> = {

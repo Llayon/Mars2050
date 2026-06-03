@@ -1,42 +1,12 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { memo } from 'react'
+import { useLeaderboard } from '@/hooks/useLeaderboard'
 
-interface LeaderboardEntry {
-  rank: number
-  colonyName: string
-  playerName: string
-  level: number
-  experience: number
-  totalResources: number
-  score: number
-}
+export const LeaderboardPanel = memo(function LeaderboardPanel() {
+  const { leaderboard, loading } = useLeaderboard()
 
-export function Leaderboard() {
-  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    fetchLeaderboard()
-  }, [])
-
-  async function fetchLeaderboard() {
-    try {
-      const res = await fetch('/api/leaderboard')
-      const data = await res.json()
-      if (data.leaderboard) {
-        setLeaderboard(data.leaderboard)
-      }
-    } catch (error) {
-      console.error('Failed to fetch leaderboard:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  if (loading) {
-    return <div className="p-4">Загрузка рейтинга...</div>
-  }
+  if (loading) return <div className="p-4 text-gray-400 bg-gray-800 rounded-lg">Загрузка рейтинга...</div>
 
   return (
     <div className="bg-gray-800 text-white p-4 rounded-lg shadow-lg">
@@ -76,4 +46,4 @@ export function Leaderboard() {
       )}
     </div>
   )
-}
+})

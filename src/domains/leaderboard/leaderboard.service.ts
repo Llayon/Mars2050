@@ -13,6 +13,7 @@ interface LeaderboardEntry {
 
 /**
  * Get leaderboard sorted by score (experience + resources/100).
+ * @returns Leaderboard entries with rank, colony name, score
  */
 export async function getLeaderboard(): Promise<{ leaderboard: LeaderboardEntry[]; error?: string }> {
   const supabase = getServerClient()

@@ -4,6 +4,8 @@ import { STARTING_RESOURCES } from '@/domains/building/building.config'
 /**
  * Initialize starting resources for a new colony.
  * Skips if resources already exist.
+ * @param colonyId - Colony ID to initialize
+ * @returns Success status with count of resources created
  */
 export async function initColonyResources(colonyId: string): Promise<{ success: boolean; error?: string; count?: number }> {
   const supabase = getServerClient()

@@ -3,6 +3,11 @@ import { getServerClient } from '@/domains/resource/resource.server'
 /**
  * Execute a trade between two colonies.
  * Deducts offered resources from seller, adds requested resources to buyer.
+ * @param fromColonyId - Selling colony ID
+ * @param toColonyId - Buying colony ID
+ * @param offerResources - Resources the seller offers
+ * @param requestResources - Resources the buyer requests
+ * @returns Success status or error message
  */
 export async function executeTrade(
   fromColonyId: string,
@@ -79,7 +84,11 @@ export async function executeTrade(
 
 /**
  * Execute an attack between two colonies.
- * Returns combat result and any stolen resources.
+ * Compares attacker power vs defender resources, returns stolen resources on win.
+ * @param attackerColonyId - Attacking colony ID
+ * @param defenderColonyId - Defending colony ID
+ * @param unitCount - Number of units the attacker sends
+ * @returns Combat result with stolen resources on success
  */
 export async function executeAttack(
   attackerColonyId: string,

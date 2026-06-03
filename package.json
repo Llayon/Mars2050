@@ -9,8 +9,11 @@
     "lint": "eslint",
     "lint:limits": "tsx scripts/check-limits.ts",
     "prebuild": "tsx scripts/check-limits.ts",
+    "generate:types": "tsx scripts/generate-types.ts",
+    "scaffold": "tsx scripts/scaffold.ts",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "prepare": "husky"
   },
   "dependencies": {
     "@supabase/ssr": "^0.10.2",
@@ -20,13 +23,24 @@
     "react-dom": "19.2.4",
     "zod": "^4.4.2"
   },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "npx tsx scripts/check-limits.ts --diff HEAD --json"
+    ],
+    "*.test.ts": [
+      "vitest run --reporter=verbose"
+    ]
+  },
   "devDependencies": {
+    "@playwright/mcp": "^0.0.75",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20.19.39",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.4",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.0.7",
     "tailwindcss": "^4",
     "tsx": "^4.21.0",
     "typescript": "^5",

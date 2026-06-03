@@ -18,6 +18,8 @@
 - ✅ Типы БД генерируются из `supabase-schema.sql`
 - ✅ Новые файлы — по доменной структуре
 - ✅ Редактирование — только через surgical replace
+- ✅ Ошибки API — только через `apiError()` / `apiValidationError()` / `apiInternalError()` из `@/lib/api-error`
+- ✅ Подсказки для LLM — читать `.opencode/instructions/` для конкретной задачи
 
 ## File Size Limits
 
@@ -52,10 +54,21 @@ domains/{feature}/
 | `supabase.from()` read | `hooks/use*.ts` (RLS) | page, component (use hook) |
 | `supabase.from()` write | NEVER client-side | always via API route |
 
+## Error Helper
+All API routes use structured errors from `@/lib/api-error`:
+- `apiError(code, message, detail?)` — generic error
+- `apiValidationError(detail)` — 422 with validation details
+- `apiInternalError(err)` — 500 with message from Error
+- Format: `{ error: { code, message, detail? } }`
+
 ## Lint Commands
-- `npm run lint:limits`: Architecture checks (check-limits.ts)
+- `npm run lint:limits`: Architecture checks (check-limits.ts, 13 rules)
 - `npm test`: Unit tests (vitest)
 - `npm run build`: Project build
+- `/lint:llm` (opencode command): Run with --json for LLM parsing
+
+## Git Hooks
+- Pre-commit (husky + lint-staged): check-limits on staged files + vitest on tests
 
 ## Rule Emojis
 - `🚫 MANUAL`: Ручная валидация в API routes (typeof, isNaN, parseInt)
@@ -64,3 +77,5 @@ domains/{feature}/
 - `📁 DOMAIN`: Нарушение структуры доменов
 - `🔒 RLS`: Нарушение правил безопасности
 - `🔄 VALIDATE`: Отсутствие Zod валидации
+- `🆘 ERROR_HELPER`: Отсутствие apiError импорта
+- `🔗 IMPORT_RULES`: Нарушение правил импортов

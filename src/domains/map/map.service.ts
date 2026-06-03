@@ -5,6 +5,7 @@ import { EXPLORATION_COST, EXPLORATION_BASE_REWARD } from './map.config'
 
 /**
  * Gets all map locations, generating them if the map is empty.
+ * @returns Array of map locations with discovery status
  */
 export async function getMapLocations(): Promise<MapLocation[]> {
   const supabase = getServerClient()

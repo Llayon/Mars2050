@@ -1,0 +1,79 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+
+  "instructions": ["AGENTS.md", ".opencode/instructions"],
+
+  "agent": {
+    "architect": {
+      "description": "Architecture reviewer — checks ADRs, domains structure, file limits, and LLM-first patterns before major changes.",
+      "mode": "subagent",
+      "permission": { "edit": "deny", "bash": "ask" },
+      "template": "You are the Mars2050 architect. Before every change: 1) load the relevant ADR from .project/adrs/ 2) run `npm run lint:limits` 3) check that the change follows domain structure 4) verify file size limits. Never bypass ADRs."
+    },
+    "reviewer": {
+      "description": "Code reviewer — runs lint, typecheck, and tests, then suggests improvements.",
+      "mode": "subagent",
+      "permission": { "edit": "deny", "bash": "ask" },
+      "template": "You are a strict code reviewer. Run `npm run lint` and `npm t` before approving. Check for Zod validation, no `any`, no manual validation, no direct DB from client. Report every violation."
+    }
+  },
+
+  "command": {
+    "lint:llm": {
+      "description": "Run architecture enforcer with JSON output for LLM parsing",
+      "template": "Run `npx tsx scripts/check-limits.ts --json` and analyze the results. Report violations grouped by severity."
+    },
+    "test:llm": {
+      "description": "Run tests with structured output",
+      "template": "Run `npm t 2>&1` and summarize failures in a table: test name, expected, actual, likely cause."
+    },
+    "build:check": {
+      "description": "Full preflight: lint limits + typecheck + tests",
+      "template": "Run sequentially: 1) `npm run lint:limits` 2) `npx tsc --noEmit` 3) `npm t`. Report all failures."
+    },
+    "context": {
+      "description": "Load LLM context for a specific domain (building, resource, map, colony, pvp, auth, events)",
+      "template": "Read the matching file from .project/llm-context/ and summarize the domain's types, services, and key rules."
+    }
+  },
+
+  "mcp": {
+    "playwright": {
+      "type": "local",
+      "command": ["npx", "-y", "@playwright/mcp"],
+      "enabled": true
+    }
+  },
+
+  "permission": {
+    "edit": "allow",
+    "bash": {
+      "git *": "allow",
+      "npm *": "allow",
+      "npx *": "allow",
+      "*": "ask"
+    },
+    "external_directory": {
+      "*": "allow"
+    }
+  },
+
+  "formatter": false,
+  "lsp": false,
+  "logLevel": "INFO",
+
+  "experimental": {
+    "primary_tools": ["edit", "glob", "grep", "read", "bash", "write", "todowrite", "question"],
+    "mcp_timeout": 30000
+  },
+
+  "tool_output": {
+    "max_lines": 500,
+    "max_bytes": 16000
+  },
+
+  "compaction": {
+    "auto": true,
+    "tail_turns": 20
+  }
+}

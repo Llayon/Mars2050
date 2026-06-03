@@ -37,6 +37,14 @@ export function useAuth() {
     return () => subscription.unsubscribe()
   }, [])
 
+  function formatError(err: unknown): string {
+    const msg = String(err)
+    if (msg.includes('Failed to fetch') || msg.includes('NetworkError') || msg.includes('ERR_NAME_NOT_RESOLVED')) {
+      return 'Сервер Supabase недоступен. Возможно, проект приостановлен — восстановите его в дашборде Supabase.'
+    }
+    return msg
+  }
+
   async function checkSession() {
     try {
       const { data: { session } } = await supabase.auth.getSession()
@@ -45,7 +53,7 @@ export function useAuth() {
         await loadColony(session.user.id)
       }
     } catch (error) {
-      setState(prev => ({ ...prev, error: String(error) }))
+      setState(prev => ({ ...prev, error: formatError(error) }))
     } finally {
       setState(prev => ({ ...prev, loading: false }))
     }
@@ -53,7 +61,6 @@ export function useAuth() {
 
   async function loadColony(userId: string) {
     try {
-      // Read colony via Supabase (RLS-protected)
       const { data: colonies } = await supabase
         .from('colonies')
         .select('id')
@@ -63,12 +70,16 @@ export function useAuth() {
       if (colonies && colonies.length > 0) {
         setState(prev => ({ ...prev, colonyId: (colonies[0] as Record<string, unknown>).id as string }))
       } else {
-        // Colony doesn't exist — create via API (server-side mutation)
         const res = await fetch('/api/colonies', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ userId })
         })
+
+        if (!res.ok) {
+          setState(prev => ({ ...prev, error: 'Ошибка сервера при создании колонии' }))
+          return
+        }
 
         const data = await res.json()
         if (data.colonyId) {
@@ -78,13 +89,18 @@ export function useAuth() {
         }
       }
     } catch (error) {
-      setState(prev => ({ ...prev, error: String(error) }))
+      setState(prev => ({ ...prev, error: formatError(error) }))
     }
   }
 
   const login = useCallback(async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) throw error
+    if (error) {
+      if (error.message?.includes('Failed to fetch') || error.status === 0) {
+        throw new Error('Сервер Supabase недоступен. Возможно, проект приостановлен.')
+      }
+      throw error
+    }
   }, [])
 
   const signup = useCallback(async (email: string, password: string) => {
@@ -93,7 +109,12 @@ export function useAuth() {
       password,
       options: { emailRedirectTo: `${window.location.origin}/auth/callback` }
     })
-    if (error) throw error
+    if (error) {
+      if (error.message?.includes('Failed to fetch') || error.status === 0) {
+        throw new Error('Ошибка подключения к серверу. Проверьте подключение к интернету.')
+      }
+      throw error
+    }
   }, [])
 
   const logout = useCallback(async () => {

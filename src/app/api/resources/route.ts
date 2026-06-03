@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { recalculateResources } from '@/domains/resource/resource.service'
 import { getCached, setCache, invalidateCache } from '@/lib/cache'
+import { apiError, apiInternalError } from '@/lib/api-error'
 
 /**
  * GET /api/resources?colonyId=xxx
@@ -14,7 +15,7 @@ export async function GET(request: Request) {
     const colonyId = searchParams.get('colonyId')
 
     if (!colonyId) {
-      return NextResponse.json({ error: 'colonyId is required' }, { status: 400 })
+      return apiError('BAD_REQUEST', 'colonyId is required')
     }
 
     // Check cache (10 second TTL)
@@ -28,7 +29,7 @@ export async function GET(request: Request) {
     const resources = await recalculateResources(colonyId)
 
     if (!resources) {
-      return NextResponse.json({ error: 'Failed to recalculate resources' }, { status: 500 })
+      return apiError('INTERNAL_ERROR', 'Failed to recalculate resources')
     }
 
     setCache(cacheKey, resources, 10)
@@ -39,6 +40,6 @@ export async function GET(request: Request) {
     return NextResponse.json({ resources })
   } catch (err) {
     console.error('Resources GET error:', err)
-    return NextResponse.json({ error: String(err) }, { status: 500 })
+    return apiInternalError(err)
   }
 }

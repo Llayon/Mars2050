@@ -404,6 +404,77 @@ function GameUI() {
 DB types are defined in `supabase-schema.sql` and mirrored in `src/types/database.ts`.
 When schema changes, update BOTH files.
 
+## LLM-First Development Patterns
+
+### opencode.json (`/opencode.json`)
+OpenCode configuration with custom modes, MCP, commands, and permissions:
+- **MCP**: Playwright MCP (E2E testing) — enable via `opencode.json`
+- **Custom agents**: `architect` (architecture review), `reviewer` (code review)
+- **Custom commands**: `/lint:llm`, `/test:llm`, `/build:check`, `/context <domain>`
+- **Permission rules**: `git *` and `npm *` allowed, others ask
+
+### Prompt Templates (`.opencode/instructions/`)
+Task-specific templates loaded by OpenCode automatically:
+| File | Trigger | Purpose |
+|------|---------|---------|
+| `feature.md` | New features | Domain-first workflow |
+| `bugfix.md` | Bug fixing | Diagnose → fix → verify |
+| `refactor.md` | Code refactoring | Extract logic, split files |
+| `test.md` | Test writing | Given/When/Then pattern |
+
+### LLM Context Files (`.project/llm-context/`)
+Domain-specific context files for focused AI reading:
+- `architecture.md` — Core rules, file limits, patterns
+- `{domain}.md` — One per domain (building, resource, map, colony, pvp, auth, events)
+
+### Architectural Decision Records (`.project/adrs/`)
+ADRs with Good/Bad Examples specifically designed for LLM comprehension:
+| ADR | Title | Key Insight |
+|-----|-------|-------------|
+| 001 | Domain-Based Architecture | Business logic in `domains/` only |
+| 002 | Zod Validation | Every API input validated via `safeParse` |
+| 003 | Ban `any` | Type safety everywhere |
+| 004 | Supabase RLS | Reads via hooks (RLS), writes via API (service_role) |
+| 005 | Service Role Key Security | Secret key never in client code |
+| 006 | File Size Limits | Context window optimization |
+| 007 | Surgical Edits | Never rewrite files, only replace fragments |
+
+### API Error Helper (`@/lib/api-error`)
+All API routes use structured error responses via `apiError()` / `apiValidationError()` / `apiInternalError()`:
+```typescript
+// ✅ Structured error for LLM-friendly parsing
+return apiError('BAD_REQUEST', 'colonyId is required')
+return apiValidationError(parsed.error.flatten())
+return apiInternalError(err)
+```
+Response format: `{ error: { code, message, detail? } }` with HTTP status derived from code.
+
+### Architecture Enforcer (`scripts/check-limits.ts`)
+15 automated rules checked on `prebuild` and `pre-commit`:
+| Rule | What it checks | Severity |
+|------|---------------|----------|
+| SIZE | File size limits by type | error |
+| NAMING | kebab-case filenames | error |
+| SECURITY | No service key in client code | error |
+| ARCH | No direct DB mutations from client | error |
+| ZOD | POST handlers use zod validation | error |
+| MANUAL | No manual typeof/isNaN/parseInt | error |
+| ANY | No `: any` or `as any` | warning |
+| IDIOM | Services use getServerClient, no throws | warning |
+| PAGE | No raw logic in pages | warning |
+| PASCAL | Component PascalCase exports | info |
+| DOMAIN | Domain directories have required files | warning |
+| ERROR_HELPER | API routes use apiError helper | warning |
+| IMPORT_RULES | No cross-api imports, hooks don't import services | warning |
+| EXPORT | Domains must have index.ts barrel export | info |
+| JSDOC | Public functions in services must have JSDoc | info |
+
+Use `--json` for LLM-parsable output, `--diff` for changed files only.
+
+### Git Hooks (husky + lint-staged)
+- **Pre-commit**: runs check-limits on staged files + vitest on test files
+- Configured in `.husky/pre-commit` and `package.json` → `lint-staged`
+
 ## Environment Variables
 
 ```env
@@ -416,8 +487,9 @@ NEXT_PUBLIC_GAME_NAME=Mars2050     # Optional. Game display name
 ## Current State
 
 - ✅ Project initialized (Next.js 16 + TypeScript + Tailwind)
-- ✅ Supabase Cloud connected (project: gkvsnzwvgonfpuespafm)
-  - URL: https://gkvsnzwvgonfpuespafm.supabase.co
+- ⚠️ Supabase Cloud project paused (project: gkvsnzwvgonfpuespafm)
+  - URL: https://gkvsnzwvgonfpuespafm.supabase.co — DNS NXDOMAIN (project paused by free-tier inactivity)
+  - Fix: restore at https://supabase.com/dashboard/projects or create new project + update .env.local
   - Schema: profiles, colonies, resources, buildings, map_locations, building_types, pending_events, **events**
 - ✅ RLS policies configured, service_role_key for mutations
 - ✅ Domain structure: building, resource, map, colony, pvp, auth, leaderboard, **events**
@@ -428,13 +500,35 @@ NEXT_PUBLIC_GAME_NAME=Mars2050     # Optional. Game display name
 - ✅ Map exploration with cost + rewards
 - ✅ Building construction with cost validation
 - ✅ Toast/Modal/ConfirmModal UI (no alert/prompt/confirm)
-- ✅ Architecture enforcer script (check-limits.ts) — 11 rules, runs on prebuild
+- ✅ Architecture enforcer script (check-limits.ts) — 15 rules, runs on prebuild + pre-commit
 - ✅ Unit tests (vitest) — 40 tests covering config, schemas, generator
 - ✅ All API routes use service layer (no direct DB in routes)
-- ✅ UI components split (page <150 lines, panels separate)
+- ✅ All API routes use structured apiError helper from `@/lib/api-error`
+- ✅ opencode.json with custom agents, MCP, commands, permissions
+- ✅ Prompt templates for feature/bugfix/refactor/test in `.opencode/instructions/`
+- ✅ Git hooks (husky + lint-staged) — pre-commit check
+- ✅ Barrel exports (index.ts) for all 8 domains — deterministic import path
+- ✅ Structured JSDoc (@param, @returns) on all exported service functions
+- ✅ Type generation from DB schema (`npm run generate:types`)
+- ✅ Scaffold generator (`npm run scaffold <name>`)
+- ✅ CI/CD workflow (`.github/workflows/ci.yml`)
+- ✅ Playwright MCP (enabled for E2E testing)
+- ✅ UI components split (page &lt;150 lines, panels separate, page.tsx is 125 lines — no business logic, only hooks + composition)
+- ✅ **All 8 domains have full pattern**: types + schemas + config + service + hook + panel + API route
+  - auth → useAuth + AuthModal
+  - building → useBuildings + BuildingsPanel
+  - colony → useColony + ColonyPanel
+  - events → useEvents + EventsPanel
+  - leaderboard → useLeaderboard + LeaderboardPanel
+  - map → useMap + GameMapPanel
+  - pvp → usePvp + PvpPanel
+  - resource → useResources + ResourcePanel
 - ✅ **Events system implemented** (Surviving Mars inspired)
   - 6 event types: dust_storm, meteor_shower, anomaly_discovered, resource_vein, cold_wave, solar_flare
   - Auto-generation (5% chance per resource recalculation)
   - Events affect production rates (modifiers)
   - UI: EventsPanel in sidebar
+- ✅ **Health check endpoint** (`/api/health`) — checks env vars + Supabase connectivity
+- ✅ **Supabase connectivity check** in `lib/supabase.ts` — warns in browser console if project is paused
+- ✅ **Network error UX** — Failed to fetch / DNS errors show readable Russian messages instead of raw TypeError
 - ⚠️ No real-time updates yet (Supabase Realtime planned)

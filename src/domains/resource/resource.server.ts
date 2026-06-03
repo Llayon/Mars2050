@@ -8,3 +8,13 @@ export function getServerClient(): SupabaseClient<any> {
     auth: { persistSession: false, autoRefreshToken: false }
   })
 }
+
+export async function checkSupabaseConnection(): Promise<string | true> {
+  try {
+    const supabase = getServerClient()
+    const { error } = await supabase.from('colonies').select('id', { count: 'exact', head: true }).limit(0)
+    return !error ? true : error.message
+  } catch (err) {
+    return String(err)
+  }
+}

@@ -16,6 +16,8 @@ const EVENT_WEIGHTS: Partial<Record<EventType, number>> = {
 /**
  * Generate a random event for a colony.
  * Checks cooldowns to avoid spamming same event type.
+ * @param colonyId - Colony ID to generate event for
+ * @returns Event type name if generated, null if no event
  */
 export async function generateRandomEvent(colonyId: string): Promise<string | null> {
   const supabase = getServerClient()
@@ -60,6 +62,7 @@ export async function generateRandomEvent(colonyId: string): Promise<string | nu
 /**
  * Trigger event generation for all active colonies.
  * Should be called periodically (e.g., via cron or Supabase Edge Function).
+ * @returns Number of events generated
  */
 export async function generateEventsForAllColonies(): Promise<number> {
   const supabase = getServerClient()

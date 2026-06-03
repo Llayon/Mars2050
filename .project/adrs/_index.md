@@ -19,13 +19,18 @@
 | 005 | Service Role Key Security | accepted | supabase, security, env | architecture.md, *.server.ts |
 | 006 | File Size Limits | accepted | architecture, limits | architecture.md, check-limits.ts |
 | 007 | Surgical Edits Only | accepted | workflow, git | AGENTS.md |
+| 008 | Barrel Exports | accepted | architecture, domains, imports | domains/*/index.ts, check-limits.ts |
+| 009 | Structured JSDoc | accepted | documentation, llm, services | domains/**/*.service.ts, check-limits.ts |
+| 010 | API Error Helper | accepted | api, errors, llm | lib/api-error.ts, app/api/**/*.ts, check-limits.ts |
 
 ## Быстрый поиск по тегам
-- `architecture`: 001, 006, 007
+- `architecture`: 001, 006, 007, 008
 - `security`: 002, 003, 004, 005
-- `domains`: 001
+- `domains`: 001, 008
 - `validation`: 002
 - `typescript`: 003
 - `supabase`: 004, 005
-- `api`: 002
+- `api`: 002, 010
 - `limits`: 006
+- `llm`: 009, 010
+- `imports`: 008

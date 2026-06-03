@@ -5,6 +5,8 @@ import type { AuthResult } from './auth.types'
 /**
  * Get or create a colony for a user (server-side).
  * Creates colony row + initializes starting resources.
+ * @param userId - Supabase user ID
+ * @returns Colony ID or error
  */
 export async function getOrCreateColony(userId: string): Promise<AuthResult & { colonyId: string | null }> {
   const supabase = getServerClient()
