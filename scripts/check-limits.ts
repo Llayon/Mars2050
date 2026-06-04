@@ -13,7 +13,7 @@
  *   8. DOMAIN: Files in correct domain structure (ADR-001)
  *   9. MANUAL: No manual validation in API routes (ADR-002)
  *  10. IDIOM: Service/API idioms (ADR-001)
- *  11. PAGE: No raw logic in pages (ADR-007)
+ *  11. PAGE: No raw logic in pages (ADR-011)
  *  12. ERROR_HELPER: API routes must use apiError helper (ADR-002)
  *  13. IMPORT_RULES: No cross-api imports, hooks don't import services (ADR-001, ADR-007)
  *  14. EXPORT: Domains must have index.ts barrel export (ADR-001)

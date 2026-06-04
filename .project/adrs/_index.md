@@ -22,9 +22,10 @@
 | 008 | Barrel Exports | accepted | architecture, domains, imports | domains/*/index.ts, check-limits.ts |
 | 009 | Structured JSDoc | accepted | documentation, llm, services | domains/**/*.service.ts, check-limits.ts |
 | 010 | API Error Helper | accepted | api, errors, llm | lib/api-error.ts, app/api/**/*.ts, check-limits.ts |
+| 011 | Component Composition Pattern | accepted | architecture, pages, components, composition | app/**/page.tsx, app/**/layout.tsx, check-limits.ts |
 
 ## Быстрый поиск по тегам
-- `architecture`: 001, 006, 007, 008
+- `architecture`: 001, 006, 007, 008, 011
 - `security`: 002, 003, 004, 005
 - `domains`: 001, 008
 - `validation`: 002

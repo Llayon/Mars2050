@@ -438,6 +438,10 @@ ADRs with Good/Bad Examples specifically designed for LLM comprehension:
 | 005 | Service Role Key Security | Secret key never in client code |
 | 006 | File Size Limits | Context window optimization |
 | 007 | Surgical Edits | Never rewrite files, only replace fragments |
+| 008 | Barrel Exports | Deterministic imports via `index.ts` per domain |
+| 009 | Structured JSDoc | LLM-friendly docs with `@param`/`@returns` |
+| 010 | API Error Helper | Structured error responses via `apiError()` |
+| 011 | Component Composition | Pages are orchestrators — only hooks + components |
 
 ### API Error Helper (`@/lib/api-error`)
 All API routes use structured error responses via `apiError()` / `apiValidationError()` / `apiInternalError()`:
