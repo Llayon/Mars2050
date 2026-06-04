@@ -233,9 +233,8 @@ When working with this stack, ALWAYS use the built-in patterns and abstractions.
 
 | Pattern | Use This | Never Do This |
 |---------|----------|---------------|
-| **API endpoints** | `app/api/{route}/route.ts` | `pages/api/` (legacy) |
 | **Server Components** | Default (no `'use client'`) | Mark everything `'use client'` |
-| **Client Components** | `'use client'` only for interactivity | Use `'use client'` for data fetching |
+| **Client Components** | `'use client'` only if hooks / events / browser APIs (see ADR-012) | Use `'use client'` for data fetching |
 | **Loading states** | `loading.tsx` + Suspense | Manual `isLoading` boolean |
 | **Error handling** | `error.tsx` + `not-found.tsx` | Manual try/catch in every component |
 | **Shared layout** | `layout.tsx` | Duplicate headers/footers |
@@ -442,6 +441,7 @@ ADRs with Good/Bad Examples specifically designed for LLM comprehension:
 | 009 | Structured JSDoc | LLM-friendly docs with `@param`/`@returns` |
 | 010 | API Error Helper | Structured error responses via `apiError()` |
 | 011 | Component Composition | Pages are orchestrators — only hooks + components |
+| 012 | Server vs Client Components | 7 criteria for when `'use client'` is mandatory |
 
 ### API Error Helper (`@/lib/api-error`)
 All API routes use structured error responses via `apiError()` / `apiValidationError()` / `apiInternalError()`:
