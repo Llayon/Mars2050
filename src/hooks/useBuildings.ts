@@ -7,18 +7,7 @@ import {
   BUILDING_PRODUCTION_MAP,
   BUILDING_RESOURCE_MAP
 } from '@/domains/building/building.config'
-import type { BuildingTypeKey } from '@/domains/building/building.types'
-
-interface BuildingRow {
-  id: string
-  colony_id: string
-  type: string
-  name: string
-  level: number
-  is_active: boolean
-  created_at: string
-  updated_at: string
-}
+import type { BuildingRow, BuildingTypeKey } from '@/domains/building/building.types'
 
 /**
  * Hook for managing colony buildings.

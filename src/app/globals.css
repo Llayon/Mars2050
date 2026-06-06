@@ -6,6 +6,11 @@
   --mars-red: #c1440e;
   --mars-orange: #e07a5f;
   --mars-dark: #1a1a2e;
+
+  --tg-bg-color: var(--mars-dark);
+  --tg-text-color: var(--foreground);
+  --tg-button-color: var(--mars-red);
+  --tg-button-text-color: #ffffff;
 }
 
 @theme inline {

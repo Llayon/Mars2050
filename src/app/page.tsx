@@ -15,10 +15,11 @@ import { BuildingsPanel } from '@/components/game/BuildingsPanel'
 import { EventsPanel } from '@/components/game/EventsPanel'
 import { LeaderboardPanel } from '@/components/game/LeaderboardPanel'
 import { PvpPanel } from '@/components/game/PvpPanel'
+import { TwaGameView } from '@/components/game/TwaGameView'
 import type { BuildingTypeKey } from '@/domains/building/building.types'
 
 function GameUI() {
-  const { user, colonyId, loading, login, signup, logout } = useAuth()
+  const { user, colonyId, loading, login, signup, logout, isTWA } = useAuth()
   const { colony, loading: colonyLoading } = useColony(colonyId)
   const { resources, loading: resourcesLoading, refetch: refetchResources } = useResources(colonyId)
   const { buildings, buildStructure, demolishBuilding } = useBuildings(colonyId)
@@ -39,7 +40,7 @@ function GameUI() {
     )
   }
 
-  if (!user || !colonyId) {
+  if (!user && !colonyId) {
     return (
       <div className="min-h-screen bg-gray-900 text-white">
         <header className="bg-gray-800 p-4 shadow-lg">
@@ -68,6 +69,25 @@ function GameUI() {
     )
   }
 
+  if (isTWA) {
+    return (
+      <TwaGameView
+        colony={colony}
+        colonyLoading={colonyLoading}
+        colonyId={colonyId!}
+        resources={resources}
+        resourcesLoading={resourcesLoading}
+        buildings={buildings}
+        onBuild={handleBuild}
+        onDemolish={handleDemolish}
+        onRefresh={refetchResources}
+        onLogout={logout}
+        onCreateEvent={handleCreateTest}
+        onToast={(msg) => toast(msg, 'info')}
+      />
+    )
+  }
+
   return (
     <div className="min-h-screen bg-gray-900 text-white">
       <header className="bg-gray-800 p-4 shadow-lg">
@@ -76,7 +96,7 @@ function GameUI() {
           <div className="flex items-center gap-4">
             <span className="text-sm text-gray-400">{colony?.name || 'Колония'} — Ур. {colony?.level || 1}</span>
             <button onClick={logout} className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded text-sm">
-              Выйти ({user.email})
+              Выйти ({user?.email || colonyId})
             </button>
           </div>
         </div>
@@ -87,16 +107,16 @@ function GameUI() {
           <div className="lg:col-span-1 space-y-4">
             <ColonyPanel colony={colony} loading={colonyLoading} />
             <ResourcePanel resources={resources} loading={resourcesLoading} />
-            <EventsPanel colonyId={colonyId} onCreateTest={handleCreateTest} />
-            <PvpPanel colonyId={colonyId} onResult={(msg) => toast(msg, 'info')} />
+            <EventsPanel colonyId={colonyId!} onCreateTest={handleCreateTest} />
+            <PvpPanel colonyId={colonyId!} onResult={(msg) => toast(msg, 'info')} />
           </div>
           <div className="lg:col-span-2">
-            <GameMapPanel colonyId={colonyId} onDiscover={refetchResources} />
+            <GameMapPanel colonyId={colonyId!} onDiscover={refetchResources} />
           </div>
           <div className="lg:col-span-3">
             <BuildingsPanel
               buildings={buildings}
-              colonyId={colonyId}
+              colonyId={colonyId!}
               resources={resources}
               onBuild={handleBuild}
               onDemolish={handleDemolish}

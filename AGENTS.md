@@ -486,14 +486,16 @@ NEXT_PUBLIC_SUPABASE_URL=          # Required. Supabase project URL
 NEXT_PUBLIC_SUPABASE_ANON_KEY=     # Required. Public anon key (safe for browser)
 SUPABASE_SERVICE_ROLE_KEY=         # Required. Secret! Server-only, NEVER expose to client
 NEXT_PUBLIC_GAME_NAME=Mars2050     # Optional. Game display name
+TELEGRAM_BOT_TOKEN=                # Required for TWA. Secret! From BotFather
+NEXT_PUBLIC_TELEGRAM_BOT_USERNAME= # Required for TWA. Public bot username
 ```
 
 ## Current State
 
 - ✅ Project initialized (Next.js 16 + TypeScript + Tailwind)
-- ⚠️ Supabase Cloud project paused (project: gkvsnzwvgonfpuespafm)
-  - URL: https://gkvsnzwvgonfpuespafm.supabase.co — DNS NXDOMAIN (project paused by free-tier inactivity)
-  - Fix: restore at https://supabase.com/dashboard/projects or create new project + update .env.local
+- ✅ Supabase Cloud project restored and operational (project: gkvsnzwvgonfpuespafm)
+  - URL: https://gkvsnzwvgonfpuespafm.supabase.co — resolves, auth endpoint returns expected 400/invalid_credentials
+  - Previously: free-tier paused (DNS NXDOMAIN) — restored via Supabase Dashboard
   - Schema: profiles, colonies, resources, buildings, map_locations, building_types, pending_events, **events**
 - ✅ RLS policies configured, service_role_key for mutations
 - ✅ Domain structure: building, resource, map, colony, pvp, auth, leaderboard, **events**

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
+import { useTelegramAuth } from './useTelegramAuth'
 import type { User } from '@supabase/supabase-js'
 
 interface AuthState {
@@ -9,22 +10,38 @@ interface AuthState {
   colonyId: string | null
   loading: boolean
   error: string | null
+  isTWA: boolean
+  tgUser: { id: number; first_name: string; username?: string } | null
 }
 
-/**
- * Hook for managing authentication and colony state.
- * Auth operations use Supabase client SDK.
- * Colony creation uses API route (server-side mutation).
- */
 export function useAuth() {
+  const telegram = useTelegramAuth()
+
   const [state, setState] = useState<AuthState>({
     user: null,
     colonyId: null,
     loading: true,
-    error: null
+    error: null,
+    isTWA: false,
+    tgUser: null,
   })
 
   useEffect(() => {
+    if (telegram.isTWA) {
+      setState(prev => ({
+        ...prev,
+        colonyId: telegram.colonyId,
+        loading: telegram.loading,
+        error: telegram.error,
+        isTWA: true,
+        tgUser: telegram.tgUser,
+      }))
+    }
+  }, [telegram.colonyId, telegram.loading, telegram.error, telegram.isTWA, telegram.tgUser])
+
+  useEffect(() => {
+    if (telegram.isTWA) return
+
     checkSession()
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -35,7 +52,7 @@ export function useAuth() {
     })
 
     return () => subscription.unsubscribe()
-  }, [])
+  }, [telegram.isTWA])
 
   function formatError(err: unknown): string {
     const msg = String(err)
@@ -118,9 +135,13 @@ export function useAuth() {
   }, [])
 
   const logout = useCallback(async () => {
+    if (state.isTWA) {
+      setState({ user: null, colonyId: null, loading: false, error: null, isTWA: false, tgUser: null })
+      return
+    }
     await supabase.auth.signOut()
-    setState({ user: null, colonyId: null, loading: false, error: null })
-  }, [])
+    setState({ user: null, colonyId: null, loading: false, error: null, isTWA: false, tgUser: null })
+  }, [state.isTWA])
 
   return { ...state, login, signup, logout }
 }
