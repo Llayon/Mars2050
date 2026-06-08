@@ -1,0 +1,123 @@
+'use client'
+
+import { memo, useState } from 'react'
+import { useMap, getExplorationCost } from '@/hooks/useMap'
+import { ResourcesBar } from './ResourcesBar'
+import { useToast } from '@/components/ui/toast'
+import { RESOURCE_NAMES } from '@/domains/resource/resource.types'
+import { LOCATION_COLORS, LOCATION_LABELS } from '@/domains/map/map.config'
+import type { MapLocation } from '@/domains/map/map.types'
+import type { ResourceRow } from '@/domains/resource/resource.types'
+
+interface MapScreenProps {
+  colonyId: string
+  resources: ResourceRow[]
+  resourcesLoading: boolean
+  onDiscover: () => void
+}
+
+export const MapScreen = memo(function MapScreen({ colonyId, resources, resourcesLoading, onDiscover }: MapScreenProps) {
+  const { locations, loading, discoverLocation } = useMap()
+  const { toast } = useToast()
+  const [selected, setSelected] = useState<MapLocation | null>(null)
+  const [exploring, setExploring] = useState(false)
+
+  async function handleDiscover(locationId: string) {
+    setExploring(true)
+    try {
+      const result = await discoverLocation(locationId, colonyId)
+      toast(result.message || 'Локация исследована!', 'success')
+      onDiscover()
+      setSelected(null)
+    } catch (e: any) {
+      toast(e.message || 'Ошибка исследования', 'error')
+    } finally {
+      setExploring(false)
+    }
+  }
+
+  return (
+    <div className="flex flex-col h-full">
+      <div className="p-3 pb-0">
+        <ResourcesBar resources={resources} loading={resourcesLoading} />
+      </div>
+
+      <div className="flex-1 p-3 pb-24 overflow-y-auto">
+        <h2 className="text-lg font-bold text-white mb-2">Карта Марса</h2>
+        <p className="text-xs text-gray-400 mb-3">{locations.length} локаций</p>
+
+        {loading ? (
+          <div className="grid grid-cols-8 gap-1.5">
+            {Array.from({ length: 40 }).map((_, i) => (
+              <div key={i} className="aspect-square bg-gray-800/50 rounded-lg animate-pulse" />
+            ))}
+          </div>
+        ) : locations.length === 0 ? (
+          <div className="glass-panel rounded-xl p-6 text-center">
+            <p className="text-gray-400 text-sm">Карта пуста</p>
+          </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-8 gap-1.5">
+              {locations.map(loc => (
+                <button
+                  key={loc.id}
+                  onClick={() => setSelected(loc)}
+                  className={`aspect-square rounded-lg border transition-all duration-200 flex items-center justify-center text-sm font-bold
+                    ${loc.is_discovered
+                      ? (LOCATION_COLORS[loc.type] || 'bg-mars-teal/40') + ' border-mars-border hover:scale-105'
+                      : 'bg-black/40 border-gray-700/30 hover:border-mars-red/50'
+                    }
+                    ${selected?.id === loc.id ? 'ring-2 ring-mars-gold scale-105' : ''}
+                  `}
+                >
+                  {loc.is_discovered ? (
+                    <span className="text-lg">{loc.name.charAt(0)}</span>
+                  ) : (
+                    <span className="text-gray-600 text-lg">?</span>
+                  )}
+                </button>
+              ))}
+            </div>
+
+            {selected && (
+              <div className="mt-3 glass-panel rounded-xl p-4 animate-float-up">
+                <h3 className="font-bold text-white">{selected.name}</h3>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  {LOCATION_LABELS[selected.type] || selected.type} • Сложность: {'⭐'.repeat(selected.difficulty)}
+                </p>
+                {selected.is_discovered ? (
+                  <div className="mt-2">
+                    <span className="text-xs text-green-400">✅ Исследовано</span>
+                    {selected.resources && typeof selected.resources === 'object' && (
+                      <div className="mt-1.5 flex flex-wrap gap-1">
+                        {Object.entries(selected.resources).map(([k, v]) => (
+                          <span key={k} className="text-[10px] bg-mars-teal/20 text-mars-teal px-2 py-0.5 rounded">
+                            {RESOURCE_NAMES[k] || k}: {String(v)}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="mt-3">
+                    <p className="text-[10px] text-gray-500 mb-2">
+                      Стоимость: {Object.entries(getExplorationCost(selected.difficulty)).map(([k, v]) => `${v} ${RESOURCE_NAMES[k] || k}`).join(', ')}
+                    </p>
+                    <button
+                      onClick={() => handleDiscover(selected.id)}
+                      disabled={exploring}
+                      className="w-full bg-mars-red hover:bg-red-700 disabled:opacity-50 py-2.5 rounded-xl text-sm font-medium transition-colors"
+                    >
+                      {exploring ? 'Исследование...' : '🔍 Исследовать'}
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  )
+})

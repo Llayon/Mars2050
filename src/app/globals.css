@@ -1,48 +1,126 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0a0a0a;
-  --foreground: #ededed;
+  --mars-surface: #0d0d1a;
+  --mars-dark: #1a1a2e;
+  --mars-mid: #2a1a1e;
   --mars-red: #c1440e;
   --mars-orange: #e07a5f;
-  --mars-dark: #1a1a2e;
+  --mars-gold: #f4a261;
+  --mars-sand: #e9c46a;
+  --mars-teal: #2a9d8f;
+  --mars-blue: #457b9d;
+  --mars-glass: rgba(26, 26, 46, 0.85);
+  --mars-glass-light: rgba(42, 26, 30, 0.7);
+  --mars-glow: rgba(193, 68, 14, 0.4);
+  --mars-border: rgba(193, 68, 14, 0.25);
 
   --tg-bg-color: var(--mars-dark);
-  --tg-text-color: var(--foreground);
+  --tg-text-color: #ededed;
   --tg-button-color: var(--mars-red);
   --tg-button-text-color: #ffffff;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-background: var(--mars-surface);
+  --color-foreground: #ededed;
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --color-mars-red: var(--mars-red);
   --color-mars-orange: var(--mars-orange);
   --color-mars-dark: var(--mars-dark);
+  --color-mars-gold: var(--mars-gold);
+  --color-mars-teal: var(--mars-teal);
+  --color-mars-surface: var(--mars-surface);
+  --color-mars-glass: var(--mars-glass);
+  --color-mars-border: var(--mars-border);
 }
 
 body {
-  background: var(--mars-dark);
-  color: var(--foreground);
+  background: var(--mars-surface);
+  color: #ededed;
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
 }
 
-/* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 8px;
+/* === Glass utility === */
+.glass-panel {
+  background: var(--mars-glass);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--mars-border);
 }
 
-::-webkit-scrollbar-track {
-  background: #1a1a2e;
+.glass-panel-light {
+  background: var(--mars-glass-light);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--mars-border);
 }
 
-::-webkit-scrollbar-thumb {
-  background: #c1440e;
-  border-radius: 4px;
+/* === Glow effects === */
+.glow-red {
+  box-shadow: 0 0 15px rgba(193, 68, 14, 0.3), 0 0 30px rgba(193, 68, 14, 0.1);
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: #e07a5f;
+.glow-gold {
+  box-shadow: 0 0 15px rgba(244, 162, 97, 0.3), 0 0 30px rgba(244, 162, 97, 0.1);
+}
+
+.glow-active {
+  box-shadow: 0 0 10px var(--mars-glow);
+}
+
+/* === Animations === */
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 8px rgba(193, 68, 14, 0.3); }
+  50% { box-shadow: 0 0 20px rgba(193, 68, 14, 0.6); }
+}
+
+@keyframes float-up {
+  0% { transform: translateY(4px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes slide-up {
+  from { transform: translateY(100%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes slide-in-right {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+@keyframes scan-line {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
+}
+
+@keyframes count-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-glow-pulse { animation: glow-pulse 2s ease-in-out infinite; }
+.animate-float-up { animation: float-up 0.3s ease-out; }
+.animate-slide-up { animation: slide-up 0.25s ease-out; }
+.animate-slide-in-right { animation: slide-in-right 0.25s ease-out; }
+.animate-count-up { animation: count-up 0.4s ease-out; }
+
+/* === HUD-style scrollbar === */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--mars-red); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: var(--mars-orange); }
+
+/* === Bottom nav safe area === */
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 8px);
 }

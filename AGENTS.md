@@ -164,7 +164,15 @@ src/
 │       └── resource.server.ts    # Shared Supabase server client
 ├── components/            # Shared UI components
 │   ├── ui/               # Primitives (Modal, Toast)
-│   └── game/             # Game-specific panels (ResourcePanel, GameMapPanel, BuildingsPanel)
+│   ├── game/             # Legacy desktop panels (ResourcePanel, GameMapPanel, BuildingsPanel)
+│   └── screens/          # TWA-optimized full-screen views
+│       ├── BottomNav.tsx       # 5-tab bottom navigation
+│       ├── ResourcesBar.tsx    # Persistent top resource strip
+│       ├── ColonyScreen.tsx    # Dashboard / home
+│       ├── BuildingsScreen.tsx # Full-screen building grid
+│       ├── MapScreen.tsx       # Full-screen Mars map
+│       ├── OperationsScreen.tsx # Events + PvP combined
+│       └── ProfileScreen.tsx   # Stats + leaderboard
 ├── hooks/                 # Custom React hooks (one per domain)
 │   ├── useAuth.ts
 │   ├── useBuildings.ts
@@ -519,7 +527,16 @@ NEXT_PUBLIC_TELEGRAM_BOT_USERNAME= # Required for TWA. Public bot username
 - ✅ Scaffold generator (`npm run scaffold <name>`)
 - ✅ CI/CD workflow (`.github/workflows/ci.yml`)
 - ✅ Playwright MCP (enabled for E2E testing)
-- ✅ UI components split (page &lt;150 lines, panels separate, page.tsx is 125 lines — no business logic, only hooks + composition)
+- ✅ **UI redesign: TWA-optimized screen architecture** (mobile-first, 5 full-screen tabs)
+  - Design system: Mars-themed CSS vars, glass-panel (backdrop-blur), glow/glow-pulse, HUD scrollbar
+  - BottomNav: 5-tab glass bottom bar (Колония / Стройка / Карта / Операции / Профиль)
+  - ResourcesBar: persistent horizontal resource strip on all screens
+  - ColonyScreen: dashboard with XP bar, stats cards, resource bar, events feed
+  - BuildingsScreen: full-screen grid with building cards, FAB button, bottom sheet for details/build
+  - MapScreen: full-screen Mars grid map, fog on unexplored, info panel on tap
+  - OperationsScreen: tabbed (Events | PvP), chronological event log + attack form
+  - ProfileScreen: colony stats, leaderboard top-10 with 🥇🥈🥉 medals
+- ✅ Desktop layout preserved (non-TWA path, same panels as before)
 - ✅ **All 8 domains have full pattern**: types + schemas + config + service + hook + panel + API route
   - auth → useAuth + AuthModal
   - building → useBuildings + BuildingsPanel

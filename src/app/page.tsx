@@ -15,7 +15,13 @@ import { BuildingsPanel } from '@/components/game/BuildingsPanel'
 import { EventsPanel } from '@/components/game/EventsPanel'
 import { LeaderboardPanel } from '@/components/game/LeaderboardPanel'
 import { PvpPanel } from '@/components/game/PvpPanel'
-import { TwaGameView } from '@/components/game/TwaGameView'
+import { BottomNav } from '@/components/screens/BottomNav'
+import type { TabId } from '@/components/screens/BottomNav'
+import { ColonyScreen } from '@/components/screens/ColonyScreen'
+import { BuildingsScreen } from '@/components/screens/BuildingsScreen'
+import { MapScreen } from '@/components/screens/MapScreen'
+import { OperationsScreen } from '@/components/screens/OperationsScreen'
+import { ProfileScreen } from '@/components/screens/ProfileScreen'
 import type { BuildingTypeKey } from '@/domains/building/building.types'
 
 function GameUI() {
@@ -27,6 +33,7 @@ function GameUI() {
   const { createEvent } = useEvents(colonyId)
 
   const [authMode, setAuthMode] = useState<'login' | 'register' | null>(null)
+  const [activeTab, setActiveTab] = useState<TabId>('colony')
 
   const handleBuild = useCallback((type: BuildingTypeKey) => buildStructure(type), [buildStructure])
   const handleDemolish = useCallback((id: string) => demolishBuilding(id), [demolishBuilding])
@@ -70,21 +77,62 @@ function GameUI() {
   }
 
   if (isTWA) {
+    const renderScreen = () => {
+      switch (activeTab) {
+        case 'colony':
+          return (
+            <ColonyScreen
+              colony={colony}
+              colonyLoading={colonyLoading}
+              colonyId={colonyId!}
+              resources={resources}
+              resourcesLoading={resourcesLoading}
+              onLogout={logout}
+            >
+              <p className="text-2xl font-bold text-white">{buildings.length}</p>
+            </ColonyScreen>
+          )
+        case 'buildings':
+          return (
+            <BuildingsScreen
+              buildings={buildings}
+              colonyId={colonyId!}
+              resources={resources}
+              resourcesLoading={resourcesLoading}
+              onBuild={handleBuild}
+              onDemolish={handleDemolish}
+              onRefresh={refetchResources}
+            />
+          )
+        case 'map':
+          return (
+            <MapScreen
+              colonyId={colonyId!}
+              resources={resources}
+              resourcesLoading={resourcesLoading}
+              onDiscover={refetchResources}
+            />
+          )
+        case 'operations':
+          return <OperationsScreen colonyId={colonyId!} />
+        case 'profile':
+          return (
+            <ProfileScreen
+              colony={colony}
+              colonyLoading={colonyLoading}
+              userEmail={user?.email}
+            />
+          )
+      }
+    }
+
     return (
-      <TwaGameView
-        colony={colony}
-        colonyLoading={colonyLoading}
-        colonyId={colonyId!}
-        resources={resources}
-        resourcesLoading={resourcesLoading}
-        buildings={buildings}
-        onBuild={handleBuild}
-        onDemolish={handleDemolish}
-        onRefresh={refetchResources}
-        onLogout={logout}
-        onCreateEvent={handleCreateTest}
-        onToast={(msg) => toast(msg, 'info')}
-      />
+      <div className="min-h-screen bg-mars-surface text-white flex flex-col">
+        <div className="flex-1 overflow-hidden">
+          {renderScreen()}
+        </div>
+        <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
+      </div>
     )
   }
 
