@@ -1,4 +1,7 @@
+'use client'
+
 import { useEffect, useState, useCallback, useRef } from 'react'
+import { useSubscription } from './useSubscription'
 
 interface GameEvent {
   id: string
@@ -29,10 +32,8 @@ export function useEvents(colonyId: string | null): UseEventsReturn {
 
   const fetchEvents = useCallback(async () => {
     if (!colonyId) return
-
     setLoading(true)
     setError(null)
-
     try {
       const res = await fetch(`/api/events?colony_id=${colonyId}&active_only=true`)
       if (!res.ok) throw new Error('Failed to fetch events')
@@ -45,22 +46,22 @@ export function useEvents(colonyId: string | null): UseEventsReturn {
     }
   }, [colonyId])
 
-  useEffect(() => {
-    mountedRef.current = true
-    return () => { mountedRef.current = false }
-  }, [])
+  useEffect(() => { mountedRef.current = true; return () => { mountedRef.current = false } }, [])
+  useEffect(() => { fetchEvents() }, [fetchEvents])
 
-  useEffect(() => {
-    fetchEvents()
-    const interval = setInterval(fetchEvents, 60000)
-    return () => clearInterval(interval)
-  }, [fetchEvents])
+  // Realtime: insert → add event, update → sync fields, delete → remove
+  useSubscription('events', colonyId, (payload) => {
+    const ev = payload.new as unknown as GameEvent
+    if (payload.eventType === 'INSERT') {
+      setEvents(prev => prev.some(e => e.id === ev.id) ? prev : [...prev, ev])
+    } else if (payload.eventType === 'UPDATE') {
+      setEvents(prev => prev.map(e => e.id === ev.id ? ev : e))
+    } else if (payload.eventType === 'DELETE') {
+      setEvents(prev => prev.filter(e => e.id !== payload.old.id))
+    }
+  })
 
-  const createEvent = async (
-    colonyId: string,
-    type?: string, // Если не указан, создаем случайное
-    durationMinutes?: number
-  ): Promise<boolean> => {
+  const createEvent = async (colonyId: string, type?: string, durationMinutes?: number): Promise<boolean> => {
     try {
       const EVENT_TYPES = ['dust_storm', 'meteor_shower', 'anomaly_discovered', 'resource_vein', 'cold_wave', 'solar_flare'] as const
       const eventType = type || EVENT_TYPES[Math.floor(Math.random() * EVENT_TYPES.length)]

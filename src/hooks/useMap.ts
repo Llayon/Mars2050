@@ -4,11 +4,8 @@ import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { MapLocation } from '@/domains/map/map.types'
 import { EXPLORATION_COST } from '@/domains/map/map.config'
+import { useSubscription } from './useSubscription'
 
-/**
- * Hook for fetching and managing map locations.
- * Uses Supabase client for reads (RLS-protected).
- */
 export function useMap() {
   const [locations, setLocations] = useState<MapLocation[]>([])
   const [loading, setLoading] = useState(true)
@@ -20,7 +17,6 @@ export function useMap() {
         .from('map_locations')
         .select('*')
         .order('y', { ascending: true })
-
       if (fetchError) throw fetchError
       if (data) setLocations(data)
       setError(null)
@@ -31,14 +27,20 @@ export function useMap() {
     }
   }, [])
 
-  useEffect(() => {
-    fetchMap()
-  }, [fetchMap])
+  useEffect(() => { fetchMap() }, [fetchMap])
 
-  /**
-   * Discovers a map location via API route (server-side mutation).
-   * Returns rewards info on success.
-   */
+  // Realtime: sync map location changes (e.g., discovered by other players, or self)
+  useSubscription('map_locations', null, (payload) => {
+    const location = payload.new as unknown as MapLocation
+    if (payload.eventType === 'UPDATE') {
+      setLocations(prev => prev.map(l => l.id === location.id ? location : l))
+    } else if (payload.eventType === 'INSERT') {
+      setLocations(prev => prev.some(l => l.id === location.id) ? prev : [...prev, location])
+    } else if (payload.eventType === 'DELETE') {
+      setLocations(prev => prev.filter(l => l.id !== payload.old.id))
+    }
+  })
+
   const discoverLocation = useCallback(async (locationId: string, colonyId: string) => {
     try {
       const res = await fetch('/api/explore', {
@@ -46,18 +48,9 @@ export function useMap() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ locationId, colonyId })
       })
-
       const data = await res.json()
-
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to discover location')
-      }
-
-      // Update local state
-      setLocations(prev =>
-        prev.map(l => l.id === locationId ? { ...l, is_discovered: true } : l)
-      )
-
+      if (!res.ok) throw new Error(data.error || 'Failed to discover location')
+      setLocations(prev => prev.map(l => l.id === locationId ? { ...l, is_discovered: true } : l))
       return data
     } catch (err) {
       setError(String(err))
@@ -68,7 +61,6 @@ export function useMap() {
   return { locations, loading, error, discoverLocation, refetch: fetchMap }
 }
 
-/** Get exploration cost for a location by difficulty. */
 export function getExplorationCost(difficulty: number): Record<string, number> {
   return EXPLORATION_COST[difficulty] || EXPLORATION_COST[1]
 }

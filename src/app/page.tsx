@@ -27,7 +27,7 @@ import type { BuildingTypeKey } from '@/domains/building/building.types'
 function GameUI() {
   const { user, colonyId, loading, login, signup, logout, isTWA } = useAuth()
   const { colony, loading: colonyLoading } = useColony(colonyId)
-  const { resources, loading: resourcesLoading, refetch: refetchResources } = useResources(colonyId)
+  const { resources, loading: resourcesLoading } = useResources(colonyId)
   const { buildings, buildStructure, demolishBuilding } = useBuildings(colonyId)
   const { toast } = useToast()
   const { createEvent } = useEvents(colonyId)
@@ -101,7 +101,6 @@ function GameUI() {
               resourcesLoading={resourcesLoading}
               onBuild={handleBuild}
               onDemolish={handleDemolish}
-              onRefresh={refetchResources}
             />
           )
         case 'map':
@@ -110,7 +109,6 @@ function GameUI() {
               colonyId={colonyId!}
               resources={resources}
               resourcesLoading={resourcesLoading}
-              onDiscover={refetchResources}
             />
           )
         case 'operations':
@@ -159,7 +157,7 @@ function GameUI() {
             <PvpPanel colonyId={colonyId!} onResult={(msg) => toast(msg, 'info')} />
           </div>
           <div className="lg:col-span-2">
-            <GameMapPanel colonyId={colonyId!} onDiscover={refetchResources} />
+            <GameMapPanel colonyId={colonyId!} />
           </div>
           <div className="lg:col-span-3">
             <BuildingsPanel
@@ -168,7 +166,6 @@ function GameUI() {
               resources={resources}
               onBuild={handleBuild}
               onDemolish={handleDemolish}
-              onRefresh={refetchResources}
             />
             <div className="mt-4">
               <LeaderboardPanel />

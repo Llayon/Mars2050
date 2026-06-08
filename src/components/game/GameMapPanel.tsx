@@ -9,10 +9,9 @@ import type { MapLocation } from '@/domains/map/map.types'
 
 interface GameMapPanelProps {
   colonyId: string
-  onDiscover: () => void
 }
 
-export const GameMapPanel = memo(function GameMapPanel({ colonyId, onDiscover }: GameMapPanelProps) {
+export const GameMapPanel = memo(function GameMapPanel({ colonyId }: GameMapPanelProps) {
   const { locations, loading, discoverLocation } = useMap()
   const { toast } = useToast()
   const [selected, setSelected] = useState<MapLocation | null>(null)
@@ -21,7 +20,6 @@ export const GameMapPanel = memo(function GameMapPanel({ colonyId, onDiscover }:
     try {
       const result = await discoverLocation(locationId, colonyId)
       toast(result.message || 'Локация исследована!', 'success')
-      onDiscover()
     } catch (e: any) {
       toast(e.message || 'Ошибка исследования', 'error')
     }

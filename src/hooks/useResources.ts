@@ -2,12 +2,8 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import type { ResourceRow } from '@/domains/resource/resource.types'
+import { useSubscription } from './useSubscription'
 
-/**
- * Hook for managing colony resources.
- * Uses API route for reads (with lazy recalculation on server).
- * Simulates production growth between server refreshes.
- */
 export function useResources(colonyId: string | null) {
   const [resources, setResources] = useState<ResourceRow[]>([])
   const [loading, setLoading] = useState(true)
@@ -16,15 +12,10 @@ export function useResources(colonyId: string | null) {
 
   const fetchResources = useCallback(async () => {
     if (!colonyId) return
-
     try {
       const res = await fetch(`/api/resources?colonyId=${colonyId}`)
       const data = await res.json()
-
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to fetch resources')
-      }
-
+      if (!res.ok) throw new Error(data.error || 'Failed to fetch resources')
       if (mountedRef.current && data.resources) {
         setResources(data.resources)
       }
@@ -39,35 +30,35 @@ export function useResources(colonyId: string | null) {
     }
   }, [colonyId])
 
-  useEffect(() => {
-    fetchResources()
-  }, [fetchResources])
+  useEffect(() => { fetchResources() }, [fetchResources])
+  useEffect(() => { mountedRef.current = true; return () => { mountedRef.current = false } }, [])
 
-  useEffect(() => {
-    mountedRef.current = true
-    return () => { mountedRef.current = false }
-  }, [])
-
-  // Simulate production growth between server refreshes
+  // Smooth client-side simulation between server updates
   useEffect(() => {
     if (resources.length === 0) return
-
     const interval = setInterval(() => {
       setResources(prev =>
-        prev.map(r => ({
-          ...r,
-          amount: r.amount + (r.production_rate - r.consumption_rate) / 720
-        }))
+        prev.map(r => ({ ...r, amount: r.amount + (r.production_rate - r.consumption_rate) / 720 }))
       )
     }, 5000)
+    return () => clearInterval(interval)
+  }, [resources.length])
 
-    const dbRefresh = setInterval(fetchResources, 60000)
-
-    return () => {
-      clearInterval(interval)
-      clearInterval(dbRefresh)
+  // Realtime: sync from server when resources recalculated
+  useSubscription('resources', colonyId, (payload) => {
+    if (payload.eventType === 'UPDATE' || payload.eventType === 'INSERT') {
+      const updated = payload.new as unknown as ResourceRow
+      setResources(prev => {
+        const idx = prev.findIndex(r => r.id === updated.id)
+        if (idx >= 0) {
+          const next = [...prev]
+          next[idx] = updated
+          return next
+        }
+        return [...prev, updated]
+      })
     }
-  }, [fetchResources, resources.length])
+  })
 
   return { resources, loading, error, refetch: fetchResources }
 }

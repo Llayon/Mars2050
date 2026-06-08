@@ -16,7 +16,6 @@ interface BuildingsScreenProps {
   resourcesLoading: boolean
   onBuild: (type: BuildingTypeKey) => Promise<void>
   onDemolish: (id: string) => Promise<void>
-  onRefresh: () => void
 }
 
 const BUILDING_LEVEL_COLORS = ['text-gray-400', 'text-green-400', 'text-blue-400', 'text-purple-400', 'text-yellow-400', 'text-red-400']
@@ -28,7 +27,6 @@ export const BuildingsScreen = memo(function BuildingsScreen({
   resourcesLoading,
   onBuild,
   onDemolish,
-  onRefresh,
 }: BuildingsScreenProps) {
   const [showBuildMenu, setShowBuildMenu] = useState(false)
   const [building, setBuilding] = useState<string | null>(null)
@@ -50,7 +48,6 @@ export const BuildingsScreen = memo(function BuildingsScreen({
     setBuilding(type)
     try {
       await onBuild(type)
-      await onRefresh()
       toast(`${config.name} построен!`, 'success')
       setShowBuildMenu(false)
     } catch (e: any) {
@@ -58,20 +55,19 @@ export const BuildingsScreen = memo(function BuildingsScreen({
     } finally {
       setBuilding(null)
     }
-  }, [resources, onBuild, onRefresh, toast])
+  }, [resources, onBuild, toast])
 
   const handleDemolish = useCallback(async () => {
     if (!demolishTarget) return
     try {
       await onDemolish(demolishTarget.id)
-      await onRefresh()
       toast(`${demolishTarget.name} снесён`, 'success')
     } catch (e: any) {
       toast(e.message || 'Ошибка сноса', 'error')
     }
     setDemolishTarget(null)
     setSelectedBuilding(null)
-  }, [demolishTarget, onDemolish, onRefresh, toast])
+  }, [demolishTarget, onDemolish, toast])
 
   const buildingConfigs = Object.entries(BUILDING_TYPES)
 

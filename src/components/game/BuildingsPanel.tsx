@@ -23,10 +23,9 @@ interface BuildingsPanelProps {
   resources: ResourceRow[]
   onBuild: (type: BuildingTypeKey) => Promise<void>
   onDemolish: (id: string) => Promise<void>
-  onRefresh: () => void
 }
 
-export const BuildingsPanel = memo(function BuildingsPanel({ buildings, colonyId, resources, onBuild, onDemolish, onRefresh }: BuildingsPanelProps) {
+export const BuildingsPanel = memo(function BuildingsPanel({ buildings, colonyId, resources, onBuild, onDemolish }: BuildingsPanelProps) {
   const [showMenu, setShowMenu] = useState(false)
   const [building, setBuilding] = useState<string | null>(null)
   const [demolishTarget, setDemolishTarget] = useState<BuildingRow | null>(null)
@@ -46,7 +45,6 @@ export const BuildingsPanel = memo(function BuildingsPanel({ buildings, colonyId
     setBuilding(type)
     try {
       await onBuild(type)
-      await onRefresh()
       toast(`${config.name} построен!`, 'success')
       setShowMenu(false)
     } catch (e: any) {
@@ -60,7 +58,6 @@ export const BuildingsPanel = memo(function BuildingsPanel({ buildings, colonyId
     if (!demolishTarget) return
     try {
       await onDemolish(demolishTarget.id)
-      await onRefresh()
       toast(`${demolishTarget.name} снесён`, 'success')
     } catch (e: any) {
       toast(e.message || 'Ошибка сноса', 'error')

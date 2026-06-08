@@ -23,7 +23,6 @@ interface TwaGameViewProps {
   buildings: BuildingRow[]
   onBuild: (type: BuildingTypeKey) => Promise<void>
   onDemolish: (id: string) => Promise<void>
-  onRefresh: () => void
   onLogout: () => void
   onCreateEvent: (id: string, type: string, dur: number) => Promise<boolean>
   onToast: (msg: string) => void
@@ -39,7 +38,6 @@ export const TwaGameView = memo(function TwaGameView({
   buildings,
   onBuild,
   onDemolish,
-  onRefresh,
   onLogout,
   onCreateEvent,
   onToast,
@@ -63,11 +61,10 @@ export const TwaGameView = memo(function TwaGameView({
             resources={resources}
             onBuild={onBuild}
             onDemolish={onDemolish}
-            onRefresh={onRefresh}
           />
         )
       case 'map':
-        return <GameMapPanel colonyId={colonyId} onDiscover={onRefresh} />
+        return <GameMapPanel colonyId={colonyId} />
       case 'events':
         return <EventsPanel colonyId={colonyId} onCreateTest={onCreateEvent} />
       case 'pvp':

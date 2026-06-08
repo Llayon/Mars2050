@@ -13,10 +13,9 @@ interface MapScreenProps {
   colonyId: string
   resources: ResourceRow[]
   resourcesLoading: boolean
-  onDiscover: () => void
 }
 
-export const MapScreen = memo(function MapScreen({ colonyId, resources, resourcesLoading, onDiscover }: MapScreenProps) {
+export const MapScreen = memo(function MapScreen({ colonyId, resources, resourcesLoading }: MapScreenProps) {
   const { locations, loading, discoverLocation } = useMap()
   const { toast } = useToast()
   const [selected, setSelected] = useState<MapLocation | null>(null)
@@ -27,7 +26,6 @@ export const MapScreen = memo(function MapScreen({ colonyId, resources, resource
     try {
       const result = await discoverLocation(locationId, colonyId)
       toast(result.message || 'Локация исследована!', 'success')
-      onDiscover()
       setSelected(null)
     } catch (e: any) {
       toast(e.message || 'Ошибка исследования', 'error')
