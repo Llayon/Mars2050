@@ -20,6 +20,7 @@
     "@supabase/supabase-js": "^2.105.1",
     "@twa-dev/sdk": "^8.0.2",
     "next": "16.2.4",
+    "pg": "^8.21.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "zod": "^4.4.2"
@@ -35,12 +36,15 @@
   "devDependencies": {
     "@playwright/mcp": "^0.0.75",
     "@tailwindcss/postcss": "^4",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
     "@types/node": "^20.19.39",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.4",
     "husky": "^9.1.7",
+    "jsdom": "^29.1.1",
     "lint-staged": "^17.0.7",
     "tailwindcss": "^4",
     "tsx": "^4.21.0",
