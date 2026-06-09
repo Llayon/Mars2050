@@ -19,3 +19,7 @@ export const eventQuerySchema = z.object({
   colony_id: z.string().uuid(),
   active_only: z.boolean().optional(),
 })
+
+export const processEventsSchema = z.object({
+  colony_id: z.string().uuid(),
+})

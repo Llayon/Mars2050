@@ -20,14 +20,17 @@ interface UseEventsReturn {
   events: GameEvent[]
   loading: boolean
   error: string | null
+  processing: boolean
   refetch: () => Promise<void>
   createEvent: (colonyId: string, type: string, durationMinutes?: number) => Promise<boolean>
+  processNow: () => Promise<void>
 }
 
 export function useEvents(colonyId: string | null): UseEventsReturn {
   const [events, setEvents] = useState<GameEvent[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [processing, setProcessing] = useState(false)
   const mountedRef = useRef(true)
 
   const fetchEvents = useCallback(async () => {
@@ -46,6 +49,30 @@ export function useEvents(colonyId: string | null): UseEventsReturn {
     }
   }, [colonyId])
 
+  const processNow = useCallback(async () => {
+    if (!colonyId || processing) return
+    setProcessing(true)
+    try {
+      await fetch('/api/events/process', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ colony_id: colonyId }),
+      })
+    } catch {
+      // silent — processing is best-effort
+    } finally {
+      if (mountedRef.current) setProcessing(false)
+    }
+  }, [colonyId, processing])
+
+  // Poll for pending events every 30 seconds
+  useEffect(() => {
+    if (!colonyId) return
+    processNow()
+    const interval = setInterval(processNow, 30_000)
+    return () => clearInterval(interval)
+  }, [colonyId, processNow])
+
   useEffect(() => { mountedRef.current = true; return () => { mountedRef.current = false } }, [])
   useEffect(() => { fetchEvents() }, [fetchEvents])
 
@@ -59,6 +86,11 @@ export function useEvents(colonyId: string | null): UseEventsReturn {
     } else if (payload.eventType === 'DELETE') {
       setEvents(prev => prev.filter(e => e.id !== payload.old.id))
     }
+  })
+
+  // Realtime: listen for pending_events being processed (marker for refresh)
+  useSubscription('pending_events', colonyId, () => {
+    fetchEvents()
   })
 
   const createEvent = async (colonyId: string, type?: string, durationMinutes?: number): Promise<boolean> => {
@@ -78,5 +110,5 @@ export function useEvents(colonyId: string | null): UseEventsReturn {
     }
   }
 
-  return { events, loading, error, refetch: fetchEvents, createEvent }
+  return { events, loading, error, processing, refetch: fetchEvents, createEvent, processNow }
 }

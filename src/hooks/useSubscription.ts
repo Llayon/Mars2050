@@ -4,7 +4,7 @@ import { useEffect, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js'
 
-type TableName = 'resources' | 'events' | 'buildings' | 'map_locations'
+type TableName = 'resources' | 'events' | 'buildings' | 'map_locations' | 'pending_events'
 
 type ChangePayload = {
   table: TableName
@@ -51,6 +51,9 @@ function ensureChannel() {
     })
     .on('postgres_changes', { event: '*' as const, schema: 'public', table: 'map_locations' }, (p: RealtimePostgresChangesPayload<Record<string, unknown>>) => {
       dispatchToSubscribers('map_locations', p.eventType, p.new, p.old)
+    })
+    .on('postgres_changes', { event: '*' as const, schema: 'public', table: 'pending_events' }, (p: RealtimePostgresChangesPayload<Record<string, unknown>>) => {
+      dispatchToSubscribers('pending_events', p.eventType, p.new, p.old)
     })
     .subscribe()
 }
