@@ -11,26 +11,20 @@ export function useResources(colonyId: string | null) {
   const mountedRef = useRef(true)
 
   const fetchResources = useCallback(async () => {
-    if (!colonyId) return
-    try {
-      const res = await fetch(`/api/resources?colonyId=${colonyId}`)
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'Failed to fetch resources')
-      if (mountedRef.current && data.resources) {
-        setResources(data.resources)
-      }
-      if (mountedRef.current) setError(null)
-    } catch (err) {
-      if (mountedRef.current) {
-        console.error('useResources error:', err)
-        setError(String(err))
-      }
-    } finally {
-      if (mountedRef.current) setLoading(false)
-    }
+    if (!colonyId) return []
+    const res = await fetch(`/api/resources?colonyId=${colonyId}`)
+    const data = await res.json()
+    if (!res.ok) throw new Error(data.error || 'Failed to fetch resources')
+    return data.resources ?? []
   }, [colonyId])
 
-  useEffect(() => { fetchResources() }, [fetchResources])
+  useEffect(() => {
+    if (!colonyId) return
+    fetchResources()
+      .then(data => { setResources(data); setError(null) })
+      .catch(err => { console.error('useResources error:', err); setError(String(err)) })
+      .finally(() => { if (mountedRef.current) setLoading(false) })
+  }, [fetchResources])
   useEffect(() => { mountedRef.current = true; return () => { mountedRef.current = false } }, [])
 
   // Smooth client-side simulation between server updates

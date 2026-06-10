@@ -12,22 +12,20 @@ export function useMap() {
   const [error, setError] = useState<string | null>(null)
 
   const fetchMap = useCallback(async () => {
-    try {
-      const { data, error: fetchError } = await supabase
-        .from('map_locations')
-        .select('*')
-        .order('y', { ascending: true })
-      if (fetchError) throw fetchError
-      if (data) setLocations(data)
-      setError(null)
-    } catch (err) {
-      setError(String(err))
-    } finally {
-      setLoading(false)
-    }
+    const { data, error: fetchError } = await supabase
+      .from('map_locations')
+      .select('*')
+      .order('y', { ascending: true })
+    if (fetchError) throw fetchError
+    return data ?? []
   }, [])
 
-  useEffect(() => { fetchMap() }, [fetchMap])
+  useEffect(() => {
+    fetchMap()
+      .then(data => { setLocations(data); setError(null) })
+      .catch(err => setError(String(err)))
+      .finally(() => setLoading(false))
+  }, [fetchMap])
 
   // Realtime: sync map location changes (e.g., discovered by other players, or self)
   useSubscription('map_locations', null, (payload) => {

@@ -1,5 +1,23 @@
-import { createClient, SupabaseClient } from '@supabase/supabase-js'
+import { SupabaseClient } from '@supabase/supabase-js'
 import { getServerClient } from './resource.server'
+
+interface PendingEvent {
+  id: string
+  colony_id: string
+  type: string
+  data: Record<string, unknown>
+  completes_at: string
+  processed: boolean
+}
+
+interface ResourceSnapshot {
+  type: string
+  amount: number
+}
+
+interface ResourceSingle {
+  amount: number
+}
 
 /**
  * Process all completed pending events for a colony.
@@ -18,7 +36,9 @@ export async function processCompletedEvents(colonyId: string) {
 
   if (error || !events || events.length === 0) return
 
-  for (const event of events) {
+  for (const raw of events) {
+    const event = raw as unknown as PendingEvent
+
     switch (event.type) {
       case 'building_complete':
         await processBuildingComplete(event, supabase)
@@ -27,7 +47,7 @@ export async function processCompletedEvents(colonyId: string) {
         await processAttackArrive(event, supabase)
         break
       case 'attack_return':
-        await processAttackReturn(event, supabase)
+        await processAttackReturn(supabase)
         break
       case 'research_complete':
         await processResearchComplete(event, supabase)
@@ -41,8 +61,8 @@ export async function processCompletedEvents(colonyId: string) {
   }
 }
 
-async function processBuildingComplete(event: any, supabase: SupabaseClient<any>) {
-  const { building_id: buildingId } = event.data
+async function processBuildingComplete(event: PendingEvent, supabase: SupabaseClient) {
+  const buildingId = event.data.building_id as string | undefined
   if (buildingId) {
     await supabase
       .from('buildings')
@@ -51,10 +71,11 @@ async function processBuildingComplete(event: any, supabase: SupabaseClient<any>
   }
 }
 
-async function processAttackArrive(event: any, supabase: SupabaseClient<any>) {
-  const { defender_colony_id: defenderId, attacker_troops: troops } = event.data
-  const defenderLevel = event.data.defender_level || 1
-  const attackerPower = (troops || 10) * 1.5
+async function processAttackArrive(event: PendingEvent, supabase: SupabaseClient) {
+  const defenderId = event.data.defender_colony_id as string
+  const troops = (event.data.attacker_troops as number) || 10
+  const defenderLevel = (event.data.defender_level as number) || 1
+  const attackerPower = troops * 1.5
   const defenderPower = defenderLevel * 20
   const attackerWins = attackerPower > defenderPower
 
@@ -65,7 +86,8 @@ async function processAttackArrive(event: any, supabase: SupabaseClient<any>) {
       .eq('colony_id', defenderId)
 
     if (defenderResources) {
-      for (const resource of defenderResources) {
+      const resources = defenderResources as unknown as ResourceSnapshot[]
+      for (const resource of resources) {
         const stolen = Math.floor(resource.amount * 0.1)
         await supabase
           .from('resources')
@@ -81,9 +103,10 @@ async function processAttackArrive(event: any, supabase: SupabaseClient<any>) {
           .single()
 
         if (attackerResource) {
+          const ar = attackerResource as unknown as ResourceSingle
           await supabase
             .from('resources')
-            .update({ amount: attackerResource.amount + stolen })
+            .update({ amount: ar.amount + stolen })
             .eq('colony_id', event.colony_id)
             .eq('type', resource.type)
         }
@@ -102,12 +125,11 @@ async function processAttackArrive(event: any, supabase: SupabaseClient<any>) {
     })
 }
 
-async function processAttackReturn(_event: any, _supabase: SupabaseClient<any>) {
-  // Troops have returned - no action needed for now
+async function processAttackReturn(_supabase: SupabaseClient) {
 }
 
-async function processResearchComplete(event: any, supabase: SupabaseClient<any>) {
-  const researchPoints = event.data.points || 50
+async function processResearchComplete(event: PendingEvent, supabase: SupabaseClient) {
+  const researchPoints = (event.data.points as number) || 50
 
   const { data: resource } = await supabase
     .from('resources')
@@ -117,9 +139,10 @@ async function processResearchComplete(event: any, supabase: SupabaseClient<any>
     .single()
 
   if (resource) {
+    const r = resource as unknown as ResourceSingle
     await supabase
       .from('resources')
-      .update({ amount: resource.amount + researchPoints })
+      .update({ amount: r.amount + researchPoints })
       .eq('colony_id', event.colony_id)
       .eq('type', 'research_points')
   }

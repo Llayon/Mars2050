@@ -18,9 +18,9 @@ if (typeof window !== 'undefined') {
   }
 }
 
-let supabaseInstance: SupabaseClient<any> | null = null
+let supabaseInstance: SupabaseClient | null = null
 
-export function getSupabaseClient(): SupabaseClient<any> {
+export function getSupabaseClient(): SupabaseClient {
   if (!supabaseInstance) {
     supabaseInstance = createClient(supabaseUrl, supabaseAnonKey, {
       auth: {
@@ -36,6 +36,6 @@ export function getSupabaseClient(): SupabaseClient<any> {
 
 export const supabase = getSupabaseClient()
 
-export function createBrowserClient(): SupabaseClient<any> {
+export function createBrowserClient(): SupabaseClient {
   return getSupabaseClient()
 }

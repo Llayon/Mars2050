@@ -12,24 +12,23 @@ export function useBuildings(colonyId: string | null) {
   const [error, setError] = useState<string | null>(null)
 
   const fetchBuildings = useCallback(async () => {
-    if (!colonyId) return
-    try {
-      const { data, error: fetchError } = await supabase
-        .from('buildings')
-        .select('*')
-        .eq('colony_id', colonyId)
-        .order('created_at', { ascending: true })
-      if (fetchError) throw fetchError
-      if (data) setBuildings(data)
-      setError(null)
-    } catch (err) {
-      setError(String(err))
-    } finally {
-      setLoading(false)
-    }
+    if (!colonyId) return []
+    const { data, error: fetchError } = await supabase
+      .from('buildings')
+      .select('*')
+      .eq('colony_id', colonyId)
+      .order('created_at', { ascending: true })
+    if (fetchError) throw fetchError
+    return data ?? []
   }, [colonyId])
 
-  useEffect(() => { fetchBuildings() }, [fetchBuildings])
+  useEffect(() => {
+    if (!colonyId) return
+    fetchBuildings()
+      .then(data => { setBuildings(data); setError(null) })
+      .catch(err => setError(String(err)))
+      .finally(() => setLoading(false))
+  }, [fetchBuildings])
 
   // Realtime: sync buildings on INSERT/UPDATE/DELETE
   useSubscription('buildings', colonyId, (payload) => {

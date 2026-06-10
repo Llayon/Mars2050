@@ -34,19 +34,10 @@ export function useEvents(colonyId: string | null): UseEventsReturn {
   const mountedRef = useRef(true)
 
   const fetchEvents = useCallback(async () => {
-    if (!colonyId) return
-    setLoading(true)
-    setError(null)
-    try {
-      const res = await fetch(`/api/events?colony_id=${colonyId}&active_only=true`)
-      if (!res.ok) throw new Error('Failed to fetch events')
-      const data = await res.json()
-      if (mountedRef.current) setEvents(data)
-    } catch (err) {
-      if (mountedRef.current) setError(err instanceof Error ? err.message : 'Unknown error')
-    } finally {
-      if (mountedRef.current) setLoading(false)
-    }
+    if (!colonyId) return []
+    const res = await fetch(`/api/events?colony_id=${colonyId}&active_only=true`)
+    if (!res.ok) throw new Error('Failed to fetch events')
+    return await res.json()
   }, [colonyId])
 
   const processNow = useCallback(async () => {
@@ -68,13 +59,19 @@ export function useEvents(colonyId: string | null): UseEventsReturn {
   // Poll for pending events every 30 seconds
   useEffect(() => {
     if (!colonyId) return
-    processNow()
+    setTimeout(() => processNow(), 0)
     const interval = setInterval(processNow, 30_000)
-    return () => clearInterval(interval)
+    return () => { clearInterval(interval) }
   }, [colonyId, processNow])
 
   useEffect(() => { mountedRef.current = true; return () => { mountedRef.current = false } }, [])
-  useEffect(() => { fetchEvents() }, [fetchEvents])
+  useEffect(() => {
+    if (!colonyId) return
+    fetchEvents()
+      .then(data => { setEvents(data); setError(null) })
+      .catch(err => setError(err instanceof Error ? err.message : 'Unknown error'))
+      .finally(() => { if (mountedRef.current) setLoading(false) })
+  }, [fetchEvents])
 
   // Realtime: insert → add event, update → sync fields, delete → remove
   useSubscription('events', colonyId, (payload) => {

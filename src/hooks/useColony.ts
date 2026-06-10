@@ -11,23 +11,14 @@ export function useColony(colonyId: string | null) {
   const mountedRef = useRef(true)
 
   const fetchColony = useCallback(async () => {
-    if (!colonyId) return
-
-    try {
-      const { data, error: fetchError } = await supabase
-        .from('colonies')
-        .select('*')
-        .eq('id', colonyId)
-        .single()
-
-      if (fetchError) throw fetchError
-      if (mountedRef.current) setColony(data)
-      if (mountedRef.current) setError(null)
-    } catch (err) {
-      if (mountedRef.current) setError(String(err))
-    } finally {
-      if (mountedRef.current) setLoading(false)
-    }
+    if (!colonyId) return null
+    const { data, error: fetchError } = await supabase
+      .from('colonies')
+      .select('*')
+      .eq('id', colonyId)
+      .single()
+    if (fetchError) throw fetchError
+    return data
   }, [colonyId])
 
   useEffect(() => {
@@ -36,7 +27,11 @@ export function useColony(colonyId: string | null) {
   }, [])
 
   useEffect(() => {
+    if (!colonyId) return
     fetchColony()
+      .then(data => { if (data) setColony(data); setError(null) })
+      .catch(err => setError(String(err)))
+      .finally(() => { if (mountedRef.current) setLoading(false) })
   }, [fetchColony])
 
   return { colony, loading, error, refetch: fetchColony }

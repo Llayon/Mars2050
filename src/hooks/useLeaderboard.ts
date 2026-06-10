@@ -10,17 +10,10 @@ export function useLeaderboard() {
   const mountedRef = useRef(true)
 
   const fetchLeaderboard = useCallback(async () => {
-    try {
-      const res = await fetch('/api/leaderboard')
-      if (!res.ok) throw new Error('Failed to fetch leaderboard')
-      const data = await res.json()
-      if (mountedRef.current) setLeaderboard(data.leaderboard ?? [])
-      if (mountedRef.current) setError(null)
-    } catch (err) {
-      if (mountedRef.current) setError(err instanceof Error ? err.message : String(err))
-    } finally {
-      if (mountedRef.current) setLoading(false)
-    }
+    const res = await fetch('/api/leaderboard')
+    if (!res.ok) throw new Error('Failed to fetch leaderboard')
+    const data = await res.json()
+    return data.leaderboard ?? []
   }, [])
 
   useEffect(() => {
@@ -30,6 +23,9 @@ export function useLeaderboard() {
 
   useEffect(() => {
     fetchLeaderboard()
+      .then(data => { setLeaderboard(data); setError(null) })
+      .catch(err => setError(err instanceof Error ? err.message : String(err)))
+      .finally(() => { if (mountedRef.current) setLoading(false) })
   }, [fetchLeaderboard])
 
   return { leaderboard, loading, error, refetch: fetchLeaderboard }

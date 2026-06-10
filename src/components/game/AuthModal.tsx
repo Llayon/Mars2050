@@ -25,8 +25,8 @@ export function AuthModal({ open, onClose, mode, onModeSwitch, onSubmit }: AuthM
       await onSubmit(email, password)
       setEmail('')
       setPassword('')
-    } catch (err: any) {
-      const msg = err?.message || 'Ошибка'
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Ошибка'
       setError(msg.includes('Invalid login') ? 'Неверный email или пароль' :
               msg.includes('already registered') ? 'Этот email уже зарегистрирован' :
               msg.includes('Password') ? 'Пароль должен быть не менее 6 символов' : msg)

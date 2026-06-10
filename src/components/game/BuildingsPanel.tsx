@@ -47,8 +47,9 @@ export const BuildingsPanel = memo(function BuildingsPanel({ buildings, colonyId
       await onBuild(type)
       toast(`${config.name} построен!`, 'success')
       setShowMenu(false)
-    } catch (e: any) {
-      toast(e.message || 'Ошибка строительства', 'error')
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Ошибка строительства'
+      toast(msg, 'error')
     } finally {
       setBuilding(null)
     }
@@ -59,8 +60,9 @@ export const BuildingsPanel = memo(function BuildingsPanel({ buildings, colonyId
     try {
       await onDemolish(demolishTarget.id)
       toast(`${demolishTarget.name} снесён`, 'success')
-    } catch (e: any) {
-      toast(e.message || 'Ошибка сноса', 'error')
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Ошибка сноса'
+      toast(msg, 'error')
     }
     setDemolishTarget(null)
   }

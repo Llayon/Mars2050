@@ -20,8 +20,9 @@ export const GameMapPanel = memo(function GameMapPanel({ colonyId }: GameMapPane
     try {
       const result = await discoverLocation(locationId, colonyId)
       toast(result.message || 'Локация исследована!', 'success')
-    } catch (e: any) {
-      toast(e.message || 'Ошибка исследования', 'error')
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Ошибка исследования'
+      toast(msg, 'error')
     }
   }
 
