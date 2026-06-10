@@ -22,14 +22,19 @@ function detectTWA(): boolean {
 }
 
 function requestFullscreen(): void {
-  if (!WebApp.requestFullscreen) {
-    WebApp.expand()
-    return
-  }
-  try {
-    WebApp.requestFullscreen()
-  } catch {
-    WebApp.expand()
+  // expand() maximizes the web app viewport height (works on all versions)
+  WebApp.expand()
+
+  // requestFullscreen() enters immersive fullscreen (requires Telegram 8.0+)
+  if (typeof WebApp.requestFullscreen === 'function') {
+    // Small delay to let Telegram process the ready/expand events first
+    setTimeout(() => {
+      try {
+        WebApp.requestFullscreen()
+      } catch {
+        // Already expanded via expand(), fullscreen not supported — ignore
+      }
+    }, 100)
   }
 }
 
