@@ -60,10 +60,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Deploy to Vercel
-        uses: amondnet/vercel-action@v25
+      - uses: actions/setup-node@v4
         with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: team_DFP4DsmGOLgMIkCHRcvLSAIy
-          vercel-project-id: prj_mbP68XdydRuN10aEyLy99uCvIEuu
-          vercel-args: --prod
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Deploy to Vercel
+        env:
+          VERCEL_ORG_ID: team_DFP4DsmGOLgMIkCHRcvLSAIy
+          VERCEL_PROJECT_ID: prj_mbP68XdydRuN10aEyLy99uCvIEuu
+        run: npx vercel deploy --prod --yes --token ${{ secrets.VERCEL_TOKEN }}
