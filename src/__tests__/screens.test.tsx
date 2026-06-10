@@ -79,7 +79,7 @@ describe('ColonyScreen', () => {
   })
 
   it('renders colony name when provided', () => {
-    const colony: Colony = { id: 'test-id', name: 'Mars Base Alpha', level: 3, user_id: 'u1', created_at: '', last_calc_at: '' }
+    const colony: Colony = { id: 'test-id', name: 'Mars Base Alpha', level: 3, experience: 0, user_id: 'u1', created_at: '', last_calc_at: '' }
     const { container } = render(<ColonyScreen {...baseProps} colony={colony} />)
     expect(container.textContent).toContain('Mars Base Alpha')
   })
