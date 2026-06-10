@@ -1,6 +1,8 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import WebApp from '@twa-dev/sdk'
+import type { WebAppUser } from '@twa-dev/types'
 
 interface TelegramAuthState {
   colonyId: string | null
@@ -10,15 +12,24 @@ interface TelegramAuthState {
   tgUser: { id: number; first_name: string; username?: string } | null
 }
 
-type TelegramWindow = Record<string, Record<string, unknown> | undefined>
-
 function detectTWA(): boolean {
   if (typeof window === 'undefined') return false
   try {
-    const tw = (window as unknown as TelegramWindow).Telegram as Record<string, unknown> | undefined
-    return !!(tw?.WebApp as Record<string, unknown> | undefined)?.initData
+    return !!WebApp.initData
   } catch {
     return false
+  }
+}
+
+function requestFullscreen(): void {
+  if (!WebApp.requestFullscreen) {
+    WebApp.expand()
+    return
+  }
+  try {
+    WebApp.requestFullscreen()
+  } catch {
+    WebApp.expand()
   }
 }
 
@@ -33,24 +44,17 @@ export function useTelegramAuth(): TelegramAuthState {
 
   const login = useCallback(async () => {
     try {
-      const tg = (window as unknown as TelegramWindow).Telegram as Record<string, unknown> | undefined
-      const WebApp = tg?.WebApp as {
-        initData?: string
-        initDataUnsafe?: { user?: { id: number; first_name: string; username?: string } }
-        ready?: () => void
-        expand?: () => void
-      } | undefined
-
-      if (!WebApp?.initData) {
+      if (!WebApp.initData) {
         setState(prev => ({ ...prev, loading: false, error: 'Telegram WebApp not available' }))
         return
       }
 
-      WebApp.ready?.()
-      WebApp.expand?.()
+      WebApp.ready()
+      requestFullscreen()
 
-      const tgUser = WebApp.initDataUnsafe?.user || null
-      setState(prev => ({ ...prev, isTWA: true, tgUser }))
+      const tgUser = (WebApp.initDataUnsafe?.user as WebAppUser | undefined) ?? null
+      const user = tgUser ? { id: tgUser.id, first_name: tgUser.first_name, username: tgUser.username } : null
+      setState(prev => ({ ...prev, isTWA: true, tgUser: user }))
 
       const res = await fetch('/api/auth/telegram', {
         method: 'POST',

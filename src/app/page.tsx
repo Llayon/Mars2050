@@ -125,7 +125,7 @@ function GameUI() {
     }
 
     return (
-      <div className="min-h-screen bg-mars-surface text-white flex flex-col">
+      <div className="min-h-[100dvh] bg-mars-surface text-white flex flex-col">
         <div className="flex-1 overflow-hidden">
           {renderScreen()}
         </div>
