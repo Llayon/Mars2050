@@ -72,11 +72,3 @@ jobs:
           VERCEL_ORG_ID: team_DFP4DsmGOLgMIkCHRcvLSAIy
           VERCEL_PROJECT_ID: prj_mbP68XdydRuN10aEyLy99uCvIEuu
         run: npx vercel deploy --prod --yes --token ${{ secrets.VERCEL_TOKEN }}
-
-      - name: Deploy Supabase Migrations
-        env:
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
-          SUPABASE_PROJECT_ID: gkvsnzwvgonfpuespafm
-        run: |
-          npx supabase db push --password $SUPABASE_DB_PASSWORD
