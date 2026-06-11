@@ -42,6 +42,18 @@
       "type": "local",
       "command": ["npx", "-y", "@playwright/mcp"],
       "enabled": true
+    },
+    "magicavoxel": {
+      "type": "local",
+      "command": [
+        "python",
+        "C:/Users/Max/AppData/Local/opencode/mcp/magicavoxel-mcp/server.py"
+      ],
+      "env": {
+        "VOX_DIR": "D:/Programms/MagicaVoxel-0.99.7.2-win64/MagicaVoxel-0.99.7.2-win64/vox",
+        "EXPORT_DIR": "D:/Programms/MagicaVoxel-0.99.7.2-win64/MagicaVoxel-0.99.7.2-win64/export"
+      },
+      "enabled": false
     }
   },
 

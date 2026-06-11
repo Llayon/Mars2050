@@ -85,6 +85,7 @@ function GameUI() {
               colony={colony}
               colonyLoading={colonyLoading}
               colonyId={colonyId!}
+              buildings={buildings}
               resources={resources}
               resourcesLoading={resourcesLoading}
               onLogout={logout}

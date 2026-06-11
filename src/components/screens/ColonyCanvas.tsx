@@ -7,6 +7,9 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import { RENDER_LIMITS } from '@/domains/building/building.config'
 import { gridToScreen } from '@/domains/building/building.isometric'
 
+import { SpriteFactory } from '@/components/colony/sprites/sprite-factory'
+import type { BuildingRow } from '@/domains/building/building.types'
+
 // Register PixiJS elements for JSX
 extend({ Container, Graphics, Sprite, Text, PixiViewport })
 
@@ -16,7 +19,7 @@ interface TelegramWebApp {
   lockOrientation: (orientation: 'portrait' | 'landscape') => void
 }
 
-export default function ColonyCanvas() {
+export default function ColonyCanvas({ buildings }: { buildings: BuildingRow[] }) {
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 })
   const containerRef = useRef<HTMLDivElement>(null)
 
@@ -78,6 +81,7 @@ export default function ColonyCanvas() {
           }}
         >
           <DebugGrid />
+          <SpriteFactory buildings={buildings} />
         </pixiViewport>
       </Application>
     </div>

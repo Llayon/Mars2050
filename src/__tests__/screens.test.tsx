@@ -69,6 +69,7 @@ describe('ColonyScreen', () => {
     colony: null as Colony | null,
     colonyLoading: false,
     colonyId: '550e8400-e29b-41d4-a716-446655440000',
+    buildings: [],
     resources: [] as ResourceRow[],
     resourcesLoading: false,
     onLogout: () => {},

@@ -4,6 +4,7 @@ import { useEffect, useState, Suspense, lazy } from 'react'
 import { ColonyPanel } from '@/components/game/ColonyPanel'
 import type { Colony } from '@/domains/colony/colony.types'
 import type { ResourceRow } from '@/domains/resource/resource.types'
+import type { BuildingRow } from '@/domains/building/building.types'
 
 // Lazy load the heavy PixiJS component
 const ColonyCanvas = lazy(() => import('./ColonyCanvas').catch(() => ({
@@ -14,6 +15,7 @@ interface ColonyScreenProps {
   colonyId: string
   colony: Colony | null
   colonyLoading: boolean
+  buildings: BuildingRow[]
   resources: ResourceRow[]
   resourcesLoading: boolean
   onLogout: () => void
@@ -27,6 +29,7 @@ export default function ColonyScreen({
   colonyId, 
   colony, 
   colonyLoading, 
+  buildings,
   resources, 
   resourcesLoading, 
   onLogout,
@@ -78,7 +81,7 @@ export default function ColonyScreen({
   return (
     <div className="relative w-full h-full overflow-hidden bg-black">
       <Suspense fallback={<div className="flex items-center justify-center h-full text-white">Загрузка колонии...</div>}>
-        <ColonyCanvas />
+        <ColonyCanvas buildings={buildings} />
       </Suspense>
       
       {/* Overlay for HUD */}
