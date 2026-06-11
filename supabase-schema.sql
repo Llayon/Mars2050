@@ -6,6 +6,7 @@ create table public.profiles (
   id uuid references auth.users on delete cascade not null primary key,
   username text unique,
   avatar_url text,
+  telegram_id bigint unique,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
@@ -121,6 +122,7 @@ create index colonies_user_id_idx on public.colonies(user_id);
 create index resources_colony_id_idx on public.resources(colony_id);
 create index buildings_colony_id_idx on public.buildings(colony_id);
 create index map_locations_coords_idx on public.map_locations(x, y);
+create index profiles_telegram_id_idx on public.profiles(telegram_id) where telegram_id is not null;
 
 -- Events table (Surviving Mars inspired)
 create table public.events (

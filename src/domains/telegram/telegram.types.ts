@@ -9,6 +9,8 @@ export interface TelegramUserData {
 
 export interface TelegramAuthResponse {
   colonyId: string
+  email?: string
+  password?: string
   error?: string
 }
 

@@ -5,10 +5,13 @@ import type { TelegramAuthResponse, TelegramUserData } from './telegram.types'
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || ''
 
+/** Max age of Telegram auth_date before we reject it (5 minutes) */
+const AUTH_DATE_MAX_AGE_SEC = 5 * 60
+
 /**
- * Validates Telegram WebApp initData HMAC-SHA256 signature.
+ * Validates Telegram WebApp initData HMAC-SHA256 signature and auth_date freshness.
  * @param initData - Raw initData string from Telegram.WebApp.initData
- * @returns Parsed user data if valid, null if invalid
+ * @returns Parsed user data if valid, null if invalid or expired
  */
 export function validateInitData(initData: string): TelegramUserData | null {
   if (!BOT_TOKEN) return null
@@ -16,6 +19,14 @@ export function validateInitData(initData: string): TelegramUserData | null {
   const params = new URLSearchParams(initData)
   const hash = params.get('hash')
   if (!hash) return null
+
+  // Check auth_date freshness (replay attack prevention)
+  const authDateRaw = params.get('auth_date')
+  if (authDateRaw) {
+    const authDate = Number(authDateRaw)
+    const nowSec = Math.floor(Date.now() / 1000)
+    if (nowSec - authDate > AUTH_DATE_MAX_AGE_SEC) return null
+  }
 
   params.delete('hash')
   const sorted = [...params.entries()]
@@ -40,9 +51,9 @@ export function validateInitData(initData: string): TelegramUserData | null {
 
 /**
  * Generates a deterministic Supabase Auth email/password pair for a Telegram user.
- * Password is derived from telegram_id + service_role_key (secret).
+ * Password is derived from telegram_id + BOT_TOKEN (secret).
  */
-function tgCredentials(tgId: number): { email: string; password: string } {
+export function tgCredentials(tgId: number): { email: string; password: string } {
   const email = `tg_${tgId}@mars2050.game`
   const hmac = createHmac('sha256', BOT_TOKEN)
   hmac.update(String(tgId))
@@ -52,26 +63,32 @@ function tgCredentials(tgId: number): { email: string; password: string } {
 
 /**
  * Handles Telegram WebApp authentication:
- * 1. Validates initData signature
- * 2. Finds or creates Supabase user
- * 3. Returns colonyId
+ * 1. Validates initData signature and auth_date
+ * 2. Finds or creates Supabase user (via profiles.telegram_id lookup)
+ * 3. Returns colonyId + credentials so client can establish a session
  */
 export async function handleTelegramAuth(initData: string): Promise<TelegramAuthResponse> {
   const supabase = getServerClient()
   const tgUser = validateInitData(initData)
-  if (!tgUser) return { colonyId: '', error: 'Invalid Telegram authentication' }
+  if (!tgUser) return { colonyId: '', error: 'Invalid or expired Telegram authentication' }
 
   const { email, password } = tgCredentials(tgUser.id)
 
-  const { data: existingUsers } = await supabase.auth.admin.listUsers()
-  const existing = existingUsers?.users.find(u => u.email === email)
+  // O(1) lookup by telegram_id instead of scanning all auth.users
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('telegram_id', tgUser.id)
+    .maybeSingle()
 
-  if (existing) {
-    const colony = await getOrCreateColony(existing.id)
+  if (profile) {
+    const userId = (profile as Record<string, unknown>).id as string
+    const colony = await getOrCreateColony(userId)
     if (colony.error) return { colonyId: '', error: colony.error }
-    return { colonyId: colony.colonyId || '' }
+    return { colonyId: colony.colonyId || '', email, password }
   }
 
+  // New user — create via admin API
   const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
     email,
     password,
@@ -87,10 +104,12 @@ export async function handleTelegramAuth(initData: string): Promise<TelegramAuth
     return { colonyId: '', error: createError?.message || 'Failed to create user' }
   }
 
+  // Store profile with telegram_id for future O(1) lookups
   const { error: profileError } = await supabase.from('profiles').insert({
     id: newUser.user.id,
     username: tgUser.username || `tg_${tgUser.id}`,
     avatar_url: tgUser.photo_url,
+    telegram_id: tgUser.id,
   })
 
   if (profileError) {
@@ -100,12 +119,5 @@ export async function handleTelegramAuth(initData: string): Promise<TelegramAuth
   const colony = await getOrCreateColony(newUser.user.id)
   if (colony.error) return { colonyId: '', error: colony.error }
 
-  return { colonyId: colony.colonyId || '' }
-}
-
-/**
- * Returns the stored Telegram credentials for a user to sign in via Supabase Auth.
- */
-export function getTelegramCredentials(tgId: number): { email: string; password: string } {
-  return tgCredentials(tgId)
+  return { colonyId: colony.colonyId || '', email, password }
 }

@@ -11,7 +11,11 @@ export async function POST(request: Request) {
     const result = await handleTelegramAuth(parsed.data.initData)
 
     if (result.error) return apiError('UNAUTHORIZED', result.error)
-    return NextResponse.json({ colonyId: result.colonyId })
+    return NextResponse.json({
+      colonyId: result.colonyId,
+      email: result.email,
+      password: result.password,
+    })
   } catch (err) {
     console.error('Telegram auth POST error:', err)
     return apiInternalError(err)

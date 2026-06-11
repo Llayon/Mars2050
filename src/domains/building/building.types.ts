@@ -1,3 +1,5 @@
+import type { ResourceTypeKey } from '@/domains/resource/resource.types'
+
 /** Represents a building type definition with cost and production rates. */
 export interface BuildingType {
   type: BuildingTypeKey
@@ -23,15 +25,6 @@ export type ResourceCost = Partial<Record<ResourceTypeKey, number>>
 
 /** Resource production/consumption mapping. */
 export type ResourceProduction = Partial<Record<ResourceTypeKey, number>>
-
-/** Resource type keys matching DB enum values. */
-export type ResourceTypeKey =
-  | 'oxygen'
-  | 'water'
-  | 'energy'
-  | 'minerals'
-  | 'food'
-  | 'research_points'
 
 /** DB row for buildings table. */
 export interface BuildingRow {

@@ -9,16 +9,19 @@ export interface Database {
           id: string
           username?: string
           avatar_url?: string
+          telegram_id?: number
           created_at?: string
           updated_at?: string
         }
         Insert: {
           username?: string
           avatar_url?: string
+          telegram_id?: number
         }
         Update: {
           username?: string
           avatar_url?: string
+          telegram_id?: number
           created_at?: string
           updated_at?: string
         }

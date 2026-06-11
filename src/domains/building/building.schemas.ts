@@ -11,7 +11,10 @@ export const buildingCreateSchema = z.object({
     'greenhouse',
     'research_lab'
   ], { message: 'Invalid building type' }),
-  name: z.string().min(1, 'Name is required').max(50, 'Name too long')
+  name: z.string().min(1, 'Name is required').max(50, 'Name too long'),
+  x: z.number().int(),
+  y: z.number().int(),
+  group_id: z.string().optional(),
 })
 
 /** Schema for updating a building level. */

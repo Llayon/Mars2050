@@ -26,33 +26,38 @@ export function useAuth() {
     tgUser: null,
   })
 
+  // Sync TWA state from useTelegramAuth
   useEffect(() => {
     if (telegram.isTWA) {
       setState(prev => ({
         ...prev,
-        colonyId: telegram.colonyId,
+        colonyId: telegram.colonyId ?? prev.colonyId,
         loading: telegram.loading,
         error: telegram.error,
         isTWA: true,
-        tgUser: telegram.tgUser,
+        tgUser: telegram.tgUser ?? prev.tgUser,
       }))
     }
   }, [telegram.colonyId, telegram.loading, telegram.error, telegram.isTWA, telegram.tgUser])
 
+  // Always subscribe to auth state changes (works for both web and TWA after signInWithPassword)
   useEffect(() => {
-    if (telegram.isTWA) return
-
-    checkSession()
-
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setState(prev => ({ ...prev, user: session?.user ?? null }))
-      if (session?.user) {
-        loadColony(session.user.id)
-      }
+      setState(prev => {
+        // Load colony when user signs in and colonyId not yet set
+        if (session?.user && !prev.colonyId) {
+          loadColony(session.user.id)
+        }
+        return { ...prev, user: session?.user ?? null }
+      })
     })
 
+    // Check existing session on mount
+    checkSession()
+
     return () => subscription.unsubscribe()
-  }, [telegram.isTWA])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   function formatError(err: unknown): string {
     const msg = String(err)
@@ -72,7 +77,7 @@ export function useAuth() {
     } catch (error) {
       setState(prev => ({ ...prev, error: formatError(error) }))
     } finally {
-      setState(prev => ({ ...prev, loading: false }))
+      setState(prev => ({ ...prev, loading: prev.isTWA ? prev.loading : false }))
     }
   }
 
@@ -135,13 +140,10 @@ export function useAuth() {
   }, [])
 
   const logout = useCallback(async () => {
-    if (state.isTWA) {
-      setState({ user: null, colonyId: null, loading: false, error: null, isTWA: false, tgUser: null })
-      return
-    }
     await supabase.auth.signOut()
+    try { sessionStorage.removeItem('mars2050_tg_user') } catch { /* ignore */ }
     setState({ user: null, colonyId: null, loading: false, error: null, isTWA: false, tgUser: null })
-  }, [state.isTWA])
+  }, [])
 
   return { ...state, login, signup, logout }
 }
