@@ -89,6 +89,7 @@ function GameUI() {
               resources={resources}
               resourcesLoading={resourcesLoading}
               onLogout={logout}
+              onDemolish={handleDemolish}
             >
               <p className="text-2xl font-bold text-white">{buildings.length}</p>
             </ColonyScreen>

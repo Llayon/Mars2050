@@ -2,6 +2,7 @@
 
 import { useEffect, useState, Suspense, lazy } from 'react'
 import { ColonyPanel } from '@/components/game/ColonyPanel'
+import { BuildingActionModal } from '@/components/game/BuildingActionModal'
 import type { Colony } from '@/domains/colony/colony.types'
 import type { ResourceRow } from '@/domains/resource/resource.types'
 import type { BuildingRow } from '@/domains/building/building.types'
@@ -19,6 +20,7 @@ interface ColonyScreenProps {
   resources: ResourceRow[]
   resourcesLoading: boolean
   onLogout: () => void
+  onDemolish: (id: string) => Promise<void>
   children?: React.ReactNode
 }
 /**
@@ -33,8 +35,10 @@ export default function ColonyScreen({
   resources, 
   resourcesLoading, 
   onLogout,
+  onDemolish,
   children 
 }: ColonyScreenProps) {
+  const [selectedBuilding, setSelectedBuilding] = useState<BuildingRow | null>(null)
   const [supportsWebGL] = useState<boolean | null>(() => {
     if (typeof window === 'undefined') return null
     try {
@@ -81,7 +85,7 @@ export default function ColonyScreen({
   return (
     <div className="relative w-full h-full overflow-hidden bg-black">
       <Suspense fallback={<div className="flex items-center justify-center h-full text-white">Загрузка колонии...</div>}>
-        <ColonyCanvas buildings={buildings} />
+        <ColonyCanvas buildings={buildings} onBuildingClick={setSelectedBuilding} />
       </Suspense>
       
       {/* Overlay for HUD */}
@@ -91,6 +95,12 @@ export default function ColonyScreen({
           {children}
         </div>
       </div>
+
+      <BuildingActionModal 
+        building={selectedBuilding} 
+        onClose={() => setSelectedBuilding(null)} 
+        onDemolish={onDemolish} 
+      />
     </div>
   )
 }

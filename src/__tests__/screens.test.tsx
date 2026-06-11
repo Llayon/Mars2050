@@ -73,6 +73,7 @@ describe('ColonyScreen', () => {
     resources: [] as ResourceRow[],
     resourcesLoading: false,
     onLogout: () => {},
+    onDemolish: vi.fn(),
     children: undefined,
   }
 
