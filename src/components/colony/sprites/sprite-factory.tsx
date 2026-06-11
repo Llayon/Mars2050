@@ -1,4 +1,4 @@
-import { useMemo, useCallback } from 'react'
+import { useMemo } from 'react'
 import * as PIXI from 'pixi.js'
 import type { BuildingRow } from '@/domains/building/building.types'
 import { gridToScreen, calculateZIndex } from '@/domains/building/building.isometric'

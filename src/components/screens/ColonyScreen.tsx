@@ -50,12 +50,6 @@ export default function ColonyScreen({
     }
   })
 
-  // Use props in a way that avoids unused warnings if necessary, or just destructure them.
-  // For now, we are focusing on the PixiJS integration.
-  console.log('Colony ID:', colonyId) 
-  console.log('Resources count:', resources.length)
-  console.log('Resources loading:', resourcesLoading)
-
   if (supportsWebGL === false) {
     return (
       <div className="p-4 space-y-4 overflow-y-auto h-full">
