@@ -67,7 +67,10 @@ export async function createBuilding(dto: BuildingCreateDTO): Promise<BuildingRe
       type: dto.type,
       name: dto.name,
       level: 1,
-      is_active: true
+      is_active: true,
+      x: dto.x,
+      y: dto.y,
+      group_id: dto.group_id
     })
     .select()
     .single()

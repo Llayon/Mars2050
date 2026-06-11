@@ -6,7 +6,7 @@ import { attackSchema, tradeSchema } from '@/domains/pvp/pvp.schemas'
 import { resourceUpdateSchema } from '@/domains/resource/resource.schemas'
 
 describe('building.schemas', () => {
-  const valid = { colonyId: '550e8400-e29b-41d4-a716-446655440000', type: 'solar_panels', name: 'Test' }
+  const valid = { colonyId: '550e8400-e29b-41d4-a716-446655440000', type: 'solar_panels', name: 'Test', x: 10, y: 20 }
 
   it('accepts valid building creation', () => {
     expect(buildingCreateSchema.safeParse(valid).success).toBe(true)

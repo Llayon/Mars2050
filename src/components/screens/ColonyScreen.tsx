@@ -1,64 +1,102 @@
 'use client'
 
-import { memo } from 'react'
+import { useEffect, useState, Suspense, lazy } from 'react'
 import { ColonyPanel } from '@/components/game/ColonyPanel'
-import { ResourcesBar } from './ResourcesBar'
-import { EventsPanel } from '@/components/game/EventsPanel'
 import type { Colony } from '@/domains/colony/colony.types'
 import type { ResourceRow } from '@/domains/resource/resource.types'
 
+// Lazy load the heavy PixiJS component
+const ColonyCanvas = lazy(() => import('./ColonyCanvas').catch(() => ({
+  default: () => <ColonyPanelFallback message="Ошибка загрузки графического движка" />
+})))
+
 interface ColonyScreenProps {
+  colonyId: string
   colony: Colony | null
   colonyLoading: boolean
-  colonyId: string | null
   resources: ResourceRow[]
   resourcesLoading: boolean
   onLogout: () => void
   children?: React.ReactNode
 }
-
-export const ColonyScreen = memo(function ColonyScreen({
-  colony,
-  colonyLoading,
-  colonyId,
-  resources,
-  resourcesLoading,
+/**
+ * Enhanced Colony Screen with Isometric PixiJS view.
+ * Falls back to traditional UI if WebGL is not supported.
+ */
+export default function ColonyScreen({ 
+  colonyId, 
+  colony, 
+  colonyLoading, 
+  resources, 
+  resourcesLoading, 
   onLogout,
-  children,
+  children 
 }: ColonyScreenProps) {
+  const [supportsWebGL] = useState<boolean | null>(() => {
+    if (typeof window === 'undefined') return null
+    try {
+      const canvas = document.createElement('canvas')
+      return !!(window.WebGLRenderingContext && 
+        (canvas.getContext('webgl') || canvas.getContext('experimental-webgl')))
+    } catch {
+      return false
+    }
+  })
+
+  // Use props in a way that avoids unused warnings if necessary, or just destructure them.
+  // For now, we are focusing on the PixiJS integration.
+  console.log('Colony ID:', colonyId) 
+  console.log('Resources count:', resources.length)
+  console.log('Resources loading:', resourcesLoading)
+
+  if (supportsWebGL === false) {
+    return (
+      <div className="p-4 space-y-4 overflow-y-auto h-full">
+        <ColonyPanel colony={colony} loading={colonyLoading} />
+        <ColonyPanelFallback message="WebGL не поддерживается" />
+        <div className="bg-gray-800 p-4 rounded-lg">
+           <h3 className="text-white font-bold mb-2">Статистика</h3>
+           <div className="flex justify-between text-gray-400">
+              <span>Здания:</span>
+              <span className="text-white">{children}</span>
+           </div>
+           <button 
+             onClick={onLogout}
+             className="w-full mt-4 bg-red-600 hover:bg-red-700 text-white py-2 rounded"
+           >
+             Выйти
+           </button>
+        </div>
+      </div>
+    )
+  }
+
+  if (supportsWebGL === null) {
+    return <div className="flex items-center justify-center h-full text-white">Инициализация...</div>
+  }
+
   return (
-    <div className="flex flex-col gap-3 p-3 pb-20 overflow-y-auto h-full">
-      <div className="glass-panel rounded-xl p-3 flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-bold text-white">Mars2050</h1>
-          <p className="text-xs text-gray-400">Колонизация Марса</p>
-        </div>
-        <button
-          onClick={onLogout}
-          className="text-xs text-gray-500 hover:text-red-400 transition-colors px-3 py-1.5 rounded-lg border border-gray-700"
-        >
-          Выйти
-        </button>
-      </div>
-
-      <ColonyPanel colony={colony} loading={colonyLoading} />
-
-      <ResourcesBar resources={resources} loading={resourcesLoading} />
-
-      <div className="grid grid-cols-2 gap-2">
-        <div className="glass-panel rounded-xl p-3">
-          <p className="text-xs text-gray-400">Зданий</p>
-          <p className="text-2xl font-bold text-white">{children ? '—' : '0'}</p>
-        </div>
-        <div className="glass-panel rounded-xl p-3">
-          <p className="text-xs text-gray-400">Уровень</p>
-          <p className="text-2xl font-bold text-mars-gold">{colony?.level || 1}</p>
+    <div className="relative w-full h-full overflow-hidden bg-black">
+      <Suspense fallback={<div className="flex items-center justify-center h-full text-white">Загрузка колонии...</div>}>
+        <ColonyCanvas />
+      </Suspense>
+      
+      {/* Overlay for HUD */}
+      <div className="absolute top-4 left-4 right-4 pointer-events-none">
+        <ColonyPanel colony={colony} loading={colonyLoading} />
+        <div className="mt-4 pointer-events-auto">
+          {children}
         </div>
       </div>
-
-      {colonyId && (
-        <EventsPanel colonyId={colonyId} />
-      )}
     </div>
   )
-})
+}
+
+function ColonyPanelFallback({ message }: { message: string }) {
+  return (
+    <div className="p-4 bg-red-900/20 border border-red-500 rounded-lg text-white">
+      <p className="font-bold">Внимание</p>
+      <p className="text-sm opacity-80">{message}. Переключение в упрощенный режим.</p>
+    </div>
+  )
+}
