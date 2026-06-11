@@ -41,6 +41,9 @@ export interface BuildingRow {
   name: string
   level: number
   is_active: boolean
+  x: number
+  y: number
+  group_id?: string | null
   created_at: string
   updated_at: string
 }
@@ -50,6 +53,9 @@ export interface BuildingCreateDTO {
   colonyId: string
   type: BuildingTypeKey
   name: string
+  x: number
+  y: number
+  group_id?: string
 }
 
 /** API response for building creation. */
