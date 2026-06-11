@@ -19,7 +19,13 @@ interface TelegramWebApp {
   lockOrientation: (orientation: 'portrait' | 'landscape') => void
 }
 
-export default function ColonyCanvas({ buildings }: { buildings: BuildingRow[] }) {
+export default function ColonyCanvas({ 
+  buildings, 
+  onBuildingClick 
+}: { 
+  buildings: BuildingRow[]
+  onBuildingClick: (building: BuildingRow) => void 
+}) {
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 })
   const containerRef = useRef<HTMLDivElement>(null)
 
@@ -81,7 +87,7 @@ export default function ColonyCanvas({ buildings }: { buildings: BuildingRow[] }
           }}
         >
           <DebugGrid />
-          <SpriteFactory buildings={buildings} />
+          <SpriteFactory buildings={buildings} onBuildingClick={onBuildingClick} />
         </pixiViewport>
       </Application>
     </div>

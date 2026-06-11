@@ -6,6 +6,7 @@ import { RENDER_LIMITS } from '@/domains/building/building.config'
 
 interface SpriteFactoryProps {
   buildings: BuildingRow[]
+  onBuildingClick: (building: BuildingRow) => void
 }
 
 // Temporary color mapping for placeholders
@@ -18,7 +19,7 @@ const TYPE_COLORS: Record<string, number> = {
   research_lab: 0x9370DB, // Medium Purple
 }
 
-export function SpriteFactory({ buildings }: SpriteFactoryProps) {
+export function SpriteFactory({ buildings, onBuildingClick }: SpriteFactoryProps) {
   const { TILE_WIDTH, TILE_HEIGHT } = RENDER_LIMITS
 
   // We use useMemo to avoid recreating the graphics array on every tiny render unless buildings change
@@ -57,10 +58,13 @@ export function SpriteFactory({ buildings }: SpriteFactoryProps) {
           y={pos.y}
           zIndex={zIndex}
           draw={drawPlaceholder}
+          eventMode="static"
+          cursor="pointer"
+          onpointerdown={() => onBuildingClick(building)}
         />
       )
     })
-  }, [buildings, TILE_WIDTH, TILE_HEIGHT])
+  }, [buildings, TILE_WIDTH, TILE_HEIGHT, onBuildingClick])
 
   return (
     <pixiContainer sortableChildren={true}>
