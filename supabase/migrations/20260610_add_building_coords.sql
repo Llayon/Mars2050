@@ -1,5 +1,6 @@
 -- Migration: Add spatial coordinates and grouping to buildings
 -- Phase 0 of Isometric UI Implementation
+-- Triggering native integration test
 
 ALTER TABLE public.buildings 
 ADD COLUMN x integer,
