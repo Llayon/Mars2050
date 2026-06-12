@@ -1,6 +1,6 @@
 'use client'
 
-import { memo, useState, useCallback } from 'react'
+import { memo, useState } from 'react'
 import { BUILDING_TYPES } from '@/domains/building/building.config'
 import type { BuildingTypeKey } from '@/domains/building/building.types'
 import type { ResourceRow } from '@/domains/resource/resource.types'
@@ -19,13 +19,12 @@ interface BuildingRow {
 
 interface BuildingsPanelProps {
   buildings: BuildingRow[]
-  colonyId: string
   resources: ResourceRow[]
   onBuild: (type: BuildingTypeKey) => Promise<void>
   onDemolish: (id: string) => Promise<void>
 }
 
-export const BuildingsPanel = memo(function BuildingsPanel({ buildings, colonyId, resources, onBuild, onDemolish }: BuildingsPanelProps) {
+export const BuildingsPanel = memo(function BuildingsPanel({ buildings, resources, onBuild, onDemolish }: BuildingsPanelProps) {
   const [showMenu, setShowMenu] = useState(false)
   const [building, setBuilding] = useState<string | null>(null)
   const [demolishTarget, setDemolishTarget] = useState<BuildingRow | null>(null)

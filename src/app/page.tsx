@@ -41,14 +41,14 @@ function GameUI() {
     if (x !== undefined && y !== undefined) {
       await buildStructure(type, x, y)
     } else {
-      if (isTWA) {
+      if (viewMode === 'isometric') {
         setPlacementMode(type)
-        setActiveTab('colony')
+        if (isTWA) setActiveTab('colony')
       } else {
         await buildStructure(type, 10, 10)
       }
     }
-  }, [buildStructure, isTWA])
+  }, [buildStructure, isTWA, viewMode])
   const handleDemolish = useCallback((id: string) => demolishBuilding(id), [demolishBuilding])
   const handleCreateTest = useCallback((id: string, type: string, dur: number) => createEvent(id, type, dur), [createEvent])
 
@@ -204,7 +204,6 @@ function GameUI() {
           <div className="lg:col-span-3">
             <BuildingsPanel
               buildings={buildings}
-              colonyId={colonyId!}
               resources={resources}
               onBuild={handleBuild}
               onDemolish={handleDemolish}

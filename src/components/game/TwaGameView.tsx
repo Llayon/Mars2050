@@ -34,7 +34,6 @@ export const TwaGameView = memo(function TwaGameView({
   colonyId,
   resources,
   resourcesLoading,
-  userEmail,
   buildings,
   onBuild,
   onDemolish,
@@ -57,7 +56,6 @@ export const TwaGameView = memo(function TwaGameView({
         return (
           <BuildingsPanel
             buildings={buildings}
-            colonyId={colonyId}
             resources={resources}
             onBuild={onBuild}
             onDemolish={onDemolish}

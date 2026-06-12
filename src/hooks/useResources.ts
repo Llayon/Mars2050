@@ -24,7 +24,7 @@ export function useResources(colonyId: string | null) {
       .then(data => { setResources(data); setError(null) })
       .catch(err => { console.error('useResources error:', err); setError(String(err)) })
       .finally(() => { if (mountedRef.current) setLoading(false) })
-  }, [fetchResources])
+  }, [fetchResources, colonyId])
   useEffect(() => { mountedRef.current = true; return () => { mountedRef.current = false } }, [])
 
   // Smooth client-side simulation between server updates

@@ -71,7 +71,7 @@ export function useEvents(colonyId: string | null): UseEventsReturn {
       .then(data => { setEvents(data); setError(null) })
       .catch(err => setError(err instanceof Error ? err.message : 'Unknown error'))
       .finally(() => { if (mountedRef.current) setLoading(false) })
-  }, [fetchEvents])
+  }, [fetchEvents, colonyId])
 
   // Realtime: insert → add event, update → sync fields, delete → remove
   useSubscription('events', colonyId, (payload) => {

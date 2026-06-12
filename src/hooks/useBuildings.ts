@@ -28,7 +28,7 @@ export function useBuildings(colonyId: string | null) {
       .then(data => { setBuildings(data); setError(null) })
       .catch(err => setError(String(err)))
       .finally(() => setLoading(false))
-  }, [fetchBuildings])
+  }, [fetchBuildings, colonyId])
 
   // Realtime: sync buildings on INSERT/UPDATE/DELETE
   useSubscription('buildings', colonyId, (payload) => {

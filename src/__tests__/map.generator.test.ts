@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest'
 import { generateMarsMap, getDefaultMapConfig } from '@/domains/map/map.generator'
-import type { MapLocationType } from '@/domains/map/map.types'
 
 describe('map.generator', () => {
   it('generates the configured number of locations', () => {

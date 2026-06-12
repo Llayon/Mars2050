@@ -32,7 +32,7 @@ export function useColony(colonyId: string | null) {
       .then(data => { if (data) setColony(data); setError(null) })
       .catch(err => setError(String(err)))
       .finally(() => { if (mountedRef.current) setLoading(false) })
-  }, [fetchColony])
+  }, [fetchColony, colonyId])
 
   return { colony, loading, error, refetch: fetchColony }
 }

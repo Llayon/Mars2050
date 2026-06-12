@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, Suspense, lazy } from 'react'
+import { useState, Suspense, lazy, useCallback } from 'react'
 import { ColonyPanel } from '@/components/game/ColonyPanel'
 import { BuildingActionModal } from '@/components/game/BuildingActionModal'
 import type { Colony } from '@/domains/colony/colony.types'
@@ -31,26 +31,24 @@ interface ColonyScreenProps {
  * Falls back to traditional UI if WebGL is not supported.
  */
 export default function ColonyScreen({ 
-  colonyId, 
   colony, 
   colonyLoading, 
   buildings,
-  resources, 
-  resourcesLoading, 
   onLogout,
   onDemolish,
   placementMode,
   setPlacementMode,
   onBuild,
   children 
-}: ColonyScreenProps) {
+}: Omit<ColonyScreenProps, 'colonyId' | 'resources' | 'resourcesLoading'>) {
   const [selectedBuilding, setSelectedBuilding] = useState<BuildingRow | null>(null)
   
-  const handleConfirmPlacement = async (x: number, y: number) => {
+  const handleConfirmPlacement = useCallback(async (x: number, y: number) => {
     if (!placementMode || !onBuild) return
     await onBuild(placementMode, x, y)
     if (setPlacementMode) setPlacementMode(null)
-  }
+  }, [placementMode, onBuild, setPlacementMode])
+
   const [supportsWebGL] = useState<boolean | null>(() => {
     if (typeof window === 'undefined') return null
     try {

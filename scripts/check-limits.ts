@@ -31,7 +31,7 @@
 
 import { readdirSync, readFileSync, existsSync } from 'fs'
 import { execSync } from 'child_process'
-import { join, extname, relative, sep } from 'path'
+import { join, extname, relative } from 'path'
 
 // ─── CLI Arguments ─────────────────────────────────────────────
 const args = process.argv.slice(2)

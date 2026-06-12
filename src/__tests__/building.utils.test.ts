@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { updateResourceRate, PRODUCTION_TYPE } from '@/domains/building/building.utils'
+import { PRODUCTION_TYPE } from '@/domains/building/building.utils'
 
 describe('PRODUCTION_TYPE map', () => {
   it('maps every building type to a resource', () => {
