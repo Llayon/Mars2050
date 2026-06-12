@@ -35,8 +35,20 @@ function GameUI() {
   const [authMode, setAuthMode] = useState<'login' | 'register' | null>(null)
   const [activeTab, setActiveTab] = useState<TabId>('colony')
   const [viewMode, setViewMode] = useState<'classic' | 'isometric'>('isometric')
+  const [placementMode, setPlacementMode] = useState<BuildingTypeKey | null>(null)
 
-  const handleBuild = useCallback((type: BuildingTypeKey) => buildStructure(type), [buildStructure])
+  const handleBuild = useCallback(async (type: BuildingTypeKey, x?: number, y?: number) => {
+    if (x !== undefined && y !== undefined) {
+      await buildStructure(type, x, y)
+    } else {
+      if (isTWA) {
+        setPlacementMode(type)
+        setActiveTab('colony')
+      } else {
+        await buildStructure(type, 10, 10)
+      }
+    }
+  }, [buildStructure, isTWA])
   const handleDemolish = useCallback((id: string) => demolishBuilding(id), [demolishBuilding])
   const handleCreateTest = useCallback((id: string, type: string, dur: number) => createEvent(id, type, dur), [createEvent])
 
@@ -86,7 +98,10 @@ function GameUI() {
     resources,
     resourcesLoading,
     onLogout: logout,
-    onDemolish: handleDemolish
+    onDemolish: handleDemolish,
+    onBuild: handleBuild,
+    placementMode,
+    setPlacementMode
   }
 
   if (isTWA) {

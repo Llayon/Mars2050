@@ -42,7 +42,7 @@ export function useBuildings(colonyId: string | null) {
     }
   })
 
-  const buildStructure = useCallback(async (type: BuildingTypeKey) => {
+  const buildStructure = useCallback(async (type: BuildingTypeKey, x?: number, y?: number) => {
     if (!colonyId) return
     const config = BUILDING_TYPES[type]
     if (!config) throw new Error('Invalid building type')
@@ -50,7 +50,7 @@ export function useBuildings(colonyId: string | null) {
       const res = await fetch('/api/buildings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ colonyId, type, name: config.name })
+        body: JSON.stringify({ colonyId, type, name: config.name, x: x ?? 10, y: y ?? 10 })
       })
       if (!res.ok) {
         const data = await res.json()

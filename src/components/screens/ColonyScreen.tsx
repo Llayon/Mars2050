@@ -5,7 +5,7 @@ import { ColonyPanel } from '@/components/game/ColonyPanel'
 import { BuildingActionModal } from '@/components/game/BuildingActionModal'
 import type { Colony } from '@/domains/colony/colony.types'
 import type { ResourceRow } from '@/domains/resource/resource.types'
-import type { BuildingRow } from '@/domains/building/building.types'
+import type { BuildingRow, BuildingTypeKey } from '@/domains/building/building.types'
 
 // Lazy load the heavy PixiJS component
 const ColonyCanvas = lazy(() => import('./ColonyCanvas').catch(() => ({
@@ -21,6 +21,9 @@ interface ColonyScreenProps {
   resourcesLoading: boolean
   onLogout: () => void
   onDemolish: (id: string) => Promise<void>
+  placementMode?: BuildingTypeKey | null
+  setPlacementMode?: (type: BuildingTypeKey | null) => void
+  onBuild?: (type: BuildingTypeKey, x: number, y: number) => Promise<void>
   children?: React.ReactNode
 }
 /**
@@ -36,11 +39,18 @@ export default function ColonyScreen({
   resourcesLoading, 
   onLogout,
   onDemolish,
+  placementMode,
+  setPlacementMode,
+  onBuild,
   children 
 }: ColonyScreenProps) {
   const [selectedBuilding, setSelectedBuilding] = useState<BuildingRow | null>(null)
-  const [placementMode, setPlacementMode] = useState<any>(null)
-  const handleConfirmPlacement = (x: number, y: number) => {}
+  
+  const handleConfirmPlacement = async (x: number, y: number) => {
+    if (!placementMode || !onBuild) return
+    await onBuild(placementMode, x, y)
+    if (setPlacementMode) setPlacementMode(null)
+  }
   const [supportsWebGL] = useState<boolean | null>(() => {
     if (typeof window === 'undefined') return null
     try {
@@ -84,7 +94,7 @@ export default function ColonyScreen({
         <ColonyCanvas 
           buildings={buildings} 
           onBuildingClick={setSelectedBuilding} 
-          placementMode={placementMode}
+          placementMode={placementMode ?? null}
           onConfirmPlacement={handleConfirmPlacement}
         />
       </Suspense>
