@@ -34,6 +34,7 @@ function GameUI() {
 
   const [authMode, setAuthMode] = useState<'login' | 'register' | null>(null)
   const [activeTab, setActiveTab] = useState<TabId>('colony')
+  const [viewMode, setViewMode] = useState<'classic' | 'isometric'>('isometric')
 
   const handleBuild = useCallback((type: BuildingTypeKey) => buildStructure(type), [buildStructure])
   const handleDemolish = useCallback((id: string) => demolishBuilding(id), [demolishBuilding])
@@ -76,24 +77,23 @@ function GameUI() {
     )
   }
 
+  // Common props for ColonyScreen
+  const colonyScreenProps = {
+    colony,
+    colonyLoading,
+    colonyId: colonyId!,
+    buildings,
+    resources,
+    resourcesLoading,
+    onLogout: logout,
+    onDemolish: handleDemolish
+  }
+
   if (isTWA) {
     const renderScreen = () => {
       switch (activeTab) {
         case 'colony':
-          return (
-            <ColonyScreen
-              colony={colony}
-              colonyLoading={colonyLoading}
-              colonyId={colonyId!}
-              buildings={buildings}
-              resources={resources}
-              resourcesLoading={resourcesLoading}
-              onLogout={logout}
-              onDemolish={handleDemolish}
-            >
-              <p className="text-2xl font-bold text-white">{buildings.length}</p>
-            </ColonyScreen>
-          )
+          return <ColonyScreen {...colonyScreenProps} />
         case 'buildings':
           return (
             <BuildingsScreen
@@ -155,11 +155,36 @@ function GameUI() {
           <div className="lg:col-span-1 space-y-4">
             <ColonyPanel colony={colony} loading={colonyLoading} />
             <ResourcePanel resources={resources} loading={resourcesLoading} />
+            
+            <div className="bg-gray-800 p-4 rounded-lg shadow-lg">
+              <h3 className="text-white font-bold mb-2 text-sm opacity-80">Режим отображения</h3>
+              <div className="flex gap-2">
+                <button 
+                  onClick={() => setViewMode('isometric')}
+                  className={`flex-1 py-1.5 rounded text-[10px] font-bold transition-all border ${viewMode === 'isometric' ? 'bg-mars-orange border-mars-orange text-white shadow-[0_0_10px_rgba(255,107,0,0.4)]' : 'bg-gray-700 border-gray-600 text-gray-400 hover:bg-gray-650'}`}
+                >
+                  ИЗОМЕТРИЯ
+                </button>
+                <button 
+                  onClick={() => setViewMode('classic')}
+                  className={`flex-1 py-1.5 rounded text-[10px] font-bold transition-all border ${viewMode === 'classic' ? 'bg-mars-orange border-mars-orange text-white shadow-[0_0_10px_rgba(255,107,0,0.4)]' : 'bg-gray-700 border-gray-600 text-gray-400 hover:bg-gray-650'}`}
+                >
+                  КЛАССИКА
+                </button>
+              </div>
+            </div>
+
             <EventsPanel colonyId={colonyId!} onCreateTest={handleCreateTest} />
             <PvpPanel colonyId={colonyId!} onResult={(msg) => toast(msg, 'info')} />
           </div>
           <div className="lg:col-span-2">
-            <GameMapPanel colonyId={colonyId!} />
+            {viewMode === 'isometric' ? (
+              <div className="h-[600px] rounded-lg overflow-hidden border border-gray-700 shadow-2xl relative bg-black">
+                 <ColonyScreen {...colonyScreenProps} />
+              </div>
+            ) : (
+              <GameMapPanel colonyId={colonyId!} />
+            )}
           </div>
           <div className="lg:col-span-3">
             <BuildingsPanel

@@ -39,6 +39,8 @@ export default function ColonyScreen({
   children 
 }: ColonyScreenProps) {
   const [selectedBuilding, setSelectedBuilding] = useState<BuildingRow | null>(null)
+  const [placementMode, setPlacementMode] = useState<any>(null)
+  const handleConfirmPlacement = (x: number, y: number) => {}
   const [supportsWebGL] = useState<boolean | null>(() => {
     if (typeof window === 'undefined') return null
     try {
@@ -79,7 +81,12 @@ export default function ColonyScreen({
   return (
     <div className="relative w-full h-full overflow-hidden bg-black">
       <Suspense fallback={<div className="flex items-center justify-center h-full text-white">Загрузка колонии...</div>}>
-        <ColonyCanvas buildings={buildings} onBuildingClick={setSelectedBuilding} />
+        <ColonyCanvas 
+          buildings={buildings} 
+          onBuildingClick={setSelectedBuilding} 
+          placementMode={placementMode}
+          onConfirmPlacement={handleConfirmPlacement}
+        />
       </Suspense>
       
       {/* Overlay for HUD */}
