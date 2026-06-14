@@ -4,7 +4,7 @@ import * as PIXI from 'pixi.js'
 import { useEffect, useRef } from 'react'
 import { gridToScreen, screenToGrid } from '@/domains/building/building.isometric'
 import type { BuildingRow, BuildingTypeKey } from '@/domains/building/building.types'
-import { RENDER_LIMITS } from '@/domains/building/building.config'
+import { RENDER_LIMITS, BUILDING_TYPES } from '@/domains/building/building.config'
 import { ASSET_MANIFEST } from '@/components/colony/sprites/asset-manifest'
 
 const TYPE_COLORS: Record<string, number> = {
@@ -15,20 +15,25 @@ const TYPE_COLORS: Record<string, number> = {
 /** Refactored building drawer to reduce main component size. */
 function drawBuilding(b: BuildingRow, textures: Record<string, PIXI.Texture>) {
   const { TILE_WIDTH, TILE_HEIGHT } = RENDER_LIMITS
+  const bConfig = BUILDING_TYPES[b.type]
+  const bw = bConfig?.width || 1
+  const bh = bConfig?.height || 1
   const buildingCont = new PIXI.Container()
-  const pos = gridToScreen(b.x + 0.5, b.y + 0.5)
+  const pos = gridToScreen(b.x + bw / 2, b.y + bh / 2)
   buildingCont.x = pos.x; buildingCont.y = pos.y
-  buildingCont.zIndex = b.y * 100 + b.x
+  buildingCont.zIndex = (b.y + bh - 1) * 100 + (b.x + bw - 1)
   
   const texture = textures[b.type]
   if (texture) {
     const sprite = new PIXI.Sprite(texture)
     sprite.anchor.set(0.5, 0.85)
-    sprite.scale.set((TILE_WIDTH * 1.8) / sprite.width)
+    const targetWidth = TILE_WIDTH * bw * 1.5
+    sprite.scale.set(targetWidth / sprite.width)
     buildingCont.addChild(sprite)
   } else {
     const color = TYPE_COLORS[b.type] || 0xcccccc
-    const g = new PIXI.Graphics(), h = 30, w2 = TILE_WIDTH / 2, h2 = TILE_HEIGHT / 2
+    const h = 30 * Math.max(bw, bh), w2 = (TILE_WIDTH * bw) / 2, h2 = (TILE_HEIGHT * bh) / 2
+    const g = new PIXI.Graphics()
     g.ellipse(0, 0, w2 * 0.8, h2 * 0.8).fill({ color: 0x000000, alpha: 0.2 })
     g.moveTo(-w2, 0).lineTo(0, h2).lineTo(0, h2 - h).lineTo(-w2, -h).closePath().fill({ color, alpha: 0.6 })
     g.moveTo(w2, 0).lineTo(0, h2).lineTo(0, h2 - h).lineTo(w2, -h).closePath().fill({ color, alpha: 0.8 })
@@ -89,10 +94,21 @@ export default function ColonyCanvas({ buildings, onBuildingClick, placementMode
           const updateGhost = (e: PIXI.FederatedPointerEvent) => {
             if (!ghostGraphics) return
             const lp = world.toLocal(e.global); const sn = screenToGrid(lp.x, lp.y)
-            ghostGridX = sn.x; ghostGridY = sn.y; let v = sn.x >= 0 && sn.x < MAP_SIZE && sn.y >= 0 && sn.y < MAP_SIZE
-            if (v && buildings.some(b => b.x === sn.x && b.y === sn.y)) v = false
-            ghostValid = v; const pos = gridToScreen(sn.x + 0.5, sn.y + 0.5); ghostGraphics.x = pos.x; ghostGraphics.y = pos.y
-            const c = v ? 0x00ff00 : 0xff0000; const w2 = TILE_WIDTH / 2, h2 = TILE_HEIGHT / 2, h = 30
+            ghostGridX = sn.x; ghostGridY = sn.y;
+            const bConfig = BUILDING_TYPES[placementMode]
+            const bw = bConfig?.width || 1, bh = bConfig?.height || 1
+            let v = sn.x >= 0 && (sn.x + bw) <= MAP_SIZE && sn.y >= 0 && (sn.y + bh) <= MAP_SIZE
+            if (v) {
+              const overlap = buildings.some(b => {
+                const config = BUILDING_TYPES[b.type]
+                const ew = config?.width || 1, eh = config?.height || 1
+                return !(sn.x >= b.x + ew || sn.x + bw <= b.x || sn.y >= b.y + eh || sn.y + bh <= b.y)
+              })
+              if (overlap) v = false
+            }
+            ghostValid = v; const pos = gridToScreen(sn.x + bw / 2, sn.y + bh / 2)
+            ghostGraphics.x = pos.x; ghostGraphics.y = pos.y
+            const c = v ? 0x00ff00 : 0xff0000; const w2 = (TILE_WIDTH * bw) / 2, h2 = (TILE_HEIGHT * bh) / 2, h = 30 * Math.max(bw, bh)
             ghostGraphics.clear()
             ghostGraphics.moveTo(-w2, 0).lineTo(0, h2).lineTo(0, h2 - h).lineTo(-w2, -h).closePath().fill({ color: c, alpha: 0.3 })
             ghostGraphics.moveTo(w2, 0).lineTo(0, h2).lineTo(0, h2 - h).lineTo(w2, -h).closePath().fill({ color: c, alpha: 0.4 })
