@@ -1,14 +1,9 @@
 import { BuildingTypeKey } from '@/domains/building/building.types'
 
 /** 
- * Maps building types to sprite IDs (textures in the atlas).
- * Using colored rectangles as placeholders for Phase 1.
+ * Maps building types to asset paths.
  */
-export const AssetManifest: Record<BuildingTypeKey, string> = {
-  solar_panels: 'sprite_solar',
-  oxygen_generator: 'sprite_oxygen',
-  water_extractor: 'sprite_water',
-  mine: 'sprite_mine',
-  greenhouse: 'sprite_greenhouse',
-  research_lab: 'sprite_lab'
+export const ASSET_MANIFEST: Partial<Record<BuildingTypeKey, string>> = {
+  water_extractor: '/assets/buildings/water_extractor.png',
+  // oxygen_generator: '/assets/buildings/oxygen_generator.png', 
 }

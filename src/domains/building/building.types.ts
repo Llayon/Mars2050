@@ -2,13 +2,13 @@ import type { ResourceTypeKey } from '@/domains/resource/resource.types'
 
 /** Represents a building type definition with cost and production rates. */
 export interface BuildingType {
-  type: BuildingTypeKey
   name: string
-  baseCost: ResourceCost
-  baseProduction: ResourceProduction
-  baseConsumption: ResourceProduction
-  buildTime: number
+  cost: ResourceCost
+  production: ResourceProduction
+  consumption: ResourceProduction
   description: string
+  width: number
+  height: number
 }
 
 /** Keys for all available building types. */

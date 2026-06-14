@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { BUILDING_TYPES, BUILDING_PRODUCTION_MAP, BUILDING_CONSUMPTION_MAP } from '@/domains/building/building.config'
+import type { ResourceTypeKey } from '@/domains/resource/resource.types'
 
 describe('building.config', () => {
   it('every building type has a name', () => {
@@ -50,7 +51,7 @@ describe('building.config', () => {
   it('no building produces the same resource it consumes', () => {
     for (const [key, config] of Object.entries(BUILDING_TYPES)) {
       for (const [produced] of Object.entries(config.production)) {
-        expect(config.consumption[produced], `${key} produces and consumes ${produced}`).toBeUndefined()
+        expect(config.consumption[produced as ResourceTypeKey], `${key} produces and consumes ${produced}`).toBeUndefined()
       }
     }
   })
