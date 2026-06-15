@@ -6,7 +6,7 @@ export const BUILDING_TYPES: Record<BuildingTypeKey, BuildingType> = {
     name: 'Солнечные панели', cost: { minerals: 80, energy: 20 },
     production: { energy: 15 }, consumption: {},
     description: 'Генерирует энергию из солнечного света',
-    width: 1, height: 1
+    width: 3, height: 3
   },
   oxygen_generator: {
     name: 'Кислородный генератор', cost: { minerals: 100, energy: 50 },
@@ -24,13 +24,13 @@ export const BUILDING_TYPES: Record<BuildingTypeKey, BuildingType> = {
     name: 'Шахта', cost: { minerals: 150, energy: 40 },
     production: { minerals: 12 }, consumption: { energy: 10 },
     description: 'Добывает полезные ископаемые',
-    width: 1, height: 1
+    width: 2, height: 2
   },
   greenhouse: {
     name: 'Теплица', cost: { minerals: 100, water: 30 },
     production: { food: 6 }, consumption: { water: 4, energy: 3 },
     description: 'Выращивает еду для колонистов',
-    width: 1, height: 1
+    width: 3, height: 3
   },
   research_lab: {
     name: 'Исследовательская лаборатория', cost: { minerals: 200, energy: 80 },
