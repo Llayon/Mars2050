@@ -36,7 +36,13 @@ export const BUILDING_TYPES: Record<BuildingTypeKey, BuildingType> = {
     name: 'Исследовательская лаборатория', cost: { minerals: 200, energy: 80 },
     production: { research_points: 5 }, consumption: { energy: 15, water: 2 },
     description: 'Проводит научные исследования',
-    width: 1, height: 1
+    width: 2, height: 2
+  },
+  habitat: {
+    name: 'Жилой модуль', cost: { minerals: 150, energy: 30, water: 20 },
+    production: {}, consumption: { water: 5, energy: 10, food: 5 },
+    description: 'Обеспечивает жильем колонистов',
+    width: 2, height: 2
   }
 }
 
@@ -47,7 +53,8 @@ export const BUILDING_RESOURCE_MAP: Record<BuildingTypeKey, string> = {
   water_extractor: 'water',
   mine: 'minerals',
   greenhouse: 'food',
-  research_lab: 'research_points'
+  research_lab: 'research_points',
+  habitat: '' // Produces capacity, not a standard resource
 }
 
 /** Maps building type to its production rate. */
@@ -57,7 +64,8 @@ export const BUILDING_PRODUCTION_MAP: Record<BuildingTypeKey, number> = {
   water_extractor: 8,
   mine: 12,
   greenhouse: 6,
-  research_lab: 5
+  research_lab: 5,
+  habitat: 0
 }
 
 /** Maps building type to its consumption rate per resource. */
@@ -67,7 +75,8 @@ export const BUILDING_CONSUMPTION_MAP: Record<BuildingTypeKey, Record<string, nu
   water_extractor: { energy: 8 },
   mine: { energy: 10 },
   greenhouse: { water: 4, energy: 3 },
-  research_lab: { energy: 15, water: 2 }
+  research_lab: { energy: 15, water: 2 },
+  habitat: { water: 5, energy: 10, food: 5 }
 }
 
 /** Starting resources for a new colony. */

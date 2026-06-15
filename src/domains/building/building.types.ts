@@ -19,6 +19,7 @@ export type BuildingTypeKey =
   | 'mine'
   | 'greenhouse'
   | 'research_lab'
+  | 'habitat'
 
 /** Resource cost mapping (resource type → amount). */
 export type ResourceCost = Partial<Record<ResourceTypeKey, number>>
