@@ -20,7 +20,7 @@ function drawBuilding(b: BuildingRow, textures: Record<string, PIXI.Texture>) {
   const tex = textures[b.type]
   if (tex) {
     const s = new PIXI.Sprite(tex); s.anchor.set(0.5, 0.85)
-    s.scale.set((TILE_WIDTH * bw * 1.5) / s.width); cont.addChild(s)
+    s.scale.set((TILE_WIDTH * bw) / s.width); cont.addChild(s)
   } else {
     const c = TYPE_COLORS[b.type] || 0xcccccc, h = 30 * Math.max(bw, bh), w2 = (TILE_WIDTH * bw) / 2, h2 = (TILE_HEIGHT * bh) / 2, g = new PIXI.Graphics()
     g.ellipse(0, 0, w2 * 0.8, h2 * 0.8).fill({ color: 0x000000, alpha: 0.2 })

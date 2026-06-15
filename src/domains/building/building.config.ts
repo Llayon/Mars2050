@@ -6,7 +6,7 @@ export const BUILDING_TYPES: Record<BuildingTypeKey, BuildingType> = {
     name: 'Солнечные панели', cost: { minerals: 80, energy: 20 },
     production: { energy: 15 }, consumption: {},
     description: 'Генерирует энергию из солнечного света',
-    width: 3, height: 3
+    width: 1, height: 1
   },
   oxygen_generator: {
     name: 'Кислородный генератор', cost: { minerals: 100, energy: 50 },
@@ -18,31 +18,31 @@ export const BUILDING_TYPES: Record<BuildingTypeKey, BuildingType> = {
     name: 'Водяной насос', cost: { minerals: 120, energy: 60 },
     production: { water: 8 }, consumption: { energy: 8 },
     description: 'Добывает воду из марсианских льдов',
-    width: 2, height: 2
+    width: 1, height: 1
   },
   mine: {
     name: 'Шахта', cost: { minerals: 150, energy: 40 },
     production: { minerals: 12 }, consumption: { energy: 10 },
     description: 'Добывает полезные ископаемые',
-    width: 2, height: 2
+    width: 1, height: 1
   },
   greenhouse: {
     name: 'Теплица', cost: { minerals: 100, water: 30 },
     production: { food: 6 }, consumption: { water: 4, energy: 3 },
     description: 'Выращивает еду для колонистов',
-    width: 3, height: 3
+    width: 1, height: 1
   },
   research_lab: {
     name: 'Исследовательская лаборатория', cost: { minerals: 200, energy: 80 },
     production: { research_points: 5 }, consumption: { energy: 15, water: 2 },
     description: 'Проводит научные исследования',
-    width: 2, height: 2
+    width: 1, height: 1
   },
   habitat: {
     name: 'Жилой модуль', cost: { minerals: 150, energy: 30, water: 20 },
     production: {}, consumption: { water: 5, energy: 10, food: 5 },
     description: 'Обеспечивает жильем колонистов',
-    width: 2, height: 2
+    width: 1, height: 1
   }
 }
 
