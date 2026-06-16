@@ -33,7 +33,7 @@ export const ResourcesBar = memo(function ResourcesBar({ resources, loading }: R
             <span className="text-base leading-none">{RESOURCE_ICONS[r.type] || '❓'}</span>
             <div className="flex items-baseline gap-1">
               <span className="text-sm font-bold text-white tabular-nums">
-                {Math.floor(r.amount).toLocaleString()}
+                {Math.floor(r.amount).toLocaleString('ru-RU')}
               </span>
               <span className={`text-[10px] font-medium ${
                 (r.production_rate - r.consumption_rate) >= 0
@@ -41,7 +41,7 @@ export const ResourcesBar = memo(function ResourcesBar({ resources, loading }: R
                   : 'text-red-400'
               }`}>
                 {(r.production_rate - r.consumption_rate) >= 0 ? '+' : ''}
-                {(r.production_rate - r.consumption_rate).toFixed(1)}
+                {Math.round(r.production_rate - r.consumption_rate).toLocaleString('ru-RU')}
               </span>
             </div>
           </div>
