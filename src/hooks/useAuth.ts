@@ -37,6 +37,9 @@ export function useAuth() {
         isTWA: true,
         tgUser: telegram.tgUser ?? prev.tgUser,
       }))
+    } else if (!telegram.loading) {
+      // TWA detection finished (not a TWA or failed) — ensure loading is false
+      setState(prev => (prev.loading ? { ...prev, loading: false } : prev))
     }
   }, [telegram.colonyId, telegram.loading, telegram.error, telegram.isTWA, telegram.tgUser])
 
@@ -61,10 +64,9 @@ export function useAuth() {
 
   function formatError(err: unknown): string {
     const msg = String(err)
-    if (msg.includes('Failed to fetch') || msg.includes('NetworkError') || msg.includes('ERR_NAME_NOT_RESOLVED')) {
-      return 'Сервер Supabase недоступен. Возможно, проект приостановлен — восстановите его в дашборде Supabase.'
-    }
-    return msg
+    return msg.includes('Failed to fetch') || msg.includes('NetworkError') || msg.includes('ERR_NAME_NOT_RESOLVED')
+      ? 'Сервер Supabase недоступен. Возможно, проект приостановлен — восстановите его в дашборде Supabase.'
+      : msg
   }
 
   async function checkSession() {
@@ -77,7 +79,7 @@ export function useAuth() {
     } catch (error) {
       setState(prev => ({ ...prev, error: formatError(error) }))
     } finally {
-      setState(prev => ({ ...prev, loading: prev.isTWA ? prev.loading : false }))
+      setState(prev => ({ ...prev, loading: (prev.isTWA || telegram.loading) ? prev.loading : false }))
     }
   }
 
@@ -118,23 +120,20 @@ export function useAuth() {
   const login = useCallback(async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) {
-      if (error.message?.includes('Failed to fetch') || error.status === 0) {
-        throw new Error('Сервер Supabase недоступен. Возможно, проект приостановлен.')
-      }
+      const msg = error.message ?? ''
+      if (msg.includes('Failed to fetch') || error.status === 0) throw new Error('Сервер Supabase недоступен. Возможно, проект приостановлен.')
       throw error
     }
   }, [])
 
   const signup = useCallback(async (email: string, password: string) => {
     const { error } = await supabase.auth.signUp({
-      email,
-      password,
+      email, password,
       options: { emailRedirectTo: `${window.location.origin}/auth/callback` }
     })
     if (error) {
-      if (error.message?.includes('Failed to fetch') || error.status === 0) {
-        throw new Error('Ошибка подключения к серверу. Проверьте подключение к интернету.')
-      }
+      const msg = error.message ?? ''
+      if (msg.includes('Failed to fetch') || error.status === 0) throw new Error('Ошибка подключения к серверу. Проверьте подключение к интернету.')
       throw error
     }
   }, [])

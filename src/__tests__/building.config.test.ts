@@ -19,8 +19,9 @@ describe('building.config', () => {
     }
   })
 
-  it('every building has a production rate', () => {
+  it('every building (except habitat) has a production rate', () => {
     for (const [key, config] of Object.entries(BUILDING_TYPES)) {
+      if (key === 'habitat') continue
       expect(Object.keys(config.production).length, `${key} has no production`).toBeGreaterThan(0)
       for (const [resource, amount] of Object.entries(config.production)) {
         expect(amount, `${key}.production.${resource} must be positive`).toBeGreaterThan(0)

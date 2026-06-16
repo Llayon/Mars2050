@@ -25,7 +25,7 @@ import { ProfileScreen } from '@/components/screens/ProfileScreen'
 import type { BuildingTypeKey } from '@/domains/building/building.types'
 
 function GameUI() {
-  const { user, colonyId, loading, login, signup, logout, isTWA } = useAuth()
+  const { user, colonyId, loading, error: authError, login, signup, logout, isTWA } = useAuth()
   const { colony, loading: colonyLoading } = useColony(colonyId)
   const { resources, loading: resourcesLoading } = useResources(colonyId)
   const { buildings, buildStructure, demolishBuilding } = useBuildings(colonyId)
@@ -60,6 +60,28 @@ function GameUI() {
     )
   }
 
+  // In TWA context — never show email auth form
+  if (isTWA && !user && !colonyId) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-900 text-white">
+        <div className="text-center p-6">
+          {authError ? (
+            <>
+              <p className="text-xl mb-2">Ошибка аутентификации</p>
+              <p className="text-sm text-red-400 mb-4">{authError}</p>
+              <p className="text-xs text-gray-500">Закройте и откройте Mini App заново</p>
+            </>
+          ) : (
+            <>
+              <p className="text-xl mb-2">Загрузка Mars2050...</p>
+              <p className="text-sm text-gray-400">Аутентификация через Telegram</p>
+            </>
+          )}
+        </div>
+      </div>
+    )
+  }
+
   if (!user && !colonyId) {
     return (
       <div className="min-h-screen bg-gray-900 text-white">
@@ -78,13 +100,7 @@ function GameUI() {
             </div>
           </div>
         </main>
-        <AuthModal
-          open={authMode !== null}
-          onClose={() => setAuthMode(null)}
-          mode={authMode || 'login'}
-          onModeSwitch={setAuthMode}
-          onSubmit={authMode === 'login' ? login : signup}
-        />
+        <AuthModal open={authMode !== null} onClose={() => setAuthMode(null)} mode={authMode || 'login'} onModeSwitch={setAuthMode} onSubmit={authMode === 'login' ? login : signup} />
       </div>
     )
   }
