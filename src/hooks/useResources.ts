@@ -1,58 +1,71 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import useSWR from 'swr'
 import type { ResourceRow } from '@/domains/resource/resource.types'
 import { useSubscription } from './useSubscription'
 
+const fetcher = async (url: string) => {
+  const res = await fetch(url)
+  const data = await res.json()
+  if (!res.ok) throw new Error(data.error || 'Failed to fetch resources')
+  return data.resources ?? []
+}
+
 export function useResources(colonyId: string | null) {
-  const [resources, setResources] = useState<ResourceRow[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const mountedRef = useRef(true)
+  const { data: serverResources, mutate, error, isLoading } = useSWR<ResourceRow[]>(
+    colonyId ? `/api/resources?colonyId=${colonyId}` : null,
+    fetcher,
+    { refreshInterval: 60000 }
+  )
 
-  const fetchResources = useCallback(async () => {
-    if (!colonyId) return []
-    const res = await fetch(`/api/resources?colonyId=${colonyId}`)
-    const data = await res.json()
-    if (!res.ok) throw new Error(data.error || 'Failed to fetch resources')
-    return data.resources ?? []
-  }, [colonyId])
+  const [displayResources, setDisplayResources] = useState<ResourceRow[]>([])
+  const exactAmountsRef = useRef<Record<string, number>>({})
 
   useEffect(() => {
-    if (!colonyId) return
-    fetchResources()
-      .then(data => { setResources(data); setError(null) })
-      .catch(err => { console.error('useResources error:', err); setError(String(err)) })
-      .finally(() => { if (mountedRef.current) setLoading(false) })
-  }, [fetchResources, colonyId])
-  useEffect(() => { mountedRef.current = true; return () => { mountedRef.current = false } }, [])
-
-  // Smooth client-side simulation between server updates
-  useEffect(() => {
-    if (resources.length === 0) return
-    const interval = setInterval(() => {
-      setResources(prev =>
-        prev.map(r => ({ ...r, amount: r.amount + (r.production_rate - r.consumption_rate) / 720 }))
-      )
-    }, 5000)
-    return () => clearInterval(interval)
-  }, [resources.length])
-
-  // Realtime: sync from server when resources recalculated
-  useSubscription('resources', colonyId, (payload) => {
-    if (payload.eventType === 'UPDATE' || payload.eventType === 'INSERT') {
-      const updated = payload.new as unknown as ResourceRow
-      setResources(prev => {
-        const idx = prev.findIndex(r => r.id === updated.id)
-        if (idx >= 0) {
-          const next = [...prev]
-          next[idx] = updated
-          return next
-        }
-        return [...prev, updated]
+    if (serverResources) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setDisplayResources(serverResources.map(r => ({ ...r, amount: Math.floor(r.amount) })))
+      const newExact: Record<string, number> = {}
+      serverResources.forEach(r => {
+        newExact[r.type] = r.amount
       })
+      exactAmountsRef.current = newExact
     }
-  })
+  }, [serverResources])
 
-  return { resources, loading, error, refetch: fetchResources }
+  useEffect(() => {
+    if (!serverResources || serverResources.length === 0) return
+    const timer = setInterval(() => {
+      let hasChanges = false
+
+      serverResources.forEach(r => {
+        const netRatePerHour = r.production_rate - r.consumption_rate
+        if (netRatePerHour === 0) return
+        const ratePerSec = netRatePerHour / 3600
+        const currentExact = exactAmountsRef.current[r.type] ?? r.amount
+        const nextExact = currentExact + ratePerSec
+        
+        if (Math.floor(nextExact) !== Math.floor(currentExact)) {
+          hasChanges = true
+        }
+        exactAmountsRef.current[r.type] = nextExact
+      })
+
+      if (hasChanges) {
+        setDisplayResources(prev => prev.map(r => {
+          const currentExact = exactAmountsRef.current[r.type]
+          if (currentExact !== undefined && Math.floor(currentExact) !== r.amount) {
+            return { ...r, amount: Math.floor(currentExact) }
+          }
+          return r
+        }))
+      }
+    }, 1000)
+    return () => clearInterval(timer)
+  }, [serverResources])
+
+  useSubscription('resources', colonyId, () => { mutate() })
+
+  return { resources: displayResources, loading: isLoading, error, mutate, refetch: mutate }
 }
