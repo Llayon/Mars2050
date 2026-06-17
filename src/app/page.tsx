@@ -15,6 +15,7 @@ import { BuildingsPanel } from '@/components/game/BuildingsPanel'
 import { EventsPanel } from '@/components/game/EventsPanel'
 import { LeaderboardPanel } from '@/components/game/LeaderboardPanel'
 import { PvpPanel } from '@/components/game/PvpPanel'
+import { ArmyPanel } from '@/components/game/ArmyPanel'
 import { BottomNav } from '@/components/screens/BottomNav'
 import type { TabId } from '@/components/screens/BottomNav'
 import ColonyScreen from '@/components/screens/ColonyScreen'
@@ -145,7 +146,7 @@ function GameUI() {
             />
           )
         case 'operations':
-          return <OperationsScreen colonyId={colonyId!} />
+          return <OperationsScreen colonyId={colonyId!} resources={resources} />
         case 'profile':
           return (
             <ProfileScreen
@@ -207,6 +208,7 @@ function GameUI() {
 
             <EventsPanel colonyId={colonyId!} onCreateTest={handleCreateTest} />
             <PvpPanel colonyId={colonyId!} onResult={(msg) => toast(msg, 'info')} />
+            <ArmyPanel colonyId={colonyId!} resources={resources} />
           </div>
           <div className="lg:col-span-2">
             {viewMode === 'isometric' ? (
