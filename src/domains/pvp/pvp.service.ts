@@ -1,4 +1,7 @@
 import { getServerClient } from '@/domains/resource/resource.server'
+import { simulateBattle } from '@/domains/combat/combat.engine'
+import type { UnitRow } from '@/domains/combat/combat.types'
+import type { BattleTick } from '@/domains/combat/combat.engine'
 
 /**
  * Execute a trade between two colonies.
@@ -83,62 +86,117 @@ export async function executeTrade(
 }
 
 /**
- * Execute an attack between two colonies.
- * Compares attacker power vs defender resources, returns stolen resources on win.
+ * Execute an attack between two colonies using the new combat engine.
  * @param attackerColonyId - Attacking colony ID
  * @param defenderColonyId - Defending colony ID
- * @param unitCount - Number of units the attacker sends
  * @returns Combat result with stolen resources on success
  */
 export async function executeAttack(
   attackerColonyId: string,
-  defenderColonyId: string,
-  unitCount: number
-): Promise<{ success: boolean; error?: string; message?: string; stolen?: Record<string, number> }> {
+  defenderColonyId: string
+): Promise<{ 
+  success: boolean; 
+  error?: string; 
+  message?: string; 
+  stolen?: Record<string, number>;
+  logs?: BattleTick[];
+  attackerUnits?: UnitRow[];
+  defenderUnits?: UnitRow[];
+}> {
   const supabase = getServerClient()
 
-  const { data: defenderResources } = await supabase
-    .from('resources')
-    .select('type, amount')
-    .eq('colony_id', defenderColonyId)
+  // 1. Fetch units for both sides
+  const { data: attackerUnits } = await supabase.from('units').select('*').eq('colony_id', attackerColonyId)
+  const { data: defenderUnits } = await supabase.from('units').select('*').eq('colony_id', defenderColonyId)
 
-  if (!defenderResources) {
-    return { success: false, error: 'Failed to fetch defender resources' }
+  if (!attackerUnits || attackerUnits.length === 0) {
+    return { success: false, error: 'У вас нет армии для атаки!' }
   }
 
-  const attackerPower = unitCount * 10
-  const defenderPower = defenderResources.reduce((sum: number, r: { amount: number }) => sum + r.amount, 0) / 100
-  const attackerWins = attackerPower > defenderPower
+  // 2. Simulate battle
+  const battleResult = simulateBattle(attackerUnits as UnitRow[], (defenderUnits || []) as UnitRow[])
 
-  if (attackerWins) {
-    const stolen: Record<string, number> = {}
-    for (const r of defenderResources) {
-      const amount = Math.floor(r.amount * 0.1)
-      stolen[r.type] = amount
-      await supabase
-        .from('resources')
-        .update({ amount: Math.max(0, r.amount - amount) })
-        .eq('colony_id', defenderColonyId)
-        .eq('type', r.type)
+  // 3. Delete dead units from the database
+  const deadAttackerIds = attackerUnits
+    .filter(u => !battleResult.survivors.some(s => s.id === u.id))
+    .map(u => u.id)
+  const deadDefenderIds = (defenderUnits || [])
+    .filter(u => !battleResult.survivors.some(s => s.id === u.id))
+    .map(u => u.id)
 
-      const { data: attackerRes } = await supabase
-        .from('resources')
-        .select('amount')
-        .eq('colony_id', attackerColonyId)
-        .eq('type', r.type)
-        .single()
+  const allDeadIds = [...deadAttackerIds, ...deadDefenderIds]
+  if (allDeadIds.length > 0) {
+    await supabase.from('units').delete().in('id', allDeadIds)
+  }
 
-      if (attackerRes) {
-        await supabase
-          .from('resources')
-          .update({ amount: attackerRes.amount + amount })
-          .eq('colony_id', attackerColonyId)
-          .eq('type', r.type)
+  // 4. Update HP for survivors (optional, but good for persistence)
+  for (const survivor of battleResult.survivors) {
+    if (survivor.hp < survivor.maxHp) {
+      await supabase.from('units').update({ hp_current: survivor.hp }).eq('id', survivor.id)
+    }
+  }
+
+  // 5. Handle resources if attacker wins
+  let stolen: Record<string, number> = {}
+  if (battleResult.winner === 'attacker') {
+    const { data: defenderResources } = await supabase
+      .from('resources')
+      .select('type, amount')
+      .eq('colony_id', defenderColonyId)
+
+    if (defenderResources) {
+      for (const r of defenderResources) {
+        const amount = Math.floor(r.amount * 0.1) // Steal 10%
+        if (amount > 0) {
+          stolen[r.type] = amount
+          await supabase
+            .from('resources')
+            .update({ amount: Math.max(0, r.amount - amount) })
+            .eq('colony_id', defenderColonyId)
+            .eq('type', r.type)
+
+          const { data: attackerRes } = await supabase
+            .from('resources')
+            .select('amount')
+            .eq('colony_id', attackerColonyId)
+            .eq('type', r.type)
+            .single()
+
+          if (attackerRes) {
+            await supabase
+              .from('resources')
+              .update({ amount: attackerRes.amount + amount })
+              .eq('colony_id', attackerColonyId)
+              .eq('type', r.type)
+          }
+        }
       }
     }
-
-    return { success: true, message: 'Атака успешна! Ресурсы захвачены.', stolen }
   }
 
-  return { success: false, message: 'Атака отбита! Вы потеряли часть армии.' }
+  // 6. Save battle log
+  await supabase.from('battles').insert({
+    attacker_colony_id: attackerColonyId,
+    defender_colony_id: defenderColonyId,
+    winner: battleResult.winner,
+    attacker_units: attackerUnits,
+    defender_units: defenderUnits || [],
+    battle_log: battleResult.logs,
+    rewards: stolen
+  })
+
+  const winMsg = battleResult.winner === 'attacker' 
+    ? 'Атака успешна! Враг разбит, ресурсы захвачены.' 
+    : battleResult.winner === 'defender'
+      ? 'Атака провалилась! Защитники отбились.'
+      : 'Ничья! Обе стороны понесли тяжелые потери.'
+
+  return { 
+    success: true, 
+    message: winMsg, 
+    stolen,
+    logs: battleResult.logs,
+    attackerUnits,
+    defenderUnits: defenderUnits || []
+  }
 }

@@ -176,6 +176,7 @@ function checkLineLimits(dir: string, changedFiles?: Set<string>) {
     if (!['.ts', '.tsx'].includes(extname(entry.name))) continue
 
     const rel = relPath(fullPath)
+    if (rel === 'types/database.ts') continue // Ignore auto-generated schema types
     if (changedFiles && !changedFiles.has(`src/${rel}`)) continue
 
     const { type, limit } = classifyFile(rel)

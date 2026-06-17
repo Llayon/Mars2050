@@ -8,7 +8,7 @@ export function usePvp(colonyId: string | null) {
   const [trading, setTrading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  async function attack(defenderColonyId: string, unitCount: number): Promise<AttackResult | null> {
+  async function attack(defenderColonyId: string): Promise<AttackResult | null> {
     if (!colonyId) return null
 
     setAttacking(true)
@@ -18,7 +18,7 @@ export function usePvp(colonyId: string | null) {
       const res = await fetch('/api/pvp/attack', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ attackerColonyId: colonyId, defenderColonyId, unitCount })
+        body: JSON.stringify({ attackerColonyId: colonyId, defenderColonyId })
       })
 
       const data = await res.json()

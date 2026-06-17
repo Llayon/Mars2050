@@ -72,18 +72,8 @@ describe('pvp.schemas', () => {
     const result = attackSchema.safeParse({
       attackerColonyId: '550e8400-e29b-41d4-a716-446655440000',
       defenderColonyId: '550e8400-e29b-41d4-a716-446655440001',
-      unitCount: 10
     })
     expect(result.success).toBe(true)
-  })
-
-  it('attackSchema rejects zero units', () => {
-    const result = attackSchema.safeParse({
-      attackerColonyId: '550e8400-e29b-41d4-a716-446655440000',
-      defenderColonyId: '550e8400-e29b-41d4-a716-446655440001',
-      unitCount: 0
-    })
-    expect(result.success).toBe(false)
   })
 
   it('tradeSchema validates required fields', () => {

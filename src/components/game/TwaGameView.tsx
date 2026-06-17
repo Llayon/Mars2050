@@ -9,6 +9,7 @@ import { BuildingsPanel } from './BuildingsPanel'
 import { EventsPanel } from './EventsPanel'
 import { PvpPanel } from './PvpPanel'
 import { LeaderboardPanel } from './LeaderboardPanel'
+import { ArmyPanel } from './ArmyPanel'
 import type { ResourceRow } from '@/domains/resource/resource.types'
 import type { Colony } from '@/domains/colony/colony.types'
 import type { BuildingTypeKey, BuildingRow } from '@/domains/building/building.types'
@@ -61,6 +62,8 @@ export const TwaGameView = memo(function TwaGameView({
             onDemolish={onDemolish}
           />
         )
+      case 'army':
+        return <ArmyPanel colonyId={colonyId} resources={resources} />
       case 'map':
         return <GameMapPanel colonyId={colonyId} />
       case 'events':

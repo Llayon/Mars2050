@@ -234,6 +234,75 @@ export interface Database {
           created_at?: string
         }
       }
+      units: {
+        Row: {
+          id?: string
+          colony_id: string
+          unit_type: UnitsType
+          tier?: number
+          upgrade_path?: string[]
+          hp_current: number
+          grid_x?: string
+          grid_y?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Insert: {
+          colony_id: string
+          unit_type: UnitsType
+          tier?: number
+          upgrade_path?: string[]
+          hp_current: number
+          grid_x?: string
+          grid_y?: string
+        }
+        Update: {
+          colony_id?: string
+          unit_type?: UnitsType
+          tier?: number
+          upgrade_path?: string[]
+          hp_current?: number
+          grid_x?: string
+          grid_y?: string
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      battles: {
+        Row: {
+          id?: string
+          attacker_colony_id: string
+          defender_colony_id: string
+          winner?: BattlesType
+          attacker_units: Record<string, unknown>
+          defender_units: Record<string, unknown>
+          battle_log: Record<string, unknown>
+          rewards?: Record<string, unknown>
+          trophies_change?: Record<string, unknown>
+          created_at?: string
+        }
+        Insert: {
+          attacker_colony_id: string
+          defender_colony_id: string
+          winner?: BattlesType
+          attacker_units: Record<string, unknown>
+          defender_units: Record<string, unknown>
+          battle_log: Record<string, unknown>
+          rewards?: Record<string, unknown>
+          trophies_change?: Record<string, unknown>
+        }
+        Update: {
+          attacker_colony_id?: string
+          defender_colony_id?: string
+          winner?: BattlesType
+          attacker_units?: Record<string, unknown>
+          defender_units?: Record<string, unknown>
+          battle_log?: Record<string, unknown>
+          rewards?: Record<string, unknown>
+          trophies_change?: Record<string, unknown>
+          created_at?: string
+        }
+      }
     }
   }
 }
@@ -242,3 +311,5 @@ export type ResourcesType = 'oxygen' | 'water' | 'energy' | 'minerals' | 'food' 
 export type MapLocationsType = 'plains' | 'mountains' | 'canyon' | 'crater' | 'ice_cap'
 export type EventsType = 'dust_storm' | 'meteor_shower' | 'anomaly_discovered' | 'resource_vein' | 'cold_wave' | 'solar_flare'
 export type PendingEventsType = 'building_complete' | 'attack_arrive' | 'attack_return' | 'research_complete'
+export type UnitsType = 'marine' | 'exosuit' | 'sniper' | 'medic' | 'rocketeer' | 'engineer'
+export type BattlesType = 'attacker' | 'defender' | 'draw'

@@ -11,6 +11,7 @@ interface Tab {
 const TABS: Tab[] = [
   { id: 'resources', label: 'Ресурсы', icon: '📦' },
   { id: 'buildings', label: 'Стройка', icon: '🏗' },
+  { id: 'army', label: 'Армия', icon: '🛡️' },
   { id: 'map', label: 'Карта', icon: '🗺' },
   { id: 'events', label: 'События', icon: '⚠️' },
   { id: 'pvp', label: 'PvP', icon: '⚔️' },

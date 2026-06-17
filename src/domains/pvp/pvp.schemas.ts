@@ -3,7 +3,6 @@ import { z } from 'zod'
 export const attackSchema = z.object({
   attackerColonyId: z.string().uuid('Invalid attacker colony ID'),
   defenderColonyId: z.string().uuid('Invalid defender colony ID'),
-  unitCount: z.number().int().min(1, 'Must send at least 1 unit').max(1000)
 })
 
 export const tradeSchema = z.object({
