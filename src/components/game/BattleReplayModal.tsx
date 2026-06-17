@@ -57,8 +57,10 @@ export const BattleReplayModal = memo(function BattleReplayModal({
 
       function createUnit(u: UnitRow, team: 'attacker' | 'defender') {
         const c = new Container()
-        c.x = OFFSET_X + (u.grid_x ?? (team === 'attacker' ? 0 : 6)) * TILE_W
-        c.y = OFFSET_Y + (u.grid_y ?? 0) * TILE_H
+        const gridX = u.grid_x !== null && u.grid_x !== undefined ? u.grid_x : (team === 'attacker' ? 0 : 6)
+        const gridY = u.grid_y !== null && u.grid_y !== undefined ? u.grid_y : 0
+        c.x = OFFSET_X + Number(gridX) * TILE_W
+        c.y = OFFSET_Y + Number(gridY) * TILE_H
         
         const bg = new Graphics()
         bg.circle(TILE_W/2, TILE_H/2, 30)
@@ -77,6 +79,7 @@ export const BattleReplayModal = memo(function BattleReplayModal({
 
         app.stage.addChild(c)
 
+        if (!u.id) return
         unitSprites[u.id] = { container: c, bg, text, hpText, hp: u.hp_current }
       }
 

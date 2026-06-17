@@ -64,7 +64,7 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
     const config = UNIT_TYPES[u.unit_type as keyof typeof UNIT_TYPES]
     if (!config) return
     units.push({
-      id: u.id,
+      id: u.id!,
       team: 'attacker',
       type: u.unit_type,
       hp: u.hp_current,
@@ -73,8 +73,8 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
       defense: config.baseStats.defense,
       speed: config.baseStats.speed,
       range: config.baseStats.range,
-      x: u.grid_x ?? 0,
-      y: u.grid_y ?? 0,
+      x: u.grid_x != null ? Number(u.grid_x) : 0,
+      y: u.grid_y != null ? Number(u.grid_y) : 0,
       isDead: false
     })
   })
@@ -84,7 +84,7 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
     const config = UNIT_TYPES[u.unit_type as keyof typeof UNIT_TYPES]
     if (!config) return
     units.push({
-      id: u.id,
+      id: u.id!,
       team: 'defender',
       type: u.unit_type,
       hp: u.hp_current,
@@ -93,8 +93,8 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
       defense: config.baseStats.defense,
       speed: config.baseStats.speed,
       range: config.baseStats.range,
-      x: u.grid_x ?? 6,
-      y: u.grid_y ?? 0,
+      x: u.grid_x != null ? Number(u.grid_x) : 6,
+      y: u.grid_y != null ? Number(u.grid_y) : 0,
       isDead: false
     })
   })

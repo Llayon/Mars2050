@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
       return apiValidationError(parsed.error.flatten())
     }
 
-    const result = await hireUnit(colony.id, parsed.data.unitType)
+    const result = await hireUnit(colony.colonyId, parsed.data.unitType)
 
     if (!result.success) {
       return apiError('BAD_REQUEST', result.error || 'Failed to hire unit')

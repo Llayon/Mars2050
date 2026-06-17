@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
       return apiValidationError(parsed.error.flatten())
     }
 
-    const result = await dismissUnit(colony.id, parsed.data.unitId)
+    const result = await dismissUnit(colony.colonyId, parsed.data.unitId)
 
     if (!result.success) {
       return apiError('BAD_REQUEST', result.error || 'Failed to dismiss unit')

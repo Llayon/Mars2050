@@ -125,7 +125,7 @@ export const ArmyPanel = memo(function ArmyPanel({ colonyId, resources }: ArmyPa
                 </div>
                 
                 <button
-                  onClick={() => handleDismiss(unit.id, config?.name || unit.unit_type)}
+                  onClick={() => handleDismiss(unit.id!, config?.name || unit.unit_type)}
                   className="bg-red-900/50 hover:bg-red-800 text-red-300 px-3 py-1.5 rounded transition-colors text-xs ml-4 whitespace-nowrap"
                 >
                   Уволить

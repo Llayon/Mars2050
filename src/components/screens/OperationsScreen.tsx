@@ -4,6 +4,7 @@ import { memo, useState } from 'react'
 import { useEvents } from '@/hooks/useEvents'
 import { usePvp } from '@/hooks/usePvp'
 import { useToast } from '@/components/ui/toast'
+import { BattleReplayModal } from '@/components/game/BattleReplayModal'
 
 interface OperationsScreenProps {
   colonyId: string | null
@@ -18,12 +19,13 @@ export const OperationsScreen = memo(function OperationsScreen({ colonyId }: Ope
   const { toast } = useToast()
 
   const [targetId, setTargetId] = useState('')
-  const [units, setUnits] = useState(10)
+  const [replayData, setReplayData] = useState<any>(null)
 
   async function handleAttack() {
     if (!targetId.trim() || !colonyId) return
-    const result = await attack(targetId.trim(), units)
+    const result = await attack(targetId.trim())
     if (result?.message) toast(result.message, result.message.includes('успешна') ? 'success' : 'error')
+    if (result?.logs && result?.attackerUnits) setReplayData(result)
   }
 
   const getEventEmoji = (type: string) => {
@@ -127,30 +129,27 @@ export const OperationsScreen = memo(function OperationsScreen({ colonyId }: Ope
                   />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-400 mb-1 block">Количество юнитов</label>
-                  <div className="flex gap-2">
-                    <input
-                      type="number"
-                      min={1}
-                      max={1000}
-                      value={units}
-                      onChange={e => setUnits(Number(e.target.value))}
-                      className="flex-1 bg-black/30 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-mars-red"
-                    />
-                    <button
-                      onClick={handleAttack}
-                      disabled={attacking || !targetId.trim() || !colonyId}
-                      className="bg-red-600 hover:bg-red-700 disabled:opacity-50 px-5 py-2 rounded-lg text-sm font-medium transition-colors"
-                    >
-                      {attacking ? '...' : 'Атака'}
-                    </button>
-                  </div>
+                  <button
+                    onClick={handleAttack}
+                    disabled={attacking || !targetId.trim() || !colonyId}
+                    className="w-full bg-red-600 hover:bg-red-700 disabled:opacity-50 px-5 py-2 rounded-lg text-sm font-medium transition-colors"
+                  >
+                    {attacking ? 'Атака в процессе...' : 'Начать атаку всей армией'}
+                  </button>
                 </div>
               </div>
             </div>
           </div>
         )}
       </div>
+      {replayData && (
+        <BattleReplayModal
+          attackerUnits={replayData.attackerUnits}
+          defenderUnits={replayData.defenderUnits}
+          logs={replayData.logs}
+          onClose={() => setReplayData(null)}
+        />
+      )}
     </div>
   )
 })
