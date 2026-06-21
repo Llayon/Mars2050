@@ -53,6 +53,12 @@ export function generateMarsMap(config: MapConfig): Omit<MapLocation, 'id'>[] {
       resources[resource] = Math.floor(Math.random() * 100 * multiplier) + 10
     }
 
+    // 25% chance to have an alien nest
+    if (Math.random() < 0.25) {
+      resources['_alien_nest'] = 1
+      resources['_cleared'] = 0
+    }
+
     locations.push({
       name,
       type,

@@ -17,7 +17,22 @@ export async function createBuilding(dto: BuildingCreateDTO): Promise<BuildingRe
     return { building: null, error: 'Invalid building type', status: 400 }
   }
 
-  // 1. Check if colony has enough resources
+  // 1. Check if cell is already occupied
+  if (dto.x !== undefined && dto.y !== undefined) {
+    const { data: existingAtCoords } = await supabase
+      .from('buildings')
+      .select('id')
+      .eq('colony_id', dto.colonyId)
+      .eq('x', dto.x)
+      .eq('y', dto.y)
+      .limit(1)
+
+    if (existingAtCoords && existingAtCoords.length > 0) {
+      return { building: null, error: 'Клетка уже занята другим зданием', status: 400 }
+    }
+  }
+
+  // 2. Check if colony has enough resources
   const { data: resources, error: resourcesError } = await supabase
     .from('resources')
     .select('type, amount')
@@ -43,20 +58,42 @@ export async function createBuilding(dto: BuildingCreateDTO): Promise<BuildingRe
     }
   }
 
-  // 2. Deduct building cost
+  // 3. Deduct building cost with Optimistic Concurrency Control
+  const deductedResources: string[] = []
+  let deductionFailed = false
+
   for (const [resourceType, cost] of Object.entries(config.cost)) {
     const currentAmount = resourceMap[resourceType] || 0
     const newAmount = currentAmount - cost
 
-    const { error: updateError } = await supabase
+    const { data: updated, error: updateError } = await supabase
       .from('resources')
       .update({ amount: Math.max(0, newAmount) })
       .eq('colony_id', dto.colonyId)
       .eq('type', resourceType)
+      .eq('amount', currentAmount) // OCC to prevent race conditions
+      .select('id')
 
-    if (updateError) {
-      console.error('Failed to deduct resource:', resourceType, updateError)
+    if (updateError || !updated || updated.length === 0) {
+      console.error('Failed to deduct resource (race condition):', resourceType)
+      deductionFailed = true
+      break
     }
+    deductedResources.push(resourceType)
+  }
+
+  if (deductionFailed) {
+    // Rollback successful deductions
+    for (const resType of deductedResources) {
+      const cost = config.cost[resType as keyof typeof config.cost]
+      const current = resourceMap[resType] || 0
+      await supabase
+        .from('resources')
+        .update({ amount: current })
+        .eq('colony_id', dto.colonyId)
+        .eq('type', resType)
+    }
+    return { building: null, error: 'Транзакция отменена: ресурсы были изменены другим процессом. Попробуйте снова.', status: 409 }
   }
 
   // 3. Create building record

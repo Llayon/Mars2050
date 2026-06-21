@@ -7,6 +7,7 @@ import type { ResourceRow } from '@/domains/resource/resource.types'
 import { RESOURCE_NAMES } from '@/domains/resource/resource.types'
 import { useCombat } from '@/hooks/useCombat'
 import { useToast } from '@/components/ui/toast'
+import { DeploymentBoard } from './DeploymentBoard'
 
 interface ArmyPanelProps {
   colonyId: string
@@ -14,10 +15,23 @@ interface ArmyPanelProps {
 }
 
 export const ArmyPanel = memo(function ArmyPanel({ colonyId, resources }: ArmyPanelProps) {
-  const { units, isLoading, hireUnit, dismissUnit } = useCombat(colonyId)
+  const { units, isLoading, hireUnit, dismissUnit, saveGarrison } = useCombat(colonyId)
   const [showMenu, setShowMenu] = useState(false)
+  const [showDeployment, setShowDeployment] = useState(false)
   const [isHiring, setIsHiring] = useState<string | null>(null)
   const { toast } = useToast()
+
+  async function handleSaveDeployment(placement: { unitId: string, x: number, y: number }[]) {
+    try {
+      const res = await saveGarrison(placement)
+      if (res.error) throw new Error(res.error)
+      toast('Расстановка сохранена!', 'success')
+      setShowDeployment(false)
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Ошибка сохранения'
+      toast(msg, 'error')
+    }
+  }
 
   async function handleHire(type: UnitTypeKey) {
     const config = UNIT_TYPES[type]
@@ -64,16 +78,32 @@ export const ArmyPanel = memo(function ArmyPanel({ colonyId, resources }: ArmyPa
     <div className="bg-gray-800 p-4 rounded-lg shadow-lg">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-bold text-white">Армия ({units.length})</h2>
-        <button onClick={() => setShowMenu(!showMenu)} className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded text-sm text-white">
-          {showMenu ? 'Отмена' : '+ Нанять'}
-        </button>
+        <div className="space-x-2">
+          <button onClick={() => setShowDeployment(true)} className="bg-purple-600 hover:bg-purple-700 px-3 py-2 rounded text-sm text-white">
+            Расстановка
+          </button>
+          <button onClick={() => setShowMenu(!showMenu)} className="bg-blue-600 hover:bg-blue-700 px-3 py-2 rounded text-sm text-white">
+            {showMenu ? 'Отмена' : '+ Нанять'}
+          </button>
+        </div>
       </div>
+
+      {showDeployment && (
+        <DeploymentBoard 
+          units={units} 
+          mode="defense" 
+          onSave={handleSaveDeployment} 
+          onCancel={() => setShowDeployment(false)} 
+        />
+      )}
 
       {showMenu && (
         <div className="mb-4 bg-gray-700 p-3 rounded-md">
           <h3 className="font-semibold mb-2 text-white">Доступные классы:</h3>
           <div className="space-y-2">
-            {Object.entries(UNIT_TYPES).map(([type, config]) => {
+            {Object.entries(UNIT_TYPES)
+              .filter(([_, config]) => Object.keys(config.hireCost).length > 0)
+              .map(([type, config]) => {
               const canAfford = Object.entries(config.hireCost).every(([k, v]) => {
                 const res = resources.find(r => r.type === k)
                 return res && res.amount >= v

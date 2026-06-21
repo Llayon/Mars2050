@@ -87,7 +87,10 @@ export function useTelegramAuth(): TelegramAuthState {
     })
 
     const data = await res.json()
-    if (!res.ok) throw new Error(data.error || 'Telegram auth failed')
+    if (!res.ok) {
+      const errorMsg = data.error?.message || data.error || 'Telegram auth failed'
+      throw new Error(typeof errorMsg === 'string' ? errorMsg : JSON.stringify(errorMsg))
+    }
 
     // Establish real Supabase session so RLS reads and realtime work
     if (data.email && data.password) {

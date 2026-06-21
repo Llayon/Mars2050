@@ -1,7 +1,7 @@
 import { getServerClient } from '@/domains/resource/resource.server'
 import { simulateBattle } from '@/domains/combat/combat.engine'
 import type { UnitRow } from '@/domains/combat/combat.types'
-import type { BattleTick } from '@/domains/combat/combat.engine'
+import type { BattleTick } from '@/domains/combat/combat.types'
 
 /**
  * Execute a trade between two colonies.
@@ -93,7 +93,8 @@ export async function executeTrade(
  */
 export async function executeAttack(
   attackerColonyId: string,
-  defenderColonyId: string
+  defenderColonyId: string,
+  attackerUnitsPlacement?: { unitId: string, x: number, y: number }[]
 ): Promise<{ 
   success: boolean; 
   error?: string; 
@@ -111,6 +112,18 @@ export async function executeAttack(
 
   if (!attackerUnits || attackerUnits.length === 0) {
     return { success: false, error: 'У вас нет армии для атаки!' }
+  }
+
+  // Override attacker unit coordinates with placement data if provided
+  if (attackerUnitsPlacement && attackerUnitsPlacement.length > 0) {
+    const placementMap = new Map(attackerUnitsPlacement.map(p => [p.unitId, p]))
+    for (const u of attackerUnits) {
+      const p = placementMap.get(u.id)
+      if (p) {
+        u.grid_x = p.x
+        u.grid_y = p.y
+      }
+    }
   }
 
   // 2. Simulate battle
@@ -181,7 +194,7 @@ export async function executeAttack(
     winner: battleResult.winner,
     attacker_units: attackerUnits,
     defender_units: defenderUnits || [],
-    battle_log: battleResult.logs,
+    battle_log: [],
     rewards: stolen
   })
 

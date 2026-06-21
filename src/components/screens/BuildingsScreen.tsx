@@ -1,6 +1,6 @@
 'use client'
 
-import { memo, useState, useCallback } from 'react'
+import { memo, useState, useCallback, useRef } from 'react'
 import { BUILDING_TYPES } from '@/domains/building/building.config'
 import type { BuildingTypeKey, BuildingRow } from '@/domains/building/building.types'
 import type { ResourceRow } from '@/domains/resource/resource.types'
@@ -34,7 +34,10 @@ export const BuildingsScreen = memo(function BuildingsScreen({
   const [demolishTarget, setDemolishTarget] = useState<BuildingRow | null>(null)
   const { toast } = useToast()
 
+  const isBuildingRef = useRef(false)
+
   const handleBuild = useCallback(async (type: BuildingTypeKey) => {
+    if (isBuildingRef.current) return
     const config = BUILDING_TYPES[type]
     if (!config) return
     const canAfford = Object.entries(config.cost).every(([k, v]) => {
@@ -45,6 +48,7 @@ export const BuildingsScreen = memo(function BuildingsScreen({
       toast('Недостаточно ресурсов', 'error')
       return
     }
+    isBuildingRef.current = true
     setBuilding(type)
     try {
       await onBuild(type)
@@ -53,10 +57,11 @@ export const BuildingsScreen = memo(function BuildingsScreen({
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Ошибка строительства'
       toast(msg, 'error')
+      isBuildingRef.current = false // Only unlock on error
     } finally {
       setBuilding(null)
     }
-  }, [resources, onBuild, toast])
+  }, [onBuild, toast, setBuilding, setShowBuildMenu])
 
   const handleDemolish = useCallback(async () => {
     if (!demolishTarget) return

@@ -9,8 +9,8 @@ export async function POST(request: Request) {
     const parsed = attackSchema.safeParse(await request.json())
     if (!parsed.success) return apiValidationError(parsed.error.flatten())
 
-    const { attackerColonyId, defenderColonyId } = parsed.data
-    const result = await executeAttack(attackerColonyId, defenderColonyId)
+    const { attackerColonyId, defenderColonyId, attackerUnitsPlacement } = parsed.data
+    const result = await executeAttack(attackerColonyId, defenderColonyId, attackerUnitsPlacement)
 
     if (result.error) return apiError('BAD_REQUEST', result.error)
     return NextResponse.json(result)

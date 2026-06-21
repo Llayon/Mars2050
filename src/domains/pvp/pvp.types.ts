@@ -1,4 +1,4 @@
-import type { BattleTick } from '@/domains/combat/combat.engine'
+import type { BattleTick } from '@/domains/combat/combat.types'
 import type { UnitRow } from '@/domains/combat/combat.types'
 
 export interface AttackResult {

@@ -8,6 +8,7 @@ import { RESOURCE_NAMES } from '@/domains/resource/resource.types'
 import { LOCATION_COLORS, LOCATION_LABELS } from '@/domains/map/map.config'
 import type { MapLocation } from '@/domains/map/map.types'
 import type { ResourceRow } from '@/domains/resource/resource.types'
+import { BattleReplayModal } from '@/components/game/BattleReplayModal'
 
 interface MapScreenProps {
   colonyId: string
@@ -20,6 +21,7 @@ export const MapScreen = memo(function MapScreen({ colonyId, resources, resource
   const { toast } = useToast()
   const [selected, setSelected] = useState<MapLocation | null>(null)
   const [exploring, setExploring] = useState(false)
+  const [replayData, setReplayData] = useState<any | null>(null)
 
   async function handleDiscover(locationId: string) {
     setExploring(true)
@@ -87,15 +89,61 @@ export const MapScreen = memo(function MapScreen({ colonyId, resources, resource
                 </p>
                 {selected.is_discovered ? (
                   <div className="mt-2">
-                    <span className="text-xs text-green-400">✅ Исследовано</span>
-                    {selected.resources && typeof selected.resources === 'object' && (
-                      <div className="mt-1.5 flex flex-wrap gap-1">
-                        {Object.entries(selected.resources).map(([k, v]) => (
-                          <span key={k} className="text-[10px] bg-mars-teal/20 text-mars-teal px-2 py-0.5 rounded">
-                            {RESOURCE_NAMES[k] || k}: {String(v)}
-                          </span>
-                        ))}
+                    {selected.resources && typeof selected.resources === 'object' && ('_alien_nest' in selected.resources) && selected.resources['_cleared'] === 0 ? (
+                      <div className="bg-red-900/40 p-3 rounded-lg border border-red-500/50 mt-2">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-xl">🐛</span>
+                          <span className="text-sm font-bold text-red-400">Вражеское гнездо!</span>
+                        </div>
+                        <p className="text-[10px] text-gray-300 mb-3">Зачистите территорию, чтобы получить доступ к ресурсам.</p>
+                        <button
+                          onClick={async () => {
+                            if (exploring) return
+                            setExploring(true)
+                            try {
+                              const res = await fetch('/api/map/attack', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ colonyId, locationId: selected.id })
+                              })
+                              const data = await res.json()
+                              if (data.error) throw new Error(data.error.message || data.error)
+                              
+                              setReplayData({
+                                attackerUnits: data.attackerUnits,
+                                defenderUnits: data.defenderUnits,
+                                logs: data.logs,
+                                message: data.message
+                              })
+                              // Map automatically updates via Realtime
+                            } catch (e: any) {
+                              toast(e.message, 'error')
+                            } finally {
+                              setExploring(false)
+                            }
+                          }}
+                          disabled={exploring}
+                          className="w-full bg-red-600 hover:bg-red-500 py-2 rounded text-white text-xs font-bold transition-colors disabled:opacity-50"
+                        >
+                          {exploring ? 'Атака...' : '⚔️ Атаковать гнездо'}
+                        </button>
                       </div>
+                    ) : (
+                      <>
+                        <span className="text-xs text-green-400">✅ Исследовано</span>
+                        {selected.resources && typeof selected.resources === 'object' && (
+                          <div className="mt-1.5 flex flex-wrap gap-1">
+                            {Object.entries(selected.resources).map(([k, v]) => {
+                              if (k.startsWith('_')) return null
+                              return (
+                                <span key={k} className="text-[10px] bg-mars-teal/20 text-mars-teal px-2 py-0.5 rounded">
+                                  {RESOURCE_NAMES[k] || k}: {String(v)}
+                                </span>
+                              )
+                            })}
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
                 ) : (
@@ -117,6 +165,18 @@ export const MapScreen = memo(function MapScreen({ colonyId, resources, resource
           </>
         )}
       </div>
+      
+      {replayData && (
+        <BattleReplayModal
+          attackerUnits={replayData.attackerUnits}
+          defenderUnits={replayData.defenderUnits}
+          logs={replayData.logs}
+          onClose={() => {
+            if (replayData.message) toast(replayData.message, 'success')
+            setReplayData(null)
+          }}
+        />
+      )}
     </div>
   )
 })

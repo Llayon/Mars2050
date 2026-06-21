@@ -29,7 +29,7 @@ export function useCombat(colonyId: string | null) {
       const res = await fetch('/api/combat/hire', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ unitType })
+        body: JSON.stringify({ colonyId, unitType })
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error?.message || data.error || 'Failed to hire')
@@ -46,10 +46,27 @@ export function useCombat(colonyId: string | null) {
       const res = await fetch('/api/combat/dismiss', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ unitId })
+        body: JSON.stringify({ colonyId, unitId })
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error?.message || data.error || 'Failed to dismiss')
+      await mutate()
+      return { success: true }
+    } catch (e: any) {
+      return { error: e.message }
+    }
+  }
+
+  const saveGarrison = async (units: { unitId: string, x: number, y: number }[]) => {
+    if (!colonyId) return { error: 'No colony ID' }
+    try {
+      const res = await fetch('/api/combat/garrison', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ colonyId, units })
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error?.message || data.error || 'Failed to save garrison')
       await mutate()
       return { success: true }
     } catch (e: any) {
@@ -63,6 +80,7 @@ export function useCombat(colonyId: string | null) {
     isError: error,
     hireUnit,
     dismissUnit,
+    saveGarrison,
     refetch: mutate
   }
 }

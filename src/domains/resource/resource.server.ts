@@ -5,7 +5,10 @@ const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PU
 
 export function getServerClient(): SupabaseClient {
   return createClient(supabaseUrl, supabaseKey, {
-    auth: { persistSession: false, autoRefreshToken: false }
+    auth: { persistSession: false, autoRefreshToken: false },
+    global: {
+      fetch: (...args) => fetch(args[0], { ...args[1], cache: 'no-store' })
+    }
   })
 }
 

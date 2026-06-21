@@ -10,8 +10,8 @@ describe('combat.engine', () => {
         colony_id: 'c1',
         unit_type: 'exosuit', // high hp, high attack
         hp_current: 120,
-        grid_x: 0,
-        grid_y: 0,
+        grid_x: '0',
+        grid_y: '0',
         tier: 1,
         upgrade_path: [],
       }
@@ -23,8 +23,8 @@ describe('combat.engine', () => {
         colony_id: 'c2',
         unit_type: 'marine', // low hp, low attack
         hp_current: 40,
-        grid_x: 6,
-        grid_y: 0,
+        grid_x: '6',
+        grid_y: '0',
         tier: 1,
         upgrade_path: [],
       }
@@ -54,8 +54,8 @@ describe('combat.engine', () => {
         colony_id: 'c1',
         unit_type: 'marine',
         hp_current: 4000, // impossible to kill
-        grid_x: 0,
-        grid_y: 0,
+        grid_x: '0',
+        grid_y: '0',
         tier: 1,
         upgrade_path: [],
       }
@@ -67,8 +67,8 @@ describe('combat.engine', () => {
         colony_id: 'c2',
         unit_type: 'marine',
         hp_current: 4000, // impossible to kill
-        grid_x: 6,
-        grid_y: 0,
+        grid_x: '6',
+        grid_y: '0',
         tier: 1,
         upgrade_path: [],
       }

@@ -30,5 +30,34 @@ export const UNIT_TYPES: Record<UnitTypeKey, UnitTypeConfig> = {
     name: 'Инженер',
     hireCost: { minerals: 50, energy: 30, research_points: 40 },
     baseStats: { hp: 60, attack: 8, defense: 4, speed: 5, range: 3, attackType: 'single' }
+  },
+  wall: {
+    name: 'Стена',
+    hireCost: { minerals: 100 },
+    baseStats: { hp: 500, attack: 0, defense: 15, speed: 0, range: 0, attackType: 'single' }
+  },
+  turret: {
+    name: 'Авто-турель',
+    hireCost: { minerals: 150, energy: 50 },
+    baseStats: { hp: 200, attack: 20, defense: 5, speed: 0, range: 6, attackType: 'single' }
+  },
+  alien_bug: {
+    name: 'Марсианский жук',
+    hireCost: {}, // Unbuildable
+    baseStats: { hp: 50, attack: 15, defense: 3, speed: 10, range: 1, attackType: 'single' }
+  },
+  alien_spitter: {
+    name: 'Кислотный плевун',
+    hireCost: {},
+    baseStats: { hp: 40, attack: 20, defense: 2, speed: 6, range: 4, attackType: 'single' }
+  },
+  alien_worm: {
+    name: 'Песчаный червь',
+    hireCost: {},
+    baseStats: { hp: 250, attack: 35, defense: 8, speed: 4, range: 1, attackType: 'aoe', aoeRadius: 2 }
   }
 }
+
+export const GRID_WIDTH = 10
+export const GRID_HEIGHT = 18
+export const MAX_TICKS = 400

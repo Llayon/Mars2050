@@ -6,6 +6,7 @@ import { usePvp } from '@/hooks/usePvp'
 import { useToast } from '@/components/ui/toast'
 import { BattleReplayModal } from '@/components/game/BattleReplayModal'
 import { ArmyPanel } from '@/components/game/ArmyPanel'
+import { BattleHistoryPanel } from '@/components/game/BattleHistoryPanel'
 import type { ResourceRow } from '@/domains/resource/resource.types'
 
 interface OperationsScreenProps {
@@ -13,7 +14,7 @@ interface OperationsScreenProps {
   resources: ResourceRow[]
 }
 
-type OpsTab = 'events' | 'pvp' | 'army'
+type OpsTab = 'events' | 'pvp' | 'army' | 'history'
 
 export const OperationsScreen = memo(function OperationsScreen({ colonyId, resources }: OperationsScreenProps) {
   const [activeTab, setActiveTab] = useState<OpsTab>('events')
@@ -54,7 +55,7 @@ export const OperationsScreen = memo(function OperationsScreen({ colonyId, resou
       </div>
 
       <div className="flex gap-1 px-3 pt-2">
-        {(['events', 'pvp', 'army'] as const).map(tab => (
+        {(['events', 'pvp', 'army', 'history'] as const).map(tab => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -64,12 +65,17 @@ export const OperationsScreen = memo(function OperationsScreen({ colonyId, resou
                 : 'text-gray-500 hover:text-gray-300'
             }`}
           >
-            {tab === 'events' ? '⚠️ События' : tab === 'pvp' ? '⚔️ PvP' : '🛡️ Армия'}
+            {tab === 'events' ? '⚠️ События' : tab === 'pvp' ? '⚔️ PvP' : tab === 'army' ? '🛡️ Армия' : '📜 Отчеты'}
           </button>
         ))}
       </div>
 
       <div className="flex-1 overflow-y-auto p-3 pb-24">
+        {activeTab === 'history' && (
+          <div className="mt-2">
+            <BattleHistoryPanel colonyId={colonyId!} />
+          </div>
+        )}
         {activeTab === 'army' && (
           <div className="mt-2">
             <ArmyPanel colonyId={colonyId!} resources={resources} />

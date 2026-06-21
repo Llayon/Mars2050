@@ -56,12 +56,10 @@ export function useEvents(colonyId: string | null): UseEventsReturn {
     }
   }, [colonyId, processing])
 
-  // Poll for pending events every 30 seconds
+  // Fetch pending events once on mount, then rely on Realtime
   useEffect(() => {
     if (!colonyId) return
     setTimeout(() => processNow(), 0)
-    const interval = setInterval(processNow, 30_000)
-    return () => { clearInterval(interval) }
   }, [colonyId, processNow])
 
   useEffect(() => { mountedRef.current = true; return () => { mountedRef.current = false } }, [])

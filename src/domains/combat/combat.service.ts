@@ -103,3 +103,22 @@ export async function dismissUnit(colonyId: string, unitId: string) {
 
   return { success: true, message: 'Юнит уволен, ресурсы частично возвращены' }
 }
+
+/**
+ * Sets the defensive garrison positions for a colony.
+ */
+export async function setGarrison(colonyId: string, unitsPlacement: { unitId: string, x: number, y: number }[]) {
+  const supabase = getServerClient()
+
+  // Validate ownership and update coordinates
+  // Note: we update them sequentially for simplicity. In production with many units, an RPC or bulk update is better.
+  for (const placement of unitsPlacement) {
+    await supabase
+      .from('units')
+      .update({ grid_x: placement.x, grid_y: placement.y })
+      .eq('id', placement.unitId)
+      .eq('colony_id', colonyId)
+  }
+
+  return { success: true, message: 'Гарнизон расставлен!' }
+}

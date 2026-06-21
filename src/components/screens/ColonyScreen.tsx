@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, Suspense, lazy, useCallback } from 'react'
+import { useState, Suspense, lazy, useCallback, useRef } from 'react'
 import { ColonyPanel } from '@/components/game/ColonyPanel'
 import { BuildingActionModal } from '@/components/game/BuildingActionModal'
 import type { Colony } from '@/domains/colony/colony.types'
@@ -42,11 +42,27 @@ export default function ColonyScreen({
   children 
 }: Omit<ColonyScreenProps, 'colonyId' | 'resources' | 'resourcesLoading'>) {
   const [selectedBuilding, setSelectedBuilding] = useState<BuildingRow | null>(null)
+  const isBuildingRef = useRef(false)
   
   const handleConfirmPlacement = useCallback(async (x: number, y: number) => {
+    if (isBuildingRef.current) return
     if (!placementMode || !onBuild) return
-    await onBuild(placementMode, x, y)
-    if (setPlacementMode) setPlacementMode(null)
+    
+    isBuildingRef.current = true
+    const currentMode = placementMode
+    if (setPlacementMode) setPlacementMode(null) // clear synchronously to prevent double click
+    
+    try {
+      await onBuild(currentMode, x, y)
+      // Do NOT reset isBuildingRef here!
+      // If it succeeded, placementMode becomes null in the UI.
+      // We want this function locked forever for this closure.
+      // The parent will re-render and pass a NEW handleConfirmPlacement 
+      // with a NEW isBuildingRef.current = false if they re-enter placement mode.
+    } catch (e) {
+      if (setPlacementMode) setPlacementMode(currentMode) // restore if failed
+      isBuildingRef.current = false // Only unlock if it failed, so they can try again
+    }
   }, [placementMode, onBuild, setPlacementMode])
 
   const [supportsWebGL] = useState<boolean | null>(() => {

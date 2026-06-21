@@ -120,26 +120,30 @@ export async function discoverLocation(
     }
   }
 
-  // 5. Calculate and grant resource rewards
+  // 5. Determine if it's an alien nest (30% chance for diff > 1, 10% for diff 1)
+  const isNest = Math.random() < (location.difficulty > 1 ? 0.3 : 0.1)
   const locationResources = location.resources as Record<string, number> || {}
   const rewards: Record<string, number> = {}
 
-  for (const [resourceType, multiplier] of Object.entries(locationResources)) {
-    // Resources in location are ~10-200 range (generated as base * multiplier)
-    // Scale down to reasonable reward amounts
-    const reward = Math.round(multiplier * EXPLORATION_BASE_REWARD / 100)
-    if (reward > 0) {
-      rewards[resourceType] = reward
+  if (isNest) {
+    locationResources['_alien_nest'] = 1
+    locationResources['_cleared'] = 0
+  } else {
+    // 5. Calculate and grant resource rewards
+    for (const [resourceType, multiplier] of Object.entries(locationResources)) {
+      if (resourceType.startsWith('_')) continue
+      const reward = Math.round(multiplier * EXPLORATION_BASE_REWARD / 100)
+      if (reward > 0) {
+        rewards[resourceType] = reward
 
-      const currentAmount = resourceMap[resourceType] || 0
-      const { error: rewardError } = await supabase
-        .from('resources')
-        .update({ amount: currentAmount + reward })
-        .eq('colony_id', colonyId)
-        .eq('type', resourceType)
+        const currentAmount = resourceMap[resourceType] || 0
+        const { error: rewardError } = await supabase
+          .from('resources')
+          .update({ amount: currentAmount + reward })
+          .eq('colony_id', colonyId)
+          .eq('type', resourceType)
 
-      if (rewardError) {
-        console.error('Failed to grant reward:', resourceType, rewardError)
+        if (rewardError) console.error('Failed to grant reward:', resourceType, rewardError)
       }
     }
   }
@@ -149,15 +153,12 @@ export async function discoverLocation(
     .from('map_locations')
     .update({
       is_discovered: true,
-      discovered_by: colonyId
+      discovered_by: colonyId,
+      resources: locationResources
     })
     .eq('id', locationId)
     .select()
     .single()
 
-  if (updateError) {
-    return { location: null, rewards: null, error: updateError.message }
-  }
-
-  return { location: updatedLocation, rewards, error: null }
+  return { location: updatedLocation, rewards: isNest ? {} : rewards, error: null }
 }

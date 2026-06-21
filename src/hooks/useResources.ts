@@ -15,8 +15,7 @@ const fetcher = async (url: string) => {
 export function useResources(colonyId: string | null) {
   const { data: serverResources, mutate, error, isLoading } = useSWR<ResourceRow[]>(
     colonyId ? `/api/resources?colonyId=${colonyId}` : null,
-    fetcher,
-    { refreshInterval: 60000 }
+    fetcher
   )
 
   const [displayResources, setDisplayResources] = useState<ResourceRow[]>([])
