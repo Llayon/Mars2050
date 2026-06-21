@@ -180,6 +180,16 @@ export const BattleReplayModal = memo(function BattleReplayModal({ attackerUnits
                   updateHp(tg)
                   s.c.scale.set(1.2); setTimeout(() => { if (!s.c.destroyed) s.c.scale.set(1) }, 150)
                 }
+              
+              } else if (a.type === 'spawn') {
+                createU({
+                  id: a.targetId || a.unitId + '_spawn_' + tick,
+                  unit_type: a.spawnType || 'turret',
+                  hp_current: a.spawnMaxHp || 200,
+                  grid_x: String(a.toX),
+                  grid_y: String(a.toY)
+                } as unknown as import('@/domains/combat/combat.types').UnitRow, (a.spawnTeam || s.team) as 'attacker' | 'defender')
+                spawnTxt('SPAWN', a.toX! * TILE_SIZE + TILE_SIZE/2, a.toY! * TILE_SIZE + TILE_SIZE/2, 0x00aaff)
               } else if (a.type === 'die') {
                 s.c.alpha = 0.3; s.hpBar.clear()
                 s.c.addChild(new Graphics().moveTo(-10, -10).lineTo(10, 10).moveTo(10, -10).lineTo(-10, 10).stroke({ color: 0x0, width: 3 }))

@@ -10,8 +10,9 @@ export interface UnitBaseStats {
   defense: number
   speed: number
   range: number
-  attackType: 'single' | 'aoe' | 'heal'
+  attackType: 'single' | 'aoe' | 'heal' | 'spawn'
   aoeRadius?: number
+  actionCooldownMax?: number
 }
 
 export interface UnitTypeConfig {
@@ -32,15 +33,17 @@ export interface SimUnit {
   defense: number
   speed: number
   range: number
-  attackType: 'single' | 'aoe' | 'heal'
+  attackType: 'single' | 'aoe' | 'heal' | 'spawn'
   aoeRadius?: number
+  actionCooldownMax: number
+  actionCooldown: number
   x: number
   y: number
   isDead: boolean
   moveTimer?: number
 }
 
-export type BattleActionType = 'move' | 'attack' | 'heal' | 'die'
+export type BattleActionType = 'move' | 'attack' | 'heal' | 'die' | 'spawn'
 
 export interface BattleAction {
   unitId: string
@@ -51,6 +54,9 @@ export interface BattleAction {
   fromY?: number
   toX?: number
   toY?: number
+  spawnType?: string
+  spawnTeam?: Team
+  spawnMaxHp?: number
 }
 
 export interface BattleTick {
