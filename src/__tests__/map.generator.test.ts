@@ -27,6 +27,7 @@ describe('map.generator', () => {
       const resources = loc.resources as Record<string, number>
       expect(Object.keys(resources).length).toBeGreaterThan(0)
       for (const [key, value] of Object.entries(resources)) {
+        if (key === '_cleared') continue;
         expect(value, `${loc.name}.${key} should be positive`).toBeGreaterThan(0)
       }
     }

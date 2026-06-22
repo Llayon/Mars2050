@@ -181,7 +181,7 @@ export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
           s.c.alpha = 0.3; s.hpBar.alpha = 0
           if (s.s) s.s.tint = 0x555555
         } else if (a.type === 'spawn') {
-          createU({ id: a.targetId!, unit_type: a.spawnType!, grid_x: a.toX!, grid_y: a.toY!, hp_current: a.spawnMaxHp!, colony_id: '1', tier: 1, upgrade_path: [] }, a.spawnTeam as 'attacker'|'defender', false)
+          createU({ id: a.targetId!, unit_type: a.spawnType! as UnitTypeKey, grid_x: String(a.toX!), grid_y: String(a.toY!), hp_current: a.spawnMaxHp!, colony_id: '1', tier: 1, upgrade_path: [] }, a.spawnTeam as 'attacker'|'defender', false)
           const newS = sprites[a.targetId!]
           if (newS) { newS.sX = a.toX!; newS.sY = a.toY!; newS.tX = a.toX!; newS.tY = a.toY!; }
         }

@@ -110,6 +110,8 @@ export function actionSystem(unit: SimUnit, target: SimUnit, units: SimUnit[], a
        actionCooldown: 0,
        isFlying: turretConfig.baseStats.isFlying || false,
        canTargetAir: turretConfig.baseStats.canTargetAir || false,
+       turnSpeed: turretConfig.baseStats.turnSpeed || 0.5,
+       currentAngle: unit.team === 'attacker' ? Math.PI / 2 : -Math.PI / 2,
        x: spawnX,
        y: spawnY,
        isDead: false
