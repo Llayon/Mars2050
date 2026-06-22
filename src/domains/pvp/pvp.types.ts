@@ -1,5 +1,5 @@
 import type { BattleTick } from '@/domains/combat/combat.types'
-import type { UnitRow } from '@/domains/combat/combat.types'
+import type { UnitRow, SimUnit, Obstacle } from '@/domains/combat/combat.types'
 
 export interface AttackResult {
   success: boolean
@@ -9,6 +9,8 @@ export interface AttackResult {
   logs?: BattleTick[]
   attackerUnits?: UnitRow[]
   defenderUnits?: UnitRow[]
+  initialState?: SimUnit[]
+  obstacles?: Obstacle[]
 }
 
 export interface TradeResult {

@@ -3,6 +3,7 @@
 import { memo, useState } from 'react'
 import { usePvp } from '@/hooks/usePvp'
 import { BattleReplayModal } from './BattleReplayModal'
+import type { AttackResult } from '@/domains/pvp/pvp.types'
 
 interface PvpPanelProps {
   colonyId: string | null
@@ -12,7 +13,7 @@ interface PvpPanelProps {
 export const PvpPanel = memo(function PvpPanel({ colonyId, onResult }: PvpPanelProps) {
   const { attack, trade, attacking, trading, error } = usePvp(colonyId)
   const [targetId, setTargetId] = useState('')
-  const [replayData, setReplayData] = useState<Record<string, unknown> | null>(null)
+  const [replayData, setReplayData] = useState<AttackResult | null>(null)
 
   async function handleAttack() {
     if (!targetId.trim()) return
@@ -56,9 +57,9 @@ export const PvpPanel = memo(function PvpPanel({ colonyId, onResult }: PvpPanelP
       </div>
       {replayData && (
         <BattleReplayModal
-          attackerUnits={replayData.attackerUnits}
-          defenderUnits={replayData.defenderUnits}
-          logs={replayData.logs}
+          attackerUnits={replayData.attackerUnits || []}
+          defenderUnits={replayData.defenderUnits || []}
+          logs={replayData.logs || []}
           onClose={() => setReplayData(null)}
         />
       )}

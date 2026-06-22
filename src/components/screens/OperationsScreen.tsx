@@ -8,6 +8,7 @@ import { BattleReplayModal } from '@/components/game/BattleReplayModal'
 import { ArmyPanel } from '@/components/game/ArmyPanel'
 import { BattleHistoryPanel } from '@/components/game/BattleHistoryPanel'
 import type { ResourceRow } from '@/domains/resource/resource.types'
+import type { AttackResult } from '@/domains/pvp/pvp.types'
 
 interface OperationsScreenProps {
   colonyId: string | null
@@ -23,7 +24,7 @@ export const OperationsScreen = memo(function OperationsScreen({ colonyId, resou
   const { toast } = useToast()
 
   const [targetId, setTargetId] = useState('')
-  const [replayData, setReplayData] = useState<Record<string, unknown> | null>(null)
+  const [replayData, setReplayData] = useState<AttackResult | null>(null)
 
   async function handleAttack() {
     if (!targetId.trim() || !colonyId) return
@@ -158,10 +159,10 @@ export const OperationsScreen = memo(function OperationsScreen({ colonyId, resou
       </div>
       {replayData && (
         <BattleReplayModal
-          attackerUnits={replayData.attackerUnits}
-          defenderUnits={replayData.defenderUnits}
-          initialState={replayData.initialState}
-          logs={replayData.logs}
+          attackerUnits={replayData.attackerUnits || []}
+          defenderUnits={replayData.defenderUnits || []}
+          initialState={replayData.initialState || []}
+          logs={replayData.logs || []}
           obstacles={replayData.obstacles}
           onClose={() => setReplayData(null)}
         />

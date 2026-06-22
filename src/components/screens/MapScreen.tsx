@@ -9,6 +9,7 @@ import { LOCATION_COLORS, LOCATION_LABELS } from '@/domains/map/map.config'
 import type { MapLocation } from '@/domains/map/map.types'
 import type { ResourceRow } from '@/domains/resource/resource.types'
 import { BattleReplayModal } from '@/components/game/BattleReplayModal'
+import type { AttackResult } from '@/domains/pvp/pvp.types'
 
 interface MapScreenProps {
   colonyId: string
@@ -21,7 +22,7 @@ export const MapScreen = memo(function MapScreen({ colonyId, resources, resource
   const { toast } = useToast()
   const [selected, setSelected] = useState<MapLocation | null>(null)
   const [exploring, setExploring] = useState(false)
-  const [replayData, setReplayData] = useState<Record<string, unknown> | null>(null)
+  const [replayData, setReplayData] = useState<AttackResult | null>(null)
 
   async function handleDiscover(locationId: string) {
     setExploring(true)
@@ -110,6 +111,7 @@ export const MapScreen = memo(function MapScreen({ colonyId, resources, resource
                               if (data.error) throw new Error(data.error.message || data.error)
                               
                               setReplayData({
+                                success: true,
                                 attackerUnits: data.attackerUnits,
                                 defenderUnits: data.defenderUnits,
                                 logs: data.logs,
@@ -168,9 +170,9 @@ export const MapScreen = memo(function MapScreen({ colonyId, resources, resource
       
       {replayData && (
         <BattleReplayModal
-          attackerUnits={replayData.attackerUnits}
-          defenderUnits={replayData.defenderUnits}
-          logs={replayData.logs}
+          attackerUnits={replayData.attackerUnits || []}
+          defenderUnits={replayData.defenderUnits || []}
+          logs={replayData.logs || []}
           onClose={() => {
             if (replayData.message) toast(replayData.message, 'success')
             setReplayData(null)
