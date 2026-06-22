@@ -12,7 +12,7 @@ const getRandomInt = (max: number) => Math.floor(Math.random() * max)
 export default function SimulatorPage() {
   const [attackerUnits, setAttackerUnits] = useState<UnitRow[]>([])
   const [defenderUnits, setDefenderUnits] = useState<UnitRow[]>([])
-  const [replayData, setReplayData] = useState<{ attackerUnits: UnitRow[], defenderUnits: UnitRow[], logs: BattleTick[], winner: string, initialState: import('@/domains/combat/combat.types').SimUnit[] } | null>(null)
+  const [replayData, setReplayData] = useState<{ attackerUnits: UnitRow[], defenderUnits: UnitRow[], logs: BattleTick[], winner: string, initialState: import('@/domains/combat/combat.types').SimUnit[], obstacles?: import('@/domains/combat/combat.types').Obstacle[] } | null>(null)
   
   const [selectedUnit, setSelectedUnit] = useState<{team: 'attacker'|'defender', index: number} | null>(null)
 
@@ -75,7 +75,7 @@ export default function SimulatorPage() {
     const aClone = JSON.parse(JSON.stringify(attackerUnits))
     const dClone = JSON.parse(JSON.stringify(defenderUnits))
     const result = simulateBattle(aClone, dClone)
-    setReplayData({ attackerUnits: aClone, defenderUnits: dClone, logs: result.logs, winner: result.winner, initialState: result.initialState })
+    setReplayData({ attackerUnits: aClone, defenderUnits: dClone, logs: result.logs, winner: result.winner, initialState: result.initialState, obstacles: result.obstacles })
   }
 
   function loadZergRushPreset() {
@@ -234,6 +234,7 @@ export default function SimulatorPage() {
           attackerUnits={replayData.attackerUnits}
           defenderUnits={replayData.defenderUnits}
           initialState={replayData.initialState}
+          obstacles={replayData.obstacles}
           logs={replayData.logs}
           onClose={() => setReplayData(null)}
         />
