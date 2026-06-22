@@ -16,6 +16,7 @@ export interface UnitBaseStats {
   isFlying?: boolean
   canTargetAir?: boolean
   turnSpeed?: number // Radians per tick
+  size?: 'S' | 'M' | 'L' | 'XL'
 }
 
 export interface UnitTypeConfig {
@@ -54,6 +55,7 @@ export interface SimUnit {
   currentAngle: number
   offsetX?: number
   offsetY?: number
+  size: 'S' | 'M' | 'L' | 'XL'
 }
 
 export type BattleActionType = 'move' | 'attack' | 'heal' | 'die' | 'spawn'

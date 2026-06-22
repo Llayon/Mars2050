@@ -52,3 +52,18 @@ export class PRNG {
     return this.seed / 233280;
   }
 }
+
+/**
+ * Gets physical collision radius based on unit size category
+ * @param size Unit size category (S, M, L, XL)
+ * @returns Collision radius in pixels
+ */
+export function getSizeRadius(size: 'S' | 'M' | 'L' | 'XL'): number {
+  switch (size) {
+    case 'S': return 10;
+    case 'M': return 18;
+    case 'L': return 28;
+    case 'XL': return 45;
+    default: return 18;
+  }
+}

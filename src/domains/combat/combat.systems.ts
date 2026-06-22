@@ -1,7 +1,6 @@
 import { SimUnit, BattleAction } from './combat.types';
 import { UNIT_TYPES } from './combat.config';
-import { getDistance } from './combat.utils';
-import { FIELD_WIDTH, FIELD_HEIGHT, PRNG } from './combat.utils';
+import { getDistance, FIELD_WIDTH, FIELD_HEIGHT, PRNG, getSizeRadius } from './combat.utils';
 
 // --- ECS Systems ---
 
@@ -34,9 +33,10 @@ export function targetingSystem(unit: SimUnit, units: SimUnit[], meleeTargetCoun
     if (unit.range <= 60) {
        validEnemies = enemies.filter(e => {
           const slotsTaken = meleeTargetCounts[e.id] || 0;
-          let maxSlots = 6;
-          if (e.maxHp >= 100) maxSlots = 10;
-          if (e.type === 'wall') maxSlots = 20;
+          const targetRadius = getSizeRadius(e.size);
+          const myRadius = getSizeRadius(unit.size);
+          const circumference = 2 * Math.PI * (targetRadius + myRadius);
+          const maxSlots = Math.floor(circumference / (myRadius * 2));
           return slotsTaken < maxSlots;
        });
        
@@ -59,8 +59,12 @@ export function targetingSystem(unit: SimUnit, units: SimUnit[], meleeTargetCoun
 
 export function actionSystem(unit: SimUnit, target: SimUnit, units: SimUnit[], actions: BattleAction[], rng: PRNG): boolean {
   const dist = getDistance(unit.x, unit.y, target.x, target.y);
-  const inRange = (unit.attackType !== 'heal' && dist <= unit.range) || 
-                 (unit.attackType === 'heal' && target.hp < target.maxHp && dist <= unit.range);
+  const targetRadius = getSizeRadius(target.size);
+  const myRadius = getSizeRadius(unit.size);
+  const distEdge = dist - targetRadius - myRadius;
+  
+  const inRange = (unit.attackType !== 'heal' && distEdge <= unit.range) || 
+                 (unit.attackType === 'heal' && target.hp < target.maxHp && distEdge <= unit.range);
 
   if (!inRange) return false;
 
@@ -112,6 +116,7 @@ export function actionSystem(unit: SimUnit, target: SimUnit, units: SimUnit[], a
        canTargetAir: turretConfig.baseStats.canTargetAir || false,
        turnSpeed: turretConfig.baseStats.turnSpeed || 0.5,
        currentAngle: unit.team === 'attacker' ? Math.PI / 2 : -Math.PI / 2,
+       size: turretConfig.baseStats.size || 'M',
        x: spawnX,
        y: spawnY,
        isDead: false

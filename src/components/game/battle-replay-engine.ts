@@ -1,6 +1,6 @@
 import { Application, Graphics, Text, Container, Assets, Sprite, Texture } from 'pixi.js'
 import { UNIT_TYPES } from '@/domains/combat/combat.config'
-import { FIELD_WIDTH, FIELD_HEIGHT, getDir, SPRITE_PATHS, SPRITE_DIRS } from '@/domains/combat/combat.utils'
+import { FIELD_WIDTH, FIELD_HEIGHT, getDir, SPRITE_PATHS, SPRITE_DIRS, getSizeRadius } from '@/domains/combat/combat.utils'
 import type { BattleTick, UnitRow, SimUnit, UnitTypeKey } from '@/domains/combat/combat.types'
 
 export type BattleReplayEngineProps = {
@@ -81,20 +81,22 @@ export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
     let s: Sprite | undefined
     let basePath: string | undefined
     const utype = isSimUnit ? (u as SimUnit).type : (u as UnitRow).unit_type
+    const config = UNIT_TYPES[utype as UnitTypeKey];
+    const uSize = config?.baseStats.size || 'M';
+    const radius = getSizeRadius(uSize);
 
     if (SPRITE_PATHS[utype]) {
       basePath = SPRITE_PATHS[utype]
       const tex = Texture.from(`${basePath}/${t === 'attacker' ? 'north' : 'south'}.png`)
       s = new Sprite(tex)
       s.anchor.set(0.5, 0.8)
-      const scaleMult = utype === 'exosuit' ? 2.5 : 1.8
-      const baseScale = (TILE_SIZE * scaleMult) / 128
+      const baseScale = (radius * 2.5) / 128
       s.scale.set(baseScale)
       c.addChild(s)
     } else {
       g = new Graphics()
       const col = t === 'attacker' ? 0x3b82f6 : 0xef4444
-      g.circle(0, 0, 14).fill({ color: col })
+      g.circle(0, 0, radius).fill({ color: col })
       c.addChild(g)
       const txt = new Text({ text: utype[0].toUpperCase(), style: { fill: 0xffffff, fontSize: 14, fontWeight: 'bold' } })
       txt.anchor.set(0.5); c.addChild(txt)

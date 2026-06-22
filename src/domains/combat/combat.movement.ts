@@ -1,5 +1,5 @@
 import { SimUnit, BattleAction } from './combat.types';
-import { getDistance, FIELD_WIDTH, FIELD_HEIGHT, PRNG } from './combat.utils';
+import { getDistance, FIELD_WIDTH, FIELD_HEIGHT, PRNG, getSizeRadius } from './combat.utils';
 
 export function movementSystem(unit: SimUnit, target: SimUnit, units: SimUnit[], actions: BattleAction[], dt: number, rng: PRNG) {
   if (unit.speed <= 0) return;
@@ -8,7 +8,10 @@ export function movementSystem(unit: SimUnit, target: SimUnit, units: SimUnit[],
   let vy = 0;
   
   const distToTarget = getDistance(unit.x, unit.y, target.x, target.y);
-  const isInRange = distToTarget <= unit.range;
+  // Subtracting sizes so that melee units stop at the edge of the target, not center
+  const targetRadius = getSizeRadius(target.size);
+  const myRadius = getSizeRadius(unit.size);
+  const isInRange = (distToTarget - targetRadius - myRadius) <= unit.range;
 
   // Turn logic (Angular Velocity)
   let targetAngle = Math.atan2(target.y - unit.y, target.x - unit.x);
@@ -39,7 +42,6 @@ export function movementSystem(unit: SimUnit, target: SimUnit, units: SimUnit[],
   }
 
   // Soft collision (Boids separation), Cohesion and Alignment
-  const UNIT_RADIUS = 18;
   const isBug = unit.type.startsWith('alien_');
   let squadCx = 0, squadCy = 0, squadCount = 0;
   let alignVx = 0, alignVy = 0, alignCount = 0;
@@ -57,6 +59,8 @@ export function movementSystem(unit: SimUnit, target: SimUnit, units: SimUnit[],
     if (unit.isFlying !== other.isFlying) continue;
     
     const dist = getDistance(unit.x, unit.y, other.x, other.y);
+    const otherRadius = getSizeRadius(other.size);
+    const minDist = myRadius + otherRadius;
 
     // Alignment (Boids): Bugs align their movement with nearby bugs
     if (isBug && other.type.startsWith('alien_') && dist < 80) {
@@ -65,7 +69,6 @@ export function movementSystem(unit: SimUnit, target: SimUnit, units: SimUnit[],
       alignCount++;
     }
 
-    const minDist = UNIT_RADIUS * 2;
     if (dist > 0 && dist < minDist) {
        const overlap = minDist - dist;
        const pushAngle = Math.atan2(unit.y - other.y, unit.x - other.x);

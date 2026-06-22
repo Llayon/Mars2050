@@ -77,6 +77,7 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
         canTargetAir: config.baseStats.canTargetAir || false,
         turnSpeed: config.baseStats.turnSpeed || 0.5,
         currentAngle: t === 'attacker' ? Math.PI / 2 : -Math.PI / 2,
+        size: config.baseStats.size || 'M',
         aoeRadius: config.baseStats.aoeRadius ? config.baseStats.aoeRadius * 40 : undefined,
         offsetX: ox,
         offsetY: oy,
