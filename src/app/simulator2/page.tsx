@@ -77,20 +77,34 @@ export default function SimulatorPage() {
   }
 
   function loadZergRushPreset() {
-    setAttackerUnits([
-       { id: crypto.randomUUID(), colony_id: 'attacker', unit_type: 'exosuit', hp_current: 120, tier: 1, upgrade_path: [], grid_x: '250', grid_y: '700' },
-       { id: crypto.randomUUID(), colony_id: 'attacker', unit_type: 'exosuit', hp_current: 120, tier: 1, upgrade_path: [], grid_x: '350', grid_y: '700' },
-       { id: crypto.randomUUID(), colony_id: 'attacker', unit_type: 'marine', hp_current: 40, tier: 1, upgrade_path: [], grid_x: '300', grid_y: '750' },
-       { id: crypto.randomUUID(), colony_id: 'attacker', unit_type: 'sniper', hp_current: 30, tier: 1, upgrade_path: [], grid_x: '300', grid_y: '850' },
-    ])
-    setDefenderUnits([
-       { id: crypto.randomUUID(), colony_id: 'defender', unit_type: 'alien_bug', hp_current: 50, tier: 1, upgrade_path: [], grid_x: '300', grid_y: '200' },
-       { id: crypto.randomUUID(), colony_id: 'defender', unit_type: 'alien_bug', hp_current: 50, tier: 1, upgrade_path: [], grid_x: '200', grid_y: '150' },
-       { id: crypto.randomUUID(), colony_id: 'defender', unit_type: 'alien_bug', hp_current: 50, tier: 1, upgrade_path: [], grid_x: '400', grid_y: '150' },
-       { id: crypto.randomUUID(), colony_id: 'defender', unit_type: 'alien_bug', hp_current: 50, tier: 1, upgrade_path: [], grid_x: '100', grid_y: '100' },
-       { id: crypto.randomUUID(), colony_id: 'defender', unit_type: 'alien_bug', hp_current: 50, tier: 1, upgrade_path: [], grid_x: '500', grid_y: '100' },
-       { id: crypto.randomUUID(), colony_id: 'defender', unit_type: 'alien_spitter', hp_current: 40, tier: 1, upgrade_path: [], grid_x: '300', grid_y: '50' },
-    ])
+    const attackers: UnitRow[] = [];
+    // 3 Exosuits in front
+    for (let i = 0; i < 3; i++) {
+       attackers.push({ id: crypto.randomUUID(), colony_id: 'attacker', unit_type: 'exosuit', hp_current: 120, tier: 1, upgrade_path: [], grid_x: String(250 + i * 50), grid_y: '700' });
+    }
+    // 10 Marines
+    for (let i = 0; i < 10; i++) {
+       attackers.push({ id: crypto.randomUUID(), colony_id: 'attacker', unit_type: 'marine', hp_current: 40, tier: 1, upgrade_path: [], grid_x: String(200 + (i % 5) * 50), grid_y: String(750 + Math.floor(i / 5) * 40) });
+    }
+    // 2 Snipers
+    attackers.push({ id: crypto.randomUUID(), colony_id: 'attacker', unit_type: 'sniper', hp_current: 30, tier: 1, upgrade_path: [], grid_x: '280', grid_y: '850' });
+    attackers.push({ id: crypto.randomUUID(), colony_id: 'attacker', unit_type: 'sniper', hp_current: 30, tier: 1, upgrade_path: [], grid_x: '320', grid_y: '850' });
+
+    setAttackerUnits(attackers);
+
+    const defenders: UnitRow[] = [];
+    // 50 Bugs!
+    for (let i = 0; i < 50; i++) {
+       const jitterX = Math.random() * 400 + 100;
+       const jitterY = Math.random() * 200 + 100;
+       defenders.push({ id: crypto.randomUUID(), colony_id: 'defender', unit_type: 'alien_bug', hp_current: 50, tier: 1, upgrade_path: [], grid_x: String(jitterX), grid_y: String(jitterY) });
+    }
+    // 3 Spitters
+    defenders.push({ id: crypto.randomUUID(), colony_id: 'defender', unit_type: 'alien_spitter', hp_current: 40, tier: 1, upgrade_path: [], grid_x: '200', grid_y: '50' });
+    defenders.push({ id: crypto.randomUUID(), colony_id: 'defender', unit_type: 'alien_spitter', hp_current: 40, tier: 1, upgrade_path: [], grid_x: '300', grid_y: '50' });
+    defenders.push({ id: crypto.randomUUID(), colony_id: 'defender', unit_type: 'alien_spitter', hp_current: 40, tier: 1, upgrade_path: [], grid_x: '400', grid_y: '50' });
+
+    setDefenderUnits(defenders);
   }
 
   const unitKeys = Object.keys(UNIT_TYPES) as UnitTypeKey[]
