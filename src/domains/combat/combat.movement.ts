@@ -96,7 +96,7 @@ export function movementSystem(unit: SimUnit, target: SimUnit, units: SimUnit[],
   // Apply Boids Alignment Force (Bugs swarm together)
   if (isBug && alignCount > 0) {
     const avgAlignAngle = Math.atan2(alignVy, alignVx);
-    const alignForce = unit.speed * (isInRange ? 0.05 : 0.4);
+    const alignForce = unit.speed * (isInRange ? 0 : 0.4);
     vx += Math.cos(avgAlignAngle) * alignForce;
     vy += Math.sin(avgAlignAngle) * alignForce;
   }
@@ -120,7 +120,7 @@ export function movementSystem(unit: SimUnit, target: SimUnit, units: SimUnit[],
     
     if (cohDist > cohThreshold) {
       const cohAngle = Math.atan2(targetCy - unit.y, targetCx - unit.x);
-      const pullForce = unit.speed * (isInRange ? 0.1 : (isBug ? 0.5 : 0.8)); 
+      const pullForce = unit.speed * (isInRange ? 0 : (isBug ? 0.5 : 0.8)); 
       vx += Math.cos(cohAngle) * pullForce;
       vy += Math.sin(cohAngle) * pullForce;
     }
@@ -130,7 +130,11 @@ export function movementSystem(unit: SimUnit, target: SimUnit, units: SimUnit[],
   // If unit is planted (fighting), it shouldn't slide backwards fast
   const maxSpeed = unit.speed * (isInRange ? 0.4 : 1.5);
   const finalMag = Math.hypot(vx, vy);
-  if (finalMag > maxSpeed) {
+  
+  if (finalMag < 0.5) {
+     vx = 0;
+     vy = 0;
+  } else if (finalMag > maxSpeed) {
       vx = (vx / finalMag) * maxSpeed;
       vy = (vy / finalMag) * maxSpeed;
   }
