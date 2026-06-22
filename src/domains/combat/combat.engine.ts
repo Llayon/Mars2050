@@ -1,8 +1,9 @@
 import { UNIT_TYPES, MAX_TICKS } from './combat.config'
-import type { UnitRow, Team, SimUnit, BattleActionType, BattleAction, BattleTick, BattleResult } from './combat.types'
+import type { UnitRow, Team, SimUnit, BattleAction, BattleTick, BattleResult, Obstacle } from './combat.types'
 import { targetingSystem, actionSystem, tickModifiersSystem } from './combat.systems'
 import { movementSystem } from './combat.movement'
 import { getDistance, FIELD_WIDTH, FIELD_HEIGHT, PRNG } from './combat.utils'
+import { createPathfindingMap, FlowFieldMap } from './combat.pathfinding'
 
 /**
  * Main simulation engine. Pure function.
@@ -13,6 +14,19 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
   const rng = new PRNG(seed)
   const dt = 0.1
   const units: SimUnit[] = []
+
+  // Generate 5-8 random static obstacles (craters/rocks)
+  const obstacles: Obstacle[] = [];
+  const numObstacles = 5 + Math.floor(rng.next() * 4);
+  for (let i = 0; i < numObstacles; i++) {
+     // Keep them slightly away from edges and spawn zones (y: 200 to 1000)
+     const ox = 50 + rng.next() * (FIELD_WIDTH - 100);
+     const oy = 250 + rng.next() * (FIELD_HEIGHT - 500);
+     const oradius = 30 + rng.next() * 50; // Radius between 30 and 80 pixels
+     obstacles.push({ x: ox, y: oy, radius: oradius });
+  }
+
+  const flowFieldMap = createPathfindingMap(obstacles);
 
   const createSquad = (u: UnitRow, t: Team) => {
     const config = UNIT_TYPES[u.unit_type as keyof typeof UNIT_TYPES]
@@ -127,7 +141,7 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
       const acted = actionSystem(unit, target, units, actions, rng);
       
       if (!acted) {
-        movementSystem(unit, target, units, actions, dt, rng);
+        movementSystem(unit, target, units, actions, dt, rng, flowFieldMap);
       }
     }
 
@@ -153,6 +167,7 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
     logs,
     seed,
     initialState,
-    survivors: units.filter(u => !u.isDead)
+    survivors: units.filter(u => !u.isDead),
+    obstacles
   }
 }

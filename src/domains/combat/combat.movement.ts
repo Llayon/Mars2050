@@ -1,7 +1,8 @@
 import { SimUnit, BattleAction } from './combat.types';
 import { getDistance, FIELD_WIDTH, FIELD_HEIGHT, PRNG, getSizeRadius } from './combat.utils';
+import { FlowFieldMap, getFlowVector } from './combat.pathfinding';
 
-export function movementSystem(unit: SimUnit, target: SimUnit, units: SimUnit[], actions: BattleAction[], dt: number, rng: PRNG) {
+export function movementSystem(unit: SimUnit, target: SimUnit, units: SimUnit[], actions: BattleAction[], dt: number, rng: PRNG, flowFieldMap: FlowFieldMap) {
   if (unit.speed <= 0) return;
   
   let vx = 0;
@@ -15,6 +16,14 @@ export function movementSystem(unit: SimUnit, target: SimUnit, units: SimUnit[],
 
   // Turn logic (Angular Velocity)
   let targetAngle = Math.atan2(target.y - unit.y, target.x - unit.x);
+  
+  // Use Flow Field if not flying and relatively far from target to avoid obstacles
+  if (!unit.isFlying && distToTarget > 60) {
+      const flowAngle = getFlowVector(flowFieldMap, unit.x, unit.y, target.x, target.y);
+      if (flowAngle !== null) {
+          targetAngle = flowAngle;
+      }
+  }
   
   let angleDiff = targetAngle - unit.currentAngle;
   

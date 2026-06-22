@@ -209,6 +209,8 @@ export async function executeAttack(
     message: winMsg, 
     stolen,
     logs: battleResult.logs,
+    obstacles: battleResult.obstacles,
+    initialState: battleResult.initialState,
     attackerUnits,
     defenderUnits: defenderUnits || []
   }

@@ -1,7 +1,7 @@
 import { Application, Graphics, Text, Container, Assets, Sprite, Texture } from 'pixi.js'
 import { UNIT_TYPES } from '@/domains/combat/combat.config'
 import { FIELD_WIDTH, FIELD_HEIGHT, getDir, SPRITE_PATHS, SPRITE_DIRS, getSizeRadius } from '@/domains/combat/combat.utils'
-import type { BattleTick, UnitRow, SimUnit, UnitTypeKey } from '@/domains/combat/combat.types'
+import type { BattleTick, UnitRow, SimUnit, UnitTypeKey, Obstacle } from '@/domains/combat/combat.types'
 
 export type BattleReplayEngineProps = {
   container: HTMLDivElement
@@ -9,10 +9,11 @@ export type BattleReplayEngineProps = {
   defenderUnits: UnitRow[]
   initialState?: SimUnit[]
   logs: BattleTick[]
+  obstacles?: Obstacle[]
 }
 
 export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
-  const { container, attackerUnits, defenderUnits, initialState, logs } = props
+  const { container, attackerUnits, defenderUnits, initialState, logs, obstacles } = props
   let isDestroyed = false
   let cleanupEvents: (() => void) | null = null
 
@@ -43,13 +44,16 @@ export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
   world.y = BOARD_H / 2
   world.scale.set(1.0)
   app.stage.addChild(world)
-  
   const gridContainer = new Container()
   world.addChild(gridContainer)
+  gridContainer.addChild(
+    new Graphics().rect(0, 0, BOARD_W, BOARD_H / 2).fill({ color: 0xef4444, alpha: 0.05 }),
+    new Graphics().rect(0, BOARD_H / 2, BOARD_W, BOARD_H / 2).fill({ color: 0x3b82f6, alpha: 0.05 })
+  )
 
-  const defZone = new Graphics().rect(0, 0, BOARD_W, BOARD_H / 2).fill({ color: 0xef4444, alpha: 0.05 })
-  const atkZone = new Graphics().rect(0, BOARD_H / 2, BOARD_W, BOARD_H / 2).fill({ color: 0x3b82f6, alpha: 0.05 })
-  gridContainer.addChild(defZone, atkZone)
+  obstacles?.forEach(o => gridContainer.addChild(
+    new Graphics().circle(o.x, o.y, o.radius).fill({ color: 0x333333 }).stroke({ width: 2, color: 0x555555 })
+  ))
 
   type SpriteState = { 
     c: Container, g?: Graphics, s?: Sprite, hpBar: Graphics, 

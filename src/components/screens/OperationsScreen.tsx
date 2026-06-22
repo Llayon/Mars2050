@@ -160,7 +160,9 @@ export const OperationsScreen = memo(function OperationsScreen({ colonyId, resou
         <BattleReplayModal
           attackerUnits={replayData.attackerUnits}
           defenderUnits={replayData.defenderUnits}
+          initialState={replayData.initialState}
           logs={replayData.logs}
+          obstacles={replayData.obstacles}
           onClose={() => setReplayData(null)}
         />
       )}

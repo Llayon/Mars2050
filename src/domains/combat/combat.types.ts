@@ -81,10 +81,17 @@ export interface BattleTick {
   actions: BattleAction[]
 }
 
+export interface Obstacle {
+  x: number
+  y: number
+  radius: number
+}
+
 export interface BattleResult {
   winner: 'attacker' | 'defender' | 'draw'
   logs: BattleTick[]
   seed?: number
   survivors: SimUnit[]
   initialState: SimUnit[]
+  obstacles?: Obstacle[]
 }

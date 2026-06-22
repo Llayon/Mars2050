@@ -1,10 +1,10 @@
 'use client'
 import { useEffect, useRef, memo } from 'react'
-import type { BattleTick, UnitRow, SimUnit } from '@/domains/combat/combat.types'
+import type { BattleTick, UnitRow, SimUnit, Obstacle } from '@/domains/combat/combat.types'
 import { startBattleReplayEngine } from './battle-replay-engine'
 import type { Application } from 'pixi.js'
 
-export const BattleReplayModal = memo(function BattleReplayModal({ attackerUnits, defenderUnits, initialState, logs, onClose }: { attackerUnits: UnitRow[], defenderUnits: UnitRow[], initialState?: SimUnit[], logs: BattleTick[], onClose: () => void }) {
+export const BattleReplayModal = memo(function BattleReplayModal({ attackerUnits, defenderUnits, initialState, logs, obstacles, onClose }: { attackerUnits: UnitRow[], defenderUnits: UnitRow[], initialState?: SimUnit[], logs: BattleTick[], obstacles?: Obstacle[], onClose: () => void }) {
   const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -19,7 +19,8 @@ export const BattleReplayModal = memo(function BattleReplayModal({ attackerUnits
         attackerUnits,
         defenderUnits,
         initialState,
-        logs
+        logs,
+        obstacles
       })
       
       if (isDestroyed) {
@@ -40,7 +41,7 @@ export const BattleReplayModal = memo(function BattleReplayModal({ attackerUnits
         try { app.destroy(true) } catch(e) {}
       }
     }
-  }, [attackerUnits, defenderUnits, initialState, logs])
+  }, [attackerUnits, defenderUnits, initialState, logs, obstacles])
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-black/95 backdrop-blur-md">
