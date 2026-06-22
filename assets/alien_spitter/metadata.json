@@ -1,0 +1,36 @@
+{
+  "group_id": null,
+  "states": [
+    {
+      "character": {
+        "id": "f119b1e8-679e-4472-beaa-8c746424b599",
+        "name": "Grotesque alien spitter with sharp, serrated mandibles, hunched posture, pulsing neon-green acidic sac on back, leathery dark purple skin, low top-down perspective, wide stance, menacing silhouette.",
+        "prompt": "Grotesque alien spitter with sharp, serrated mandibles, hunched posture, pulsing neon-green acidic sac on back, leathery dark purple skin, low top-down perspective, wide stance, menacing silhouette.",
+        "size": {
+          "width": 92,
+          "height": 92
+        },
+        "template_id": "dog",
+        "directions": 8,
+        "view": "low top-down",
+        "created_at": "2026-06-21T18:18:04.575745+00:00"
+      },
+      "folder": "Grotesque_alien_spitter_with_sharp_serrated_mandib",
+      "frames": {
+        "rotations": {
+          "south": "Grotesque_alien_spitter_with_sharp_serrated_mandib/rotations/south.png",
+          "south-east": "Grotesque_alien_spitter_with_sharp_serrated_mandib/rotations/south-east.png",
+          "east": "Grotesque_alien_spitter_with_sharp_serrated_mandib/rotations/east.png",
+          "north-east": "Grotesque_alien_spitter_with_sharp_serrated_mandib/rotations/north-east.png",
+          "north": "Grotesque_alien_spitter_with_sharp_serrated_mandib/rotations/north.png",
+          "north-west": "Grotesque_alien_spitter_with_sharp_serrated_mandib/rotations/north-west.png",
+          "west": "Grotesque_alien_spitter_with_sharp_serrated_mandib/rotations/west.png",
+          "south-west": "Grotesque_alien_spitter_with_sharp_serrated_mandib/rotations/south-west.png"
+        },
+        "animations": {}
+      }
+    }
+  ],
+  "export_version": "3.0",
+  "export_date": "2026-06-21T21:19:12.874757"
+}

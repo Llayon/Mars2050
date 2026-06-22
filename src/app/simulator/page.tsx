@@ -10,7 +10,7 @@ import Link from 'next/link'
 export default function SimulatorPage() {
   const [attackerUnits, setAttackerUnits] = useState<UnitRow[]>([])
   const [defenderUnits, setDefenderUnits] = useState<UnitRow[]>([])
-  const [replayData, setReplayData] = useState<{ attackerUnits: UnitRow[], defenderUnits: UnitRow[], logs: BattleTick[], winner: string } | null>(null)
+  const [replayData, setReplayData] = useState<{ attackerUnits: UnitRow[], defenderUnits: UnitRow[], logs: BattleTick[], winner: string, initialState: import('@/domains/combat/combat.types').SimUnit[] } | null>(null)
   
   const [selectedUnit, setSelectedUnit] = useState<{team: 'attacker'|'defender', index: number} | null>(null)
 
@@ -23,8 +23,8 @@ export default function SimulatorPage() {
       hp_current: config.baseStats.hp,
       tier: 1,
       upgrade_path: [],
-      grid_x: String(Math.floor(Math.random() * 10)),
-      grid_y: String(team === 'attacker' ? Math.floor(Math.random() * 6) + 12 : Math.floor(Math.random() * 6)),
+      grid_x: String(Math.floor(Math.random() * 600)),
+      grid_y: String(team === 'attacker' ? Math.floor(Math.random() * 400) + 800 : Math.floor(Math.random() * 400)),
     }
     if (team === 'attacker') {
       setAttackerUnits(prev => [...prev, unit])
@@ -43,21 +43,21 @@ export default function SimulatorPage() {
 
   function handleCellClick(x: number, y: number) {
     // Is there a unit here?
-    const aIdx = attackerUnits.findIndex(u => Number(u.grid_x) === x && Number(u.grid_y) === y)
-    const dIdx = defenderUnits.findIndex(u => Number(u.grid_x) === x && Number(u.grid_y) === y)
+    const aIdx = attackerUnits.findIndex(u => Math.floor(Number(u.grid_x)/60) === x && Math.floor(Number(u.grid_y)/60) === y)
+    const dIdx = defenderUnits.findIndex(u => Math.floor(Number(u.grid_x)/60) === x && Math.floor(Number(u.grid_y)/60) === y)
 
     if (selectedUnit) {
       // Move selected unit
       if (aIdx !== -1 || dIdx !== -1) return // Cell occupied
       if (selectedUnit.team === 'attacker') {
         const newU = [...attackerUnits]
-        newU[selectedUnit.index].grid_x = String(x)
-        newU[selectedUnit.index].grid_y = String(y)
+        newU[selectedUnit.index].grid_x = String(x * 60 + 30)
+        newU[selectedUnit.index].grid_y = String(y * 60 + 30)
         setAttackerUnits(newU)
       } else {
         const newU = [...defenderUnits]
-        newU[selectedUnit.index].grid_x = String(x)
-        newU[selectedUnit.index].grid_y = String(y)
+        newU[selectedUnit.index].grid_x = String(x * 60 + 30)
+        newU[selectedUnit.index].grid_y = String(y * 60 + 30)
         setDefenderUnits(newU)
       }
       setSelectedUnit(null)
@@ -73,7 +73,7 @@ export default function SimulatorPage() {
     const aClone = JSON.parse(JSON.stringify(attackerUnits))
     const dClone = JSON.parse(JSON.stringify(defenderUnits))
     const result = simulateBattle(aClone, dClone)
-    setReplayData({ attackerUnits: aClone, defenderUnits: dClone, logs: result.logs, winner: result.winner })
+    setReplayData({ attackerUnits: aClone, defenderUnits: dClone, logs: result.logs, winner: result.winner, initialState: result.initialState })
   }
 
   const unitKeys = Object.keys(UNIT_TYPES) as UnitTypeKey[]
@@ -102,11 +102,11 @@ export default function SimulatorPage() {
                     <span>{UNIT_TYPES[u.unit_type as UnitTypeKey]?.name} [{u.grid_x}, {u.grid_y}]</span>
                     <div className="flex gap-2 items-center text-sm shrink-0" onClick={e => e.stopPropagation()}>
                       <label className="text-gray-400">X:</label>
-                      <input type="number" min="0" max="9" className="w-12 bg-gray-700 rounded px-1 text-white border border-gray-600 focus:border-blue-500 outline-none" value={u.grid_x || ''} onChange={e => {
+                      <input type="number" min="0" max="600" className="w-16 bg-gray-700 rounded px-1 text-white border border-gray-600 focus:border-blue-500 outline-none" value={u.grid_x || ''} onChange={e => {
                         const newU = [...attackerUnits]; newU[i].grid_x = e.target.value; setAttackerUnits(newU)
                       }} />
                       <label className="text-gray-400">Y:</label>
-                      <input type="number" min="0" max="17" className="w-12 bg-gray-700 rounded px-1 text-white border border-gray-600 focus:border-blue-500 outline-none" value={u.grid_y || ''} onChange={e => {
+                      <input type="number" min="0" max="1200" className="w-16 bg-gray-700 rounded px-1 text-white border border-gray-600 focus:border-blue-500 outline-none" value={u.grid_y || ''} onChange={e => {
                         const newU = [...attackerUnits]; newU[i].grid_y = e.target.value; setAttackerUnits(newU)
                       }} />
                     </div>
@@ -129,11 +129,11 @@ export default function SimulatorPage() {
                     <span>{UNIT_TYPES[u.unit_type as UnitTypeKey]?.name} [{u.grid_x}, {u.grid_y}]</span>
                     <div className="flex gap-2 items-center text-sm shrink-0" onClick={e => e.stopPropagation()}>
                       <label className="text-gray-400">X:</label>
-                      <input type="number" min="0" max="9" className="w-12 bg-gray-700 rounded px-1 text-white border border-gray-600 focus:border-red-500 outline-none" value={u.grid_x || ''} onChange={e => {
+                      <input type="number" min="0" max="600" className="w-16 bg-gray-700 rounded px-1 text-white border border-gray-600 focus:border-red-500 outline-none" value={u.grid_x || ''} onChange={e => {
                         const newU = [...defenderUnits]; newU[i].grid_x = e.target.value; setDefenderUnits(newU)
                       }} />
                       <label className="text-gray-400">Y:</label>
-                      <input type="number" min="0" max="17" className="w-12 bg-gray-700 rounded px-1 text-white border border-gray-600 focus:border-red-500 outline-none" value={u.grid_y || ''} onChange={e => {
+                      <input type="number" min="0" max="1200" className="w-16 bg-gray-700 rounded px-1 text-white border border-gray-600 focus:border-red-500 outline-none" value={u.grid_y || ''} onChange={e => {
                         const newU = [...defenderUnits]; newU[i].grid_y = e.target.value; setDefenderUnits(newU)
                       }} />
                     </div>
@@ -151,11 +151,11 @@ export default function SimulatorPage() {
           {/* Визуальная сетка */}
           <div className="shrink-0 flex flex-col items-center">
             <p className="text-sm text-gray-400 mb-2">Нажмите на юнита, затем кликните на сетку для перемещения</p>
-            <div className="grid bg-gray-900 border border-gray-700 select-none shadow-[0_0_30px_rgba(0,0,0,0.5)]" style={{ gridTemplateColumns: 'repeat(10, 1fr)', gridTemplateRows: 'repeat(18, 1fr)', width: '320px', height: '576px' }}>
-              {Array.from({length: 18}).map((_, y) => 
+            <div className="grid bg-gray-900 border border-gray-700 select-none shadow-[0_0_30px_rgba(0,0,0,0.5)]" style={{ gridTemplateColumns: 'repeat(10, 1fr)', gridTemplateRows: 'repeat(20, 1fr)', width: '300px', height: '600px' }}>
+              {Array.from({length: 20}).map((_, y) => 
                 Array.from({length: 10}).map((_, x) => {
-                  const aIdx = attackerUnits.findIndex(u => Number(u.grid_x) === x && Number(u.grid_y) === y)
-                  const dIdx = defenderUnits.findIndex(u => Number(u.grid_x) === x && Number(u.grid_y) === y)
+                  const aIdx = attackerUnits.findIndex(u => Math.floor(Number(u.grid_x)/60) === x && Math.floor(Number(u.grid_y)/60) === y)
+                  const dIdx = defenderUnits.findIndex(u => Math.floor(Number(u.grid_x)/60) === x && Math.floor(Number(u.grid_y)/60) === y)
                   
                   let bgClass = 'bg-transparent hover:bg-white/10'
                   let inner = null
@@ -173,7 +173,7 @@ export default function SimulatorPage() {
                   }
 
                   // Разделитель зон
-                  const borderClass = y === 8 ? 'border-b-2 border-b-gray-600' : 'border-b border-b-gray-800/30'
+                  const borderClass = y === 9 ? 'border-b-2 border-b-gray-600' : 'border-b border-b-gray-800/30'
 
                   return (
                     <div 
@@ -195,6 +195,7 @@ export default function SimulatorPage() {
         <BattleReplayModal
           attackerUnits={replayData.attackerUnits}
           defenderUnits={replayData.defenderUnits}
+          initialState={replayData.initialState}
           logs={replayData.logs}
           onClose={() => setReplayData(null)}
         />

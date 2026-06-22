@@ -1,0 +1,36 @@
+{
+  "group_id": null,
+  "states": [
+    {
+      "character": {
+        "id": "2e1e0ef6-6134-488f-bb18-3b109aaf5066",
+        "name": "Heavy sci-fi soldier in thick,",
+        "prompt": "Heavy sci-fi soldier in thick, bulky blast-resistant plating, holding a massive shoulder-mounted rocket launcher, wearing a glowing tactical targeting visor, sturdy combat boots, wide battle-ready stance.",
+        "size": {
+          "width": 128,
+          "height": 128
+        },
+        "template_id": "mannequin",
+        "directions": 8,
+        "view": "low top-down",
+        "created_at": "2026-06-20T22:23:06.568247+00:00"
+      },
+      "folder": "Heavy_sci-fi_soldier_in_thick",
+      "frames": {
+        "rotations": {
+          "south": "Heavy_sci-fi_soldier_in_thick/rotations/south.png",
+          "south-east": "Heavy_sci-fi_soldier_in_thick/rotations/south-east.png",
+          "east": "Heavy_sci-fi_soldier_in_thick/rotations/east.png",
+          "north-east": "Heavy_sci-fi_soldier_in_thick/rotations/north-east.png",
+          "north": "Heavy_sci-fi_soldier_in_thick/rotations/north.png",
+          "north-west": "Heavy_sci-fi_soldier_in_thick/rotations/north-west.png",
+          "west": "Heavy_sci-fi_soldier_in_thick/rotations/west.png",
+          "south-west": "Heavy_sci-fi_soldier_in_thick/rotations/south-west.png"
+        },
+        "animations": {}
+      }
+    }
+  ],
+  "export_version": "3.0",
+  "export_date": "2026-06-21T00:46:35.669387"
+}

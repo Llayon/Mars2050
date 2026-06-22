@@ -1,0 +1,36 @@
+{
+  "group_id": null,
+  "states": [
+    {
+      "character": {
+        "id": "1aee9bbc-7b53-499f-b495-a0d72955ed39",
+        "name": "A terrifying alien bug monster",
+        "prompt": "A terrifying alien bug monster with sharp scythe-like claws, a segmented thick insectoid carapace, and vicious mandibles, standing in a wide, aggressive stance, low top-down perspective.",
+        "size": {
+          "width": 124,
+          "height": 124
+        },
+        "template_id": "mannequin",
+        "directions": 8,
+        "view": "low top-down",
+        "created_at": "2026-06-21T00:57:42.603035+00:00"
+      },
+      "folder": "A_terrifying_alien_bug_monster",
+      "frames": {
+        "rotations": {
+          "south": "A_terrifying_alien_bug_monster/rotations/south.png",
+          "south-east": "A_terrifying_alien_bug_monster/rotations/south-east.png",
+          "east": "A_terrifying_alien_bug_monster/rotations/east.png",
+          "north-east": "A_terrifying_alien_bug_monster/rotations/north-east.png",
+          "north": "A_terrifying_alien_bug_monster/rotations/north.png",
+          "north-west": "A_terrifying_alien_bug_monster/rotations/north-west.png",
+          "west": "A_terrifying_alien_bug_monster/rotations/west.png",
+          "south-west": "A_terrifying_alien_bug_monster/rotations/south-west.png"
+        },
+        "animations": {}
+      }
+    }
+  ],
+  "export_version": "3.0",
+  "export_date": "2026-06-21T21:18:54.984211"
+}

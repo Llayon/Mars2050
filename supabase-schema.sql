@@ -220,7 +220,7 @@ $$ language plpgsql security definer;
 create table public.units (
   id uuid default uuid_generate_v4() primary key,
   colony_id uuid references public.colonies(id) on delete cascade not null,
-  unit_type text not null check (unit_type in ('marine', 'exosuit', 'sniper', 'medic', 'rocketeer', 'engineer')),
+  unit_type text not null check (unit_type in ('marine', 'exosuit', 'sniper', 'medic', 'rocketeer', 'engineer', 'wall', 'turret', 'alien_worm', 'alien_spitter', 'alien_bug', 'drone', 'aa_turret')),
   tier integer default 1 check (tier between 1 and 4),
   upgrade_path text[] default '{}',
   hp_current integer not null,

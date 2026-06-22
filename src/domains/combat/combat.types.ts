@@ -13,12 +13,18 @@ export interface UnitBaseStats {
   attackType: 'single' | 'aoe' | 'heal' | 'spawn'
   aoeRadius?: number
   actionCooldownMax?: number
+  isFlying?: boolean
+  canTargetAir?: boolean
+  turnSpeed?: number // Radians per tick
 }
 
 export interface UnitTypeConfig {
   name: string
   baseStats: UnitBaseStats
   hireCost: Record<string, number>
+  squadSize?: number
+  squadSpacing?: number
+  formation?: 'line' | 'wedge' | 'grid'
 }
 
 export type Team = 'attacker' | 'defender'
@@ -37,10 +43,15 @@ export interface SimUnit {
   aoeRadius?: number
   actionCooldownMax: number
   actionCooldown: number
+  isFlying: boolean
+  canTargetAir: boolean
   x: number
   y: number
   isDead: boolean
+  squadId?: string
   moveTimer?: number
+  turnSpeed: number
+  currentAngle: number
 }
 
 export type BattleActionType = 'move' | 'attack' | 'heal' | 'die' | 'spawn'
@@ -50,10 +61,12 @@ export interface BattleAction {
   type: BattleActionType
   targetId?: string
   damage?: number
+  isCritical?: boolean
   fromX?: number
   fromY?: number
   toX?: number
   toY?: number
+  facingAngle?: number
   spawnType?: string
   spawnTeam?: Team
   spawnMaxHp?: number
@@ -67,5 +80,7 @@ export interface BattleTick {
 export interface BattleResult {
   winner: 'attacker' | 'defender' | 'draw'
   logs: BattleTick[]
+  seed?: number
   survivors: SimUnit[]
+  initialState: SimUnit[]
 }

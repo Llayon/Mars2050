@@ -1,0 +1,14 @@
+
+> mars2050-temp@0.1.0 prebuild
+> tsx scripts/check-limits.ts
+
+
+❌ Architecture violations found:
+
+  ⚠️ ANY (warning):
+     domains/map/map.combat.ts:48 — uses 'as any' cast [ADR-003]
+
+  Total: 1 violation(s)
+  Errors: 0
+  Warnings: 1
+

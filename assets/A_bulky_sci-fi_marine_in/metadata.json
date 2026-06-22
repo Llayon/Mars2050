@@ -1,0 +1,45 @@
+{
+  "group_id": null,
+  "states": [
+    {
+      "character": {
+        "id": "6b80abdb-ff5e-4785-a039-59356095e7e3",
+        "name": "A bulky sci-fi marine in",
+        "prompt": "A bulky sci-fi marine in thick orange and dark grey segmented armor, holding a heavy assault rifle across the chest, wide combat stance, low top-down perspective, industrial plating details, solid silhouette, showing character's face and weapon clearly",
+        "size": {
+          "width": 128,
+          "height": 128
+        },
+        "template_id": "mannequin",
+        "directions": 8,
+        "view": "low top-down",
+        "created_at": "2026-06-20T21:11:05.724574+00:00"
+      },
+      "folder": "A_bulky_sci-fi_marine_in",
+      "frames": {
+        "rotations": {
+          "south": "A_bulky_sci-fi_marine_in/rotations/south.png",
+          "south-east": "A_bulky_sci-fi_marine_in/rotations/south-east.png",
+          "east": "A_bulky_sci-fi_marine_in/rotations/east.png",
+          "north-east": "A_bulky_sci-fi_marine_in/rotations/north-east.png",
+          "north": "A_bulky_sci-fi_marine_in/rotations/north.png",
+          "north-west": "A_bulky_sci-fi_marine_in/rotations/north-west.png",
+          "west": "A_bulky_sci-fi_marine_in/rotations/west.png",
+          "south-west": "A_bulky_sci-fi_marine_in/rotations/south-west.png"
+        },
+        "animations": {
+          "Breathing_Idle": {
+            "north": [
+              "A_bulky_sci-fi_marine_in/animations/Breathing_Idle/north/frame_000.png",
+              "A_bulky_sci-fi_marine_in/animations/Breathing_Idle/north/frame_001.png",
+              "A_bulky_sci-fi_marine_in/animations/Breathing_Idle/north/frame_002.png",
+              "A_bulky_sci-fi_marine_in/animations/Breathing_Idle/north/frame_003.png"
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "export_version": "3.0",
+  "export_date": "2026-06-20T21:43:44.212791"
+}

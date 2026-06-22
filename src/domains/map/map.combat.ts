@@ -27,6 +27,12 @@ export async function attackAlienNest(colonyId: string, locationId: string) {
     return { error: 'У вас нет армии для атаки!' }
   }
 
+  // Clear previous grid coordinates so they auto-spawn at the bottom in pixel space
+  attackerUnits.forEach(u => {
+    u.grid_x = null
+    u.grid_y = null
+  })
+
   // 3. Generate alien units based on difficulty
   const alienUnits: import('@/domains/combat/combat.types').UnitRow[] = []
   const diff = location.difficulty
@@ -43,14 +49,15 @@ export async function attackAlienNest(colonyId: string, locationId: string) {
       colony_id: 'ALIEN_SWARM',
       unit_type: type,
       hp_current: type === 'alien_worm' ? 250 : type === 'alien_spitter' ? 40 : 50,
-      grid_x: String(Math.floor(Math.random() * 10)),
-      grid_y: String(Math.floor(Math.random() * 8)) // Defenders at top (y: 0-7)
+      grid_x: String(Math.floor(Math.random() * 600)),
+      grid_y: String(Math.floor(Math.random() * 400)) // Defenders at top (y: 0-400)
     } as unknown as import('@/domains/combat/combat.types').UnitRow)
   }
 
   // 4. Import simulateBattle dynamically or statically
   const { simulateBattle } = await import('@/domains/combat/combat.engine')
-  const battleResult = simulateBattle(attackerUnits, alienUnits)
+  const seed = Math.floor(Math.random() * 1000000)
+  const battleResult = simulateBattle(attackerUnits, alienUnits, seed)
 
   // 5. Apply unit deaths
   const deadAttackerIds = attackerUnits
@@ -98,6 +105,7 @@ export async function attackAlienNest(colonyId: string, locationId: string) {
     attacker_units: attackerUnits,
     defender_units: alienUnits,
     battle_log: [],
+    seed: seed,
     rewards: rewards
   })
 

@@ -1,0 +1,36 @@
+{
+  "group_id": null,
+  "states": [
+    {
+      "character": {
+        "id": "8e01d9e9-1b38-41e9-bc13-2fdebe08ebcd",
+        "name": "A massive sci-fi exosuit mech",
+        "prompt": "A massive sci-fi exosuit mech in a wide, grounded stance, featuring thick industrial armor plating, exposed hydraulic pistons at the joints, and a prominent glowing blue circular reactor core on the chest, low top-down perspective, black outline.",
+        "size": {
+          "width": 128,
+          "height": 128
+        },
+        "template_id": "mannequin",
+        "directions": 8,
+        "view": "low top-down",
+        "created_at": "2026-06-20T21:45:51.660197+00:00"
+      },
+      "folder": "A_massive_sci-fi_exosuit_mech",
+      "frames": {
+        "rotations": {
+          "south": "A_massive_sci-fi_exosuit_mech/rotations/south.png",
+          "south-east": "A_massive_sci-fi_exosuit_mech/rotations/south-east.png",
+          "east": "A_massive_sci-fi_exosuit_mech/rotations/east.png",
+          "north-east": "A_massive_sci-fi_exosuit_mech/rotations/north-east.png",
+          "north": "A_massive_sci-fi_exosuit_mech/rotations/north.png",
+          "north-west": "A_massive_sci-fi_exosuit_mech/rotations/north-west.png",
+          "west": "A_massive_sci-fi_exosuit_mech/rotations/west.png",
+          "south-west": "A_massive_sci-fi_exosuit_mech/rotations/south-west.png"
+        },
+        "animations": {}
+      }
+    }
+  ],
+  "export_version": "3.0",
+  "export_date": "2026-06-21T00:46:20.237966"
+}

@@ -1,0 +1,36 @@
+{
+  "group_id": null,
+  "states": [
+    {
+      "character": {
+        "id": "c2726c1b-1f49-45df-a59d-10fd17e1dd16",
+        "name": "A stealthy sniper in a",
+        "prompt": "A stealthy sniper in a slim, dark tactical bodysuit and a dust-streaked hooded cloak, holding a long sleek plasma rifle across the chest, low top-down perspective, wide alert stance.",
+        "size": {
+          "width": 128,
+          "height": 128
+        },
+        "template_id": "mannequin",
+        "directions": 8,
+        "view": "low top-down",
+        "created_at": "2026-06-20T21:59:06.65603+00:00"
+      },
+      "folder": "A_stealthy_sniper_in_a",
+      "frames": {
+        "rotations": {
+          "south": "A_stealthy_sniper_in_a/rotations/south.png",
+          "south-east": "A_stealthy_sniper_in_a/rotations/south-east.png",
+          "east": "A_stealthy_sniper_in_a/rotations/east.png",
+          "north-east": "A_stealthy_sniper_in_a/rotations/north-east.png",
+          "north": "A_stealthy_sniper_in_a/rotations/north.png",
+          "north-west": "A_stealthy_sniper_in_a/rotations/north-west.png",
+          "west": "A_stealthy_sniper_in_a/rotations/west.png",
+          "south-west": "A_stealthy_sniper_in_a/rotations/south-west.png"
+        },
+        "animations": {}
+      }
+    }
+  ],
+  "export_version": "3.0",
+  "export_date": "2026-06-21T00:45:45.855366"
+}
