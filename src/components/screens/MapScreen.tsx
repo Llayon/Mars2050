@@ -114,6 +114,8 @@ export const MapScreen = memo(function MapScreen({ colonyId, resources, resource
                                 success: true,
                                 attackerUnits: data.attackerUnits,
                                 defenderUnits: data.defenderUnits,
+                                initialState: data.initialState,
+                                obstacles: data.obstacles,
                                 logs: data.logs,
                                 message: data.message
                               })
@@ -172,6 +174,8 @@ export const MapScreen = memo(function MapScreen({ colonyId, resources, resource
         <BattleReplayModal
           attackerUnits={replayData.attackerUnits || []}
           defenderUnits={replayData.defenderUnits || []}
+          initialState={replayData.initialState || []}
+          obstacles={replayData.obstacles || []}
           logs={replayData.logs || []}
           onClose={() => {
             if (replayData.message) toast(replayData.message, 'success')

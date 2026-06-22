@@ -114,8 +114,10 @@ export async function attackAlienNest(colonyId: string, locationId: string) {
     winner: battleResult.winner,
     logs: battleResult.logs,
     rewards,
-    attackerUnits,
-    defenderUnits: alienUnits,
+    attackerUnits: battleResult.initialState.filter(u => u.team === 'attacker') as unknown as import('@/domains/combat/combat.types').UnitRow[],
+    defenderUnits: battleResult.initialState.filter(u => u.team === 'defender') as unknown as import('@/domains/combat/combat.types').UnitRow[],
+    initialState: battleResult.initialState,
+    obstacles: battleResult.obstacles,
     message: battleResult.winner === 'attacker' ? 'Гнездо зачищено! Вы получили награду.' : 'Ваш отряд был уничтожен роем.'
   }
 }

@@ -59,6 +59,8 @@ export const PvpPanel = memo(function PvpPanel({ colonyId, onResult }: PvpPanelP
         <BattleReplayModal
           attackerUnits={replayData.attackerUnits || []}
           defenderUnits={replayData.defenderUnits || []}
+          initialState={replayData.initialState || []}
+          obstacles={replayData.obstacles || []}
           logs={replayData.logs || []}
           onClose={() => setReplayData(null)}
         />

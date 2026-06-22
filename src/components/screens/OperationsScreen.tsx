@@ -163,7 +163,7 @@ export const OperationsScreen = memo(function OperationsScreen({ colonyId, resou
           defenderUnits={replayData.defenderUnits || []}
           initialState={replayData.initialState || []}
           logs={replayData.logs || []}
-          obstacles={replayData.obstacles}
+          obstacles={replayData.obstacles || []}
           onClose={() => setReplayData(null)}
         />
       )}
