@@ -1,6 +1,7 @@
 import { UNIT_TYPES, MAX_TICKS } from './combat.config'
 import type { UnitRow, Team, SimUnit, BattleActionType, BattleAction, BattleTick, BattleResult } from './combat.types'
-import { targetingSystem, actionSystem, movementSystem, tickModifiersSystem } from './combat.systems'
+import { targetingSystem, actionSystem, tickModifiersSystem } from './combat.systems'
+import { movementSystem } from './combat.movement'
 import { getDistance, FIELD_WIDTH, FIELD_HEIGHT, PRNG } from './combat.utils'
 
 /**
