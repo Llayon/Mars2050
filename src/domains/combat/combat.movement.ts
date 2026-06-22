@@ -38,9 +38,11 @@ export function movementSystem(unit: SimUnit, target: SimUnit, units: SimUnit[],
     vy = Math.sin(unit.currentAngle) * unit.speed;
   }
 
-  // Soft collision (Boids separation) and Cohesion (Squad Physics)
+  // Soft collision (Boids separation), Cohesion and Alignment
   const UNIT_RADIUS = 18;
+  const isBug = unit.type.startsWith('alien_');
   let squadCx = 0, squadCy = 0, squadCount = 0;
+  let alignVx = 0, alignVy = 0, alignCount = 0;
 
   for (const other of units) {
     if (other.isDead || other.id === unit.id) continue;
@@ -55,38 +57,58 @@ export function movementSystem(unit: SimUnit, target: SimUnit, units: SimUnit[],
     if (unit.isFlying !== other.isFlying) continue;
     
     const dist = getDistance(unit.x, unit.y, other.x, other.y);
+
+    // Alignment (Boids): Bugs align their movement with nearby bugs
+    if (isBug && other.type.startsWith('alien_') && dist < 80) {
+      alignVx += Math.cos(other.currentAngle);
+      alignVy += Math.sin(other.currentAngle);
+      alignCount++;
+    }
+
     const minDist = UNIT_RADIUS * 2;
     if (dist > 0 && dist < minDist) {
        const overlap = minDist - dist;
        const pushAngle = Math.atan2(unit.y - other.y, unit.x - other.x);
        
-       // Mass calculation: heavier units (more maxHp) get pushed less, lighter units get pushed more
        const myMass = unit.maxHp || 20;
        const otherMass = other.maxHp || 20;
-       const totalMass = myMass + otherMass;
+       const pushRatio = (otherMass / (myMass + otherMass)) * 2; 
        
-       // Mass ratio
-       const pushRatio = (otherMass / totalMass) * 2; 
-       
-       // Stance Stability (Friction): If a unit is in range and attacking, it "plants its feet"
-       // and heavily resists being pushed back (acts as a wall).
        const stanceMultiplier = isInRange ? 0.3 : 1.0;
-       
        const pushForce = overlap * 5 * pushRatio * stanceMultiplier; 
        vx += Math.cos(pushAngle) * pushForce;
        vy += Math.sin(pushAngle) * pushForce;
     }
   }
 
-  // Apply Cohesion Force (Squads stick together)
+  // Apply Boids Alignment Force (Bugs swarm together)
+  if (isBug && alignCount > 0) {
+    const avgAlignAngle = Math.atan2(alignVy, alignVx);
+    const alignForce = unit.speed * (isInRange ? 0.05 : 0.4);
+    vx += Math.cos(avgAlignAngle) * alignForce;
+    vy += Math.sin(avgAlignAngle) * alignForce;
+  }
+
+  // Apply Cohesion Force (Formations)
   if (squadCount > 0) {
     squadCx /= squadCount;
     squadCy /= squadCount;
-    const cohDist = getDistance(unit.x, unit.y, squadCx, squadCy);
-    if (cohDist > 60) {
-      const cohAngle = Math.atan2(squadCy - unit.y, squadCx - unit.x);
-      // Cohesion should not pull a planted unit out of combat
-      const pullForce = unit.speed * (isInRange ? 0.1 : 0.5); 
+    
+    let targetCx = squadCx;
+    let targetCy = squadCy;
+    
+    if (!isBug && unit.offsetX !== undefined && unit.offsetY !== undefined) {
+      // Humans keep strict military formation relative to squad center
+      targetCx += unit.offsetX;
+      targetCy += unit.offsetY;
+    }
+
+    const cohDist = getDistance(unit.x, unit.y, targetCx, targetCy);
+    const cohThreshold = isBug ? 60 : 10; // Bugs are loose, Humans are strict
+    
+    if (cohDist > cohThreshold) {
+      const cohAngle = Math.atan2(targetCy - unit.y, targetCx - unit.x);
+      const pullForce = unit.speed * (isInRange ? 0.1 : (isBug ? 0.5 : 0.8)); 
       vx += Math.cos(cohAngle) * pullForce;
       vy += Math.sin(cohAngle) * pullForce;
     }

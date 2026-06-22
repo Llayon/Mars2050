@@ -52,6 +52,8 @@ export interface SimUnit {
   moveTimer?: number
   turnSpeed: number
   currentAngle: number
+  offsetX?: number
+  offsetY?: number
 }
 
 export type BattleActionType = 'move' | 'attack' | 'heal' | 'die' | 'spawn'
