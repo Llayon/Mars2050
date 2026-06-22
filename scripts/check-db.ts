@@ -34,7 +34,7 @@ async function check() {
   console.log(colonies)
   
   console.log('--- RESOURCES ---')
-  const resByColony: Record<string, any[]> = {}
+  const resByColony: Record<string, {type: string, amount: number}[]> = {}
   resources?.forEach(r => {
     if (!resByColony[r.colony_id]) resByColony[r.colony_id] = []
     resByColony[r.colony_id].push({ type: r.type, amount: r.amount })

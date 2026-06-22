@@ -14,7 +14,7 @@ export type BattleReplayEngineProps = {
 
 export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
   const { container, attackerUnits, defenderUnits, initialState, logs, obstacles } = props
-  let isDestroyed = false
+  const isDestroyed = false
   let cleanupEvents: (() => void) | null = null
 
   const app = new Application()

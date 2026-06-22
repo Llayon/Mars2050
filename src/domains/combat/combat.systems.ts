@@ -83,8 +83,8 @@ export function actionSystem(unit: SimUnit, target: SimUnit, units: SimUnit[], a
 
   if (unit.attackType === 'spawn') {
      // Spawn a turret directly in front of the engineer (towards target)
-     let dx = target.x - unit.x;
-     let dy = target.y - unit.y;
+     const dx = target.x - unit.x;
+     const dy = target.y - unit.y;
      const mag = Math.hypot(dx, dy) || 1;
      let spawnX = unit.x + (dx / mag) * 40; // spawn 40 units ahead
      let spawnY = unit.y + (dy / mag) * 40;
@@ -141,7 +141,7 @@ export function actionSystem(unit: SimUnit, target: SimUnit, units: SimUnit[], a
      target.hp = Math.min(target.maxHp, target.hp + healAmount);
      actions.push({ unitId: unit.id, type: 'heal', targetId: target.id, damage: healAmount });
   } else {
-     let damage = Math.max(1, unit.attack - target.defense);
+     const damage = Math.max(1, unit.attack - target.defense);
      target.hp -= damage;
      actions.push({ unitId: unit.id, type: 'attack', targetId: target.id, damage });
 

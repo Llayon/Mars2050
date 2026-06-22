@@ -21,7 +21,7 @@ export const MapScreen = memo(function MapScreen({ colonyId, resources, resource
   const { toast } = useToast()
   const [selected, setSelected] = useState<MapLocation | null>(null)
   const [exploring, setExploring] = useState(false)
-  const [replayData, setReplayData] = useState<any | null>(null)
+  const [replayData, setReplayData] = useState<Record<string, unknown> | null>(null)
 
   async function handleDiscover(locationId: string) {
     setExploring(true)
@@ -116,8 +116,8 @@ export const MapScreen = memo(function MapScreen({ colonyId, resources, resource
                                 message: data.message
                               })
                               // Map automatically updates via Realtime
-                            } catch (e: any) {
-                              toast(e.message, 'error')
+                            } catch (e: unknown) {
+                              toast((e as Error).message, 'error')
                             } finally {
                               setExploring(false)
                             }

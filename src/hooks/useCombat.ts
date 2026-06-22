@@ -35,8 +35,8 @@ export function useCombat(colonyId: string | null) {
       if (!res.ok) throw new Error(data.error?.message || data.error || 'Failed to hire')
       await mutate()
       return { success: true }
-    } catch (e: any) {
-      return { error: e.message }
+    } catch (e: unknown) {
+      return { error: (e as Error).message }
     }
   }
 
@@ -52,8 +52,8 @@ export function useCombat(colonyId: string | null) {
       if (!res.ok) throw new Error(data.error?.message || data.error || 'Failed to dismiss')
       await mutate()
       return { success: true }
-    } catch (e: any) {
-      return { error: e.message }
+    } catch (e: unknown) {
+      return { error: (e as Error).message }
     }
   }
 
@@ -69,8 +69,8 @@ export function useCombat(colonyId: string | null) {
       if (!res.ok) throw new Error(data.error?.message || data.error || 'Failed to save garrison')
       await mutate()
       return { success: true }
-    } catch (e: any) {
-      return { error: e.message }
+    } catch (e: unknown) {
+      return { error: (e as Error).message }
     }
   }
 

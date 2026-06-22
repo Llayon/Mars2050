@@ -41,7 +41,7 @@ export async function attackAlienNest(colonyId: string, locationId: string) {
   for (let i = 0; i < alienCount; i++) {
     const isSpitter = Math.random() < 0.3
     const isWorm = diff >= 4 && Math.random() < 0.1
-    let type: import('@/types/database').UnitsType = isWorm ? 'alien_worm' : isSpitter ? 'alien_spitter' : 'alien_bug'
+    const type: import('@/types/database').UnitsType = isWorm ? 'alien_worm' : isSpitter ? 'alien_spitter' : 'alien_bug'
     
     // Give them fake IDs and row structure so engine accepts them
     alienUnits.push({

@@ -152,7 +152,7 @@ export async function executeAttack(
   }
 
   // 5. Handle resources if attacker wins
-  let stolen: Record<string, number> = {}
+  const stolen: Record<string, number> = {}
   if (battleResult.winner === 'attacker') {
     const { data: defenderResources } = await supabase
       .from('resources')

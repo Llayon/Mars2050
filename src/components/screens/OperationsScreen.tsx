@@ -23,7 +23,7 @@ export const OperationsScreen = memo(function OperationsScreen({ colonyId, resou
   const { toast } = useToast()
 
   const [targetId, setTargetId] = useState('')
-  const [replayData, setReplayData] = useState<any>(null)
+  const [replayData, setReplayData] = useState<Record<string, unknown> | null>(null)
 
   async function handleAttack() {
     if (!targetId.trim() || !colonyId) return

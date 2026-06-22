@@ -7,6 +7,8 @@ import { simulateBattle } from '@/domains/combat/combat.engine'
 import { BattleReplayModal } from '@/components/game/BattleReplayModal'
 import Link from 'next/link'
 
+const getRandomInt = (max: number) => Math.floor(Math.random() * max)
+
 export default function SimulatorPage() {
   const [attackerUnits, setAttackerUnits] = useState<UnitRow[]>([])
   const [defenderUnits, setDefenderUnits] = useState<UnitRow[]>([])
@@ -23,8 +25,8 @@ export default function SimulatorPage() {
       hp_current: config.baseStats.hp,
       tier: 1,
       upgrade_path: [],
-      grid_x: String(Math.floor(Math.random() * 600)),
-      grid_y: String(team === 'attacker' ? Math.floor(Math.random() * 400) + 800 : Math.floor(Math.random() * 400)),
+      grid_x: String(getRandomInt(600)),
+      grid_y: String(team === 'attacker' ? getRandomInt(400) + 800 : getRandomInt(400)),
     }
     if (team === 'attacker') {
       setAttackerUnits(prev => [...prev, unit])

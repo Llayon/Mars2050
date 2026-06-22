@@ -2,11 +2,11 @@ import { simulateBattle } from './src/domains/combat/combat.engine';
 import type { UnitRow } from './src/domains/combat/combat.types';
 
 const attackers: UnitRow[] = [
-  { id: 'a1', unit_type: 'marine', hp_current: 200 } as any
+  { id: 'a1', unit_type: 'marine', hp_current: 200 } as unknown as UnitRow
 ];
 
 const defenders: UnitRow[] = [
-  { id: 'd2', unit_type: 'exosuit', hp_current: 1000 } as any
+  { id: 'd2', unit_type: 'exosuit', hp_current: 1000 } as unknown as UnitRow
 ];
 
 const result = simulateBattle(attackers, defenders, 12345);

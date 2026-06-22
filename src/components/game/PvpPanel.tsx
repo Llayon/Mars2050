@@ -12,7 +12,7 @@ interface PvpPanelProps {
 export const PvpPanel = memo(function PvpPanel({ colonyId, onResult }: PvpPanelProps) {
   const { attack, trade, attacking, trading, error } = usePvp(colonyId)
   const [targetId, setTargetId] = useState('')
-  const [replayData, setReplayData] = useState<any>(null)
+  const [replayData, setReplayData] = useState<Record<string, unknown> | null>(null)
 
   async function handleAttack() {
     if (!targetId.trim()) return

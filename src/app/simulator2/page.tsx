@@ -7,6 +7,8 @@ import { simulateBattle } from '@/domains/combat/combat.engine'
 import { BattleReplayModal } from '@/components/game/BattleReplayModal'
 import Link from 'next/link'
 
+const getRandomInt = (max: number) => Math.floor(Math.random() * max)
+
 export default function SimulatorPage() {
   const [attackerUnits, setAttackerUnits] = useState<UnitRow[]>([])
   const [defenderUnits, setDefenderUnits] = useState<UnitRow[]>([])
@@ -23,8 +25,8 @@ export default function SimulatorPage() {
       hp_current: config.baseStats.hp,
       tier: 1,
       upgrade_path: [],
-      grid_x: String(Math.floor(Math.random() * 600)),
-      grid_y: String(team === 'attacker' ? Math.floor(Math.random() * 400) + 800 : Math.floor(Math.random() * 400)),
+      grid_x: String(getRandomInt(600)),
+      grid_y: String(team === 'attacker' ? getRandomInt(400) + 800 : getRandomInt(400)),
     }
     if (team === 'attacker') {
       setAttackerUnits(prev => [...prev, unit])
@@ -116,7 +118,7 @@ export default function SimulatorPage() {
           <h1 className="text-2xl font-bold">🔬 Симулятор Боя (v2)</h1>
           <div className="flex gap-4">
              <button onClick={loadZergRushPreset} className="text-sm bg-purple-900 hover:bg-purple-800 px-4 py-2 rounded font-bold transition-colors text-purple-200">
-               Загрузить пресет "Зерг Раш"
+               Загрузить пресет &quot;Зерг Раш&quot;
              </button>
              <Link href="/" className="text-gray-400 hover:text-white px-4 py-2 bg-gray-800 rounded-lg">← В игру</Link>
           </div>
