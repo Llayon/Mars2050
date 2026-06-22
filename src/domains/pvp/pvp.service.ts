@@ -101,6 +101,8 @@ export async function executeAttack(
   message?: string; 
   stolen?: Record<string, number>;
   logs?: BattleTick[];
+  obstacles?: import('@/domains/combat/combat.types').Obstacle[];
+  initialState?: import('@/domains/combat/combat.types').SimUnit[];
   attackerUnits?: UnitRow[];
   defenderUnits?: UnitRow[];
 }> {
