@@ -60,14 +60,24 @@ export function movementSystem(unit: SimUnit, target: SimUnit, units: SimUnit[],
           let diff = flowAngle - directAngle;
           while (diff > Math.PI) diff -= Math.PI * 2;
           while (diff < -Math.PI) diff += Math.PI * 2;
+          const diffAbs = Math.abs(diff);
           
-          // If the flow angle strongly deviates from the direct angle (more than 45 degrees), it means we are avoiding an obstacle
-          if (Math.abs(diff) > 0.8) {
-             targetAngle = flowAngle;
-             isNavigatingObstacle = true;
+          if (unit.isNavigatingObstacle) {
+             if (diffAbs > 0.4) { // Stay in flow field mode longer
+                 targetAngle = flowAngle;
+                 isNavigatingObstacle = true;
+             } else {
+                 targetAngle = directAngle;
+                 unit.isNavigatingObstacle = false;
+             }
           } else {
-             // If it's roughly the same direction, just walk directly towards target to avoid 45-degree zigzagging
-             targetAngle = directAngle;
+             if (diffAbs > 0.8) { // Require strong deviation to enter obstacle mode
+                 targetAngle = flowAngle;
+                 isNavigatingObstacle = true;
+                 unit.isNavigatingObstacle = true;
+             } else {
+                 targetAngle = directAngle;
+             }
           }
       }
   }

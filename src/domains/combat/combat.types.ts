@@ -81,6 +81,7 @@ export interface SimUnit {
   spawnerConfig?: { unitType: string, interval: number, timer: number }
   initialAngle?: number
   isMoving?: boolean
+  isNavigatingObstacle?: boolean
   replicateOnKill?: boolean
   stealthUntilAttack?: boolean
   hasAttacked?: boolean
