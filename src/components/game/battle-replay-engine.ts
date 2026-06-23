@@ -68,9 +68,8 @@ export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
 
   type SpriteState = { 
     c: Container, g?: Graphics, s?: Sprite, hpBar: Graphics, empGfx?: Graphics,
-    hp: number, maxHp: number, prog: number, 
-    sX: number, sY: number, tX: number, tY: number, 
-    type: string, team: 'attacker'|'defender', basePath?: string, baseScale?: number, isAtlas?: boolean
+    hp: number, maxHp: number, prog: number, sX: number, sY: number, tX: number, tY: number, 
+    type: string, team: 'attacker'|'defender', basePath?: string, baseScale?: number, isAtlas?: boolean, act?: string, dir?: string
   }
   const sprites: Record<string, SpriteState> = {}
 
@@ -120,7 +119,7 @@ export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
     if (!u.id) return
     const maxHp = UNIT_TYPES[utype as UnitTypeKey]?.baseStats.hp || ('hp_current' in u ? u.hp_current : 1)
     const baseScale = s ? s.scale.x : 1
-    sprites[u.id] = { c, g, s, hpBar, hp: isSimUnit ? (u as SimUnit).hp : ('hp_current' in u ? u.hp_current : 1), maxHp, prog: 1, sX: c.x, sY: c.y, tX: c.x, tY: c.y, type: utype, team: t, basePath, baseScale, isAtlas: !!SPRITE_ATLASES[utype] }
+    sprites[u.id] = { c, g, s, hpBar, hp: isSimUnit ? (u as SimUnit).hp : ('hp_current' in u ? u.hp_current : 1), maxHp, prog: 1, sX: c.x, sY: c.y, tX: c.x, tY: c.y, type: utype, team: t, basePath, baseScale, isAtlas: !!SPRITE_ATLASES[utype], act: 'idle', dir: t === 'attacker' ? 'north' : 'south' }
     updateHp(sprites[u.id])
   }
   if (initialState) {
@@ -152,7 +151,7 @@ export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
       time -= DUR
       
       Object.values(sprites).forEach(s => {
-        s.sX = s.tX; s.sY = s.tY;
+        s.sX = s.tX; s.sY = s.tY; s.act = 'idle'
       })
 
       logs[tick].actions.forEach(a => {
@@ -162,20 +161,8 @@ export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
           s.sX = a.fromX!; s.sY = a.fromY!
           s.tX = a.toX!; s.tY = a.toY!
           if (s.s) {
-            let dir = 'south';
-            if (a.facingAngle !== undefined) {
-               const dx = Math.cos(a.facingAngle);
-               const dy = Math.sin(a.facingAngle);
-               dir = getDir(dx, dy);
-            } else {
-               dir = getDir(s.tX - s.sX, s.tY - s.sY);
-            }
-            if (s.isAtlas) {
-              // Walk animation! Just frame 0 for now since we don't have animation loop running yet
-              s.s.texture = Texture.from(`${s.type}_walk_${dir}_000`)
-            } else if (s.basePath) {
-              s.s.texture = Texture.from(`${s.basePath}/${dir}.png`)
-            }
+            s.dir = a.facingAngle !== undefined ? getDir(Math.cos(a.facingAngle), Math.sin(a.facingAngle)) : getDir(s.tX - s.sX, s.tY - s.sY);
+            s.act = 'walk'
           }
         } else if (a.type === 'attack' || a.type === 'heal') {
           const tg = sprites[a.targetId!]
@@ -183,12 +170,8 @@ export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
             const isH = a.type === 'heal', pCol = isH ? 0x4ade80 : (a.isShieldHit ? 0x3b82f6 : 0xffaa00)
             spawnProj(s.c.x, s.c.y, tg.c.x, tg.c.y, pCol)
             if (s.s) {
-              const dir = getDir(tg.c.x - s.c.x, tg.c.y - s.c.y);
-              if (s.isAtlas) {
-                s.s.texture = Texture.from(`${s.type}_shoot_${dir}_000`)
-              } else if (s.basePath) {
-                s.s.texture = Texture.from(`${s.basePath}/${dir}.png`)
-              }
+              s.dir = getDir(tg.c.x - s.c.x, tg.c.y - s.c.y);
+              s.act = 'shoot'
             }
             
             tg.hp -= isH ? -a.damage! : a.damage!
@@ -234,6 +217,12 @@ export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
     Object.values(sprites).forEach(s => {
       s.c.x = lerp(s.sX, s.tX, prog); s.c.y = lerp(s.sY, s.tY, prog)
       layer.children.sort((a, b) => a.y - b.y)
+      if (s.s && s.isAtlas && s.act && s.dir) {
+         const f = Math.min(6, Math.floor((time / DUR) * 7));
+         s.s.texture = Texture.from(`${s.type}_${s.act}_${s.dir}_00${s.act === 'idle' ? '' : f}`)
+      } else if (s.s && s.basePath && s.dir) {
+         s.s.texture = Texture.from(`${s.basePath}/${s.dir}.png`)
+      }
       if (s.s && s.baseScale !== undefined) {
          s.s.scale.x = lerp(s.s.scale.x, s.baseScale, 0.1)
          s.s.scale.y = lerp(s.s.scale.y, s.baseScale, 0.1)
