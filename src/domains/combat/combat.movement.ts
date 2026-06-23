@@ -50,11 +50,25 @@ export function movementSystem(unit: SimUnit, target: SimUnit, units: SimUnit[],
       ? Math.atan2(target.y - squadCy, target.x - squadCx)
       : Math.atan2(target.y - unit.y, target.x - unit.x);
   
-  // Use Flow Field if not flying and relatively far from target to avoid obstacles
-  if (!unit.isFlying && distToTarget > 60) {
-      const flowAngle = getFlowVector(flowFieldMap, squadCount > 1 ? squadCx : unit.x, squadCount > 1 ? squadCy : unit.y, target.x, target.y);
+  let isNavigatingObstacle = false;
+
+  // Use Flow Field if not flying to avoid obstacles
+  if (!unit.isFlying && distToTarget > unit.range) {
+      const flowAngle = getFlowVector(flowFieldMap, unit.x, unit.y, target.x, target.y);
       if (flowAngle !== null) {
-          targetAngle = flowAngle;
+          const directAngle = Math.atan2(target.y - unit.y, target.x - unit.x);
+          let diff = flowAngle - directAngle;
+          while (diff > Math.PI) diff -= Math.PI * 2;
+          while (diff < -Math.PI) diff += Math.PI * 2;
+          
+          // If the flow angle strongly deviates from the direct angle (more than 45 degrees), it means we are avoiding an obstacle
+          if (Math.abs(diff) > 0.8) {
+             targetAngle = flowAngle;
+             isNavigatingObstacle = true;
+          } else {
+             // If it's roughly the same direction, just walk directly towards target to avoid 45-degree zigzagging
+             targetAngle = directAngle;
+          }
       }
   }
   
@@ -89,7 +103,7 @@ export function movementSystem(unit: SimUnit, target: SimUnit, units: SimUnit[],
     const dist = getDistance(unit.x, unit.y, other.x, other.y);
     const otherRadius = getSizeRadius(other.size);
     // Allow a tiny bit of overlap in formation by capping minDist slightly smaller than spacing, but let's just use 90% of radius to prevent jitter
-    const minDist = (myRadius + otherRadius) * 0.9;
+    const minDist = (myRadius + otherRadius) * 0.95;
 
     if (dist > 0 && dist < minDist) {
        const overlap = minDist - dist;
@@ -100,7 +114,7 @@ export function movementSystem(unit: SimUnit, target: SimUnit, units: SimUnit[],
        const pushRatio = (otherMass / (myMass + otherMass)) * 2; 
        
        const stanceMultiplier = isInRange ? 0.5 : 1.0; // Pushes less but still resolves overlap when fighting
-       const pushForce = overlap * 5 * pushRatio * stanceMultiplier; 
+       const pushForce = Math.min(overlap * 2, unit.speed * 1.5) * pushRatio * stanceMultiplier; 
        vx += Math.cos(pushAngle) * pushForce;
        vy += Math.sin(pushAngle) * pushForce;
     }
@@ -154,7 +168,7 @@ export function movementSystem(unit: SimUnit, target: SimUnit, units: SimUnit[],
     
     if (cohDist > cohThreshold) {
       const cohAngle = Math.atan2(targetCy - unit.y, targetCx - unit.x);
-      const pullForce = unit.speed * (isInRange ? 0 : (isBug ? 0.5 : 0.8)); 
+      const pullForce = unit.speed * (isInRange ? 0 : (isNavigatingObstacle ? 0.1 : (isBug ? 0.5 : 0.8))); 
       vx += Math.cos(cohAngle) * pullForce;
       vy += Math.sin(cohAngle) * pullForce;
     }
@@ -193,7 +207,8 @@ export function movementSystem(unit: SimUnit, target: SimUnit, units: SimUnit[],
        fromY: r(fromY), 
        toX: r(nx), 
        toY: r(ny),
-       facingAngle: r(unit.currentAngle)
+       facingAngle: r(unit.currentAngle),
+       isWalking: unit.isMoving
     });
   }
 }

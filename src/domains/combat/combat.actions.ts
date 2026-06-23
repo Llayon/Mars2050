@@ -14,6 +14,7 @@ export interface BattleAction {
   toX?: number
   toY?: number
   facingAngle?: number
+  isWalking?: boolean
   spawnType?: string
   spawnTeam?: Team
   spawnMaxHp?: number

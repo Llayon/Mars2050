@@ -65,8 +65,42 @@ export function getFlowVector(map: FlowFieldMap, startX: number, startY: number,
   const angle = vectorField[sIndex];
   
   if (isNaN(angle)) {
-     // Unreachable or no gradient, fallback to direct line
-     return Math.atan2(targetY - startY, targetX - startX);
+     // Unit might be pushed into an impassable cell (cost 255)
+     // Find the nearest valid neighbor and walk towards it
+     let bestCost = Infinity;
+     let bestAngle = Math.atan2(targetY - startY, targetX - startX); // Default
+     
+     const neighbors = [
+       { dx: 0, dy: -1 }, { dx: 1, dy: 0 }, { dx: 0, dy: 1 }, { dx: -1, dy: 0 },
+       { dx: 1, dy: -1 }, { dx: 1, dy: 1 }, { dx: -1, dy: 1 }, { dx: -1, dy: -1 }
+     ];
+     
+     const directAngle = bestAngle;
+     let bestDiff = Infinity;
+     
+     for (const n of neighbors) {
+       const nx = sx + n.dx;
+       const ny = sy + n.dy;
+       if (nx >= 0 && nx < COLS && ny >= 0 && ny < ROWS) {
+         const nIdx = ny * COLS + nx;
+         const nCost = vectorField[nIdx];
+         if (!isNaN(nCost)) {
+            const angleToNeighbor = Math.atan2((sy + n.dy) * TILE_SIZE + TILE_SIZE/2 - startY, (sx + n.dx) * TILE_SIZE + TILE_SIZE/2 - startX);
+            let diff = angleToNeighbor - directAngle;
+            while (diff > Math.PI) diff -= Math.PI * 2;
+            while (diff < -Math.PI) diff += Math.PI * 2;
+            diff = Math.abs(diff);
+            
+            if (diff < bestDiff) {
+               bestDiff = diff;
+               bestAngle = angleToNeighbor;
+            }
+         }
+       }
+     }
+     
+     // Fallback to direct line if completely trapped
+     return bestAngle;
   }
   
   return angle;

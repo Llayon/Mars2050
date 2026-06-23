@@ -99,14 +99,15 @@ export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
     const uSize = config?.baseStats.size || 'M';
     const radius = getSizeRadius(uSize);
     const tDir = t === 'attacker' ? 'north' : 'south';
+    const scaleMultiplier = utype === 'flamethrower' ? 0.75 : 1;
 
     if (SPRITE_ATLASES[utype]) {
       s = new Sprite(Texture.from(`${utype}_idle_${tDir}_00`))
-      s.anchor.set(0.5, 0.8); s.scale.set((radius * 8) / 128); c.addChild(s)
+      s.anchor.set(0.5, 0.8); s.scale.set(((radius * 8) / 128) * scaleMultiplier); c.addChild(s)
     } else if (SPRITE_PATHS[utype]) {
       basePath = SPRITE_PATHS[utype]
       s = new Sprite(Texture.from(`${basePath}/${tDir}.png`))
-      s.anchor.set(0.5, 0.8); s.scale.set((radius * 8) / 128); c.addChild(s)
+      s.anchor.set(0.5, 0.8); s.scale.set(((radius * 8) / 128) * scaleMultiplier); c.addChild(s)
     } else {
       g = new Graphics(); g.circle(0, 0, radius).fill({ color: t === 'attacker' ? 0x3b82f6 : 0xef4444 }); c.addChild(g)
       const txt = new Text({ text: utype[0].toUpperCase(), style: { fill: 0xffffff, fontSize: 14, fontWeight: 'bold' } })
@@ -164,7 +165,7 @@ export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
           s.tX = a.toX!; s.tY = a.toY!
           if (s.s) {
             s.dir = a.facingAngle !== undefined ? getDir(Math.cos(a.facingAngle), Math.sin(a.facingAngle)) : getDir(s.tX - s.sX, s.tY - s.sY);
-            s.act = 'walk'
+            if (a.isWalking !== false) s.act = 'walk'
           }
         } else if (a.type === 'attack' || a.type === 'heal') {
           const tg = sprites[a.targetId!]
@@ -178,7 +179,8 @@ export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
             
             tg.hp -= isH ? -a.damage! : a.damage!
             updateHp(tg)
-            spawnTxt(isH ? `+${a.damage}` : `-${a.damage}`, tg.c.x, tg.c.y, pCol)
+            const dmgText = isH ? `+${a.damage}` : (a.isShieldHit && a.damage === 0 ? `БЛОК` : `-${a.damage}`)
+            spawnTxt(dmgText, tg.c.x, tg.c.y, pCol)
             
             if (s.s && s.baseScale !== undefined) {
                s.s.scale.set(s.baseScale * 1.2)
@@ -213,10 +215,9 @@ export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
       tick++
     }
 
-
     const easeOutQuad = (t: number) => t * (2 - t)
     const prog = easeOutQuad(Math.min(1, time / DUR))
-    const animFPS = 12 // 12 frames per second
+    const animFPS = 6 // Reduced from 12 to 6 frames per second
     const fIdx = Math.floor(globalTime / (1000 / animFPS)) % 6
     
     Object.values(sprites).forEach(s => {
@@ -225,11 +226,8 @@ export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
       if (s.s && s.isAtlas && s.act && s.dir) {
          // Shoot animation should play once per tick
          let f = fIdx;
-         if (s.act === 'shoot') {
-             f = Math.min(5, Math.floor((time / DUR) * 6));
-         } else if (s.act === 'idle') {
-             f = 0; // Or if you have idle animation: Math.floor(globalTime / (1000 / 6)) % 4
-         }
+         if (s.act === 'shoot') f = Math.min(5, Math.floor((time / DUR) * 6));
+         else if (s.act === 'idle') f = 0;
          s.s.texture = Texture.from(`${s.type}_${s.act}_${s.dir}_00${s.act === 'idle' ? '' : (f + 1)}`)
       } else if (s.s && s.basePath && s.dir) {
          s.s.texture = Texture.from(`${s.basePath}/${s.dir}.png`)

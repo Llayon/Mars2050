@@ -52,44 +52,36 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
     let modSpeed = config.baseStats.speed * 15;
     let modRange = config.baseStats.range * 40;
     let modCooldown = config.baseStats.actionCooldownMax || 10;
-    let modFlying = config.baseStats.isFlying || false;
     let modCanTargetAir = config.baseStats.canTargetAir || false;
     let modAoe = config.baseStats.aoeRadius ? config.baseStats.aoeRadius * 40 : undefined;
     let attackType = config.baseStats.attackType || 'single';
-    let modShield = 0;
-    let appliesEmp = false;
-    let leavesPuddle = false;
-    let spawnerConfig: { unitType: string, interval: number, timer: number } | undefined = undefined;
-    
-    let modDamageReductionWhileMoving = 0;
-    let modOnDeathPuddle: 'napalm' | 'acid' | 'emp' | undefined = undefined;
-    let modMultishot = 1;
-    let modAntiAirDamageMult = 1.0;
-    let modReplicateOnKill = false;
+    let modShield = 0, modFlying = config.baseStats.isFlying || false, modStealthWhileMoving = false;
+    let appliesEmp = false, leavesPuddle = false, spawnerConfig: { unitType: string, interval: number, timer: number } | undefined = undefined;
+    let modDamageReductionWhileMoving = 0, modOnDeathPuddle: 'napalm' | 'acid' | 'emp' | undefined = undefined;
+    let modMultishot = 1, modAntiAirDamageMult = 1.0, modReplicateOnKill = false;
+    let modResurrectOnce = false, modStealthUntilAttack = false, modExecuteThreshold = 0;
+    let modLifestealMult = 0, modGroundDamageMult = 1.0;
 
     if (u.upgrade_path && Array.isArray(u.upgrade_path)) {
       for (const upgradeId of u.upgrade_path) {
         const upgrade = UPGRADES[upgradeId]
         if (!upgrade) continue;
         const m = upgrade.modifiers;
-        if (m.hpMult) modHp *= m.hpMult;
-        if (m.attackMult) modAttack *= m.attackMult;
-        if (m.defenseAdd) modDefense += m.defenseAdd;
-        if (m.speedMult) modSpeed *= m.speedMult;
-        if (m.rangeAdd) modRange += m.rangeAdd * 40;
-        if (m.cooldownMult) modCooldown *= m.cooldownMult;
+        if (m.hpMult) modHp *= m.hpMult; if (m.attackMult) modAttack *= m.attackMult;
+        if (m.defenseAdd) modDefense += m.defenseAdd; if (m.speedMult) modSpeed *= m.speedMult;
+        if (m.rangeAdd) modRange += m.rangeAdd * 40; if (m.cooldownMult) modCooldown *= m.cooldownMult;
         if (m.addFlying) modFlying = true;
         if (m.grantShield) modShield += config.baseStats.hp * m.grantShield;
         if (m.grantShieldFlat) modShield += m.grantShieldFlat;
-        if (m.disableEnemyTech) appliesEmp = true;
-        if (m.leaveAoePuddle) leavesPuddle = true;
-        if (m.periodicSpawn) spawnerConfig = { unitType: m.periodicSpawn.unit, interval: m.periodicSpawn.interval * 10, timer: m.periodicSpawn.interval * 10 }; // interval in ticks (10 ticks = 1 sec approx)
+        if (m.disableEnemyTech) appliesEmp = true; if (m.leaveAoePuddle) leavesPuddle = true;
+        if (m.periodicSpawn) spawnerConfig = { unitType: m.periodicSpawn.unit, interval: m.periodicSpawn.interval * 10, timer: m.periodicSpawn.interval * 10 };
+        if (m.stealthWhileMoving) modStealthWhileMoving = true; if (m.onDeathPuddle) modOnDeathPuddle = m.onDeathPuddle;
+        if (m.replicateOnKill) modReplicateOnKill = true; if (m.resurrectOnce) modResurrectOnce = true;
+        if (m.stealthUntilAttack) modStealthUntilAttack = true; if (m.executeThreshold) modExecuteThreshold = m.executeThreshold;
+        if (m.lifestealMult) modLifestealMult = m.lifestealMult; if (m.groundDamageMult) modGroundDamageMult = m.groundDamageMult;
         if (m.damageReductionWhileMoving) modDamageReductionWhileMoving = m.damageReductionWhileMoving;
-        if (m.onDeathPuddle) modOnDeathPuddle = m.onDeathPuddle;
-        if (m.multishot) modMultishot = m.multishot;
-        if (m.antiAirDamageMult) modAntiAirDamageMult = m.antiAirDamageMult;
+        if (m.multishot) modMultishot = m.multishot; if (m.antiAirDamageMult) modAntiAirDamageMult = m.antiAirDamageMult;
         if (m.grantAntiAir) modCanTargetAir = true;
-        if (m.replicateOnKill) modReplicateOnKill = true;
         if (m.addAoE) {
           attackType = 'aoe';
           if (!modAoe) modAoe = m.addAoE * 40;
@@ -160,6 +152,11 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
         multishot: modMultishot,
         antiAirDamageMult: modAntiAirDamageMult,
         replicateOnKill: modReplicateOnKill,
+        resurrectOnce: modResurrectOnce,
+        stealthUntilAttack: modStealthUntilAttack,
+        executeThreshold: modExecuteThreshold,
+        lifestealMult: modLifestealMult,
+        groundDamageMult: modGroundDamageMult,
         offsetX: ox,
         offsetY: oy,
         x: cx + ox,

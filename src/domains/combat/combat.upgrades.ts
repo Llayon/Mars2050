@@ -26,6 +26,11 @@ export interface UpgradeConfig {
     grantAntiAir?: boolean // Allows targeting flying units
     grantShieldFlat?: number // Flat shield amount
     replicateOnKill?: boolean // Spawns a clone on kill
+    resurrectOnce?: boolean
+    stealthUntilAttack?: boolean
+    executeThreshold?: number
+    lifestealMult?: number
+    groundDamageMult?: number
   }
 }
 
@@ -81,6 +86,24 @@ export const UPGRADES: Record<string, UpgradeConfig> = {
   },
   drone_carrier: {
     id: 'drone_carrier', name: 'Улей-модуль', description: 'Каждые 15 секунд выпускает 1 Развед-дрона', cost: 500, allowedUnits: ['carrier', 'titan_mech'], modifiers: { periodicSpawn: { unit: 'scout_drone', interval: 15 } }
+  },
+  energy_absorption: {
+    id: 'energy_absorption', name: 'Поглощение энергии', description: 'Вампиризм: лечит юнита на 50% от нанесенного урона.', cost: 200, allowedUnits: ['exosuit', 'plasma_tank', 'marine'], modifiers: { lifestealMult: 0.5 }
+  },
+  culling_rounds: {
+    id: 'culling_rounds', name: 'Калибровочные снаряды', description: 'Мгновенно уничтожает цели с HP ниже 300. Снижает базовый урон на 20%.', cost: 200, allowedUnits: ['gatling_rover', 'heavy_gunner'], modifiers: { executeThreshold: 300, attackMult: 0.8 }
+  },
+  field_reassembly: {
+    id: 'field_reassembly', name: 'Ремонтный модуль', description: 'При смерти воскрешается с 100% HP (один раз за бой).', cost: 300, allowedUnits: ['titan_mech', 'behemoth_tank'], modifiers: { resurrectOnce: true }
+  },
+  stealth_cloak: {
+    id: 'stealth_cloak', name: 'Стелс-маскировка', description: 'Невидим и неуязвим до первой атаки.', cost: 150, allowedUnits: ['stealth_operative', 'sniper'], modifiers: { stealthUntilAttack: true }
+  },
+  ground_specialization: {
+    id: 'ground_specialization', name: 'Удар с небес', description: '+150% урона по наземным целям.', cost: 200, allowedUnits: ['gunship', 'interceptor'], modifiers: { groundDamageMult: 2.5 }
+  },
+  clone_hive: {
+    id: 'clone_hive', name: 'Био-клонирование', description: 'Убив врага, юнит создает свою копию (с 50% HP).', cost: 150, allowedUnits: ['alien_bug', 'alien_spitter'], modifiers: { replicateOnKill: true }
   }
 }
 

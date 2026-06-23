@@ -1,9 +1,7 @@
 import { SimUnit, BattleAction, SimHazard, UnitTypeKey } from './combat.types';
 import { UNIT_TYPES } from './combat.config';
+import { handleDeath, processSpawnAction } from './combat.systems.utils';
 import { getDistance, FIELD_WIDTH, FIELD_HEIGHT, PRNG, getSizeRadius } from './combat.utils';
-
-// --- ECS Systems ---
-
 
 export function tickModifiersSystem(unit: SimUnit, dt: number, actions: BattleAction[]) {
   if (unit.actionCooldown > 0) unit.actionCooldown = Math.max(0, unit.actionCooldown - 1);
@@ -19,8 +17,6 @@ export function tickModifiersSystem(unit: SimUnit, dt: number, actions: BattleAc
     }
   }
 }
-
-
 
 export function actionSystem(unit: SimUnit, target: SimUnit, units: SimUnit[], hazards: SimHazard[], actions: BattleAction[], rng: PRNG): boolean {
   const dist = getDistance(unit.x, unit.y, target.x, target.y);
@@ -47,61 +43,7 @@ export function actionSystem(unit: SimUnit, target: SimUnit, units: SimUnit[], h
   unit.actionCooldown = unit.actionCooldownMax; // Reset cooldown
 
   if (unit.attackType === 'spawn') {
-     // Spawn a turret directly in front of the engineer (towards target)
-     const dx = target.x - unit.x;
-     const dy = target.y - unit.y;
-     const mag = Math.hypot(dx, dy) || 1;
-     let spawnX = unit.x + (dx / mag) * 40; // spawn 40 units ahead
-     let spawnY = unit.y + (dy / mag) * 40;
-     
-     // Check if spawn position is out of bounds
-     if (spawnX < 0 || spawnX >= FIELD_WIDTH || spawnY < 0 || spawnY >= FIELD_HEIGHT) {
-        spawnX = unit.x; // Fallback to current position
-        spawnY = unit.y;
-     }
-
-     const spawnType = unit.spawnType || 'turret';
-     const newId = 'spawn_' + Math.floor(rng.next() * 1000000);
-     const spawnConfig = UNIT_TYPES[spawnType as UnitTypeKey];
-     
-     units.push({
-       id: newId,
-       team: unit.team,
-       type: spawnType,
-       hp: spawnConfig.baseStats.hp,
-       maxHp: spawnConfig.baseStats.hp,
-       attack: spawnConfig.baseStats.attack,
-       defense: spawnConfig.baseStats.defense,
-       speed: spawnConfig.baseStats.speed,
-       range: spawnConfig.baseStats.range,
-       attackType: spawnConfig.baseStats.attackType || 'single',
-       aoeRadius: spawnConfig.baseStats.aoeRadius,
-       actionCooldownMax: spawnConfig.baseStats.actionCooldownMax || 5,
-       actionCooldown: 0,
-       isFlying: spawnConfig.baseStats.isFlying || false,
-       canTargetAir: spawnConfig.baseStats.canTargetAir || false,
-       turnSpeed: spawnConfig.baseStats.turnSpeed || 5,
-       currentAngle: unit.team === 'attacker' ? Math.PI / 2 : -Math.PI / 2,
-       size: spawnConfig.baseStats.size || 'M',
-       x: spawnX,
-       y: spawnY,
-       isDead: false,
-       shield: 0,
-       maxShield: 0,
-       statusEffects: []
-     });
-
-     actions.push({ 
-       unitId: unit.id, 
-       type: 'spawn', 
-       toX: spawnX, 
-       toY: spawnY, 
-       spawnType: spawnType, 
-       spawnTeam: unit.team, 
-       spawnMaxHp: spawnConfig.baseStats.hp,
-       targetId: newId
-     });
-     return true;
+      return processSpawnAction(unit, target, units, actions, rng);
   }
 
   if (unit.attackType === 'heal') {
@@ -118,13 +60,18 @@ export function actionSystem(unit: SimUnit, target: SimUnit, units: SimUnit[], h
          if (target.isFlying && unit.antiAirDamageMult) {
              damage = Math.floor(damage * unit.antiAirDamageMult);
          }
+         if (!target.isFlying && unit.groundDamageMult) {
+             damage = Math.floor(damage * unit.groundDamageMult);
+         }
          
          if (target.isMoving && target.damageReductionWhileMoving) {
              damage = Math.floor(damage * (1 - target.damageReductionWhileMoving));
          }
 
+         let hitShield = false;
          // Portable Shield Logic (absorbs overflow damage completely)
          if (target.shield > 0) {
+             hitShield = true;
              if (target.shield >= damage) {
                  target.shield -= damage;
                  damage = 0;
@@ -134,11 +81,22 @@ export function actionSystem(unit: SimUnit, target: SimUnit, units: SimUnit[], h
              }
          }
 
+         if (unit.executeThreshold && target.hp <= unit.executeThreshold) {
+             damage = target.hp; // Insta-kill
+         }
+         
+         if (unit.lifestealMult && damage > 0) {
+             const heal = Math.floor(damage * unit.lifestealMult);
+             unit.hp = Math.min(unit.maxHp, unit.hp + heal);
+         }
+
          if (damage > 0) {
              target.hp -= damage;
          }
          
-         actions.push({ unitId: unit.id, type: 'attack', targetId: target.id, damage });
+         unit.hasAttacked = true;
+         
+         actions.push({ unitId: unit.id, type: 'attack', targetId: target.id, damage, isShieldHit: hitShield });
 
          if (unit.appliesEmp) {
              target.statusEffects.push({ type: 'emp', duration: 30 });
@@ -157,50 +115,8 @@ export function actionSystem(unit: SimUnit, target: SimUnit, units: SimUnit[], h
              });
          }
 
-         const handleDeath = (t: SimUnit) => {
-             t.isDead = true;
-             actions.push({ unitId: t.id, type: 'die' });
-             if (t.onDeathPuddle) {
-                 hazards.push({
-                     id: 'hazard_' + Math.floor(rng.next() * 1000000),
-                     team: t.team,
-                     type: t.onDeathPuddle,
-                     x: t.x,
-                     y: t.y,
-                     radius: 50,
-                     damagePerTick: t.onDeathPuddle === 'acid' ? Math.floor(t.maxHp * 0.1) : 10,
-                     duration: 40
-                 });
-             }
-             if (unit.replicateOnKill) {
-                 const newId = 'clone_' + Math.floor(rng.next() * 1000000);
-                 units.push({
-                     ...unit,
-                     id: newId,
-                     hp: unit.maxHp,
-                     x: t.x,
-                     y: t.y,
-                     actionCooldown: 0,
-                     shield: unit.maxShield,
-                     statusEffects: [],
-                     isDead: false,
-                     squadId: undefined
-                 });
-                 actions.push({ 
-                     unitId: unit.id, 
-                     type: 'spawn', 
-                     toX: t.x, 
-                     toY: t.y, 
-                     spawnType: unit.type, 
-                     spawnTeam: unit.team, 
-                     spawnMaxHp: unit.maxHp,
-                     targetId: newId
-                 });
-             }
-         };
-
          if (target.hp <= 0 && !target.isDead) {
-             handleDeath(target);
+             handleDeath(target, unit, units, actions, hazards, rng);
          }
 
          if (unit.attackType === 'aoe' && unit.aoeRadius) {
@@ -211,9 +127,12 @@ export function actionSystem(unit: SimUnit, target: SimUnit, units: SimUnit[], h
                      let splash = Math.max(1, Math.floor(unit.attack * 0.5) - e.defense);
                      
                      if (e.isFlying && unit.antiAirDamageMult) splash = Math.floor(splash * unit.antiAirDamageMult);
+                     if (!e.isFlying && unit.groundDamageMult) splash = Math.floor(splash * unit.groundDamageMult);
                      if (e.isMoving && e.damageReductionWhileMoving) splash = Math.floor(splash * (1 - e.damageReductionWhileMoving));
 
+                     let hitShield = false;
                      if (e.shield > 0) {
+                         hitShield = true;
                          if (e.shield >= splash) {
                              e.shield -= splash;
                              splash = 0;
@@ -223,14 +142,23 @@ export function actionSystem(unit: SimUnit, target: SimUnit, units: SimUnit[], h
                          }
                      }
 
+                     if (unit.executeThreshold && e.hp <= unit.executeThreshold) {
+                         splash = e.hp; // Insta-kill
+                     }
+                     
+                     if (unit.lifestealMult && splash > 0) {
+                         const heal = Math.floor(splash * unit.lifestealMult);
+                         unit.hp = Math.min(unit.maxHp, unit.hp + heal);
+                     }
+
                      if (splash > 0) e.hp -= splash;
                      
-                     actions.push({ unitId: unit.id, type: 'attack', targetId: e.id, damage: splash });
+                     actions.push({ unitId: unit.id, type: 'attack', targetId: e.id, damage: splash, isShieldHit: hitShield });
                      
                      if (unit.appliesEmp) e.statusEffects.push({ type: 'emp', duration: 30 });
 
                      if (e.hp <= 0 && !e.isDead) {
-                         handleDeath(e);
+                         handleDeath(e, unit, units, actions, hazards, rng);
                      }
                  }
              }

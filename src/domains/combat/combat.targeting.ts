@@ -17,7 +17,7 @@ export function targetingSystem(unit: SimUnit, units: SimUnit[], meleeTargetCoun
        }
     }
   } else {
-    const enemies = units.filter(e => !e.isDead && e.team !== unit.team && (!e.isFlying || unit.canTargetAir));
+    const enemies = units.filter(e => !e.isDead && e.team !== unit.team && (!e.isFlying || unit.canTargetAir) && !(e.stealthUntilAttack && !e.hasAttacked));
     if (enemies.length === 0) return null;
     
     // Filter out enemies that are already fully surrounded (if this is a melee unit)

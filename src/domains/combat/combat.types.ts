@@ -5,17 +5,10 @@ export type BattleRow = Database['public']['Tables']['battles']['Row']
 export type UnitTypeKey = UnitsType
 
 export interface UnitBaseStats {
-  hp: number
-  attack: number
-  defense: number
-  speed: number
-  range: number
+  hp: number; attack: number; defense: number; speed: number; range: number
   attackType: 'single' | 'aoe' | 'heal' | 'spawn'
-  aoeRadius?: number
-  spawnType?: string
-  actionCooldownMax?: number
-  isFlying?: boolean
-  canTargetAir?: boolean
+  aoeRadius?: number; spawnType?: string; actionCooldownMax?: number
+  isFlying?: boolean; canTargetAir?: boolean
   turnSpeed?: number // Radians per tick
   size?: 'S' | 'M' | 'L' | 'XL'
 }
@@ -39,10 +32,12 @@ export interface StatusEffect {
 
 export interface Obstacle { x: number; y: number; radius: number; }
 
+
+
 export interface SimHazard {
   id: string
   team: Team
-  type: 'napalm' | 'radiation' | 'emp_field'
+  type: 'napalm' | 'radiation' | 'emp_field' | 'acid' | 'emp'
   x: number
   y: number
   radius: number
@@ -87,8 +82,17 @@ export interface SimUnit {
   initialAngle?: number
   isMoving?: boolean
   replicateOnKill?: boolean
+  stealthUntilAttack?: boolean
+  hasAttacked?: boolean
+  resurrectOnce?: boolean
+  executeThreshold?: number
+  lifestealMult?: number
+  groundDamageMult?: number
+  damageReductionWhileMoving?: number
+  onDeathPuddle?: 'napalm' | 'acid' | 'emp'
+  multishot?: number
+  antiAirDamageMult?: number
 }
 
 export * from './combat.actions'
-
 
