@@ -53,8 +53,11 @@ export function movementSystem(unit: SimUnit, target: SimUnit, units: SimUnit[],
 
   // Soft collision (Boids separation), Cohesion and Alignment
   const isBug = unit.type.startsWith('alien_');
-  let squadCx = 0, squadCy = 0, squadCount = 0;
-  let squadVx = 0, squadVy = 0;
+  let squadCx = unit.squadId ? unit.x : 0;
+  let squadCy = unit.squadId ? unit.y : 0;
+  let squadCount = unit.squadId ? 1 : 0;
+  let squadVx = unit.squadId ? Math.cos(unit.currentAngle) : 0;
+  let squadVy = unit.squadId ? Math.sin(unit.currentAngle) : 0;
   let alignVx = 0, alignVy = 0, alignCount = 0;
 
   for (const other of units) {
@@ -121,7 +124,7 @@ export function movementSystem(unit: SimUnit, target: SimUnit, units: SimUnit[],
   }
 
   // Apply Cohesion Force (Formations)
-  if (squadCount > 0) {
+  if (squadCount > 1) {
     squadCx /= squadCount;
     squadCy /= squadCount;
     
