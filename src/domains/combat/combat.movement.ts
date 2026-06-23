@@ -90,7 +90,7 @@ export function movementSystem(unit: SimUnit, target: SimUnit, units: SimUnit[],
        const otherMass = getSizeMass(other.size);
        const pushRatio = (otherMass / (myMass + otherMass)) * 2; 
        
-       const stanceMultiplier = isInRange ? 0 : 1.0; // Plants firmly when fighting
+       const stanceMultiplier = isInRange ? 0.5 : 1.0; // Pushes less but still resolves overlap when fighting
        const pushForce = overlap * 5 * pushRatio * stanceMultiplier; 
        vx += Math.cos(pushAngle) * pushForce;
        vy += Math.sin(pushAngle) * pushForce;
