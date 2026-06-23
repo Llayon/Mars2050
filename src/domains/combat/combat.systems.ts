@@ -1,4 +1,4 @@
-import { SimUnit, BattleAction, SimHazard } from './combat.types';
+import { SimUnit, BattleAction, SimHazard, UnitTypeKey } from './combat.types';
 import { UNIT_TYPES } from './combat.config';
 import { getDistance, FIELD_WIDTH, FIELD_HEIGHT, PRNG, getSizeRadius } from './combat.utils';
 
@@ -126,12 +126,14 @@ export function actionSystem(unit: SimUnit, target: SimUnit, units: SimUnit[], h
        actionCooldown: 0,
        isFlying: spawnConfig.baseStats.isFlying || false,
        canTargetAir: spawnConfig.baseStats.canTargetAir || false,
-       turnSpeed: spawnConfig.baseStats.turnSpeed || 0.5,
+       turnSpeed: spawnConfig.baseStats.turnSpeed || 5,
        currentAngle: unit.team === 'attacker' ? Math.PI / 2 : -Math.PI / 2,
        size: spawnConfig.baseStats.size || 'M',
        x: spawnX,
        y: spawnY,
        isDead: false,
+       shield: 0,
+       maxShield: 0,
        statusEffects: []
      });
 

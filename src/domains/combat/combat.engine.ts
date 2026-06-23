@@ -3,7 +3,7 @@ import { GLOBAL_UPGRADES, UPGRADES, GlobalUpgradeConfig } from './combat.upgrade
 import { processGlobals } from './combat.globals'
 import { processHazards } from './combat.hazards'
 import { processSpawnerLogic } from './combat.spawner'
-import type { UnitRow, Team, SimUnit, BattleAction, BattleTick, BattleResult, Obstacle, SimHazard } from './combat.types'
+import type { UnitRow, Team, SimUnit, BattleAction, BattleTick, BattleResult, Obstacle, SimHazard, UnitTypeKey } from './combat.types'
 import { targetingSystem, actionSystem, tickModifiersSystem } from './combat.systems'
 import { movementSystem } from './combat.movement'
 import { getDistance, FIELD_WIDTH, FIELD_HEIGHT, PRNG } from './combat.utils'

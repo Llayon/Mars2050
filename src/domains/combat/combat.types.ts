@@ -37,6 +37,8 @@ export interface StatusEffect {
   value?: number
 }
 
+export interface Obstacle { x: number; y: number; radius: number; }
+
 export interface SimHazard {
   id: string
   team: Team
