@@ -76,6 +76,9 @@ export function movementSystem(unit: SimUnit, target: SimUnit, units: SimUnit[],
   if (!isInRange) {
     vx = Math.cos(unit.currentAngle) * unit.speed;
     vy = Math.sin(unit.currentAngle) * unit.speed;
+    unit.isMoving = true;
+  } else {
+    unit.isMoving = false;
   }
 
   for (const other of units) {

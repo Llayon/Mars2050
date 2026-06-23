@@ -20,53 +20,7 @@ export function tickModifiersSystem(unit: SimUnit, dt: number, actions: BattleAc
   }
 }
 
-export function targetingSystem(unit: SimUnit, units: SimUnit[], meleeTargetCounts: Record<string, number>): SimUnit | null {
-  let target: SimUnit | null = null;
-  let minDistance = Infinity;
 
-  if (unit.attackType === 'heal') {
-    let allies = units.filter(a => !a.isDead && a.team === unit.team && a.hp < a.maxHp && a.id !== unit.id);
-    if (allies.length === 0) {
-      allies = units.filter(a => !a.isDead && a.team === unit.team && a.id !== unit.id);
-    }
-    if (allies.length > 0) {
-       for (const ally of allies) {
-         const dist = getDistance(unit.x, unit.y, ally.x, ally.y);
-         if (dist < minDistance) { minDistance = dist; target = ally; }
-       }
-    }
-  } else {
-    const enemies = units.filter(e => !e.isDead && e.team !== unit.team && (!e.isFlying || unit.canTargetAir));
-    if (enemies.length === 0) return null;
-    
-    // Filter out enemies that are already fully surrounded (if this is a melee unit)
-    let validEnemies = enemies;
-    if (unit.range <= 60) {
-       validEnemies = enemies.filter(e => {
-          const slotsTaken = meleeTargetCounts[e.id] || 0;
-          const targetRadius = getSizeRadius(e.size);
-          const myRadius = getSizeRadius(unit.size);
-          const circumference = 2 * Math.PI * (targetRadius + myRadius);
-          const maxSlots = Math.floor(circumference / (myRadius * 2));
-          return slotsTaken < maxSlots;
-       });
-       
-       // Fallback: if all enemies are perfectly surrounded, just walk towards the closest one anyway
-       if (validEnemies.length === 0) validEnemies = enemies;
-    }
-
-    for (const enemy of validEnemies) {
-      const dist = getDistance(unit.x, unit.y, enemy.x, enemy.y);
-      if (dist < minDistance) {
-        minDistance = dist;
-        target = enemy;
-      } else if (dist === minDistance && target && enemy.hp < target.hp) {
-        target = enemy;
-      }
-    }
-  }
-  return target;
-}
 
 export function actionSystem(unit: SimUnit, target: SimUnit, units: SimUnit[], hazards: SimHazard[], actions: BattleAction[], rng: PRNG): boolean {
   const dist = getDistance(unit.x, unit.y, target.x, target.y);
@@ -156,29 +110,131 @@ export function actionSystem(unit: SimUnit, target: SimUnit, units: SimUnit[], h
      target.hp = Math.min(target.maxHp, target.hp + healAmount);
      actions.push({ unitId: unit.id, type: 'heal', targetId: target.id, damage: healAmount });
   } else {
-     const damage = Math.max(1, unit.attack - target.defense);
-     target.hp -= damage;
-     actions.push({ unitId: unit.id, type: 'attack', targetId: target.id, damage });
+     const numShots = unit.multishot || 1;
+     for (let shot = 0; shot < numShots; shot++) {
+         if (target.isDead) break;
 
-     if (target.hp <= 0 && !target.isDead) {
-       target.isDead = true;
-       actions.push({ unitId: target.id, type: 'die' });
-     }
+         let damage = Math.max(1, unit.attack - target.defense);
+         if (target.isFlying && unit.antiAirDamageMult) {
+             damage = Math.floor(damage * unit.antiAirDamageMult);
+         }
+         
+         if (target.isMoving && target.damageReductionWhileMoving) {
+             damage = Math.floor(damage * (1 - target.damageReductionWhileMoving));
+         }
 
-     if (unit.attackType === 'aoe' && unit.aoeRadius) {
-       const radius = unit.aoeRadius;
-       const splashEnemies = units.filter(e => !e.isDead && e.team !== unit.team && e.id !== target.id);
-       for (const e of splashEnemies) {
-          if (getDistance(target.x, target.y, e.x, e.y) <= radius) {
-             const splash = Math.max(1, Math.floor(unit.attack * 0.5) - e.defense);
-             e.hp -= splash;
-             actions.push({ unitId: unit.id, type: 'attack', targetId: e.id, damage: splash });
-             if (e.hp <= 0 && !e.isDead) {
-               e.isDead = true;
-               actions.push({ unitId: e.id, type: 'die' });
+         // Portable Shield Logic (absorbs overflow damage completely)
+         if (target.shield > 0) {
+             if (target.shield >= damage) {
+                 target.shield -= damage;
+                 damage = 0;
+             } else {
+                 target.shield = 0;
+                 damage = 0; // Shield breaks but absorbs the rest of this hit
              }
-          }
-       }
+         }
+
+         if (damage > 0) {
+             target.hp -= damage;
+         }
+         
+         actions.push({ unitId: unit.id, type: 'attack', targetId: target.id, damage });
+
+         if (unit.appliesEmp) {
+             target.statusEffects.push({ type: 'emp', duration: 30 });
+         }
+
+         if (unit.leavesPuddle) {
+             hazards.push({
+                 id: 'hazard_' + Math.floor(rng.next() * 1000000),
+                 team: unit.team,
+                 type: 'napalm',
+                 x: target.x,
+                 y: target.y,
+                 radius: 40,
+                 damagePerTick: Math.floor(unit.attack * 0.2),
+                 duration: 50 // 5 seconds
+             });
+         }
+
+         const handleDeath = (t: SimUnit) => {
+             t.isDead = true;
+             actions.push({ unitId: t.id, type: 'die' });
+             if (t.onDeathPuddle) {
+                 hazards.push({
+                     id: 'hazard_' + Math.floor(rng.next() * 1000000),
+                     team: t.team,
+                     type: t.onDeathPuddle,
+                     x: t.x,
+                     y: t.y,
+                     radius: 50,
+                     damagePerTick: t.onDeathPuddle === 'acid' ? Math.floor(t.maxHp * 0.1) : 10,
+                     duration: 40
+                 });
+             }
+             if (unit.replicateOnKill) {
+                 const newId = 'clone_' + Math.floor(rng.next() * 1000000);
+                 units.push({
+                     ...unit,
+                     id: newId,
+                     hp: unit.maxHp,
+                     x: t.x,
+                     y: t.y,
+                     actionCooldown: 0,
+                     shield: unit.maxShield,
+                     statusEffects: [],
+                     isDead: false,
+                     squadId: undefined
+                 });
+                 actions.push({ 
+                     unitId: unit.id, 
+                     type: 'spawn', 
+                     toX: t.x, 
+                     toY: t.y, 
+                     spawnType: unit.type, 
+                     spawnTeam: unit.team, 
+                     spawnMaxHp: unit.maxHp,
+                     targetId: newId
+                 });
+             }
+         };
+
+         if (target.hp <= 0 && !target.isDead) {
+             handleDeath(target);
+         }
+
+         if (unit.attackType === 'aoe' && unit.aoeRadius) {
+             const radius = unit.aoeRadius;
+             const splashEnemies = units.filter(e => !e.isDead && e.team !== unit.team && e.id !== target.id);
+             for (const e of splashEnemies) {
+                 if (getDistance(target.x, target.y, e.x, e.y) <= radius) {
+                     let splash = Math.max(1, Math.floor(unit.attack * 0.5) - e.defense);
+                     
+                     if (e.isFlying && unit.antiAirDamageMult) splash = Math.floor(splash * unit.antiAirDamageMult);
+                     if (e.isMoving && e.damageReductionWhileMoving) splash = Math.floor(splash * (1 - e.damageReductionWhileMoving));
+
+                     if (e.shield > 0) {
+                         if (e.shield >= splash) {
+                             e.shield -= splash;
+                             splash = 0;
+                         } else {
+                             e.shield = 0;
+                             splash = 0;
+                         }
+                     }
+
+                     if (splash > 0) e.hp -= splash;
+                     
+                     actions.push({ unitId: unit.id, type: 'attack', targetId: e.id, damage: splash });
+                     
+                     if (unit.appliesEmp) e.statusEffects.push({ type: 'emp', duration: 30 });
+
+                     if (e.hp <= 0 && !e.isDead) {
+                         handleDeath(e);
+                     }
+                 }
+             }
+         }
      }
   }
   return true;

@@ -4,40 +4,14 @@ import { processGlobals } from './combat.globals'
 import { processHazards } from './combat.hazards'
 import { processSpawnerLogic } from './combat.spawner'
 import type { UnitRow, Team, SimUnit, BattleAction, BattleTick, BattleResult, Obstacle, SimHazard, UnitTypeKey } from './combat.types'
-import { targetingSystem, actionSystem, tickModifiersSystem } from './combat.systems'
+import { actionSystem, tickModifiersSystem } from './combat.systems'
+import { targetingSystem } from './combat.targeting'
 import { movementSystem } from './combat.movement'
-import { getDistance, FIELD_WIDTH, FIELD_HEIGHT, PRNG } from './combat.utils'
+import { getDistance, FIELD_WIDTH, FIELD_HEIGHT, PRNG, generateObstacles } from './combat.utils'
 import { createPathfindingMap, FlowFieldMap } from './combat.pathfinding'
 
 
 
-export function generateObstacles(seed: number): Obstacle[] {
-  const rng = new PRNG(seed)
-  const obstacles: Obstacle[] = [];
-  const numObstacles = 4 + Math.floor(rng.next() * 4);
-  let attempts = 0;
-  
-  while (obstacles.length < numObstacles && attempts < 50) {
-     attempts++;
-     const ox = 50 + rng.next() * (FIELD_WIDTH - 100);
-     const oy = 250 + rng.next() * (FIELD_HEIGHT - 600);
-     const oradius = 15 + rng.next() * 25; // Radius 15-40
-     
-     let overlaps = false;
-     for (const existing of obstacles) {
-       const dist = getDistance(ox, oy, existing.x, existing.y);
-       if (dist < oradius + existing.radius + 20) {
-         overlaps = true;
-         break;
-       }
-     }
-     
-     if (!overlaps) {
-       obstacles.push({ x: ox, y: oy, radius: oradius });
-     }
-  }
-  return obstacles;
-}
 
 export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[], providedSeed?: number, providedObstacles?: Obstacle[], attackerGlobals: string[] = [], defenderGlobals: string[] = []): BattleResult {
   const seed = providedSeed || Date.now()
@@ -79,12 +53,19 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
     let modRange = config.baseStats.range * 40;
     let modCooldown = config.baseStats.actionCooldownMax || 10;
     let modFlying = config.baseStats.isFlying || false;
+    let modCanTargetAir = config.baseStats.canTargetAir || false;
     let modAoe = config.baseStats.aoeRadius ? config.baseStats.aoeRadius * 40 : undefined;
     let attackType = config.baseStats.attackType || 'single';
     let modShield = 0;
     let appliesEmp = false;
     let leavesPuddle = false;
     let spawnerConfig: { unitType: string, interval: number, timer: number } | undefined = undefined;
+    
+    let modDamageReductionWhileMoving = 0;
+    let modOnDeathPuddle: 'napalm' | 'acid' | 'emp' | undefined = undefined;
+    let modMultishot = 1;
+    let modAntiAirDamageMult = 1.0;
+    let modReplicateOnKill = false;
 
     if (u.upgrade_path && Array.isArray(u.upgrade_path)) {
       for (const upgradeId of u.upgrade_path) {
@@ -99,9 +80,16 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
         if (m.cooldownMult) modCooldown *= m.cooldownMult;
         if (m.addFlying) modFlying = true;
         if (m.grantShield) modShield += config.baseStats.hp * m.grantShield;
+        if (m.grantShieldFlat) modShield += m.grantShieldFlat;
         if (m.disableEnemyTech) appliesEmp = true;
         if (m.leaveAoePuddle) leavesPuddle = true;
         if (m.periodicSpawn) spawnerConfig = { unitType: m.periodicSpawn.unit, interval: m.periodicSpawn.interval * 10, timer: m.periodicSpawn.interval * 10 }; // interval in ticks (10 ticks = 1 sec approx)
+        if (m.damageReductionWhileMoving) modDamageReductionWhileMoving = m.damageReductionWhileMoving;
+        if (m.onDeathPuddle) modOnDeathPuddle = m.onDeathPuddle;
+        if (m.multishot) modMultishot = m.multishot;
+        if (m.antiAirDamageMult) modAntiAirDamageMult = m.antiAirDamageMult;
+        if (m.grantAntiAir) modCanTargetAir = true;
+        if (m.replicateOnKill) modReplicateOnKill = true;
         if (m.addAoE) {
           attackType = 'aoe';
           if (!modAoe) modAoe = m.addAoE * 40;
@@ -155,7 +143,7 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
         actionCooldownMax: modCooldown,
         actionCooldown: 0,
         isFlying: modFlying,
-        canTargetAir: config.baseStats.canTargetAir || false,
+        canTargetAir: modCanTargetAir,
         turnSpeed: config.baseStats.turnSpeed || 0.5,
         currentAngle: t === 'attacker' ? Math.PI / 2 : -Math.PI / 2,
         initialAngle: t === 'attacker' ? Math.PI / 2 : -Math.PI / 2,
@@ -167,6 +155,11 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
         appliesEmp,
         leavesPuddle,
         spawnerConfig: spawnerConfig ? { ...spawnerConfig } : undefined,
+        damageReductionWhileMoving: modDamageReductionWhileMoving,
+        onDeathPuddle: modOnDeathPuddle,
+        multishot: modMultishot,
+        antiAirDamageMult: modAntiAirDamageMult,
+        replicateOnKill: modReplicateOnKill,
         offsetX: ox,
         offsetY: oy,
         x: cx + ox,

@@ -19,36 +19,65 @@ export interface UpgradeConfig {
     periodicSpawn?: { unit: string, interval: number }
     disableEnemyTech?: boolean // EMP
     leaveAoePuddle?: boolean // Napalm
+    damageReductionWhileMoving?: number // Reduces damage taken while moving
+    onDeathPuddle?: 'napalm' | 'acid' | 'emp' // Drops hazard on death
+    multishot?: number // Number of shots per attack
+    antiAirDamageMult?: number // Damage multiplier against flying targets
+    grantAntiAir?: boolean // Allows targeting flying units
+    grantShieldFlat?: number // Flat shield amount
+    replicateOnKill?: boolean // Spawns a clone on kill
   }
 }
 
 export const UPGRADES: Record<string, UpgradeConfig> = {
-  stimpacks: {
-    id: 'stimpacks', name: 'Стимуляторы', description: 'Скорость атаки +50%, Здоровье -20%', cost: 100, allowedUnits: ['marine', 'shock_trooper', 'flamethrower', 'heavy_gunner'], modifiers: { cooldownMult: 0.5, hpMult: 0.8 }
+  // Legacy / General
+  stimpacks: { id: 'stimpacks', name: 'Стимуляторы', description: 'Скорость атаки +50%, Здоровье -20%', cost: 100, allowedUnits: ['marine', 'heavy_gunner'], modifiers: { cooldownMult: 0.5, hpMult: 0.8 } },
+  hollow_point: { id: 'hollow_point', name: 'Экспансивные пули', description: 'Урон +50%', cost: 150, allowedUnits: ['marine', 'heavy_gunner', 'gatling_rover'], modifiers: { attackMult: 1.5 } },
+  heavy_armor: { id: 'heavy_armor', name: 'Тяжелая броня', description: 'Броня +5, Здоровье +30%, Скорость -20%', cost: 250, allowedUnits: ['all'], modifiers: { defenseAdd: 5, hpMult: 1.3, speedMult: 0.8 } },
+  photon_coating: { id: 'photon_coating', name: 'Фотонное покрытие', description: 'Дает энергетический щит на 50% от максимального ХП', cost: 400, allowedUnits: ['all'], modifiers: { grantShield: 0.5 } },
+
+  // New Mechabellum-inspired Techs
+  parasitic_infestation: {
+    id: 'parasitic_infestation', name: 'Паразитическое заражение', description: 'Убив вражеского юнита, создает из его трупа нового Жука.', 
+    cost: 450, allowedUnits: ['alien_bug'], modifiers: { replicateOnKill: true }
   },
-  hollow_point: {
-    id: 'hollow_point', name: 'Экспансивные пули', description: 'Урон +50%', cost: 150, allowedUnits: ['marine', 'heavy_gunner', 'sniper', 'gatling_rover'], modifiers: { attackMult: 1.5 }
+  subterranean_blitz: { 
+    id: 'subterranean_blitz', name: 'Подземный рывок', description: 'Юнит зарывается под землю во время движения, получая на 45% меньше урона и ускоряясь на 20%.', 
+    cost: 350, allowedUnits: ['shock_trooper', 'alien_bug'], modifiers: { damageReductionWhileMoving: 0.45, speedMult: 1.2 } 
   },
-  extended_barrel: {
-    id: 'extended_barrel', name: 'Оптика', description: 'Дальность стрельбы +2', cost: 200, allowedUnits: ['marine', 'sniper', 'siege_tank', 'missile_buggy'], modifiers: { rangeAdd: 2 }
+  portable_shield: { 
+    id: 'portable_shield', name: 'Портативный щит', description: 'Каждый боец получает персональный энергощит, впитывающий 150 урона.', 
+    cost: 400, allowedUnits: ['marine'], modifiers: { grantShieldFlat: 150 } 
   },
-  jump_pack: {
-    id: 'jump_pack', name: 'Прыжковые ранцы', description: 'Дает возможность перелетать препятствия (Летающий) и Скорость +30%', cost: 300, allowedUnits: ['shock_trooper', 'sapper', 'exosuit'], modifiers: { addFlying: true, speedMult: 1.3 }
+  acidic_explosion: { 
+    id: 'acidic_explosion', name: 'Кислотный взрыв', description: 'После смерти оставляет лужу кислоты, наносящую урон врагам.', 
+    cost: 200, allowedUnits: ['shock_trooper', 'alien_bug', 'alien_spitter'], modifiers: { onDeathPuddle: 'acid' } 
   },
-  heavy_armor: {
-    id: 'heavy_armor', name: 'Тяжелая броня', description: 'Броня +5, Здоровье +30%, Скорость -20%', cost: 250, allowedUnits: ['all'], modifiers: { defenseAdd: 5, hpMult: 1.3, speedMult: 0.8 }
+  range_enhancement: { 
+    id: 'range_enhancement', name: 'Продвинутая оптика', description: 'Дальность стрельбы +3.', 
+    cost: 300, allowedUnits: ['marine', 'sniper', 'siege_tank', 'missile_buggy'], modifiers: { rangeAdd: 3 } 
+  },
+  doubleshot: { 
+    id: 'doubleshot', name: 'Двойной выстрел', description: 'Производит 2 выстрела подряд, урон каждого снижен на 15%.', 
+    cost: 250, allowedUnits: ['sniper'], modifiers: { multishot: 2, attackMult: 0.85 } 
+  },
+  aerial_specialization: { 
+    id: 'aerial_specialization', name: 'ПВО-Специализация', description: 'Урон по летающим целям +90%.', 
+    cost: 250, allowedUnits: ['sniper', 'marine', 'aa_turret'], modifiers: { antiAirDamageMult: 1.9 } 
+  },
+  anti_aircraft_ammo: { 
+    id: 'anti_aircraft_ammo', name: 'Зенитные боеприпасы', description: 'Позволяет атаковать летающие цели.', 
+    cost: 300, allowedUnits: ['flamethrower', 'grenadier'], modifiers: { grantAntiAir: true } 
   },
   incendiary_ammo: {
-    id: 'incendiary_ammo', name: 'Зажигательные снаряды', description: 'Оставляет огненную лужу (Напалм)', cost: 300, allowedUnits: ['missile_buggy', 'gunship', 'railgun_walker', 'scavenger_buggy', 'flamethrower'], modifiers: { leaveAoePuddle: true, attackMult: 0.8 }
+    id: 'incendiary_ammo', name: 'Зажигательные снаряды', description: 'Оставляет огненную лужу (Напалм), но базовый урон снижен.', 
+    cost: 300, allowedUnits: ['missile_buggy', 'gunship', 'railgun_walker', 'scavenger_buggy', 'flamethrower'], modifiers: { leaveAoePuddle: true, attackMult: 0.8 }
   },
-  photon_coating: {
-    id: 'photon_coating', name: 'Фотонное покрытие', description: 'Дает энергетический щит на 50% от максимального ХП', cost: 400, allowedUnits: ['all'], modifiers: { grantShield: 0.5 }
+  emp_rounds: {
+    id: 'emp_rounds', name: 'ЭМИ-снаряды', description: 'Отключает технологии цели на 3 секунды', cost: 300, allowedUnits: ['sniper', 'railgun_walker', 'heavy_gunner'], modifiers: { disableEnemyTech: true }
   },
   overclock: {
     id: 'overclock', name: 'Разгон ядра', description: 'Урон +100%, Скорость атаки +50%, Здоровье -50%', cost: 300, allowedUnits: ['plasma_tank', 'siege_tank', 'titan_mech', 'cryo_tank'], modifiers: { attackMult: 2.0, cooldownMult: 0.5, hpMult: 0.5 }
-  },
-  emp_rounds: {
-    id: 'emp_rounds', name: 'ЭМИ-снаряды', description: 'Отключает технологии цели на 3 секунды', cost: 300, allowedUnits: ['sniper', 'railgun_walker'], modifiers: { disableEnemyTech: true }
   },
   drone_carrier: {
     id: 'drone_carrier', name: 'Улей-модуль', description: 'Каждые 15 секунд выпускает 1 Развед-дрона', cost: 500, allowedUnits: ['carrier', 'titan_mech'], modifiers: { periodicSpawn: { unit: 'scout_drone', interval: 15 } }

@@ -85,6 +85,8 @@ export interface SimUnit {
   leavesPuddle?: boolean
   spawnerConfig?: { unitType: string, interval: number, timer: number }
   initialAngle?: number
+  isMoving?: boolean
+  replicateOnKill?: boolean
 }
 
 export * from './combat.actions'
