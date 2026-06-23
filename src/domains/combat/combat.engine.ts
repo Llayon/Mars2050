@@ -141,7 +141,7 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
       const acted = actionSystem(unit, target, units, actions, rng);
       
       if (!acted) {
-        movementSystem(unit, target, units, actions, dt, rng, flowFieldMap);
+        movementSystem(unit, target, units, actions, dt, rng, flowFieldMap, obstacles);
       }
     }
 

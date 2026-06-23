@@ -1,8 +1,9 @@
 import { SimUnit, BattleAction } from './combat.types';
 import { getDistance, FIELD_WIDTH, FIELD_HEIGHT, PRNG, getSizeRadius } from './combat.utils';
 import { FlowFieldMap, getFlowVector } from './combat.pathfinding';
+import { Obstacle } from './combat.types';
 
-export function movementSystem(unit: SimUnit, target: SimUnit, units: SimUnit[], actions: BattleAction[], dt: number, rng: PRNG, flowFieldMap: FlowFieldMap) {
+export function movementSystem(unit: SimUnit, target: SimUnit, units: SimUnit[], actions: BattleAction[], dt: number, rng: PRNG, flowFieldMap: FlowFieldMap, obstacles: Obstacle[]) {
   if (unit.speed <= 0) return;
   
   let vx = 0;
@@ -91,6 +92,21 @@ export function movementSystem(unit: SimUnit, target: SimUnit, units: SimUnit[],
        vx += Math.cos(pushAngle) * pushForce;
        vy += Math.sin(pushAngle) * pushForce;
     }
+  }
+
+  // Soft collision with obstacles
+  if (!unit.isFlying) {
+     for (const obs of obstacles) {
+        const dist = getDistance(unit.x, unit.y, obs.x, obs.y);
+        const minDist = myRadius + obs.radius;
+        if (dist > 0 && dist < minDist) {
+           const overlap = minDist - dist;
+           const pushAngle = Math.atan2(unit.y - obs.y, unit.x - obs.x);
+           const pushForce = overlap * 15; // strong push away from obstacles
+           vx += Math.cos(pushAngle) * pushForce;
+           vy += Math.sin(pushAngle) * pushForce;
+        }
+     }
   }
 
   // Apply Boids Alignment Force (Bugs swarm together)
