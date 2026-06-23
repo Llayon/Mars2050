@@ -9,18 +9,50 @@ export function movementSystem(unit: SimUnit, target: SimUnit, units: SimUnit[],
   let vx = 0;
   let vy = 0;
   
+  // Pre-calculate squad center and alignment for parallel movement and boids
+  const isBug = unit.type.startsWith('alien_');
+  let squadCx = unit.squadId ? unit.x : 0;
+  let squadCy = unit.squadId ? unit.y : 0;
+  let squadCount = unit.squadId ? 1 : 0;
+  let alignVx = 0, alignVy = 0, alignCount = 0;
+
+  for (const other of units) {
+    if (other.isDead || other.id === unit.id) continue;
+    
+    if (unit.squadId && other.squadId === unit.squadId) {
+      squadCx += other.x;
+      squadCy += other.y;
+      squadCount++;
+    }
+
+    if (unit.isFlying === other.isFlying) {
+      const dist = getDistance(unit.x, unit.y, other.x, other.y);
+      if (isBug && other.type.startsWith('alien_') && dist < 80) {
+        alignVx += Math.cos(other.currentAngle);
+        alignVy += Math.sin(other.currentAngle);
+        alignCount++;
+      }
+    }
+  }
+
+  if (squadCount > 1) {
+    squadCx /= squadCount;
+    squadCy /= squadCount;
+  }
+
   const distToTarget = getDistance(unit.x, unit.y, target.x, target.y);
-  // Subtracting sizes so that melee units stop at the edge of the target, not center
   const targetRadius = getSizeRadius(target.size);
   const myRadius = getSizeRadius(unit.size);
   const isInRange = (distToTarget - targetRadius - myRadius) <= unit.range;
 
-  // Turn logic (Angular Velocity)
-  let targetAngle = Math.atan2(target.y - unit.y, target.x - unit.x);
+  // Turn logic: if in a squad, aim parallel to the squad's direction to the target to prevent converging and crushing
+  let targetAngle = (unit.squadId && squadCount > 1 && distToTarget > unit.range * 1.5) 
+      ? Math.atan2(target.y - squadCy, target.x - squadCx)
+      : Math.atan2(target.y - unit.y, target.x - unit.x);
   
   // Use Flow Field if not flying and relatively far from target to avoid obstacles
   if (!unit.isFlying && distToTarget > 60) {
-      const flowAngle = getFlowVector(flowFieldMap, unit.x, unit.y, target.x, target.y);
+      const flowAngle = getFlowVector(flowFieldMap, squadCount > 1 ? squadCx : unit.x, squadCount > 1 ? squadCy : unit.y, target.x, target.y);
       if (flowAngle !== null) {
           targetAngle = flowAngle;
       }
@@ -28,7 +60,6 @@ export function movementSystem(unit: SimUnit, target: SimUnit, units: SimUnit[],
   
   let angleDiff = targetAngle - unit.currentAngle;
   
-  // Normalize to -PI to PI
   while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
   while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
 
@@ -39,51 +70,23 @@ export function movementSystem(unit: SimUnit, target: SimUnit, units: SimUnit[],
       unit.currentAngle += Math.sign(angleDiff) * maxTurn;
   }
   
-  // Normalize currentAngle just in case
   while (unit.currentAngle > Math.PI) unit.currentAngle -= Math.PI * 2;
   while (unit.currentAngle < -Math.PI) unit.currentAngle += Math.PI * 2;
 
-  // Only move towards target if outside of attack range, otherwise base velocity is 0 (stand and fight)
-  // Heal targets use the same range logic
   if (!isInRange) {
-    // MOVE ALONG CURRENT ANGLE, NOT TARGET ANGLE! (This causes heavy units to move in arcs)
     vx = Math.cos(unit.currentAngle) * unit.speed;
     vy = Math.sin(unit.currentAngle) * unit.speed;
   }
 
-  // Soft collision (Boids separation), Cohesion and Alignment
-  const isBug = unit.type.startsWith('alien_');
-  let squadCx = unit.squadId ? unit.x : 0;
-  let squadCy = unit.squadId ? unit.y : 0;
-  let squadCount = unit.squadId ? 1 : 0;
-  let squadVx = unit.squadId ? Math.cos(unit.currentAngle) : 0;
-  let squadVy = unit.squadId ? Math.sin(unit.currentAngle) : 0;
-  let alignVx = 0, alignVy = 0, alignCount = 0;
-
   for (const other of units) {
     if (other.isDead || other.id === unit.id) continue;
     
-    // Cohesion: find center of mass of the squad
-    if (unit.squadId && other.squadId === unit.squadId) {
-      squadCx += other.x;
-      squadCy += other.y;
-      squadVx += Math.cos(other.currentAngle);
-      squadVy += Math.sin(other.currentAngle);
-      squadCount++;
-    }
-
     if (unit.isFlying !== other.isFlying) continue;
     
     const dist = getDistance(unit.x, unit.y, other.x, other.y);
     const otherRadius = getSizeRadius(other.size);
-    const minDist = myRadius + otherRadius;
-
-    // Alignment (Boids): Bugs align their movement with nearby bugs
-    if (isBug && other.type.startsWith('alien_') && dist < 80) {
-      alignVx += Math.cos(other.currentAngle);
-      alignVy += Math.sin(other.currentAngle);
-      alignCount++;
-    }
+    // Allow a tiny bit of overlap in formation by capping minDist slightly smaller than spacing, but let's just use 90% of radius to prevent jitter
+    const minDist = (myRadius + otherRadius) * 0.9;
 
     if (dist > 0 && dist < minDist) {
        const overlap = minDist - dist;
@@ -125,16 +128,15 @@ export function movementSystem(unit: SimUnit, target: SimUnit, units: SimUnit[],
 
   // Apply Cohesion Force (Formations)
   if (squadCount > 1) {
-    squadCx /= squadCount;
-    squadCy /= squadCount;
     
     let targetCx = squadCx;
     let targetCy = squadCy;
     
     if (!isBug && unit.offsetX !== undefined && unit.offsetY !== undefined && unit.initialAngle !== undefined) {
       // Humans keep strict military formation relative to squad center
-      // Rotate the local offset to match the squad's average heading
-      const squadAngle = Math.atan2(squadVy, squadVx);
+      // Rotate the local offset to match the angle from squad center to target
+      // This prevents the formation from spinning wildly when units individually adjust their angles
+      const squadAngle = Math.atan2(target.y - squadCy, target.x - squadCx);
       const rotation = squadAngle - unit.initialAngle;
       
       const rotatedOx = unit.offsetX * Math.cos(rotation) - unit.offsetY * Math.sin(rotation);
