@@ -153,8 +153,8 @@ export function movementSystem(unit: SimUnit, target: SimUnit, units: SimUnit[],
   }
 
   // Cap velocity to avoid them flying off screen if they are perfectly stacked
-  // If unit is planted (fighting), it shouldn't slide backwards fast
-  const maxSpeed = unit.speed * (isInRange ? 0.4 : 1.5);
+  // Allow a high minimum maxSpeed so collision resolution isn't throttled when speed is low or fighting
+  const maxSpeed = Math.max(unit.speed * 1.5, 40);
   const finalMag = Math.hypot(vx, vy);
   
   if (finalMag < 0.5) {
