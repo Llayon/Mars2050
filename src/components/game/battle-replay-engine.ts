@@ -129,7 +129,7 @@ export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
     attackerUnits.forEach(u => createU(u, 'attacker', false)); defenderUnits.forEach(u => createU(u, 'defender', false))
   }
 
-  let tick = 0, time = 0
+  let tick = 0, time = 0, globalTime = 0
   const DUR = 150
   type FX = { c: Container, life: number }
   type Proj = { g: Graphics, sX: number, sY: number, tX: number, tY: number, p: number, col: number }
@@ -147,6 +147,7 @@ export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
 
   app.ticker.add(({ deltaMS: dt }) => {
     time += dt
+    globalTime += dt
     
     while (time >= DUR && tick < logs.length) {
       time -= DUR
@@ -215,12 +216,21 @@ export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
 
     const easeOutQuad = (t: number) => t * (2 - t)
     const prog = easeOutQuad(Math.min(1, time / DUR))
+    const animFPS = 12 // 12 frames per second
+    const fIdx = Math.floor(globalTime / (1000 / animFPS)) % 6
+    
     Object.values(sprites).forEach(s => {
       s.c.x = lerp(s.sX, s.tX, prog); s.c.y = lerp(s.sY, s.tY, prog)
       layer.children.sort((a, b) => a.y - b.y)
       if (s.s && s.isAtlas && s.act && s.dir) {
-         const f = Math.min(6, Math.floor((time / DUR) * 7));
-         s.s.texture = Texture.from(`${s.type}_${s.act}_${s.dir}_00${s.act === 'idle' ? '' : f}`)
+         // Shoot animation should play once per tick
+         let f = fIdx;
+         if (s.act === 'shoot') {
+             f = Math.min(5, Math.floor((time / DUR) * 6));
+         } else if (s.act === 'idle') {
+             f = 0; // Or if you have idle animation: Math.floor(globalTime / (1000 / 6)) % 4
+         }
+         s.s.texture = Texture.from(`${s.type}_${s.act}_${s.dir}_00${s.act === 'idle' ? '' : (f + 1)}`)
       } else if (s.s && s.basePath && s.dir) {
          s.s.texture = Texture.from(`${s.basePath}/${s.dir}.png`)
       }
