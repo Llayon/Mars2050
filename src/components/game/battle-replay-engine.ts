@@ -172,7 +172,7 @@ export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
             }
             if (s.isAtlas) {
               // Walk animation! Just frame 0 for now since we don't have animation loop running yet
-              s.s.texture = Texture.from(`${s.type}_walk_${dir}_00`)
+              s.s.texture = Texture.from(`${s.type}_walk_${dir}_000`)
             } else if (s.basePath) {
               s.s.texture = Texture.from(`${s.basePath}/${dir}.png`)
             }
@@ -185,7 +185,7 @@ export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
             if (s.s) {
               const dir = getDir(tg.c.x - s.c.x, tg.c.y - s.c.y);
               if (s.isAtlas) {
-                s.s.texture = Texture.from(`${s.type}_shoot_${dir}_00`)
+                s.s.texture = Texture.from(`${s.type}_shoot_${dir}_000`)
               } else if (s.basePath) {
                 s.s.texture = Texture.from(`${s.basePath}/${dir}.png`)
               }
