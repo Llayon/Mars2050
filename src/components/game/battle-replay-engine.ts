@@ -115,7 +115,7 @@ export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
 
     if (utype === 'drone') c.addChild(new Graphics().ellipse(0, 0, 10, 5).fill({ color: 0x000000, alpha: 0.5 }))
     
-    const hpBar = new Graphics(); hpBar.y = utype === 'drone' ? -35 : -5
+    const hpBar = new Graphics(); hpBar.y = -(radius * 2.5) - 5
     c.addChild(hpBar)
     if (!u.id) return
     const maxHp = UNIT_TYPES[utype as UnitTypeKey]?.baseStats.hp || ('hp_current' in u ? u.hp_current : 1)
