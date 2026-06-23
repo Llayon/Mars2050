@@ -106,6 +106,11 @@ export function movementSystem(unit: SimUnit, target: SimUnit, units: SimUnit[],
     const minDist = (myRadius + otherRadius) * 0.95;
 
     if (dist > 0 && dist < minDist) {
+       // If I am in combat, I hold my ground against allies. I cannot be pushed by them.
+       if (isInRange && other.team === unit.team) {
+           continue;
+       }
+       
        const overlap = minDist - dist;
        const pushAngle = Math.atan2(unit.y - other.y, unit.x - other.x);
        
