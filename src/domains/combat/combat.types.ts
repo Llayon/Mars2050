@@ -12,6 +12,7 @@ export interface UnitBaseStats {
   range: number
   attackType: 'single' | 'aoe' | 'heal' | 'spawn'
   aoeRadius?: number
+  spawnType?: string
   actionCooldownMax?: number
   isFlying?: boolean
   canTargetAir?: boolean
@@ -30,6 +31,23 @@ export interface UnitTypeConfig {
 
 export type Team = 'attacker' | 'defender'
 
+export interface StatusEffect {
+  type: 'emp' | 'burn' | 'slow'
+  duration: number
+  value?: number
+}
+
+export interface SimHazard {
+  id: string
+  team: Team
+  type: 'napalm' | 'radiation' | 'emp_field'
+  x: number
+  y: number
+  radius: number
+  damagePerTick: number
+  duration: number
+}
+
 export interface SimUnit {
   id: string
   team: Team
@@ -42,10 +60,12 @@ export interface SimUnit {
   range: number
   attackType: 'single' | 'aoe' | 'heal' | 'spawn'
   aoeRadius?: number
+  spawnType?: string
   actionCooldownMax: number
   actionCooldown: number
   isFlying: boolean
   canTargetAir: boolean
+  isTemporary?: boolean
   x: number
   y: number
   isDead: boolean
@@ -56,42 +76,15 @@ export interface SimUnit {
   offsetX?: number
   offsetY?: number
   size: 'S' | 'M' | 'L' | 'XL'
+  shield: number
+  maxShield: number
+  statusEffects: StatusEffect[]
+  appliesEmp?: boolean
+  leavesPuddle?: boolean
+  spawnerConfig?: { unitType: string, interval: number, timer: number }
+  initialAngle?: number
 }
 
-export type BattleActionType = 'move' | 'attack' | 'heal' | 'die' | 'spawn'
+export * from './combat.actions'
 
-export interface BattleAction {
-  unitId: string
-  type: BattleActionType
-  targetId?: string
-  damage?: number
-  isCritical?: boolean
-  fromX?: number
-  fromY?: number
-  toX?: number
-  toY?: number
-  facingAngle?: number
-  spawnType?: string
-  spawnTeam?: Team
-  spawnMaxHp?: number
-}
 
-export interface BattleTick {
-  tick: number
-  actions: BattleAction[]
-}
-
-export interface Obstacle {
-  x: number
-  y: number
-  radius: number
-}
-
-export interface BattleResult {
-  winner: 'attacker' | 'defender' | 'draw'
-  logs: BattleTick[]
-  seed?: number
-  survivors: SimUnit[]
-  initialState: SimUnit[]
-  obstacles?: Obstacle[]
-}

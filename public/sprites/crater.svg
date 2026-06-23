@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100%" height="100%">
+  <defs>
+    <radialGradient id="craterInner" cx="50%" cy="50%" r="50%" fx="40%" fy="40%">
+      <stop offset="0%" stop-color="#3d2215"/>
+      <stop offset="70%" stop-color="#2a160d"/>
+      <stop offset="100%" stop-color="#140a05"/>
+    </radialGradient>
+    <linearGradient id="craterRim" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#8c533e"/>
+      <stop offset="50%" stop-color="#5c3322"/>
+      <stop offset="100%" stop-color="#2e1910"/>
+    </linearGradient>
+    <filter id="rockyEdge" x="-20%" y="-20%" width="140%" height="140%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.08" numOctaves="3" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="4" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+  </defs>
+  
+  <!-- Outer Rim shadow -->
+  <circle cx="52" cy="52" r="45" fill="#140a05" opacity="0.7" filter="url(#rockyEdge)"/>
+  
+  <!-- Main Rim -->
+  <circle cx="50" cy="50" r="46" fill="url(#craterRim)" filter="url(#rockyEdge)"/>
+  
+  <!-- Inner slope (shadowed) -->
+  <circle cx="48" cy="48" r="40" fill="#2e1910" filter="url(#rockyEdge)"/>
+  
+  <!-- Deep Basin -->
+  <circle cx="46" cy="46" r="32" fill="url(#craterInner)" filter="url(#rockyEdge)"/>
+  
+  <!-- Small rocks/details -->
+  <circle cx="40" cy="60" r="3" fill="#2a160d"/>
+  <circle cx="65" cy="40" r="2" fill="#3d2215"/>
+  <circle cx="55" cy="55" r="4" fill="#140a05"/>
+  <circle cx="35" cy="35" r="2" fill="#5c3322"/>
+  <circle cx="50" cy="30" r="2.5" fill="#2e1910"/>
+</svg>

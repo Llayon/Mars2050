@@ -1,7 +1,9 @@
 import { Application, Graphics, Text, Container, Assets, Sprite, Texture } from 'pixi.js'
 import { UNIT_TYPES } from '@/domains/combat/combat.config'
-import { FIELD_WIDTH, FIELD_HEIGHT, getDir, SPRITE_PATHS, SPRITE_DIRS, getSizeRadius } from '@/domains/combat/combat.utils'
+import { FIELD_WIDTH, FIELD_HEIGHT, getDir, SPRITE_PATHS, SPRITE_ATLASES, SPRITE_DIRS, getSizeRadius } from '@/domains/combat/combat.utils'
 import type { BattleTick, UnitRow, SimUnit, UnitTypeKey, Obstacle } from '@/domains/combat/combat.types'
+import { setupCameraControls } from './battle-replay-camera'
+import { processVisualEffects, lerp } from './battle-replay-utils'
 
 export type BattleReplayEngineProps = {
   container: HTMLDivElement
@@ -29,12 +31,9 @@ export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
   app.canvas.style.objectFit = 'contain'
   
   try {
-    const toLoad = []
-    for (const t in SPRITE_PATHS) {
-      for (const d of SPRITE_DIRS) {
-        toLoad.push(`${SPRITE_PATHS[t]}/${d}.png`)
-      }
-    }
+    const toLoad = ['/sprites/crater.svg']
+    for (const t in SPRITE_PATHS) for (const d of SPRITE_DIRS) toLoad.push(`${SPRITE_PATHS[t]}/${d}.png`)
+    for (const t in SPRITE_ATLASES) toLoad.push(SPRITE_ATLASES[t])
     await Assets.load(toLoad)
   } catch(e) { console.error('Failed to load textures', e) }
   
@@ -51,15 +50,27 @@ export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
     new Graphics().rect(0, BOARD_H / 2, BOARD_W, BOARD_H / 2).fill({ color: 0x3b82f6, alpha: 0.05 })
   )
 
-  obstacles?.forEach(o => gridContainer.addChild(
-    new Graphics().circle(o.x, o.y, o.radius).fill({ color: 0x333333 }).stroke({ width: 2, color: 0x555555 })
-  ))
+  obstacles?.forEach(o => {
+    try {
+      const tex = Texture.from('/sprites/crater.svg')
+      const s = new Sprite(tex)
+      s.anchor.set(0.5)
+      s.position.set(o.x, o.y)
+      s.width = o.radius * 2
+      s.height = o.radius * 2
+      gridContainer.addChild(s)
+    } catch(e) {
+      gridContainer.addChild(
+        new Graphics().circle(o.x, o.y, o.radius).fill({ color: 0x5c4033, alpha: 0.8 }).stroke({ width: 3, color: 0x3e2723, alpha: 1 })
+      )
+    }
+  })
 
   type SpriteState = { 
-    c: Container, g?: Graphics, s?: Sprite, hpBar: Graphics, 
+    c: Container, g?: Graphics, s?: Sprite, hpBar: Graphics, empGfx?: Graphics,
     hp: number, maxHp: number, prog: number, 
     sX: number, sY: number, tX: number, tY: number, 
-    type: string, team: 'attacker'|'defender', basePath?: string, baseScale?: number
+    type: string, team: 'attacker'|'defender', basePath?: string, baseScale?: number, isAtlas?: boolean
   }
   const sprites: Record<string, SpriteState> = {}
 
@@ -89,37 +100,29 @@ export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
     const uSize = config?.baseStats.size || 'M';
     const radius = getSizeRadius(uSize);
 
-    if (SPRITE_PATHS[utype]) {
+    if (SPRITE_ATLASES[utype]) {
+      s = new Sprite(Texture.from(`${utype}_idle_${t === 'attacker' ? 'north' : 'south'}_00`))
+      s.anchor.set(0.5, 0.8); s.scale.set((radius * 2.5) / 128); c.addChild(s)
+    } else if (SPRITE_PATHS[utype]) {
       basePath = SPRITE_PATHS[utype]
-      const tex = Texture.from(`${basePath}/${t === 'attacker' ? 'north' : 'south'}.png`)
-      s = new Sprite(tex)
-      s.anchor.set(0.5, 0.8)
-      const baseScale = (radius * 2.5) / 128
-      s.scale.set(baseScale)
-      c.addChild(s)
+      s = new Sprite(Texture.from(`${basePath}/${t === 'attacker' ? 'north' : 'south'}.png`))
+      s.anchor.set(0.5, 0.8); s.scale.set((radius * 2.5) / 128); c.addChild(s)
     } else {
-      g = new Graphics()
-      const col = t === 'attacker' ? 0x3b82f6 : 0xef4444
-      g.circle(0, 0, radius).fill({ color: col })
-      c.addChild(g)
+      g = new Graphics(); g.circle(0, 0, radius).fill({ color: t === 'attacker' ? 0x3b82f6 : 0xef4444 }); c.addChild(g)
       const txt = new Text({ text: utype[0].toUpperCase(), style: { fill: 0xffffff, fontSize: 14, fontWeight: 'bold' } })
       txt.anchor.set(0.5); c.addChild(txt)
     }
 
-    if (utype === 'drone') {
-      const shadow = new Graphics().ellipse(0, 0, 10, 5).fill({ color: 0x000000, alpha: 0.5 })
-      c.addChild(shadow)
-    }
+    if (utype === 'drone') c.addChild(new Graphics().ellipse(0, 0, 10, 5).fill({ color: 0x000000, alpha: 0.5 }))
     
     const hpBar = new Graphics(); hpBar.y = utype === 'drone' ? -35 : -5
     c.addChild(hpBar)
     if (!u.id) return
     const maxHp = UNIT_TYPES[utype as UnitTypeKey]?.baseStats.hp || ('hp_current' in u ? u.hp_current : 1)
     const baseScale = s ? s.scale.x : 1
-    sprites[u.id] = { c, g, s, hpBar, hp: isSimUnit ? (u as SimUnit).hp : ('hp_current' in u ? u.hp_current : 1), maxHp, prog: 1, sX: c.x, sY: c.y, tX: c.x, tY: c.y, type: utype, team: t, basePath, baseScale }
+    sprites[u.id] = { c, g, s, hpBar, hp: isSimUnit ? (u as SimUnit).hp : ('hp_current' in u ? u.hp_current : 1), maxHp, prog: 1, sX: c.x, sY: c.y, tX: c.x, tY: c.y, type: utype, team: t, basePath, baseScale, isAtlas: !!SPRITE_ATLASES[utype] }
     updateHp(sprites[u.id])
   }
-
   if (initialState) {
     initialState.forEach(u => createU(u, u.team, true))
   } else {
@@ -130,7 +133,8 @@ export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
   const DUR = 150
   type FX = { c: Container, life: number }
   type Proj = { g: Graphics, sX: number, sY: number, tX: number, tY: number, p: number, col: number }
-  const fts: FX[] = [], projs: Proj[] = []
+  type HazardFX = { g: Graphics, life: number }
+  const fts: FX[] = [], projs: Proj[] = [], hazardFxs: HazardFX[] = []
   const spawnTxt = (txt: string, x: number, y: number, col: number) => {
     const t = new Text({ text: txt, style: { fill: col, fontSize: 18, fontWeight: 'bold', dropShadow: { alpha: 0.5 } } })
     t.anchor.set(0.5); t.position.set(x, y - 20)
@@ -157,22 +161,34 @@ export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
         if (a.type === 'move') {
           s.sX = a.fromX!; s.sY = a.fromY!
           s.tX = a.toX!; s.tY = a.toY!
-          if (s.s && s.basePath) {
+          if (s.s) {
+            let dir = 'south';
             if (a.facingAngle !== undefined) {
                const dx = Math.cos(a.facingAngle);
                const dy = Math.sin(a.facingAngle);
-               s.s.texture = Texture.from(`${s.basePath}/${getDir(dx, dy)}.png`)
+               dir = getDir(dx, dy);
             } else {
-               s.s.texture = Texture.from(`${s.basePath}/${getDir(s.tX - s.sX, s.tY - s.sY)}.png`)
+               dir = getDir(s.tX - s.sX, s.tY - s.sY);
+            }
+            if (s.isAtlas) {
+              // Walk animation! Just frame 0 for now since we don't have animation loop running yet
+              s.s.texture = Texture.from(`${s.type}_walk_${dir}_00`)
+            } else if (s.basePath) {
+              s.s.texture = Texture.from(`${s.basePath}/${dir}.png`)
             }
           }
         } else if (a.type === 'attack' || a.type === 'heal') {
           const tg = sprites[a.targetId!]
           if (tg) {
-            const isH = a.type === 'heal', pCol = isH ? 0x4ade80 : 0xffaa00
+            const isH = a.type === 'heal', pCol = isH ? 0x4ade80 : (a.isShieldHit ? 0x3b82f6 : 0xffaa00)
             spawnProj(s.c.x, s.c.y, tg.c.x, tg.c.y, pCol)
-            if (s.s && s.basePath) {
-              s.s.texture = Texture.from(`${s.basePath}/${getDir(tg.c.x - s.c.x, tg.c.y - s.c.y)}.png`)
+            if (s.s) {
+              const dir = getDir(tg.c.x - s.c.x, tg.c.y - s.c.y);
+              if (s.isAtlas) {
+                s.s.texture = Texture.from(`${s.type}_shoot_${dir}_00`)
+              } else if (s.basePath) {
+                s.s.texture = Texture.from(`${s.basePath}/${dir}.png`)
+              }
             }
             
             tg.hp -= isH ? -a.damage! : a.damage!
@@ -190,12 +206,29 @@ export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
           createU({ id: a.targetId!, unit_type: a.spawnType! as UnitTypeKey, grid_x: String(a.toX!), grid_y: String(a.toY!), hp_current: a.spawnMaxHp!, colony_id: '1', tier: 1, upgrade_path: [] }, a.spawnTeam as 'attacker'|'defender', false)
           const newS = sprites[a.targetId!]
           if (newS) { newS.sX = a.toX!; newS.sY = a.toY!; newS.tX = a.toX!; newS.tY = a.toY!; }
+        } else if (a.type === 'hazard_spawn') {
+          const hGfx = new Graphics().circle(0, 0, a.radius || 60).fill({ color: 0xff4400, alpha: 0.3 })
+          hGfx.position.set(a.toX!, a.toY!)
+          gridContainer.addChild(hGfx)
+          hazardFxs.push({ g: hGfx, life: 1.0 })
+        } else if (a.type === 'status_apply') {
+          if (a.statusType === 'emp') {
+            if (!s.empGfx) {
+               s.empGfx = new Graphics().circle(0, -10, 20).stroke({ width: 2, color: 0x00ffff, alpha: 0.8 })
+               s.c.addChild(s.empGfx)
+            }
+            s.empGfx.visible = true
+          }
+        } else if (a.type === 'status_expire') {
+          if (a.statusType === 'emp' && s.empGfx) {
+             s.empGfx.visible = false
+          }
         }
       })
       tick++
     }
 
-    const lerp = (a: number, b: number, t: number) => a + (b - a) * t
+
     const easeOutQuad = (t: number) => t * (2 - t)
     const prog = easeOutQuad(Math.min(1, time / DUR))
     Object.values(sprites).forEach(s => {
@@ -207,43 +240,10 @@ export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
       }
     })
 
-    for (let i = fts.length - 1; i >= 0; i--) {
-      const f = fts[i]
-      f.life -= dt * 0.002; f.c.y -= dt * 0.02; f.c.alpha = f.life
-      if (f.life <= 0) { f.c.destroy(); fts.splice(i, 1) }
-    }
-    for (let i = projs.length - 1; i >= 0; i--) {
-      const p = projs[i]
-      p.p += dt * 0.005; p.g.x = lerp(p.sX, p.tX, p.p); p.g.y = lerp(p.sY, p.tY, p.p)
-      if (p.p >= 1) { p.g.destroy(); projs.splice(i, 1) }
-    }
+    processVisualEffects(fts, projs, hazardFxs, dt)
   })
 
-  let isDragging = false, lastPos = { x: 0, y: 0 }
-  const onPointerDown = (e: PointerEvent) => { isDragging = true; lastPos = { x: e.clientX, y: e.clientY } }
-  const onPointerUp = () => { isDragging = false }
-  const onPointerMove = (e: PointerEvent) => {
-    if (!isDragging) return
-    const dx = e.clientX - lastPos.x, dy = e.clientY - lastPos.y
-    world.x += dx; world.y += dy
-    lastPos = { x: e.clientX, y: e.clientY }
-  }
-  const onWheel = (e: WheelEvent) => {
-    e.preventDefault()
-    const zoom = e.deltaY < 0 ? 1.1 : 0.9
-    world.scale.x = Math.max(0.5, Math.min(5, world.scale.x * zoom))
-    world.scale.y = Math.max(0.5, Math.min(5, world.scale.y * zoom))
-  }
-
-  app.canvas.addEventListener('pointerdown', onPointerDown)
-  window.addEventListener('pointerup', onPointerUp)
-  window.addEventListener('pointermove', onPointerMove)
-  app.canvas.addEventListener('wheel', onWheel)
-
-  cleanupEvents = () => {
-    window.removeEventListener('pointerup', onPointerUp)
-    window.removeEventListener('pointermove', onPointerMove)
-  }
+  cleanupEvents = setupCameraControls(app, world)
 
   return { app, cleanupEvents }
 }

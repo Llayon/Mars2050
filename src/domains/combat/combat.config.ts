@@ -1,75 +1,71 @@
 import type { UnitTypeKey, UnitTypeConfig } from './combat.types'
 
 export const UNIT_TYPES: Record<UnitTypeKey, UnitTypeConfig> = {
+  // === Legacy / Static ===
+  wall: { name: 'Стена', hireCost: { minerals: 100 }, baseStats: { hp: 500, attack: 0, defense: 15, speed: 0, range: 0, attackType: 'single', actionCooldownMax: 10, turnSpeed: 0, size: 'L' } },
+  turret: { name: 'Авто-турель', hireCost: { minerals: 150, energy: 50 }, baseStats: { hp: 200, attack: 20, defense: 5, speed: 0, range: 6, attackType: 'single', actionCooldownMax: 5, canTargetAir: true, turnSpeed: 1.5, size: 'L' } },
+  aa_turret: { name: 'ПВО-Турель', hireCost: { minerals: 100, energy: 60 }, baseStats: { hp: 150, attack: 40, defense: 4, speed: 0, range: 7, attackType: 'single', actionCooldownMax: 15, canTargetAir: true, turnSpeed: 1, size: 'L' } },
+  drone: { name: 'Боевой дрон (Устар.)', hireCost: { minerals: 40, energy: 40 }, squadSize: 3, squadSpacing: 30, baseStats: { hp: 20, attack: 15, defense: 0, speed: 6, range: 1, attackType: 'single', actionCooldownMax: 5, isFlying: true, turnSpeed: 40, size: 'S' } },
+  rocketeer: { name: 'Ракетчик (Устар.)', hireCost: { minerals: 30, energy: 30 }, squadSize: 3, squadSpacing: 25, baseStats: { hp: 60, attack: 15, defense: 4, speed: 4, range: 3, attackType: 'aoe', aoeRadius: 1, actionCooldownMax: 20, canTargetAir: true, turnSpeed: 10, size: 'M' } },
 
-  drone: {
-    name: 'Боевой дрон',
-    hireCost: { minerals: 40, energy: 40 },
-    squadSize: 3, squadSpacing: 30, baseStats: { hp: 20, attack: 15, defense: 0, speed: 6, range: 1, attackType: 'single', actionCooldownMax: 5, isFlying: true, turnSpeed: 40, size: 'S' }
-  },
-  aa_turret: {
-    name: 'ПВО-Турель',
-    hireCost: { minerals: 100, energy: 60 },
-    baseStats: { hp: 150, attack: 40, defense: 4, speed: 0, range: 7, attackType: 'single', actionCooldownMax: 15, canTargetAir: true, turnSpeed: 1, size: 'L' }
-  },
+  // === Aliens ===
+  alien_bug: { name: 'Марсианский жук', hireCost: {}, squadSize: 10, squadSpacing: 15, formation: 'grid', baseStats: { hp: 20, attack: 5, defense: 0, speed: 10, range: 0.5, attackType: 'single', actionCooldownMax: 10, turnSpeed: 40, size: 'S' } },
+  alien_spitter: { name: 'Кислотный плевун', hireCost: {}, squadSize: 3, squadSpacing: 25, formation: 'line', baseStats: { hp: 40, attack: 20, defense: 2, speed: 6, range: 4, attackType: 'aoe', aoeRadius: 1.5, actionCooldownMax: 12, turnSpeed: 15, size: 'M' } },
+  alien_worm: { name: 'Песчаный червь', hireCost: {}, baseStats: { hp: 250, attack: 35, defense: 8, speed: 4, range: 1, attackType: 'aoe', aoeRadius: 2, actionCooldownMax: 30, turnSpeed: 2, size: 'XL' } },
 
-  marine: {
-    name: 'Пехотинец',
-    hireCost: { minerals: 30, energy: 60 },
-    squadSize: 5, squadSpacing: 20, formation: 'line', baseStats: { hp: 40, attack: 12, defense: 2, speed: 8, range: 2, attackType: 'single', actionCooldownMax: 8, canTargetAir: true, turnSpeed: 30, size: 'M' }
-  },
-  exosuit: {
-    name: 'Экзоскелет',
-    hireCost: { minerals: 80, energy: 20 },
-    baseStats: { hp: 120, attack: 18, defense: 8, speed: 3, range: 1, attackType: 'single', actionCooldownMax: 15, canTargetAir: true, turnSpeed: 3, size: 'L' }
-  },
-  sniper: {
-    name: 'Снайпер',
-    hireCost: { minerals: 40, energy: 20, water: 50 },
-    squadSize: 3, squadSpacing: 25, formation: 'wedge', baseStats: { hp: 30, attack: 25, defense: 1, speed: 5, range: 5, attackType: 'single', actionCooldownMax: 25, canTargetAir: true, turnSpeed: 15, size: 'M' }
-  },
-  medic: {
-    name: 'Медик',
-    hireCost: { minerals: 20, energy: 10, water: 10, food: 40 },
-    squadSize: 2, squadSpacing: 25, baseStats: { hp: 50, attack: 10, defense: 3, speed: 4, range: 2, attackType: 'heal', actionCooldownMax: 12, turnSpeed: 20, size: 'M' }
-  },
-  rocketeer: {
-    name: 'Ракетчик',
-    hireCost: { minerals: 30, energy: 30, oxygen: 50 },
-    squadSize: 3, squadSpacing: 25, baseStats: { hp: 60, attack: 15, defense: 4, speed: 4, range: 3, attackType: 'aoe', aoeRadius: 1, actionCooldownMax: 20, canTargetAir: true, turnSpeed: 10, size: 'M' }
-  },
-  engineer: {
-    name: 'Инженер',
-    hireCost: { minerals: 50, energy: 30, research_points: 40 },
-    baseStats: { hp: 60, attack: 8, defense: 4, speed: 5, range: 3, attackType: 'spawn', actionCooldownMax: 30, turnSpeed: 8, size: 'M' }
-  },
-  wall: {
-    name: 'Стена',
-    hireCost: { minerals: 100 },
-    baseStats: { hp: 500, attack: 0, defense: 15, speed: 0, range: 0, attackType: 'single', actionCooldownMax: 10, turnSpeed: 0, size: 'L' }
-  },
-  turret: {
-    name: 'Авто-турель',
-    hireCost: { minerals: 150, energy: 50 },
-    baseStats: { hp: 200, attack: 20, defense: 5, speed: 0, range: 6, attackType: 'single', actionCooldownMax: 5, canTargetAir: true, turnSpeed: 1.5, size: 'L' }
-  },
-  alien_bug: {
-    name: 'Марсианский жук',
-    hireCost: {}, // Unbuildable
-    squadSize: 10, squadSpacing: 15, formation: 'grid', baseStats: { hp: 20, attack: 5, defense: 0, speed: 10, range: 0.5, attackType: 'single', actionCooldownMax: 10, turnSpeed: 40, size: 'S' }
-  },
-  alien_spitter: {
-    name: 'Кислотный плевун',
-    hireCost: {},
-    squadSize: 3, squadSpacing: 25, formation: 'line', baseStats: { hp: 40, attack: 20, defense: 2, speed: 6, range: 4, attackType: 'aoe', aoeRadius: 1.5, actionCooldownMax: 12, turnSpeed: 15, size: 'M' }
-  },
-  alien_worm: {
-    name: 'Песчаный червь',
-    hireCost: {},
-    baseStats: { hp: 250, attack: 35, defense: 8, speed: 4, range: 1, attackType: 'aoe', aoeRadius: 2, actionCooldownMax: 30, turnSpeed: 2, size: 'XL' }
-  }
+  // === Tier 1 ===
+  marine: { name: 'Морпех', hireCost: { minerals: 100, energy: 0 }, squadSize: 8, squadSpacing: 20, formation: 'line', baseStats: { hp: 35, attack: 10, defense: 2, speed: 7, range: 3, attackType: 'single', actionCooldownMax: 8, canTargetAir: true, turnSpeed: 30, size: 'S' } },
+  shock_trooper: { name: 'Штурмовик', hireCost: { minerals: 100, energy: 0 }, squadSize: 8, squadSpacing: 15, formation: 'grid', baseStats: { hp: 45, attack: 14, defense: 3, speed: 10, range: 0.5, attackType: 'single', actionCooldownMax: 7, canTargetAir: false, turnSpeed: 40, size: 'S' } },
+  flamethrower: { name: 'Огнеметчик', hireCost: { minerals: 100, energy: 50 }, squadSize: 4, squadSpacing: 25, formation: 'line', baseStats: { hp: 60, attack: 6, defense: 2, speed: 6, range: 2, attackType: 'aoe', aoeRadius: 1.5, actionCooldownMax: 5, canTargetAir: false, turnSpeed: 20, size: 'S' } },
+  scout_drone: { name: 'Развед-дрон', hireCost: { minerals: 50, energy: 100 }, squadSize: 5, squadSpacing: 30, baseStats: { hp: 20, attack: 12, defense: 0, speed: 12, range: 2, attackType: 'single', actionCooldownMax: 6, isFlying: true, canTargetAir: true, turnSpeed: 40, size: 'S' } },
+  medic: { name: 'Медик', hireCost: { minerals: 50, energy: 50 }, squadSize: 3, squadSpacing: 25, baseStats: { hp: 50, attack: 10, defense: 2, speed: 6, range: 2, attackType: 'heal', actionCooldownMax: 12, turnSpeed: 20, size: 'S' } },
+  sniper: { name: 'Снайпер', hireCost: { minerals: 100, energy: 50 }, squadSize: 2, squadSpacing: 25, formation: 'wedge', baseStats: { hp: 30, attack: 60, defense: 1, speed: 5, range: 7, attackType: 'single', actionCooldownMax: 30, canTargetAir: true, turnSpeed: 15, size: 'S' } },
+  scavenger_buggy: { name: 'Багги-стервятник', hireCost: { minerals: 150, energy: 50 }, squadSize: 3, squadSpacing: 35, baseStats: { hp: 80, attack: 15, defense: 4, speed: 14, range: 2, attackType: 'single', actionCooldownMax: 10, turnSpeed: 10, size: 'M' } },
+  grenadier: { name: 'Гренадер', hireCost: { minerals: 120, energy: 30 }, squadSize: 4, squadSpacing: 25, formation: 'line', baseStats: { hp: 40, attack: 25, defense: 3, speed: 6, range: 4, attackType: 'aoe', aoeRadius: 1.5, actionCooldownMax: 20, turnSpeed: 20, size: 'S' } },
+  heavy_gunner: { name: 'Пулеметчик', hireCost: { minerals: 150, energy: 0 }, squadSize: 6, squadSpacing: 20, formation: 'line', baseStats: { hp: 50, attack: 4, defense: 4, speed: 5, range: 5, attackType: 'single', actionCooldownMax: 2, canTargetAir: true, turnSpeed: 15, size: 'S' } },
+  sapper: { name: 'Сапер', hireCost: { minerals: 80, energy: 50 }, squadSize: 3, squadSpacing: 20, formation: 'grid', baseStats: { hp: 30, attack: 150, defense: 1, speed: 9, range: 1, attackType: 'aoe', aoeRadius: 2, actionCooldownMax: 40, turnSpeed: 30, size: 'S' } },
+  officer: { name: 'Офицер', hireCost: { minerals: 200, energy: 100 }, squadSize: 1, baseStats: { hp: 80, attack: 15, defense: 5, speed: 6, range: 4, attackType: 'heal', actionCooldownMax: 10, turnSpeed: 20, size: 'S' } },
+  jetpack_trooper: { name: 'Десантник', hireCost: { minerals: 150, energy: 100 }, squadSize: 5, squadSpacing: 25, formation: 'grid', baseStats: { hp: 45, attack: 18, defense: 3, speed: 13, range: 1, attackType: 'single', actionCooldownMax: 8, isFlying: true, turnSpeed: 40, size: 'S' } },
+
+  // === Tier 2 ===
+  exosuit: { name: 'Экзоскелет', hireCost: { minerals: 200, energy: 100 }, squadSize: 4, squadSpacing: 25, baseStats: { hp: 150, attack: 20, defense: 8, speed: 5, range: 1, attackType: 'single', actionCooldownMax: 15, canTargetAir: false, turnSpeed: 10, size: 'M' } },
+  gatling_rover: { name: 'Пулеметный Ровер', hireCost: { minerals: 150, energy: 150 }, squadSize: 2, squadSpacing: 30, baseStats: { hp: 120, attack: 8, defense: 5, speed: 7, range: 4, attackType: 'single', actionCooldownMax: 2, canTargetAir: true, turnSpeed: 10, size: 'M' } },
+  plasma_tank: { name: 'Плазмо-танк', hireCost: { minerals: 250, energy: 150 }, squadSize: 2, squadSpacing: 35, baseStats: { hp: 200, attack: 40, defense: 10, speed: 6, range: 5, attackType: 'single', actionCooldownMax: 20, turnSpeed: 8, size: 'M' } },
+  missile_buggy: { name: 'Ракетный багги', hireCost: { minerals: 200, energy: 200 }, squadSize: 3, squadSpacing: 30, baseStats: { hp: 100, attack: 25, defense: 4, speed: 9, range: 6, attackType: 'single', actionCooldownMax: 15, canTargetAir: true, turnSpeed: 10, size: 'M' } },
+  gunship: { name: 'Ганшип', hireCost: { minerals: 300, energy: 250 }, squadSize: 2, squadSpacing: 40, baseStats: { hp: 180, attack: 35, defense: 6, speed: 8, range: 5, attackType: 'single', actionCooldownMax: 12, isFlying: true, canTargetAir: false, turnSpeed: 15, size: 'M' } },
+  engineer: { name: 'Инженерный тягач', hireCost: { minerals: 150, energy: 150 }, squadSize: 1, baseStats: { hp: 100, attack: 10, defense: 5, speed: 5, range: 2, attackType: 'heal', actionCooldownMax: 15, turnSpeed: 8, size: 'M' } },
+  emp_drone: { name: 'EMP-Дрон', hireCost: { minerals: 100, energy: 200 }, squadSize: 4, squadSpacing: 25, baseStats: { hp: 40, attack: 0, defense: 0, speed: 11, range: 1, attackType: 'single', actionCooldownMax: 100, isFlying: true, turnSpeed: 30, size: 'S' } },
+  minelayer_rover: { name: 'Минный укладчик', hireCost: { minerals: 150, energy: 150 }, squadSize: 2, squadSpacing: 30, baseStats: { hp: 130, attack: 15, defense: 6, speed: 8, range: 3, attackType: 'single', actionCooldownMax: 12, turnSpeed: 12, size: 'M' } },
+
+  // === Tier 3 ===
+  siege_tank: { name: 'Осадный танк', hireCost: { minerals: 400, energy: 300 }, squadSize: 1, baseStats: { hp: 300, attack: 80, defense: 12, speed: 4, range: 8, attackType: 'aoe', aoeRadius: 2.5, actionCooldownMax: 35, turnSpeed: 5, size: 'L' } },
+  railgun_walker: { name: 'Рейлган-шагоход', hireCost: { minerals: 450, energy: 400 }, squadSize: 1, baseStats: { hp: 250, attack: 120, defense: 8, speed: 5, range: 7, attackType: 'single', actionCooldownMax: 40, turnSpeed: 5, size: 'L' } },
+  drone_carrier: { name: 'Авианосец дронов', hireCost: { minerals: 500, energy: 500 }, squadSize: 1, baseStats: { hp: 400, attack: 0, defense: 10, speed: 4, range: 5, attackType: 'spawn', spawnType: 'scout_drone', actionCooldownMax: 60, isFlying: true, turnSpeed: 5, size: 'L' } },
+  cryo_tank: { name: 'Крио-танк', hireCost: { minerals: 350, energy: 350 }, squadSize: 1, baseStats: { hp: 350, attack: 20, defense: 15, speed: 5, range: 3, attackType: 'aoe', aoeRadius: 2, actionCooldownMax: 8, turnSpeed: 6, size: 'L' } },
+  shield_emitter: { name: 'Мобильный Щит', hireCost: { minerals: 300, energy: 500 }, squadSize: 1, baseStats: { hp: 200, attack: 0, defense: 20, speed: 5, range: 0, attackType: 'single', actionCooldownMax: 10, turnSpeed: 8, size: 'L' } },
+  interceptor: { name: 'Перехватчик', hireCost: { minerals: 300, energy: 400 }, squadSize: 2, squadSpacing: 40, baseStats: { hp: 150, attack: 50, defense: 4, speed: 15, range: 6, attackType: 'single', actionCooldownMax: 15, isFlying: true, canTargetAir: true, turnSpeed: 25, size: 'M' } },
+  hacker_rover: { name: 'Мобильный хакер', hireCost: { minerals: 200, energy: 600 }, squadSize: 1, baseStats: { hp: 120, attack: 0, defense: 4, speed: 6, range: 5, attackType: 'single', actionCooldownMax: 20, turnSpeed: 10, size: 'M' } },
+  artillery_crawler: { name: 'Мобильная артиллерия', hireCost: { minerals: 500, energy: 500 }, squadSize: 1, baseStats: { hp: 250, attack: 500, defense: 8, speed: 3, range: 10, attackType: 'aoe', aoeRadius: 4, actionCooldownMax: 200, turnSpeed: 2, size: 'L' } },
+
+  // === Tier 4 ===
+  titan_mech: { name: 'Титан', hireCost: { minerals: 800, energy: 600 }, squadSize: 1, baseStats: { hp: 800, attack: 40, defense: 20, speed: 5, range: 4, attackType: 'aoe', aoeRadius: 1.5, actionCooldownMax: 5, canTargetAir: true, turnSpeed: 4, size: 'XL' } },
+  behemoth_tank: { name: 'Бегемот', hireCost: { minerals: 1000, energy: 500 }, squadSize: 1, baseStats: { hp: 1200, attack: 60, defense: 25, speed: 4, range: 5, attackType: 'single', actionCooldownMax: 15, turnSpeed: 3, size: 'XL' } },
+  ion_crawler: { name: 'Ионный излучатель', hireCost: { minerals: 700, energy: 900 }, squadSize: 1, baseStats: { hp: 600, attack: 10, defense: 15, speed: 4, range: 6, attackType: 'single', actionCooldownMax: 2, turnSpeed: 4, size: 'XL' } },
+  goliath_gunship: { name: 'Дредноут Голиаф', hireCost: { minerals: 800, energy: 1000 }, squadSize: 1, baseStats: { hp: 1000, attack: 50, defense: 15, speed: 4, range: 6, attackType: 'single', actionCooldownMax: 10, isFlying: true, canTargetAir: true, turnSpeed: 5, size: 'XL' } },
+  mobile_factory: { name: 'Командный Центр', hireCost: { minerals: 1000, energy: 1000 }, squadSize: 1, baseStats: { hp: 900, attack: 0, defense: 20, speed: 3, range: 4, attackType: 'spawn', spawnType: 'exosuit', actionCooldownMax: 80, turnSpeed: 3, size: 'XL' } },
+  sonic_devastator: { name: 'Звуковой разрушитель', hireCost: { minerals: 700, energy: 700 }, squadSize: 1, baseStats: { hp: 700, attack: 30, defense: 15, speed: 4, range: 4, attackType: 'aoe', aoeRadius: 2.5, actionCooldownMax: 15, turnSpeed: 5, size: 'XL' } },
+  radar_zepplin: { name: 'Радарный Дирижабль', hireCost: { minerals: 500, energy: 800 }, squadSize: 1, baseStats: { hp: 500, attack: 0, defense: 10, speed: 5, range: 0, attackType: 'single', actionCooldownMax: 10, isFlying: true, turnSpeed: 5, size: 'XL' } },
+
+  // === Tier 5 ===
+  stealth_operative: { name: 'Призрак', hireCost: { minerals: 500, energy: 500 }, squadSize: 1, baseStats: { hp: 100, attack: 150, defense: 5, speed: 8, range: 5, attackType: 'single', actionCooldownMax: 25, turnSpeed: 20, size: 'S' } },
+  hologram_projector: { name: 'Проектор Миражей', hireCost: { minerals: 300, energy: 600 }, squadSize: 1, baseStats: { hp: 80, attack: 0, defense: 0, speed: 6, range: 4, attackType: 'spawn', spawnType: 'exosuit', actionCooldownMax: 50, turnSpeed: 10, size: 'M' } },
+  gravity_manipulator: { name: 'Грави-танк', hireCost: { minerals: 400, energy: 800 }, squadSize: 1, baseStats: { hp: 200, attack: 10, defense: 10, speed: 5, range: 5, attackType: 'aoe', aoeRadius: 3, actionCooldownMax: 30, turnSpeed: 8, size: 'L' } },
+  nanite_generator: { name: 'Генератор Нанитов', hireCost: { minerals: 400, energy: 400 }, squadSize: 1, baseStats: { hp: 150, attack: 20, defense: 5, speed: 6, range: 4, attackType: 'heal', actionCooldownMax: 10, turnSpeed: 10, size: 'M' } },
+  bounty_hunter: { name: 'Охотник за головами', hireCost: { minerals: 600, energy: 200 }, squadSize: 1, baseStats: { hp: 120, attack: 80, defense: 8, speed: 7, range: 6, attackType: 'single', actionCooldownMax: 20, canTargetAir: true, turnSpeed: 15, size: 'S' } }
 }
 
 export const GRID_WIDTH = 10
 export const GRID_HEIGHT = 18
 export const MAX_TICKS = 400
+
+

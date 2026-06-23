@@ -9,6 +9,10 @@ export const SPRITE_PATHS: Record<string, string> = {
   'alien_spitter': '/sprites/alien_spitter'
 };
 
+export const SPRITE_ATLASES: Record<string, string> = {
+  'flamethrower': '/sprites/units/flamethrower.json'
+};
+
 export const SPRITE_DIRS = ['north', 'south', 'east', 'west', 'north-east', 'north-west', 'south-east', 'south-west'];
 
 export const FIELD_WIDTH = 600;
@@ -65,5 +69,20 @@ export function getSizeRadius(size: 'S' | 'M' | 'L' | 'XL'): number {
     case 'L': return 28;
     case 'XL': return 45;
     default: return 18;
+  }
+}
+
+/**
+ * Gets physical mass based on unit size category for collision pushing
+ * @param size Unit size category
+ * @returns Mass value
+ */
+export function getSizeMass(size: 'S' | 'M' | 'L' | 'XL'): number {
+  switch (size) {
+    case 'S': return 10;
+    case 'M': return 50;
+    case 'L': return 250;
+    case 'XL': return 1000;
+    default: return 50;
   }
 }

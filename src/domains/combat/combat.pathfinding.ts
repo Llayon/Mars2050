@@ -27,8 +27,8 @@ export function createPathfindingMap(obstacles: {x: number, y: number, radius: n
         const cy = y * TILE_SIZE + TILE_SIZE / 2;
         const dist = Math.hypot(cx - obs.x, cy - obs.y);
         
-        // If the cell center is roughly inside the obstacle radius
-        if (dist < obs.radius + TILE_SIZE / 4) {
+        // Make the impassable area slightly larger than the obstacle to ensure flow field routes around it
+        if (dist <= obs.radius + TILE_SIZE / 1.5) {
           costField[y * COLS + x] = 255; // impassable
         }
       }

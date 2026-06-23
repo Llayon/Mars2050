@@ -1,19 +1,34 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { UNIT_TYPES } from '@/domains/combat/combat.config'
+import { UPGRADES, GLOBAL_UPGRADES } from '@/domains/combat/combat.upgrades'
 import type { UnitRow, UnitTypeKey, BattleTick } from '@/domains/combat/combat.types'
-import { simulateBattle } from '@/domains/combat/combat.engine'
+import { simulateBattle, generateObstacles } from '@/domains/combat/combat.engine'
+import { getZergRushPreset } from '@/domains/combat/combat.presets'
+import { UnitSelector, GlobalUpgradesSelector, UnitUpgradesPanel, SimulatorGrid } from './simulator.components'
 import { BattleReplayModal } from '@/components/game/BattleReplayModal'
 import Link from 'next/link'
 
 const getRandomInt = (max: number) => Math.floor(Math.random() * max)
 
 export default function SimulatorPage() {
+  const [seed, setSeed] = useState(12345)
+  const [obstacles, setObstacles] = useState<import('@/domains/combat/combat.types').Obstacle[]>([])
+
+  useEffect(() => {
+    const s = Date.now()
+    setSeed(s)
+    setObstacles(generateObstacles(s))
+  }, [])
+
   const [attackerUnits, setAttackerUnits] = useState<UnitRow[]>([])
   const [defenderUnits, setDefenderUnits] = useState<UnitRow[]>([])
   const [replayData, setReplayData] = useState<{ attackerUnits: UnitRow[], defenderUnits: UnitRow[], logs: BattleTick[], winner: string, initialState: import('@/domains/combat/combat.types').SimUnit[], obstacles?: import('@/domains/combat/combat.types').Obstacle[] } | null>(null)
   
+  const [attackerGlobals, setAttackerGlobals] = useState<string[]>([])
+  const [defenderGlobals, setDefenderGlobals] = useState<string[]>([])
+
   const [selectedUnit, setSelectedUnit] = useState<{team: 'attacker'|'defender', index: number} | null>(null)
 
   function addUnit(team: 'attacker' | 'defender', type: UnitTypeKey) {
@@ -74,42 +89,38 @@ export default function SimulatorPage() {
     if (attackerUnits.length === 0 && defenderUnits.length === 0) return alert('Добавьте юнитов!')
     const aClone = JSON.parse(JSON.stringify(attackerUnits))
     const dClone = JSON.parse(JSON.stringify(defenderUnits))
-    const result = simulateBattle(aClone, dClone)
+    const result = simulateBattle(aClone, dClone, seed, obstacles, attackerGlobals, defenderGlobals)
     setReplayData({ attackerUnits: aClone, defenderUnits: dClone, logs: result.logs, winner: result.winner, initialState: result.initialState, obstacles: result.obstacles })
   }
 
   function loadZergRushPreset() {
-    const attackers: UnitRow[] = [];
-    // 3 Exosuits in front
-    for (let i = 0; i < 3; i++) {
-       attackers.push({ id: crypto.randomUUID(), colony_id: 'attacker', unit_type: 'exosuit', hp_current: 120, tier: 1, upgrade_path: [], grid_x: String(250 + i * 50), grid_y: '700' });
-    }
-    // 10 Marines
-    for (let i = 0; i < 10; i++) {
-       attackers.push({ id: crypto.randomUUID(), colony_id: 'attacker', unit_type: 'marine', hp_current: 40, tier: 1, upgrade_path: [], grid_x: String(200 + (i % 5) * 50), grid_y: String(750 + Math.floor(i / 5) * 40) });
-    }
-    // 2 Snipers
-    attackers.push({ id: crypto.randomUUID(), colony_id: 'attacker', unit_type: 'sniper', hp_current: 30, tier: 1, upgrade_path: [], grid_x: '280', grid_y: '850' });
-    attackers.push({ id: crypto.randomUUID(), colony_id: 'attacker', unit_type: 'sniper', hp_current: 30, tier: 1, upgrade_path: [], grid_x: '320', grid_y: '850' });
-
-    setAttackerUnits(attackers);
-
-    const defenders: UnitRow[] = [];
-    // 50 Bugs!
-    for (let i = 0; i < 50; i++) {
-       const jitterX = Math.random() * 400 + 100;
-       const jitterY = Math.random() * 200 + 100;
-       defenders.push({ id: crypto.randomUUID(), colony_id: 'defender', unit_type: 'alien_bug', hp_current: 50, tier: 1, upgrade_path: [], grid_x: String(jitterX), grid_y: String(jitterY) });
-    }
-    // 3 Spitters
-    defenders.push({ id: crypto.randomUUID(), colony_id: 'defender', unit_type: 'alien_spitter', hp_current: 40, tier: 1, upgrade_path: [], grid_x: '200', grid_y: '50' });
-    defenders.push({ id: crypto.randomUUID(), colony_id: 'defender', unit_type: 'alien_spitter', hp_current: 40, tier: 1, upgrade_path: [], grid_x: '300', grid_y: '50' });
-    defenders.push({ id: crypto.randomUUID(), colony_id: 'defender', unit_type: 'alien_spitter', hp_current: 40, tier: 1, upgrade_path: [], grid_x: '400', grid_y: '50' });
-
-    setDefenderUnits(defenders);
+    const preset = getZergRushPreset()
+    setAttackerUnits(preset.attackers)
+    setDefenderUnits(preset.defenders)
   }
 
-  const unitKeys = Object.keys(UNIT_TYPES) as UnitTypeKey[]
+  const toggleAttackerGlobal = (upgId: string) => {
+    if (attackerGlobals.includes(upgId)) setAttackerGlobals(attackerGlobals.filter(id => id !== upgId));
+    else setAttackerGlobals([...attackerGlobals, upgId]);
+  }
+
+  const toggleDefenderGlobal = (upgId: string) => {
+    if (defenderGlobals.includes(upgId)) setDefenderGlobals(defenderGlobals.filter(id => id !== upgId));
+    else setDefenderGlobals([...defenderGlobals, upgId]);
+  }
+
+  const toggleUpgrade = (team: 'attacker'|'defender', index: number, upgId: string) => {
+    const teamArray = team === 'attacker' ? attackerUnits : defenderUnits;
+    const setTeamArray = team === 'attacker' ? setAttackerUnits : setDefenderUnits;
+    const newArr = [...teamArray];
+    const path = newArr[index].upgrade_path || [];
+    if (path.includes(upgId)) {
+       newArr[index].upgrade_path = path.filter(id => id !== upgId);
+    } else {
+       newArr[index].upgrade_path = [...path, upgId];
+    }
+    setTeamArray(newArr);
+  }
 
   return (
     <div className="min-h-screen bg-gray-950 text-white p-4 font-sans">
@@ -129,12 +140,9 @@ export default function SimulatorPage() {
           <div className="flex-1 flex flex-col gap-8">
             <div className="bg-gray-900/50 p-4 rounded-xl border border-blue-900/30">
               <h2 className="text-xl font-bold text-blue-400 mb-4">Команда: Атака (Синие)</h2>
-              <div className="flex flex-wrap gap-2 mb-4">
-                {unitKeys.map(key => (
-                  <button key={key} onClick={() => addUnit('attacker', key)} className="bg-gray-800 hover:bg-blue-900 border border-gray-700 px-2 py-1 rounded text-sm transition-colors">+ {UNIT_TYPES[key].name}</button>
-                ))}
-              </div>
-              <div className="space-y-1">
+              <UnitSelector onAddUnit={(type) => addUnit('attacker', type)} />
+              <GlobalUpgradesSelector globals={attackerGlobals} onToggle={toggleAttackerGlobal} />
+              <div className="space-y-1 mt-4">
                 {attackerUnits.map((u, i) => (
                   <div key={u.id} onClick={() => setSelectedUnit({team: 'attacker', index: i})} className={`flex justify-between items-center p-2 rounded cursor-pointer ${selectedUnit?.team === 'attacker' && selectedUnit.index === i ? 'bg-blue-900/50 border border-blue-500' : 'bg-gray-800 hover:bg-gray-700'}`}>
                     <span>{UNIT_TYPES[u.unit_type as UnitTypeKey]?.name} [{u.grid_x}, {u.grid_y}]</span>
@@ -156,12 +164,9 @@ export default function SimulatorPage() {
 
             <div className="bg-gray-900/50 p-4 rounded-xl border border-red-900/30">
               <h2 className="text-xl font-bold text-red-400 mb-4">Команда: Защита (Красные)</h2>
-              <div className="flex flex-wrap gap-2 mb-4">
-                {unitKeys.map(key => (
-                  <button key={key} onClick={() => addUnit('defender', key)} className="bg-gray-800 hover:bg-red-900 border border-gray-700 px-2 py-1 rounded text-sm transition-colors">+ {UNIT_TYPES[key].name}</button>
-                ))}
-              </div>
-              <div className="space-y-1">
+              <UnitSelector onAddUnit={(type) => addUnit('defender', type)} />
+              <GlobalUpgradesSelector globals={defenderGlobals} onToggle={toggleDefenderGlobal} />
+              <div className="space-y-1 mt-4">
                 {defenderUnits.map((u, i) => (
                   <div key={u.id} onClick={() => setSelectedUnit({team: 'defender', index: i})} className={`flex justify-between items-center p-2 rounded cursor-pointer ${selectedUnit?.team === 'defender' && selectedUnit.index === i ? 'bg-red-900/50 border border-red-500' : 'bg-gray-800 hover:bg-gray-700'}`}>
                     <span>{UNIT_TYPES[u.unit_type as UnitTypeKey]?.name} [{u.grid_x}, {u.grid_y}]</span>
@@ -189,42 +194,19 @@ export default function SimulatorPage() {
           {/* Визуальная сетка */}
           <div className="shrink-0 flex flex-col items-center">
             <p className="text-sm text-gray-400 mb-2">Нажмите на юнита, затем кликните на сетку для перемещения</p>
-            <div className="grid bg-gray-900 border border-gray-700 select-none shadow-[0_0_30px_rgba(0,0,0,0.5)]" style={{ gridTemplateColumns: 'repeat(10, 1fr)', gridTemplateRows: 'repeat(20, 1fr)', width: '300px', height: '600px' }}>
-              {Array.from({length: 20}).map((_, y) => 
-                Array.from({length: 10}).map((_, x) => {
-                  const aIdx = attackerUnits.findIndex(u => Math.floor(Number(u.grid_x)/60) === x && Math.floor(Number(u.grid_y)/60) === y)
-                  const dIdx = defenderUnits.findIndex(u => Math.floor(Number(u.grid_x)/60) === x && Math.floor(Number(u.grid_y)/60) === y)
-                  
-                  let bgClass = 'bg-transparent hover:bg-white/10'
-                  let inner = null
-                  
-                  if (aIdx !== -1) {
-                    const isSel = selectedUnit?.team === 'attacker' && selectedUnit.index === aIdx
-                    inner = <div className={`w-full h-full rounded-full bg-blue-500 ${isSel ? 'animate-pulse shadow-[0_0_10px_#3b82f6]' : ''}`} title={UNIT_TYPES[attackerUnits[aIdx].unit_type as UnitTypeKey]?.name} />
-                    bgClass = isSel ? 'bg-white/20' : 'bg-blue-900/20'
-                  } else if (dIdx !== -1) {
-                    const isSel = selectedUnit?.team === 'defender' && selectedUnit.index === dIdx
-                    inner = <div className={`w-full h-full rounded-full bg-red-500 ${isSel ? 'animate-pulse shadow-[0_0_10px_#ef4444]' : ''}`} title={UNIT_TYPES[defenderUnits[dIdx].unit_type as UnitTypeKey]?.name} />
-                    bgClass = isSel ? 'bg-white/20' : 'bg-red-900/20'
-                  } else if (selectedUnit) {
-                    bgClass = 'bg-transparent hover:bg-green-500/30'
-                  }
-
-                  // Разделитель зон
-                  const borderClass = y === 9 ? 'border-b-2 border-b-gray-600' : 'border-b border-b-gray-800/30'
-
-                  return (
-                    <div 
-                      key={`${x}-${y}`} 
-                      onClick={() => handleCellClick(x, y)}
-                      className={`border-r border-r-gray-800/30 ${borderClass} ${bgClass} cursor-pointer flex items-center justify-center p-[2px]`}
-                    >
-                      {inner}
-                    </div>
-                  )
-                })
-              )}
-            </div>
+            <SimulatorGrid 
+              obstacles={obstacles} 
+              attackerUnits={attackerUnits} 
+              defenderUnits={defenderUnits} 
+              selectedUnit={selectedUnit} 
+              onCellClick={handleCellClick} 
+            />
+            {selectedUnit && (
+              <UnitUpgradesPanel 
+                unit={selectedUnit.team === 'attacker' ? attackerUnits[selectedUnit.index] : defenderUnits[selectedUnit.index]} 
+                onToggle={(upgId) => toggleUpgrade(selectedUnit.team, selectedUnit.index, upgId)} 
+              />
+            )}
           </div>
         </div>
       </div>

@@ -1,5 +1,5 @@
 import { SimUnit, BattleAction } from './combat.types';
-import { getDistance, FIELD_WIDTH, FIELD_HEIGHT, PRNG, getSizeRadius } from './combat.utils';
+import { getDistance, FIELD_WIDTH, FIELD_HEIGHT, PRNG, getSizeRadius, getSizeMass } from './combat.utils';
 import { FlowFieldMap, getFlowVector } from './combat.pathfinding';
 import { Obstacle } from './combat.types';
 
@@ -54,6 +54,7 @@ export function movementSystem(unit: SimUnit, target: SimUnit, units: SimUnit[],
   // Soft collision (Boids separation), Cohesion and Alignment
   const isBug = unit.type.startsWith('alien_');
   let squadCx = 0, squadCy = 0, squadCount = 0;
+  let squadVx = 0, squadVy = 0;
   let alignVx = 0, alignVy = 0, alignCount = 0;
 
   for (const other of units) {
@@ -63,6 +64,8 @@ export function movementSystem(unit: SimUnit, target: SimUnit, units: SimUnit[],
     if (unit.squadId && other.squadId === unit.squadId) {
       squadCx += other.x;
       squadCy += other.y;
+      squadVx += Math.cos(other.currentAngle);
+      squadVy += Math.sin(other.currentAngle);
       squadCount++;
     }
 
@@ -83,11 +86,11 @@ export function movementSystem(unit: SimUnit, target: SimUnit, units: SimUnit[],
        const overlap = minDist - dist;
        const pushAngle = Math.atan2(unit.y - other.y, unit.x - other.x);
        
-       const myMass = unit.maxHp || 20;
-       const otherMass = other.maxHp || 20;
+       const myMass = getSizeMass(unit.size);
+       const otherMass = getSizeMass(other.size);
        const pushRatio = (otherMass / (myMass + otherMass)) * 2; 
        
-       const stanceMultiplier = isInRange ? 0.3 : 1.0;
+       const stanceMultiplier = isInRange ? 0 : 1.0; // Plants firmly when fighting
        const pushForce = overlap * 5 * pushRatio * stanceMultiplier; 
        vx += Math.cos(pushAngle) * pushForce;
        vy += Math.sin(pushAngle) * pushForce;
@@ -125,10 +128,17 @@ export function movementSystem(unit: SimUnit, target: SimUnit, units: SimUnit[],
     let targetCx = squadCx;
     let targetCy = squadCy;
     
-    if (!isBug && unit.offsetX !== undefined && unit.offsetY !== undefined) {
+    if (!isBug && unit.offsetX !== undefined && unit.offsetY !== undefined && unit.initialAngle !== undefined) {
       // Humans keep strict military formation relative to squad center
-      targetCx += unit.offsetX;
-      targetCy += unit.offsetY;
+      // Rotate the local offset to match the squad's average heading
+      const squadAngle = Math.atan2(squadVy, squadVx);
+      const rotation = squadAngle - unit.initialAngle;
+      
+      const rotatedOx = unit.offsetX * Math.cos(rotation) - unit.offsetY * Math.sin(rotation);
+      const rotatedOy = unit.offsetX * Math.sin(rotation) + unit.offsetY * Math.cos(rotation);
+      
+      targetCx += rotatedOx;
+      targetCy += rotatedOy;
     }
 
     const cohDist = getDistance(unit.x, unit.y, targetCx, targetCy);
@@ -162,7 +172,7 @@ export function movementSystem(unit: SimUnit, target: SimUnit, units: SimUnit[],
   nx = Math.max(0, Math.min(FIELD_WIDTH, nx));
   ny = Math.max(0, Math.min(FIELD_HEIGHT, ny));
 
-  if (nx !== unit.x || ny !== unit.y || Math.abs(angleDiff) > 0.05) { // Even if not moving, we might be turning!
+  if (Math.hypot(nx - unit.x, ny - unit.y) > 0.1 || Math.abs(angleDiff) > 0.2) { // Only emit move if significantly moved or turned
     const fromX = unit.x, fromY = unit.y;
     unit.x = nx; unit.y = ny;
     // Round to 2 decimal places to save JSON size but keep movement smooth

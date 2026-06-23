@@ -1,0 +1,165 @@
+{
+  "group_id": null,
+  "states": [
+    {
+      "character": {
+        "id": "4abaff24-494e-4065-9314-0442c69a68d1",
+        "name": "A heavy industrial soldier clad",
+        "prompt": "A heavy industrial soldier clad in a bulky, fireproof silver environmental suit with reinforced plating and heat-resistant piping. Two large, cylindrical red fuel tanks are mounted securely to the back, connected to a heavy-duty flamethrower held firmly in both hands. The character stands in a wide, stable combat stance, wearing a sealed helmet with a dark, reflective visor, featuring a low top-down perspective that emphasizes the weight and mechanical bulk of the suit.",
+        "size": {
+          "width": 256,
+          "height": 256
+        },
+        "template_id": "mannequin",
+        "directions": 8,
+        "view": "low top-down",
+        "created_at": "2026-06-23T10:48:56.259575+00:00"
+      },
+      "folder": "A_heavy_industrial_soldier_clad",
+      "frames": {
+        "rotations": {
+          "south": "A_heavy_industrial_soldier_clad/rotations/south.png",
+          "south-east": "A_heavy_industrial_soldier_clad/rotations/south-east.png",
+          "east": "A_heavy_industrial_soldier_clad/rotations/east.png",
+          "north-east": "A_heavy_industrial_soldier_clad/rotations/north-east.png",
+          "north": "A_heavy_industrial_soldier_clad/rotations/north.png",
+          "north-west": "A_heavy_industrial_soldier_clad/rotations/north-west.png",
+          "west": "A_heavy_industrial_soldier_clad/rotations/west.png",
+          "south-west": "A_heavy_industrial_soldier_clad/rotations/south-west.png"
+        },
+        "animations": {
+          "The_soldier_plants_their_feet_firmly_bracing_their": {
+            "east": [
+              "A_heavy_industrial_soldier_clad/animations/The_soldier_plants_their_feet_firmly_bracing_their/east/frame_000.png",
+              "A_heavy_industrial_soldier_clad/animations/The_soldier_plants_their_feet_firmly_bracing_their/east/frame_001.png",
+              "A_heavy_industrial_soldier_clad/animations/The_soldier_plants_their_feet_firmly_bracing_their/east/frame_002.png",
+              "A_heavy_industrial_soldier_clad/animations/The_soldier_plants_their_feet_firmly_bracing_their/east/frame_003.png",
+              "A_heavy_industrial_soldier_clad/animations/The_soldier_plants_their_feet_firmly_bracing_their/east/frame_004.png",
+              "A_heavy_industrial_soldier_clad/animations/The_soldier_plants_their_feet_firmly_bracing_their/east/frame_005.png",
+              "A_heavy_industrial_soldier_clad/animations/The_soldier_plants_their_feet_firmly_bracing_their/east/frame_006.png"
+            ],
+            "south": [
+              "A_heavy_industrial_soldier_clad/animations/The_soldier_plants_their_feet_firmly_bracing_their/south/frame_000.png",
+              "A_heavy_industrial_soldier_clad/animations/The_soldier_plants_their_feet_firmly_bracing_their/south/frame_001.png",
+              "A_heavy_industrial_soldier_clad/animations/The_soldier_plants_their_feet_firmly_bracing_their/south/frame_002.png",
+              "A_heavy_industrial_soldier_clad/animations/The_soldier_plants_their_feet_firmly_bracing_their/south/frame_003.png",
+              "A_heavy_industrial_soldier_clad/animations/The_soldier_plants_their_feet_firmly_bracing_their/south/frame_004.png",
+              "A_heavy_industrial_soldier_clad/animations/The_soldier_plants_their_feet_firmly_bracing_their/south/frame_005.png",
+              "A_heavy_industrial_soldier_clad/animations/The_soldier_plants_their_feet_firmly_bracing_their/south/frame_006.png"
+            ],
+            "north": [
+              "A_heavy_industrial_soldier_clad/animations/The_soldier_plants_their_feet_firmly_bracing_their/north/frame_000.png",
+              "A_heavy_industrial_soldier_clad/animations/The_soldier_plants_their_feet_firmly_bracing_their/north/frame_001.png",
+              "A_heavy_industrial_soldier_clad/animations/The_soldier_plants_their_feet_firmly_bracing_their/north/frame_002.png",
+              "A_heavy_industrial_soldier_clad/animations/The_soldier_plants_their_feet_firmly_bracing_their/north/frame_003.png",
+              "A_heavy_industrial_soldier_clad/animations/The_soldier_plants_their_feet_firmly_bracing_their/north/frame_004.png",
+              "A_heavy_industrial_soldier_clad/animations/The_soldier_plants_their_feet_firmly_bracing_their/north/frame_005.png",
+              "A_heavy_industrial_soldier_clad/animations/The_soldier_plants_their_feet_firmly_bracing_their/north/frame_006.png"
+            ],
+            "south-east": [
+              "A_heavy_industrial_soldier_clad/animations/The_soldier_plants_their_feet_firmly_bracing_their/south-east/frame_000.png",
+              "A_heavy_industrial_soldier_clad/animations/The_soldier_plants_their_feet_firmly_bracing_their/south-east/frame_001.png",
+              "A_heavy_industrial_soldier_clad/animations/The_soldier_plants_their_feet_firmly_bracing_their/south-east/frame_002.png",
+              "A_heavy_industrial_soldier_clad/animations/The_soldier_plants_their_feet_firmly_bracing_their/south-east/frame_003.png",
+              "A_heavy_industrial_soldier_clad/animations/The_soldier_plants_their_feet_firmly_bracing_their/south-east/frame_004.png",
+              "A_heavy_industrial_soldier_clad/animations/The_soldier_plants_their_feet_firmly_bracing_their/south-east/frame_005.png",
+              "A_heavy_industrial_soldier_clad/animations/The_soldier_plants_their_feet_firmly_bracing_their/south-east/frame_006.png"
+            ]
+          },
+          "The_heavily_armored_soldier_takes_a_slow_deliberat": {
+            "south": [
+              "A_heavy_industrial_soldier_clad/animations/The_heavily_armored_soldier_takes_a_slow_deliberat/south/frame_000.png",
+              "A_heavy_industrial_soldier_clad/animations/The_heavily_armored_soldier_takes_a_slow_deliberat/south/frame_001.png",
+              "A_heavy_industrial_soldier_clad/animations/The_heavily_armored_soldier_takes_a_slow_deliberat/south/frame_002.png",
+              "A_heavy_industrial_soldier_clad/animations/The_heavily_armored_soldier_takes_a_slow_deliberat/south/frame_003.png",
+              "A_heavy_industrial_soldier_clad/animations/The_heavily_armored_soldier_takes_a_slow_deliberat/south/frame_004.png",
+              "A_heavy_industrial_soldier_clad/animations/The_heavily_armored_soldier_takes_a_slow_deliberat/south/frame_005.png",
+              "A_heavy_industrial_soldier_clad/animations/The_heavily_armored_soldier_takes_a_slow_deliberat/south/frame_006.png",
+              "A_heavy_industrial_soldier_clad/animations/The_heavily_armored_soldier_takes_a_slow_deliberat/south/frame_007.png",
+              "A_heavy_industrial_soldier_clad/animations/The_heavily_armored_soldier_takes_a_slow_deliberat/south/frame_008.png"
+            ],
+            "north-east": [
+              "A_heavy_industrial_soldier_clad/animations/The_heavily_armored_soldier_takes_a_slow_deliberat/north-east/frame_000.png",
+              "A_heavy_industrial_soldier_clad/animations/The_heavily_armored_soldier_takes_a_slow_deliberat/north-east/frame_001.png",
+              "A_heavy_industrial_soldier_clad/animations/The_heavily_armored_soldier_takes_a_slow_deliberat/north-east/frame_002.png",
+              "A_heavy_industrial_soldier_clad/animations/The_heavily_armored_soldier_takes_a_slow_deliberat/north-east/frame_003.png",
+              "A_heavy_industrial_soldier_clad/animations/The_heavily_armored_soldier_takes_a_slow_deliberat/north-east/frame_004.png",
+              "A_heavy_industrial_soldier_clad/animations/The_heavily_armored_soldier_takes_a_slow_deliberat/north-east/frame_005.png",
+              "A_heavy_industrial_soldier_clad/animations/The_heavily_armored_soldier_takes_a_slow_deliberat/north-east/frame_006.png",
+              "A_heavy_industrial_soldier_clad/animations/The_heavily_armored_soldier_takes_a_slow_deliberat/north-east/frame_007.png",
+              "A_heavy_industrial_soldier_clad/animations/The_heavily_armored_soldier_takes_a_slow_deliberat/north-east/frame_008.png"
+            ],
+            "south-west": [
+              "A_heavy_industrial_soldier_clad/animations/The_heavily_armored_soldier_takes_a_slow_deliberat/south-west/frame_000.png",
+              "A_heavy_industrial_soldier_clad/animations/The_heavily_armored_soldier_takes_a_slow_deliberat/south-west/frame_001.png",
+              "A_heavy_industrial_soldier_clad/animations/The_heavily_armored_soldier_takes_a_slow_deliberat/south-west/frame_002.png",
+              "A_heavy_industrial_soldier_clad/animations/The_heavily_armored_soldier_takes_a_slow_deliberat/south-west/frame_003.png",
+              "A_heavy_industrial_soldier_clad/animations/The_heavily_armored_soldier_takes_a_slow_deliberat/south-west/frame_004.png",
+              "A_heavy_industrial_soldier_clad/animations/The_heavily_armored_soldier_takes_a_slow_deliberat/south-west/frame_005.png",
+              "A_heavy_industrial_soldier_clad/animations/The_heavily_armored_soldier_takes_a_slow_deliberat/south-west/frame_006.png",
+              "A_heavy_industrial_soldier_clad/animations/The_heavily_armored_soldier_takes_a_slow_deliberat/south-west/frame_007.png",
+              "A_heavy_industrial_soldier_clad/animations/The_heavily_armored_soldier_takes_a_slow_deliberat/south-west/frame_008.png"
+            ],
+            "east": [
+              "A_heavy_industrial_soldier_clad/animations/The_heavily_armored_soldier_takes_a_slow_deliberat/east/frame_000.png",
+              "A_heavy_industrial_soldier_clad/animations/The_heavily_armored_soldier_takes_a_slow_deliberat/east/frame_001.png",
+              "A_heavy_industrial_soldier_clad/animations/The_heavily_armored_soldier_takes_a_slow_deliberat/east/frame_002.png",
+              "A_heavy_industrial_soldier_clad/animations/The_heavily_armored_soldier_takes_a_slow_deliberat/east/frame_003.png",
+              "A_heavy_industrial_soldier_clad/animations/The_heavily_armored_soldier_takes_a_slow_deliberat/east/frame_004.png",
+              "A_heavy_industrial_soldier_clad/animations/The_heavily_armored_soldier_takes_a_slow_deliberat/east/frame_005.png",
+              "A_heavy_industrial_soldier_clad/animations/The_heavily_armored_soldier_takes_a_slow_deliberat/east/frame_006.png",
+              "A_heavy_industrial_soldier_clad/animations/The_heavily_armored_soldier_takes_a_slow_deliberat/east/frame_007.png",
+              "A_heavy_industrial_soldier_clad/animations/The_heavily_armored_soldier_takes_a_slow_deliberat/east/frame_008.png"
+            ],
+            "north-west": [
+              "A_heavy_industrial_soldier_clad/animations/The_heavily_armored_soldier_takes_a_slow_deliberat/north-west/frame_000.png",
+              "A_heavy_industrial_soldier_clad/animations/The_heavily_armored_soldier_takes_a_slow_deliberat/north-west/frame_001.png",
+              "A_heavy_industrial_soldier_clad/animations/The_heavily_armored_soldier_takes_a_slow_deliberat/north-west/frame_002.png",
+              "A_heavy_industrial_soldier_clad/animations/The_heavily_armored_soldier_takes_a_slow_deliberat/north-west/frame_003.png",
+              "A_heavy_industrial_soldier_clad/animations/The_heavily_armored_soldier_takes_a_slow_deliberat/north-west/frame_004.png",
+              "A_heavy_industrial_soldier_clad/animations/The_heavily_armored_soldier_takes_a_slow_deliberat/north-west/frame_005.png",
+              "A_heavy_industrial_soldier_clad/animations/The_heavily_armored_soldier_takes_a_slow_deliberat/north-west/frame_006.png",
+              "A_heavy_industrial_soldier_clad/animations/The_heavily_armored_soldier_takes_a_slow_deliberat/north-west/frame_007.png",
+              "A_heavy_industrial_soldier_clad/animations/The_heavily_armored_soldier_takes_a_slow_deliberat/north-west/frame_008.png"
+            ],
+            "south-east": [
+              "A_heavy_industrial_soldier_clad/animations/The_heavily_armored_soldier_takes_a_slow_deliberat/south-east/frame_000.png",
+              "A_heavy_industrial_soldier_clad/animations/The_heavily_armored_soldier_takes_a_slow_deliberat/south-east/frame_001.png",
+              "A_heavy_industrial_soldier_clad/animations/The_heavily_armored_soldier_takes_a_slow_deliberat/south-east/frame_002.png",
+              "A_heavy_industrial_soldier_clad/animations/The_heavily_armored_soldier_takes_a_slow_deliberat/south-east/frame_003.png",
+              "A_heavy_industrial_soldier_clad/animations/The_heavily_armored_soldier_takes_a_slow_deliberat/south-east/frame_004.png",
+              "A_heavy_industrial_soldier_clad/animations/The_heavily_armored_soldier_takes_a_slow_deliberat/south-east/frame_005.png",
+              "A_heavy_industrial_soldier_clad/animations/The_heavily_armored_soldier_takes_a_slow_deliberat/south-east/frame_006.png",
+              "A_heavy_industrial_soldier_clad/animations/The_heavily_armored_soldier_takes_a_slow_deliberat/south-east/frame_007.png",
+              "A_heavy_industrial_soldier_clad/animations/The_heavily_armored_soldier_takes_a_slow_deliberat/south-east/frame_008.png"
+            ],
+            "north": [
+              "A_heavy_industrial_soldier_clad/animations/The_heavily_armored_soldier_takes_a_slow_deliberat/north/frame_000.png",
+              "A_heavy_industrial_soldier_clad/animations/The_heavily_armored_soldier_takes_a_slow_deliberat/north/frame_001.png",
+              "A_heavy_industrial_soldier_clad/animations/The_heavily_armored_soldier_takes_a_slow_deliberat/north/frame_002.png",
+              "A_heavy_industrial_soldier_clad/animations/The_heavily_armored_soldier_takes_a_slow_deliberat/north/frame_003.png",
+              "A_heavy_industrial_soldier_clad/animations/The_heavily_armored_soldier_takes_a_slow_deliberat/north/frame_004.png",
+              "A_heavy_industrial_soldier_clad/animations/The_heavily_armored_soldier_takes_a_slow_deliberat/north/frame_005.png",
+              "A_heavy_industrial_soldier_clad/animations/The_heavily_armored_soldier_takes_a_slow_deliberat/north/frame_006.png",
+              "A_heavy_industrial_soldier_clad/animations/The_heavily_armored_soldier_takes_a_slow_deliberat/north/frame_007.png",
+              "A_heavy_industrial_soldier_clad/animations/The_heavily_armored_soldier_takes_a_slow_deliberat/north/frame_008.png"
+            ],
+            "west": [
+              "A_heavy_industrial_soldier_clad/animations/The_heavily_armored_soldier_takes_a_slow_deliberat/west/frame_000.png",
+              "A_heavy_industrial_soldier_clad/animations/The_heavily_armored_soldier_takes_a_slow_deliberat/west/frame_001.png",
+              "A_heavy_industrial_soldier_clad/animations/The_heavily_armored_soldier_takes_a_slow_deliberat/west/frame_002.png",
+              "A_heavy_industrial_soldier_clad/animations/The_heavily_armored_soldier_takes_a_slow_deliberat/west/frame_003.png",
+              "A_heavy_industrial_soldier_clad/animations/The_heavily_armored_soldier_takes_a_slow_deliberat/west/frame_004.png",
+              "A_heavy_industrial_soldier_clad/animations/The_heavily_armored_soldier_takes_a_slow_deliberat/west/frame_005.png",
+              "A_heavy_industrial_soldier_clad/animations/The_heavily_armored_soldier_takes_a_slow_deliberat/west/frame_006.png",
+              "A_heavy_industrial_soldier_clad/animations/The_heavily_armored_soldier_takes_a_slow_deliberat/west/frame_007.png",
+              "A_heavy_industrial_soldier_clad/animations/The_heavily_armored_soldier_takes_a_slow_deliberat/west/frame_008.png"
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "export_version": "3.0",
+  "export_date": "2026-06-23T12:20:13.241815"
+}

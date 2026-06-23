@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { simulateBattle } from '@/domains/combat/combat.engine'
+import { UPGRADES } from '@/domains/combat/combat.upgrades'
 import type { UnitRow } from '@/domains/combat/combat.types'
 
 describe('combat.engine', () => {
@@ -78,11 +79,11 @@ describe('combat.engine', () => {
         id: 'a1',
         colony_id: 'c1',
         unit_type: 'marine',
-        hp_current: 4000, // impossible to kill
+        hp_current: 1000000,
         grid_x: '0',
         grid_y: '0',
         tier: 1,
-        upgrade_path: [],
+        upgrade_path: ['god_mode'],
       }
     ]
 
@@ -91,16 +92,30 @@ describe('combat.engine', () => {
         id: 'd1',
         colony_id: 'c2',
         unit_type: 'marine',
-        hp_current: 4000, // impossible to kill
+        hp_current: 1000000,
         grid_x: '6',
         grid_y: '0',
         tier: 1,
-        upgrade_path: [],
+        upgrade_path: ['god_mode'],
       }
     ]
 
+    const tempUpgrades = UPGRADES['god_mode'];
+    UPGRADES['god_mode'] = {
+       id: 'god_mode',
+       name: 'God',
+       type: 'unit_upgrade',
+       cost: {},
+       prerequisites: [],
+       unitType: 'marine',
+       modifiers: { hpMult: 100000 }
+    };
+
     const result = simulateBattle(attackerUnits, defenderUnits)
     
+    if (tempUpgrades === undefined) delete (UPGRADES as any)['god_mode'];
+    else (UPGRADES as any)['god_mode'] = tempUpgrades;
+
     // Reached MAX_TICKS without kills or they killed each other
     expect(result.winner).toBe('defender')
     expect(result.survivors.length).toBeGreaterThan(0)

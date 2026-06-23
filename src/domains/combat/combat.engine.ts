@@ -1,30 +1,57 @@
 import { UNIT_TYPES, MAX_TICKS } from './combat.config'
-import type { UnitRow, Team, SimUnit, BattleAction, BattleTick, BattleResult, Obstacle } from './combat.types'
+import { GLOBAL_UPGRADES, UPGRADES, GlobalUpgradeConfig } from './combat.upgrades'
+import { processGlobals } from './combat.globals'
+import { processHazards } from './combat.hazards'
+import { processSpawnerLogic } from './combat.spawner'
+import type { UnitRow, Team, SimUnit, BattleAction, BattleTick, BattleResult, Obstacle, SimHazard } from './combat.types'
 import { targetingSystem, actionSystem, tickModifiersSystem } from './combat.systems'
 import { movementSystem } from './combat.movement'
 import { getDistance, FIELD_WIDTH, FIELD_HEIGHT, PRNG } from './combat.utils'
 import { createPathfindingMap, FlowFieldMap } from './combat.pathfinding'
 
-/**
- * Main simulation engine. Pure function.
- */
 
-export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[], providedSeed?: number): BattleResult {
+
+export function generateObstacles(seed: number): Obstacle[] {
+  const rng = new PRNG(seed)
+  const obstacles: Obstacle[] = [];
+  const numObstacles = 4 + Math.floor(rng.next() * 4);
+  let attempts = 0;
+  
+  while (obstacles.length < numObstacles && attempts < 50) {
+     attempts++;
+     const ox = 50 + rng.next() * (FIELD_WIDTH - 100);
+     const oy = 250 + rng.next() * (FIELD_HEIGHT - 600);
+     const oradius = 15 + rng.next() * 25; // Radius 15-40
+     
+     let overlaps = false;
+     for (const existing of obstacles) {
+       const dist = getDistance(ox, oy, existing.x, existing.y);
+       if (dist < oradius + existing.radius + 20) {
+         overlaps = true;
+         break;
+       }
+     }
+     
+     if (!overlaps) {
+       obstacles.push({ x: ox, y: oy, radius: oradius });
+     }
+  }
+  return obstacles;
+}
+
+export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[], providedSeed?: number, providedObstacles?: Obstacle[], attackerGlobals: string[] = [], defenderGlobals: string[] = []): BattleResult {
   const seed = providedSeed || Date.now()
   const rng = new PRNG(seed)
   const dt = 0.1
   const units: SimUnit[] = []
+  const hazards: SimHazard[] = []
 
-  // Generate 5-8 random static obstacles (craters/rocks)
-  const obstacles: Obstacle[] = [];
-  const numObstacles = 5 + Math.floor(rng.next() * 4);
-  for (let i = 0; i < numObstacles; i++) {
-     // Keep them slightly away from edges and spawn zones (y: 200 to 1000)
-     const ox = 50 + rng.next() * (FIELD_WIDTH - 100);
-     const oy = 250 + rng.next() * (FIELD_HEIGHT - 500);
-     const oradius = 30 + rng.next() * 50; // Radius between 30 and 80 pixels
-     obstacles.push({ x: ox, y: oy, radius: oradius });
-  }
+  const activeGlobals: { team: Team, upg: GlobalUpgradeConfig }[] = []
+  attackerGlobals.forEach(id => { if (GLOBAL_UPGRADES[id]) activeGlobals.push({ team: 'attacker', upg: GLOBAL_UPGRADES[id] }) })
+  defenderGlobals.forEach(id => { if (GLOBAL_UPGRADES[id]) activeGlobals.push({ team: 'defender', upg: GLOBAL_UPGRADES[id] }) })
+
+  // Generate or use provided obstacles
+  const obstacles: Obstacle[] = providedObstacles || generateObstacles(seed);
 
   const flowFieldMap = createPathfindingMap(obstacles);
 
@@ -44,6 +71,45 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
     const squadId = squadSize > 1 ? `${u.id}_squad` : undefined
     const formation = config.formation || 'grid'
 
+    // Calculate base stats with upgrades
+    let modHp = config.baseStats.hp;
+    let modAttack = config.baseStats.attack;
+    let modDefense = config.baseStats.defense;
+    let modSpeed = config.baseStats.speed * 15;
+    let modRange = config.baseStats.range * 40;
+    let modCooldown = config.baseStats.actionCooldownMax || 10;
+    let modFlying = config.baseStats.isFlying || false;
+    let modAoe = config.baseStats.aoeRadius ? config.baseStats.aoeRadius * 40 : undefined;
+    let attackType = config.baseStats.attackType || 'single';
+    let modShield = 0;
+    let appliesEmp = false;
+    let leavesPuddle = false;
+    let spawnerConfig: { unitType: string, interval: number, timer: number } | undefined = undefined;
+
+    if (u.upgrade_path && Array.isArray(u.upgrade_path)) {
+      for (const upgradeId of u.upgrade_path) {
+        const upgrade = UPGRADES[upgradeId]
+        if (!upgrade) continue;
+        const m = upgrade.modifiers;
+        if (m.hpMult) modHp *= m.hpMult;
+        if (m.attackMult) modAttack *= m.attackMult;
+        if (m.defenseAdd) modDefense += m.defenseAdd;
+        if (m.speedMult) modSpeed *= m.speedMult;
+        if (m.rangeAdd) modRange += m.rangeAdd * 40;
+        if (m.cooldownMult) modCooldown *= m.cooldownMult;
+        if (m.addFlying) modFlying = true;
+        if (m.grantShield) modShield += config.baseStats.hp * m.grantShield;
+        if (m.disableEnemyTech) appliesEmp = true;
+        if (m.leaveAoePuddle) leavesPuddle = true;
+        if (m.periodicSpawn) spawnerConfig = { unitType: m.periodicSpawn.unit, interval: m.periodicSpawn.interval * 10, timer: m.periodicSpawn.interval * 10 }; // interval in ticks (10 ticks = 1 sec approx)
+        if (m.addAoE) {
+          attackType = 'aoe';
+          if (!modAoe) modAoe = m.addAoE * 40;
+          else modAoe += m.addAoE * 40;
+        }
+      }
+    }
+
     for (let i = 0; i < squadSize; i++) {
       let ox = 0, oy = 0
       
@@ -55,12 +121,12 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
         // Let's do a simple V shape
         const isLeader = i === 0
         if (isLeader) {
-          ox = 0; oy = -spacing
+          ox = 0; oy = spacing
         } else {
           const side = i % 2 === 0 ? 1 : -1
           const rank = Math.ceil(i / 2)
           ox = side * rank * spacing
-          oy = rank * spacing - spacing
+          oy = spacing - rank * spacing
         }
       } else {
         // Grid
@@ -77,22 +143,30 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
         id: squadSize > 1 ? `${u.id}_${i}` : u.id!,
         squadId,
         team: t,
-        type: u.unit_type,
-        hp: config.baseStats.hp,
-        maxHp: config.baseStats.hp,
-        attack: config.baseStats.attack,
-        defense: config.baseStats.defense,
-        speed: config.baseStats.speed * 15,
-        range: config.baseStats.range * 40,
-        attackType: config.baseStats.attackType || 'single',
-        actionCooldownMax: config.baseStats.actionCooldownMax || 10,
+        type: u.unit_type as UnitTypeKey,
+        hp: u.hp_current !== undefined ? Math.min(u.hp_current, modHp) : modHp,
+        maxHp: Math.round(modHp),
+        attack: Math.round(modAttack),
+        defense: modDefense,
+        speed: modSpeed,
+        range: modRange,
+        attackType: attackType,
+        spawnType: config.baseStats.spawnType,
+        actionCooldownMax: modCooldown,
         actionCooldown: 0,
-        isFlying: config.baseStats.isFlying || false,
+        isFlying: modFlying,
         canTargetAir: config.baseStats.canTargetAir || false,
         turnSpeed: config.baseStats.turnSpeed || 0.5,
         currentAngle: t === 'attacker' ? Math.PI / 2 : -Math.PI / 2,
+        initialAngle: t === 'attacker' ? Math.PI / 2 : -Math.PI / 2,
         size: config.baseStats.size || 'M',
-        aoeRadius: config.baseStats.aoeRadius ? config.baseStats.aoeRadius * 40 : undefined,
+        aoeRadius: modAoe,
+        shield: Math.round(modShield),
+        maxShield: Math.round(modShield),
+        statusEffects: [],
+        appliesEmp,
+        leavesPuddle,
+        spawnerConfig: spawnerConfig ? { ...spawnerConfig } : undefined,
         offsetX: ox,
         offsetY: oy,
         x: cx + ox,
@@ -113,6 +187,8 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
   while (tick < MAX_TICKS) {
     const actions: BattleAction[] = []
     
+    processGlobals(tick, activeGlobals, units, hazards, actions, rng);
+    
     // Check win condition before tick
     const aliveAttackers = units.filter(u => !u.isDead && u.team === 'attacker')
     const aliveDefenders = units.filter(u => !u.isDead && u.team === 'defender')
@@ -128,46 +204,45 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
     for (const unit of turnOrder) {
       if (unit.isDead) continue;
       
-      tickModifiersSystem(unit, dt);
+      tickModifiersSystem(unit, dt, actions);
 
       const target = targetingSystem(unit, units, meleeTargetCounts);
       if (!target) continue;
+
+      processSpawnerLogic(unit, target, units, hazards, actions, rng);
 
       // Register slot taken if melee unit
       if (unit.range <= 60) {
          meleeTargetCounts[target.id] = (meleeTargetCounts[target.id] || 0) + 1;
       }
 
-      const acted = actionSystem(unit, target, units, actions, rng);
+      const acted = actionSystem(unit, target, units, hazards, actions, rng);
       
       if (!acted) {
         movementSystem(unit, target, units, actions, dt, rng, flowFieldMap, obstacles);
       }
     }
 
+    processHazards(hazards, units, actions);
+    
     if (actions.length > 0) logs.push({ tick, actions })
     
     tick++
   }
 
-  // Determine winner after simulation loop
   const finalAttackers = units.filter(u => !u.isDead && u.team === 'attacker')
   const finalDefenders = units.filter(u => !u.isDead && u.team === 'defender')
-
   let winner: 'attacker' | 'defender' | 'draw' = 'draw'
   if (finalAttackers.length > 0 && finalDefenders.length === 0) winner = 'attacker'
   if (finalDefenders.length > 0 && finalAttackers.length === 0) winner = 'defender'
-  if (finalAttackers.length > 0 && finalDefenders.length > 0) {
-    // If time ran out, defender wins by default
-    winner = 'defender'
-  }
+  if (finalAttackers.length > 0 && finalDefenders.length > 0) winner = 'defender'
 
   return {
     winner,
     logs,
     seed,
     initialState,
-    survivors: units.filter(u => !u.isDead),
+    survivors: units.filter(u => !u.isDead && !u.isTemporary),
     obstacles
   }
 }

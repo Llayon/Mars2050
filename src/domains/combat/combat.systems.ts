@@ -1,12 +1,23 @@
-import { SimUnit, BattleAction } from './combat.types';
+import { SimUnit, BattleAction, SimHazard } from './combat.types';
 import { UNIT_TYPES } from './combat.config';
 import { getDistance, FIELD_WIDTH, FIELD_HEIGHT, PRNG, getSizeRadius } from './combat.utils';
 
 // --- ECS Systems ---
 
 
-export function tickModifiersSystem(unit: SimUnit, dt: number) {
+export function tickModifiersSystem(unit: SimUnit, dt: number, actions: BattleAction[]) {
   if (unit.actionCooldown > 0) unit.actionCooldown = Math.max(0, unit.actionCooldown - 1);
+
+  if (unit.statusEffects) {
+    for (let i = unit.statusEffects.length - 1; i >= 0; i--) {
+      const eff = unit.statusEffects[i];
+      eff.duration--;
+      if (eff.duration <= 0) {
+        unit.statusEffects.splice(i, 1);
+        actions.push({ unitId: unit.id, type: 'status_expire', statusType: eff.type });
+      }
+    }
+  }
 }
 
 export function targetingSystem(unit: SimUnit, units: SimUnit[], meleeTargetCounts: Record<string, number>): SimUnit | null {
@@ -57,13 +68,13 @@ export function targetingSystem(unit: SimUnit, units: SimUnit[], meleeTargetCoun
   return target;
 }
 
-export function actionSystem(unit: SimUnit, target: SimUnit, units: SimUnit[], actions: BattleAction[], rng: PRNG): boolean {
+export function actionSystem(unit: SimUnit, target: SimUnit, units: SimUnit[], hazards: SimHazard[], actions: BattleAction[], rng: PRNG): boolean {
   const dist = getDistance(unit.x, unit.y, target.x, target.y);
   const targetRadius = getSizeRadius(target.size);
   const myRadius = getSizeRadius(unit.size);
   const distEdge = dist - targetRadius - myRadius;
   
-  const inRange = (unit.attackType !== 'heal' && distEdge <= unit.range) || 
+  const inRange = unit.attackType === 'spawn' || (unit.attackType !== 'heal' && distEdge <= unit.range) || 
                  (unit.attackType === 'heal' && target.hp < target.maxHp && distEdge <= unit.range);
 
   if (!inRange) return false;
@@ -95,31 +106,33 @@ export function actionSystem(unit: SimUnit, target: SimUnit, units: SimUnit[], a
         spawnY = unit.y;
      }
 
+     const spawnType = unit.spawnType || 'turret';
      const newId = 'spawn_' + Math.floor(rng.next() * 1000000);
-     const turretConfig = UNIT_TYPES['turret'];
+     const spawnConfig = UNIT_TYPES[spawnType as UnitTypeKey];
      
      units.push({
        id: newId,
        team: unit.team,
-       type: 'turret',
-       hp: turretConfig.baseStats.hp,
-       maxHp: turretConfig.baseStats.hp,
-       attack: turretConfig.baseStats.attack,
-       defense: turretConfig.baseStats.defense,
-       speed: turretConfig.baseStats.speed,
-       range: turretConfig.baseStats.range,
-       attackType: turretConfig.baseStats.attackType || 'single',
-       aoeRadius: turretConfig.baseStats.aoeRadius,
-       actionCooldownMax: turretConfig.baseStats.actionCooldownMax || 5,
+       type: spawnType,
+       hp: spawnConfig.baseStats.hp,
+       maxHp: spawnConfig.baseStats.hp,
+       attack: spawnConfig.baseStats.attack,
+       defense: spawnConfig.baseStats.defense,
+       speed: spawnConfig.baseStats.speed,
+       range: spawnConfig.baseStats.range,
+       attackType: spawnConfig.baseStats.attackType || 'single',
+       aoeRadius: spawnConfig.baseStats.aoeRadius,
+       actionCooldownMax: spawnConfig.baseStats.actionCooldownMax || 5,
        actionCooldown: 0,
-       isFlying: turretConfig.baseStats.isFlying || false,
-       canTargetAir: turretConfig.baseStats.canTargetAir || false,
-       turnSpeed: turretConfig.baseStats.turnSpeed || 0.5,
+       isFlying: spawnConfig.baseStats.isFlying || false,
+       canTargetAir: spawnConfig.baseStats.canTargetAir || false,
+       turnSpeed: spawnConfig.baseStats.turnSpeed || 0.5,
        currentAngle: unit.team === 'attacker' ? Math.PI / 2 : -Math.PI / 2,
-       size: turretConfig.baseStats.size || 'M',
+       size: spawnConfig.baseStats.size || 'M',
        x: spawnX,
        y: spawnY,
-       isDead: false
+       isDead: false,
+       statusEffects: []
      });
 
      actions.push({ 
@@ -127,9 +140,9 @@ export function actionSystem(unit: SimUnit, target: SimUnit, units: SimUnit[], a
        type: 'spawn', 
        toX: spawnX, 
        toY: spawnY, 
-       spawnType: 'turret', 
+       spawnType: spawnType, 
        spawnTeam: unit.team, 
-       spawnMaxHp: turretConfig.baseStats.hp,
+       spawnMaxHp: spawnConfig.baseStats.hp,
        targetId: newId
      });
      return true;
