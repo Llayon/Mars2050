@@ -98,14 +98,15 @@ export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
     const config = UNIT_TYPES[utype as UnitTypeKey];
     const uSize = config?.baseStats.size || 'M';
     const radius = getSizeRadius(uSize);
+    const tDir = t === 'attacker' ? 'north' : 'south';
 
     if (SPRITE_ATLASES[utype]) {
-      s = new Sprite(Texture.from(`${utype}_idle_${t === 'attacker' ? 'north' : 'south'}_00`))
-      s.anchor.set(0.5, 0.8); s.scale.set((radius * 2.5) / 128); c.addChild(s)
+      s = new Sprite(Texture.from(`${utype}_idle_${tDir}_00`))
+      s.anchor.set(0.5, 0.8); s.scale.set((radius * 4) / 128); c.addChild(s)
     } else if (SPRITE_PATHS[utype]) {
       basePath = SPRITE_PATHS[utype]
-      s = new Sprite(Texture.from(`${basePath}/${t === 'attacker' ? 'north' : 'south'}.png`))
-      s.anchor.set(0.5, 0.8); s.scale.set((radius * 2.5) / 128); c.addChild(s)
+      s = new Sprite(Texture.from(`${basePath}/${tDir}.png`))
+      s.anchor.set(0.5, 0.8); s.scale.set((radius * 4) / 128); c.addChild(s)
     } else {
       g = new Graphics(); g.circle(0, 0, radius).fill({ color: t === 'attacker' ? 0x3b82f6 : 0xef4444 }); c.addChild(g)
       const txt = new Text({ text: utype[0].toUpperCase(), style: { fill: 0xffffff, fontSize: 14, fontWeight: 'bold' } })
