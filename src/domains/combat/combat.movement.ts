@@ -4,6 +4,7 @@ import { getDistance, FIELD_WIDTH, FIELD_HEIGHT, PRNG, getSizeRadius } from './c
 import { FlowFieldMap, getFlowVector } from './combat.pathfinding';
 import type { SpatialHash } from './spatial-hash';
 import { getMovementNeighbors, getSteeringContext } from './combat.steering';
+import { getStuckRecoveryForce, updateStuckRecovery } from './combat.stuck-recovery';
 
 export function movementSystem(unit: SimUnit, target: SimUnit, units: SimUnit[], actions: BattleAction[], dt: number, rng: PRNG, flowFieldMap: FlowFieldMap, obstacles: Obstacle[], spatialHash?: SpatialHash) {
   if (unit.speed <= 0) return;
@@ -20,6 +21,7 @@ export function movementSystem(unit: SimUnit, target: SimUnit, units: SimUnit[],
   const targetRadius = getSizeRadius(target.size);
   const myRadius = getSizeRadius(unit.size);
   const isInRange = (distToTarget - targetRadius - myRadius) <= unit.range;
+  updateStuckRecovery(unit, target, distToTarget, isInRange);
   const steering = getSteeringContext(unit, neighbors, myRadius, isInRange);
   const { squadCx, squadCy, squadCount } = steering;
 
@@ -131,6 +133,11 @@ export function movementSystem(unit: SimUnit, target: SimUnit, units: SimUnit[],
 
   vx += steering.separationX + steering.alignmentX;
   vy += steering.separationY + steering.alignmentY;
+
+  const recovery = getStuckRecoveryForce(unit, target, obstacles);
+  vx += recovery.forceX;
+  vy += recovery.forceY;
+  if (recovery.isRecovering) unit.isNavigatingObstacle = true;
 
   // Allow a high minimum maxSpeed so collision resolution isn't throttled when speed is low or fighting
   const maxSpeed = Math.max(unit.speed * 1.5, 40);

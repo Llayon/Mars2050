@@ -58,6 +58,13 @@ export interface SimUnit {
   initialAngle?: number
   isMoving?: boolean
   isNavigatingObstacle?: boolean
+  lastProgressX?: number
+  lastProgressY?: number
+  lastTargetDistance?: number
+  lastProgressTargetId?: string
+  stuckTicks?: number
+  avoidanceSide?: -1 | 1
+  avoidanceTicks?: number
   replicateOnKill?: boolean
   stealthUntilAttack?: boolean
   hasAttacked?: boolean
