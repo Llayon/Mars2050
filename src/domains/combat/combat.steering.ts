@@ -98,7 +98,7 @@ function getAwayVector(unit: SimUnit, other: SimUnit, dist: number): { x: number
     }
   }
 
-  const angle = getDeterministicAngle(unit.id, other.id)
+  const angle = getDeterministicPairAngle(unit.id, other.id)
   return { x: Math.cos(angle), y: Math.sin(angle) }
 }
 
@@ -110,6 +110,11 @@ function getEmergencyPush(unit: SimUnit, other: SimUnit, myRadius: number, other
   const pushRatio = (otherMass / (myMass + otherMass)) * 2
   const stanceMultiplier = isInRange ? 0.5 : 1.0
   return Math.min(overlap * 2, unit.speed * 1.5) * pushRatio * stanceMultiplier
+}
+
+function getDeterministicPairAngle(unitId: string, otherId: string): number {
+  const angle = getDeterministicAngle(unitId, otherId)
+  return unitId < otherId ? angle : angle + Math.PI
 }
 
 function getDeterministicAngle(a: string, b: string): number {

@@ -4,6 +4,16 @@ import { FIELD_WIDTH, FIELD_HEIGHT, getDir, SPRITE_PATHS, SPRITE_ATLASES, SPRITE
 import type { BattleTick, UnitRow, SimUnit, UnitTypeKey, Obstacle } from '@/domains/combat/combat.types'
 import { setupCameraControls } from './battle-replay-camera'
 import { processVisualEffects, lerp } from './battle-replay-utils'
+import { drawOverlays } from './battle-replay-overlays'
+import { createU, updateHp } from './battle-replay-units'
+import type { SpriteState } from './battle-replay-units'
+
+export interface ReplayControls {
+  play: () => void;
+  pause: () => void;
+  setSpeed: (s: number) => void;
+  setOverlays: (o: { radius: boolean; velocity: boolean; targets: boolean }) => void;
+}
 
 export type BattleReplayEngineProps = {
   container: HTMLDivElement
@@ -22,21 +32,32 @@ export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
   const app = new Application()
   const TILE_SIZE = 40, BOARD_W = FIELD_WIDTH, BOARD_H = FIELD_HEIGHT
   await app.init({ width: BOARD_W, height: BOARD_H, backgroundColor: 0x1a1a2e, resolution: window.devicePixelRatio || 1, autoDensity: true })
-  
-  if (isDestroyed) return { app, cleanupEvents }
-  
+
+  if (isDestroyed) return { app, cleanupEvents, controls: null }
+
+  let isPlaying = true
+  let playbackSpeed = 1
+  let overlays = { radius: false, velocity: false, targets: false }
+
+  const controls: ReplayControls = {
+    play: () => { isPlaying = true },
+    pause: () => { isPlaying = false },
+    setSpeed: (s: number) => { playbackSpeed = s },
+    setOverlays: (o: { radius: boolean; velocity: boolean; targets: boolean }) => { overlays = o }
+  }
+
   container.appendChild(app.canvas)
   app.canvas.style.width = '100%'
   app.canvas.style.height = '100%'
   app.canvas.style.objectFit = 'contain'
-  
+
   try {
     const toLoad = ['/sprites/crater.svg']
     for (const t in SPRITE_PATHS) for (const d of SPRITE_DIRS) toLoad.push(`${SPRITE_PATHS[t]}/${d}.png`)
     for (const t in SPRITE_ATLASES) toLoad.push(SPRITE_ATLASES[t])
     await Assets.load(toLoad)
   } catch(e) { console.error('Failed to load textures', e) }
-  
+
   const world = new Container()
   world.pivot.set(BOARD_W / 2, BOARD_H / 2)
   world.x = BOARD_W / 2
@@ -66,68 +87,18 @@ export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
     }
   })
 
-  type SpriteState = { 
-    c: Container, g?: Graphics, s?: Sprite, hpBar: Graphics, empGfx?: Graphics,
-    hp: number, maxHp: number, prog: number, sX: number, sY: number, tX: number, tY: number, 
-    type: string, team: 'attacker'|'defender', basePath?: string, baseScale?: number, isAtlas?: boolean, act?: string, dir?: string
-  }
   const sprites: Record<string, SpriteState> = {}
-
 
   const layer = new Container(), fxLayer = new Container()
   layer.sortableChildren = true
-  world.addChild(layer, fxLayer)
 
-  const updateHp = (s: SpriteState) => {
-    s.hpBar.clear()
-    if (s.hp <= 0) return
-    const r = Math.max(0, s.hp / s.maxHp)
-    s.hpBar.rect(-10, 0, 20, 3).fill({ color: 0x555555 }).rect(-10, 0, 20 * r, 3).fill({ color: r > 0.5 ? 0x4ade80 : 0xef4444 })
-  }
+  const overlayGfx = new Graphics()
 
-  const createU = (u: SimUnit | UnitRow, t: 'attacker'|'defender', isSimUnit: boolean) => {
-    const c = new Container()
-    c.x = isSimUnit ? (u as SimUnit).x : Number((u as UnitRow).grid_x||0)
-    c.y = isSimUnit ? (u as SimUnit).y : Number((u as UnitRow).grid_y||0)
-    layer.addChild(c)
-    
-    let g: Graphics | undefined
-    let s: Sprite | undefined
-    let basePath: string | undefined
-    const utype = isSimUnit ? (u as SimUnit).type : (u as UnitRow).unit_type
-    const config = UNIT_TYPES[utype as UnitTypeKey];
-    const uSize = config?.baseStats.size || 'M';
-    const radius = getSizeRadius(uSize);
-    const tDir = t === 'attacker' ? 'north' : 'south';
-    const scaleMultiplier = utype === 'flamethrower' ? 0.75 : 1;
-
-    if (SPRITE_ATLASES[utype]) {
-      s = new Sprite(Texture.from(`${utype}_idle_${tDir}_00`))
-      s.anchor.set(0.5, 0.8); s.scale.set(((radius * 8) / 128) * scaleMultiplier); c.addChild(s)
-    } else if (SPRITE_PATHS[utype]) {
-      basePath = SPRITE_PATHS[utype]
-      s = new Sprite(Texture.from(`${basePath}/${tDir}.png`))
-      s.anchor.set(0.5, 0.8); s.scale.set(((radius * 8) / 128) * scaleMultiplier); c.addChild(s)
-    } else {
-      g = new Graphics(); g.circle(0, 0, radius).fill({ color: t === 'attacker' ? 0x3b82f6 : 0xef4444 }); c.addChild(g)
-      const txt = new Text({ text: utype[0].toUpperCase(), style: { fill: 0xffffff, fontSize: 14, fontWeight: 'bold' } })
-      txt.anchor.set(0.5); c.addChild(txt)
-    }
-
-    if (utype === 'drone') c.addChild(new Graphics().ellipse(0, 0, 10, 5).fill({ color: 0x000000, alpha: 0.5 }))
-    
-    const hpBar = new Graphics(); hpBar.y = -(radius * 2.5) - 5
-    c.addChild(hpBar)
-    if (!u.id) return
-    const maxHp = UNIT_TYPES[utype as UnitTypeKey]?.baseStats.hp || ('hp_current' in u ? u.hp_current : 1)
-    const baseScale = s ? s.scale.x : 1
-    sprites[u.id] = { c, g, s, hpBar, hp: isSimUnit ? (u as SimUnit).hp : ('hp_current' in u ? u.hp_current : 1), maxHp, prog: 1, sX: c.x, sY: c.y, tX: c.x, tY: c.y, type: utype, team: t, basePath, baseScale, isAtlas: !!SPRITE_ATLASES[utype], act: 'idle', dir: t === 'attacker' ? 'north' : 'south' }
-    updateHp(sprites[u.id])
-  }
+  world.addChild(layer, fxLayer, overlayGfx)
   if (initialState) {
-    initialState.forEach(u => createU(u, u.team, true))
+    initialState.forEach(u => createU(u, u.team, true, layer, sprites))
   } else {
-    attackerUnits.forEach(u => createU(u, 'attacker', false)); defenderUnits.forEach(u => createU(u, 'defender', false))
+    attackerUnits.forEach(u => createU(u, 'attacker', false, layer, sprites)); defenderUnits.forEach(u => createU(u, 'defender', false, layer, sprites))
   }
 
   let tick = 0, time = 0, globalTime = 0
@@ -147,12 +118,13 @@ export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
   }
 
   app.ticker.add(({ deltaMS: dt }) => {
-    time += dt
-    globalTime += dt
-    
+    if (!isPlaying) return
+    time += dt * playbackSpeed
+    globalTime += dt * playbackSpeed
+
     while (time >= DUR && tick < logs.length) {
       time -= DUR
-      
+
       Object.values(sprites).forEach(s => {
         s.sX = s.tX; s.sY = s.tY; s.act = 'idle'
       })
@@ -176,12 +148,12 @@ export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
               s.dir = getDir(tg.c.x - s.c.x, tg.c.y - s.c.y);
               s.act = 'shoot'
             }
-            
+
             tg.hp -= isH ? -a.damage! : a.damage!
             updateHp(tg)
             const dmgText = isH ? `+${a.damage}` : (a.isShieldHit && a.damage === 0 ? `БЛОК` : `-${a.damage}`)
             spawnTxt(dmgText, tg.c.x, tg.c.y, pCol)
-            
+
             if (s.s && s.baseScale !== undefined) {
                s.s.scale.set(s.baseScale * 1.2)
             }
@@ -190,7 +162,7 @@ export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
           s.c.alpha = 0.3; s.hpBar.alpha = 0
           if (s.s) s.s.tint = 0x555555
         } else if (a.type === 'spawn') {
-          createU({ id: a.targetId!, unit_type: a.spawnType! as UnitTypeKey, grid_x: String(a.toX!), grid_y: String(a.toY!), hp_current: a.spawnMaxHp!, colony_id: '1', tier: 1, upgrade_path: [] }, a.spawnTeam as 'attacker'|'defender', false)
+          createU({ id: a.targetId!, unit_type: a.spawnType! as UnitTypeKey, grid_x: String(a.toX!), grid_y: String(a.toY!), hp_current: a.spawnMaxHp!, colony_id: '1', tier: 1, upgrade_path: [] }, a.spawnTeam as 'attacker'|'defender', false, layer, sprites)
           const newS = sprites[a.targetId!]
           if (newS) { newS.sX = a.toX!; newS.sY = a.toY!; newS.tX = a.toX!; newS.tY = a.toY!; }
         } else if (a.type === 'hazard_spawn') {
@@ -219,7 +191,7 @@ export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
     const prog = easeOutQuad(Math.min(1, time / DUR))
     const animFPS = 6 // Reduced from 12 to 6 frames per second
     const fIdx = Math.floor(globalTime / (1000 / animFPS)) % 6
-    
+
     Object.values(sprites).forEach(s => {
       s.c.x = lerp(s.sX, s.tX, prog); s.c.y = lerp(s.sY, s.tY, prog)
       layer.children.sort((a, b) => a.y - b.y)
@@ -238,10 +210,11 @@ export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
       }
     })
 
-    processVisualEffects(fts, projs, hazardFxs, dt)
+    processVisualEffects(fts, projs, hazardFxs, dt * playbackSpeed)
+    drawOverlays(overlayGfx, overlays, sprites, projs)
   })
 
   cleanupEvents = setupCameraControls(app, world)
 
-  return { app, cleanupEvents }
+  return { app, cleanupEvents, controls }
 }

@@ -8,11 +8,11 @@ import type { Team, SimUnit, Obstacle, SimHazard } from './combat.sim.types'
 import { actionSystem, tickModifiersSystem } from './combat.systems'
 import { targetingSystem } from './combat.targeting'
 import { movementSystem } from './combat.movement'
-import { getDistance, FIELD_WIDTH, FIELD_HEIGHT, PRNG, generateObstacles } from './combat.utils'
-import { createPathfindingMap, FlowFieldMap } from './combat.pathfinding'
+import { FIELD_WIDTH, FIELD_HEIGHT, PRNG, generateObstacles } from './combat.utils'
+import { createPathfindingMap } from './combat.pathfinding'
 import { SpatialHash } from './spatial-hash'
 export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[], providedSeed?: number, providedObstacles?: Obstacle[], attackerGlobals: string[] = [], defenderGlobals: string[] = []): BattleResult {
-  const seed = providedSeed || Date.now()
+  const seed = providedSeed ?? Date.now()
   const rng = new PRNG(seed)
   const dt = 0.1
   const units: SimUnit[] = []
@@ -54,7 +54,7 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
     let modCanTargetAir = config.baseStats.canTargetAir || false;
     let modAoe = config.baseStats.aoeRadius ? config.baseStats.aoeRadius * 40 : undefined;
     let attackType = config.baseStats.attackType || 'single';
-    let modShield = 0, modFlying = config.baseStats.isFlying || false, modStealthWhileMoving = false;
+    let modShield = 0, modFlying = config.baseStats.isFlying || false;
     let appliesEmp = false, leavesPuddle = false, spawnerConfig: { unitType: string, interval: number, timer: number } | undefined = undefined;
     let modDamageReductionWhileMoving = 0, modOnDeathPuddle: 'napalm' | 'acid' | 'emp' | undefined = undefined;
     let modMultishot = 1, modAntiAirDamageMult = 1.0, modReplicateOnKill = false;
@@ -74,7 +74,7 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
         if (m.grantShieldFlat) modShield += m.grantShieldFlat;
         if (m.disableEnemyTech) appliesEmp = true; if (m.leaveAoePuddle) leavesPuddle = true;
         if (m.periodicSpawn) spawnerConfig = { unitType: m.periodicSpawn.unit, interval: m.periodicSpawn.interval * 10, timer: m.periodicSpawn.interval * 10 };
-        if (m.stealthWhileMoving) modStealthWhileMoving = true; if (m.onDeathPuddle) modOnDeathPuddle = m.onDeathPuddle;
+        if (m.onDeathPuddle) modOnDeathPuddle = m.onDeathPuddle;
         if (m.replicateOnKill) modReplicateOnKill = true; if (m.resurrectOnce) modResurrectOnce = true;
         if (m.stealthUntilAttack) modStealthUntilAttack = true; if (m.executeThreshold) modExecuteThreshold = m.executeThreshold;
         if (m.lifestealMult) modLifestealMult = m.lifestealMult; if (m.groundDamageMult) modGroundDamageMult = m.groundDamageMult;
@@ -177,7 +177,6 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
 
   while (tick < MAX_TICKS) {
     const actions: BattleAction[] = []
-    
     processGlobals(tick, activeGlobals, units, hazards, actions, rng);
     
     // Check win condition before tick
@@ -221,6 +220,7 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
       
       if (!acted) {
         movementSystem(unit, target, units, actions, dt, rng, flowFieldMap, obstacles, spatialHash);
+        spatialHash.update(unit);
       }
     }
 

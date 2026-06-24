@@ -18,7 +18,7 @@ export function usePvp(colonyId: string | null) {
       const res = await fetch('/api/pvp/attack', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ attackerColonyId: colonyId, defenderColonyId })
+        body: JSON.stringify({ defenderColonyId })
       })
 
       const data = await res.json()
@@ -62,5 +62,12 @@ export function usePvp(colonyId: string | null) {
     }
   }
 
-  return { attack, trade, attacking, trading, error }
+  async function fetchBattle(battleId: string): Promise<unknown> {
+    const res = await fetch(`/api/pvp/battle/${battleId}`)
+    const data = await res.json()
+    if (!res.ok) throw new Error(data.error || 'Fetch failed')
+    return data
+  }
+
+  return { attack, trade, fetchBattle, attacking, trading, error }
 }

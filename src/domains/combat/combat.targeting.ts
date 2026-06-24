@@ -1,4 +1,5 @@
 import type { SimUnit } from './combat.sim.types';
+import { UNIT_TYPES } from './combat.config';
 import { getDistance, getSizeRadius } from './combat.utils';
 import type { SpatialHash } from './spatial-hash';
 
@@ -9,7 +10,6 @@ const RANGED_ACQUISITION_BUFFER = 120;
 const DISTANCE_SCORE_WEIGHT = 100000;
 const CURRENT_TARGET_BONUS = 50;
 const LOW_HP_BONUS = 25;
-const FULL_MAP_ACQUISITION_TYPES = new Set(['sniper', 'siege_tank', 'railgun_walker', 'artillery_crawler']);
 
 export function targetingSystem(unit: SimUnit, units: SimUnit[], meleeTargetCounts: Record<string, number>, spatialHash?: SpatialHash): SimUnit | null {
   if (unit.attackType === 'heal') {
@@ -124,7 +124,7 @@ function getAcquisitionRadius(unit: SimUnit): number {
 }
 
 function isFullMapAcquisitionUnit(unit: SimUnit): boolean {
-  return FULL_MAP_ACQUISITION_TYPES.has(unit.type);
+  return UNIT_TYPES[unit.type as keyof typeof UNIT_TYPES]?.baseStats.targetingProfile === 'global';
 }
 
 function isWithinLeash(unit: SimUnit, target: SimUnit): boolean {

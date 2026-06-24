@@ -54,4 +54,30 @@ describe('SpatialHash', () => {
 
     expect(hash.query(10, 10, 50)).toEqual([])
   })
+
+  it('updates moved units without leaving stale cell entries', () => {
+    const hash = new SpatialHash(40)
+    const unit = makeUnit('moving', 10, 10)
+
+    hash.insert(unit)
+    unit.x = 180
+    unit.y = 10
+    hash.update(unit)
+
+    expect(hash.query(10, 10, 50).map(candidate => candidate.id)).toEqual([])
+    expect(hash.query(180, 10, 50).map(candidate => candidate.id)).toEqual(['moving'])
+  })
+
+  it('keeps original insertion order after unit updates', () => {
+    const hash = new SpatialHash(40)
+    const first = makeUnit('first', 10, 10)
+    const second = makeUnit('second', 20, 10)
+
+    hash.insert(first)
+    hash.insert(second)
+    first.x = 30
+    hash.update(first)
+
+    expect(hash.query(20, 10, 50).map(unit => unit.id)).toEqual(['first', 'second'])
+  })
 })

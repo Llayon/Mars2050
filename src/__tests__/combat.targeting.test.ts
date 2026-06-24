@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { UNIT_TYPES } from '@/domains/combat/combat.config'
 import { targetingSystem } from '@/domains/combat/combat.targeting'
 import { SpatialHash } from '@/domains/combat/spatial-hash'
 import type { SimUnit, Team } from '@/domains/combat/combat.types'
@@ -85,6 +86,25 @@ describe('targetingSystem aggro', () => {
     expect(target?.id).toBe('far')
     expect(sniper.attackTargetId).toBe('far')
     expect(sniper.aggroLockTicks).toBe(10)
+  })
+
+  it('drives global acquisition from unit config', () => {
+    const previousProfile = UNIT_TYPES.marine.baseStats.targetingProfile
+    UNIT_TYPES.marine.baseStats.targetingProfile = 'global'
+
+    try {
+      const marine = makeUnit({ id: 'marine', team: 'attacker', type: 'marine', x: 0, y: 0 })
+      const far = makeUnit({ id: 'far', team: 'defender', x: 500, y: 0 })
+      const units = [marine, far]
+
+      const target = targetingSystem(marine, units, {}, makeHash(units))
+
+      expect(target?.id).toBe('far')
+      expect(marine.attackTargetId).toBe('far')
+      expect(marine.aggroLockTicks).toBe(10)
+    } finally {
+      UNIT_TYPES.marine.baseStats.targetingProfile = previousProfile
+    }
   })
 
   it('uses aggro scoring to prefer lower HP targets at equal distance', () => {

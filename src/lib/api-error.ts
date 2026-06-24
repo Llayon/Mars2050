@@ -44,3 +44,11 @@ export function apiInternalError(err: unknown): NextResponse<ApiErrorBody> {
   const message = err instanceof Error ? err.message : 'Unknown error'
   return apiError('INTERNAL_ERROR', message)
 }
+
+export function apiUnauthorized(message = 'Authentication required'): NextResponse<ApiErrorBody> {
+  return apiError('UNAUTHORIZED', message)
+}
+
+export function apiForbidden(message = 'Access denied'): NextResponse<ApiErrorBody> {
+  return apiError('FORBIDDEN', message)
+}

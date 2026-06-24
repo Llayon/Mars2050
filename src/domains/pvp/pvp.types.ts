@@ -11,6 +11,8 @@ export interface AttackResult {
   defenderUnits?: UnitRow[]
   initialState?: SimUnit[]
   obstacles?: Obstacle[]
+  battleId?: string
+  seed?: number
 }
 
 export interface TradeResult {

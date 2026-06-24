@@ -6,25 +6,27 @@ import { UPGRADES, GLOBAL_UPGRADES } from '@/domains/combat/combat.upgrades'
 import type { BattleTick, Obstacle, SimUnit, UnitRow, UnitTypeKey } from '@/domains/combat/combat.types'
 import { simulateBattle } from '@/domains/combat/combat.engine'
 import { generateObstacles } from '@/domains/combat/combat.utils'
-import { getZergRushPreset } from '@/domains/combat/combat.presets'
+import { getSimulatorPreset } from './simulator.presets'
 import { UnitSelector, GlobalUpgradesSelector, UnitUpgradesPanel, SimulatorGrid } from './simulator.components'
 import { BattleReplayModal } from '@/components/game/BattleReplayModal'
 import Link from 'next/link'
 
 const getRandomInt = (max: number) => Math.floor(Math.random() * max)
 
-function createInitialBattlefield() {
-  const seed = Date.now()
-  return {
-    seed,
-    obstacles: generateObstacles(seed),
-  }
-}
-
 export default function SimulatorPage() {
-  const [battlefield] = useState(createInitialBattlefield)
-  const seed = battlefield.seed
-  const obstacles = battlefield.obstacles
+  const [seedInput, setSeedInput] = useState<string>(() => Date.now().toString())
+  const seed = parseInt(seedInput) || 0
+  const [obstacles, setObstacles] = useState(() => generateObstacles(seed))
+
+  function handleRegenerateObstacles() {
+    setObstacles(generateObstacles(seed))
+  }
+
+  function handleSeedChange(e: React.ChangeEvent<HTMLInputElement>) {
+    setSeedInput(e.target.value)
+    const newSeed = parseInt(e.target.value) || 0
+    setObstacles(generateObstacles(newSeed))
+  }
 
   const [attackerUnits, setAttackerUnits] = useState<UnitRow[]>([])
   const [defenderUnits, setDefenderUnits] = useState<UnitRow[]>([])
@@ -63,13 +65,11 @@ export default function SimulatorPage() {
   }
 
   function handleCellClick(x: number, y: number) {
-    // Is there a unit here?
     const aIdx = attackerUnits.findIndex(u => Math.floor(Number(u.grid_x)/60) === x && Math.floor(Number(u.grid_y)/60) === y)
     const dIdx = defenderUnits.findIndex(u => Math.floor(Number(u.grid_x)/60) === x && Math.floor(Number(u.grid_y)/60) === y)
 
     if (selectedUnit) {
-      // Move selected unit
-      if (aIdx !== -1 || dIdx !== -1) return // Cell occupied
+      if (aIdx !== -1 || dIdx !== -1) return
       if (selectedUnit.team === 'attacker') {
         const newU = [...attackerUnits]
         newU[selectedUnit.index].grid_x = String(x * 60 + 30)
@@ -83,7 +83,6 @@ export default function SimulatorPage() {
       }
       setSelectedUnit(null)
     } else {
-      // Select unit
       if (aIdx !== -1) setSelectedUnit({ team: 'attacker', index: aIdx })
       else if (dIdx !== -1) setSelectedUnit({ team: 'defender', index: dIdx })
     }
@@ -97,10 +96,12 @@ export default function SimulatorPage() {
     setReplayData({ attackerUnits: aClone, defenderUnits: dClone, logs: result.logs, winner: result.winner, initialState: result.initialState, obstacles: result.obstacles })
   }
 
-  function loadZergRushPreset() {
-    const preset = getZergRushPreset()
-    setAttackerUnits(preset.attackers)
-    setDefenderUnits(preset.defenders)
+  function loadPreset(presetName: string) {
+    const preset = getSimulatorPreset(presetName)
+    if (preset) {
+       setAttackerUnits(preset.attackers)
+       setDefenderUnits(preset.defenders)
+    }
   }
 
   const toggleAttackerGlobal = (upgId: string) => {
@@ -132,10 +133,26 @@ export default function SimulatorPage() {
         <div className="flex items-center justify-between mb-6 border-b border-gray-800 pb-4">
           <h1 className="text-2xl font-bold">🔬 Симулятор Боя (v2)</h1>
           <div className="flex gap-4">
-             <button onClick={loadZergRushPreset} className="text-sm bg-purple-900 hover:bg-purple-800 px-4 py-2 rounded font-bold transition-colors text-purple-200">
-               Загрузить пресет &quot;Зерг Раш&quot;
-             </button>
+             <select onChange={(e) => loadPreset(e.target.value)} className="text-sm bg-purple-900 hover:bg-purple-800 px-4 py-2 rounded font-bold transition-colors text-purple-200 outline-none">
+               <option value="">Загрузить пресет...</option>
+               <option value="zerg_rush">Зерг Раш</option>
+               <option value="ranged_duel">Дуэль стрелков</option>
+               <option value="massive_clash">Стенка на стенку (100+)</option>
+             </select>
              <Link href="/" className="text-gray-400 hover:text-white px-4 py-2 bg-gray-800 rounded-lg">← В игру</Link>
+          </div>
+        </div>
+
+        <div className="bg-gray-900/50 p-4 rounded-xl border border-gray-800 mb-6 flex gap-6 items-center">
+          <div>
+            <label className="text-gray-400 text-sm block mb-1">Seed (RNG)</label>
+            <input type="text" value={seedInput} onChange={handleSeedChange} className="bg-gray-800 text-white px-3 py-1 rounded border border-gray-700 outline-none focus:border-purple-500 w-32" />
+          </div>
+          <div>
+            <label className="text-gray-400 text-sm block mb-1">Obstacles</label>
+            <button onClick={handleRegenerateObstacles} className="bg-gray-800 hover:bg-gray-700 text-white px-3 py-1 rounded border border-gray-700 transition-colors">
+              Пересоздать кратеры
+            </button>
           </div>
         </div>
 

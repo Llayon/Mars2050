@@ -40,6 +40,17 @@ describe('combat movement metrics', () => {
     expect(second.survivors).toEqual(first.survivors)
     expect(second.obstacles).toEqual(first.obstacles)
   })
+
+  it('treats zero as a valid deterministic seed', () => {
+    const first = simulateDeterministicBattle(0)
+    const second = simulateDeterministicBattle(0)
+
+    expect(first.seed).toBe(0)
+    expect(second.initialState).toEqual(first.initialState)
+    expect(second.logs).toEqual(first.logs)
+    expect(second.survivors).toEqual(first.survivors)
+    expect(second.obstacles).toEqual(first.obstacles)
+  })
 })
 
 function simulateMetricBattle(): BattleResult {
@@ -51,11 +62,11 @@ function simulateMetricBattle(): BattleResult {
   )
 }
 
-function simulateDeterministicBattle(): BattleResult {
+function simulateDeterministicBattle(seed = 54321): BattleResult {
   return simulateBattle(
     makeUnits('a', 1, 'exosuit', 850),
     makeUnits('d', 1, 'alien_bug', 360),
-    54321
+    seed
   )
 }
 

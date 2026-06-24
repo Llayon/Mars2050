@@ -76,6 +76,46 @@ describe('pvp.schemas', () => {
     expect(result.success).toBe(true)
   })
 
+  it('attackSchema accepts clientSeed as positive integer', () => {
+    const result = attackSchema.safeParse({
+      attackerColonyId: '550e8400-e29b-41d4-a716-446655440000',
+      defenderColonyId: '550e8400-e29b-41d4-a716-446655440001',
+      clientSeed: 99,
+    })
+    expect(result.success).toBe(true)
+  })
+
+  it('attackSchema rejects negative or fractional clientSeed', () => {
+    const neg = attackSchema.safeParse({
+      attackerColonyId: '550e8400-e29b-41d4-a716-446655440000',
+      defenderColonyId: '550e8400-e29b-41d4-a716-446655440001',
+      clientSeed: -1,
+    })
+    expect(neg.success).toBe(false)
+    const frac = attackSchema.safeParse({
+      attackerColonyId: '550e8400-e29b-41d4-a716-446655440000',
+      defenderColonyId: '550e8400-e29b-41d4-a716-446655440001',
+      clientSeed: 1.5,
+    })
+    expect(frac.success).toBe(false)
+  })
+
+  it('attackSchema enforces grid placement bounds', () => {
+    const ok = attackSchema.safeParse({
+      attackerColonyId: '550e8400-e29b-41d4-a716-446655440000',
+      defenderColonyId: '550e8400-e29b-41d4-a716-446655440001',
+      attackerUnitsPlacement: [{ unitId: '550e8400-e29b-41d4-a716-446655440000', x: 0, y: 16 }],
+    })
+    expect(ok.success).toBe(true)
+
+    const bad = attackSchema.safeParse({
+      attackerColonyId: '550e8400-e29b-41d4-a716-446655440000',
+      defenderColonyId: '550e8400-e29b-41d4-a716-446655440001',
+      attackerUnitsPlacement: [{ unitId: '550e8400-e29b-41d4-a716-446655440000', x: 99, y: 16 }],
+    })
+    expect(bad.success).toBe(false)
+  })
+
   it('tradeSchema validates required fields', () => {
     const result = tradeSchema.safeParse({
       fromColonyId: '550e8400-e29b-41d4-a716-446655440000',
