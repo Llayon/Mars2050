@@ -1,8 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { UNIT_TYPES } from '@/domains/combat/combat.config'
-import { UPGRADES, GLOBAL_UPGRADES } from '@/domains/combat/combat.upgrades'
 import type { BattleTick, Obstacle, SimUnit, UnitRow, UnitTypeKey } from '@/domains/combat/combat.types'
 import { simulateBattle } from '@/domains/combat/combat.engine'
 import { generateObstacles } from '@/domains/combat/combat.utils'
@@ -18,13 +17,6 @@ export default function SimulatorPage() {
   const seed = parseInt(seedInput) || 0
   const [obstacles, setObstacles] = useState(() => generateObstacles(12345))
 
-  // Fix hydration mismatch: randomize seed only on client after mount
-  useEffect(() => {
-    const s = Date.now().toString()
-    setSeedInput(s)
-    setObstacles(generateObstacles(parseInt(s)))
-  }, [])
-
   function handleRegenerateObstacles() {
     setObstacles(generateObstacles(seed))
   }
@@ -38,7 +30,6 @@ export default function SimulatorPage() {
   const [attackerUnits, setAttackerUnits] = useState<UnitRow[]>([])
   const [defenderUnits, setDefenderUnits] = useState<UnitRow[]>([])
   const [replayData, setReplayData] = useState<{ attackerUnits: UnitRow[], defenderUnits: UnitRow[], logs: BattleTick[], winner: string, initialState: SimUnit[], obstacles?: Obstacle[] } | null>(null)
-  
   const [attackerGlobals, setAttackerGlobals] = useState<string[]>([])
   const [defenderGlobals, setDefenderGlobals] = useState<string[]>([])
 

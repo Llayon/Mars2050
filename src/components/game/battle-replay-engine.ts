@@ -1,7 +1,7 @@
 import { Application, Graphics, Text, Container, Assets, Sprite, Texture } from 'pixi.js'
 import { UNIT_TYPES } from '@/domains/combat/combat.config'
 import { UNIT_VISUALS } from './battle-replay-visuals'
-import { FIELD_WIDTH, FIELD_HEIGHT, getDir, SPRITE_PATHS, SPRITE_ATLASES, SPRITE_DIRS, getSizeRadius } from '@/domains/combat/combat.utils'
+import { FIELD_WIDTH, FIELD_HEIGHT, getDir, SPRITE_PATHS, SPRITE_ATLASES, SPRITE_DIRS } from '@/domains/combat/combat.utils'
 import type { BattleTick, UnitRow, SimUnit, UnitTypeKey, Obstacle } from '@/domains/combat/combat.types'
 import { setupCameraControls } from './battle-replay-camera'
 import { processVisualEffects, lerp } from './battle-replay-utils'
@@ -27,14 +27,11 @@ export type BattleReplayEngineProps = {
 
 export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
   const { container, attackerUnits, defenderUnits, initialState, logs, obstacles } = props
-  const isDestroyed = false
   let cleanupEvents: (() => void) | null = null
 
   const app = new Application()
-  const TILE_SIZE = 40, BOARD_W = FIELD_WIDTH, BOARD_H = FIELD_HEIGHT
+  const BOARD_W = FIELD_WIDTH, BOARD_H = FIELD_HEIGHT
   await app.init({ width: BOARD_W, height: BOARD_H, backgroundColor: 0x1a1a2e, resolution: window.devicePixelRatio || 1, autoDensity: true })
-
-  if (isDestroyed) return { app, cleanupEvents, controls: null }
 
   let isPlaying = true
   let playbackSpeed = 1
@@ -207,14 +204,13 @@ export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
 
     const easeOutQuad = (t: number) => t * (2 - t)
     const prog = easeOutQuad(Math.min(1, time / DUR))
-    const animFPS = 6 // Reduced from 12 to 6 frames per second
+    const animFPS = 6
     const fIdx = Math.floor(globalTime / (1000 / animFPS)) % 6
 
     Object.values(sprites).forEach(s => {
       s.c.x = lerp(s.sX, s.tX, prog); s.c.y = lerp(s.sY, s.tY, prog)
       layer.children.sort((a, b) => a.y - b.y)
       if (s.s && s.isAtlas && s.act && s.dir) {
-         // Shoot animation should play once per tick
          let f = fIdx;
          if (s.act === 'shoot') f = Math.min(5, Math.floor((time / DUR) * 6));
          else if (s.act === 'idle') f = 0;
