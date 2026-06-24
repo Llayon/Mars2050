@@ -4,7 +4,7 @@ title: Domain-Based Architecture
 status: accepted
 date: 2026-05-07
 tags: [architecture, domains, structure]
-affects: [architecture.md, building.md, resource.md, map.md, colony.md, pvp.md, auth.md]
+affects: [architecture.md, building.md, resource.md, map.md, colony.md, combat.md, pvp.md, auth.md]
 ---
 
 # Decision: Domain-Based Architecture

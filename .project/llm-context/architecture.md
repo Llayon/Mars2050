@@ -62,7 +62,7 @@ All API routes use structured errors from `@/lib/api-error`:
 - Format: `{ error: { code, message, detail? } }`
 
 ## Lint Commands
-- `npm run lint:limits`: Architecture checks (check-limits.ts, 13 rules)
+- `npm run lint:limits`: Architecture checks (check-limits.ts, 15 rules)
 - `npm test`: Unit tests (vitest)
 - `npm run build`: Project build
 - `/lint:llm` (opencode command): Run with --json for LLM parsing

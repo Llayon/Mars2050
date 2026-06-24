@@ -1,36 +1,56 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Mars2050
 
-## Getting Started
+Mars2050 is a browser strategy game about building and defending a Mars colony.
+The current stack is Next.js 16 App Router, React 19, TypeScript, Tailwind CSS 4, Supabase, and Vitest.
 
-First, run the development server:
+## Project Layout
+
+- `src/app/` — Next.js App Router pages and API routes.
+- `src/domains/` — business logic by domain. This is the primary source of truth.
+- `src/components/` — shared UI, game panels, and TWA-optimized screens.
+- `src/hooks/` — React hooks for client data access.
+- `src/__tests__/` — Vitest unit and simulation regression tests.
+- `supabase/` and `supabase-schema.sql` — Supabase config and schema.
+- `.project/llm-context/` — focused context files for AI agents.
+
+Important domains include `building`, `resource`, `map`, `colony`, `pvp`, `events`, and `combat`.
+The combat domain contains the tick-based battle simulator, targeting, movement, spatial hash, steering, hazards, upgrades, and replay output.
+
+## Development Commands
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
+Starts the local Next.js development server.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+```bash
+npm test
+```
+Runs Vitest unit and combat simulation tests.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npx tsc --noEmit --pretty false
+```
+Runs TypeScript type checking without emitting files.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run lint:limits
+```
+Runs the architecture enforcer (`scripts/check-limits.ts`).
 
-## Learn More
+```bash
+npm run build
+```
+Runs architecture checks and builds the app.
 
-To learn more about Next.js, take a look at the following resources:
+## Architecture Rules
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Business logic belongs in `src/domains/{feature}/`. API routes should stay thin: validate input, call the domain service, return a structured response.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Client components must not perform direct database mutations. Use API routes for mutations and Supabase RLS-protected reads through hooks.
 
-## Deploy on Vercel
+Combat simulation must stay deterministic for seeded replays. Avoid nondeterministic ordering, full-map target scans by default, and unseeded randomness inside the simulation path.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Environment
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Copy `.env.local.example` to `.env.local` and provide Supabase and Telegram values as needed. Never expose `SUPABASE_SERVICE_ROLE_KEY` to client code.

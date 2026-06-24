@@ -143,6 +143,16 @@ src/
 │   │   ├── colony.types.ts
 │   │   ├── colony.schemas.ts
 │   │   └── colony.service.ts
+│   ├── combat/
+│   │   ├── combat.types.ts
+│   │   ├── combat.sim.types.ts
+│   │   ├── combat.config.ts
+│   │   ├── combat.engine.ts
+│   │   ├── combat.targeting.ts
+│   │   ├── combat.movement.ts
+│   │   ├── combat.steering.ts
+│   │   ├── combat.pathfinding.ts
+│   │   └── spatial-hash.ts
 │   ├── leaderboard/
 │   │   ├── leaderboard.types.ts
 │   │   └── leaderboard.service.ts
@@ -232,6 +242,18 @@ export const BUILDING_TYPES = {
   ...
 }
 ```
+
+## Combat Simulation Rules
+
+The combat domain is deterministic replay code. Treat it as simulation infrastructure, not ordinary UI logic.
+
+- Seeded `simulateBattle(..., seed)` must produce identical replay logs for identical inputs.
+- Do not use unseeded randomness inside the combat tick path.
+- Do not use full-map targeting by default. Normal aggro is local; special full-map acquisition must be explicit.
+- Keep target selection order deterministic. Spatial hash query order is part of replay stability.
+- Keep `combat.types.ts` for DB/config-facing types and `combat.sim.types.ts` for runtime simulation state.
+- Movement combines flow/pathfinding, facing/turn speed, formation cohesion, steering, and emergency depenetration. Do not replace one layer without regression tests.
+- When changing combat, run `npm test`, `npx tsc --noEmit --pretty false`, and `npx tsx scripts/check-limits.ts --diff HEAD --json`.
 
 ## Stack-Specific Patterns (No Re-inventing the Wheel)
 
@@ -432,7 +454,7 @@ Task-specific templates loaded by OpenCode automatically:
 ### LLM Context Files (`.project/llm-context/`)
 Domain-specific context files for focused AI reading:
 - `architecture.md` — Core rules, file limits, patterns
-- `{domain}.md` — One per domain (building, resource, map, colony, pvp, auth, events)
+- `{domain}.md` — One per domain/context area (architecture, building, resource, map, colony, pvp, combat, auth, events)
 
 ### Architectural Decision Records (`.project/adrs/`)
 ADRs with Good/Bad Examples specifically designed for LLM comprehension:
@@ -506,7 +528,7 @@ NEXT_PUBLIC_TELEGRAM_BOT_USERNAME= # Required for TWA. Public bot username
   - Previously: free-tier paused (DNS NXDOMAIN) — restored via Supabase Dashboard
   - Schema: profiles, colonies, resources, buildings, map_locations, building_types, pending_events, **events**
 - ✅ RLS policies configured, service_role_key for mutations
-- ✅ Domain structure: building, resource, map, colony, pvp, auth, leaderboard, **events**
+- ✅ Domain structure: building, resource, map, colony, combat, pvp, auth, leaderboard, **events**
 - ✅ Zod validation on all mutation endpoints
 - ✅ Lazy resource calculation (recalculateResources on every action)
 - ✅ Cost deduction on build/explore, rate updates on build/demolish
@@ -515,13 +537,13 @@ NEXT_PUBLIC_TELEGRAM_BOT_USERNAME= # Required for TWA. Public bot username
 - ✅ Building construction with cost validation
 - ✅ Toast/Modal/ConfirmModal UI (no alert/prompt/confirm)
 - ✅ Architecture enforcer script (check-limits.ts) — 15 rules, runs on prebuild + pre-commit
-- ✅ Unit tests (vitest) — 40 tests covering config, schemas, generator
+- ✅ Unit tests (vitest) — includes combat targeting, spatial hash, replay determinism, and crowd movement metrics
 - ✅ All API routes use service layer (no direct DB in routes)
 - ✅ All API routes use structured apiError helper from `@/lib/api-error`
 - ✅ opencode.json with custom agents, MCP, commands, permissions
 - ✅ Prompt templates for feature/bugfix/refactor/test in `.opencode/instructions/`
 - ✅ Git hooks (husky + lint-staged) — pre-commit check
-- ✅ Barrel exports (index.ts) for all 8 domains — deterministic import path
+- ✅ Barrel exports (index.ts) for primary domains — deterministic import path
 - ✅ Structured JSDoc (@param, @returns) on all exported service functions
 - ✅ Type generation from DB schema (`npm run generate:types`)
 - ✅ Scaffold generator (`npm run scaffold <name>`)
@@ -537,7 +559,7 @@ NEXT_PUBLIC_TELEGRAM_BOT_USERNAME= # Required for TWA. Public bot username
   - OperationsScreen: tabbed (Events | PvP), chronological event log + attack form
   - ProfileScreen: colony stats, leaderboard top-10 with 🥇🥈🥉 medals
 - ✅ Desktop layout preserved (non-TWA path, same panels as before)
-- ✅ **All 8 domains have full pattern**: types + schemas + config + service + hook + panel + API route
+- ✅ **Primary UI/API domains have full pattern**: types + schemas + config + service + hook + panel + API route
   - auth → useAuth + AuthModal
   - building → useBuildings + BuildingsPanel
   - colony → useColony + ColonyPanel
@@ -546,6 +568,7 @@ NEXT_PUBLIC_TELEGRAM_BOT_USERNAME= # Required for TWA. Public bot username
   - map → useMap + GameMapPanel
   - pvp → usePvp + PvpPanel
   - resource → useResources + ResourcePanel
+- ✅ **Combat domain implemented**: tick engine, squads, spatial hash, sticky aggro, local acquisition, steering movement, AoE, hazards, statuses, upgrades, PvE replay
 - ✅ **Events system implemented** (Surviving Mars inspired)
   - 6 event types: dust_storm, meteor_shower, anomaly_discovered, resource_vein, cold_wave, solar_flare
   - Auto-generation (5% chance per resource recalculation)
