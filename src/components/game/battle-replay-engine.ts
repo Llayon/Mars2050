@@ -1,12 +1,12 @@
 import { Application, Graphics, Text, Container, Assets, Sprite, Texture } from 'pixi.js'
 import { UNIT_TYPES } from '@/domains/combat/combat.config'
 import { UNIT_VISUALS } from './battle-replay-visuals'
-import { FIELD_WIDTH, FIELD_HEIGHT, getDir, SPRITE_PATHS, SPRITE_ATLASES, SPRITE_DIRS } from '@/domains/combat/combat.utils'
+import { FIELD_WIDTH, FIELD_HEIGHT, getDir, SPRITE_PATHS, SPRITE_ATLASES, SPRITE_DIRS, SVG_UNITS } from '@/domains/combat/combat.utils'
 import type { BattleTick, UnitRow, SimUnit, UnitTypeKey, Obstacle } from '@/domains/combat/combat.types'
 import { setupCameraControls } from './battle-replay-camera'
 import { processVisualEffects, lerp } from './battle-replay-utils'
 import { drawOverlays } from './battle-replay-overlays'
-import { createU, updateHp } from './battle-replay-units'
+import { createU, getSvgFrameTexture, updateHp } from './battle-replay-units'
 import type { SpriteState } from './battle-replay-units'
 
 export interface ReplayControls {
@@ -29,12 +29,10 @@ export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
   const { container, attackerUnits, defenderUnits, initialState, logs, obstacles } = props
   let cleanupEvents: (() => void) | null = null
 
-  const app = new Application()
-  const BOARD_W = FIELD_WIDTH, BOARD_H = FIELD_HEIGHT
+  const app = new Application(), BOARD_W = FIELD_WIDTH, BOARD_H = FIELD_HEIGHT
   await app.init({ width: BOARD_W, height: BOARD_H, backgroundColor: 0x1a1a2e, resolution: window.devicePixelRatio || 1, autoDensity: true })
 
-  let isPlaying = true
-  let playbackSpeed = 1
+  let isPlaying = true, playbackSpeed = 1
   let overlays = { radius: false, velocity: false, targets: false }
 
   const controls: ReplayControls = {
@@ -53,7 +51,9 @@ export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
     const toLoad = ['/sprites/crater.svg']
     for (const t in SPRITE_PATHS) for (const d of SPRITE_DIRS) toLoad.push(`${SPRITE_PATHS[t]}/${d}.png`)
     for (const t in SPRITE_ATLASES) toLoad.push(SPRITE_ATLASES[t])
-    await Assets.load(toLoad)
+    for (const t of SVG_UNITS) toLoad.push(`/assets/units/${t}_8dir.svg`)
+    Object.values(UNIT_VISUALS).forEach(v => { if (v.fxType) toLoad.push(`/assets/units/${v.fxType}.svg`) })
+    await Assets.load([...new Set(toLoad)])
   } catch(e) { console.error('Failed to load textures', e) }
 
   const world = new Container()
@@ -87,11 +87,8 @@ export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
 
   const sprites: Record<string, SpriteState> = {}
 
-  const layer = new Container(), fxLayer = new Container()
+  const layer = new Container(), fxLayer = new Container(), overlayGfx = new Graphics()
   layer.sortableChildren = true
-
-  const overlayGfx = new Graphics()
-
   world.addChild(layer, fxLayer, overlayGfx)
   if (initialState) {
     initialState.forEach(u => createU(u, u.team, true, layer, sprites))
@@ -215,6 +212,8 @@ export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
          if (s.act === 'shoot') f = Math.min(5, Math.floor((time / DUR) * 6));
          else if (s.act === 'idle') f = 0;
          s.s.texture = Texture.from(`${s.type}_${s.act}_${s.dir}_00${s.act === 'idle' ? '' : (f + 1)}`)
+      } else if (s.s && s.isSvg && s.dir) {
+         const texture = getSvgFrameTexture(s.type, s.dir); if (texture) s.s.texture = texture
       } else if (s.s && s.basePath && s.dir) {
          s.s.texture = Texture.from(`${s.basePath}/${s.dir}.png`)
       }

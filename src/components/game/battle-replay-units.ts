@@ -12,6 +12,27 @@ export type SpriteState = {
   recoil?: number, recoilAngle?: number
 }
 
+const svgFrameCache = new Map<string, Texture>()
+
+export function getSvgFrameTexture(unitType: string, dir: string): Texture | null {
+  const cacheKey = `${unitType}:${dir}`
+  const cached = svgFrameCache.get(cacheKey)
+  if (cached) return cached
+
+  let baseTex: Texture
+  try {
+    baseTex = Assets.get(`/assets/units/${unitType}_8dir.svg`) || Texture.from(`/assets/units/${unitType}_8dir.svg`)
+    if (baseTex.source.width < 800) return null
+  } catch {
+    return null
+  }
+
+  const dirIdx = SPRITE_DIRS.indexOf(dir)
+  const texture = new Texture({ source: baseTex.source, frame: new Rectangle((dirIdx === -1 ? 0 : dirIdx) * 100, 0, 100, 100) })
+  svgFrameCache.set(cacheKey, texture)
+  return texture
+}
+
 export function updateHp(s: SpriteState) {
   s.hpBar.clear()
   if (s.hp <= 0) return
@@ -39,14 +60,12 @@ export function createU(
   
   let g: Graphics | undefined
   let s: Sprite | undefined
-  let isAtlas = false
   let isSvg = false
   let basePath = ''
   const utype = isSimUnit ? (u as SimUnit).type : (u as UnitRow).unit_type
   const tDir = t === 'attacker' ? 'north' : 'south';
 
   if (SPRITE_ATLASES[utype]) {
-    isAtlas = true
     const scaleMultiplier = (utype === 'flamethrower') ? 1.0 : 0.8
     s = new Sprite(Texture.from(`${utype}_idle_${tDir}_00`))
     
@@ -69,15 +88,8 @@ export function createU(
     
     g = new Graphics(); g.circle(0, 0, radius).fill({ color: t === 'attacker' ? 0x3b82f6 : 0xef4444 }); c.addChild(g)
     
-    try {
-      const baseTex = Assets.get(`/assets/units/${utype}_8dir.svg`) || Texture.from(`/assets/units/${utype}_8dir.svg`)
-      if (baseTex.source.width >= 800) {
-        const dirIdx = SPRITE_DIRS.indexOf(tDir)
-        const frameRect = new Rectangle((dirIdx === -1 ? 0 : dirIdx) * 100, 0, 100, 100)
-        s.texture = new Texture({ source: baseTex.source, frame: frameRect })
-        g.visible = false
-      }
-    } catch(e) {}
+    const texture = getSvgFrameTexture(utype, tDir)
+    if (texture) { s.texture = texture; g.visible = false }
   } else if (SPRITE_PATHS[utype]) {
     basePath = SPRITE_PATHS[utype]
     s = new Sprite(Texture.from(`${basePath}/${tDir}.png`))
