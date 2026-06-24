@@ -15,6 +15,9 @@
 - `src/domains/combat/combat.upgrades.ts` — unit and global upgrade definitions.
 - `src/domains/combat/combat.pathfinding.ts` — static obstacle flow field.
 
+## UI / Renderer Layer
+- `src/components/game/battle-replay-visuals.ts` — purely visual configuration (scale, anchor, hover, VFX scale, muzzle offsets). Kept strictly separated from `combat.config.ts` to preserve simulation determinism.
+
 ## Core Rules
 - Seeded replay must be deterministic. Do not introduce unseeded randomness in the simulation path.
 - Seed `0` is valid; use nullish fallback for optional seeds, not truthy checks.
