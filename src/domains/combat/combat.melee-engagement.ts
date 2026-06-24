@@ -3,9 +3,15 @@ import { getSizeRadius } from './combat.utils'
 
 const MAX_MELEE_SLOTS = 12
 const MIN_MELEE_SLOTS = 4
+const MELEE_SLOT_RANGE_FRACTION = 0.75
 
 export interface MeleeEngagementState {
   slotsByTarget: Record<string, Record<number, string>>
+}
+
+export interface MeleeEngagementPoint {
+  x: number
+  y: number
 }
 
 export function createMeleeEngagementState(): MeleeEngagementState {
@@ -25,7 +31,24 @@ export function reserveMeleeEngagementSlot(unit: SimUnit, target: SimUnit, state
 
   if (!state.slotsByTarget[target.id]) state.slotsByTarget[target.id] = {}
   state.slotsByTarget[target.id][slot] = unit.id
+  unit.meleeSlotTargetId = target.id
+  unit.meleeSlotIndex = slot
+  unit.meleeSlotCount = getMeleeSlotCount(unit, target)
   return true
+}
+
+export function getMeleeEngagementPoint(unit: SimUnit, target: SimUnit): MeleeEngagementPoint | null {
+  if (!isMeleeUnit(unit)) return null
+  if (unit.meleeSlotTargetId !== target.id) return null
+  if (unit.meleeSlotIndex === undefined || !unit.meleeSlotCount) return null
+
+  const slotAngle = ((unit.meleeSlotIndex + 0.5) / unit.meleeSlotCount) * Math.PI * 2
+  const distance = getSizeRadius(target.size) + getSizeRadius(unit.size) + Math.max(0, unit.range * MELEE_SLOT_RANGE_FRACTION)
+
+  return {
+    x: target.x + Math.cos(slotAngle) * distance,
+    y: target.y + Math.sin(slotAngle) * distance,
+  }
 }
 
 export function getMeleeSlotCount(unit: SimUnit, target: SimUnit): number {

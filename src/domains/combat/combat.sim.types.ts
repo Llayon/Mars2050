@@ -43,6 +43,9 @@ export interface SimUnit {
   squadId?: string
   attackTargetId?: string
   aggroLockTicks: number
+  meleeSlotTargetId?: string
+  meleeSlotIndex?: number
+  meleeSlotCount?: number
   velocity: { x: number; y: number }
   turnSpeed: number
   currentAngle: number

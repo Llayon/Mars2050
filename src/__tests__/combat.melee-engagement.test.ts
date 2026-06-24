@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import {
   createMeleeEngagementState,
+  getMeleeEngagementPoint,
   getMeleeSlotCount,
   hasMeleeEngagementSlot,
   reserveMeleeEngagementSlot,
 } from '@/domains/combat/combat.melee-engagement'
+import { getSizeRadius } from '@/domains/combat/combat.utils'
 import type { SimUnit, Team } from '@/domains/combat/combat.types'
 
 function makeUnit(overrides: Partial<SimUnit> & { id: string; team: Team; x: number; y: number }): SimUnit {
@@ -66,5 +68,22 @@ describe('melee engagement slots', () => {
 
     expect(reserveMeleeEngagementSlot(ranged, target, state)).toBe(true)
     expect(state.slotsByTarget[target.id]).toBeUndefined()
+  })
+
+  it('stores the reserved slot and exposes a stable arrival point', () => {
+    const target = makeUnit({ id: 'target', team: 'defender', x: 100, y: 100, size: 'M' })
+    const unit = makeUnit({ id: 'unit', team: 'attacker', x: 140, y: 100, range: 40, size: 'S' })
+    const state = createMeleeEngagementState()
+
+    expect(reserveMeleeEngagementSlot(unit, target, state)).toBe(true)
+
+    const point = getMeleeEngagementPoint(unit, target)
+    const expectedDistance = getSizeRadius(target.size) + getSizeRadius(unit.size) + unit.range * 0.75
+
+    expect(unit.meleeSlotTargetId).toBe(target.id)
+    expect(unit.meleeSlotIndex).toBeDefined()
+    expect(unit.meleeSlotCount).toBe(getMeleeSlotCount(unit, target))
+    expect(point).not.toBeNull()
+    expect(Math.hypot(point!.x - target.x, point!.y - target.y)).toBeCloseTo(expectedDistance)
   })
 })
