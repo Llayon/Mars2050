@@ -90,7 +90,7 @@ describe('targetingSystem aggro', () => {
 
   it('drives global acquisition from unit config', () => {
     const previousProfile = UNIT_TYPES.marine.baseStats.targetingProfile
-    UNIT_TYPES.marine.baseStats.targetingProfile = 'global'
+    UNIT_TYPES.marine.baseStats.targetingProfile = 'long_range_priority'
 
     try {
       const marine = makeUnit({ id: 'marine', team: 'attacker', type: 'marine', x: 0, y: 0 })
@@ -118,5 +118,41 @@ describe('targetingSystem aggro', () => {
     expect(target?.id).toBe('wounded')
     expect(attacker.attackTargetId).toBe('wounded')
     expect(attacker.aggroLockTicks).toBe(10)
+  })
+
+  it('uses anti-air profile to prefer aircraft over a closer ground target', () => {
+    const turret = makeUnit({ id: 'turret', team: 'attacker', type: 'aa_turret', x: 0, y: 0, range: 280, canTargetAir: true })
+    const ground = makeUnit({ id: 'ground', team: 'defender', type: 'marine', x: 120, y: 0 })
+    const aircraft = makeUnit({ id: 'aircraft', team: 'defender', type: 'gunship', x: 180, y: 0, isFlying: true })
+    const units = [turret, ground, aircraft]
+
+    const target = targetingSystem(turret, units, {}, makeHash(units))
+
+    expect(target?.id).toBe('aircraft')
+    expect(turret.attackTargetId).toBe('aircraft')
+  })
+
+  it('uses anti-armor profile to prefer armored heavy targets within local acquisition', () => {
+    const attacker = makeUnit({ id: 'plasma', team: 'attacker', type: 'plasma_tank', x: 0, y: 0, range: 240 })
+    const infantry = makeUnit({ id: 'infantry', team: 'defender', type: 'marine', x: 110, y: 0 })
+    const armored = makeUnit({ id: 'armored', team: 'defender', type: 'behemoth_tank', x: 150, y: 0, size: 'XL' })
+    const units = [attacker, infantry, armored]
+
+    const target = targetingSystem(attacker, units, {}, makeHash(units))
+
+    expect(target?.id).toBe('armored')
+    expect(attacker.attackTargetId).toBe('armored')
+  })
+
+  it('uses assassin profile to prefer support targets without fixed unit roles', () => {
+    const hunter = makeUnit({ id: 'hunter', team: 'attacker', type: 'bounty_hunter', x: 0, y: 0, range: 240, canTargetAir: true })
+    const infantry = makeUnit({ id: 'infantry', team: 'defender', type: 'marine', x: 100, y: 0 })
+    const medic = makeUnit({ id: 'medic', team: 'defender', type: 'medic', x: 220, y: 0, attackType: 'heal' })
+    const units = [hunter, infantry, medic]
+
+    const target = targetingSystem(hunter, units, {}, makeHash(units))
+
+    expect(target?.id).toBe('medic')
+    expect(hunter.attackTargetId).toBe('medic')
   })
 })

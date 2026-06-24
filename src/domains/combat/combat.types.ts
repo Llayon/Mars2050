@@ -3,7 +3,24 @@ import { Database, UnitsType } from '@/types/database'
 export type UnitRow = Database['public']['Tables']['units']['Row']
 export type BattleRow = Database['public']['Tables']['battles']['Row']
 export type UnitTypeKey = UnitsType
-export type TargetingProfile = 'local' | 'global'
+export type TargetingAcquisition = 'local' | 'global'
+export type CombatTag =
+  | 'infantry' | 'vehicle' | 'aircraft' | 'structure'
+  | 'organic' | 'mechanical' | 'armored' | 'light' | 'heavy'
+  | 'shielded' | 'healer' | 'summoner' | 'stealth' | 'explosive'
+export type TargetingProfileKey =
+  | 'default_local' | 'long_range_priority' | 'anti_air'
+  | 'anti_armor' | 'siege' | 'assassin' | 'support_hunter'
+export type TargetingProfile = TargetingProfileKey
+
+export interface TargetingProfileConfig {
+  acquisition: TargetingAcquisition
+  distanceWeight: number
+  currentTargetBonus: number
+  lowHpWeight: number
+  preferredTags?: Partial<Record<CombatTag, number>>
+  avoidedTags?: Partial<Record<CombatTag, number>>
+}
 
 export interface UnitBaseStats {
   hp: number; attack: number; defense: number; speed: number; range: number
@@ -11,6 +28,7 @@ export interface UnitBaseStats {
   aoeRadius?: number; spawnType?: string; actionCooldownMax?: number
   isFlying?: boolean; canTargetAir?: boolean
   targetingProfile?: TargetingProfile
+  combatTags?: CombatTag[]
   turnSpeed?: number // Radians per tick
   size?: 'S' | 'M' | 'L' | 'XL'
 }

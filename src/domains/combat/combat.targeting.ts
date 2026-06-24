@@ -1,15 +1,14 @@
 import type { SimUnit } from './combat.sim.types';
 import { UNIT_TYPES } from './combat.config';
+import { DEFAULT_TARGETING_PROFILE, TARGETING_PROFILES } from './combat.targeting.config';
 import { getDistance, getSizeRadius } from './combat.utils';
 import type { SpatialHash } from './spatial-hash';
+import type { CombatTag, TargetingProfileConfig, TargetingProfileKey } from './combat.types';
 
 const AGGRO_LOCK_TICKS = 10;
 const AGGRO_LEASH_MULTIPLIER = 1.5;
 const MELEE_ACQUISITION_RADIUS = 240;
 const RANGED_ACQUISITION_BUFFER = 120;
-const DISTANCE_SCORE_WEIGHT = 100000;
-const CURRENT_TARGET_BONUS = 50;
-const LOW_HP_BONUS = 25;
 
 export function targetingSystem(unit: SimUnit, units: SimUnit[], meleeTargetCounts: Record<string, number>, spatialHash?: SpatialHash): SimUnit | null {
   if (unit.attackType === 'heal') {
@@ -124,7 +123,7 @@ function getAcquisitionRadius(unit: SimUnit): number {
 }
 
 function isFullMapAcquisitionUnit(unit: SimUnit): boolean {
-  return UNIT_TYPES[unit.type as keyof typeof UNIT_TYPES]?.baseStats.targetingProfile === 'global';
+  return getTargetingProfile(unit).acquisition === 'global';
 }
 
 function isWithinLeash(unit: SimUnit, target: SimUnit): boolean {
@@ -135,9 +134,10 @@ function isWithinLeash(unit: SimUnit, target: SimUnit): boolean {
 function selectAggroTarget(unit: SimUnit, enemies: SimUnit[]): SimUnit | null {
   let target: SimUnit | null = null;
   let bestScore = -Infinity;
+  const profile = getTargetingProfile(unit);
 
   for (const enemy of enemies) {
-    const score = getAggroScore(unit, enemy);
+    const score = getAggroScore(unit, enemy, profile);
     if (!target || score > bestScore || (score === bestScore && isBetterTie(unit, enemy, target))) {
       target = enemy;
       bestScore = score;
@@ -159,13 +159,13 @@ function selectNearestTarget(unit: SimUnit, enemies: SimUnit[]): SimUnit | null 
   return target;
 }
 
-function getAggroScore(unit: SimUnit, enemy: SimUnit): number {
+function getAggroScore(unit: SimUnit, enemy: SimUnit, profile: TargetingProfileConfig): number {
   const distance = Math.max(1, getDistance(unit.x, unit.y, enemy.x, enemy.y));
-  const distanceScore = DISTANCE_SCORE_WEIGHT / distance;
-  const currentTargetScore = enemy.id === unit.attackTargetId ? CURRENT_TARGET_BONUS : 0;
+  const distanceScore = profile.distanceWeight / distance;
+  const currentTargetScore = enemy.id === unit.attackTargetId ? profile.currentTargetBonus : 0;
   const hpRatio = enemy.maxHp > 0 ? Math.max(0, enemy.hp / enemy.maxHp) : 1;
-  const lowHpScore = (1 - hpRatio) * LOW_HP_BONUS;
-  return distanceScore + currentTargetScore + lowHpScore;
+  const lowHpScore = (1 - hpRatio) * profile.lowHpWeight;
+  return distanceScore + currentTargetScore + lowHpScore + getCombatTagScore(enemy, profile);
 }
 
 function isBetterTie(unit: SimUnit, candidate: SimUnit, current: SimUnit): boolean {
@@ -173,5 +173,31 @@ function isBetterTie(unit: SimUnit, candidate: SimUnit, current: SimUnit): boole
   const currentDistance = getDistance(unit.x, unit.y, current.x, current.y);
   if (candidateDistance !== currentDistance) return candidateDistance < currentDistance;
   if (candidate.hp !== current.hp) return candidate.hp < current.hp;
-  return false;
+  return candidate.id < current.id;
+}
+
+function getTargetingProfile(unit: SimUnit): TargetingProfileConfig {
+  return TARGETING_PROFILES[getTargetingProfileKey(unit)];
+}
+
+function getTargetingProfileKey(unit: SimUnit): TargetingProfileKey {
+  return UNIT_TYPES[unit.type as keyof typeof UNIT_TYPES]?.baseStats.targetingProfile ?? DEFAULT_TARGETING_PROFILE;
+}
+
+function getCombatTagScore(enemy: SimUnit, profile: TargetingProfileConfig): number {
+  let score = 0;
+  for (const tag of getEffectiveCombatTags(enemy)) {
+    score += profile.preferredTags?.[tag] ?? 0;
+    score -= profile.avoidedTags?.[tag] ?? 0;
+  }
+  return score;
+}
+
+function getEffectiveCombatTags(unit: SimUnit): Set<CombatTag> {
+  const tags = new Set<CombatTag>(UNIT_TYPES[unit.type as keyof typeof UNIT_TYPES]?.baseStats.combatTags ?? []);
+  if (unit.isFlying) tags.add('aircraft');
+  if (unit.shield > 0) tags.add('shielded');
+  if (unit.attackType === 'heal') tags.add('healer');
+  if (unit.attackType === 'spawn') tags.add('summoner');
+  return tags;
 }
