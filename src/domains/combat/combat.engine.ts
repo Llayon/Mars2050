@@ -8,6 +8,7 @@ import type { Team, SimUnit, Obstacle, SimHazard } from './combat.sim.types'
 import { actionSystem, tickModifiersSystem } from './combat.systems'
 import { targetingSystem } from './combat.targeting'
 import { movementSystem } from './combat.movement'
+import { createMeleeEngagementState, reserveMeleeEngagementSlot } from './combat.melee-engagement'
 import { FIELD_WIDTH, FIELD_HEIGHT, PRNG, generateObstacles } from './combat.utils'
 import { createPathfindingMap } from './combat.pathfinding'
 import { SpatialHash } from './spatial-hash'
@@ -194,23 +195,20 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
 
     // Sort units by speed descending
     const turnOrder = units.filter(u => !u.isDead).sort((a, b) => b.speed - a.speed)
-    const meleeTargetCounts: Record<string, number> = {};
+    const meleeEngagement = createMeleeEngagementState();
 
     for (const unit of turnOrder) {
       if (unit.isDead) continue;
       
       tickModifiersSystem(unit, dt, actions);
 
-      const target = targetingSystem(unit, units, meleeTargetCounts, spatialHash);
+      const target = targetingSystem(unit, units, meleeEngagement, spatialHash);
       if (!target) continue;
 
       const unitCountBeforeActions = units.length;
       processSpawnerLogic(unit, target, units, hazards, actions, rng);
 
-      // Register slot taken if melee unit
-      if (unit.range <= 60) {
-         meleeTargetCounts[target.id] = (meleeTargetCounts[target.id] || 0) + 1;
-      }
+      reserveMeleeEngagementSlot(unit, target, meleeEngagement);
 
       const acted = actionSystem(unit, target, units, hazards, actions, rng);
 

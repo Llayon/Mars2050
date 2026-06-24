@@ -1,6 +1,8 @@
 import type { SimUnit } from './combat.sim.types';
+import type { MeleeEngagementState } from './combat.melee-engagement';
+import { hasMeleeEngagementSlot } from './combat.melee-engagement';
 import { getTargetingProfile, getTargetScore } from './combat.targeting-score';
-import { getDistance, getSizeRadius } from './combat.utils';
+import { getDistance } from './combat.utils';
 import type { SpatialHash } from './spatial-hash';
 
 const AGGRO_LOCK_TICKS = 10;
@@ -8,12 +10,12 @@ const AGGRO_LEASH_MULTIPLIER = 1.5;
 const MELEE_ACQUISITION_RADIUS = 240;
 const RANGED_ACQUISITION_BUFFER = 120;
 
-export function targetingSystem(unit: SimUnit, units: SimUnit[], meleeTargetCounts: Record<string, number>, spatialHash?: SpatialHash): SimUnit | null {
+export function targetingSystem(unit: SimUnit, units: SimUnit[], meleeEngagement: MeleeEngagementState, spatialHash?: SpatialHash): SimUnit | null {
   if (unit.attackType === 'heal') {
     return selectHealTarget(unit, units);
   }
 
-  const lockedTarget = getLockedTarget(unit, units, meleeTargetCounts);
+  const lockedTarget = getLockedTarget(unit, units, meleeEngagement);
   if (lockedTarget) {
     unit.aggroLockTicks = Math.max(0, unit.aggroLockTicks - 1);
     return lockedTarget;
@@ -24,13 +26,13 @@ export function targetingSystem(unit: SimUnit, units: SimUnit[], meleeTargetCoun
   if (enemies.length === 0) {
     unit.attackTargetId = undefined;
     unit.aggroLockTicks = 0;
-    return selectMovementFallback(unit, units, meleeTargetCounts);
+    return selectMovementFallback(unit, units, meleeEngagement);
   }
   
   // Filter out enemies that are already fully surrounded (if this is a melee unit)
   let validEnemies = enemies;
   if (unit.range <= 60) {
-     validEnemies = enemies.filter(e => hasMeleeSlot(unit, e, meleeTargetCounts));
+     validEnemies = enemies.filter(e => hasMeleeEngagementSlot(unit, e, meleeEngagement));
      
      // Fallback: if all enemies are perfectly surrounded, just walk towards the best one anyway
      if (validEnemies.length === 0) validEnemies = enemies;
@@ -73,24 +75,24 @@ function selectHealTarget(unit: SimUnit, candidates: SimUnit[]): SimUnit | null 
   return target;
 }
 
-function getLockedTarget(unit: SimUnit, candidates: SimUnit[], meleeTargetCounts: Record<string, number>): SimUnit | null {
+function getLockedTarget(unit: SimUnit, candidates: SimUnit[], meleeEngagement: MeleeEngagementState): SimUnit | null {
   if (!unit.attackTargetId || unit.aggroLockTicks <= 0) return null;
 
   const target = candidates.find(candidate => candidate.id === unit.attackTargetId);
-  if (target && isReachableEnemy(unit, target) && isWithinLeash(unit, target) && hasMeleeSlot(unit, target, meleeTargetCounts)) return target;
+  if (target && isReachableEnemy(unit, target) && isWithinLeash(unit, target) && hasMeleeEngagementSlot(unit, target, meleeEngagement)) return target;
 
   unit.attackTargetId = undefined;
   unit.aggroLockTicks = 0;
   return null;
 }
 
-function selectMovementFallback(unit: SimUnit, units: SimUnit[], meleeTargetCounts: Record<string, number>): SimUnit | null {
+function selectMovementFallback(unit: SimUnit, units: SimUnit[], meleeEngagement: MeleeEngagementState): SimUnit | null {
   const enemies = units.filter(e => isReachableEnemy(unit, e));
   if (enemies.length === 0) return null;
 
   let validEnemies = enemies;
   if (unit.range <= 60) {
-    validEnemies = enemies.filter(e => hasMeleeSlot(unit, e, meleeTargetCounts));
+    validEnemies = enemies.filter(e => hasMeleeEngagementSlot(unit, e, meleeEngagement));
     if (validEnemies.length === 0) validEnemies = enemies;
   }
 
@@ -102,17 +104,6 @@ function isReachableEnemy(unit: SimUnit, enemy: SimUnit): boolean {
     enemy.team !== unit.team &&
     (!enemy.isFlying || unit.canTargetAir) &&
     !(enemy.stealthUntilAttack && !enemy.hasAttacked);
-}
-
-function hasMeleeSlot(unit: SimUnit, target: SimUnit, meleeTargetCounts: Record<string, number>): boolean {
-  if (unit.range > 60) return true;
-
-  const slotsTaken = meleeTargetCounts[target.id] || 0;
-  const targetRadius = getSizeRadius(target.size);
-  const myRadius = getSizeRadius(unit.size);
-  const circumference = 2 * Math.PI * (targetRadius + myRadius);
-  const maxSlots = Math.floor(circumference / (myRadius * 2));
-  return slotsTaken < maxSlots;
 }
 
 function getAcquisitionRadius(unit: SimUnit): number {

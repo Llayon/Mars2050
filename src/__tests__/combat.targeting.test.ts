@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { UNIT_TYPES } from '@/domains/combat/combat.config'
+import { createMeleeEngagementState, reserveMeleeEngagementSlot } from '@/domains/combat/combat.melee-engagement'
 import { targetingSystem } from '@/domains/combat/combat.targeting'
 import { SpatialHash } from '@/domains/combat/spatial-hash'
 import type { SimUnit, Team } from '@/domains/combat/combat.types'
@@ -44,7 +45,7 @@ describe('targetingSystem aggro', () => {
     const closer = makeUnit({ id: 'closer', team: 'defender', x: 20, y: 0 })
     const units = [attacker, locked, closer]
 
-    const target = targetingSystem(attacker, units, {}, makeHash(units))
+    const target = targetingSystem(attacker, units, createMeleeEngagementState(), makeHash(units))
 
     expect(target?.id).toBe('locked')
     expect(attacker.attackTargetId).toBe('locked')
@@ -57,7 +58,7 @@ describe('targetingSystem aggro', () => {
     const farWounded = makeUnit({ id: 'far-wounded', team: 'defender', x: 245, y: 0, hp: 1 })
     const units = [attacker, local, farWounded]
 
-    const target = targetingSystem(attacker, units, {}, makeHash(units))
+    const target = targetingSystem(attacker, units, createMeleeEngagementState(), makeHash(units))
 
     expect(target?.id).toBe('local')
     expect(attacker.attackTargetId).toBe('local')
@@ -69,7 +70,7 @@ describe('targetingSystem aggro', () => {
     const far = makeUnit({ id: 'far', team: 'defender', x: 500, y: 0 })
     const units = [attacker, far]
 
-    const target = targetingSystem(attacker, units, {}, makeHash(units))
+    const target = targetingSystem(attacker, units, createMeleeEngagementState(), makeHash(units))
 
     expect(target?.id).toBe('far')
     expect(attacker.attackTargetId).toBeUndefined()
@@ -81,7 +82,7 @@ describe('targetingSystem aggro', () => {
     const far = makeUnit({ id: 'far', team: 'defender', x: 500, y: 0 })
     const units = [sniper, far]
 
-    const target = targetingSystem(sniper, units, {}, makeHash(units))
+    const target = targetingSystem(sniper, units, createMeleeEngagementState(), makeHash(units))
 
     expect(target?.id).toBe('far')
     expect(sniper.attackTargetId).toBe('far')
@@ -97,7 +98,7 @@ describe('targetingSystem aggro', () => {
       const far = makeUnit({ id: 'far', team: 'defender', x: 500, y: 0 })
       const units = [marine, far]
 
-      const target = targetingSystem(marine, units, {}, makeHash(units))
+      const target = targetingSystem(marine, units, createMeleeEngagementState(), makeHash(units))
 
       expect(target?.id).toBe('far')
       expect(marine.attackTargetId).toBe('far')
@@ -113,7 +114,7 @@ describe('targetingSystem aggro', () => {
     const wounded = makeUnit({ id: 'wounded', team: 'defender', x: -100, y: 0, hp: 10 })
     const units = [attacker, healthy, wounded]
 
-    const target = targetingSystem(attacker, units, {}, makeHash(units))
+    const target = targetingSystem(attacker, units, createMeleeEngagementState(), makeHash(units))
 
     expect(target?.id).toBe('wounded')
     expect(attacker.attackTargetId).toBe('wounded')
@@ -126,7 +127,7 @@ describe('targetingSystem aggro', () => {
     const aircraft = makeUnit({ id: 'aircraft', team: 'defender', type: 'gunship', x: 180, y: 0, isFlying: true })
     const units = [turret, ground, aircraft]
 
-    const target = targetingSystem(turret, units, {}, makeHash(units))
+    const target = targetingSystem(turret, units, createMeleeEngagementState(), makeHash(units))
 
     expect(target?.id).toBe('aircraft')
     expect(turret.attackTargetId).toBe('aircraft')
@@ -138,7 +139,7 @@ describe('targetingSystem aggro', () => {
     const armored = makeUnit({ id: 'armored', team: 'defender', type: 'behemoth_tank', x: 150, y: 0, size: 'XL' })
     const units = [attacker, infantry, armored]
 
-    const target = targetingSystem(attacker, units, {}, makeHash(units))
+    const target = targetingSystem(attacker, units, createMeleeEngagementState(), makeHash(units))
 
     expect(target?.id).toBe('armored')
     expect(attacker.attackTargetId).toBe('armored')
@@ -150,7 +151,7 @@ describe('targetingSystem aggro', () => {
     const farArmored = makeUnit({ id: 'far-armored', team: 'defender', type: 'behemoth_tank', x: 350, y: 0, size: 'XL' })
     const units = [attacker, infantry, farArmored]
 
-    const target = targetingSystem(attacker, units, {}, makeHash(units))
+    const target = targetingSystem(attacker, units, createMeleeEngagementState(), makeHash(units))
 
     expect(target?.id).toBe('infantry')
     expect(attacker.attackTargetId).toBe('infantry')
@@ -162,9 +163,27 @@ describe('targetingSystem aggro', () => {
     const medic = makeUnit({ id: 'medic', team: 'defender', type: 'medic', x: 220, y: 0, attackType: 'heal' })
     const units = [hunter, infantry, medic]
 
-    const target = targetingSystem(hunter, units, {}, makeHash(units))
+    const target = targetingSystem(hunter, units, createMeleeEngagementState(), makeHash(units))
 
     expect(target?.id).toBe('medic')
     expect(hunter.attackTargetId).toBe('medic')
+  })
+
+  it('selects another target when a melee target has no open engagement slots', () => {
+    const attacker = makeUnit({ id: 'attacker', team: 'attacker', x: 0, y: 0, range: 40 })
+    const surrounded = makeUnit({ id: 'surrounded', team: 'defender', x: 40, y: 0, size: 'S' })
+    const open = makeUnit({ id: 'open', team: 'defender', x: 90, y: 0, size: 'S' })
+    const state = createMeleeEngagementState()
+
+    for (let i = 0; i < 6; i++) {
+      const blocker = makeUnit({ id: `blocker-${i}`, team: 'attacker', x: 40 + Math.cos(i) * 15, y: Math.sin(i) * 15, range: 40 })
+      reserveMeleeEngagementSlot(blocker, surrounded, state)
+    }
+
+    const units = [attacker, surrounded, open]
+    const target = targetingSystem(attacker, units, state, makeHash(units))
+
+    expect(target?.id).toBe('open')
+    expect(attacker.attackTargetId).toBe('open')
   })
 })
