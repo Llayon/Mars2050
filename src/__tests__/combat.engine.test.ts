@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { simulateBattle } from '@/domains/combat/combat.engine'
-import { UPGRADES } from '@/domains/combat/combat.upgrades'
+import { UPGRADES, type UpgradeConfig } from '@/domains/combat/combat.upgrades'
 import type { UnitRow } from '@/domains/combat/combat.types'
 
 describe('combat.engine', () => {
@@ -53,11 +53,6 @@ describe('combat.engine', () => {
 
     const result = simulateBattle(attackerUnits, defenderUnits)
 
-    // DEBUG
-    console.log(`WINNER: ${result.winner}`);
-    console.log(`SURVIVORS:`, result.survivors.map(s => `${s.id} (${s.hp} HP)`));
-    console.log(`LOGS (last tick):`, result.logs[result.logs.length - 1]);
-
     expect(result.winner).toBe('attacker')
     expect(result.survivors.length).toBeGreaterThan(0)
     expect(result.survivors[0].id).toContain('a')
@@ -100,24 +95,27 @@ describe('combat.engine', () => {
       }
     ]
 
-    const tempUpgrades = UPGRADES['god_mode'];
-    UPGRADES['god_mode'] = {
+    const tempUpgrade = UPGRADES['god_mode'];
+    const godModeUpgrade: UpgradeConfig = {
        id: 'god_mode',
        name: 'God',
-       type: 'unit_upgrade',
-       cost: {},
-       prerequisites: [],
-       unitType: 'marine',
+       description: 'Test-only health multiplier',
+       cost: 0,
+       allowedUnits: ['marine'],
        modifiers: { hpMult: 100000 }
     };
 
-    const result = simulateBattle(attackerUnits, defenderUnits)
-    
-    if (tempUpgrades === undefined) delete (UPGRADES as any)['god_mode'];
-    else (UPGRADES as any)['god_mode'] = tempUpgrades;
+    UPGRADES['god_mode'] = godModeUpgrade
 
-    // Reached MAX_TICKS without kills or they killed each other
-    expect(result.winner).toBe('defender')
-    expect(result.survivors.length).toBeGreaterThan(0)
+    try {
+      const result = simulateBattle(attackerUnits, defenderUnits)
+
+      // Reached MAX_TICKS without kills or they killed each other
+      expect(result.winner).toBe('defender')
+      expect(result.survivors.length).toBeGreaterThan(0)
+    } finally {
+      if (tempUpgrade === undefined) delete UPGRADES['god_mode'];
+      else UPGRADES['god_mode'] = tempUpgrade;
+    }
   })
 })

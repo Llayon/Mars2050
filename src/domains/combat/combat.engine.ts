@@ -3,16 +3,14 @@ import { GLOBAL_UPGRADES, UPGRADES, GlobalUpgradeConfig } from './combat.upgrade
 import { processGlobals } from './combat.globals'
 import { processHazards } from './combat.hazards'
 import { processSpawnerLogic } from './combat.spawner'
-import type { UnitRow, Team, SimUnit, BattleAction, BattleTick, BattleResult, Obstacle, SimHazard, UnitTypeKey } from './combat.types'
+import type { UnitRow, BattleAction, BattleTick, BattleResult, UnitTypeKey } from './combat.types'
+import type { Team, SimUnit, Obstacle, SimHazard } from './combat.sim.types'
 import { actionSystem, tickModifiersSystem } from './combat.systems'
 import { targetingSystem } from './combat.targeting'
 import { movementSystem } from './combat.movement'
 import { getDistance, FIELD_WIDTH, FIELD_HEIGHT, PRNG, generateObstacles } from './combat.utils'
 import { createPathfindingMap, FlowFieldMap } from './combat.pathfinding'
-
-
-
-
+import { SpatialHash } from './spatial-hash'
 export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[], providedSeed?: number, providedObstacles?: Obstacle[], attackerGlobals: string[] = [], defenderGlobals: string[] = []): BattleResult {
   const seed = providedSeed || Date.now()
   const rng = new PRNG(seed)
@@ -28,6 +26,7 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
   const obstacles: Obstacle[] = providedObstacles || generateObstacles(seed);
 
   const flowFieldMap = createPathfindingMap(obstacles);
+  const spatialHash = new SpatialHash();
 
   const createSquad = (u: UnitRow, t: Team) => {
     const config = UNIT_TYPES[u.unit_type as keyof typeof UNIT_TYPES]
@@ -161,6 +160,8 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
         offsetY: oy,
         x: cx + ox,
         y: cy + oy,
+        aggroLockTicks: 0,
+        velocity: { x: 0, y: 0 },
         isDead: false
       })
     }
@@ -187,6 +188,11 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
     if (aliveAttackers.length === 0) break // Defender wins
     if (aliveDefenders.length === 0) break // Attacker wins
 
+    spatialHash.clear();
+    for (const unit of units) {
+      if (!unit.isDead) spatialHash.insert(unit);
+    }
+
     // Sort units by speed descending
     const turnOrder = units.filter(u => !u.isDead).sort((a, b) => b.speed - a.speed)
     const meleeTargetCounts: Record<string, number> = {};
@@ -196,9 +202,10 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
       
       tickModifiersSystem(unit, dt, actions);
 
-      const target = targetingSystem(unit, units, meleeTargetCounts);
+      const target = targetingSystem(unit, units, meleeTargetCounts, spatialHash);
       if (!target) continue;
 
+      const unitCountBeforeActions = units.length;
       processSpawnerLogic(unit, target, units, hazards, actions, rng);
 
       // Register slot taken if melee unit
@@ -207,9 +214,13 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
       }
 
       const acted = actionSystem(unit, target, units, hazards, actions, rng);
+
+      for (let i = unitCountBeforeActions; i < units.length; i++) {
+        if (!units[i].isDead) spatialHash.insert(units[i]);
+      }
       
       if (!acted) {
-        movementSystem(unit, target, units, actions, dt, rng, flowFieldMap, obstacles);
+        movementSystem(unit, target, units, actions, dt, rng, flowFieldMap, obstacles, spatialHash);
       }
     }
 

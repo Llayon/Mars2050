@@ -31,7 +31,7 @@ export function getDistance(x1: number, y1: number, x2: number, y2: number): num
     return Math.hypot(x2 - x1, y2 - y1);
 }
 
-import { Obstacle } from './combat.types';
+import type { Obstacle } from './combat.sim.types';
 
 /**
  * Generates random obstacles for the battlefield

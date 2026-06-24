@@ -1,4 +1,4 @@
-import type { Team, SimUnit, Obstacle } from './combat.types'
+import type { Team, SimUnit, Obstacle } from './combat.sim.types'
 
 export type BattleActionType = 'move' | 'attack' | 'heal' | 'die' | 'spawn' | 'hazard_spawn' | 'status_apply' | 'status_expire'
 

@@ -1,4 +1,5 @@
-import { SimUnit, BattleAction, SimHazard } from './combat.types';
+import type { BattleAction } from './combat.actions';
+import type { SimUnit, SimHazard } from './combat.sim.types';
 import { PRNG } from './combat.utils';
 import { actionSystem } from './combat.systems';
 

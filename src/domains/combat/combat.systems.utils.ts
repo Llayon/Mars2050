@@ -1,4 +1,6 @@
-import { SimUnit, BattleAction, SimHazard, UnitTypeKey } from './combat.types';
+import type { BattleAction } from './combat.actions';
+import type { SimHazard, SimUnit } from './combat.sim.types';
+import type { UnitTypeKey } from './combat.types';
 import { UNIT_TYPES } from './combat.config';
 import { PRNG, FIELD_WIDTH, FIELD_HEIGHT } from './combat.utils';
 
@@ -43,6 +45,9 @@ export function handleDeath(t: SimUnit, unit: SimUnit, units: SimUnit[], actions
             actionCooldown: 0,
             shield: unit.maxShield,
             statusEffects: [],
+            attackTargetId: undefined,
+            aggroLockTicks: 0,
+            velocity: { x: 0, y: 0 },
             isDead: false,
             squadId: undefined
         });
@@ -107,6 +112,8 @@ export function processSpawnAction(unit: SimUnit, target: SimUnit, units: SimUni
        size: spawnConfig.baseStats.size || 'M',
        x: spawnX,
        y: spawnY,
+       aggroLockTicks: 0,
+       velocity: { x: 0, y: 0 },
        isDead: false,
        shield: 0,
        maxShield: 0,

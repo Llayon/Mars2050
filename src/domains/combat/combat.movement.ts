@@ -1,49 +1,27 @@
-import { SimUnit, BattleAction } from './combat.types';
-import { getDistance, FIELD_WIDTH, FIELD_HEIGHT, PRNG, getSizeRadius, getSizeMass } from './combat.utils';
+import type { BattleAction } from './combat.actions';
+import type { Obstacle, SimUnit } from './combat.sim.types';
+import { getDistance, FIELD_WIDTH, FIELD_HEIGHT, PRNG, getSizeRadius } from './combat.utils';
 import { FlowFieldMap, getFlowVector } from './combat.pathfinding';
-import { Obstacle } from './combat.types';
+import type { SpatialHash } from './spatial-hash';
+import { getMovementNeighbors, getSteeringContext } from './combat.steering';
 
-export function movementSystem(unit: SimUnit, target: SimUnit, units: SimUnit[], actions: BattleAction[], dt: number, rng: PRNG, flowFieldMap: FlowFieldMap, obstacles: Obstacle[]) {
+export function movementSystem(unit: SimUnit, target: SimUnit, units: SimUnit[], actions: BattleAction[], dt: number, rng: PRNG, flowFieldMap: FlowFieldMap, obstacles: Obstacle[], spatialHash?: SpatialHash) {
   if (unit.speed <= 0) return;
   
   let vx = 0;
   let vy = 0;
   
-  // Pre-calculate squad center and alignment for parallel movement and boids
+  if (!unit.velocity) unit.velocity = { x: 0, y: 0 };
+
+  const neighbors = getMovementNeighbors(unit, units, spatialHash);
   const isBug = unit.type.startsWith('alien_');
-  let squadCx = unit.squadId ? unit.x : 0;
-  let squadCy = unit.squadId ? unit.y : 0;
-  let squadCount = unit.squadId ? 1 : 0;
-  let alignVx = 0, alignVy = 0, alignCount = 0;
-
-  for (const other of units) {
-    if (other.isDead || other.id === unit.id) continue;
-    
-    if (unit.squadId && other.squadId === unit.squadId) {
-      squadCx += other.x;
-      squadCy += other.y;
-      squadCount++;
-    }
-
-    if (unit.isFlying === other.isFlying) {
-      const dist = getDistance(unit.x, unit.y, other.x, other.y);
-      if (isBug && other.type.startsWith('alien_') && dist < 80) {
-        alignVx += Math.cos(other.currentAngle);
-        alignVy += Math.sin(other.currentAngle);
-        alignCount++;
-      }
-    }
-  }
-
-  if (squadCount > 1) {
-    squadCx /= squadCount;
-    squadCy /= squadCount;
-  }
 
   const distToTarget = getDistance(unit.x, unit.y, target.x, target.y);
   const targetRadius = getSizeRadius(target.size);
   const myRadius = getSizeRadius(unit.size);
   const isInRange = (distToTarget - targetRadius - myRadius) <= unit.range;
+  const steering = getSteeringContext(unit, neighbors, myRadius, isInRange);
+  const { squadCx, squadCy, squadCount } = steering;
 
   // Turn logic: if in a squad, aim parallel to the squad's direction to the target to prevent converging and crushing
   let targetAngle = (unit.squadId && squadCount > 1 && distToTarget > unit.range * 1.5) 
@@ -105,36 +83,6 @@ export function movementSystem(unit: SimUnit, target: SimUnit, units: SimUnit[],
     unit.isMoving = false;
   }
 
-  for (const other of units) {
-    if (other.isDead || other.id === unit.id) continue;
-    
-    if (unit.isFlying !== other.isFlying) continue;
-    
-    const dist = getDistance(unit.x, unit.y, other.x, other.y);
-    const otherRadius = getSizeRadius(other.size);
-    // Allow a tiny bit of overlap in formation by capping minDist slightly smaller than spacing, but let's just use 90% of radius to prevent jitter
-    const minDist = (myRadius + otherRadius) * 0.95;
-
-    if (dist > 0 && dist < minDist) {
-       // If I am in combat, I hold my ground against allies. I cannot be pushed by them.
-       if (isInRange && other.team === unit.team) {
-           continue;
-       }
-       
-       const overlap = minDist - dist;
-       const pushAngle = Math.atan2(unit.y - other.y, unit.x - other.x);
-       
-       const myMass = getSizeMass(unit.size);
-       const otherMass = getSizeMass(other.size);
-       const pushRatio = (otherMass / (myMass + otherMass)) * 2; 
-       
-       const stanceMultiplier = isInRange ? 0.5 : 1.0; // Pushes less but still resolves overlap when fighting
-       const pushForce = Math.min(overlap * 2, unit.speed * 1.5) * pushRatio * stanceMultiplier; 
-       vx += Math.cos(pushAngle) * pushForce;
-       vy += Math.sin(pushAngle) * pushForce;
-    }
-  }
-
   // Soft collision with obstacles
   if (!unit.isFlying) {
      for (const obs of obstacles) {
@@ -148,14 +96,6 @@ export function movementSystem(unit: SimUnit, target: SimUnit, units: SimUnit[],
            vy += Math.sin(pushAngle) * pushForce;
         }
      }
-  }
-
-  // Apply Boids Alignment Force (Bugs swarm together)
-  if (isBug && alignCount > 0) {
-    const avgAlignAngle = Math.atan2(alignVy, alignVx);
-    const alignForce = unit.speed * (isInRange ? 0 : 0.4);
-    vx += Math.cos(avgAlignAngle) * alignForce;
-    vy += Math.sin(avgAlignAngle) * alignForce;
   }
 
   // Apply Cohesion Force (Formations)
@@ -189,21 +129,41 @@ export function movementSystem(unit: SimUnit, target: SimUnit, units: SimUnit[],
     }
   }
 
-  // Cap velocity to avoid them flying off screen if they are perfectly stacked
+  vx += steering.separationX + steering.alignmentX;
+  vy += steering.separationY + steering.alignmentY;
+
   // Allow a high minimum maxSpeed so collision resolution isn't throttled when speed is low or fighting
   const maxSpeed = Math.max(unit.speed * 1.5, 40);
-  const finalMag = Math.hypot(vx, vy);
+  const desiredMag = Math.hypot(vx, vy);
   
-  if (finalMag < 0.5) {
+  if (desiredMag < 0.5) {
      vx = 0;
      vy = 0;
-  } else if (finalMag > maxSpeed) {
-      vx = (vx / finalMag) * maxSpeed;
-      vy = (vy / finalMag) * maxSpeed;
+  } else if (desiredMag > maxSpeed) {
+      vx = (vx / desiredMag) * maxSpeed;
+      vy = (vy / desiredMag) * maxSpeed;
   }
 
-  let nx = unit.x + vx * dt;
-  let ny = unit.y + vy * dt;
+  const velocityBlend = Math.min(1, dt * 8);
+  if (desiredMag > 0.5) {
+    unit.velocity.x += (vx - unit.velocity.x) * velocityBlend;
+    unit.velocity.y += (vy - unit.velocity.y) * velocityBlend;
+  } else {
+    unit.velocity.x *= 0.6;
+    unit.velocity.y *= 0.6;
+  }
+
+  const finalMag = Math.hypot(unit.velocity.x, unit.velocity.y);
+  if (finalMag < 0.5) {
+    unit.velocity.x = 0;
+    unit.velocity.y = 0;
+  } else if (finalMag > maxSpeed) {
+    unit.velocity.x = (unit.velocity.x / finalMag) * maxSpeed;
+    unit.velocity.y = (unit.velocity.y / finalMag) * maxSpeed;
+  }
+
+  let nx = unit.x + unit.velocity.x * dt;
+  let ny = unit.y + unit.velocity.y * dt;
 
   // Keep in bounds
   nx = Math.max(0, Math.min(FIELD_WIDTH, nx));

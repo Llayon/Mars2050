@@ -1,4 +1,6 @@
-import { SimUnit, BattleAction, SimHazard, UnitTypeKey } from './combat.types';
+import type { BattleAction } from './combat.actions';
+import type { SimHazard, SimUnit } from './combat.sim.types';
+import type { UnitTypeKey } from './combat.types';
 import { UNIT_TYPES } from './combat.config';
 import { handleDeath, processSpawnAction } from './combat.systems.utils';
 import { getDistance, FIELD_WIDTH, FIELD_HEIGHT, PRNG, getSizeRadius } from './combat.utils';

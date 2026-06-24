@@ -1,5 +1,7 @@
 export * from './combat.types'
+export * from './combat.sim.types'
 export * from './combat.schemas'
 export * from './combat.config'
 export * from './combat.service'
 export * from './combat.engine'
+export * from './spatial-hash'

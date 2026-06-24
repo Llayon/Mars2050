@@ -1,4 +1,5 @@
-import { SimUnit, BattleAction, SimHazard, Team } from './combat.types';
+import type { BattleAction } from './combat.actions';
+import type { SimUnit, SimHazard, Team } from './combat.sim.types';
 import { PRNG, FIELD_WIDTH, FIELD_HEIGHT } from './combat.utils';
 import { GlobalUpgradeConfig } from './combat.upgrades';
 

@@ -1,4 +1,5 @@
-import { SimHazard, SimUnit, BattleAction } from './combat.types';
+import type { BattleAction } from './combat.actions';
+import type { SimHazard, SimUnit } from './combat.sim.types';
 import { getDistance } from './combat.utils';
 
 export function processHazards(hazards: SimHazard[], units: SimUnit[], actions: BattleAction[]) {
