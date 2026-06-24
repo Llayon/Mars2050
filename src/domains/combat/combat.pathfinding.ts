@@ -67,7 +67,6 @@ export function getFlowVector(map: FlowFieldMap, startX: number, startY: number,
   if (isNaN(angle)) {
      // Unit might be pushed into an impassable cell (cost 255)
      // Find the nearest valid neighbor and walk towards it
-     let bestCost = Infinity;
      let bestAngle = Math.atan2(targetY - startY, targetX - startX); // Default
      
      const neighbors = [

@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { UNIT_TYPES } from '@/domains/combat/combat.config'
 import { UPGRADES, GLOBAL_UPGRADES } from '@/domains/combat/combat.upgrades'
-import type { UnitRow, UnitTypeKey, BattleTick } from '@/domains/combat/combat.types'
+import type { BattleTick, Obstacle, SimUnit, UnitRow, UnitTypeKey } from '@/domains/combat/combat.types'
 import { simulateBattle } from '@/domains/combat/combat.engine'
 import { generateObstacles } from '@/domains/combat/combat.utils'
 import { getZergRushPreset } from '@/domains/combat/combat.presets'
@@ -13,19 +13,22 @@ import Link from 'next/link'
 
 const getRandomInt = (max: number) => Math.floor(Math.random() * max)
 
-export default function SimulatorPage() {
-  const [seed, setSeed] = useState(12345)
-  const [obstacles, setObstacles] = useState<import('@/domains/combat/combat.types').Obstacle[]>([])
+function createInitialBattlefield() {
+  const seed = Date.now()
+  return {
+    seed,
+    obstacles: generateObstacles(seed),
+  }
+}
 
-  useEffect(() => {
-    const s = Date.now()
-    setSeed(s)
-    setObstacles(generateObstacles(s))
-  }, [])
+export default function SimulatorPage() {
+  const [battlefield] = useState(createInitialBattlefield)
+  const seed = battlefield.seed
+  const obstacles = battlefield.obstacles
 
   const [attackerUnits, setAttackerUnits] = useState<UnitRow[]>([])
   const [defenderUnits, setDefenderUnits] = useState<UnitRow[]>([])
-  const [replayData, setReplayData] = useState<{ attackerUnits: UnitRow[], defenderUnits: UnitRow[], logs: BattleTick[], winner: string, initialState: import('@/domains/combat/combat.types').SimUnit[], obstacles?: import('@/domains/combat/combat.types').Obstacle[] } | null>(null)
+  const [replayData, setReplayData] = useState<{ attackerUnits: UnitRow[], defenderUnits: UnitRow[], logs: BattleTick[], winner: string, initialState: SimUnit[], obstacles?: Obstacle[] } | null>(null)
   
   const [attackerGlobals, setAttackerGlobals] = useState<string[]>([])
   const [defenderGlobals, setDefenderGlobals] = useState<string[]>([])

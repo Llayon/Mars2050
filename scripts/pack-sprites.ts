@@ -7,6 +7,24 @@ const OUTPUT_DIR = path.join('public', 'sprites', 'units');
 const OUTPUT_NAME = 'flamethrower';
 const TARGET_SIZE = 128; // Scale down to 128x128
 
+interface SpriteFrameMetadata {
+  frame: { x: number; y: number; w: number; h: number };
+  rotated: boolean;
+  trimmed: boolean;
+  spriteSourceSize: { x: number; y: number; w: number; h: number };
+  sourceSize: { w: number; h: number };
+}
+
+interface SpriteSheetMetadata {
+  frames: Record<string, SpriteFrameMetadata>;
+  meta: {
+    image: string;
+    format: string;
+    size: { w: number; h: number };
+    scale: string;
+  };
+}
+
 async function packSprites() {
   if (!fs.existsSync(OUTPUT_DIR)) {
     fs.mkdirSync(OUTPUT_DIR, { recursive: true });
@@ -63,8 +81,8 @@ async function packSprites() {
   const sheetWidth = cols * TARGET_SIZE;
   const sheetHeight = rows * TARGET_SIZE;
 
-  const metadata = {
-    frames: {} as any,
+  const metadata: SpriteSheetMetadata = {
+    frames: {},
     meta: {
       image: `${OUTPUT_NAME}.png`,
       format: "RGBA8888",
