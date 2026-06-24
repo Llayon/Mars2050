@@ -7,6 +7,7 @@ export function usePvp(colonyId: string | null) {
   const [attacking, setAttacking] = useState(false)
   const [trading, setTrading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [cooldownRemaining, setCooldownRemaining] = useState<number>(0)
 
   async function attack(defenderColonyId: string): Promise<AttackResult | null> {
     if (!colonyId) return null
@@ -22,7 +23,14 @@ export function usePvp(colonyId: string | null) {
       })
 
       const data = await res.json()
+      if (res.status === 429) {
+        const detail = (data?.error?.detail?.cooldownRemaining as number) ?? 0
+        setCooldownRemaining(detail)
+        setError(data?.error?.message ?? 'Cooldown active')
+        return null
+      }
       if (!res.ok) throw new Error(data.error || 'Attack failed')
+      setCooldownRemaining(0)
       return data
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
@@ -69,5 +77,13 @@ export function usePvp(colonyId: string | null) {
     return data
   }
 
-  return { attack, trade, fetchBattle, attacking, trading, error }
+  return {
+    attack,
+    trade,
+    fetchBattle,
+    attacking,
+    trading,
+    error,
+    cooldownRemaining,
+  }
 }

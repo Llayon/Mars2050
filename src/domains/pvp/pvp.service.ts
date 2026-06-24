@@ -2,10 +2,33 @@ import { getServerClient } from '@/domains/resource/resource.server'
 import { simulateBattle } from '@/domains/combat/combat.engine'
 import type { UnitRow, BattleTick, Obstacle, SimUnit } from '@/domains/combat/combat.types'
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { loadOwnedColony, computeBattlePersistence } from './pvp.persistence'
+import { loadOwnedColony } from './pvp.ownership'
+import {
+  computeBattlePersistence,
+} from './pvp.persistence'
+import {
+  validateOffer,
+  applyTrade,
+  applyAttackRewards,
+} from './pvp.resources'
+import {
+  loadAuthorizedBattle,
+  loadBattleWithSnapshot,
+  getAttackCooldownSeconds,
+  persistBattleWithSnapshot,
+  SNAPSHOT_VERSION,
+  type BattleWithSnapshot,
+} from './pvp.replay'
 
 /**
- * Trade resources between two colonies.
+ * Default minimum seconds between attacks from the same colony.
+ * The simulation is a heavy operation; the cooldown prevents spam.
+ */
+export const ATTACK_COOLDOWN_SECONDS = 30
+
+/**
+ * Execute a trade between two colonies.
+ * Deducts offered resources from seller, adds requested resources to buyer.
  * @param authClient - user-scoped Supabase client
  * @param userId - requesting user id, must own fromColonyId
  * @returns Success status or error message
@@ -18,72 +41,35 @@ export async function executeTrade(
   offerResources: Record<string, number>,
   requestResources?: Record<string, number>
 ): Promise<{ success: boolean; error?: string; message?: string }> {
-  const supabase = getServerClient()
-
   const owned = await loadOwnedColony(authClient, fromColonyId, userId)
   if (!owned) {
     return { success: false, error: 'You do not own the seller colony' }
   }
 
-  // Verify both colonies exist (counterparty may belong to another user)
+  const supabase = getServerClient()
   const { data: colonies } = await supabase
     .from('colonies')
     .select('id')
     .in('id', [fromColonyId, toColonyId])
-
   if (!colonies || colonies.length !== 2) {
     return { success: false, error: 'Invalid colonies' }
   }
 
-  // Validate and subtract from seller
-  for (const [resourceType, amount] of Object.entries(offerResources)) {
-    const { data: resource } = await supabase
-      .from('resources')
-      .select('amount')
-      .eq('colony_id', fromColonyId)
-      .eq('type', resourceType)
-      .single()
-    if (!resource || resource.amount < amount) {
-      return { success: false, error: `Not enough ${resourceType}` }
-    }
-    await supabase
-      .from('resources')
-      .update({ amount: Math.max(0, resource.amount - amount) })
-      .eq('colony_id', fromColonyId)
-      .eq('type', resourceType)
+  const missing = await validateOffer(fromColonyId, offerResources)
+  const missingKeys = Object.keys(missing)
+  if (missingKeys.length > 0) {
+    return { success: false, error: `Not enough ${missingKeys[0]}` }
   }
 
-  // Add to buyer
-  if (requestResources) {
-    for (const [resourceType, amount] of Object.entries(requestResources)) {
-      const { data: existing } = await supabase
-        .from('resources')
-        .select('amount')
-        .eq('colony_id', toColonyId)
-        .eq('type', resourceType)
-        .single()
-      if (existing) {
-        await supabase
-          .from('resources')
-          .update({ amount: existing.amount + amount })
-          .eq('colony_id', toColonyId)
-          .eq('type', resourceType)
-      }
-    }
-  }
-
+  await applyTrade(fromColonyId, toColonyId, offerResources, requestResources)
   return { success: true, message: 'Торговля завершена!' }
 }
 
 /**
- * Execute an attack between two colonies using the new combat engine.
- * @param authClient - user-scoped Supabase client (used for ownership check)
- * @param userId - requesting user id, must own attackerColonyId
- * @param attackerColonyId - Attacking colony ID
- * @param defenderColonyId - Defending colony ID
- * @param clientSeed - Optional deterministic seed from the client (replay integrity)
- * @param attackerUnitsPlacement - Optional grid placement for attacker units
- * @returns Combat result with stolen resources on success
+ * Execute an attack between two colonies.
+ * Validates ownership, applies the cooldown check, simulates the battle,
+ * applies persistence (unit HP / dead removal), and writes the replay
+ * snapshot.
  */
 export async function executeAttack(
   authClient: SupabaseClient,
@@ -93,27 +79,42 @@ export async function executeAttack(
   clientSeed?: number,
   attackerUnitsPlacement?: { unitId: string, x: number, y: number }[]
 ): Promise<{
-  success: boolean;
-  error?: string;
-  message?: string;
-  stolen?: Record<string, number>;
-  logs?: BattleTick[];
-  obstacles?: import('@/domains/combat/combat.types').Obstacle[];
-  initialState?: import('@/domains/combat/combat.types').SimUnit[];
-  attackerUnits?: UnitRow[];
-  defenderUnits?: UnitRow[];
-  battleId?: string;
-  seed?: number;
+  success: boolean
+  error?: string
+  message?: string
+  stolen?: Record<string, number>
+  logs?: BattleTick[]
+  obstacles?: Obstacle[]
+  initialState?: SimUnit[]
+  attackerUnits?: UnitRow[]
+  defenderUnits?: UnitRow[]
+  battleId?: string
+  seed?: number
+  simulationVersion?: number
+  cooldownRemaining?: number
 }> {
-  const supabase = getServerClient()
-
   const owned = await loadOwnedColony(authClient, attackerColonyId, userId)
   if (!owned) {
     return { success: false, error: 'You do not own the attacker colony' }
   }
 
-  const { data: attackerUnits } = await supabase.from('units').select('*').eq('colony_id', attackerColonyId)
-  const { data: defenderUnits } = await supabase.from('units').select('*').eq('colony_id', defenderColonyId)
+  const cooldownRemaining = await getAttackCooldownSeconds(
+    attackerColonyId,
+    ATTACK_COOLDOWN_SECONDS
+  )
+  if (cooldownRemaining > 0) {
+    return {
+      success: false,
+      error: `Attack cooldown active: ${cooldownRemaining}s remaining`,
+      cooldownRemaining,
+    }
+  }
+
+  const supabase = getServerClient()
+  const { data: attackerUnits } = await supabase
+    .from('units').select('*').eq('colony_id', attackerColonyId)
+  const { data: defenderUnits } = await supabase
+    .from('units').select('*').eq('colony_id', defenderColonyId)
 
   if (!attackerUnits || attackerUnits.length === 0) {
     return { success: false, error: 'У вас нет армии для атаки!' }
@@ -156,75 +157,34 @@ export async function executeAttack(
     await supabase.from('units').update({ hp_current: upd.hp_current }).eq('id', upd.id)
   }
 
-  // Handle resources if attacker wins
-  const stolen: Record<string, number> = {}
-  if (battleResult.winner === 'attacker') {
-    const { data: defenderResources } = await supabase
-      .from('resources')
-      .select('type, amount')
-      .eq('colony_id', defenderColonyId)
+  const stolen =
+    battleResult.winner === 'attacker'
+      ? await applyAttackRewards(attackerColonyId, defenderColonyId)
+      : {}
 
-    if (defenderResources) {
-      for (const r of defenderResources) {
-        const amount = Math.floor(r.amount * 0.1)
-        if (amount > 0) {
-          stolen[r.type] = amount
-          await supabase
-            .from('resources')
-            .update({ amount: Math.max(0, r.amount - amount) })
-            .eq('colony_id', defenderColonyId)
-            .eq('type', r.type)
-
-          const { data: attackerRes } = await supabase
-            .from('resources')
-            .select('amount')
-            .eq('colony_id', attackerColonyId)
-            .eq('type', r.type)
-            .single()
-
-          if (attackerRes) {
-            await supabase
-              .from('resources')
-              .update({ amount: attackerRes.amount + amount })
-              .eq('colony_id', attackerColonyId)
-              .eq('type', r.type)
-          }
-        }
-      }
-    }
-  }
-
-  const { data: battleRow, error: battleError } = await supabase
-    .from('battles')
-    .insert({
+  const battleId = await persistBattleWithSnapshot(
+    {
       attacker_colony_id: attackerColonyId,
       defender_colony_id: defenderColonyId,
       winner: battleResult.winner,
       attacker_units: attackerUnits as unknown as Record<string, unknown>,
       defender_units: (defenderUnits || []) as unknown as Record<string, unknown>,
-      battle_log: [] as unknown as Record<string, unknown>,
-      rewards: stolen as unknown as Record<string, unknown>,
-    })
-    .select('id')
-    .single()
-
-  let battleId: string | undefined
-  if (!battleError && battleRow?.id) {
-    battleId = battleRow.id
-    await supabase.from('battle_snapshots').insert({
-      battle_id: battleRow.id,
+      rewards: stolen,
+    },
+    {
       seed: battleResult.seed ?? clientSeed ?? 0,
       initial_state: battleResult.initialState as unknown as Record<string, unknown>,
       log: battleResult.logs as unknown as Record<string, unknown>,
-      version: 1,
-    })
-  }
+      simulationVersion: SNAPSHOT_VERSION,
+    }
+  )
 
-  const winMsg = battleResult.winner === 'attacker'
-    ? 'Атака успешна! Враг разбит, ресурсы захвачены.'
-    : battleResult.winner === 'defender'
-      ? 'Атака провалилась! Защитники отбились.'
-      : 'Ничья! Обе стороны понесли тяжелые потери.'
+  const winMsg =
+    battleResult.winner === 'attacker'
+      ? 'Атака успешна! Враг разбит, ресурсы захвачены.'
+      : battleResult.winner === 'defender'
+        ? 'Атака провалилась! Защитники отбились.'
+        : 'Ничья! Обе стороны понесли тяжелые потери.'
 
   return {
     success: true,
@@ -235,7 +195,30 @@ export async function executeAttack(
     initialState: battleResult.initialState,
     attackerUnits,
     defenderUnits: defenderUnits || [],
-    battleId,
+    battleId: battleId ?? undefined,
     seed: battleResult.seed,
+    simulationVersion: SNAPSHOT_VERSION,
   }
+}
+
+/**
+ * Load a battle with its snapshot, but only if the user is a participant.
+ * Returns null when the battle does not exist OR the user is not a
+ * participant (intentionally indistinguishable to prevent existence leaks).
+ */
+export async function fetchAuthorizedBattle(
+  authClient: SupabaseClient,
+  battleId: string
+): Promise<BattleWithSnapshot | null> {
+  return loadAuthorizedBattle(authClient, battleId)
+}
+
+/**
+ * Internal helper: load a battle without auth (service_role). Used by tests
+ * and admin tooling. Not exposed to the API layer.
+ */
+export async function fetchBattleInternal(
+  battleId: string
+): Promise<BattleWithSnapshot | null> {
+  return loadBattleWithSnapshot(battleId)
 }

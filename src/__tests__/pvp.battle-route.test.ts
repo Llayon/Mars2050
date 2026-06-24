@@ -7,8 +7,11 @@ vi.mock('@/lib/auth', () => ({
 }))
 
 const mockLoadAuthorizedBattle = vi.fn()
-vi.mock('@/domains/pvp/pvp.persistence', () => ({
+vi.mock('@/domains/pvp/pvp.replay', () => ({
   loadAuthorizedBattle: (...args: unknown[]) => mockLoadAuthorizedBattle(...args),
+  loadBattleWithSnapshot: vi.fn(),
+  persistBattleWithSnapshot: vi.fn(),
+  getAttackCooldownSeconds: vi.fn().mockResolvedValue(0),
 }))
 
 import { GET } from '@/app/api/pvp/battle/[battleId]/route'

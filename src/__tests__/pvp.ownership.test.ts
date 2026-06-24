@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { loadOwnedColony } from '@/domains/pvp/pvp.persistence'
+import { loadOwnedColony } from '@/domains/pvp/pvp.ownership'
 
 function chainableForSingle(data: unknown, error: unknown = null) {
   const c: Record<string, unknown> = {}

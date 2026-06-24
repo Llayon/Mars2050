@@ -14,6 +14,7 @@ const STATUS_CODES: Record<string, number> = {
   FORBIDDEN: 403,
   NOT_FOUND: 404,
   CONFLICT: 409,
+  TOO_MANY_REQUESTS: 429,
   VALIDATION_ERROR: 422,
   INTERNAL_ERROR: 500,
 }
@@ -51,4 +52,11 @@ export function apiUnauthorized(message = 'Authentication required'): NextRespon
 
 export function apiForbidden(message = 'Access denied'): NextResponse<ApiErrorBody> {
   return apiError('FORBIDDEN', message)
+}
+
+export function apiTooManyRequests(
+  message = 'Too many requests',
+  detail?: unknown
+): NextResponse<ApiErrorBody> {
+  return apiError('TOO_MANY_REQUESTS', message, detail)
 }

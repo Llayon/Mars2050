@@ -1,7 +1,13 @@
 import { NextResponse } from 'next/server'
 import { attackSchema } from '@/domains/pvp/pvp.schemas'
 import { executeAttack } from '@/domains/pvp/pvp.service'
-import { apiError, apiInternalError, apiUnauthorized, apiValidationError } from '@/lib/api-error'
+import {
+  apiError,
+  apiInternalError,
+  apiTooManyRequests,
+  apiUnauthorized,
+  apiValidationError,
+} from '@/lib/api-error'
 import { getAuthContext } from '@/lib/auth'
 
 /** POST /api/pvp/attack — attack another colony */
@@ -23,6 +29,12 @@ export async function POST(request: Request) {
       attackerUnitsPlacement
     )
 
+    if (!result.success && typeof result.cooldownRemaining === 'number') {
+      return apiTooManyRequests(
+        result.error ?? 'Cooldown active',
+        { cooldownRemaining: result.cooldownRemaining }
+      )
+    }
     if (result.error) return apiError('BAD_REQUEST', result.error)
     return NextResponse.json(result)
   } catch (err) {

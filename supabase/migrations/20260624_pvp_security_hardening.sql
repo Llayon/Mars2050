@@ -1,6 +1,9 @@
 -- Battle replay snapshots: heavy replay payload separated from battles summary.
 -- The battles table holds only the summary (participants, winner, status, created_at).
 -- battle_snapshots holds seed, initial_state, and tick log for replay/audit.
+-- `version` carries the combat-engine simulation version (CURRENT_SIMULATION_VERSION)
+-- that produced the result. UIs should warn when snapshot.version is older than the
+-- engine's current version — older replays may differ visually from a fresh run.
 
 create table if not exists public.battle_snapshots (
   id uuid default uuid_generate_v4() primary key,

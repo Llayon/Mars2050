@@ -13,6 +13,8 @@ export interface AttackResult {
   obstacles?: Obstacle[]
   battleId?: string
   seed?: number
+  simulationVersion?: number
+  cooldownRemaining?: number
 }
 
 export interface TradeResult {

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { battleIdSchema } from '@/domains/pvp/pvp.schemas'
 import { getAuthContext } from '@/lib/auth'
-import { loadAuthorizedBattle } from '@/domains/pvp/pvp.persistence'
+import { loadAuthorizedBattle } from '@/domains/pvp/pvp.replay'
 import { apiError, apiForbidden, apiInternalError, apiUnauthorized, apiValidationError } from '@/lib/api-error'
 
 /**
