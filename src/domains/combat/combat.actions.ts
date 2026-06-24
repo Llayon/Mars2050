@@ -1,4 +1,5 @@
 import type { Team, SimUnit, Obstacle } from './combat.sim.types'
+import type { CombatMetrics } from './combat.metrics'
 
 export type BattleActionType = 'move' | 'attack' | 'heal' | 'die' | 'spawn' | 'hazard_spawn' | 'status_apply' | 'status_expire'
 
@@ -35,4 +36,5 @@ export interface BattleResult {
   survivors: SimUnit[]
   initialState: SimUnit[]
   obstacles?: Obstacle[]
+  metrics?: CombatMetrics
 }

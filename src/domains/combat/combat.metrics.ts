@@ -1,0 +1,147 @@
+import type { BattleAction } from './combat.actions'
+import type { SimUnit } from './combat.sim.types'
+import { getSizeRadius } from './combat.utils'
+
+export interface BattleSimulationOptions {
+  trackMetrics?: boolean
+}
+
+export interface CombatMetrics {
+  firstAttackTick: number | null
+  battleDurationTicks: number
+  targetSwitches: number
+  averageOverlap: number
+  maxOverlap: number
+  averageTimeToEngage: number | null
+  damageByUnitType: Record<string, number>
+  overkillDamage: number
+}
+
+export interface CombatMetricsCollector {
+  firstAttackTick: number | null
+  targetSwitches: number
+  totalOverlap: number
+  overlapSamples: number
+  maxOverlap: number
+  damageByUnitType: Record<string, number>
+  overkillDamage: number
+  hpByUnitId: Map<string, number>
+  firstEngageTickByUnitId: Map<string, number>
+  lastTargetByUnitId: Map<string, string>
+}
+
+export function createCombatMetrics(units: SimUnit[]): CombatMetricsCollector {
+  return {
+    firstAttackTick: null,
+    targetSwitches: 0,
+    totalOverlap: 0,
+    overlapSamples: 0,
+    maxOverlap: 0,
+    damageByUnitType: {},
+    overkillDamage: 0,
+    hpByUnitId: new Map(units.map(unit => [unit.id, unit.hp])),
+    firstEngageTickByUnitId: new Map(),
+    lastTargetByUnitId: new Map(),
+  }
+}
+
+export function recordCombatActions(
+  metrics: CombatMetricsCollector,
+  tick: number,
+  actions: BattleAction[],
+  units: SimUnit[]
+): void {
+  const unitById = new Map(units.map(unit => [unit.id, unit]))
+
+  for (const action of actions) {
+    if (action.type === 'attack') recordAttackAction(metrics, tick, action, unitById)
+    if (action.type === 'heal') recordHealAction(metrics, action)
+    if (action.type === 'die') metrics.hpByUnitId.set(action.unitId, 0)
+  }
+}
+
+export function recordCombatTick(metrics: CombatMetricsCollector, units: SimUnit[]): void {
+  recordTargetSwitches(metrics, units)
+  recordOverlap(metrics, units)
+}
+
+export function finalizeCombatMetrics(
+  metrics: CombatMetricsCollector,
+  battleDurationTicks: number
+): CombatMetrics {
+  return {
+    firstAttackTick: metrics.firstAttackTick,
+    battleDurationTicks,
+    targetSwitches: metrics.targetSwitches,
+    averageOverlap: metrics.overlapSamples > 0 ? metrics.totalOverlap / metrics.overlapSamples : 0,
+    maxOverlap: metrics.maxOverlap,
+    averageTimeToEngage: getAverageTimeToEngage(metrics),
+    damageByUnitType: metrics.damageByUnitType,
+    overkillDamage: metrics.overkillDamage,
+  }
+}
+
+function recordAttackAction(
+  metrics: CombatMetricsCollector,
+  tick: number,
+  action: BattleAction,
+  unitById: Map<string, SimUnit>
+): void {
+  if (metrics.firstAttackTick === null) metrics.firstAttackTick = tick
+  if (!metrics.firstEngageTickByUnitId.has(action.unitId)) metrics.firstEngageTickByUnitId.set(action.unitId, tick)
+
+  const damage = Math.max(0, action.damage ?? 0)
+  const attackerType = unitById.get(action.unitId)?.type ?? 'unknown'
+  metrics.damageByUnitType[attackerType] = (metrics.damageByUnitType[attackerType] ?? 0) + damage
+
+  if (!action.targetId || damage <= 0) return
+  const previousHp = metrics.hpByUnitId.get(action.targetId) ?? unitById.get(action.targetId)?.hp ?? 0
+  metrics.overkillDamage += Math.max(0, damage - Math.max(0, previousHp))
+  metrics.hpByUnitId.set(action.targetId, Math.max(0, previousHp - damage))
+}
+
+function recordHealAction(metrics: CombatMetricsCollector, action: BattleAction): void {
+  if (!action.targetId) return
+  const previousHp = metrics.hpByUnitId.get(action.targetId) ?? 0
+  metrics.hpByUnitId.set(action.targetId, previousHp + Math.max(0, action.damage ?? 0))
+}
+
+function recordTargetSwitches(metrics: CombatMetricsCollector, units: SimUnit[]): void {
+  for (const unit of units) {
+    if (unit.isDead || !unit.attackTargetId) {
+      metrics.lastTargetByUnitId.delete(unit.id)
+      continue
+    }
+
+    const previousTarget = metrics.lastTargetByUnitId.get(unit.id)
+    if (previousTarget && previousTarget !== unit.attackTargetId) metrics.targetSwitches++
+    metrics.lastTargetByUnitId.set(unit.id, unit.attackTargetId)
+  }
+}
+
+function recordOverlap(metrics: CombatMetricsCollector, units: SimUnit[]): void {
+  const alive = units.filter(unit => !unit.isDead)
+  for (let i = 0; i < alive.length; i++) {
+    for (let j = i + 1; j < alive.length; j++) {
+      const first = alive[i]
+      const second = alive[j]
+      if (first.isFlying !== second.isFlying) continue
+
+      const minDistance = (getSizeRadius(first.size) + getSizeRadius(second.size)) * 0.95
+      const distance = Math.hypot(first.x - second.x, first.y - second.y)
+      const overlap = Math.max(0, minDistance - distance)
+      if (overlap <= 0) continue
+
+      metrics.totalOverlap += overlap
+      metrics.maxOverlap = Math.max(metrics.maxOverlap, overlap)
+      metrics.overlapSamples++
+    }
+  }
+}
+
+function getAverageTimeToEngage(metrics: CombatMetricsCollector): number | null {
+  if (metrics.firstEngageTickByUnitId.size === 0) return null
+  let total = 0
+  for (const tick of metrics.firstEngageTickByUnitId.values()) total += tick
+  return total / metrics.firstEngageTickByUnitId.size
+}

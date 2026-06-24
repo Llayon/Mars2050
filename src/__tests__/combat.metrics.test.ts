@@ -51,14 +51,37 @@ describe('combat movement metrics', () => {
     expect(second.survivors).toEqual(first.survivors)
     expect(second.obstacles).toEqual(first.obstacles)
   })
+
+  it('does not collect combat metrics unless explicitly requested', () => {
+    const result = simulateMetricBattle()
+
+    expect(result.metrics).toBeUndefined()
+  })
+
+  it('collects combat metrics when tracking is enabled', () => {
+    const result = simulateMetricBattle(true)
+
+    expect(result.metrics).toBeDefined()
+    expect(result.metrics?.firstAttackTick).not.toBeNull()
+    expect(result.metrics?.firstAttackTick).toBeLessThanOrEqual(25)
+    expect(result.metrics?.battleDurationTicks).toBeGreaterThan(0)
+    expect(result.metrics?.averageOverlap).toBeGreaterThanOrEqual(0)
+    expect(result.metrics?.maxOverlap).toBeGreaterThanOrEqual(result.metrics?.averageOverlap ?? 0)
+    expect(result.metrics?.averageTimeToEngage).not.toBeNull()
+    expect(result.metrics?.damageByUnitType.shock_trooper).toBeGreaterThan(0)
+    expect(result.metrics?.overkillDamage).toBeGreaterThanOrEqual(0)
+  })
 })
 
-function simulateMetricBattle(): BattleResult {
+function simulateMetricBattle(trackMetrics = false): BattleResult {
   return simulateBattle(
     makeUnits('a', 6, 'shock_trooper', 820),
     makeUnits('d', 6, 'alien_bug', 380),
     12345,
-    []
+    [],
+    [],
+    [],
+    { trackMetrics }
   )
 }
 

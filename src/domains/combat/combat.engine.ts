@@ -9,10 +9,11 @@ import { actionSystem, tickModifiersSystem } from './combat.systems'
 import { targetingSystem } from './combat.targeting'
 import { movementSystem } from './combat.movement'
 import { createMeleeEngagementState, reserveMeleeEngagementSlot } from './combat.melee-engagement'
+import { createCombatMetrics, finalizeCombatMetrics, recordCombatActions, recordCombatTick, type BattleSimulationOptions } from './combat.metrics'
 import { FIELD_WIDTH, FIELD_HEIGHT, PRNG, generateObstacles } from './combat.utils'
 import { createPathfindingMap } from './combat.pathfinding'
 import { SpatialHash } from './spatial-hash'
-export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[], providedSeed?: number, providedObstacles?: Obstacle[], attackerGlobals: string[] = [], defenderGlobals: string[] = []): BattleResult {
+export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[], providedSeed?: number, providedObstacles?: Obstacle[], attackerGlobals: string[] = [], defenderGlobals: string[] = [], options: BattleSimulationOptions = {}): BattleResult {
   const seed = providedSeed ?? Date.now()
   const rng = new PRNG(seed)
   const dt = 0.1
@@ -23,7 +24,6 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
   attackerGlobals.forEach(id => { if (GLOBAL_UPGRADES[id]) activeGlobals.push({ team: 'attacker', upg: GLOBAL_UPGRADES[id] }) })
   defenderGlobals.forEach(id => { if (GLOBAL_UPGRADES[id]) activeGlobals.push({ team: 'defender', upg: GLOBAL_UPGRADES[id] }) })
 
-  // Generate or use provided obstacles
   const obstacles: Obstacle[] = providedObstacles || generateObstacles(seed);
 
   const flowFieldMap = createPathfindingMap(obstacles);
@@ -45,7 +45,6 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
     const squadId = squadSize > 1 ? `${u.id}_squad` : undefined
     const formation = config.formation || 'grid'
 
-    // Calculate base stats with upgrades
     let modHp = config.baseStats.hp;
     let modAttack = config.baseStats.attack;
     let modDefense = config.baseStats.defense;
@@ -116,7 +115,6 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
         oy = (row - (Math.ceil(squadSize / rowSize) - 1) / 2) * spacing
       }
 
-      // Flip Y based on team
       oy *= (t === 'attacker' ? 1 : -1)
 
       units.push({
@@ -172,6 +170,7 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
   defenderUnits.forEach(u => createSquad(u, 'defender'))
 
   const initialState = JSON.parse(JSON.stringify(units))
+  const metrics = options.trackMetrics ? createCombatMetrics(units) : undefined
 
   const logs: BattleTick[] = []
   let tick = 0
@@ -180,7 +179,6 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
     const actions: BattleAction[] = []
     processGlobals(tick, activeGlobals, units, hazards, actions, rng);
     
-    // Check win condition before tick
     const aliveAttackers = units.filter(u => !u.isDead && u.team === 'attacker')
     const aliveDefenders = units.filter(u => !u.isDead && u.team === 'defender')
     
@@ -193,7 +191,6 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
       if (!unit.isDead) spatialHash.insert(unit);
     }
 
-    // Sort units by speed descending
     const turnOrder = units.filter(u => !u.isDead).sort((a, b) => b.speed - a.speed)
     const meleeEngagement = createMeleeEngagementState();
 
@@ -223,6 +220,7 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
     }
 
     processHazards(hazards, units, actions);
+    if (metrics) { recordCombatActions(metrics, tick, actions, units); recordCombatTick(metrics, units) }
     
     if (actions.length > 0) logs.push({ tick, actions })
     
@@ -242,6 +240,7 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
     seed,
     initialState,
     survivors: units.filter(u => !u.isDead && !u.isTemporary),
-    obstacles
+    obstacles,
+    metrics: metrics ? finalizeCombatMetrics(metrics, tick) : undefined
   }
 }
