@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <defs>
+    <filter id="glowExp">
+      <feGaussianBlur stdDeviation="4" result="b1" />
+      <feGaussianBlur stdDeviation="8" result="b2" />
+      <feMerge><feMergeNode in="b2"/><feMergeNode in="b1"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <g transform="translate(50, 50)">
+    <circle cx="0" cy="0" r="25" fill="#0369a1" filter="url(#glowExp)" opacity="0.7" />
+    <circle cx="0" cy="0" r="15" fill="#67e8f9" filter="url(#glowExp)" />
+    <circle cx="0" cy="0" r="8" fill="#ffffff" />
+    <!-- Debris lines -->
+    <path d="M 0 -15 L 0 -35 M 15 -15 L 25 -25 M 15 0 L 35 0 M 15 15 L 25 25 M 0 15 L 0 35 M -15 15 L -25 25 M -15 0 L -35 0 M -15 -15 L -25 -25" stroke="#67e8f9" stroke-width="3" stroke-linecap="round" />
+  </g>
+</svg>

@@ -13,7 +13,16 @@ export const SPRITE_ATLASES: Record<string, string> = {
   'flamethrower': '/sprites/units/flamethrower.json'
 };
 
+export const SVG_UNITS = [
+  'plasma_tank', 'missile_buggy', 'gunship', 'engineer', 'emp_drone', 'minelayer_rover', 'siege_tank',
+  'railgun_walker', 'drone_carrier', 'cryo_tank', 'shield_emitter', 'interceptor', 'hacker_rover',
+  'artillery_crawler', 'titan_mech', 'behemoth_tank', 'ion_crawler', 'goliath_gunship', 'mobile_factory',
+  'sonic_devastator', 'radar_zepplin', 'stealth_operative', 'hologram_projector', 'gravity_manipulator',
+  'nanite_generator', 'bounty_hunter'
+];
+
 export const SPRITE_DIRS = ['north', 'south', 'east', 'west', 'north-east', 'north-west', 'south-east', 'south-west'];
+
 
 export const FIELD_WIDTH = 600;
 export const FIELD_HEIGHT = 1200;

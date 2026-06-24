@@ -1,5 +1,6 @@
 import { Application, Graphics, Text, Container, Assets, Sprite, Texture } from 'pixi.js'
 import { UNIT_TYPES } from '@/domains/combat/combat.config'
+import { UNIT_VISUALS } from './battle-replay-visuals'
 import { FIELD_WIDTH, FIELD_HEIGHT, getDir, SPRITE_PATHS, SPRITE_ATLASES, SPRITE_DIRS, getSizeRadius } from '@/domains/combat/combat.utils'
 import type { BattleTick, UnitRow, SimUnit, UnitTypeKey, Obstacle } from '@/domains/combat/combat.types'
 import { setupCameraControls } from './battle-replay-camera'
@@ -107,14 +108,13 @@ export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
   type Proj = { g: Graphics, sX: number, sY: number, tX: number, tY: number, p: number, col: number }
   type HazardFX = { g: Graphics, life: number }
   const fts: FX[] = [], projs: Proj[] = [], hazardFxs: HazardFX[] = []
-  const spawnTxt = (txt: string, x: number, y: number, col: number) => {
-    const t = new Text({ text: txt, style: { fill: col, fontSize: 18, fontWeight: 'bold', dropShadow: { alpha: 0.5 } } })
-    t.anchor.set(0.5); t.position.set(x, y - 20)
-    fxLayer.addChild(t); fts.push({ c: t, life: 1 })
+  const spawnTxt = (t: string, x: number, y: number, c: number) => {
+    const txt = new Text({ text: t, style: { fill: c, fontSize: 18, fontWeight: 'bold', dropShadow: { alpha: 0.5 } } })
+    txt.anchor.set(0.5); txt.position.set(x, y - 20); fxLayer.addChild(txt); fts.push({ c: txt, life: 1 })
   }
-  const spawnProj = (x1: number, y1: number, x2: number, y2: number, col: number) => {
-    const p = new Graphics().circle(0, 0, 4).fill({ color: col }); p.position.set(x1, y1)
-    fxLayer.addChild(p); projs.push({ g: p, sX: x1, sY: y1, tX: x2, tY: y2, p: 0, col })
+  const spawnProj = (x1: number, y1: number, x2: number, y2: number, c: number) => {
+    const p = new Graphics().circle(0, 0, 4).fill({ color: c }); p.position.set(x1, y1)
+    fxLayer.addChild(p); projs.push({ g: p, sX: x1, sY: y1, tX: x2, tY: y2, p: 0, col: c })
   }
 
   app.ticker.add(({ deltaMS: dt }) => {
@@ -156,6 +156,24 @@ export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
 
             if (s.s && s.baseScale !== undefined) {
                s.s.scale.set(s.baseScale * 1.2)
+            }
+
+            if (s.s && !isH) {
+              const vConf = UNIT_VISUALS[s.type as UnitTypeKey] || {};
+              const flashType = vConf.fxType || 'fx_muzzle_orange';
+              const mOff = vConf.muzzleOffset || 25;
+              try {
+                const flash = new Sprite(Texture.from(`/assets/units/${flashType}.svg`));
+                flash.anchor.set(0.5);
+                flash.scale.set(0.5 * (vConf.vfxScale || 1.0));
+                const aRad = Math.atan2(tg.c.y - s.c.y, tg.c.x - s.c.x);
+                flash.rotation = aRad + Math.PI/2;
+                flash.x = s.c.x + Math.cos(aRad) * mOff;
+                flash.y = s.c.y + Math.sin(aRad) * mOff;
+                flash.blendMode = 'add';
+                fxLayer.addChild(flash);
+                fts.push({ c: flash, life: 0.15 });
+              } catch(e) {}
             }
           }
         } else if (a.type === 'die') {
@@ -204,6 +222,20 @@ export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
       } else if (s.s && s.basePath && s.dir) {
          s.s.texture = Texture.from(`${s.basePath}/${s.dir}.png`)
       }
+
+      if (s.s) {
+         const vConf = UNIT_VISUALS[s.type as UnitTypeKey] || {};
+         const isFlying = UNIT_TYPES[s.type as UnitTypeKey]?.baseStats.isFlying;
+         if (isFlying) {
+           const hAmp = vConf.hoverAmplitude || 3;
+           const hSpeed = vConf.hoverSpeed || 0.05;
+           const hover = Math.sin(globalTime * hSpeed + s.c.uid) * hAmp;
+           s.s.y = (vConf.yOffset || -20) + hover;
+         } else if (vConf.yOffset) {
+           s.s.y = vConf.yOffset;
+         }
+      }
+
       if (s.s && s.baseScale !== undefined) {
          s.s.scale.x = lerp(s.s.scale.x, s.baseScale, 0.1)
          s.s.scale.y = lerp(s.s.scale.y, s.baseScale, 0.1)

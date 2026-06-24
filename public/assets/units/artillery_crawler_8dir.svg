@@ -1,0 +1,396 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 100" width="800" height="100">
+  <defs>
+    <filter id="shadowBlur" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="4" />
+    </filter>
+    <filter id="fireGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="2" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+    
+    <!-- Gradients -->
+    <linearGradient id="forestTop" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#4d7c0f" />
+      <stop offset="100%" stop-color="#3f6212" />
+    </linearGradient>
+    <linearGradient id="forestSide" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#166534" />
+      <stop offset="100%" stop-color="#14532d" />
+    </linearGradient>
+
+    <linearGradient id="steelTop" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#52525b" />
+      <stop offset="100%" stop-color="#3f3f46" />
+    </linearGradient>
+    <linearGradient id="steelSide" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#27272a" />
+      <stop offset="100%" stop-color="#18181b" />
+    </linearGradient>
+
+    <linearGradient id="trackSide" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a" />
+      <stop offset="100%" stop-color="#020617" />
+    </linearGradient>
+    <linearGradient id="trackTop" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1e293b" />
+      <stop offset="100%" stop-color="#0f172a" />
+    </linearGradient>
+
+    <pattern id="treads" width="20" height="4" patternUnits="userSpaceOnUse">
+      <rect width="20" height="2" fill="#000" opacity="0.8" />
+      <rect y="2" width="20" height="2" fill="transparent" />
+    </pattern>
+  </defs>
+  <rect width="100%" height="100%" fill="transparent" />
+<g transform="translate(0, 0)">
+<g transform="translate(50, 50) scale(0.82) translate(-50, -50)">
+  <ellipse cx="50" cy="55" rx="42" ry="40" fill="#000" opacity="0.4" filter="url(#shadowBlur)" />
+<polygon points="28.0,85.0 12.0,85.0 12.0,92.0 28.0,92.0" fill="url(#trackSide)" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="12.0,15.0 28.0,15.0 28.0,85.0 12.0,85.0" fill="url(#trackTop)" stroke="#000" stroke-width="1" stroke-linejoin="round" />
+<polygon points="12.0,15.0 28.0,15.0 28.0,85.0 12.0,85.0" fill="url(#treads)" />
+<polygon points="88.0,85.0 72.0,85.0 72.0,92.0 88.0,92.0" fill="url(#trackSide)" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="72.0,15.0 88.0,15.0 88.0,85.0 72.0,85.0" fill="url(#trackTop)" stroke="#000" stroke-width="1" stroke-linejoin="round" />
+<polygon points="72.0,15.0 88.0,15.0 88.0,85.0 72.0,85.0" fill="url(#treads)" />
+<polygon points="12.0,55.0 5.0,55.0 5.0,60.0 12.0,60.0" fill="url(#steelSide)" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="5.0,45.0 12.0,45.0 12.0,55.0 5.0,55.0" fill="url(#steelTop)" stroke="#000" stroke-width="1" stroke-linejoin="round" />
+<polygon points="95.0,55.0 88.0,55.0 88.0,60.0 95.0,60.0" fill="url(#steelSide)" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="88.0,45.0 95.0,45.0 95.0,55.0 88.0,55.0" fill="url(#steelTop)" stroke="#000" stroke-width="1" stroke-linejoin="round" />
+<polygon points="72.0,80.0 28.0,80.0 28.0,90.0 72.0,90.0" fill="url(#forestSide)" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="28.0,20.0 72.0,20.0 72.0,80.0 28.0,80.0" fill="url(#forestTop)" stroke="#000" stroke-width="1.5" stroke-linejoin="round" />
+<polygon points="65.0,75.0 35.0,75.0 35.0,79.0 65.0,79.0" fill="#0f172a" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="35.0,65.0 65.0,65.0 65.0,75.0 35.0,75.0" fill="#1e293b" stroke="#000" stroke-width="1" stroke-linejoin="round" />
+  <polygon points="37,67 63,67 63,73 37,73" fill="#38bdf8" />
+<polygon points="68.0,55.0 32.0,55.0 32.0,61.0 68.0,61.0" fill="url(#steelSide)" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="32.0,25.0 68.0,25.0 68.0,55.0 32.0,55.0" fill="url(#steelTop)" stroke="#000" stroke-width="1.5" stroke-linejoin="round" />
+<polygon points="35.0,28.0 65.0,28.0 65.0,52.0 35.0,52.0" fill="#18181b" />
+  <circle cx="40" cy="32" r="2.5" fill="#000" />
+  <circle cx="40" cy="32" r="1.5" fill="#ef4444" filter="url(#fireGlow)" />
+  <circle cx="40" cy="40" r="2.5" fill="#000" />
+  <circle cx="40" cy="40" r="1.5" fill="#ef4444" filter="url(#fireGlow)" />
+  <circle cx="40" cy="48" r="2.5" fill="#000" />
+  <circle cx="40" cy="48" r="1.5" fill="#ef4444" filter="url(#fireGlow)" />
+  <circle cx="50" cy="32" r="2.5" fill="#000" />
+  <circle cx="50" cy="32" r="1.5" fill="#ef4444" filter="url(#fireGlow)" />
+  <circle cx="50" cy="40" r="2.5" fill="#000" />
+  <circle cx="50" cy="40" r="1.5" fill="#ef4444" filter="url(#fireGlow)" />
+  <circle cx="50" cy="48" r="2.5" fill="#000" />
+  <circle cx="50" cy="48" r="1.5" fill="#ef4444" filter="url(#fireGlow)" />
+  <circle cx="60" cy="32" r="2.5" fill="#000" />
+  <circle cx="60" cy="32" r="1.5" fill="#ef4444" filter="url(#fireGlow)" />
+  <circle cx="60" cy="40" r="2.5" fill="#000" />
+  <circle cx="60" cy="40" r="1.5" fill="#ef4444" filter="url(#fireGlow)" />
+  <circle cx="60" cy="48" r="2.5" fill="#000" />
+  <circle cx="60" cy="48" r="1.5" fill="#ef4444" filter="url(#fireGlow)" />
+</g></g>
+<g transform="translate(100, 0)">
+<g transform="translate(50, 50) scale(0.82) translate(-50, -50)">
+  <ellipse cx="50" cy="55" rx="42" ry="40" fill="#000" opacity="0.4" filter="url(#shadowBlur)" />
+<polygon points="59.2,9.7 9.7,59.2 9.7,66.2 59.2,16.7" fill="url(#trackSide)" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="9.7,59.2 -1.6,47.9 -1.6,54.9 9.7,66.2" fill="url(#trackSide)" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="47.9,-1.6 59.2,9.7 9.7,59.2 -1.6,47.9" fill="url(#trackTop)" stroke="#000" stroke-width="1" stroke-linejoin="round" />
+<polygon points="47.9,-1.6 59.2,9.7 9.7,59.2 -1.6,47.9" fill="url(#treads)" />
+<polygon points="101.6,52.1 52.1,101.6 52.1,108.6 101.6,59.1" fill="url(#trackSide)" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="52.1,101.6 40.8,90.3 40.8,97.3 52.1,108.6" fill="url(#trackSide)" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="90.3,40.8 101.6,52.1 52.1,101.6 40.8,90.3" fill="url(#trackTop)" stroke="#000" stroke-width="1" stroke-linejoin="round" />
+<polygon points="90.3,40.8 101.6,52.1 52.1,101.6 40.8,90.3" fill="url(#treads)" />
+<polygon points="26.7,19.6 19.6,26.7 19.6,31.7 26.7,24.6" fill="url(#steelSide)" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="19.6,26.7 14.6,21.7 14.6,26.7 19.6,31.7" fill="url(#steelSide)" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="21.7,14.6 26.7,19.6 19.6,26.7 14.6,21.7" fill="url(#steelTop)" stroke="#000" stroke-width="1" stroke-linejoin="round" />
+<polygon points="85.4,78.3 78.3,85.4 78.3,90.4 85.4,83.3" fill="url(#steelSide)" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="78.3,85.4 73.3,80.4 73.3,85.4 78.3,90.4" fill="url(#steelSide)" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="80.4,73.3 85.4,78.3 78.3,85.4 73.3,80.4" fill="url(#steelTop)" stroke="#000" stroke-width="1" stroke-linejoin="round" />
+<polygon points="86.8,44.3 44.3,86.8 44.3,96.8 86.8,54.3" fill="url(#forestSide)" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="44.3,86.8 13.2,55.7 13.2,65.7 44.3,96.8" fill="url(#forestSide)" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="55.7,13.2 86.8,44.3 44.3,86.8 13.2,55.7" fill="url(#forestTop)" stroke="#000" stroke-width="1.5" stroke-linejoin="round" />
+<polygon points="50.0,71.2 42.9,78.3 42.9,82.3 50.0,75.2" fill="#0f172a" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="42.9,78.3 21.7,57.1 21.7,61.1 42.9,82.3" fill="#0f172a" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="28.8,50.0 50.0,71.2 42.9,78.3 21.7,57.1" fill="#1e293b" stroke="#000" stroke-width="1" stroke-linejoin="round" />
+  <polygon points="28.786796564403573,52.828427124746185 47.171572875253815,71.21320343559643 42.928932188134524,75.45584412271572 24.544155877284286,57.071067811865476" fill="#38bdf8" />
+<polygon points="80.4,45.1 59.2,66.3 59.2,72.3 80.4,51.1" fill="url(#steelSide)" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="59.2,66.3 33.7,40.8 33.7,46.8 59.2,72.3" fill="url(#steelSide)" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="54.9,19.6 80.4,45.1 59.2,66.3 33.7,40.8" fill="url(#steelTop)" stroke="#000" stroke-width="1.5" stroke-linejoin="round" />
+<polygon points="54.9,23.8 76.2,45.1 59.2,62.0 38.0,40.8" fill="#18181b" />
+  <circle cx="55.65685424949238" cy="30.201010126776666" r="2.5" fill="#000" />
+  <circle cx="55.65685424949238" cy="30.201010126776666" r="1.5" fill="#ef4444" filter="url(#fireGlow)" />
+  <circle cx="50" cy="35.85786437626905" r="2.5" fill="#000" />
+  <circle cx="50" cy="35.85786437626905" r="1.5" fill="#ef4444" filter="url(#fireGlow)" />
+  <circle cx="44.34314575050762" cy="41.51471862576143" r="2.5" fill="#000" />
+  <circle cx="44.34314575050762" cy="41.51471862576143" r="1.5" fill="#ef4444" filter="url(#fireGlow)" />
+  <circle cx="62.72792206135786" cy="37.27207793864214" r="2.5" fill="#000" />
+  <circle cx="62.72792206135786" cy="37.27207793864214" r="1.5" fill="#ef4444" filter="url(#fireGlow)" />
+  <circle cx="57.071067811865476" cy="42.928932188134524" r="2.5" fill="#000" />
+  <circle cx="57.071067811865476" cy="42.928932188134524" r="1.5" fill="#ef4444" filter="url(#fireGlow)" />
+  <circle cx="51.41421356237309" cy="48.58578643762691" r="2.5" fill="#000" />
+  <circle cx="51.41421356237309" cy="48.58578643762691" r="1.5" fill="#ef4444" filter="url(#fireGlow)" />
+  <circle cx="69.79898987322333" cy="44.34314575050762" r="2.5" fill="#000" />
+  <circle cx="69.79898987322333" cy="44.34314575050762" r="1.5" fill="#ef4444" filter="url(#fireGlow)" />
+  <circle cx="64.14213562373095" cy="50" r="2.5" fill="#000" />
+  <circle cx="64.14213562373095" cy="50" r="1.5" fill="#ef4444" filter="url(#fireGlow)" />
+  <circle cx="58.48528137423857" cy="55.65685424949238" r="2.5" fill="#000" />
+  <circle cx="58.48528137423857" cy="55.65685424949238" r="1.5" fill="#ef4444" filter="url(#fireGlow)" />
+</g></g>
+<g transform="translate(200, 0)">
+<g transform="translate(50, 50) scale(0.82) translate(-50, -50)">
+  <ellipse cx="50" cy="55" rx="42" ry="40" fill="#000" opacity="0.4" filter="url(#shadowBlur)" />
+<polygon points="85.0,28.0 15.0,28.0 15.0,35.0 85.0,35.0" fill="url(#trackSide)" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="85.0,12.0 85.0,28.0 15.0,28.0 15.0,12.0" fill="url(#trackTop)" stroke="#000" stroke-width="1" stroke-linejoin="round" />
+<polygon points="85.0,12.0 85.0,28.0 15.0,28.0 15.0,12.0" fill="url(#treads)" />
+<polygon points="85.0,88.0 15.0,88.0 15.0,95.0 85.0,95.0" fill="url(#trackSide)" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="85.0,72.0 85.0,88.0 15.0,88.0 15.0,72.0" fill="url(#trackTop)" stroke="#000" stroke-width="1" stroke-linejoin="round" />
+<polygon points="85.0,72.0 85.0,88.0 15.0,88.0 15.0,72.0" fill="url(#treads)" />
+<polygon points="55.0,12.0 45.0,12.0 45.0,17.0 55.0,17.0" fill="url(#steelSide)" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="55.0,5.0 55.0,12.0 45.0,12.0 45.0,5.0" fill="url(#steelTop)" stroke="#000" stroke-width="1" stroke-linejoin="round" />
+<polygon points="55.0,95.0 45.0,95.0 45.0,100.0 55.0,100.0" fill="url(#steelSide)" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="55.0,88.0 55.0,95.0 45.0,95.0 45.0,88.0" fill="url(#steelTop)" stroke="#000" stroke-width="1" stroke-linejoin="round" />
+<polygon points="80.0,72.0 20.0,72.0 20.0,82.0 80.0,82.0" fill="url(#forestSide)" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="80.0,28.0 80.0,72.0 20.0,72.0 20.0,28.0" fill="url(#forestTop)" stroke="#000" stroke-width="1.5" stroke-linejoin="round" />
+<polygon points="35.0,65.0 25.0,65.0 25.0,69.0 35.0,69.0" fill="#0f172a" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="35.0,35.0 35.0,65.0 25.0,65.0 25.0,35.0" fill="#1e293b" stroke="#000" stroke-width="1" stroke-linejoin="round" />
+  <polygon points="33,37 33,63 27,63 27,37" fill="#38bdf8" />
+<polygon points="75.0,68.0 45.0,68.0 45.0,74.0 75.0,74.0" fill="url(#steelSide)" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="75.0,32.0 75.0,68.0 45.0,68.0 45.0,32.0" fill="url(#steelTop)" stroke="#000" stroke-width="1.5" stroke-linejoin="round" />
+<polygon points="72.0,35.0 72.0,65.0 48.0,65.0 48.0,35.0" fill="#18181b" />
+  <circle cx="68" cy="40" r="2.5" fill="#000" />
+  <circle cx="68" cy="40" r="1.5" fill="#ef4444" filter="url(#fireGlow)" />
+  <circle cx="60" cy="40" r="2.5" fill="#000" />
+  <circle cx="60" cy="40" r="1.5" fill="#ef4444" filter="url(#fireGlow)" />
+  <circle cx="52" cy="40" r="2.5" fill="#000" />
+  <circle cx="52" cy="40" r="1.5" fill="#ef4444" filter="url(#fireGlow)" />
+  <circle cx="68" cy="50" r="2.5" fill="#000" />
+  <circle cx="68" cy="50" r="1.5" fill="#ef4444" filter="url(#fireGlow)" />
+  <circle cx="60" cy="50" r="2.5" fill="#000" />
+  <circle cx="60" cy="50" r="1.5" fill="#ef4444" filter="url(#fireGlow)" />
+  <circle cx="52" cy="50" r="2.5" fill="#000" />
+  <circle cx="52" cy="50" r="1.5" fill="#ef4444" filter="url(#fireGlow)" />
+  <circle cx="68" cy="60" r="2.5" fill="#000" />
+  <circle cx="68" cy="60" r="1.5" fill="#ef4444" filter="url(#fireGlow)" />
+  <circle cx="60" cy="60" r="2.5" fill="#000" />
+  <circle cx="60" cy="60" r="1.5" fill="#ef4444" filter="url(#fireGlow)" />
+  <circle cx="52" cy="60" r="2.5" fill="#000" />
+  <circle cx="52" cy="60" r="1.5" fill="#ef4444" filter="url(#fireGlow)" />
+</g></g>
+<g transform="translate(300, 0)">
+<g transform="translate(50, 50) scale(0.82) translate(-50, -50)">
+  <ellipse cx="50" cy="55" rx="42" ry="40" fill="#000" opacity="0.4" filter="url(#shadowBlur)" />
+<polygon points="101.6,47.9 90.3,59.2 90.3,66.2 101.6,54.9" fill="url(#trackSide)" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="90.3,59.2 40.8,9.7 40.8,16.7 90.3,66.2" fill="url(#trackSide)" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="101.6,47.9 90.3,59.2 40.8,9.7 52.1,-1.6" fill="url(#trackTop)" stroke="#000" stroke-width="1" stroke-linejoin="round" />
+<polygon points="101.6,47.9 90.3,59.2 40.8,9.7 52.1,-1.6" fill="url(#treads)" />
+<polygon points="59.2,90.3 47.9,101.6 47.9,108.6 59.2,97.3" fill="url(#trackSide)" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="47.9,101.6 -1.6,52.1 -1.6,59.1 47.9,108.6" fill="url(#trackSide)" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="59.2,90.3 47.9,101.6 -1.6,52.1 9.7,40.8" fill="url(#trackTop)" stroke="#000" stroke-width="1" stroke-linejoin="round" />
+<polygon points="59.2,90.3 47.9,101.6 -1.6,52.1 9.7,40.8" fill="url(#treads)" />
+<polygon points="85.4,21.7 80.4,26.7 80.4,31.7 85.4,26.7" fill="url(#steelSide)" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="80.4,26.7 73.3,19.6 73.3,24.6 80.4,31.7" fill="url(#steelSide)" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="85.4,21.7 80.4,26.7 73.3,19.6 78.3,14.6" fill="url(#steelTop)" stroke="#000" stroke-width="1" stroke-linejoin="round" />
+<polygon points="26.7,80.4 21.7,85.4 21.7,90.4 26.7,85.4" fill="url(#steelSide)" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="21.7,85.4 14.6,78.3 14.6,83.3 21.7,90.4" fill="url(#steelSide)" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="26.7,80.4 21.7,85.4 14.6,78.3 19.6,73.3" fill="url(#steelTop)" stroke="#000" stroke-width="1" stroke-linejoin="round" />
+<polygon points="86.8,55.7 55.7,86.8 55.7,96.8 86.8,65.7" fill="url(#forestSide)" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="55.7,86.8 13.2,44.3 13.2,54.3 55.7,96.8" fill="url(#forestSide)" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="86.8,55.7 55.7,86.8 13.2,44.3 44.3,13.2" fill="url(#forestTop)" stroke="#000" stroke-width="1.5" stroke-linejoin="round" />
+<polygon points="50.0,28.8 28.8,50.0 28.8,54.0 50.0,32.8" fill="#0f172a" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="28.8,50.0 21.7,42.9 21.7,46.9 28.8,54.0" fill="#0f172a" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="50.0,28.8 28.8,50.0 21.7,42.9 42.9,21.7" fill="#1e293b" stroke="#000" stroke-width="1" stroke-linejoin="round" />
+  <polygon points="47.171572875253815,28.786796564403573 28.78679656440357,47.171572875253815 24.544155877284286,42.928932188134524 42.928932188134524,24.544155877284286" fill="#38bdf8" />
+<polygon points="80.4,54.9 54.9,80.4 54.9,86.4 80.4,60.9" fill="url(#steelSide)" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="54.9,80.4 33.7,59.2 33.7,65.2 54.9,86.4" fill="url(#steelSide)" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="80.4,54.9 54.9,80.4 33.7,59.2 59.2,33.7" fill="url(#steelTop)" stroke="#000" stroke-width="1.5" stroke-linejoin="round" />
+<polygon points="76.2,54.9 54.9,76.2 38.0,59.2 59.2,38.0" fill="#18181b" />
+  <circle cx="69.79898987322333" cy="55.65685424949238" r="2.5" fill="#000" />
+  <circle cx="69.79898987322333" cy="55.65685424949238" r="1.5" fill="#ef4444" filter="url(#fireGlow)" />
+  <circle cx="64.14213562373095" cy="50" r="2.5" fill="#000" />
+  <circle cx="64.14213562373095" cy="50" r="1.5" fill="#ef4444" filter="url(#fireGlow)" />
+  <circle cx="58.48528137423857" cy="44.34314575050762" r="2.5" fill="#000" />
+  <circle cx="58.48528137423857" cy="44.34314575050762" r="1.5" fill="#ef4444" filter="url(#fireGlow)" />
+  <circle cx="62.72792206135786" cy="62.72792206135786" r="2.5" fill="#000" />
+  <circle cx="62.72792206135786" cy="62.72792206135786" r="1.5" fill="#ef4444" filter="url(#fireGlow)" />
+  <circle cx="57.071067811865476" cy="57.071067811865476" r="2.5" fill="#000" />
+  <circle cx="57.071067811865476" cy="57.071067811865476" r="1.5" fill="#ef4444" filter="url(#fireGlow)" />
+  <circle cx="51.41421356237309" cy="51.41421356237309" r="2.5" fill="#000" />
+  <circle cx="51.41421356237309" cy="51.41421356237309" r="1.5" fill="#ef4444" filter="url(#fireGlow)" />
+  <circle cx="55.65685424949238" cy="69.79898987322333" r="2.5" fill="#000" />
+  <circle cx="55.65685424949238" cy="69.79898987322333" r="1.5" fill="#ef4444" filter="url(#fireGlow)" />
+  <circle cx="50" cy="64.14213562373095" r="2.5" fill="#000" />
+  <circle cx="50" cy="64.14213562373095" r="1.5" fill="#ef4444" filter="url(#fireGlow)" />
+  <circle cx="44.34314575050762" cy="58.48528137423857" r="2.5" fill="#000" />
+  <circle cx="44.34314575050762" cy="58.48528137423857" r="1.5" fill="#ef4444" filter="url(#fireGlow)" />
+</g></g>
+<g transform="translate(400, 0)">
+<g transform="translate(50, 50) scale(0.82) translate(-50, -50)">
+  <ellipse cx="50" cy="55" rx="42" ry="40" fill="#000" opacity="0.4" filter="url(#shadowBlur)" />
+<polygon points="88.0,85.0 72.0,85.0 72.0,92.0 88.0,92.0" fill="url(#trackSide)" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="88.0,85.0 72.0,85.0 72.0,15.0 88.0,15.0" fill="url(#trackTop)" stroke="#000" stroke-width="1" stroke-linejoin="round" />
+<polygon points="88.0,85.0 72.0,85.0 72.0,15.0 88.0,15.0" fill="url(#treads)" />
+<polygon points="28.0,85.0 12.0,85.0 12.0,92.0 28.0,92.0" fill="url(#trackSide)" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="28.0,85.0 12.0,85.0 12.0,15.0 28.0,15.0" fill="url(#trackTop)" stroke="#000" stroke-width="1" stroke-linejoin="round" />
+<polygon points="28.0,85.0 12.0,85.0 12.0,15.0 28.0,15.0" fill="url(#treads)" />
+<polygon points="95.0,55.0 88.0,55.0 88.0,60.0 95.0,60.0" fill="url(#steelSide)" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="95.0,55.0 88.0,55.0 88.0,45.0 95.0,45.0" fill="url(#steelTop)" stroke="#000" stroke-width="1" stroke-linejoin="round" />
+<polygon points="12.0,55.0 5.0,55.0 5.0,60.0 12.0,60.0" fill="url(#steelSide)" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="12.0,55.0 5.0,55.0 5.0,45.0 12.0,45.0" fill="url(#steelTop)" stroke="#000" stroke-width="1" stroke-linejoin="round" />
+<polygon points="72.0,80.0 28.0,80.0 28.0,90.0 72.0,90.0" fill="url(#forestSide)" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="72.0,80.0 28.0,80.0 28.0,20.0 72.0,20.0" fill="url(#forestTop)" stroke="#000" stroke-width="1.5" stroke-linejoin="round" />
+<polygon points="65.0,35.0 35.0,35.0 35.0,39.0 65.0,39.0" fill="#0f172a" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="65.0,35.0 35.0,35.0 35.0,25.0 65.0,25.0" fill="#1e293b" stroke="#000" stroke-width="1" stroke-linejoin="round" />
+  <polygon points="63,33 37,33 37,27 63,27" fill="#38bdf8" />
+<polygon points="68.0,75.0 32.0,75.0 32.0,81.0 68.0,81.0" fill="url(#steelSide)" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="68.0,75.0 32.0,75.0 32.0,45.0 68.0,45.0" fill="url(#steelTop)" stroke="#000" stroke-width="1.5" stroke-linejoin="round" />
+<polygon points="65.0,72.0 35.0,72.0 35.0,48.0 65.0,48.0" fill="#18181b" />
+  <circle cx="60" cy="68" r="2.5" fill="#000" />
+  <circle cx="60" cy="68" r="1.5" fill="#ef4444" filter="url(#fireGlow)" />
+  <circle cx="60" cy="60" r="2.5" fill="#000" />
+  <circle cx="60" cy="60" r="1.5" fill="#ef4444" filter="url(#fireGlow)" />
+  <circle cx="60" cy="52" r="2.5" fill="#000" />
+  <circle cx="60" cy="52" r="1.5" fill="#ef4444" filter="url(#fireGlow)" />
+  <circle cx="50" cy="68" r="2.5" fill="#000" />
+  <circle cx="50" cy="68" r="1.5" fill="#ef4444" filter="url(#fireGlow)" />
+  <circle cx="50" cy="60" r="2.5" fill="#000" />
+  <circle cx="50" cy="60" r="1.5" fill="#ef4444" filter="url(#fireGlow)" />
+  <circle cx="50" cy="52" r="2.5" fill="#000" />
+  <circle cx="50" cy="52" r="1.5" fill="#ef4444" filter="url(#fireGlow)" />
+  <circle cx="40" cy="68" r="2.5" fill="#000" />
+  <circle cx="40" cy="68" r="1.5" fill="#ef4444" filter="url(#fireGlow)" />
+  <circle cx="40" cy="60" r="2.5" fill="#000" />
+  <circle cx="40" cy="60" r="1.5" fill="#ef4444" filter="url(#fireGlow)" />
+  <circle cx="40" cy="52" r="2.5" fill="#000" />
+  <circle cx="40" cy="52" r="1.5" fill="#ef4444" filter="url(#fireGlow)" />
+</g></g>
+<g transform="translate(500, 0)">
+<g transform="translate(50, 50) scale(0.82) translate(-50, -50)">
+  <ellipse cx="50" cy="55" rx="42" ry="40" fill="#000" opacity="0.4" filter="url(#shadowBlur)" />
+<polygon points="52.1,101.6 40.8,90.3 40.8,97.3 52.1,108.6" fill="url(#trackSide)" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="101.6,52.1 52.1,101.6 52.1,108.6 101.6,59.1" fill="url(#trackSide)" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="52.1,101.6 40.8,90.3 90.3,40.8 101.6,52.1" fill="url(#trackTop)" stroke="#000" stroke-width="1" stroke-linejoin="round" />
+<polygon points="52.1,101.6 40.8,90.3 90.3,40.8 101.6,52.1" fill="url(#treads)" />
+<polygon points="9.7,59.2 -1.6,47.9 -1.6,54.9 9.7,66.2" fill="url(#trackSide)" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="59.2,9.7 9.7,59.2 9.7,66.2 59.2,16.7" fill="url(#trackSide)" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="9.7,59.2 -1.6,47.9 47.9,-1.6 59.2,9.7" fill="url(#trackTop)" stroke="#000" stroke-width="1" stroke-linejoin="round" />
+<polygon points="9.7,59.2 -1.6,47.9 47.9,-1.6 59.2,9.7" fill="url(#treads)" />
+<polygon points="78.3,85.4 73.3,80.4 73.3,85.4 78.3,90.4" fill="url(#steelSide)" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="85.4,78.3 78.3,85.4 78.3,90.4 85.4,83.3" fill="url(#steelSide)" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="78.3,85.4 73.3,80.4 80.4,73.3 85.4,78.3" fill="url(#steelTop)" stroke="#000" stroke-width="1" stroke-linejoin="round" />
+<polygon points="19.6,26.7 14.6,21.7 14.6,26.7 19.6,31.7" fill="url(#steelSide)" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="26.7,19.6 19.6,26.7 19.6,31.7 26.7,24.6" fill="url(#steelSide)" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="19.6,26.7 14.6,21.7 21.7,14.6 26.7,19.6" fill="url(#steelTop)" stroke="#000" stroke-width="1" stroke-linejoin="round" />
+<polygon points="44.3,86.8 13.2,55.7 13.2,65.7 44.3,96.8" fill="url(#forestSide)" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="86.8,44.3 44.3,86.8 44.3,96.8 86.8,54.3" fill="url(#forestSide)" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="44.3,86.8 13.2,55.7 55.7,13.2 86.8,44.3" fill="url(#forestTop)" stroke="#000" stroke-width="1.5" stroke-linejoin="round" />
+<polygon points="71.2,50.0 50.0,28.8 50.0,32.8 71.2,54.0" fill="#0f172a" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="78.3,42.9 71.2,50.0 71.2,54.0 78.3,46.9" fill="#0f172a" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="71.2,50.0 50.0,28.8 57.1,21.7 78.3,42.9" fill="#1e293b" stroke="#000" stroke-width="1" stroke-linejoin="round" />
+  <polygon points="71.21320343559643,47.17157287525381 52.828427124746185,28.786796564403566 57.071067811865476,24.544155877284282 75.45584412271572,42.928932188134524" fill="#38bdf8" />
+<polygon points="45.1,80.4 19.6,54.9 19.6,60.9 45.1,86.4" fill="url(#steelSide)" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="66.3,59.2 45.1,80.4 45.1,86.4 66.3,65.2" fill="url(#steelSide)" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="45.1,80.4 19.6,54.9 40.8,33.7 66.3,59.2" fill="url(#steelTop)" stroke="#000" stroke-width="1.5" stroke-linejoin="round" />
+<polygon points="45.1,76.2 23.8,54.9 40.8,38.0 62.0,59.2" fill="#18181b" />
+  <circle cx="44.34314575050762" cy="69.79898987322333" r="2.5" fill="#000" />
+  <circle cx="44.34314575050762" cy="69.79898987322333" r="1.5" fill="#ef4444" filter="url(#fireGlow)" />
+  <circle cx="50" cy="64.14213562373095" r="2.5" fill="#000" />
+  <circle cx="50" cy="64.14213562373095" r="1.5" fill="#ef4444" filter="url(#fireGlow)" />
+  <circle cx="55.65685424949238" cy="58.48528137423857" r="2.5" fill="#000" />
+  <circle cx="55.65685424949238" cy="58.48528137423857" r="1.5" fill="#ef4444" filter="url(#fireGlow)" />
+  <circle cx="37.27207793864214" cy="62.72792206135786" r="2.5" fill="#000" />
+  <circle cx="37.27207793864214" cy="62.72792206135786" r="1.5" fill="#ef4444" filter="url(#fireGlow)" />
+  <circle cx="42.928932188134524" cy="57.071067811865476" r="2.5" fill="#000" />
+  <circle cx="42.928932188134524" cy="57.071067811865476" r="1.5" fill="#ef4444" filter="url(#fireGlow)" />
+  <circle cx="48.58578643762691" cy="51.41421356237309" r="2.5" fill="#000" />
+  <circle cx="48.58578643762691" cy="51.41421356237309" r="1.5" fill="#ef4444" filter="url(#fireGlow)" />
+  <circle cx="30.20101012677667" cy="55.65685424949238" r="2.5" fill="#000" />
+  <circle cx="30.20101012677667" cy="55.65685424949238" r="1.5" fill="#ef4444" filter="url(#fireGlow)" />
+  <circle cx="35.85786437626905" cy="50" r="2.5" fill="#000" />
+  <circle cx="35.85786437626905" cy="50" r="1.5" fill="#ef4444" filter="url(#fireGlow)" />
+  <circle cx="41.51471862576143" cy="44.34314575050762" r="2.5" fill="#000" />
+  <circle cx="41.51471862576143" cy="44.34314575050762" r="1.5" fill="#ef4444" filter="url(#fireGlow)" />
+</g></g>
+<g transform="translate(600, 0)">
+<g transform="translate(50, 50) scale(0.82) translate(-50, -50)">
+  <ellipse cx="50" cy="55" rx="42" ry="40" fill="#000" opacity="0.4" filter="url(#shadowBlur)" />
+<polygon points="85.0,88.0 15.0,88.0 15.0,95.0 85.0,95.0" fill="url(#trackSide)" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="15.0,88.0 15.0,72.0 85.0,72.0 85.0,88.0" fill="url(#trackTop)" stroke="#000" stroke-width="1" stroke-linejoin="round" />
+<polygon points="15.0,88.0 15.0,72.0 85.0,72.0 85.0,88.0" fill="url(#treads)" />
+<polygon points="85.0,28.0 15.0,28.0 15.0,35.0 85.0,35.0" fill="url(#trackSide)" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="15.0,28.0 15.0,12.0 85.0,12.0 85.0,28.0" fill="url(#trackTop)" stroke="#000" stroke-width="1" stroke-linejoin="round" />
+<polygon points="15.0,28.0 15.0,12.0 85.0,12.0 85.0,28.0" fill="url(#treads)" />
+<polygon points="55.0,95.0 45.0,95.0 45.0,100.0 55.0,100.0" fill="url(#steelSide)" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="45.0,95.0 45.0,88.0 55.0,88.0 55.0,95.0" fill="url(#steelTop)" stroke="#000" stroke-width="1" stroke-linejoin="round" />
+<polygon points="55.0,12.0 45.0,12.0 45.0,17.0 55.0,17.0" fill="url(#steelSide)" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="45.0,12.0 45.0,5.0 55.0,5.0 55.0,12.0" fill="url(#steelTop)" stroke="#000" stroke-width="1" stroke-linejoin="round" />
+<polygon points="80.0,72.0 20.0,72.0 20.0,82.0 80.0,82.0" fill="url(#forestSide)" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="20.0,72.0 20.0,28.0 80.0,28.0 80.0,72.0" fill="url(#forestTop)" stroke="#000" stroke-width="1.5" stroke-linejoin="round" />
+<polygon points="75.0,65.0 65.0,65.0 65.0,69.0 75.0,69.0" fill="#0f172a" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="65.0,65.0 65.0,35.0 75.0,35.0 75.0,65.0" fill="#1e293b" stroke="#000" stroke-width="1" stroke-linejoin="round" />
+  <polygon points="67,63 67,37 73,36.99999999999999 73,62.99999999999999" fill="#38bdf8" />
+<polygon points="55.0,68.0 25.0,68.0 25.0,74.0 55.0,74.0" fill="url(#steelSide)" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="25.0,68.0 25.0,32.0 55.0,32.0 55.0,68.0" fill="url(#steelTop)" stroke="#000" stroke-width="1.5" stroke-linejoin="round" />
+<polygon points="28.0,65.0 28.0,35.0 52.0,35.0 52.0,65.0" fill="#18181b" />
+  <circle cx="32" cy="60" r="2.5" fill="#000" />
+  <circle cx="32" cy="60" r="1.5" fill="#ef4444" filter="url(#fireGlow)" />
+  <circle cx="40" cy="60" r="2.5" fill="#000" />
+  <circle cx="40" cy="60" r="1.5" fill="#ef4444" filter="url(#fireGlow)" />
+  <circle cx="48" cy="60" r="2.5" fill="#000" />
+  <circle cx="48" cy="60" r="1.5" fill="#ef4444" filter="url(#fireGlow)" />
+  <circle cx="32" cy="50" r="2.5" fill="#000" />
+  <circle cx="32" cy="50" r="1.5" fill="#ef4444" filter="url(#fireGlow)" />
+  <circle cx="40" cy="50" r="2.5" fill="#000" />
+  <circle cx="40" cy="50" r="1.5" fill="#ef4444" filter="url(#fireGlow)" />
+  <circle cx="48" cy="50" r="2.5" fill="#000" />
+  <circle cx="48" cy="50" r="1.5" fill="#ef4444" filter="url(#fireGlow)" />
+  <circle cx="32" cy="40" r="2.5" fill="#000" />
+  <circle cx="32" cy="40" r="1.5" fill="#ef4444" filter="url(#fireGlow)" />
+  <circle cx="40" cy="40" r="2.5" fill="#000" />
+  <circle cx="40" cy="40" r="1.5" fill="#ef4444" filter="url(#fireGlow)" />
+  <circle cx="48" cy="40" r="2.5" fill="#000" />
+  <circle cx="48" cy="40" r="1.5" fill="#ef4444" filter="url(#fireGlow)" />
+</g></g>
+<g transform="translate(700, 0)">
+<g transform="translate(50, 50) scale(0.82) translate(-50, -50)">
+  <ellipse cx="50" cy="55" rx="42" ry="40" fill="#000" opacity="0.4" filter="url(#shadowBlur)" />
+<polygon points="59.2,90.3 47.9,101.6 47.9,108.6 59.2,97.3" fill="url(#trackSide)" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="47.9,101.6 -1.6,52.1 -1.6,59.1 47.9,108.6" fill="url(#trackSide)" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="-1.6,52.1 9.7,40.8 59.2,90.3 47.9,101.6" fill="url(#trackTop)" stroke="#000" stroke-width="1" stroke-linejoin="round" />
+<polygon points="-1.6,52.1 9.7,40.8 59.2,90.3 47.9,101.6" fill="url(#treads)" />
+<polygon points="101.6,47.9 90.3,59.2 90.3,66.2 101.6,54.9" fill="url(#trackSide)" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="90.3,59.2 40.8,9.7 40.8,16.7 90.3,66.2" fill="url(#trackSide)" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="40.8,9.7 52.1,-1.6 101.6,47.9 90.3,59.2" fill="url(#trackTop)" stroke="#000" stroke-width="1" stroke-linejoin="round" />
+<polygon points="40.8,9.7 52.1,-1.6 101.6,47.9 90.3,59.2" fill="url(#treads)" />
+<polygon points="26.7,80.4 21.7,85.4 21.7,90.4 26.7,85.4" fill="url(#steelSide)" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="21.7,85.4 14.6,78.3 14.6,83.3 21.7,90.4" fill="url(#steelSide)" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="14.6,78.3 19.6,73.3 26.7,80.4 21.7,85.4" fill="url(#steelTop)" stroke="#000" stroke-width="1" stroke-linejoin="round" />
+<polygon points="85.4,21.7 80.4,26.7 80.4,31.7 85.4,26.7" fill="url(#steelSide)" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="80.4,26.7 73.3,19.6 73.3,24.6 80.4,31.7" fill="url(#steelSide)" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="73.3,19.6 78.3,14.6 85.4,21.7 80.4,26.7" fill="url(#steelTop)" stroke="#000" stroke-width="1" stroke-linejoin="round" />
+<polygon points="86.8,55.7 55.7,86.8 55.7,96.8 86.8,65.7" fill="url(#forestSide)" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="55.7,86.8 13.2,44.3 13.2,54.3 55.7,96.8" fill="url(#forestSide)" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="13.2,44.3 44.3,13.2 86.8,55.7 55.7,86.8" fill="url(#forestTop)" stroke="#000" stroke-width="1.5" stroke-linejoin="round" />
+<polygon points="78.3,57.1 57.1,78.3 57.1,82.3 78.3,61.1" fill="#0f172a" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="57.1,78.3 50.0,71.2 50.0,75.2 57.1,82.3" fill="#0f172a" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="50.0,71.2 71.2,50.0 78.3,57.1 57.1,78.3" fill="#1e293b" stroke="#000" stroke-width="1" stroke-linejoin="round" />
+  <polygon points="52.8284271247462,71.21320343559643 71.21320343559643,52.828427124746185 75.45584412271572,57.07106781186547 57.07106781186548,75.45584412271572" fill="#38bdf8" />
+<polygon points="66.3,40.8 40.8,66.3 40.8,72.3 66.3,46.8" fill="url(#steelSide)" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="40.8,66.3 19.6,45.1 19.6,51.1 40.8,72.3" fill="url(#steelSide)" stroke="#000" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="19.6,45.1 45.1,19.6 66.3,40.8 40.8,66.3" fill="url(#steelTop)" stroke="#000" stroke-width="1.5" stroke-linejoin="round" />
+<polygon points="23.8,45.1 45.1,23.8 62.0,40.8 40.8,62.0" fill="#18181b" />
+  <circle cx="30.201010126776666" cy="44.343145750507624" r="2.5" fill="#000" />
+  <circle cx="30.201010126776666" cy="44.343145750507624" r="1.5" fill="#ef4444" filter="url(#fireGlow)" />
+  <circle cx="35.85786437626905" cy="50" r="2.5" fill="#000" />
+  <circle cx="35.85786437626905" cy="50" r="1.5" fill="#ef4444" filter="url(#fireGlow)" />
+  <circle cx="41.51471862576143" cy="55.65685424949238" r="2.5" fill="#000" />
+  <circle cx="41.51471862576143" cy="55.65685424949238" r="1.5" fill="#ef4444" filter="url(#fireGlow)" />
+  <circle cx="37.27207793864214" cy="37.27207793864215" r="2.5" fill="#000" />
+  <circle cx="37.27207793864214" cy="37.27207793864215" r="1.5" fill="#ef4444" filter="url(#fireGlow)" />
+  <circle cx="42.928932188134524" cy="42.928932188134524" r="2.5" fill="#000" />
+  <circle cx="42.928932188134524" cy="42.928932188134524" r="1.5" fill="#ef4444" filter="url(#fireGlow)" />
+  <circle cx="48.58578643762691" cy="48.58578643762691" r="2.5" fill="#000" />
+  <circle cx="48.58578643762691" cy="48.58578643762691" r="1.5" fill="#ef4444" filter="url(#fireGlow)" />
+  <circle cx="44.34314575050762" cy="30.201010126776673" r="2.5" fill="#000" />
+  <circle cx="44.34314575050762" cy="30.201010126776673" r="1.5" fill="#ef4444" filter="url(#fireGlow)" />
+  <circle cx="50" cy="35.85786437626905" r="2.5" fill="#000" />
+  <circle cx="50" cy="35.85786437626905" r="1.5" fill="#ef4444" filter="url(#fireGlow)" />
+  <circle cx="55.65685424949238" cy="41.51471862576143" r="2.5" fill="#000" />
+  <circle cx="55.65685424949238" cy="41.51471862576143" r="1.5" fill="#ef4444" filter="url(#fireGlow)" />
+</g></g>
+</svg>

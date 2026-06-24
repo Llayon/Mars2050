@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { UNIT_TYPES } from '@/domains/combat/combat.config'
 import { UPGRADES, GLOBAL_UPGRADES } from '@/domains/combat/combat.upgrades'
 import type { BattleTick, Obstacle, SimUnit, UnitRow, UnitTypeKey } from '@/domains/combat/combat.types'
@@ -14,9 +14,16 @@ import Link from 'next/link'
 const getRandomInt = (max: number) => Math.floor(Math.random() * max)
 
 export default function SimulatorPage() {
-  const [seedInput, setSeedInput] = useState<string>(() => Date.now().toString())
+  const [seedInput, setSeedInput] = useState<string>('12345')
   const seed = parseInt(seedInput) || 0
-  const [obstacles, setObstacles] = useState(() => generateObstacles(seed))
+  const [obstacles, setObstacles] = useState(() => generateObstacles(12345))
+
+  // Fix hydration mismatch: randomize seed only on client after mount
+  useEffect(() => {
+    const s = Date.now().toString()
+    setSeedInput(s)
+    setObstacles(generateObstacles(parseInt(s)))
+  }, [])
 
   function handleRegenerateObstacles() {
     setObstacles(generateObstacles(seed))
@@ -119,11 +126,7 @@ export default function SimulatorPage() {
     const setTeamArray = team === 'attacker' ? setAttackerUnits : setDefenderUnits;
     const newArr = [...teamArray];
     const path = newArr[index].upgrade_path || [];
-    if (path.includes(upgId)) {
-       newArr[index].upgrade_path = path.filter(id => id !== upgId);
-    } else {
-       newArr[index].upgrade_path = [...path, upgId];
-    }
+    newArr[index].upgrade_path = path.includes(upgId) ? path.filter(id => id !== upgId) : [...path, upgId];
     setTeamArray(newArr);
   }
 

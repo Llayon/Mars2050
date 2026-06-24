@@ -1,0 +1,181 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 100" width="800" height="100">
+  <defs>
+  <filter id="shadowBlur"><feGaussianBlur stdDeviation="4"/></filter>
+  <filter id="flyBlur"><feGaussianBlur stdDeviation="6"/></filter>
+  <filter id="glowCyan"><feGaussianBlur stdDeviation="2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  <filter id="glowGreen"><feGaussianBlur stdDeviation="2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  <filter id="glowOrange"><feGaussianBlur stdDeviation="2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  
+  <linearGradient id="steelTop" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#64748b"/><stop offset="1" stop-color="#475569"/></linearGradient>
+  <linearGradient id="steelSide" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#334155"/><stop offset="1" stop-color="#1e293b"/></linearGradient>
+
+  <linearGradient id="darkTop" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#334155"/><stop offset="1" stop-color="#1e293b"/></linearGradient>
+  <linearGradient id="darkSide" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0f172a"/><stop offset="1" stop-color="#020617"/></linearGradient>
+
+  <linearGradient id="cryoTop" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#38bdf8"/><stop offset="1" stop-color="#0284c7"/></linearGradient>
+  <linearGradient id="cryoSide" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0369a1"/><stop offset="1" stop-color="#082f49"/></linearGradient>
+
+  <linearGradient id="glassTop" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fbbf24"/><stop offset="1" stop-color="#d97706"/></linearGradient>
+  <linearGradient id="stealthTop" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#18181b"/><stop offset="1" stop-color="#09090b"/></linearGradient>
+</defs>
+  <rect width="100%" height="100%" fill="transparent" /><g transform="translate(0, 0)">
+<g transform="translate(50, 50) scale(0.82) translate(-50, -50)">
+<ellipse cx="50" cy="55" rx="35" ry="30" fill="#000" opacity="0.4" filter="url(#shadowBlur)" />
+<polygon points="35.0,80.0 25.0,80.0 25.0,84.0 35.0,84.0" fill="url(#darkSide)" stroke="#0f172a" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="25.0,60.0 35.0,60.0 35.0,80.0 25.0,80.0" fill="url(#darkTop)" stroke="#000" stroke-width="1" stroke-linejoin="round" />
+<polygon points="75.0,80.0 65.0,80.0 65.0,84.0 75.0,84.0" fill="url(#darkSide)" stroke="#0f172a" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="65.0,60.0 75.0,60.0 75.0,80.0 65.0,80.0" fill="url(#darkTop)" stroke="#000" stroke-width="1" stroke-linejoin="round" />
+<polygon points="35.0,40.0 25.0,40.0 25.0,44.0 35.0,44.0" fill="url(#darkSide)" stroke="#0f172a" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="25.0,20.0 35.0,20.0 35.0,40.0 25.0,40.0" fill="url(#darkTop)" stroke="#000" stroke-width="1" stroke-linejoin="round" />
+<polygon points="75.0,40.0 65.0,40.0 65.0,44.0 75.0,44.0" fill="url(#darkSide)" stroke="#0f172a" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="65.0,20.0 75.0,20.0 75.0,40.0 65.0,40.0" fill="url(#darkTop)" stroke="#000" stroke-width="1" stroke-linejoin="round" />
+<polygon points="70.0,75.0 30.0,75.0 30.0,81.0 70.0,81.0" fill="url(#stealthSide)" stroke="#0f172a" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="30.0,25.0 70.0,25.0 70.0,75.0 30.0,75.0" fill="url(#stealthTop)" stroke="#000" stroke-width="1.5" stroke-linejoin="round" />
+<polygon points="60.0,55.0 40.0,55.0 40.0,58.0 60.0,58.0" fill="url(#darkSide)" stroke="#0f172a" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="40.0,35.0 60.0,35.0 60.0,55.0 40.0,55.0" fill="url(#darkTop)" stroke="#10b981" stroke-width="1" stroke-linejoin="round" />
+<circle cx="50" cy="45" r="2" fill="#22c55e" filter="url(#glowGreen)" />
+</g></g>
+<g transform="translate(100, 0)">
+<g transform="translate(50, 50) scale(0.82) translate(-50, -50)">
+<ellipse cx="50" cy="55" rx="35" ry="30" fill="#000" opacity="0.4" filter="url(#shadowBlur)" />
+<polygon points="32.3,46.5 18.2,60.6 18.2,64.6 32.3,50.5" fill="url(#darkSide)" stroke="#0f172a" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="18.2,60.6 11.1,53.5 11.1,57.5 18.2,64.6" fill="url(#darkSide)" stroke="#0f172a" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="25.3,39.4 32.3,46.5 18.2,60.6 11.1,53.5" fill="url(#darkTop)" stroke="#000" stroke-width="1" stroke-linejoin="round" />
+<polygon points="60.6,74.7 46.5,88.9 46.5,92.9 60.6,78.7" fill="url(#darkSide)" stroke="#0f172a" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="46.5,88.9 39.4,81.8 39.4,85.8 46.5,92.9" fill="url(#darkSide)" stroke="#0f172a" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="53.5,67.7 60.6,74.7 46.5,88.9 39.4,81.8" fill="url(#darkTop)" stroke="#000" stroke-width="1" stroke-linejoin="round" />
+<polygon points="60.6,18.2 46.5,32.3 46.5,36.3 60.6,22.2" fill="url(#darkSide)" stroke="#0f172a" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="46.5,32.3 39.4,25.3 39.4,29.3 46.5,36.3" fill="url(#darkSide)" stroke="#0f172a" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="53.5,11.1 60.6,18.2 46.5,32.3 39.4,25.3" fill="url(#darkTop)" stroke="#000" stroke-width="1" stroke-linejoin="round" />
+<polygon points="88.9,46.5 74.7,60.6 74.7,64.6 88.9,50.5" fill="url(#darkSide)" stroke="#0f172a" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="74.7,60.6 67.7,53.5 67.7,57.5 74.7,64.6" fill="url(#darkSide)" stroke="#0f172a" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="81.8,39.4 88.9,46.5 74.7,60.6 67.7,53.5" fill="url(#darkTop)" stroke="#000" stroke-width="1" stroke-linejoin="round" />
+<polygon points="81.8,46.5 46.5,81.8 46.5,87.8 81.8,52.5" fill="url(#stealthSide)" stroke="#0f172a" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="46.5,81.8 18.2,53.5 18.2,59.5 46.5,87.8" fill="url(#stealthSide)" stroke="#0f172a" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="53.5,18.2 81.8,46.5 46.5,81.8 18.2,53.5" fill="url(#stealthTop)" stroke="#000" stroke-width="1.5" stroke-linejoin="round" />
+<polygon points="67.7,46.5 53.5,60.6 53.5,63.6 67.7,49.5" fill="url(#darkSide)" stroke="#0f172a" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="53.5,60.6 39.4,46.5 39.4,49.5 53.5,63.6" fill="url(#darkSide)" stroke="#0f172a" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="53.5,32.3 67.7,46.5 53.5,60.6 39.4,46.5" fill="url(#darkTop)" stroke="#10b981" stroke-width="1" stroke-linejoin="round" />
+<circle cx="53.53553390593274" cy="46.46446609406726" r="2" fill="#22c55e" filter="url(#glowGreen)" />
+</g></g>
+<g transform="translate(200, 0)">
+<g transform="translate(50, 50) scale(0.82) translate(-50, -50)">
+<ellipse cx="50" cy="55" rx="35" ry="30" fill="#000" opacity="0.4" filter="url(#shadowBlur)" />
+<polygon points="40.0,35.0 20.0,35.0 20.0,39.0 40.0,39.0" fill="url(#darkSide)" stroke="#0f172a" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="40.0,25.0 40.0,35.0 20.0,35.0 20.0,25.0" fill="url(#darkTop)" stroke="#000" stroke-width="1" stroke-linejoin="round" />
+<polygon points="40.0,75.0 20.0,75.0 20.0,79.0 40.0,79.0" fill="url(#darkSide)" stroke="#0f172a" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="40.0,65.0 40.0,75.0 20.0,75.0 20.0,65.0" fill="url(#darkTop)" stroke="#000" stroke-width="1" stroke-linejoin="round" />
+<polygon points="80.0,35.0 60.0,35.0 60.0,39.0 80.0,39.0" fill="url(#darkSide)" stroke="#0f172a" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="80.0,25.0 80.0,35.0 60.0,35.0 60.0,25.0" fill="url(#darkTop)" stroke="#000" stroke-width="1" stroke-linejoin="round" />
+<polygon points="80.0,75.0 60.0,75.0 60.0,79.0 80.0,79.0" fill="url(#darkSide)" stroke="#0f172a" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="80.0,65.0 80.0,75.0 60.0,75.0 60.0,65.0" fill="url(#darkTop)" stroke="#000" stroke-width="1" stroke-linejoin="round" />
+<polygon points="75.0,70.0 25.0,70.0 25.0,76.0 75.0,76.0" fill="url(#stealthSide)" stroke="#0f172a" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="75.0,30.0 75.0,70.0 25.0,70.0 25.0,30.0" fill="url(#stealthTop)" stroke="#000" stroke-width="1.5" stroke-linejoin="round" />
+<polygon points="65.0,60.0 45.0,60.0 45.0,63.0 65.0,63.0" fill="url(#darkSide)" stroke="#0f172a" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="65.0,40.0 65.0,60.0 45.0,60.0 45.0,40.0" fill="url(#darkTop)" stroke="#10b981" stroke-width="1" stroke-linejoin="round" />
+<circle cx="55" cy="50" r="2" fill="#22c55e" filter="url(#glowGreen)" />
+</g></g>
+<g transform="translate(300, 0)">
+<g transform="translate(50, 50) scale(0.82) translate(-50, -50)">
+<ellipse cx="50" cy="55" rx="35" ry="30" fill="#000" opacity="0.4" filter="url(#shadowBlur)" />
+<polygon points="60.6,25.3 53.5,32.3 53.5,36.3 60.6,29.3" fill="url(#darkSide)" stroke="#0f172a" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="53.5,32.3 39.4,18.2 39.4,22.2 53.5,36.3" fill="url(#darkSide)" stroke="#0f172a" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="60.6,25.3 53.5,32.3 39.4,18.2 46.5,11.1" fill="url(#darkTop)" stroke="#000" stroke-width="1" stroke-linejoin="round" />
+<polygon points="32.3,53.5 25.3,60.6 25.3,64.6 32.3,57.5" fill="url(#darkSide)" stroke="#0f172a" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="25.3,60.6 11.1,46.5 11.1,50.5 25.3,64.6" fill="url(#darkSide)" stroke="#0f172a" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="32.3,53.5 25.3,60.6 11.1,46.5 18.2,39.4" fill="url(#darkTop)" stroke="#000" stroke-width="1" stroke-linejoin="round" />
+<polygon points="88.9,53.5 81.8,60.6 81.8,64.6 88.9,57.5" fill="url(#darkSide)" stroke="#0f172a" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="81.8,60.6 67.7,46.5 67.7,50.5 81.8,64.6" fill="url(#darkSide)" stroke="#0f172a" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="88.9,53.5 81.8,60.6 67.7,46.5 74.7,39.4" fill="url(#darkTop)" stroke="#000" stroke-width="1" stroke-linejoin="round" />
+<polygon points="60.6,81.8 53.5,88.9 53.5,92.9 60.6,85.8" fill="url(#darkSide)" stroke="#0f172a" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="53.5,88.9 39.4,74.7 39.4,78.7 53.5,92.9" fill="url(#darkSide)" stroke="#0f172a" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="60.6,81.8 53.5,88.9 39.4,74.7 46.5,67.7" fill="url(#darkTop)" stroke="#000" stroke-width="1" stroke-linejoin="round" />
+<polygon points="81.8,53.5 53.5,81.8 53.5,87.8 81.8,59.5" fill="url(#stealthSide)" stroke="#0f172a" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="53.5,81.8 18.2,46.5 18.2,52.5 53.5,87.8" fill="url(#stealthSide)" stroke="#0f172a" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="81.8,53.5 53.5,81.8 18.2,46.5 46.5,18.2" fill="url(#stealthTop)" stroke="#000" stroke-width="1.5" stroke-linejoin="round" />
+<polygon points="67.7,53.5 53.5,67.7 53.5,70.7 67.7,56.5" fill="url(#darkSide)" stroke="#0f172a" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="53.5,67.7 39.4,53.5 39.4,56.5 53.5,70.7" fill="url(#darkSide)" stroke="#0f172a" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="67.7,53.5 53.5,67.7 39.4,53.5 53.5,39.4" fill="url(#darkTop)" stroke="#10b981" stroke-width="1" stroke-linejoin="round" />
+<circle cx="53.53553390593274" cy="53.53553390593274" r="2" fill="#22c55e" filter="url(#glowGreen)" />
+</g></g>
+<g transform="translate(400, 0)">
+<g transform="translate(50, 50) scale(0.82) translate(-50, -50)">
+<ellipse cx="50" cy="55" rx="35" ry="30" fill="#000" opacity="0.4" filter="url(#shadowBlur)" />
+<polygon points="75.0,40.0 65.0,40.0 65.0,44.0 75.0,44.0" fill="url(#darkSide)" stroke="#0f172a" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="75.0,40.0 65.0,40.0 65.0,20.0 75.0,20.0" fill="url(#darkTop)" stroke="#000" stroke-width="1" stroke-linejoin="round" />
+<polygon points="35.0,40.0 25.0,40.0 25.0,44.0 35.0,44.0" fill="url(#darkSide)" stroke="#0f172a" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="35.0,40.0 25.0,40.0 25.0,20.0 35.0,20.0" fill="url(#darkTop)" stroke="#000" stroke-width="1" stroke-linejoin="round" />
+<polygon points="75.0,80.0 65.0,80.0 65.0,84.0 75.0,84.0" fill="url(#darkSide)" stroke="#0f172a" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="75.0,80.0 65.0,80.0 65.0,60.0 75.0,60.0" fill="url(#darkTop)" stroke="#000" stroke-width="1" stroke-linejoin="round" />
+<polygon points="35.0,80.0 25.0,80.0 25.0,84.0 35.0,84.0" fill="url(#darkSide)" stroke="#0f172a" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="35.0,80.0 25.0,80.0 25.0,60.0 35.0,60.0" fill="url(#darkTop)" stroke="#000" stroke-width="1" stroke-linejoin="round" />
+<polygon points="70.0,75.0 30.0,75.0 30.0,81.0 70.0,81.0" fill="url(#stealthSide)" stroke="#0f172a" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="70.0,75.0 30.0,75.0 30.0,25.0 70.0,25.0" fill="url(#stealthTop)" stroke="#000" stroke-width="1.5" stroke-linejoin="round" />
+<polygon points="60.0,65.0 40.0,65.0 40.0,68.0 60.0,68.0" fill="url(#darkSide)" stroke="#0f172a" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="60.0,65.0 40.0,65.0 40.0,45.0 60.0,45.0" fill="url(#darkTop)" stroke="#10b981" stroke-width="1" stroke-linejoin="round" />
+<circle cx="50" cy="55" r="2" fill="#22c55e" filter="url(#glowGreen)" />
+</g></g>
+<g transform="translate(500, 0)">
+<g transform="translate(50, 50) scale(0.82) translate(-50, -50)">
+<ellipse cx="50" cy="55" rx="35" ry="30" fill="#000" opacity="0.4" filter="url(#shadowBlur)" />
+<polygon points="74.7,60.6 67.7,53.5 67.7,57.5 74.7,64.6" fill="url(#darkSide)" stroke="#0f172a" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="88.9,46.5 74.7,60.6 74.7,64.6 88.9,50.5" fill="url(#darkSide)" stroke="#0f172a" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="74.7,60.6 67.7,53.5 81.8,39.4 88.9,46.5" fill="url(#darkTop)" stroke="#000" stroke-width="1" stroke-linejoin="round" />
+<polygon points="46.5,32.3 39.4,25.3 39.4,29.3 46.5,36.3" fill="url(#darkSide)" stroke="#0f172a" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="60.6,18.2 46.5,32.3 46.5,36.3 60.6,22.2" fill="url(#darkSide)" stroke="#0f172a" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="46.5,32.3 39.4,25.3 53.5,11.1 60.6,18.2" fill="url(#darkTop)" stroke="#000" stroke-width="1" stroke-linejoin="round" />
+<polygon points="46.5,88.9 39.4,81.8 39.4,85.8 46.5,92.9" fill="url(#darkSide)" stroke="#0f172a" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="60.6,74.7 46.5,88.9 46.5,92.9 60.6,78.7" fill="url(#darkSide)" stroke="#0f172a" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="46.5,88.9 39.4,81.8 53.5,67.7 60.6,74.7" fill="url(#darkTop)" stroke="#000" stroke-width="1" stroke-linejoin="round" />
+<polygon points="18.2,60.6 11.1,53.5 11.1,57.5 18.2,64.6" fill="url(#darkSide)" stroke="#0f172a" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="32.3,46.5 18.2,60.6 18.2,64.6 32.3,50.5" fill="url(#darkSide)" stroke="#0f172a" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="18.2,60.6 11.1,53.5 25.3,39.4 32.3,46.5" fill="url(#darkTop)" stroke="#000" stroke-width="1" stroke-linejoin="round" />
+<polygon points="46.5,81.8 18.2,53.5 18.2,59.5 46.5,87.8" fill="url(#stealthSide)" stroke="#0f172a" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="81.8,46.5 46.5,81.8 46.5,87.8 81.8,52.5" fill="url(#stealthSide)" stroke="#0f172a" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="46.5,81.8 18.2,53.5 53.5,18.2 81.8,46.5" fill="url(#stealthTop)" stroke="#000" stroke-width="1.5" stroke-linejoin="round" />
+<polygon points="46.5,67.7 32.3,53.5 32.3,56.5 46.5,70.7" fill="url(#darkSide)" stroke="#0f172a" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="60.6,53.5 46.5,67.7 46.5,70.7 60.6,56.5" fill="url(#darkSide)" stroke="#0f172a" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="46.5,67.7 32.3,53.5 46.5,39.4 60.6,53.5" fill="url(#darkTop)" stroke="#10b981" stroke-width="1" stroke-linejoin="round" />
+<circle cx="46.46446609406726" cy="53.53553390593274" r="2" fill="#22c55e" filter="url(#glowGreen)" />
+</g></g>
+<g transform="translate(600, 0)">
+<g transform="translate(50, 50) scale(0.82) translate(-50, -50)">
+<ellipse cx="50" cy="55" rx="35" ry="30" fill="#000" opacity="0.4" filter="url(#shadowBlur)" />
+<polygon points="80.0,75.0 60.0,75.0 60.0,79.0 80.0,79.0" fill="url(#darkSide)" stroke="#0f172a" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="60.0,75.0 60.0,65.0 80.0,65.0 80.0,75.0" fill="url(#darkTop)" stroke="#000" stroke-width="1" stroke-linejoin="round" />
+<polygon points="80.0,35.0 60.0,35.0 60.0,39.0 80.0,39.0" fill="url(#darkSide)" stroke="#0f172a" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="60.0,35.0 60.0,25.0 80.0,25.0 80.0,35.0" fill="url(#darkTop)" stroke="#000" stroke-width="1" stroke-linejoin="round" />
+<polygon points="40.0,75.0 20.0,75.0 20.0,79.0 40.0,79.0" fill="url(#darkSide)" stroke="#0f172a" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="20.0,75.0 20.0,65.0 40.0,65.0 40.0,75.0" fill="url(#darkTop)" stroke="#000" stroke-width="1" stroke-linejoin="round" />
+<polygon points="40.0,35.0 20.0,35.0 20.0,39.0 40.0,39.0" fill="url(#darkSide)" stroke="#0f172a" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="20.0,35.0 20.0,25.0 40.0,25.0 40.0,35.0" fill="url(#darkTop)" stroke="#000" stroke-width="1" stroke-linejoin="round" />
+<polygon points="75.0,70.0 25.0,70.0 25.0,76.0 75.0,76.0" fill="url(#stealthSide)" stroke="#0f172a" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="25.0,70.0 25.0,30.0 75.0,30.0 75.0,70.0" fill="url(#stealthTop)" stroke="#000" stroke-width="1.5" stroke-linejoin="round" />
+<polygon points="55.0,60.0 35.0,60.0 35.0,63.0 55.0,63.0" fill="url(#darkSide)" stroke="#0f172a" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="35.0,60.0 35.0,40.0 55.0,40.0 55.0,60.0" fill="url(#darkTop)" stroke="#10b981" stroke-width="1" stroke-linejoin="round" />
+<circle cx="45" cy="50" r="2" fill="#22c55e" filter="url(#glowGreen)" />
+</g></g>
+<g transform="translate(700, 0)">
+<g transform="translate(50, 50) scale(0.82) translate(-50, -50)">
+<ellipse cx="50" cy="55" rx="35" ry="30" fill="#000" opacity="0.4" filter="url(#shadowBlur)" />
+<polygon points="60.6,81.8 53.5,88.9 53.5,92.9 60.6,85.8" fill="url(#darkSide)" stroke="#0f172a" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="53.5,88.9 39.4,74.7 39.4,78.7 53.5,92.9" fill="url(#darkSide)" stroke="#0f172a" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="39.4,74.7 46.5,67.7 60.6,81.8 53.5,88.9" fill="url(#darkTop)" stroke="#000" stroke-width="1" stroke-linejoin="round" />
+<polygon points="88.9,53.5 81.8,60.6 81.8,64.6 88.9,57.5" fill="url(#darkSide)" stroke="#0f172a" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="81.8,60.6 67.7,46.5 67.7,50.5 81.8,64.6" fill="url(#darkSide)" stroke="#0f172a" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="67.7,46.5 74.7,39.4 88.9,53.5 81.8,60.6" fill="url(#darkTop)" stroke="#000" stroke-width="1" stroke-linejoin="round" />
+<polygon points="32.3,53.5 25.3,60.6 25.3,64.6 32.3,57.5" fill="url(#darkSide)" stroke="#0f172a" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="25.3,60.6 11.1,46.5 11.1,50.5 25.3,64.6" fill="url(#darkSide)" stroke="#0f172a" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="11.1,46.5 18.2,39.4 32.3,53.5 25.3,60.6" fill="url(#darkTop)" stroke="#000" stroke-width="1" stroke-linejoin="round" />
+<polygon points="60.6,25.3 53.5,32.3 53.5,36.3 60.6,29.3" fill="url(#darkSide)" stroke="#0f172a" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="53.5,32.3 39.4,18.2 39.4,22.2 53.5,36.3" fill="url(#darkSide)" stroke="#0f172a" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="39.4,18.2 46.5,11.1 60.6,25.3 53.5,32.3" fill="url(#darkTop)" stroke="#000" stroke-width="1" stroke-linejoin="round" />
+<polygon points="81.8,53.5 53.5,81.8 53.5,87.8 81.8,59.5" fill="url(#stealthSide)" stroke="#0f172a" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="53.5,81.8 18.2,46.5 18.2,52.5 53.5,87.8" fill="url(#stealthSide)" stroke="#0f172a" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="18.2,46.5 46.5,18.2 81.8,53.5 53.5,81.8" fill="url(#stealthTop)" stroke="#000" stroke-width="1.5" stroke-linejoin="round" />
+<polygon points="60.6,46.5 46.5,60.6 46.5,63.6 60.6,49.5" fill="url(#darkSide)" stroke="#0f172a" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="46.5,60.6 32.3,46.5 32.3,49.5 46.5,63.6" fill="url(#darkSide)" stroke="#0f172a" stroke-width="0.5" stroke-linejoin="round" />
+<polygon points="32.3,46.5 46.5,32.3 60.6,46.5 46.5,60.6" fill="url(#darkTop)" stroke="#10b981" stroke-width="1" stroke-linejoin="round" />
+<circle cx="46.46446609406726" cy="46.46446609406726" r="2" fill="#22c55e" filter="url(#glowGreen)" />
+</g></g>
+</svg>

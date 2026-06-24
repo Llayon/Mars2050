@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="blur1" />
+      <feGaussianBlur stdDeviation="6" result="blur2" />
+      <feMerge>
+        <feMergeNode in="blur2" />
+        <feMergeNode in="blur1" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+  <g transform="translate(32, 32)">
+    <!-- Base Glow -->
+    <circle cx="0" cy="0" r="12" fill="#16a34a" filter="url(#glow)" opacity="0.8" />
+    
+    <!-- Starburst -->
+    <path d="M 0 -20 L 4 -6 L 20 0 L 4 6 L 0 20 L -4 6 L -20 0 L -4 -6 Z" fill="#16a34a" filter="url(#glow)" />
+    <path d="M 0 -25 L 2 -4 L 25 0 L 2 4 L 0 25 L -2 4 L -25 0 L -2 -4 Z" fill="#bbf7d0" />
+    
+    <!-- Core -->
+    <circle cx="0" cy="0" r="6" fill="#bbf7d0" />
+    <circle cx="0" cy="0" r="3" fill="#ffffff" />
+  </g>
+</svg>

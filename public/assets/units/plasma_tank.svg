@@ -1,0 +1,129 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <defs>
+    <!-- Плазменное свечение -->
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="2" result="blur" />
+      <feGaussianBlur stdDeviation="4" result="blur2" />
+      <feMerge>
+        <feMergeNode in="blur2" />
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+    
+    <filter id="shadowBlur" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="4" />
+    </filter>
+
+    <!-- Градиенты материалов -->
+    <linearGradient id="topArmor" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#4a5568" />
+      <stop offset="100%" stop-color="#2d3748" />
+    </linearGradient>
+    
+    <linearGradient id="sideArmor" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1a202c" />
+      <stop offset="100%" stop-color="#0f172a" />
+    </linearGradient>
+
+    <linearGradient id="trackSide" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#000" />
+      <stop offset="100%" stop-color="#0a0a0a" />
+    </linearGradient>
+
+    <linearGradient id="trackTop" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#222" />
+      <stop offset="100%" stop-color="#111" />
+    </linearGradient>
+    
+    <pattern id="treads" width="18" height="6" patternUnits="userSpaceOnUse">
+      <rect width="18" height="2" fill="#000" opacity="0.6" />
+      <rect y="2" width="18" height="4" fill="transparent" />
+    </pattern>
+  </defs>
+
+  <!-- Тень от танка -->
+  <ellipse cx="50" cy="55" rx="38" ry="32" fill="#000" opacity="0.5" filter="url(#shadowBlur)" />
+
+  <!-- ЛЕВАЯ ГУСЕНИЦА -->
+  <!-- Боковина (создает объем вниз на 8px) -->
+  <rect x="12" y="16" width="18" height="66" rx="4" fill="url(#trackSide)" />
+  <!-- Верхняя плоскость -->
+  <rect x="12" y="16" width="18" height="58" rx="4" fill="url(#trackTop)" />
+  <!-- Текстура траков на верхней плоскости -->
+  <rect x="12" y="16" width="18" height="58" rx="4" fill="url(#treads)" />
+
+  <!-- ПРАВАЯ ГУСЕНИЦА -->
+  <!-- Боковина (создает объем вниз на 8px) -->
+  <rect x="70" y="16" width="18" height="66" rx="4" fill="url(#trackSide)" />
+  <!-- Верхняя плоскость -->
+  <rect x="70" y="16" width="18" height="58" rx="4" fill="url(#trackTop)" />
+  <!-- Текстура траков на верхней плоскости -->
+  <rect x="70" y="16" width="18" height="58" rx="4" fill="url(#treads)" />
+
+  <!-- ОСНОВНОЙ КОРПУС -->
+  <!-- Боковые/передние грани корпуса (создают толщину 8px) -->
+  <path d="M 25,35 L 25,60 L 35,70 L 65,70 L 75,60 L 75,35 
+           L 75,43 L 75,68 L 65,78 L 35,78 L 25,68 L 25,43 Z" fill="url(#sideArmor)" />
+  
+  <!-- Верхняя панель корпуса -->
+  <path d="M 35,15 L 65,15 L 75,35 L 75,60 L 65,70 L 35,70 L 25,60 L 25,35 Z" 
+        fill="url(#topArmor)" stroke="#1a202c" stroke-width="1.5" />
+
+  <!-- Детали верхней панели корпуса -->
+  <!-- Радиатор охлаждения сзади -->
+  <rect x="40" y="18" width="20" height="10" rx="1" fill="#1a202c" />
+  <line x1="42" y1="21" x2="58" y2="21" stroke="#4a5568" stroke-width="1.5" />
+  <line x1="42" y1="24" x2="58" y2="24" stroke="#4a5568" stroke-width="1.5" />
+
+  <!-- Левая плазменная катушка (на корпусе) -->
+  <path d="M 28,40 L 34,40 L 34,55 L 28,55 Z" fill="#1a202c" stroke="#0f172a" stroke-width="1" />
+  <line x1="31" y1="42" x2="31" y2="53" stroke="#00ffff" stroke-width="2" filter="url(#glow)" />
+
+  <!-- Правая плазменная катушка (на корпусе) -->
+  <path d="M 72,40 L 66,40 L 66,55 L 72,55 Z" fill="#1a202c" stroke="#0f172a" stroke-width="1" />
+  <line x1="69" y1="42" x2="69" y2="53" stroke="#00ffff" stroke-width="2" filter="url(#glow)" />
+
+  <!-- БАШНЯ -->
+  <!-- Тень от башни на корпусе -->
+  <path d="M 38,42 L 62,42 L 62,64 L 38,64 Z" fill="#000" opacity="0.3" filter="url(#shadowBlur)" />
+  
+  <!-- Боковые/передние грани башни (создают толщину 6px) -->
+  <path d="M 38,38 L 38,52 L 50,59 L 62,52 L 62,38 
+           L 62,44 L 62,58 L 50,65 L 38,58 L 38,44 Z" fill="url(#sideArmor)" />
+           
+  <!-- Верхняя панель башни -->
+  <path d="M 50,31 L 62,38 L 62,52 L 50,59 L 38,52 L 38,38 Z" 
+        fill="url(#topArmor)" stroke="#1a202c" stroke-width="1.5" />
+        
+  <!-- Внутренняя структура башни -->
+  <path d="M 50,36 L 57,40 L 57,50 L 50,54 L 43,50 L 43,40 Z" fill="#2d3748" stroke="#1a202c" stroke-width="1" />
+
+  <!-- Плазменное энерго-ядро башни -->
+  <circle cx="50" cy="45" r="5" fill="#1a202c" />
+  <circle cx="50" cy="45" r="3" fill="#00ffff" filter="url(#glow)" />
+  <circle cx="50" cy="45" r="1.5" fill="#ffffff" />
+
+  <!-- ПУШКА -->
+  <!-- Боковые/передние грани пушки (создают толщину 5px) -->
+  <path d="M 46,45 L 48,80 L 52,80 L 54,45 
+           L 54,50 L 52,85 L 48,85 L 46,50 Z" fill="#0f172a" />
+           
+  <!-- Верхняя плоскость пушки -->
+  <path d="M 46,45 L 54,45 L 52,80 L 48,80 Z" fill="#2d3748" stroke="#1a202c" stroke-width="1" />
+  
+  <!-- Плазменные ускорители пушки -->
+  <line x1="49" y1="52" x2="49.5" y2="76" stroke="#00ffff" stroke-width="1.5" filter="url(#glow)" />
+  <line x1="51" y1="52" x2="50.5" y2="76" stroke="#00ffff" stroke-width="1.5" filter="url(#glow)" />
+
+  <!-- Дульный срез пушки -->
+  <!-- Боковина дула (толщина 2px) -->
+  <rect x="46" y="80" width="8" height="7" rx="1" fill="#0f172a" />
+  <!-- Верхняя часть дула -->
+  <rect x="46" y="78" width="8" height="5" rx="1" fill="#1a202c" />
+  
+  <!-- Свечение плазмы в дуле -->
+  <ellipse cx="50" cy="81" rx="2.5" ry="1.5" fill="#00ffff" filter="url(#glow)" />
+  <ellipse cx="50" cy="81" rx="1" ry="0.5" fill="#ffffff" />
+  
+</svg>
