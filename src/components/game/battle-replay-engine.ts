@@ -224,6 +224,13 @@ export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
          s.s.texture = Texture.from(`${s.type}_${s.act}_${s.dir}_00${s.act === 'idle' ? '' : (f + 1)}`)
       } else if (s.s && s.basePath && s.dir) {
          s.s.texture = Texture.from(`${s.basePath}/${s.dir}.png`)
+      } else if (s.s && s.isSvg && s.dir) {
+         const baseTex = Assets.get(`/assets/units/${s.type}_8dir.svg`);
+         if (baseTex && baseTex.source.width >= 800) {
+            const dirIdx = SPRITE_DIRS.indexOf(s.dir);
+            s.s.texture.frame.x = (dirIdx === -1 ? 0 : dirIdx) * 100;
+            s.s.texture.updateUvs();
+         }
       }
 
       if (s.s) {

@@ -5,6 +5,9 @@ import { FlowFieldMap, getFlowVector } from './combat.pathfinding';
 import type { SpatialHash } from './spatial-hash';
 import { getMovementNeighbors, getSteeringContext } from './combat.steering';
 import { getStuckRecoveryForce, updateStuckRecovery } from './combat.stuck-recovery';
+import { getMeleeEngagementPoint } from './combat.melee-engagement';
+
+const MELEE_SLOT_FORMATION_RELEASE_DISTANCE = 140;
 
 export function movementSystem(unit: SimUnit, target: SimUnit, units: SimUnit[], actions: BattleAction[], dt: number, rng: PRNG, flowFieldMap: FlowFieldMap, obstacles: Obstacle[], spatialHash?: SpatialHash) {
   if (unit.speed <= 0) return;
@@ -21,22 +24,26 @@ export function movementSystem(unit: SimUnit, target: SimUnit, units: SimUnit[],
   const targetRadius = getSizeRadius(target.size);
   const myRadius = getSizeRadius(unit.size);
   const isInRange = (distToTarget - targetRadius - myRadius) <= unit.range;
+  const engagementPoint = getMeleeEngagementPoint(unit, target);
+  const useSlotApproach = engagementPoint !== null && !isInRange;
+  const approachX = useSlotApproach ? engagementPoint.x : target.x;
+  const approachY = useSlotApproach ? engagementPoint.y : target.y;
   updateStuckRecovery(unit, target, distToTarget, isInRange);
   const steering = getSteeringContext(unit, neighbors, myRadius, isInRange);
   const { squadCx, squadCy, squadCount } = steering;
 
   // Turn logic: if in a squad, aim parallel to the squad's direction to the target to prevent converging and crushing
-  let targetAngle = (unit.squadId && squadCount > 1 && distToTarget > unit.range * 1.5) 
+  let targetAngle = (unit.squadId && squadCount > 1 && !useSlotApproach && distToTarget > unit.range * 1.5)
       ? Math.atan2(target.y - squadCy, target.x - squadCx)
-      : Math.atan2(target.y - unit.y, target.x - unit.x);
+      : Math.atan2(approachY - unit.y, approachX - unit.x);
   
   let isNavigatingObstacle = false;
 
   // Use Flow Field if not flying to avoid obstacles
   if (!unit.isFlying && distToTarget > unit.range) {
-      const flowAngle = getFlowVector(flowFieldMap, unit.x, unit.y, target.x, target.y);
+      const flowAngle = getFlowVector(flowFieldMap, unit.x, unit.y, approachX, approachY);
       if (flowAngle !== null) {
-          const directAngle = Math.atan2(target.y - unit.y, target.x - unit.x);
+          const directAngle = Math.atan2(approachY - unit.y, approachX - unit.x);
           let diff = flowAngle - directAngle;
           while (diff > Math.PI) diff -= Math.PI * 2;
           while (diff < -Math.PI) diff += Math.PI * 2;
@@ -101,7 +108,8 @@ export function movementSystem(unit: SimUnit, target: SimUnit, units: SimUnit[],
   }
 
   // Apply Cohesion Force (Formations)
-  if (squadCount > 1) {
+  const releaseFormationForSlot = useSlotApproach && distToTarget < targetRadius + myRadius + unit.range + MELEE_SLOT_FORMATION_RELEASE_DISTANCE;
+  if (squadCount > 1 && !releaseFormationForSlot) {
     
     let targetCx = squadCx;
     let targetCy = squadCy;
