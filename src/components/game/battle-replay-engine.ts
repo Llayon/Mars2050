@@ -1,7 +1,7 @@
 import { Application, Graphics, Text, Container, Assets, Sprite, Texture } from 'pixi.js'
 import { UNIT_TYPES } from '@/domains/combat/combat.config'
 import { UNIT_VISUALS } from './battle-replay-visuals'
-import { FIELD_WIDTH, FIELD_HEIGHT, getDir, SPRITE_PATHS, SPRITE_ATLASES, SPRITE_DIRS, getSizeRadius } from '@/domains/combat/combat.utils'
+import { FIELD_WIDTH, FIELD_HEIGHT, getDir, SPRITE_PATHS, SPRITE_ATLASES, SPRITE_DIRS, getSizeRadius, SVG_UNITS } from '@/domains/combat/combat.utils'
 import type { BattleTick, UnitRow, SimUnit, UnitTypeKey, Obstacle } from '@/domains/combat/combat.types'
 import { setupCameraControls } from './battle-replay-camera'
 import { processVisualEffects, lerp } from './battle-replay-utils'
@@ -56,6 +56,9 @@ export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
     const toLoad = ['/sprites/crater.svg']
     for (const t in SPRITE_PATHS) for (const d of SPRITE_DIRS) toLoad.push(`${SPRITE_PATHS[t]}/${d}.png`)
     for (const t in SPRITE_ATLASES) toLoad.push(SPRITE_ATLASES[t])
+    SVG_UNITS.forEach(u => toLoad.push(`/assets/units/${u}_8dir.svg`))
+    toLoad.push('/assets/units/fx_muzzle_orange.svg', '/assets/units/fx_muzzle_cyan.svg', '/assets/units/fx_muzzle_green.svg')
+    toLoad.push('/assets/units/fx_impact_orange.svg', '/assets/units/fx_impact_cyan.svg')
     await Assets.load(toLoad)
   } catch(e) { console.error('Failed to load textures', e) }
 
