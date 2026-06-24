@@ -31,7 +31,7 @@ export interface BattleTick {
 export interface BattleResult {
   winner: 'attacker' | 'defender' | 'draw'
   logs: BattleTick[]
-  seed?: number
+  seed: number
   survivors: SimUnit[]
   initialState: SimUnit[]
   obstacles?: Obstacle[]

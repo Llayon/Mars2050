@@ -12,10 +12,12 @@
 - `src/domains/`: бизнес-логика по доменам (`auth`, `building`, `colony`, `combat`, `events`, `leaderboard`, `map`, `pvp`, `resource`).
 - `src/domains/combat/`: тиковый battle simulator, spatial hash, targeting, steering, pathfinding, upgrades, hazards, replay.
 - `src/app/api/`: тонкие API-роуты (валидация → сервис → ответ).
+- `src/app/simulator2/`: UI-песочница для тестирования и балансировки боя.
 - `src/hooks/`: клиентские хуки по доменам.
 - `src/components/`: UI-компоненты, game panels и TWA screens.
 - `src/__tests__/`: Vitest unit/regression tests.
 - `.project/llm-context/`: короткие доменные контексты для агентов.
+- `docs/`: дополнительная документация (например, `simulator-qa.md`).
 
 ## Критические правила
 - Не делать прямые DB-мутации из клиентских компонентов.

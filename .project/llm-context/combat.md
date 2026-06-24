@@ -17,8 +17,10 @@
 
 ## Core Rules
 - Seeded replay must be deterministic. Do not introduce unseeded randomness in the simulation path.
+- Seed `0` is valid; use nullish fallback for optional seeds, not truthy checks.
 - Keep candidate ordering deterministic. Spatial hash query order is part of replay stability.
 - Normal units should not use full-map aggro. Full-map acquisition must be explicit for special long-range units.
+- Use `UnitBaseStats.targetingProfile = 'global'` for explicit full-map acquisition; do not add hidden hardcoded unit lists in targeting code.
 - Movement uses flow/pathfinding plus steering. Do not remove flow or facing/turn logic without regression tests.
 - Keep runtime simulation types in `combat.sim.types.ts`; keep DB/config-facing types in `combat.types.ts`.
 
@@ -33,15 +35,18 @@
 
 ## Current Movement Model
 - `combat.engine.ts` rebuilds `SpatialHash` at the start of each tick.
+- Moving units call `spatialHash.update(unit)` after movement, so later units in the same tick query current positions.
 - `combat.movement.ts` keeps flow-field navigation, turn speed, formation cohesion, obstacle push, and velocity smoothing.
 - `combat.steering.ts` adds separation/alignment over nearby units.
-- Known review risk: hash membership can become stale after movement inside the same tick; update/rebuild strategy should be handled before relying on strict neighbor accuracy.
+- Fully overlapped unit pairs use deterministic opposite separation directions; do not make zero-distance push one-sided.
+- `SpatialHash.update()` preserves initial insertion order; do not reinsert moved units in a way that changes replay ordering.
 
-## Tests
+## Tests & QA
 - `src/__tests__/combat.engine.test.ts` — basic battle outcomes and timeout behavior.
 - `src/__tests__/combat.spatial-hash.test.ts` — deterministic spatial query behavior.
 - `src/__tests__/combat.targeting.test.ts` — sticky aggro, acquisition radius, fallback, long-range exceptions.
 - `src/__tests__/combat.metrics.test.ts` — replay determinism and crowd movement metrics.
+- `docs/simulator-qa.md` — Visual simulator QA matrix and metrics guide.
 
 ## Commands
 - `npm test`
@@ -50,5 +55,5 @@
 
 ## Design Direction
 - Do not add a hard `role` field to units.
-- Use future `targetingProfile` for behavior (`local`, `long_range`, `global`, preferred/avoided target tags).
+- Use `targetingProfile` for targeting behavior, not broad strategic roles.
 - Use future `combatTags` only for UI/analytics with neutral terms (`screening`, `swarm`, `anti_swarm`, `siege`, `support`), not as simulation logic.

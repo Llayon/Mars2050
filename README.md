@@ -6,12 +6,14 @@ The current stack is Next.js 16 App Router, React 19, TypeScript, Tailwind CSS 4
 ## Project Layout
 
 - `src/app/` — Next.js App Router pages and API routes.
+- `src/app/simulator2/` — interactive battle sandbox for balance and QA.
 - `src/domains/` — business logic by domain. This is the primary source of truth.
 - `src/components/` — shared UI, game panels, and TWA-optimized screens.
 - `src/hooks/` — React hooks for client data access.
 - `src/__tests__/` — Vitest unit and simulation regression tests.
 - `supabase/` and `supabase-schema.sql` — Supabase config and schema.
 - `.project/llm-context/` — focused context files for AI agents.
+- `docs/simulator-qa.md` — Combat Simulator QA instructions.
 
 Important domains include `building`, `resource`, `map`, `colony`, `pvp`, `events`, and `combat`.
 The combat domain contains the tick-based battle simulator, targeting, movement, spatial hash, steering, hazards, upgrades, and replay output.
