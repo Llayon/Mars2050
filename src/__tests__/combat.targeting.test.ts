@@ -144,6 +144,18 @@ describe('targetingSystem aggro', () => {
     expect(attacker.attackTargetId).toBe('armored')
   })
 
+  it('does not chase extreme tag preference over a much closer valid target', () => {
+    const attacker = makeUnit({ id: 'plasma', team: 'attacker', type: 'plasma_tank', x: 0, y: 0, range: 240 })
+    const infantry = makeUnit({ id: 'infantry', team: 'defender', type: 'marine', x: 100, y: 0 })
+    const farArmored = makeUnit({ id: 'far-armored', team: 'defender', type: 'behemoth_tank', x: 350, y: 0, size: 'XL' })
+    const units = [attacker, infantry, farArmored]
+
+    const target = targetingSystem(attacker, units, {}, makeHash(units))
+
+    expect(target?.id).toBe('infantry')
+    expect(attacker.attackTargetId).toBe('infantry')
+  })
+
   it('uses assassin profile to prefer support targets without fixed unit roles', () => {
     const hunter = makeUnit({ id: 'hunter', team: 'attacker', type: 'bounty_hunter', x: 0, y: 0, range: 240, canTargetAir: true })
     const infantry = makeUnit({ id: 'infantry', team: 'defender', type: 'marine', x: 100, y: 0 })

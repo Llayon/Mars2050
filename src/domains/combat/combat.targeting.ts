@@ -1,9 +1,7 @@
 import type { SimUnit } from './combat.sim.types';
-import { UNIT_TYPES } from './combat.config';
-import { DEFAULT_TARGETING_PROFILE, TARGETING_PROFILES } from './combat.targeting.config';
+import { getTargetingProfile, getTargetScore } from './combat.targeting-score';
 import { getDistance, getSizeRadius } from './combat.utils';
 import type { SpatialHash } from './spatial-hash';
-import type { CombatTag, TargetingProfileConfig, TargetingProfileKey } from './combat.types';
 
 const AGGRO_LOCK_TICKS = 10;
 const AGGRO_LEASH_MULTIPLIER = 1.5;
@@ -135,9 +133,10 @@ function selectAggroTarget(unit: SimUnit, enemies: SimUnit[]): SimUnit | null {
   let target: SimUnit | null = null;
   let bestScore = -Infinity;
   const profile = getTargetingProfile(unit);
+  const nearestDistance = getNearestDistance(unit, enemies);
 
   for (const enemy of enemies) {
-    const score = getAggroScore(unit, enemy, profile);
+    const score = getTargetScore(unit, enemy, profile, nearestDistance).total;
     if (!target || score > bestScore || (score === bestScore && isBetterTie(unit, enemy, target))) {
       target = enemy;
       bestScore = score;
@@ -145,6 +144,14 @@ function selectAggroTarget(unit: SimUnit, enemies: SimUnit[]): SimUnit | null {
   }
 
   return target;
+}
+
+function getNearestDistance(unit: SimUnit, enemies: SimUnit[]): number {
+  let nearestDistance = Infinity;
+  for (const enemy of enemies) {
+    nearestDistance = Math.min(nearestDistance, getDistance(unit.x, unit.y, enemy.x, enemy.y));
+  }
+  return nearestDistance;
 }
 
 function selectNearestTarget(unit: SimUnit, enemies: SimUnit[]): SimUnit | null {
@@ -159,45 +166,10 @@ function selectNearestTarget(unit: SimUnit, enemies: SimUnit[]): SimUnit | null 
   return target;
 }
 
-function getAggroScore(unit: SimUnit, enemy: SimUnit, profile: TargetingProfileConfig): number {
-  const distance = Math.max(1, getDistance(unit.x, unit.y, enemy.x, enemy.y));
-  const distanceScore = profile.distanceWeight / distance;
-  const currentTargetScore = enemy.id === unit.attackTargetId ? profile.currentTargetBonus : 0;
-  const hpRatio = enemy.maxHp > 0 ? Math.max(0, enemy.hp / enemy.maxHp) : 1;
-  const lowHpScore = (1 - hpRatio) * profile.lowHpWeight;
-  return distanceScore + currentTargetScore + lowHpScore + getCombatTagScore(enemy, profile);
-}
-
 function isBetterTie(unit: SimUnit, candidate: SimUnit, current: SimUnit): boolean {
   const candidateDistance = getDistance(unit.x, unit.y, candidate.x, candidate.y);
   const currentDistance = getDistance(unit.x, unit.y, current.x, current.y);
   if (candidateDistance !== currentDistance) return candidateDistance < currentDistance;
   if (candidate.hp !== current.hp) return candidate.hp < current.hp;
   return candidate.id < current.id;
-}
-
-function getTargetingProfile(unit: SimUnit): TargetingProfileConfig {
-  return TARGETING_PROFILES[getTargetingProfileKey(unit)];
-}
-
-function getTargetingProfileKey(unit: SimUnit): TargetingProfileKey {
-  return UNIT_TYPES[unit.type as keyof typeof UNIT_TYPES]?.baseStats.targetingProfile ?? DEFAULT_TARGETING_PROFILE;
-}
-
-function getCombatTagScore(enemy: SimUnit, profile: TargetingProfileConfig): number {
-  let score = 0;
-  for (const tag of getEffectiveCombatTags(enemy)) {
-    score += profile.preferredTags?.[tag] ?? 0;
-    score -= profile.avoidedTags?.[tag] ?? 0;
-  }
-  return score;
-}
-
-function getEffectiveCombatTags(unit: SimUnit): Set<CombatTag> {
-  const tags = new Set<CombatTag>(UNIT_TYPES[unit.type as keyof typeof UNIT_TYPES]?.baseStats.combatTags ?? []);
-  if (unit.isFlying) tags.add('aircraft');
-  if (unit.shield > 0) tags.add('shielded');
-  if (unit.attackType === 'heal') tags.add('healer');
-  if (unit.attackType === 'spawn') tags.add('summoner');
-  return tags;
 }
