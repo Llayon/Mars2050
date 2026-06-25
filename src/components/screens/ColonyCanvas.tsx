@@ -47,10 +47,16 @@ export default function ColonyCanvas({ buildings, onBuildingClick, placementMode
   useEffect(() => {
     if (!containerRef.current) return
     const app = new PIXI.Application()
+    let cancelled = false
+
     const init = async () => {
       await app.init({ width: containerRef.current?.clientWidth || 800, height: containerRef.current?.clientHeight || 600, background: '#121212', antialias: true, resolution: window.devicePixelRatio || 1, autoDensity: true })
-      if (!containerRef.current) return; containerRef.current.appendChild(app.canvas); appRef.current = app
+      // If component unmounted before init finished — destroy immediately and bail
+      if (cancelled) { try { app.destroy(true) } catch {} return }
+      if (!containerRef.current) return
+      containerRef.current.appendChild(app.canvas); appRef.current = app
       await Promise.all(Object.entries(ASSET_MANIFEST).map(async ([t, p]) => { try { texturesRef.current[t] = await PIXI.Assets.load(p) } catch {} }))
+      if (cancelled) return
       const world = new PIXI.Container(); world.sortableChildren = true; worldRef.current = world
       world.x = app.screen.width / 2; world.y = app.screen.height / 2 - 320; app.stage.addChild(world)
       const { MAP_SIZE } = RENDER_LIMITS, grid = new PIXI.Graphics().setStrokeStyle({ width: 1, color: 0x333333, alpha: 0.8 })
@@ -72,7 +78,16 @@ export default function ColonyCanvas({ buildings, onBuildingClick, placementMode
       })
       setInitDone(true)
     }
-    init(); return () => { app.destroy(true) }
+
+    init()
+    return () => {
+      cancelled = true
+      // Only destroy if init already attached the app (appRef was set)
+      if (appRef.current) {
+        try { appRef.current.destroy(true) } catch {}
+        appRef.current = null
+      }
+    }
   }, [])
 
   useEffect(() => {
