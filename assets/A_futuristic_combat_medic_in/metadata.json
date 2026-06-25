@@ -1,0 +1,36 @@
+{
+  "group_id": null,
+  "states": [
+    {
+      "character": {
+        "id": "d1088d5c-a2b4-460f-a883-067d21e68364",
+        "name": "A futuristic combat medic in",
+        "prompt": "A futuristic combat medic in sleek white and light gray armor, teal and green medical accents, chest and shoulder medical cross emblems, compact med-injector tool in hand, small backpack with glowing vials, utility pouches, calm support stance, readable silhouette.",
+        "size": {
+          "width": 248,
+          "height": 248
+        },
+        "template_id": "mannequin",
+        "directions": 8,
+        "view": "low top-down",
+        "created_at": "2026-06-24T13:27:18.852414+00:00"
+      },
+      "folder": "A_futuristic_combat_medic_in",
+      "frames": {
+        "rotations": {
+          "south": "A_futuristic_combat_medic_in/rotations/south.png",
+          "south-east": "A_futuristic_combat_medic_in/rotations/south-east.png",
+          "east": "A_futuristic_combat_medic_in/rotations/east.png",
+          "north-east": "A_futuristic_combat_medic_in/rotations/north-east.png",
+          "north": "A_futuristic_combat_medic_in/rotations/north.png",
+          "north-west": "A_futuristic_combat_medic_in/rotations/north-west.png",
+          "west": "A_futuristic_combat_medic_in/rotations/west.png",
+          "south-west": "A_futuristic_combat_medic_in/rotations/south-west.png"
+        },
+        "animations": {}
+      }
+    }
+  ],
+  "export_version": "3.0",
+  "export_date": "2026-06-24T22:29:54.947586"
+}

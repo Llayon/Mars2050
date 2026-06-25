@@ -1,0 +1,36 @@
+{
+  "group_id": null,
+  "states": [
+    {
+      "character": {
+        "id": "5ffc6577-42c0-436a-9e88-33b6b0b4d27c",
+        "name": "A futuristic infantry base mannequin",
+        "prompt": "A futuristic infantry base mannequin in a compact, athletic build, wearing streamlined light tactical armor, a smooth-surfaced combat helmet, minimalist gloves, and sturdy boots, standing in a relaxed combat-ready stance with arms slightly bent at the sides, clean silhouette with crisp black outlines, low top-down perspective.",
+        "size": {
+          "width": 116,
+          "height": 116
+        },
+        "template_id": "mannequin",
+        "directions": 8,
+        "view": "low top-down",
+        "created_at": "2026-06-25T08:46:56.975033+00:00"
+      },
+      "folder": "A_futuristic_infantry_base_mannequin",
+      "frames": {
+        "rotations": {
+          "south": "A_futuristic_infantry_base_mannequin/rotations/south.png",
+          "south-east": "A_futuristic_infantry_base_mannequin/rotations/south-east.png",
+          "east": "A_futuristic_infantry_base_mannequin/rotations/east.png",
+          "north-east": "A_futuristic_infantry_base_mannequin/rotations/north-east.png",
+          "north": "A_futuristic_infantry_base_mannequin/rotations/north.png",
+          "north-west": "A_futuristic_infantry_base_mannequin/rotations/north-west.png",
+          "west": "A_futuristic_infantry_base_mannequin/rotations/west.png",
+          "south-west": "A_futuristic_infantry_base_mannequin/rotations/south-west.png"
+        },
+        "animations": {}
+      }
+    }
+  ],
+  "export_version": "3.0",
+  "export_date": "2026-06-25T08:51:45.784657"
+}

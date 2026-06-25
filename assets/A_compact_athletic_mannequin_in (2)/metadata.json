@@ -1,0 +1,36 @@
+{
+  "group_id": null,
+  "states": [
+    {
+      "character": {
+        "id": "bb444e79-f8cd-44c9-8913-244dda486df2",
+        "name": "A compact athletic mannequin in",
+        "prompt": "A compact athletic mannequin in neutral gray light tactical armor, featuring a smooth minimalist combat helmet and clean-cut plating, standing in a neutral combat stance with arms hanging relaxed at the sides, crisp black outlines, low top-down perspective.",
+        "size": {
+          "width": 120,
+          "height": 120
+        },
+        "template_id": "mannequin",
+        "directions": 8,
+        "view": "low top-down",
+        "created_at": "2026-06-25T09:26:54.935037+00:00"
+      },
+      "folder": "A_compact_athletic_mannequin_in",
+      "frames": {
+        "rotations": {
+          "south": "A_compact_athletic_mannequin_in/rotations/south.png",
+          "south-east": "A_compact_athletic_mannequin_in/rotations/south-east.png",
+          "east": "A_compact_athletic_mannequin_in/rotations/east.png",
+          "north-east": "A_compact_athletic_mannequin_in/rotations/north-east.png",
+          "north": "A_compact_athletic_mannequin_in/rotations/north.png",
+          "north-west": "A_compact_athletic_mannequin_in/rotations/north-west.png",
+          "west": "A_compact_athletic_mannequin_in/rotations/west.png",
+          "south-west": "A_compact_athletic_mannequin_in/rotations/south-west.png"
+        },
+        "animations": {}
+      }
+    }
+  ],
+  "export_version": "3.0",
+  "export_date": "2026-06-25T09:54:31.816915"
+}

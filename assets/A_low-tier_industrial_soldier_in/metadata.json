@@ -1,0 +1,49 @@
+{
+  "group_id": null,
+  "states": [
+    {
+      "character": {
+        "id": "9a5793f3-06de-4ebd-bfc3-f375183beb87",
+        "name": "A low-tier industrial soldier in",
+        "prompt": "A low-tier industrial soldier in a streamlined dark grey light armor suit with bold yellow hazard stripes on the shoulders and thighs, wearing a sleek tactical helmet with a visor, standing in a steady combat stance, holding a compact standard-issue rifle, crisp black outlines, clear readable silhouette.",
+        "size": {
+          "width": 248,
+          "height": 248
+        },
+        "template_id": "mannequin",
+        "directions": 8,
+        "view": "low top-down",
+        "created_at": "2026-06-24T09:22:49.514725+00:00"
+      },
+      "folder": "A_low-tier_industrial_soldier_in",
+      "frames": {
+        "rotations": {
+          "south": "A_low-tier_industrial_soldier_in/rotations/south.png",
+          "south-east": "A_low-tier_industrial_soldier_in/rotations/south-east.png",
+          "east": "A_low-tier_industrial_soldier_in/rotations/east.png",
+          "north-east": "A_low-tier_industrial_soldier_in/rotations/north-east.png",
+          "north": "A_low-tier_industrial_soldier_in/rotations/north.png",
+          "north-west": "A_low-tier_industrial_soldier_in/rotations/north-west.png",
+          "west": "A_low-tier_industrial_soldier_in/rotations/west.png",
+          "south-west": "A_low-tier_industrial_soldier_in/rotations/south-west.png"
+        },
+        "animations": {
+          "Running": {
+            "south": [
+              "A_low-tier_industrial_soldier_in/animations/Running/south/frame_000.png",
+              "A_low-tier_industrial_soldier_in/animations/Running/south/frame_001.png",
+              "A_low-tier_industrial_soldier_in/animations/Running/south/frame_002.png",
+              "A_low-tier_industrial_soldier_in/animations/Running/south/frame_003.png",
+              "A_low-tier_industrial_soldier_in/animations/Running/south/frame_004.png",
+              "A_low-tier_industrial_soldier_in/animations/Running/south/frame_005.png",
+              "A_low-tier_industrial_soldier_in/animations/Running/south/frame_006.png",
+              "A_low-tier_industrial_soldier_in/animations/Running/south/frame_007.png"
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "export_version": "3.0",
+  "export_date": "2026-06-24T22:46:04.402739"
+}

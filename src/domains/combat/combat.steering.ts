@@ -52,10 +52,10 @@ export function getSteeringContext(unit: SimUnit, neighbors: SimUnit[], myRadius
 
     if (dist < separateRadius) {
       const direction = getAwayVector(unit, other, dist)
-      const forceMult = other.team === unit.team && isInRange ? 0.35 : 1
       const soft = Math.max(0, (separateRadius - dist) / separateRadius)
       const emergency = dist < minDist ? getEmergencyPush(unit, other, myRadius, otherRadius, dist, isInRange) : 0
-      const force = (soft * soft * unit.speed * SEPARATION_WEIGHT + emergency) * forceMult
+      const force = soft * soft * unit.speed * SEPARATION_WEIGHT * getSoftSeparationMultiplier(unit, other, isInRange) +
+        emergency * getEmergencySeparationMultiplier(isInRange)
 
       separationX += direction.x * force
       separationY += direction.y * force
@@ -110,6 +110,15 @@ function getEmergencyPush(unit: SimUnit, other: SimUnit, myRadius: number, other
   const pushRatio = (otherMass / (myMass + otherMass)) * 2
   const stanceMultiplier = isInRange ? 0.5 : 1.0
   return Math.min(overlap * 2, unit.speed * 1.5) * pushRatio * stanceMultiplier
+}
+
+function getSoftSeparationMultiplier(unit: SimUnit, other: SimUnit, isInRange: boolean): number {
+  if (!isInRange) return 1
+  return unit.team === other.team ? 0.35 : 0.1
+}
+
+function getEmergencySeparationMultiplier(isInRange: boolean): number {
+  return isInRange ? 0.35 : 1
 }
 
 function getDeterministicPairAngle(unitId: string, otherId: string): number {

@@ -44,4 +44,16 @@ describe('combat steering', () => {
     expect(firstContext.separationX + secondContext.separationX).toBeCloseTo(0, 5)
     expect(firstContext.separationY + secondContext.separationY).toBeCloseTo(0, 5)
   })
+
+  it('dampens enemy soft separation while in attack range', () => {
+    const defender = makeUnit({ id: 'defender', team: 'defender', x: 100, y: 100 })
+    const melee = makeUnit({ id: 'melee', team: 'attacker', x: 125, y: 100, range: 40 })
+    const radius = getSizeRadius(defender.size)
+
+    const movingContext = getSteeringContext(defender, [defender, melee], radius, false)
+    const combatContext = getSteeringContext(defender, [defender, melee], radius, true)
+
+    expect(combatContext.separationX).toBeLessThan(0)
+    expect(Math.abs(combatContext.separationX)).toBeLessThan(Math.abs(movingContext.separationX) * 0.2)
+  })
 })

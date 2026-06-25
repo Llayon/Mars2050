@@ -8,23 +8,10 @@ import { useBuildings } from '@/hooks/useBuildings'
 import { useEvents } from '@/hooks/useEvents'
 import { ToastProvider, useToast } from '@/components/ui/toast'
 import { AuthModal } from '@/components/game/AuthModal'
-import { ColonyPanel } from '@/components/game/ColonyPanel'
-import { ResourcePanel } from '@/components/game/ResourcePanel'
-import { GameMapPanel } from '@/components/game/GameMapPanel'
-import { BuildingsPanel } from '@/components/game/BuildingsPanel'
-import { EventsPanel } from '@/components/game/EventsPanel'
-import { LeaderboardPanel } from '@/components/game/LeaderboardPanel'
-import { PvpPanel } from '@/components/game/PvpPanel'
-import { ArmyPanel } from '@/components/game/ArmyPanel'
-import { BottomNav } from '@/components/screens/BottomNav'
 import type { TabId } from '@/components/screens/BottomNav'
-import ColonyScreen from '@/components/screens/ColonyScreen'
-import { BuildingsScreen } from '@/components/screens/BuildingsScreen'
-import { MapScreen } from '@/components/screens/MapScreen'
-import { OperationsScreen } from '@/components/screens/OperationsScreen'
-import { ProfileScreen } from '@/components/screens/ProfileScreen'
-import { HudBottomSheet } from '@/components/ui/hud/HudBottomSheet'
 import type { BuildingTypeKey } from '@/domains/building/building.types'
+import { TwaHud } from '@/components/game/TwaHud'
+import { DesktopHud } from '@/components/game/DesktopHud'
 
 function GameUI() {
   const { user, colonyId, loading, error: authError, login, signup, logout, isTWA } = useAuth()
@@ -107,135 +94,46 @@ function GameUI() {
     )
   }
 
-  // Common props for ColonyScreen
-  const colonyScreenProps = {
-    colony,
-    colonyLoading,
-    colonyId: colonyId!,
-    buildings,
-    resources,
-    resourcesLoading,
-    onLogout: logout,
-    onDemolish: handleDemolish,
-    onBuild: handleBuild,
-    placementMode,
-    setPlacementMode
-  }
-
   if (isTWA) {
     return (
-      <div className="min-h-[100dvh] bg-black text-white flex flex-col relative overflow-hidden">
-        {/* Base layer: Colony Screen is always present */}
-        <div className="absolute inset-0 z-0">
-          <ColonyScreen {...colonyScreenProps} />
-        </div>
-        
-        {/* Bottom Sheets for other tabs */}
-        <HudBottomSheet open={activeTab === 'buildings'} onClose={() => setActiveTab('colony')}>
-          <BuildingsScreen
-            buildings={buildings}
-            colonyId={colonyId!}
-            resources={resources}
-            resourcesLoading={resourcesLoading}
-            onBuild={handleBuild}
-            onDemolish={handleDemolish}
-          />
-        </HudBottomSheet>
-        
-        <HudBottomSheet open={activeTab === 'map'} onClose={() => setActiveTab('colony')}>
-          <MapScreen
-            colonyId={colonyId!}
-            resources={resources}
-            resourcesLoading={resourcesLoading}
-          />
-        </HudBottomSheet>
-        
-        <HudBottomSheet open={activeTab === 'operations'} onClose={() => setActiveTab('colony')}>
-          <OperationsScreen colonyId={colonyId!} resources={resources} />
-        </HudBottomSheet>
-        
-        <HudBottomSheet open={activeTab === 'profile'} onClose={() => setActiveTab('colony')}>
-          <ProfileScreen
-            colony={colony}
-            colonyLoading={colonyLoading}
-            userEmail={user?.email}
-          />
-        </HudBottomSheet>
-
-        <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
-      </div>
+      <TwaHud 
+        colonyId={colonyId!}
+        colony={colony}
+        colonyLoading={colonyLoading}
+        buildings={buildings}
+        resources={resources}
+        resourcesLoading={resourcesLoading}
+        userEmail={user?.email}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        placementMode={placementMode}
+        setPlacementMode={setPlacementMode}
+        onBuild={handleBuild}
+        onDemolish={handleDemolish}
+        onLogout={logout}
+      />
     )
   }
 
   return (
-    <div className="min-h-[100dvh] bg-black text-white relative overflow-hidden">
-      {/* Background Layer */}
-      <div className="absolute inset-0 z-0">
-        {viewMode === 'isometric' ? (
-          <ColonyScreen {...colonyScreenProps} />
-        ) : (
-          <div className="w-full h-full bg-mars-surface p-4 pt-24 overflow-y-auto">
-             <GameMapPanel colonyId={colonyId!} />
-          </div>
-        )}
-      </div>
-
-      {/* Top HUD */}
-      <div className="absolute top-0 left-0 right-0 z-10 pointer-events-none p-4 flex justify-between items-start">
-        {/* Top Left */}
-        <div className="w-80 pointer-events-auto space-y-4">
-          <ColonyPanel colony={colony} loading={colonyLoading} />
-          <ResourcePanel resources={resources} loading={resourcesLoading} />
-        </div>
-        
-        {/* Top Right */}
-        <div className="flex flex-col items-end gap-2 pointer-events-auto">
-          <div className="hud-panel rounded-lg px-4 py-2 flex items-center gap-4">
-            <span className="text-sm font-bold text-gray-200">{colony?.name || 'Колония'}</span>
-            <span className="text-xs text-mars-gold">Ур. {colony?.level || 1}</span>
-            <button onClick={logout} className="text-[10px] uppercase text-red-400 hover:text-red-300 ml-2">
-              Выход
-            </button>
-          </div>
-          <div className="hud-panel rounded-lg p-1 flex gap-1 w-48">
-             <button 
-                onClick={() => setViewMode('isometric')}
-                className={`flex-1 py-1.5 rounded text-[10px] font-bold transition-all border ${viewMode === 'isometric' ? 'bg-mars-orange border-mars-orange text-white shadow-[0_0_10px_rgba(255,107,0,0.4)]' : 'bg-transparent border-transparent text-gray-400 hover:bg-white/5'}`}
-             >
-               БАЗА
-             </button>
-             <button 
-                onClick={() => setViewMode('classic')}
-                className={`flex-1 py-1.5 rounded text-[10px] font-bold transition-all border ${viewMode === 'classic' ? 'bg-mars-orange border-mars-orange text-white shadow-[0_0_10px_rgba(255,107,0,0.4)]' : 'bg-transparent border-transparent text-gray-400 hover:bg-white/5'}`}
-             >
-               КАРТА
-             </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Left HUD panels */}
-      <div className="absolute top-48 left-4 bottom-4 w-80 z-10 pointer-events-none overflow-y-auto">
-        <div className="pointer-events-auto space-y-4 pb-4">
-          <EventsPanel colonyId={colonyId!} onCreateTest={handleCreateTest} />
-          <PvpPanel colonyId={colonyId!} onResult={(msg) => toast(msg, 'info')} />
-          <ArmyPanel colonyId={colonyId!} resources={resources} />
-        </div>
-      </div>
-
-      {/* Right HUD panels */}
-      <div className="absolute top-24 right-4 bottom-4 w-96 z-10 pointer-events-none overflow-y-auto">
-        <div className="pointer-events-auto space-y-4 pb-4">
-          <BuildingsPanel
-            buildings={buildings}
-            resources={resources}
-            onBuild={handleBuild}
-            onDemolish={handleDemolish}
-          />
-          <LeaderboardPanel />
-        </div>
-      </div>
-    </div>
+    <DesktopHud 
+      colonyId={colonyId!}
+      colony={colony}
+      colonyLoading={colonyLoading}
+      buildings={buildings}
+      resources={resources}
+      resourcesLoading={resourcesLoading}
+      userEmail={user?.email}
+      viewMode={viewMode}
+      setViewMode={setViewMode}
+      placementMode={placementMode}
+      setPlacementMode={setPlacementMode}
+      onBuild={handleBuild}
+      onDemolish={handleDemolish}
+      onCreateTestEvent={handleCreateTest}
+      onPvpResult={(msg) => toast(msg, 'info')}
+      onLogout={logout}
+    />
   )
 }
 

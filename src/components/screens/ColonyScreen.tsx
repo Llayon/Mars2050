@@ -113,13 +113,14 @@ export default function ColonyScreen({
         />
       </Suspense>
       
-      {/* Overlay for HUD */}
-      <div className="absolute top-4 left-4 right-4 pointer-events-none">
-        <ColonyPanel colony={colony} loading={colonyLoading} />
-        <div className="mt-4 pointer-events-auto">
-          {children}
+      {/* Children overlay */}
+      {children && (
+        <div className="absolute top-4 left-4 right-4 pointer-events-none">
+          <div className="mt-4 pointer-events-auto">
+            {children}
+          </div>
         </div>
-      </div>
+      )}
 
       <BuildingActionModal 
         building={selectedBuilding} 
