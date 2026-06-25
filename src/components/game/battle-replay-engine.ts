@@ -206,7 +206,7 @@ export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
 
     Object.values(sprites).forEach(s => {
       s.c.x = lerp(s.sX, s.tX, prog); s.c.y = lerp(s.sY, s.tY, prog)
-      layer.children.sort((a, b) => a.y - b.y)
+      s.c.zIndex = s.c.y
       if (s.s && s.isAtlas && s.act && s.dir) {
          let f = fIdx;
          if (s.act === 'shoot') f = Math.min(5, Math.floor((time / DUR) * 6));
@@ -236,6 +236,7 @@ export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
          s.s.scale.y = lerp(s.s.scale.y, s.baseScale, 0.1)
       }
     })
+    layer.sortChildren()
 
     processVisualEffects(fts, projs, hazardFxs, dt * playbackSpeed)
     drawOverlays(overlayGfx, overlays, sprites, projs)
