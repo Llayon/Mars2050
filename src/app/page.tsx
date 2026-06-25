@@ -168,73 +168,73 @@ function GameUI() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
-      <header className="bg-gray-800 p-4 shadow-lg">
-        <div className="container mx-auto flex justify-between items-center">
-          <h1 className="text-2xl font-bold">🚀 Mars2050</h1>
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-gray-400">{colony?.name || 'Колония'} — Ур. {colony?.level || 1}</span>
-            <button onClick={logout} className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded text-sm">
-              Выйти ({user?.email || colonyId})
+    <div className="min-h-[100dvh] bg-black text-white relative overflow-hidden">
+      {/* Background Layer */}
+      <div className="absolute inset-0 z-0">
+        {viewMode === 'isometric' ? (
+          <ColonyScreen {...colonyScreenProps} />
+        ) : (
+          <div className="w-full h-full bg-mars-surface p-4 pt-24 overflow-y-auto">
+             <GameMapPanel colonyId={colonyId!} />
+          </div>
+        )}
+      </div>
+
+      {/* Top HUD */}
+      <div className="absolute top-0 left-0 right-0 z-10 pointer-events-none p-4 flex justify-between items-start">
+        {/* Top Left */}
+        <div className="w-80 pointer-events-auto space-y-4">
+          <ColonyPanel colony={colony} loading={colonyLoading} />
+          <ResourcePanel resources={resources} loading={resourcesLoading} />
+        </div>
+        
+        {/* Top Right */}
+        <div className="flex flex-col items-end gap-2 pointer-events-auto">
+          <div className="hud-panel rounded-lg px-4 py-2 flex items-center gap-4">
+            <span className="text-sm font-bold text-gray-200">{colony?.name || 'Колония'}</span>
+            <span className="text-xs text-mars-gold">Ур. {colony?.level || 1}</span>
+            <button onClick={logout} className="text-[10px] uppercase text-red-400 hover:text-red-300 ml-2">
+              Выход
             </button>
           </div>
-        </div>
-      </header>
-
-      <main className="container mx-auto p-4">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <div className="lg:col-span-1 space-y-4">
-            <ColonyPanel colony={colony} loading={colonyLoading} />
-            <ResourcePanel resources={resources} loading={resourcesLoading} />
-            
-            <div className="bg-gray-800 p-4 rounded-lg shadow-lg">
-              <h3 className="text-white font-bold mb-2 text-sm opacity-80">Режим отображения</h3>
-              <div className="flex gap-2">
-                <button 
-                  onClick={() => setViewMode('isometric')}
-                  className={`flex-1 py-1.5 rounded text-[10px] font-bold transition-all border ${viewMode === 'isometric' ? 'bg-mars-orange border-mars-orange text-white shadow-[0_0_10px_rgba(255,107,0,0.4)]' : 'bg-gray-700 border-gray-600 text-gray-400 hover:bg-gray-650'}`}
-                >
-                  ИЗОМЕТРИЯ
-                </button>
-                <button 
-                  onClick={() => setViewMode('classic')}
-                  className={`flex-1 py-1.5 rounded text-[10px] font-bold transition-all border ${viewMode === 'classic' ? 'bg-mars-orange border-mars-orange text-white shadow-[0_0_10px_rgba(255,107,0,0.4)]' : 'bg-gray-700 border-gray-600 text-gray-400 hover:bg-gray-650'}`}
-                >
-                  КЛАССИКА
-                </button>
-              </div>
-            </div>
-
-            <EventsPanel colonyId={colonyId!} onCreateTest={handleCreateTest} />
-            <PvpPanel colonyId={colonyId!} onResult={(msg) => toast(msg, 'info')} />
-            <ArmyPanel colonyId={colonyId!} resources={resources} />
-          </div>
-          <div className="lg:col-span-2">
-            {viewMode === 'isometric' ? (
-              <div className="h-[600px] rounded-lg overflow-hidden border border-gray-700 shadow-2xl relative bg-black">
-                 <ColonyScreen {...colonyScreenProps} />
-              </div>
-            ) : (
-              <GameMapPanel colonyId={colonyId!} />
-            )}
-          </div>
-          <div className="lg:col-span-3">
-            <BuildingsPanel
-              buildings={buildings}
-              resources={resources}
-              onBuild={handleBuild}
-              onDemolish={handleDemolish}
-            />
-            <div className="mt-4">
-              <LeaderboardPanel />
-            </div>
+          <div className="hud-panel rounded-lg p-1 flex gap-1 w-48">
+             <button 
+                onClick={() => setViewMode('isometric')}
+                className={`flex-1 py-1.5 rounded text-[10px] font-bold transition-all border ${viewMode === 'isometric' ? 'bg-mars-orange border-mars-orange text-white shadow-[0_0_10px_rgba(255,107,0,0.4)]' : 'bg-transparent border-transparent text-gray-400 hover:bg-white/5'}`}
+             >
+               БАЗА
+             </button>
+             <button 
+                onClick={() => setViewMode('classic')}
+                className={`flex-1 py-1.5 rounded text-[10px] font-bold transition-all border ${viewMode === 'classic' ? 'bg-mars-orange border-mars-orange text-white shadow-[0_0_10px_rgba(255,107,0,0.4)]' : 'bg-transparent border-transparent text-gray-400 hover:bg-white/5'}`}
+             >
+               КАРТА
+             </button>
           </div>
         </div>
-      </main>
+      </div>
 
-      <footer className="bg-gray-800 p-4 mt-8 text-center text-gray-400">
-        <p>© 2050 Mars2050 — Стратегия колонизации Марса</p>
-      </footer>
+      {/* Left HUD panels */}
+      <div className="absolute top-48 left-4 bottom-4 w-80 z-10 pointer-events-none overflow-y-auto">
+        <div className="pointer-events-auto space-y-4 pb-4">
+          <EventsPanel colonyId={colonyId!} onCreateTest={handleCreateTest} />
+          <PvpPanel colonyId={colonyId!} onResult={(msg) => toast(msg, 'info')} />
+          <ArmyPanel colonyId={colonyId!} resources={resources} />
+        </div>
+      </div>
+
+      {/* Right HUD panels */}
+      <div className="absolute top-24 right-4 bottom-4 w-96 z-10 pointer-events-none overflow-y-auto">
+        <div className="pointer-events-auto space-y-4 pb-4">
+          <BuildingsPanel
+            buildings={buildings}
+            resources={resources}
+            onBuild={handleBuild}
+            onDemolish={handleDemolish}
+          />
+          <LeaderboardPanel />
+        </div>
+      </div>
     </div>
   )
 }
