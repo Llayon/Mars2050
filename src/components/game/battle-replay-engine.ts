@@ -8,6 +8,8 @@ import { processVisualEffects, lerp } from './battle-replay-utils'
 import { drawOverlays } from './battle-replay-overlays'
 import { createU, getSvgFrameTexture, updateHp } from './battle-replay-units'
 import type { SpriteState } from './battle-replay-units'
+import { addVisualAnimationAssets, getVisualAnimationTexture } from './battle-replay-animation-sequences'
+import { applyProceduralMotion, updateParticles } from './battle-replay-motion-vfx'
 
 export interface ReplayControls {
   play: () => void;
@@ -53,6 +55,7 @@ export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
     for (const t in SPRITE_ATLASES) toLoad.push(SPRITE_ATLASES[t])
     for (const t of SVG_UNITS) toLoad.push(`/assets/units/${t}_8dir.svg`)
     Object.values(UNIT_VISUALS).forEach(v => { if (v.fxType) toLoad.push(`/assets/units/${v.fxType}.svg`) })
+    addVisualAnimationAssets(toLoad)
     await Assets.load([...new Set(toLoad)])
   } catch(e) { console.error('Failed to load textures', e) }
 
@@ -154,6 +157,10 @@ export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
 
             if (s.s && !isH) {
               const vConf = UNIT_VISUALS[s.type as UnitTypeKey] || {};
+              if (vConf.recoilPx) {
+                 s.recoilAngle = Math.atan2(tg.c.y - s.c.y, tg.c.x - s.c.x);
+                 s.recoil = vConf.recoilPx;
+              }
               const flashType = vConf.fxType || 'fx_muzzle_orange';
               const mOff = vConf.muzzleOffset || 25;
               try {
@@ -215,21 +222,10 @@ export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
       } else if (s.s && s.isSvg && s.dir) {
          const texture = getSvgFrameTexture(s.type, s.dir); if (texture) s.s.texture = texture
       } else if (s.s && s.basePath && s.dir) {
-         s.s.texture = Texture.from(`${s.basePath}/${s.dir}.png`)
+         s.s.texture = getVisualAnimationTexture(s, globalTime) ?? Texture.from(`${s.basePath}/${s.dir}.png`)
       }
 
-      if (s.s) {
-         const vConf = UNIT_VISUALS[s.type as UnitTypeKey] || {};
-         const isFlying = UNIT_TYPES[s.type as UnitTypeKey]?.baseStats.isFlying;
-         if (isFlying) {
-           const hAmp = vConf.hoverAmplitude || 3;
-           const hSpeed = vConf.hoverSpeed || 0.05;
-           const hover = Math.sin(globalTime * hSpeed + s.c.uid) * hAmp;
-           s.s.y = (vConf.yOffset || -20) + hover;
-         } else if (vConf.yOffset) {
-           s.s.y = vConf.yOffset;
-         }
-      }
+      applyProceduralMotion(s, { dt, globalTime }, fxLayer)
 
       if (s.s && s.baseScale !== undefined) {
          s.s.scale.x = lerp(s.s.scale.x, s.baseScale, 0.1)
@@ -238,6 +234,7 @@ export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
     })
     layer.sortChildren()
 
+    updateParticles(dt * playbackSpeed)
     processVisualEffects(fts, projs, hazardFxs, dt * playbackSpeed)
     drawOverlays(overlayGfx, overlays, sprites, projs)
   })
