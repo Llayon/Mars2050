@@ -23,6 +23,7 @@ import { BuildingsScreen } from '@/components/screens/BuildingsScreen'
 import { MapScreen } from '@/components/screens/MapScreen'
 import { OperationsScreen } from '@/components/screens/OperationsScreen'
 import { ProfileScreen } from '@/components/screens/ProfileScreen'
+import { HudBottomSheet } from '@/components/ui/hud/HudBottomSheet'
 import type { BuildingTypeKey } from '@/domains/building/building.types'
 
 function GameUI() {
@@ -122,47 +123,45 @@ function GameUI() {
   }
 
   if (isTWA) {
-    const renderScreen = () => {
-      switch (activeTab) {
-        case 'colony':
-          return <ColonyScreen {...colonyScreenProps} />
-        case 'buildings':
-          return (
-            <BuildingsScreen
-              buildings={buildings}
-              colonyId={colonyId!}
-              resources={resources}
-              resourcesLoading={resourcesLoading}
-              onBuild={handleBuild}
-              onDemolish={handleDemolish}
-            />
-          )
-        case 'map':
-          return (
-            <MapScreen
-              colonyId={colonyId!}
-              resources={resources}
-              resourcesLoading={resourcesLoading}
-            />
-          )
-        case 'operations':
-          return <OperationsScreen colonyId={colonyId!} resources={resources} />
-        case 'profile':
-          return (
-            <ProfileScreen
-              colony={colony}
-              colonyLoading={colonyLoading}
-              userEmail={user?.email}
-            />
-          )
-      }
-    }
-
     return (
-      <div className="min-h-[100dvh] bg-mars-surface text-white flex flex-col">
-        <div className="flex-1 overflow-hidden">
-          {renderScreen()}
+      <div className="min-h-[100dvh] bg-black text-white flex flex-col relative overflow-hidden">
+        {/* Base layer: Colony Screen is always present */}
+        <div className="absolute inset-0 z-0">
+          <ColonyScreen {...colonyScreenProps} />
         </div>
+        
+        {/* Bottom Sheets for other tabs */}
+        <HudBottomSheet open={activeTab === 'buildings'} onClose={() => setActiveTab('colony')}>
+          <BuildingsScreen
+            buildings={buildings}
+            colonyId={colonyId!}
+            resources={resources}
+            resourcesLoading={resourcesLoading}
+            onBuild={handleBuild}
+            onDemolish={handleDemolish}
+          />
+        </HudBottomSheet>
+        
+        <HudBottomSheet open={activeTab === 'map'} onClose={() => setActiveTab('colony')}>
+          <MapScreen
+            colonyId={colonyId!}
+            resources={resources}
+            resourcesLoading={resourcesLoading}
+          />
+        </HudBottomSheet>
+        
+        <HudBottomSheet open={activeTab === 'operations'} onClose={() => setActiveTab('colony')}>
+          <OperationsScreen colonyId={colonyId!} resources={resources} />
+        </HudBottomSheet>
+        
+        <HudBottomSheet open={activeTab === 'profile'} onClose={() => setActiveTab('colony')}>
+          <ProfileScreen
+            colony={colony}
+            colonyLoading={colonyLoading}
+            userEmail={user?.email}
+          />
+        </HudBottomSheet>
+
         <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
       </div>
     )
