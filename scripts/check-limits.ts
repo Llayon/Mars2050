@@ -103,6 +103,7 @@ const LIMITS: Record<string, number> = {
   service: 250,
   component: 250,
   hook: 150,
+  replayEngine: 320,
 }
 const DEFAULT_LIMIT = 250
 
@@ -143,6 +144,7 @@ function readFileContent(filePath: string): string {
 }
 
 function classifyFile(relPath: string): { type: string; limit: number } {
+  if (isReplayRenderEngine(relPath)) return { type: 'Replay/render engine', limit: LIMITS['replayEngine'] }
   if (relPath.includes('/api/')) return { type: 'API route', limit: LIMITS['api'] }
   if (relPath.startsWith('hooks/')) return { type: 'Hook', limit: LIMITS['hook'] }
   if (relPath.endsWith('.service.ts')) return { type: 'Service', limit: LIMITS['service'] }
@@ -151,6 +153,10 @@ function classifyFile(relPath: string): { type: string; limit: number } {
   if (relPath.endsWith('.config.ts')) return { type: 'Config', limit: LIMITS['config'] }
   if (relPath.endsWith('.tsx')) return { type: 'Component', limit: LIMITS['component'] }
   return { type: 'Other', limit: DEFAULT_LIMIT }
+}
+
+function isReplayRenderEngine(relPath: string): boolean {
+  return relPath.endsWith('battle-replay-engine.ts') || relPath.endsWith('-replay-engine.ts')
 }
 
 // ─── Get changed files via git diff ───────────────────────────

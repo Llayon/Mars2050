@@ -59,11 +59,15 @@ function getAcquisitionCandidates(unit: SimUnit, units: SimUnit[], spatialHash?:
 }
 
 function selectHealTarget(unit: SimUnit, candidates: SimUnit[]): SimUnit | null {
+  const woundedAllies = candidates.filter(a => !a.isDead && a.team === unit.team && a.hp < a.maxHp && a.id !== unit.id);
+  if (woundedAllies.length > 0) return selectNearestAlly(unit, woundedAllies);
+
+  return selectSupportAnchor(unit, candidates);
+}
+
+function selectNearestAlly(unit: SimUnit, allies: SimUnit[]): SimUnit | null {
   let target: SimUnit | null = null;
   let minDistance = Infinity;
-  let allies = candidates.filter(a => !a.isDead && a.team === unit.team && a.hp < a.maxHp && a.id !== unit.id);
-  if (allies.length === 0) allies = candidates.filter(a => !a.isDead && a.team === unit.team && a.id !== unit.id);
-
   for (const ally of allies) {
     const dist = getDistance(unit.x, unit.y, ally.x, ally.y);
     if (dist < minDistance) {
@@ -73,6 +77,39 @@ function selectHealTarget(unit: SimUnit, candidates: SimUnit[]): SimUnit | null 
   }
 
   return target;
+}
+
+function selectSupportAnchor(unit: SimUnit, candidates: SimUnit[]): SimUnit | null {
+  const allies = candidates.filter(a => !a.isDead && a.team === unit.team && a.id !== unit.id);
+  if (allies.length === 0) return null;
+
+  const enemies = candidates.filter(e => !e.isDead && e.team !== unit.team);
+  const combatAllies = allies.filter(a => a.attackType !== 'heal' && (a.speed > 0 || a.attack > 0 || a.attackType === 'spawn'));
+  const anchors = combatAllies.length > 0 ? combatAllies : allies;
+  let target: SimUnit | null = null;
+
+  for (const ally of anchors) {
+    if (!target || isBetterSupportAnchor(unit, ally, target, enemies)) {
+      target = ally;
+    }
+  }
+
+  return target;
+}
+
+function isBetterSupportAnchor(unit: SimUnit, candidate: SimUnit, current: SimUnit, enemies: SimUnit[]): boolean {
+  const candidateEnemyDistance = getNearestEnemyDistance(candidate, enemies);
+  const currentEnemyDistance = getNearestEnemyDistance(current, enemies);
+  if (candidateEnemyDistance !== currentEnemyDistance) return candidateEnemyDistance < currentEnemyDistance;
+  return isBetterTie(unit, candidate, current);
+}
+
+function getNearestEnemyDistance(unit: SimUnit, enemies: SimUnit[]): number {
+  let nearestDistance = Infinity;
+  for (const enemy of enemies) {
+    nearestDistance = Math.min(nearestDistance, getDistance(unit.x, unit.y, enemy.x, enemy.y));
+  }
+  return nearestDistance;
 }
 
 function getLockedTarget(unit: SimUnit, candidates: SimUnit[], meleeEngagement: MeleeEngagementState): SimUnit | null {

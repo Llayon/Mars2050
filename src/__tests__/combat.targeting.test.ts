@@ -121,6 +121,30 @@ describe('targetingSystem aggro', () => {
     expect(attacker.aggroLockTicks).toBe(10)
   })
 
+  it('keeps heal priority on wounded allies before support anchoring', () => {
+    const medic = makeUnit({ id: 'medic', team: 'attacker', type: 'medic', x: 0, y: 0, attackType: 'heal' })
+    const wounded = makeUnit({ id: 'wounded', team: 'attacker', type: 'marine', x: 180, y: 0, hp: 50 })
+    const frontline = makeUnit({ id: 'frontline', team: 'attacker', type: 'marine', x: 260, y: 0 })
+    const enemy = makeUnit({ id: 'enemy', team: 'defender', x: 280, y: 0 })
+    const units = [medic, wounded, frontline, enemy]
+
+    const target = targetingSystem(medic, units, createMeleeEngagementState(), makeHash(units))
+
+    expect(target?.id).toBe('wounded')
+  })
+
+  it('anchors healers to frontline combat allies when nobody is wounded', () => {
+    const medic = makeUnit({ id: 'medic', team: 'attacker', type: 'medic', x: 0, y: 0, attackType: 'heal' })
+    const otherSupport = makeUnit({ id: 'other-support', team: 'attacker', type: 'officer', x: 20, y: 0, attackType: 'heal' })
+    const frontline = makeUnit({ id: 'frontline', team: 'attacker', type: 'marine', x: 260, y: 0 })
+    const enemy = makeUnit({ id: 'enemy', team: 'defender', x: 280, y: 0 })
+    const units = [medic, otherSupport, frontline, enemy]
+
+    const target = targetingSystem(medic, units, createMeleeEngagementState(), makeHash(units))
+
+    expect(target?.id).toBe('frontline')
+  })
+
   it('uses anti-air profile to prefer aircraft over a closer ground target', () => {
     const turret = makeUnit({ id: 'turret', team: 'attacker', type: 'aa_turret', x: 0, y: 0, range: 280, canTargetAir: true })
     const ground = makeUnit({ id: 'ground', team: 'defender', type: 'marine', x: 120, y: 0 })

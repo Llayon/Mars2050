@@ -3,7 +3,7 @@ export const SPRITE_PATHS: Record<string, string> = {
   'rocketeer': '/sprites/rocketeer',
   'exosuit': '/sprites/exosuit',
   'sniper': '/sprites/sniper',
-  'medic': '/sprites/medic',
+  'medic': '/assets/units/medic-v2',
   'turret': '/sprites/turret',
   'alien_bug': '/sprites/alien_bug',
   'alien_spitter': '/sprites/alien_spitter'

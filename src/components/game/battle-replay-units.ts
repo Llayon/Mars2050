@@ -96,8 +96,9 @@ export function createU(
     
     const vScale = vConfig.scale || 1.0;
     const vAnchor = vConfig.anchor || { x: 0.5, y: 0.8 };
+    const sourceCanvas = vConfig.sourceCanvas || 128;
     s.anchor.set(vAnchor.x, vAnchor.y);
-    s.scale.set(((radius * 8) / 128) * vScale);
+    s.scale.set(((radius * 8) / sourceCanvas) * vScale);
     s.y = vConfig.yOffset || 0;
     c.addChild(s)
   } else {

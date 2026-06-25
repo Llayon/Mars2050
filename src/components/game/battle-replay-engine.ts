@@ -9,7 +9,7 @@ import { drawOverlays } from './battle-replay-overlays'
 import { createU, getSvgFrameTexture, updateHp } from './battle-replay-units'
 import type { SpriteState } from './battle-replay-units'
 import { addVisualAnimationAssets, getVisualAnimationTexture } from './battle-replay-animation-sequences'
-import { applyProceduralMotion, updateParticles } from './battle-replay-motion-vfx'
+import { applyProceduralMotion, updateParticles, initMotionVfx } from './battle-replay-motion-vfx'
 
 export interface ReplayControls {
   play: () => void;
@@ -33,6 +33,8 @@ export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
 
   const app = new Application(), BOARD_W = FIELD_WIDTH, BOARD_H = FIELD_HEIGHT
   await app.init({ width: BOARD_W, height: BOARD_H, backgroundColor: 0x1a1a2e, resolution: window.devicePixelRatio || 1, autoDensity: true })
+
+  initMotionVfx()
 
   let isPlaying = true, playbackSpeed = 1
   let overlays = { radius: false, velocity: false, targets: false }

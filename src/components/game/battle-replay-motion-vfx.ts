@@ -14,6 +14,12 @@ const MAX_PARTICLES = 50;
 const particlePool: { g: Graphics; life: number; maxLife: number; vx: number; vy: number; active: boolean }[] = [];
 let nextTrailAt: Record<string, number> = {};
 
+export function initMotionVfx() {
+  particlePool.forEach(p => p.g.destroy());
+  particlePool.length = 0;
+  nextTrailAt = {};
+}
+
 function spawnTrailParticle(x: number, y: number, color: number, layer: Container) {
   let p = particlePool.find(p => !p.active);
   if (!p) {
