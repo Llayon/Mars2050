@@ -92,14 +92,17 @@ export function processSpawnAction(unit: SimUnit, target: SimUnit, units: SimUni
      const spawnType = unit.spawnType || 'turret';
      const newId = 'spawn_' + Math.floor(rng.next() * 1000000);
      const spawnConfig = UNIT_TYPES[spawnType as UnitTypeKey];
+     const sourceConfig = UNIT_TYPES[unit.type as UnitTypeKey];
+     const overrides = sourceConfig?.baseStats.spawnOverrides;
+     const spawnHp = overrides?.hp ?? spawnConfig.baseStats.hp;
      
      units.push({
        id: newId,
        team: unit.team,
        type: spawnType,
-       hp: spawnConfig.baseStats.hp,
-       maxHp: spawnConfig.baseStats.hp,
-       attack: spawnConfig.baseStats.attack,
+       hp: spawnHp,
+       maxHp: spawnHp,
+       attack: overrides?.attack ?? spawnConfig.baseStats.attack,
        defense: spawnConfig.baseStats.defense,
        speed: spawnConfig.baseStats.speed,
        range: spawnConfig.baseStats.range,
@@ -109,6 +112,8 @@ export function processSpawnAction(unit: SimUnit, target: SimUnit, units: SimUni
        actionCooldown: 0,
        isFlying: spawnConfig.baseStats.isFlying || false,
        canTargetAir: spawnConfig.baseStats.canTargetAir || false,
+       isTemporary: overrides?.isTemporary,
+       temporaryDuration: overrides?.duration,
        turnSpeed: spawnConfig.baseStats.turnSpeed || 5,
        currentAngle: unit.team === 'attacker' ? Math.PI / 2 : -Math.PI / 2,
        size: spawnConfig.baseStats.size || 'M',
@@ -119,7 +124,9 @@ export function processSpawnAction(unit: SimUnit, target: SimUnit, units: SimUni
        isDead: false,
        shield: 0,
        maxShield: 0,
-       statusEffects: []
+       statusEffects: [],
+       statusOnHit: spawnConfig.baseStats.statusOnHit ? spawnConfig.baseStats.statusOnHit.map(status => ({ ...status })) : undefined,
+       supportAuras: spawnConfig.baseStats.supportAuras ? spawnConfig.baseStats.supportAuras.map(aura => ({ ...aura })) : undefined
      });
 
      actions.push({ 
@@ -129,7 +136,7 @@ export function processSpawnAction(unit: SimUnit, target: SimUnit, units: SimUni
        toY: spawnY, 
        spawnType: spawnType, 
        spawnTeam: unit.team, 
-       spawnMaxHp: spawnConfig.baseStats.hp,
+       spawnMaxHp: spawnHp,
        targetId: newId
      });
      return true;

@@ -5,20 +5,14 @@ import { UNIT_TYPES } from './combat.config';
 import { handleDeath, processSpawnAction } from './combat.systems.utils';
 import { getDistance, FIELD_WIDTH, FIELD_HEIGHT, PRNG, getSizeRadius } from './combat.utils';
 import { isMeleeEngagementReady } from './combat.melee-engagement';
+import { applyStatus, isActionBlockedByStatus, tickStatuses } from './combat.status';
+import { applyCombatDamage } from './combat.damage';
+import { tryDeployMine } from './combat.minefield';
 
 export function tickModifiersSystem(unit: SimUnit, dt: number, actions: BattleAction[]) {
   if (unit.actionCooldown > 0) unit.actionCooldown = Math.max(0, unit.actionCooldown - 1);
-
-  if (unit.statusEffects) {
-    for (let i = unit.statusEffects.length - 1; i >= 0; i--) {
-      const eff = unit.statusEffects[i];
-      eff.duration--;
-      if (eff.duration <= 0) {
-        unit.statusEffects.splice(i, 1);
-        actions.push({ unitId: unit.id, type: 'status_expire', statusType: eff.type });
-      }
-    }
-  }
+  tickTemporaryUnit(unit, actions);
+  tickStatuses(unit, actions);
 }
 
 export function actionSystem(unit: SimUnit, target: SimUnit, units: SimUnit[], hazards: SimHazard[], actions: BattleAction[], rng: PRNG): boolean {
@@ -43,8 +37,10 @@ export function actionSystem(unit: SimUnit, target: SimUnit, units: SimUnit[], h
   if (Math.abs(angleDiff) > 0.26) return false;
 
   if (unit.actionCooldown > 0) return false;
+  if (isActionBlockedByStatus(unit)) return false;
 
   unit.actionCooldown = unit.actionCooldownMax; // Reset cooldown
+  if (tryDeployMine(unit, target, hazards, actions, rng)) return true;
 
   if (unit.attackType === 'spawn') {
       return processSpawnAction(unit, target, units, actions, rng);
@@ -60,51 +56,13 @@ export function actionSystem(unit: SimUnit, target: SimUnit, units: SimUnit[], h
      for (let shot = 0; shot < numShots; shot++) {
          if (target.isDead) break;
 
-         let damage = Math.max(1, unit.attack - target.defense);
-         if (target.isFlying && unit.antiAirDamageMult) {
-             damage = Math.floor(damage * unit.antiAirDamageMult);
-         }
-         if (!target.isFlying && unit.groundDamageMult) {
-             damage = Math.floor(damage * unit.groundDamageMult);
-         }
-         
-         if (target.isMoving && target.damageReductionWhileMoving) {
-             damage = Math.floor(damage * (1 - target.damageReductionWhileMoving));
-         }
-
-         let hitShield = false;
-         // Portable Shield Logic (absorbs overflow damage completely)
-         if (target.shield > 0) {
-             hitShield = true;
-             if (target.shield >= damage) {
-                 target.shield -= damage;
-                 damage = 0;
-             } else {
-                 target.shield = 0;
-                 damage = 0; // Shield breaks but absorbs the rest of this hit
-             }
-         }
-
-         if (unit.executeThreshold && target.hp <= unit.executeThreshold) {
-             damage = target.hp; // Insta-kill
-         }
-         
-         if (unit.lifestealMult && damage > 0) {
-             const heal = Math.floor(damage * unit.lifestealMult);
-             unit.hp = Math.min(unit.maxHp, unit.hp + heal);
-         }
-
-         if (damage > 0) {
-             target.hp -= damage;
-         }
+         const damageResult = applyCombatDamage(unit, target, unit.attack);
          
          unit.hasAttacked = true;
          
-         actions.push({ unitId: unit.id, type: 'attack', targetId: target.id, damage, isShieldHit: hitShield });
+         actions.push({ unitId: unit.id, type: 'attack', targetId: target.id, damage: damageResult.damage, isShieldHit: damageResult.isShieldHit });
 
-         if (unit.appliesEmp) {
-             target.statusEffects.push({ type: 'emp', duration: 30 });
-         }
+         applyOnHitStatuses(unit, target, actions);
 
          if (unit.leavesPuddle) {
              hazards.push({
@@ -128,38 +86,11 @@ export function actionSystem(unit: SimUnit, target: SimUnit, units: SimUnit[], h
              const splashEnemies = units.filter(e => !e.isDead && e.team !== unit.team && e.id !== target.id);
              for (const e of splashEnemies) {
                  if (getDistance(target.x, target.y, e.x, e.y) <= radius) {
-                     let splash = Math.max(1, Math.floor(unit.attack * 0.5) - e.defense);
+                     const splash = applyCombatDamage(unit, e, Math.floor(unit.attack * 0.5));
                      
-                     if (e.isFlying && unit.antiAirDamageMult) splash = Math.floor(splash * unit.antiAirDamageMult);
-                     if (!e.isFlying && unit.groundDamageMult) splash = Math.floor(splash * unit.groundDamageMult);
-                     if (e.isMoving && e.damageReductionWhileMoving) splash = Math.floor(splash * (1 - e.damageReductionWhileMoving));
-
-                     let hitShield = false;
-                     if (e.shield > 0) {
-                         hitShield = true;
-                         if (e.shield >= splash) {
-                             e.shield -= splash;
-                             splash = 0;
-                         } else {
-                             e.shield = 0;
-                             splash = 0;
-                         }
-                     }
-
-                     if (unit.executeThreshold && e.hp <= unit.executeThreshold) {
-                         splash = e.hp; // Insta-kill
-                     }
+                     actions.push({ unitId: unit.id, type: 'attack', targetId: e.id, damage: splash.damage, isShieldHit: splash.isShieldHit });
                      
-                     if (unit.lifestealMult && splash > 0) {
-                         const heal = Math.floor(splash * unit.lifestealMult);
-                         unit.hp = Math.min(unit.maxHp, unit.hp + heal);
-                     }
-
-                     if (splash > 0) e.hp -= splash;
-                     
-                     actions.push({ unitId: unit.id, type: 'attack', targetId: e.id, damage: splash, isShieldHit: hitShield });
-                     
-                     if (unit.appliesEmp) e.statusEffects.push({ type: 'emp', duration: 30 });
+                     applyOnHitStatuses(unit, e, actions);
 
                      if (e.hp <= 0 && !e.isDead) {
                          handleDeath(e, unit, units, actions, hazards, rng);
@@ -172,3 +103,18 @@ export function actionSystem(unit: SimUnit, target: SimUnit, units: SimUnit[], h
   return true;
 }
 
+function applyOnHitStatuses(unit: SimUnit, target: SimUnit, actions: BattleAction[]): void {
+  if (unit.appliesEmp) applyStatus(target, { type: 'emp', duration: 30, sourceUnitId: unit.id }, actions);
+  for (const status of unit.statusOnHit ?? []) {
+    applyStatus(target, { ...status, sourceUnitId: unit.id }, actions);
+  }
+}
+
+function tickTemporaryUnit(unit: SimUnit, actions: BattleAction[]): void {
+  if (!unit.isTemporary || unit.temporaryDuration === undefined || unit.isDead) return;
+  unit.temporaryDuration--;
+  if (unit.temporaryDuration > 0) return;
+
+  unit.isDead = true;
+  actions.push({ unitId: unit.id, type: 'die' });
+}

@@ -14,6 +14,11 @@ import type { Colony } from '@/domains/colony/colony.types'
 const TYPE_COLORS: Record<string, number> = {
   solar_panels: 0xFFD700, oxygen_generator: 0x00CCFF, water_extractor: 0x3366FF,
   mine: 0x996633, greenhouse: 0x33FF33, research_lab: 0xCC33FF,
+  habitat: 0xCCCCCC, habitat_mk2: 0xDDDDDD, habitat_mk3: 0xEEEEEE,
+  community_hall: 0xFFB6C1, workshop: 0xCD853F, advanced_mine: 0x8B4513,
+  geothermal_plant: 0xFF4500, vehicle_bay: 0x708090, biotech_lab: 0x32CD32,
+  data_center: 0x00CED1, university: 0x9370DB, nanoforge: 0x4682B4,
+  spaceport: 0x1E90FF, military_academy: 0x8B0000, hq: 0x4B0082, executive_dome: 0xFFDF00
 }
 
 function drawBuilding(b: BuildingRow, textures: Record<string, PIXI.Texture>) {

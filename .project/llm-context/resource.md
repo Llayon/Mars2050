@@ -3,7 +3,7 @@
 ## Файлы домена
 - `src/domains/resource/resource.types.ts` — Типы ресурсов
 - `src/domains/resource/resource.schemas.ts` — Zod схемы
-- `src/domains/resource/resource.service.ts` — Бизнес-логика
+- `src/domains/resource/resource.service.ts` — Бизнес-логика (вкл. recalculateResources)
 - `src/domains/resource/resource.events.ts` — События ресурсов
 - `src/domains/resource/resource.server.ts` — Supabase server client
 
@@ -14,20 +14,20 @@
 - `src/hooks/useResources.ts` — Хук для работы с ресурсами
 
 ## Components
-- `src/components/game/ResourcePanel.tsx` — UI панель ресурсов
+- `src/components/screens/ResourcesBar.tsx` — UI полоса ресурсов в TWA
+- `src/components/game/ResourcePanel.tsx` — Desktop UI панель ресурсов
 
 ## Типы (ключевые)
-- `ResourceType`: Типы ресурсов (minerals, energy, etc.)
-- `Resource`: Ресурс колонии (в БД)
-- `ResourceUpdate`: DTO для обновления ресурсов
+- `ResourceTypeKey`: Ключи типов ресурсов (minerals, energy, consumer_goods, etc.)
+- `ResourceRow`: Ресурс колонии (в БД)
 
 ## Сервис (resource.service.ts)
-- `getResources()`: Получить ресурсы колонии (через RLS)
-- `recalculateResources()`: Пересчет ресурсов (lazy calculation)
-- `updateResourceRate()`: Обновление production rate при постройке/сносе
+- `getResources()`: Получить ресурсы колонии
+- `recalculateResources()`: Ключевая функция! Вызывает RPC для начисления офлайн-прогресса, затем рассчитывает новые рейты (производство зданий с учетом `fillRatio` штата, потребление населения) и сохраняет их в БД.
 
 ## Особенности
-- **Lazy recalculation**: Ресурсы пересчитываются при каждом действии
+- **Lazy recalculation**: Ресурсы пересчитываются при загрузке и при каждом изменении (постройка/снос зданий).
+- **Dynamic Rates**: Мы больше не хардкодим `production_rate` инкрементами. Рейт вычисляется на лету на основе актуального штата и зданий.
 - **RLS reads**: Чтение через хук `useResources()` с Supabase клиентом
 - **Server writes**: Мутации только через API routes с service_role
 

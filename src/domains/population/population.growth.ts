@@ -1,4 +1,5 @@
-import { PopulationTier, HAPPINESS_GROWTH_MULT, POPULATION_TIERS } from './population.config'
+import { HAPPINESS_GROWTH_MULT, POPULATION_TIERS } from './population.config'
+import type { PopulationTier } from './population.types'
 import type { ResourceRow } from '@/domains/resource/resource.types'
 
 /**

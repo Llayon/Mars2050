@@ -1,7 +1,10 @@
 import type { Team, SimUnit, Obstacle } from './combat.sim.types'
 import type { CombatMetrics } from './combat.metrics'
 
-export type BattleActionType = 'move' | 'attack' | 'heal' | 'die' | 'spawn' | 'hazard_spawn' | 'status_apply' | 'status_expire'
+export type BattleActionType =
+  | 'move' | 'attack' | 'heal' | 'die' | 'spawn' | 'hazard_spawn'
+  | 'status_apply' | 'status_expire' | 'status_cleanse' | 'status_tick'
+  | 'shield_apply'
 
 export interface BattleAction {
   unitId: string
@@ -22,6 +25,7 @@ export interface BattleAction {
   hazardId?: string
   radius?: number
   statusType?: string
+  value?: number
 }
 
 export interface BattleTick {

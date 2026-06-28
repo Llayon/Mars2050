@@ -10,6 +10,11 @@ export function processHazards(hazards: SimHazard[], units: SimUnit[], actions: 
         hazards.splice(i, 1);
         continue;
      }
+
+     if (h.type === 'mine') {
+        if (processMine(h, units, actions)) hazards.splice(i, 1);
+        continue;
+     }
      
      // Every 10 ticks (approx 1 sec), apply damage
      if (h.duration % 10 === 0) {
@@ -24,4 +29,22 @@ export function processHazards(hazards: SimHazard[], units: SimUnit[], actions: 
         }
      }
   }
+}
+
+function processMine(h: SimHazard, units: SimUnit[], actions: BattleAction[]): boolean {
+  const targets = units
+    .filter(u => !u.isDead && !u.isFlying && u.team !== h.team && getDistance(u.x, u.y, h.x, h.y) <= h.radius)
+    .sort((a, b) => a.id.localeCompare(b.id));
+  if (targets.length === 0) return false;
+
+  for (const target of targets) {
+    target.hp -= h.damagePerTick;
+    actions.push({ unitId: h.id, type: 'attack', targetId: target.id, damage: h.damagePerTick });
+    if (target.hp <= 0 && !target.isDead) {
+      target.isDead = true;
+      actions.push({ unitId: target.id, type: 'die' });
+    }
+  }
+
+  return true;
 }

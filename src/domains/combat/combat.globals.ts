@@ -2,6 +2,7 @@ import type { BattleAction } from './combat.actions';
 import type { SimUnit, SimHazard, Team } from './combat.sim.types';
 import { PRNG, FIELD_WIDTH, FIELD_HEIGHT } from './combat.utils';
 import { GlobalUpgradeConfig } from './combat.upgrades';
+import { applyStatus } from './combat.status';
 
 export function processGlobals(
   tick: number,
@@ -55,8 +56,7 @@ export function processGlobals(
         } else if (upg.type === 'global_emp') {
            const enemies = units.filter(u => !u.isDead && u.team === enemyTeam)
            enemies.forEach(e => {
-              e.statusEffects.push({ type: 'emp', duration: upg.value });
-              actions.push({ unitId: e.id, type: 'status_apply', statusType: 'emp' })
+              applyStatus(e, { type: 'emp', duration: upg.value, sourceUnitId: 'global_emp' }, actions)
            })
         } else if (upg.type === 'mass_heal') {
            const allies = units.filter(u => !u.isDead && u.team === team)

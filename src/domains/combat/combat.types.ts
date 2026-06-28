@@ -1,4 +1,5 @@
 import { Database, UnitsType } from '@/types/database'
+import type { StatusEffect, SupportAura } from './combat.sim.types'
 
 export type UnitRow = Database['public']['Tables']['units']['Row']
 export type BattleRow = Database['public']['Tables']['battles']['Row']
@@ -27,6 +28,10 @@ export interface UnitBaseStats {
   hp: number; attack: number; defense: number; speed: number; range: number
   attackType: 'single' | 'aoe' | 'heal' | 'spawn'
   aoeRadius?: number; spawnType?: string; actionCooldownMax?: number
+  spawnOverrides?: { hp?: number; attack?: number; isTemporary?: boolean; duration?: number }
+  statusOnHit?: StatusEffect[]
+  supportAuras?: SupportAura[]
+  mineOnAction?: { radius: number; damage: number; duration: number }
   isFlying?: boolean; canTargetAir?: boolean
   targetingProfile?: TargetingProfile
   combatTags?: CombatTag[]
@@ -43,6 +48,6 @@ export interface UnitTypeConfig {
   formation?: 'line' | 'wedge' | 'grid'
 }
 
-export type { Team, StatusEffect, Obstacle, SimHazard, SimUnit } from './combat.sim.types'
+export type { Team, StatusEffect, StatusType, SupportAura, SupportAuraType, Obstacle, SimHazard, SimUnit } from './combat.sim.types'
 export * from './combat.actions'
 

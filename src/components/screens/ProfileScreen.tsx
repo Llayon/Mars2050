@@ -3,7 +3,7 @@
 import { memo } from 'react'
 import { useLeaderboard } from '@/hooks/useLeaderboard'
 import type { Colony } from '@/domains/colony/colony.types'
-import type { PopulationState } from '@/domains/population/population.types'
+import type { PopulationState, PopulationTier } from '@/domains/population/population.types'
 import { PopulationPanel } from '@/components/game/PopulationPanel'
 
 interface ProfileScreenProps {
@@ -12,7 +12,7 @@ interface ProfileScreenProps {
   userEmail?: string
   population?: PopulationState | null
   populationLoading?: boolean
-  onUpgradePopulation?: (fromTier: string, count: number) => void
+  onUpgradePopulation?: (fromTier: PopulationTier, count: number) => void
 }
 
 export const ProfileScreen = memo(function ProfileScreen({ 

@@ -2,7 +2,7 @@ import { z } from 'zod'
 
 export const upgradePopulationSchema = z.object({
   colonyId: z.string().uuid('Некорректный ID колонии'),
-  fromTier: z.enum(['worker', 'technician', 'scientist']),
+  fromTier: z.enum(['worker', 'technician', 'scientist', 'director']),
   count: z.number().int().min(1, 'Количество должно быть больше 0')
 })
 

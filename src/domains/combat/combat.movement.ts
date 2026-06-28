@@ -7,12 +7,14 @@ import { getMovementNeighbors, getSteeringContext } from './combat.steering';
 import { getStuckRecoveryForce, updateStuckRecovery } from './combat.stuck-recovery';
 import { getPositioningDecision } from './combat.positioning';
 import { getFormationCohesionForce } from './combat.formation';
+import { getMovementSpeedMultiplier } from './combat.status';
 
 export function movementSystem(unit: SimUnit, target: SimUnit, units: SimUnit[], actions: BattleAction[], dt: number, rng: PRNG, flowFieldMap: FlowFieldMap, obstacles: Obstacle[], spatialHash?: SpatialHash) {
   let vx = 0;
   let vy = 0;
   
   if (!unit.velocity) unit.velocity = { x: 0, y: 0 };
+  const effectiveSpeed = unit.speed * getMovementSpeedMultiplier(unit);
 
   const neighbors = getMovementNeighbors(unit, units, spatialHash);
 
@@ -80,7 +82,7 @@ export function movementSystem(unit: SimUnit, target: SimUnit, units: SimUnit[],
   while (unit.currentAngle > Math.PI) unit.currentAngle -= Math.PI * 2;
   while (unit.currentAngle < -Math.PI) unit.currentAngle += Math.PI * 2;
 
-  if (unit.speed <= 0) {
+  if (effectiveSpeed <= 0) {
     unit.velocity.x = 0;
     unit.velocity.y = 0;
     unit.isMoving = false;
@@ -123,8 +125,8 @@ export function movementSystem(unit: SimUnit, target: SimUnit, units: SimUnit[],
   }
 
   if (positioning.shouldMove) {
-    vx = Math.cos(unit.currentAngle) * unit.speed;
-    vy = Math.sin(unit.currentAngle) * unit.speed;
+    vx = Math.cos(unit.currentAngle) * effectiveSpeed;
+    vy = Math.sin(unit.currentAngle) * effectiveSpeed;
     unit.isMoving = true;
   } else {
     unit.isMoving = false;
@@ -138,7 +140,7 @@ export function movementSystem(unit: SimUnit, target: SimUnit, units: SimUnit[],
         if (dist > 0 && dist < minDist) {
            const overlap = minDist - dist;
            const pushAngle = Math.atan2(unit.y - obs.y, unit.x - obs.x);
-           const pushForce = Math.min(overlap * 2.5, Math.max(10, unit.speed * 0.6));
+           const pushForce = Math.min(overlap * 2.5, Math.max(10, effectiveSpeed * 0.6));
            vx += Math.cos(pushAngle) * pushForce;
            vy += Math.sin(pushAngle) * pushForce;
         }
@@ -158,7 +160,7 @@ export function movementSystem(unit: SimUnit, target: SimUnit, units: SimUnit[],
   if (recovery.isRecovering) unit.isNavigatingObstacle = true;
 
   // Keep auxiliary steering responsive without letting slow units lurch from force spikes.
-  const maxSpeed = Math.max(unit.speed * 1.6, 18);
+  const maxSpeed = Math.max(effectiveSpeed * 1.6, 18);
   const desiredMag = Math.hypot(vx, vy);
   
   if (desiredMag < 0.5) {

@@ -12,6 +12,7 @@ import type { BuildingTypeKey } from '@/domains/building/building.types'
 import type { Colony } from '@/domains/colony/colony.types'
 import type { ResourceRow } from '@/domains/resource/resource.types'
 import type { BuildingRow } from '@/domains/building/building.types'
+import type { PopulationState, PopulationTier } from '@/domains/population/population.types'
 
 interface TwaHudProps {
   colonyId: string
@@ -28,9 +29,9 @@ interface TwaHudProps {
   onBuild: (type: BuildingTypeKey, x?: number, y?: number) => Promise<void>
   onDemolish: (id: string) => Promise<void>
   onLogout: () => void
-  population: import('@/domains/population/population.types').PopulationState | null
+  population: PopulationState | null
   populationLoading?: boolean
-  onUpgradePopulation: (fromTier: string, count: number) => void
+  onUpgradePopulation: (fromTier: PopulationTier, count: number) => void
 }
 
 export function TwaHud({

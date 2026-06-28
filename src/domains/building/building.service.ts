@@ -1,7 +1,6 @@
 import { getServerClient } from '@/domains/resource/resource.server'
-import type { BuildingCreateDTO, BuildingResponse, BuildingRow } from './building.types'
-import { BUILDING_TYPES, BUILDING_PRODUCTION_MAP, BUILDING_CONSUMPTION_MAP } from './building.config'
-import { updateResourceRate, PRODUCTION_TYPE } from './building.utils'
+import type { BuildingCreateDTO, BuildingResponse, BuildingRow, BuildingTypeKey } from './building.types'
+import { BUILDING_TYPES } from './building.config'
 import { validateBuildingPlacement } from './building-placement'
 import { recalculateResources } from '@/domains/resource/resource.service'
 import type { TerrainCell } from '@/domains/colony/colony-terrain.types'
@@ -41,7 +40,7 @@ export async function createBuilding(dto: BuildingCreateDTO): Promise<BuildingRe
       .not('y', 'is', null)
 
     const mappedBuildings = (buildings || []).map(b => {
-      const cfg = BUILDING_TYPES[b.type as string]
+      const cfg = BUILDING_TYPES[b.type as BuildingTypeKey]
       return { x: b.x as number, y: b.y as number, width: cfg?.width || 1, height: cfg?.height || 1 }
     })
 

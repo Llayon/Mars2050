@@ -1,10 +1,10 @@
 import React from 'react'
 import { POPULATION_TIERS } from '@/domains/population/population.config'
-import type { PopulationState } from '@/domains/population/population.types'
+import type { PopulationState, PopulationTier } from '@/domains/population/population.types'
 
 interface PopulationPanelProps {
   population: PopulationState | null
-  onUpgrade: (fromTier: string, count: number) => void
+  onUpgrade: (fromTier: PopulationTier, count: number) => void
   loading?: boolean
 }
 
@@ -65,7 +65,7 @@ export function PopulationPanel({ population, onUpgrade, loading }: PopulationPa
                   {/* Only allow upgrade if next tier exists and there's enough population */}
                   {idx < tiers.length - 1 && tier.count >= 10 && (
                     <button 
-                      onClick={() => onUpgrade(tier.key, 10)}
+                      onClick={() => onUpgrade(tier.key as PopulationTier, 10)}
                       disabled={loading || tier.count < 10}
                       className="ml-2 px-3 py-1 bg-mars-orange hover:bg-orange-600 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded text-xs font-bold transition-colors"
                     >

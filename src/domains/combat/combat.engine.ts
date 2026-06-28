@@ -3,6 +3,7 @@ import { GLOBAL_UPGRADES, UPGRADES, GlobalUpgradeConfig } from './combat.upgrade
 import { processGlobals } from './combat.globals'
 import { processHazards } from './combat.hazards'
 import { processSpawnerLogic } from './combat.spawner'
+import { processSupportAuras } from './combat.auras'
 import type { UnitRow, BattleAction, BattleTick, BattleResult, UnitTypeKey } from './combat.types'
 import type { Team, SimUnit, Obstacle, SimHazard } from './combat.sim.types'
 import { actionSystem, tickModifiersSystem } from './combat.systems'
@@ -141,6 +142,8 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
         shield: Math.round(modShield),
         maxShield: Math.round(modShield),
         statusEffects: [],
+        statusOnHit: config.baseStats.statusOnHit ? config.baseStats.statusOnHit.map(status => ({ ...status })) : undefined,
+        supportAuras: config.baseStats.supportAuras ? config.baseStats.supportAuras.map(aura => ({ ...aura })) : undefined,
         appliesEmp,
         leavesPuddle,
         spawnerConfig: spawnerConfig ? { ...spawnerConfig } : undefined,
@@ -177,6 +180,7 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
   while (tick < MAX_TICKS) {
     const actions: BattleAction[] = []
     processGlobals(tick, activeGlobals, units, hazards, actions, rng);
+    processSupportAuras(tick, units, actions);
     
     const aliveAttackers = units.filter(u => !u.isDead && u.team === 'attacker')
     const aliveDefenders = units.filter(u => !u.isDead && u.team === 'defender')
@@ -196,7 +200,7 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
     for (const unit of turnOrder) {
       if (unit.isDead) continue;
       
-      tickModifiersSystem(unit, dt, actions);
+      tickModifiersSystem(unit, dt, actions); if (unit.isDead) continue;
 
       const target = targetingSystem(unit, units, meleeEngagement, spatialHash);
       if (!target) continue;
@@ -204,9 +208,10 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
       const unitCountBeforeActions = units.length;
       processSpawnerLogic(unit, target, units, hazards, actions, rng);
 
-      const hasEngagement = reserveMeleeEngagementSlot(unit, target, meleeEngagement);
+      const canActOnTarget = target.team !== unit.team || unit.attackType === 'heal';
+      const hasEngagement = canActOnTarget ? reserveMeleeEngagementSlot(unit, target, meleeEngagement) : true;
 
-      const acted = hasEngagement && actionSystem(unit, target, units, hazards, actions, rng);
+      const acted = canActOnTarget && hasEngagement && actionSystem(unit, target, units, hazards, actions, rng);
 
       for (let i = unitCountBeforeActions; i < units.length; i++) {
         if (!units[i].isDead) spatialHash.insert(units[i]);
@@ -230,8 +235,7 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
   const finalDefenders = units.filter(u => !u.isDead && u.team === 'defender')
   let winner: 'attacker' | 'defender' | 'draw' = 'draw'
   if (finalAttackers.length > 0 && finalDefenders.length === 0) winner = 'attacker'
-  if (finalDefenders.length > 0 && finalAttackers.length === 0) winner = 'defender'
-  if (finalAttackers.length > 0 && finalDefenders.length > 0) winner = 'defender'
+  if (finalDefenders.length > 0) winner = 'defender'
 
   return {
     winner,

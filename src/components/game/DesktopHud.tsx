@@ -13,7 +13,7 @@ import type { BuildingTypeKey } from '@/domains/building/building.types'
 import type { Colony } from '@/domains/colony/colony.types'
 import type { ResourceRow } from '@/domains/resource/resource.types'
 import type { BuildingRow } from '@/domains/building/building.types'
-import type { PopulationState } from '@/domains/population/population.types'
+import type { PopulationState, PopulationTier } from '@/domains/population/population.types'
 import { PopulationPanel } from '@/components/game/PopulationPanel'
 
 interface DesktopHudProps {
@@ -35,7 +35,7 @@ interface DesktopHudProps {
   onLogout: () => void
   population: PopulationState | null
   populationLoading?: boolean
-  onUpgradePopulation: (fromTier: string, count: number) => void
+  onUpgradePopulation: (fromTier: PopulationTier, count: number) => void
 }
 
 export function DesktopHud({

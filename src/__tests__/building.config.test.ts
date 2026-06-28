@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { BUILDING_TYPES, BUILDING_PRODUCTION_MAP, BUILDING_CONSUMPTION_MAP } from '@/domains/building/building.config'
+import { BUILDING_TYPES } from '@/domains/building/building.config'
 import type { ResourceTypeKey } from '@/domains/resource/resource.types'
 
 describe('building.config', () => {
@@ -19,9 +19,10 @@ describe('building.config', () => {
     }
   })
 
-  it('every building (except habitat) has a production rate', () => {
+  it('every building (except habitats and special structures) has a production rate', () => {
+    const nonProducers = ['habitat', 'habitat_mk2', 'habitat_mk3', 'community_hall', 'vehicle_bay', 'university', 'hq', 'spaceport', 'military_academy', 'executive_dome']
     for (const [key, config] of Object.entries(BUILDING_TYPES)) {
-      if (key === 'habitat') continue
+      if (nonProducers.includes(key)) continue
       expect(Object.keys(config.production).length, `${key} has no production`).toBeGreaterThan(0)
       for (const [resource, amount] of Object.entries(config.production)) {
         expect(amount, `${key}.production.${resource} must be positive`).toBeGreaterThan(0)
@@ -29,22 +30,10 @@ describe('building.config', () => {
     }
   })
 
-  it('BUILDING_PRODUCTION_MAP matches BUILDING_TYPES keys', () => {
-    const typeKeys = Object.keys(BUILDING_TYPES).sort()
-    const prodKeys = Object.keys(BUILDING_PRODUCTION_MAP).sort()
-    expect(prodKeys).toEqual(typeKeys)
-  })
-
-  it('BUILDING_CONSUMPTION_MAP matches BUILDING_TYPES keys', () => {
-    const typeKeys = Object.keys(BUILDING_TYPES).sort()
-    const consKeys = Object.keys(BUILDING_CONSUMPTION_MAP).sort()
-    expect(consKeys).toEqual(typeKeys)
-  })
-
   it('consumption values are non-negative', () => {
-    for (const [building, resources] of Object.entries(BUILDING_CONSUMPTION_MAP)) {
-      for (const [resource, amount] of Object.entries(resources)) {
-        expect(amount, `${building}.consumption.${resource} must be >= 0`).toBeGreaterThanOrEqual(0)
+    for (const [key, config] of Object.entries(BUILDING_TYPES)) {
+      for (const [resource, amount] of Object.entries(config.consumption)) {
+        expect(amount, `${key}.consumption.${resource} must be >= 0`).toBeGreaterThanOrEqual(0)
       }
     }
   })

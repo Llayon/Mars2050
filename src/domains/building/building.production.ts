@@ -1,7 +1,7 @@
 import { BUILDING_TYPES } from './building.config'
 import type { BuildingRow } from './building.types'
 import type { PopulationState, PopulationTier } from '@/domains/population/population.types'
-import type { ColonyTerrainCell } from '@/domains/colony/colony-terrain.types'
+import type { TerrainCell } from '@/domains/colony/colony-terrain.types'
 
 /**
  * Counts total job slots of a tier across all buildings.
@@ -25,7 +25,7 @@ export function getEffectiveProduction(
   building: BuildingRow,
   population: PopulationState | null,
   allBuildings: BuildingRow[],
-  terrainGrid: ColonyTerrainCell[] = []
+  terrainGrid: TerrainCell[] = []
 ): { production: Record<string, number>, consumption: Record<string, number> } {
   const config = BUILDING_TYPES[building.type]
   if (!config) return { production: {}, consumption: {} }

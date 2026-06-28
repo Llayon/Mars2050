@@ -3,6 +3,7 @@ import type { MeleeEngagementState } from './combat.melee-engagement';
 import { clearMeleeEngagementSlot, hasMeleeEngagementSlot, setMeleeWaitingTarget } from './combat.melee-engagement';
 import { getTargetingProfile, getTargetScore } from './combat.targeting-score';
 import { getDistance } from './combat.utils';
+import { hasStatus } from './combat.status';
 import type { SpatialHash } from './spatial-hash';
 
 const AGGRO_LOCK_TICKS = 10;
@@ -14,6 +15,9 @@ const SUPPORT_ACQUISITION_RADIUS = 420;
 export function targetingSystem(unit: SimUnit, units: SimUnit[], meleeEngagement: MeleeEngagementState, spatialHash?: SpatialHash): SimUnit | null {
   if (unit.attackType === 'heal') {
     return selectHealTarget(unit, units, spatialHash);
+  }
+  if (isPassiveSupportUnit(unit)) {
+    return selectPassiveSupportTarget(unit, units, spatialHash);
   }
 
   const lockedTarget = getLockedTarget(unit, units, meleeEngagement);
@@ -72,6 +76,15 @@ function selectHealTarget(unit: SimUnit, units: SimUnit[], spatialHash?: Spatial
   if (woundedAllies.length > 0) return selectNearestAlly(unit, woundedAllies);
 
   return selectSupportAnchor(unit, candidates) ?? selectSupportAnchor(unit, units);
+}
+
+function selectPassiveSupportTarget(unit: SimUnit, units: SimUnit[], spatialHash?: SpatialHash): SimUnit | null {
+  const candidates = getSupportCandidates(unit, units, spatialHash);
+  return selectSupportAnchor(unit, candidates) ?? selectSupportAnchor(unit, units);
+}
+
+function isPassiveSupportUnit(unit: SimUnit): boolean {
+  return unit.attackType !== 'spawn' && unit.attack <= 0 && (unit.supportAuras?.length ?? 0) > 0;
 }
 
 function getSupportCandidates(unit: SimUnit, units: SimUnit[], spatialHash?: SpatialHash): SimUnit[] {
@@ -160,7 +173,7 @@ function isReachableEnemy(unit: SimUnit, enemy: SimUnit): boolean {
   return !enemy.isDead &&
     enemy.team !== unit.team &&
     (!enemy.isFlying || unit.canTargetAir) &&
-    !(enemy.stealthUntilAttack && !enemy.hasAttacked);
+    !(enemy.stealthUntilAttack && !enemy.hasAttacked && !hasStatus(enemy, 'revealed'));
 }
 
 function getAcquisitionRadius(unit: SimUnit): number {

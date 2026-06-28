@@ -1,0 +1,80 @@
+import type { BattleAction } from './combat.actions'
+import type { SimUnit, SupportAura } from './combat.sim.types'
+import { applyStatus } from './combat.status'
+import { getDistance } from './combat.utils'
+
+const DEFAULT_AURA_INTERVAL = 10
+
+/**
+ * Processes deterministic support auras for one simulation tick.
+ * @param tick Current simulation tick
+ * @param units All simulation units
+ * @param actions Replay action sink
+ */
+export function processSupportAuras(tick: number, units: SimUnit[], actions: BattleAction[]): void {
+  const sources = units
+    .filter(unit => !unit.isDead && unit.supportAuras && unit.supportAuras.length > 0)
+    .sort((a, b) => a.id.localeCompare(b.id))
+
+  for (const source of sources) {
+    for (const aura of source.supportAuras ?? []) {
+      const interval = aura.interval ?? DEFAULT_AURA_INTERVAL
+      if (interval > 1 && tick % interval !== 0) continue
+
+      const targets = getAuraTargets(source, aura, units)
+      for (const target of targets) applyAura(source, target, aura, actions)
+    }
+  }
+}
+
+function getAuraTargets(source: SimUnit, aura: SupportAura, units: SimUnit[]): SimUnit[] {
+  return units
+    .filter(unit => isAuraTarget(source, unit, aura))
+    .sort((a, b) => a.id.localeCompare(b.id))
+}
+
+function isAuraTarget(source: SimUnit, target: SimUnit, aura: SupportAura): boolean {
+  if (target.isDead || target.id === source.id) return false
+  if (aura.target === 'allies' && target.team !== source.team) return false
+  if (aura.target === 'enemies' && target.team === source.team) return false
+  return getDistance(source.x, source.y, target.x, target.y) <= aura.radius
+}
+
+function applyAura(source: SimUnit, target: SimUnit, aura: SupportAura, actions: BattleAction[]): void {
+  if (aura.type === 'shield') {
+    const shieldCap = Math.max(0, Math.floor(aura.value))
+    if (shieldCap <= 0 || target.shield >= shieldCap) return
+
+    const granted = shieldCap - target.shield
+    target.maxShield = Math.max(target.maxShield, shieldCap)
+    target.shield = shieldCap
+    actions.push({ unitId: source.id, type: 'shield_apply', targetId: target.id, damage: granted })
+    return
+  }
+
+  if (aura.type === 'regen') {
+    applyStatus(target, {
+      type: 'regen',
+      duration: aura.duration ?? (aura.interval ?? DEFAULT_AURA_INTERVAL) + 1,
+      value: aura.value,
+      sourceUnitId: source.id
+    }, actions)
+    return
+  }
+
+  if (aura.type === 'reveal') {
+    applyStatus(target, {
+      type: 'revealed',
+      duration: aura.duration ?? (aura.interval ?? DEFAULT_AURA_INTERVAL) + 1,
+      sourceUnitId: source.id
+    }, actions)
+    return
+  }
+
+  applyStatus(target, {
+    type: 'damage_reduction',
+    duration: aura.duration ?? (aura.interval ?? DEFAULT_AURA_INTERVAL) + 1,
+    value: aura.value,
+    sourceUnitId: source.id
+  }, actions)
+}

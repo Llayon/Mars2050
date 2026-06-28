@@ -1,9 +1,24 @@
 export type Team = 'attacker' | 'defender'
+export type StatusType =
+  | 'emp' | 'slow' | 'burn' | 'acid' | 'vulnerable' | 'range_suppressed' | 'revealed'
+  | 'hacked' | 'damage_reduction' | 'regen' | 'output_suppressed' | 'armor_broken' | 'degeneration' | 'haste'
 
 export interface StatusEffect {
-  type: 'emp' | 'burn' | 'slow'
+  type: StatusType
   duration: number
   value?: number
+  sourceUnitId?: string
+  stackKey?: string
+}
+
+export type SupportAuraType = 'shield' | 'regen' | 'reveal' | 'damage_reduction'
+export type SupportAuraTarget = 'allies' | 'enemies'
+
+export interface SupportAura {
+  type: SupportAuraType; radius: number; value: number
+  duration?: number
+  interval?: number
+  target: SupportAuraTarget
 }
 
 export interface Obstacle { x: number; y: number; radius: number }
@@ -11,7 +26,7 @@ export interface Obstacle { x: number; y: number; radius: number }
 export interface SimHazard {
   id: string
   team: Team
-  type: 'napalm' | 'radiation' | 'emp_field' | 'acid' | 'emp'
+  type: 'napalm' | 'radiation' | 'emp_field' | 'acid' | 'emp' | 'mine'
   x: number
   y: number
   radius: number
@@ -36,7 +51,7 @@ export interface SimUnit {
   actionCooldown: number
   isFlying: boolean
   canTargetAir: boolean
-  isTemporary?: boolean
+  isTemporary?: boolean; temporaryDuration?: number
   x: number
   y: number
   isDead: boolean
@@ -55,6 +70,8 @@ export interface SimUnit {
   shield: number
   maxShield: number
   statusEffects: StatusEffect[]
+  statusOnHit?: StatusEffect[]
+  supportAuras?: SupportAura[]
   appliesEmp?: boolean
   leavesPuddle?: boolean
   spawnerConfig?: { unitType: string, interval: number, timer: number }

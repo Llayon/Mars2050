@@ -1,3 +1,5 @@
+import type { TerrainCell } from './colony-terrain.types'
+
 export interface Colony {
   id: string
   name: string
@@ -6,6 +8,8 @@ export interface Colony {
   user_id: string
   last_calc_at: string
   created_at: string
+  terrain_grid?: TerrainCell[]
+  unlocked_radius?: number
 }
 
 export interface ColonyInitResult {
