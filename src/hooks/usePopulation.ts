@@ -28,9 +28,11 @@ export function usePopulation(colonyId: string | null) {
   }, [colonyId])
 
   useEffect(() => {
-    fetchPopulation()
-
     if (!colonyId) return
+
+    const loadTimer = setTimeout(() => {
+      void fetchPopulation()
+    }, 0)
 
     // Realtime subscription
     const channel = supabase.channel(`population-${colonyId}`)
@@ -44,6 +46,7 @@ export function usePopulation(colonyId: string | null) {
       .subscribe()
 
     return () => {
+      clearTimeout(loadTimer)
       supabase.removeChannel(channel)
     }
   }, [colonyId, fetchPopulation])

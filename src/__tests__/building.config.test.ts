@@ -3,6 +3,7 @@ import { BUILDING_TYPES } from '@/domains/building/building.config'
 import { POPULATION_TIERS } from '@/domains/population/population.config'
 import type { ResourceTypeKey } from '@/domains/resource/resource.types'
 import type { BuildingTypeKey } from '@/domains/building/building.types'
+import type { TierConfig } from '@/domains/population/population.types'
 
 describe('building.config', () => {
   it('every building type has a name', () => {
@@ -59,7 +60,7 @@ describe('building.config', () => {
 
   it('every workforce tier has at least one housing source', () => {
     for (const [tier, config] of Object.entries(POPULATION_TIERS)) {
-      const housingPerBuilding = (config as any).housingPerBuilding
+      const housingPerBuilding = (config as TierConfig).housingPerBuilding
       expect(Object.keys(housingPerBuilding).length, `${tier} has no housing source`).toBeGreaterThan(0)
       for (const buildingType of Object.keys(housingPerBuilding)) {
         expect(BUILDING_TYPES[buildingType as BuildingTypeKey], `Housing building ${buildingType} not found in config`).toBeDefined()
@@ -81,7 +82,7 @@ describe('building.config', () => {
     }
 
     for (const [tier, config] of Object.entries(POPULATION_TIERS)) {
-      for (const need of (config as any).needs) {
+      for (const need of (config as TierConfig).needs) {
         consumers.add(need.resource)
       }
     }

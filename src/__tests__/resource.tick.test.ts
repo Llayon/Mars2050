@@ -3,9 +3,19 @@ import { recalculateResources } from '@/domains/resource/resource.service'
 
 const callOrder: string[] = []
 
+type QueryResult = { data: unknown[]; error: null }
+
+interface MockQueryBuilder {
+  select: () => MockQueryBuilder
+  update: () => MockQueryBuilder
+  eq: () => MockQueryBuilder
+  single: () => Promise<{ data: unknown; error: null }>
+  then: (onfulfilled: (value: QueryResult) => unknown) => Promise<unknown>
+}
+
 const mockSupabase = {
   from: vi.fn().mockImplementation((table) => {
-    const queryBuilder: any = {
+    const queryBuilder: MockQueryBuilder = {
       select: vi.fn().mockImplementation(() => queryBuilder),
       update: vi.fn().mockImplementation(() => {
         callOrder.push('update')
@@ -18,8 +28,8 @@ const mockSupabase = {
         return Promise.resolve({ data: null, error: null })
       }),
       // The promise resolution for normal queries
-      then: (onfulfilled: any) => {
-        let result: any = []
+      then: (onfulfilled: (value: QueryResult) => unknown) => {
+        let result: unknown[] = []
         if (table === 'resources') {
           // Set production_rate to 999 so it differs from calculated 0 rate, triggering update
           result = [{ id: 'res-1', type: 'minerals', production_rate: 999, consumption_rate: 0, amount: 50 }]

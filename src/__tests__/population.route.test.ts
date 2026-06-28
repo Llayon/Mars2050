@@ -16,9 +16,9 @@ vi.mock('@/domains/colony/colony.ownership', () => ({
   loadOwnedColony: (...args: unknown[]) => mockLoadOwnedColony(...args),
   checkColonyAuth: async (req: Request, colonyId: string) => {
     const auth = await mockGetAuthContext(req)
-    if (!auth) return { errorResponse: { status: 401 } as any }
+    if (!auth) return { errorResponse: new Response(null, { status: 401 }) }
     const { colony, error } = await mockLoadOwnedColony(auth.client, auth.userId, colonyId)
-    if (error || !colony) return { errorResponse: { status: 403 } as any }
+    if (error || !colony) return { errorResponse: new Response(null, { status: 403 }) }
     return { auth, colony }
   }
 }))

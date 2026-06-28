@@ -41,7 +41,7 @@ export async function checkColonyAuth(
   colonyId: string
 ): Promise<
   | { auth: AuthContext; colony: Colony; errorResponse?: null }
-  | { auth?: null; colony?: null; errorResponse: NextResponse<any> }
+  | { auth?: null; colony?: null; errorResponse: NextResponse<unknown> }
 > {
   const auth = await getAuthContext(request)
   if (!auth) {

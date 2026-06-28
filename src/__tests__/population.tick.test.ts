@@ -3,6 +3,18 @@ import { processPopulationTick } from '@/domains/population/population.tick'
 
 const mockUpdate = vi.fn()
 
+type MockBuildingRow = { type: string; level: number; is_active: boolean }
+type MockResourceRow = { type: string; amount: number }
+type QueryResult = { data: MockBuildingRow[] | MockResourceRow[]; error: null }
+
+interface MockQueryBuilder {
+  select: () => MockQueryBuilder
+  eq: () => MockQueryBuilder
+  single: () => Promise<{ data: typeof mockPopulationData | null; error: null }>
+  update: () => { eq: () => Promise<{ error: null }> }
+  then: (onfulfilled: (value: QueryResult) => unknown) => Promise<unknown>
+}
+
 let mockPopulationData = {
   workers: 10,
   technicians: 0,
@@ -12,12 +24,12 @@ let mockPopulationData = {
   happiness_workers: 50,
 }
 
-let mockBuildingsData: any[] = []
-let mockResourcesData: any[] = []
+let mockBuildingsData: MockBuildingRow[] = []
+let mockResourcesData: MockResourceRow[] = []
 
 const mockSupabase = {
   from: vi.fn().mockImplementation((table) => {
-    const queryBuilder: any = {
+    const queryBuilder: MockQueryBuilder = {
       select: vi.fn().mockImplementation(() => queryBuilder),
       eq: vi.fn().mockImplementation(() => queryBuilder),
       single: vi.fn().mockImplementation(() => {
@@ -29,8 +41,8 @@ const mockSupabase = {
       update: mockUpdate.mockImplementation(() => {
         return { eq: vi.fn().mockResolvedValue({ error: null }) }
       }),
-      then: (onfulfilled: any) => {
-        let result: any = []
+      then: (onfulfilled: (value: QueryResult) => unknown) => {
+        let result: MockBuildingRow[] | MockResourceRow[] = []
         if (table === 'buildings') {
           result = mockBuildingsData
         } else if (table === 'resources') {

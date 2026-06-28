@@ -118,8 +118,8 @@ export default function ColonyCanvas({ colony, buildings, onBuildingClick, place
         const pos = gridToScreen(cell.x + 0.5, cell.y + 0.5)
         const maxDist = Math.max(Math.abs(cell.x - 19.5), Math.abs(cell.y - 19.5))
         const isUnlocked = maxDist <= radius - 0.5
-        let color = config ? config.color : 0x8B4513
-        let alpha = isUnlocked ? 1.0 : 0.2
+        const color = config ? config.color : 0x8B4513
+        const alpha = isUnlocked ? 1.0 : 0.2
         terrain.moveTo(pos.x, pos.y - h2).lineTo(pos.x + w2, pos.y).lineTo(pos.x, pos.y + h2).lineTo(pos.x - w2, pos.y).closePath().fill({ color, alpha })
         if (isUnlocked) terrain.stroke({ width: 1, color: 0x333333, alpha: 0.5 })
       })
