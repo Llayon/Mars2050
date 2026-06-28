@@ -73,7 +73,7 @@ export function TwaHud({
       </div>
       
       <HudBottomSheet open={activeTab === 'buildings'} onClose={() => setActiveTab('colony')}>
-        <BuildingsScreen buildings={buildings} colonyId={colonyId} resources={resources} resourcesLoading={resourcesLoading} onBuild={onBuild} onDemolish={onDemolish} />
+        <BuildingsScreen buildings={buildings} colonyId={colonyId} resources={resources} resourcesLoading={resourcesLoading} onBuild={onBuild} onDemolish={onDemolish} population={population} />
       </HudBottomSheet>
       
       <HudBottomSheet open={activeTab === 'map'} onClose={() => setActiveTab('colony')}>

@@ -8,6 +8,7 @@ import { RESOURCE_NAMES } from '@/domains/resource/resource.types'
 import { ResourcesBar } from './ResourcesBar'
 import { useToast } from '@/components/ui/toast'
 import { ConfirmModal } from '@/components/ui/modal'
+import type { PopulationState } from '@/domains/population/population.types'
 
 interface BuildingsScreenProps {
   buildings: BuildingRow[]
@@ -16,6 +17,7 @@ interface BuildingsScreenProps {
   resourcesLoading: boolean
   onBuild: (type: BuildingTypeKey) => Promise<void>
   onDemolish: (id: string) => Promise<void>
+  population: PopulationState | null
 }
 
 const BUILDING_LEVEL_COLORS = ['text-gray-400', 'text-green-400', 'text-blue-400', 'text-purple-400', 'text-yellow-400', 'text-red-400']
@@ -27,6 +29,7 @@ export const BuildingsScreen = memo(function BuildingsScreen({
   resourcesLoading,
   onBuild,
   onDemolish,
+  population,
 }: BuildingsScreenProps) {
   const [showBuildMenu, setShowBuildMenu] = useState(false)
   const [building, setBuilding] = useState<string | null>(null)
@@ -139,6 +142,11 @@ export const BuildingsScreen = memo(function BuildingsScreen({
               {Object.entries(BUILDING_TYPES[selectedBuilding.type as BuildingTypeKey]?.production || {}).map(([k, v]) => (
                 <p key={k} className="text-sm text-green-400">+{v} {RESOURCE_NAMES[k] || k}/ч</p>
               ))}
+              {BUILDING_TYPES[selectedBuilding.type as BuildingTypeKey]?.workforce && (
+                <p className="text-xs text-blue-300 mt-2">
+                  Штат: {BUILDING_TYPES[selectedBuilding.type as BuildingTypeKey].workforce.count} {BUILDING_TYPES[selectedBuilding.type as BuildingTypeKey].workforce.tier}s
+                </p>
+              )}
             </div>
             <button
               onClick={() => setDemolishTarget(selectedBuilding)}
@@ -172,23 +180,36 @@ export const BuildingsScreen = memo(function BuildingsScreen({
                   const res = resources.find(r => r.type === k)
                   return res && res.amount >= v
                 })
+                
+                let tierMet = true
+                if (config.unlockedByTier && population) {
+                  const popField = `${config.unlockedByTier}s` as keyof PopulationState
+                  tierMet = ((population[popField] as number) || 0) > 0
+                }
+
                 const exists = buildings.some(b => b.type === type)
                 return (
                   <button
                     key={type}
                     onClick={() => handleBuild(type as BuildingTypeKey)}
-                    disabled={building !== null}
+                    disabled={building !== null || (!canAfford && !exists) || !tierMet}
                     className={`w-full text-left glass-panel-light rounded-xl p-3 transition-all duration-200 ${
-                      canAfford ? 'hover:bg-white/5' : 'opacity-50'
+                      (canAfford && tierMet) ? 'hover:bg-white/5' : 'opacity-50'
                     } ${exists ? 'ring-1 ring-mars-teal/30' : ''}`}
                   >
                     <div className="flex items-center justify-between">
                       <p className="font-semibold text-sm text-white">{config.name}</p>
                       {exists && <span className="text-[10px] text-mars-teal">Построено</span>}
+                      {!tierMet && <span className="text-[10px] text-red-400">Нужен {config.unlockedByTier}</span>}
                     </div>
                     <p className="text-xs text-gray-400 mt-1">
                       Стоимость: {Object.entries(config.cost).map(([k, v]) => `${v} ${RESOURCE_NAMES[k] || k}`).join(', ')}
                     </p>
+                    {config.workforce && config.workforce.count > 0 && (
+                      <p className="text-[10px] text-blue-300">
+                        👷 {config.workforce.count} {config.workforce.tier}s
+                      </p>
+                    )}
                     <p className="text-xs text-green-400/80">
                       +{Object.entries(config.production).map(([k, v]) => `${v} ${RESOURCE_NAMES[k] || k}/ч`).join(', ')}
                     </p>

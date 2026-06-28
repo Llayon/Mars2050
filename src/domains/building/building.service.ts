@@ -3,7 +3,9 @@ import type { BuildingCreateDTO, BuildingResponse, BuildingRow } from './buildin
 import { BUILDING_TYPES, BUILDING_PRODUCTION_MAP, BUILDING_CONSUMPTION_MAP } from './building.config'
 import { updateResourceRate, PRODUCTION_TYPE } from './building.utils'
 import { validateBuildingPlacement } from './building-placement'
+import { recalculateResources } from '@/domains/resource/resource.service'
 import type { TerrainCell } from '@/domains/colony/colony-terrain.types'
+import type { PopulationState } from '@/domains/population/population.types'
 
 /**
  * Creates a new building for a colony.
@@ -55,6 +57,25 @@ export async function createBuilding(dto: BuildingCreateDTO): Promise<BuildingRe
 
     if (!validation.valid) {
       return { building: null, error: validation.error || 'Invalid placement', status: 400 }
+    }
+  }
+
+  // 1.5 Check unlock prerequisites
+  if (config.unlockedByTier) {
+    const { data: population } = await supabase
+      .from('population')
+      .select('*')
+      .eq('colony_id', dto.colonyId)
+      .single()
+      
+    if (!population) {
+      return { building: null, error: 'Population data missing', status: 400 }
+    }
+    
+    const tierField = `${config.unlockedByTier}s` as keyof PopulationState
+    const popCount = (population as PopulationState)[tierField] || 0
+    if (popCount === 0) {
+      return { building: null, error: `Requires at least one ${config.unlockedByTier} to build`, status: 403 }
     }
   }
 
@@ -142,18 +163,8 @@ export async function createBuilding(dto: BuildingCreateDTO): Promise<BuildingRe
     return { building: null, error: error.message, status: 500 }
   }
 
-  // 4. Update production rate
-  const productionResource = PRODUCTION_TYPE[dto.type]
-  const productionBonus = BUILDING_PRODUCTION_MAP[dto.type] || 0
-  if (productionResource && productionBonus > 0) {
-    await updateResourceRate(dto.colonyId, productionResource, 'production_rate', productionBonus)
-  }
-
-  // 5. Update consumption rates
-  const consumption = BUILDING_CONSUMPTION_MAP[dto.type] || {}
-  for (const [resourceKey, amount] of Object.entries(consumption)) {
-    await updateResourceRate(dto.colonyId, resourceKey, 'consumption_rate', amount as number)
-  }
+  // 4. Trigger full resource recalculation
+  await recalculateResources(dto.colonyId)
 
   return { building, error: null, status: 201 }
 }
@@ -183,17 +194,7 @@ export async function deleteBuilding(buildingId: string, colonyId: string): Prom
   }
 
   if (building) {
-    const productionResource = PRODUCTION_TYPE[building.type as string]
-    const productionAmount = (BUILDING_PRODUCTION_MAP as Record<string, number>)[building.type as string] || 0
-
-    if (productionResource && productionAmount > 0) {
-      await updateResourceRate(colonyId, productionResource, 'production_rate', -productionAmount)
-    }
-
-    const consumption = (BUILDING_CONSUMPTION_MAP as Record<string, Record<string, number>>)[building.type as string] || {}
-    for (const [resourceKey, amount] of Object.entries(consumption)) {
-      await updateResourceRate(colonyId, resourceKey, 'consumption_rate', -(amount as number))
-    }
+    await recalculateResources(colonyId)
   }
 
   return { success: true, error: null }

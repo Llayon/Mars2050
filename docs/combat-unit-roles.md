@@ -154,7 +154,7 @@ Target state:
 | --- | --- |
 | Dedicated AA | `aa_turret`, `gatling_rover`, `missile_buggy`, `interceptor`, `goliath_gunship` |
 | Upgrade-based AA | `marine`, `sniper`, `grenadier`, `flamethrower` |
-| No AA by default | Most tanks, melee, artillery, supports |
+| No AA by default | Most tanks, melee, artillery, utility supports |
 
 Recommended first pass:
 
@@ -164,9 +164,9 @@ Recommended first pass:
    `aerial_specialization`.
 3. Ensure flying units have real counters, not universal counters.
 
-### P2: Support role separation
+### P2: Utility support role separation
 
-| Unit | Proposed support identity |
+| Unit | Proposed utility identity |
 | --- | --- |
 | `medic` | Organic single-target/squad healing. |
 | `engineer` | Mechanical repair and shield restoration. |
@@ -175,18 +175,28 @@ Recommended first pass:
 | `shield_emitter` | Shield aura or periodic shield pulses. |
 | `radar_zepplin` | Reveal, anti-stealth, range/targeting relay. |
 
+### P2.5: Mechabellum-style missing counters
+
+| Counter layer | Why it matters | Candidate units |
+| --- | --- | --- |
+| Projectile defense | Creates counterplay against artillery and missiles. | `shield_emitter`, `radar_zepplin`, `gatling_rover` |
+| Shield breaking | Prevents shield anchors from becoming mandatory. | `emp_drone`, `hacker_rover`, `ion_crawler` |
+| Anti-summoner | Stops War Factory-style snowball loops. | `bounty_hunter`, `stealth_operative`, `hacker_rover` |
+| Anti-stealth/reveal | Gives stealth units a real risk/reward contract. | `radar_zepplin`, `scout_drone`, `officer` |
+| Anti-giant ramping | Lets small armies answer XL anchors without universal DPS. | `ion_crawler`, `railgun_walker`, `plasma_tank` |
+
 ### P3: Tier 1 retune
 
 The early roster should teach clean counters:
 
 | Unit | Keep | Reduce/limit |
 | --- | --- | --- |
-| `marine` | Baseline ranged flexibility | Native AA and/or DPS |
-| `shock_trooper` | Fast melee pressure | Total DPS or durability |
-| `flamethrower` | Anti-swarm AoE | Air/armor relevance |
-| `medic` | Support learning | Damage role |
+| `marine` | Baseline carry flexibility | Native AA and/or DPS |
+| `shock_trooper` | Fast screen pressure | Total DPS or durability |
+| `flamethrower` | Screen Clear AoE | Air/armor relevance |
+| `medic` | Utility support learning | Damage role |
 | `grenadier` | Mid-range AoE | Single-target efficiency |
-| `heavy_gunner` | Suppression sustained fire | Overlap with marine/AA |
+| `heavy_gunner` | Sustained carry/suppression | Overlap with marine/AA |
 | `sapper` | Burst demolition | Reliability and survivability |
 
 ## Upgrade Implications
@@ -196,12 +206,12 @@ keep and expand:
 
 | Upgrade | Role transformation |
 | --- | --- |
-| `portable_shield` | Marine becomes frontline-capable rifle squad. |
-| `range_enhancement` | Ranged unit shifts into backline/siege posture. |
-| `emp_rounds` | Marksman/heavy gunner becomes control counter. |
-| `anti_aircraft_ammo` | Ground AoE infantry can become emergency AA. |
-| `subterranean_blitz` | Melee swarm becomes engage/survivability unit. |
-| `incendiary_ammo` | Projectile unit becomes area denial. |
+| `portable_shield` | Marine becomes anchor-capable carry. |
+| `range_enhancement` | Ranged unit shifts into range pressure posture. |
+| `emp_rounds` | Marksman/heavy gunner becomes control specialist counter. |
+| `anti_aircraft_ammo` | Ground unit becomes emergency anti-air specialist. |
+| `subterranean_blitz` | Screen unit becomes engage/survivability pressure. |
+| `incendiary_ammo` | Projectile unit becomes area denial/screen clear. |
 
 Missing upgrade categories:
 
@@ -210,14 +220,17 @@ Missing upgrade categories:
 3. Anti-stealth/reveal.
 4. Armor-piercing with drawback.
 5. Formation disruption.
-6. Support specialization: repair vs heal vs shield.
+6. Projectile defense/interception.
+7. Anti-giant ramping damage.
+8. Utility support specialization: repair vs heal vs shield.
+9. Role-swap upgrades for Tech Carrier units.
 
 ## Next Implementation Slices
 
 1. Implement P0 mechanics for `emp_drone` and `shield_emitter`.
-2. Add regression tests for no-op support/control units.
+2. Add regression tests for no-op utility support/control units.
 3. Normalize anti-air capability in config and tests.
-4. Split support healing/repair/buff behavior.
+4. Split utility support healing/repair/buff behavior.
 5. Retune Tier 1 infantry using simulator metrics.
 6. Add a balance table test that flags units with `attack: 0` and no implemented
    utility mechanic.

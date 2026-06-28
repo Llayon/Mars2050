@@ -1,5 +1,8 @@
 import type { ResourceTypeKey } from '@/domains/resource/resource.types'
 
+import type { PopulationTier } from '@/domains/population/population.types'
+import type { ColonyTerrain } from '@/domains/colony/colony-terrain.types'
+
 /** Represents a building type definition with cost and production rates. */
 export interface BuildingType {
   name: string
@@ -9,6 +12,13 @@ export interface BuildingType {
   description: string
   width: number
   height: number
+  workforce: {
+    tier: PopulationTier
+    count: number
+  }
+  requiresTerrain?: ColonyTerrain[]
+  unlockedByTier?: PopulationTier
+  unlockedByBuilding?: BuildingTypeKey
 }
 
 /** Keys for all available building types. */
