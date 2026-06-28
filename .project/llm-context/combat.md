@@ -12,6 +12,12 @@
 - `src/domains/combat/spatial-hash.ts` — deterministic spatial index.
 - `src/domains/combat/combat.systems.ts` — action, damage, heal, AoE, status application.
 - `src/domains/combat/combat.systems.utils.ts` — death, clone, spawn helpers.
+- `src/domains/combat/combat.status.ts` — deterministic status apply/tick/cleanse helpers.
+- `src/domains/combat/combat.damage.ts` — defense, shield, status mitigation, lifesteal, and HP damage pipeline.
+- `src/domains/combat/combat.auras.ts` — periodic shield, regen, reveal, and status auras.
+- `src/domains/combat/combat.minefield.ts` — deterministic mine deployment.
+- `src/domains/combat/combat.attack-geometry.ts` — line pierce and reusable attack geometry helpers.
+- `src/domains/combat/combat.displacement.ts` — deterministic pull displacement.
 - `src/domains/combat/combat.upgrades.ts` — unit and global upgrade definitions.
 - `src/domains/combat/combat.pathfinding.ts` — static obstacle flow field.
 
@@ -44,11 +50,23 @@
 - Fully overlapped unit pairs use deterministic opposite separation directions; do not make zero-distance push one-sided.
 - `SpatialHash.update()` preserves initial insertion order; do not reinsert moved units in a way that changes replay ordering.
 
+## Current Status / Damage Model
+- Runtime statuses live in `combat.status.ts`; do not implement one-off status ticking in `combat.systems.ts`.
+- Current status types are `emp`, `slow`, `burn`, `acid`, `vulnerable`, `range_suppressed`, `revealed`, `hacked`, `damage_reduction`, `regen`, `output_suppressed`, `armor_broken`, `degeneration`, and `haste`.
+- Same stack identity refreshes duration and keeps the strongest value. Avoid unbounded duplicate status stacks.
+- `emp` and `hacked` block active actions. `slow` and `haste` affect movement. `burn`, `acid`, `degeneration`, and `regen` tick every 10 simulation ticks.
+- Damage must go through `applyCombatDamage()` in `combat.damage.ts`. Do not subtract HP directly in attack code except for explicitly modeled hazards/status ticks with tests.
+- Shield overflow is intentional: shields absorb only remaining shield HP; leftover damage reaches HP.
+- `applyCombatDamage()` may emit detailed replay events: `unit_blocked_damage`, `shield_damage`, `shield_break`, `damage`, and `lifesteal`.
+- `combat.systems.ts` still emits legacy `attack` events for replay renderer compatibility. Do not remove them until the renderer is migrated to detailed damage events.
+
 ## Tests & QA
 - `src/__tests__/combat.engine.test.ts` — basic battle outcomes and timeout behavior.
 - `src/__tests__/combat.spatial-hash.test.ts` — deterministic spatial query behavior.
 - `src/__tests__/combat.targeting.test.ts` — sticky aggro, acquisition radius, fallback, long-range exceptions.
 - `src/__tests__/combat.metrics.test.ts` — replay determinism and crowd movement metrics.
+- `src/__tests__/combat.status.test.ts` — status stacking, ticking, cleanse, and action blocking.
+- `src/__tests__/combat.damage.test.ts` — damage mitigation, shield overflow, and detailed damage replay actions.
 - `docs/simulator-qa.md` — Visual simulator QA matrix and metrics guide.
 
 ## Commands

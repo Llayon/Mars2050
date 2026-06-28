@@ -82,9 +82,15 @@ Mechabellum-style control is not one generic status. Mars2050 should separate
 short-lived combat statuses from special mechanics such as shields, stealth,
 revive, projectile interception, and forced movement.
 
-Current runtime status support is minimal: `emp`, `burn`, and `slow`. The
-simulation also has adjacent state fields such as `shield`, `stealthUntilAttack`,
-`lifestealMult`, `damageReductionWhileMoving`, `onDeathPuddle`, and hazards.
+Current runtime status support is centralized in `combat.status.ts`. The active
+typed set is `emp`, `slow`, `burn`, `acid`, `vulnerable`,
+`range_suppressed`, `revealed`, `hacked`, `damage_reduction`, `regen`,
+`output_suppressed`, `armor_broken`, `degeneration`, and `haste`.
+Status application, refresh, strongest-value selection, ticking, expiration,
+and cleanse all emit deterministic replay actions when an action sink is passed.
+Adjacent non-status state still lives on `SimUnit`: `shield`,
+`stealthUntilAttack`, `lifestealMult`, `damageReductionWhileMoving`,
+`onDeathPuddle`, temporary spawns, and hazards.
 
 ### Core statuses to add first
 
@@ -121,15 +127,42 @@ simulation also has adjacent state fields such as `shield`, `stealthUntilAttack`
 | Pull / knockback | Should be a forced movement event with collision and pathing rules. |
 | Projectile interception | Needs projectile or attack-event filtering, not per-unit ticking. |
 
-### Implementation priority
+### Implemented runtime contract
 
-1. Normalize `StatusEffect` into a typed status contract with `type`, `duration`,
-   optional `value`, optional `sourceUnitId`, and deterministic stacking rules.
-2. Implement P0 statuses: `emp`, `slow`, `burn`, `acid`, `vulnerable`.
-3. Add P1 control statuses: `range_suppressed`, `revealed`, `hacked`.
-4. Add support statuses: `damage_reduction`, `regen`.
-5. Keep shield, stealth, lifesteal, revive, pull/knockback, and projectile
-   interception as explicit mechanics with their own tests.
+1. `StatusEffect` is typed with `type`, `duration`, optional `value`,
+   optional `sourceUnitId`, and optional `stackKey`.
+2. Same stack identity refreshes duration and keeps the strongest value.
+3. `emp` and `hacked` block attacks, heals, support actions, and spawns.
+4. `slow` and `haste` modify movement speed in `combat.movement.ts`.
+5. `burn`, `acid`, `degeneration`, and `regen` tick every 10 simulation ticks.
+6. `vulnerable`, `damage_reduction`, `armor_broken`, and
+   `output_suppressed` feed into `combat.damage.ts`.
+7. `revealed` participates in stealth acquisition checks.
+8. Shield, stealth, lifesteal, pull/knockback, mines, barriers, and decoys
+   remain explicit mechanics with their own tests.
+
+### Damage / shield pipeline
+
+Damage now flows through `combat.damage.ts` before HP is mutated. The current
+pipeline applies defense, output suppression, air/ground damage multipliers,
+movement damage reduction, status damage modifiers, shield absorption, execute,
+lifesteal, and final HP damage.
+
+Shield overflow is intentional: if a hit exceeds the current shield value, the
+shield absorbs only its remaining capacity and the leftover damage reaches HP.
+The detailed replay stream can emit:
+
+| Action | Meaning |
+| --- | --- |
+| `damage` | Final HP damage after mitigation and shield absorption. |
+| `shield_damage` | Amount absorbed by shield HP. |
+| `shield_break` | Shield reached zero from the hit. |
+| `lifesteal` | Attacker healed from actual HP damage dealt. |
+| `unit_blocked_damage` | Damage removed by defense, status reduction, or other mitigation. |
+
+The legacy `attack` replay action is still emitted for renderer compatibility.
+Do not remove it until `battle-replay-engine.ts` consumes the detailed damage
+actions directly.
 
 ## Advanced Mechanics / Upgrade Primitives
 
@@ -390,24 +423,18 @@ Missing upgrade categories:
 
 ## Next Implementation Slices
 
-1. Normalize `StatusEffect` and implement P0 statuses: `emp`, `slow`, `burn`,
-   `acid`, and `vulnerable`.
-2. Implement P0 mechanics for `emp_drone`, `cryo_tank`, `shield_emitter`, and
-   `hacker_rover`.
-3. Add regression tests for no-op utility support and control-role units.
-4. Normalize anti-air capability in config and tests.
-5. Split utility support healing/repair/buff behavior.
-6. Add P1 statuses: `range_suppressed`, `revealed`, `hacked`,
-   `damage_reduction`, and `regen`.
-7. Retune Tier 1 infantry using simulator metrics.
-8. Add a balance table test that flags units with `attack: 0` and no implemented
-   utility mechanic.
-9. Add defensive primitives: flat damage block, damage sharing, status immunity,
-   and reactive armor charges.
-10. Add transform/control primitives: stance transforms, target marks, burrow,
-    ramp/charge scaling, and percent-HP damage.
-11. Add weapon/death primitives: split fire, chain attacks, periodic side
-    weapons, on-death effects, and on-kill recycling.
-12. Add advanced statuses and attack shapes: `output_suppressed`,
-    `armor_broken`, `degeneration`, `haste`, beams, cones, line pierce, and
-    temporary battlefield objects.
+1. Wire `battle-replay-engine.ts` to consume detailed `damage`,
+   `shield_damage`, `shield_break`, `lifesteal`, and `unit_blocked_damage`
+   events without double-counting HP.
+2. Add regression tests for no-op utility support and control-role units.
+3. Normalize anti-air capability in config and tests.
+4. Split utility support healing/repair/buff behavior.
+5. Implement defensive primitives: flat damage block, damage sharing, status
+   immunity, reactive armor charges, cleanse-on-action, and projectile
+   interception.
+6. Add transform/control primitives: stance transforms, target marks, burrow,
+   ramp/charge scaling, and percent-HP damage.
+7. Add weapon/death primitives: split fire, chain attacks, periodic side
+   weapons, on-death effects, and on-kill recycling.
+8. Add remaining attack shapes: beams, cones, barrage, and richer temporary
+   battlefield objects.
