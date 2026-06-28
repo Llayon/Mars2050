@@ -6,10 +6,11 @@ import { gridToScreen, screenToGrid } from '@/domains/building/building.isometri
 import type { BuildingRow, BuildingTypeKey } from '@/domains/building/building.types'
 import { RENDER_LIMITS, BUILDING_TYPES } from '@/domains/building/building.config'
 import { ASSET_MANIFEST } from '@/components/colony/sprites/asset-manifest'
-import { COLONY_GRID_SIZE, TERRAIN_CONFIG } from '@/domains/colony/colony-terrain.config'
+import { COLONY_GRID_SIZE, TERRAIN_CONFIG, TERRAIN_BUILDING_MODIFIERS } from '@/domains/colony/colony-terrain.config'
 import type { TerrainGrid } from '@/domains/colony/colony-terrain.types'
 import { validateBuildingPlacement } from '@/domains/building/building-placement'
 import type { Colony } from '@/domains/colony/colony.types'
+import { ADJACENCY_RULES } from '@/domains/building/building.adjacency'
 
 const TYPE_COLORS: Record<string, number> = {
   solar_panels: 0xFFD700, oxygen_generator: 0x00CCFF, water_extractor: 0x3366FF,
@@ -49,6 +50,7 @@ export default function ColonyCanvas({ colony, buildings, onBuildingClick, place
   const containerRef = useRef<HTMLDivElement>(null), appRef = useRef<PIXI.Application | null>(null)
   const worldRef = useRef<PIXI.Container | null>(null), buildingsRef = useRef<PIXI.Container | null>(null), terrainRef = useRef<PIXI.Graphics | null>(null)
   const ghostRef = useRef<PIXI.Graphics | null>(null), texturesRef = useRef<Record<string, PIXI.Texture>>({})
+  const ghostTextRef = useRef<PIXI.Text | null>(null)
   const isDragging = useRef(false), lastPos = useRef({ x: 0, y: 0 }), startDragPos = useRef({ x: 0, y: 0 })
   const ghostState = useRef({ valid: false, x: 0, y: 0 }), ghostListeners = useRef<{ move: (e: PIXI.FederatedPointerEvent) => void, up: (e: PIXI.FederatedPointerEvent) => void } | null>(null)
   const [initDone, setInitDone] = useState(false)
@@ -77,6 +79,7 @@ export default function ColonyCanvas({ colony, buildings, onBuildingClick, place
       const terrainLayer = new PIXI.Graphics(); terrainLayer.zIndex = -2; world.addChild(terrainLayer); terrainRef.current = terrainLayer
       const bl = new PIXI.Container(); bl.sortableChildren = true; buildingsRef.current = bl; world.addChild(bl)
       const g = new PIXI.Graphics(); g.zIndex = 9999; ghostRef.current = g; world.addChild(g)
+      const gt = new PIXI.Text({ text: '', style: { fontFamily: 'Arial', fontSize: 14, fill: 0xffffff, align: 'center', stroke: { color: 0x000000, width: 3 } } }); gt.zIndex = 10000; gt.anchor.set(0.5, 1); ghostTextRef.current = gt; world.addChild(gt)
       app.stage.eventMode = 'static'; app.stage.hitArea = app.screen
       app.stage.on('pointerdown', (e) => { isDragging.current = true; lastPos.current = { x: e.global.x, y: e.global.y }; startDragPos.current = { x: e.global.x, y: e.global.y } })
       app.stage.on('pointerup', () => { isDragging.current = false }); app.stage.on('pointerupoutside', () => { isDragging.current = false })
@@ -128,6 +131,7 @@ export default function ColonyCanvas({ colony, buildings, onBuildingClick, place
     })
     if (ghostListeners.current) { app.stage.off('pointermove', ghostListeners.current.move); app.stage.off('pointerup', ghostListeners.current.up) }
     ghost.clear(); ghost.visible = !!placementMode
+    if (ghostTextRef.current) ghostTextRef.current.visible = !!placementMode
     if (placementMode) {
       const updateGhost = (global: { x: number, y: number }) => {
         const lp = world.toLocal(global), sn = screenToGrid(lp.x, lp.y), bCfg = BUILDING_TYPES[placementMode]
@@ -151,6 +155,36 @@ export default function ColonyCanvas({ colony, buildings, onBuildingClick, place
         ghost.x = pos.x; ghost.y = pos.y; ghost.clear().moveTo(-w2, 0).lineTo(0, h2).lineTo(0, h2 - h).lineTo(-w2, -h).closePath().fill({ color: c, alpha: 0.3 })
           .moveTo(w2, 0).lineTo(0, h2).lineTo(0, h2 - h).lineTo(w2, -h).closePath().fill({ color: c, alpha: 0.4 })
           .moveTo(0, h2 - h).lineTo(w2, -h).lineTo(0, -h2 - h).lineTo(-w2, -h).closePath().fill({ color: c, alpha: 0.5 }).stroke({ width: 1, color: 0xffffff, alpha: 0.5 })
+
+        if (ghostTextRef.current) {
+          ghostTextRef.current.x = pos.x
+          ghostTextRef.current.y = pos.y - h - 10
+          let text = ''
+          if (!v) {
+            text = `⚠️ ${validation.error || 'Blocked'}`
+          } else {
+            const cell = (colony?.terrain_grid as TerrainGrid)?.find(c => c.x === sn.x && c.y === sn.y)
+            if (cell) {
+              const tm = TERRAIN_BUILDING_MODIFIERS[cell.t]
+              if (tm?.bonuses && tm.bonuses[placementMode]) {
+                text += `+${tm.bonuses[placementMode] * 100}% terrain (${cell.t})\n`
+              }
+              if (tm?.penalties && tm.penalties[placementMode]) {
+                text += `${tm.penalties[placementMode] * 100}% terrain (${cell.t})\n`
+              }
+            }
+            let adjMod = 0
+            const neighbors = buildings.filter(b => b.is_active && Math.abs(b.x - sn.x) <= 1 && Math.abs(b.y - sn.y) <= 1)
+            for (const n of neighbors) {
+              const rule = ADJACENCY_RULES.find(r => r.source === placementMode && r.neighbor === n.type)
+              if (rule) adjMod += rule.productionMult
+            }
+            if (adjMod !== 0) {
+              text += `${adjMod > 0 ? '+' : ''}${Math.round(adjMod * 100)}% adjacency\n`
+            }
+          }
+          ghostTextRef.current.text = text.trim()
+        }
       }
       const onMove = (e: PIXI.FederatedPointerEvent) => updateGhost(e.global)
       const onUp = (e: PIXI.FederatedPointerEvent) => { if (ghostState.current.valid && Math.abs(e.global.x - startDragPos.current.x) < 5 && Math.abs(e.global.y - startDragPos.current.y) < 5) onConfirmPlacement(ghostState.current.x, ghostState.current.y) }

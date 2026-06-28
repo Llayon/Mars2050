@@ -9,6 +9,7 @@ import { ResourcesBar } from './ResourcesBar'
 import { useToast } from '@/components/ui/toast'
 import { ConfirmModal } from '@/components/ui/modal'
 import type { PopulationState } from '@/domains/population/population.types'
+import { ProductionOverview } from '@/components/game/ProductionOverview'
 
 interface BuildingsScreenProps {
   buildings: BuildingRow[]
@@ -87,19 +88,21 @@ export const BuildingsScreen = memo(function BuildingsScreen({
         <ResourcesBar resources={resources} loading={resourcesLoading} />
       </div>
 
-      <div className="flex-1 overflow-y-auto p-3 pb-24">
-        <div className="grid grid-cols-2 gap-2">
-          {buildings.length === 0 && (
-            <div className="col-span-2 glass-panel rounded-xl p-6 text-center">
-              <p className="text-gray-400 text-sm mb-3">Зданий пока нет</p>
-              <button
-                onClick={() => setShowBuildMenu(true)}
-                className="bg-mars-red hover:bg-red-700 text-white px-6 py-2 rounded-lg text-sm transition-colors"
-              >
-                Построить первое здание
-              </button>
-            </div>
-          )}
+      {!selectedBuilding ? (
+        <div className="flex-1 overflow-y-auto p-3 pb-24 space-y-4 custom-scrollbar">
+          <ProductionOverview />
+          <div className="grid grid-cols-2 gap-2">
+            {buildings.length === 0 ? (
+              <div className="col-span-2 glass-panel rounded-xl p-6 text-center">
+                <p className="text-gray-400 text-sm mb-3">Зданий пока нет</p>
+                <button
+                  onClick={() => setShowBuildMenu(true)}
+                  className="bg-mars-red hover:bg-red-700 text-white px-6 py-2 rounded-lg text-sm transition-colors"
+                >
+                  Построить первое здание
+                </button>
+              </div>
+            ) : null}
 
           {buildings.map(b => {
             const lvlColor = BUILDING_LEVEL_COLORS[Math.min(b.level, BUILDING_LEVEL_COLORS.length - 1)]
@@ -124,8 +127,7 @@ export const BuildingsScreen = memo(function BuildingsScreen({
           })}
         </div>
       </div>
-
-      {selectedBuilding && (
+      ) : (
         <div className="fixed inset-0 z-40 flex items-end" onClick={() => setSelectedBuilding(null)}>
           <div className="fixed inset-0 bg-black/50" />
           <div

@@ -36,15 +36,16 @@ describe('events.schemas: processEventsSchema', () => {
 // ─── BottomNav ─────────────────────────────────────────────────────────────
 
 describe('BottomNav', () => {
-  it('renders all 5 tabs', () => {
+  it('renders all 6 tabs', () => {
     const { container } = render(<BottomNav activeTab="colony" onTabChange={() => {}} />)
     const buttons = container.querySelectorAll('button')
-    expect(buttons.length).toBe(5)
+    expect(buttons.length).toBe(6)
     expect(buttons[0].textContent).toContain('Колония')
     expect(buttons[1].textContent).toContain('Стройка')
-    expect(buttons[2].textContent).toContain('Карта')
-    expect(buttons[3].textContent).toContain('Операции')
-    expect(buttons[4].textContent).toContain('Профиль')
+    expect(buttons[2].textContent).toContain('Люди')
+    expect(buttons[3].textContent).toContain('Карта')
+    expect(buttons[4].textContent).toContain('Операции')
+    expect(buttons[5].textContent).toContain('Профиль')
   })
 
   it('highlights active tab', () => {
@@ -57,7 +58,7 @@ describe('BottomNav', () => {
     const onChange = vi.fn()
     const { container } = render(<BottomNav activeTab="colony" onTabChange={onChange} />)
     const buttons = container.querySelectorAll('button')
-    buttons[2].click()
+    buttons[3].click()
     expect(onChange).toHaveBeenCalledWith('map')
   })
 })
