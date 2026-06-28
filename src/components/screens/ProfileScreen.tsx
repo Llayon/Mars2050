@@ -3,14 +3,26 @@
 import { memo } from 'react'
 import { useLeaderboard } from '@/hooks/useLeaderboard'
 import type { Colony } from '@/domains/colony/colony.types'
+import type { PopulationState } from '@/domains/population/population.types'
+import { PopulationPanel } from '@/components/game/PopulationPanel'
 
 interface ProfileScreenProps {
   colony: Colony | null
   colonyLoading: boolean
   userEmail?: string
+  population?: PopulationState | null
+  populationLoading?: boolean
+  onUpgradePopulation?: (fromTier: string, count: number) => void
 }
 
-export const ProfileScreen = memo(function ProfileScreen({ colony, colonyLoading, userEmail }: ProfileScreenProps) {
+export const ProfileScreen = memo(function ProfileScreen({ 
+  colony, 
+  colonyLoading, 
+  userEmail,
+  population,
+  populationLoading,
+  onUpgradePopulation
+}: ProfileScreenProps) {
   const { leaderboard, loading: lbLoading } = useLeaderboard()
 
   return (
@@ -51,6 +63,15 @@ export const ProfileScreen = memo(function ProfileScreen({ colony, colonyLoading
           ) : (
             <p className="text-gray-400 text-sm">Нет данных</p>
           )}
+        </div>
+
+        {/* Population Panel */}
+        <div className="glass-panel rounded-xl overflow-hidden">
+          <PopulationPanel 
+            population={population ?? null} 
+            loading={populationLoading} 
+            onUpgrade={onUpgradePopulation || (() => {})} 
+          />
         </div>
 
         <div className="glass-panel rounded-xl overflow-hidden">

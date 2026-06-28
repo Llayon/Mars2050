@@ -24,8 +24,20 @@ export async function getPopulation(colonyId: string): Promise<{ data?: Populati
 /**
  * Upgrades population from one tier to the next.
  */
-export async function upgradePopulation(colonyId: string, fromTier: string, count: number): Promise<{ data?: PopulationState; error?: unknown }> {
+export async function upgradePopulation(userId: string, colonyId: string, fromTier: string, count: number): Promise<{ data?: PopulationState; error?: unknown }> {
   const supabase = getServerClient()
+
+  // Verify colony ownership
+  const { data: colony, error: colError } = await supabase
+    .from('colonies')
+    .select('id')
+    .eq('id', colonyId)
+    .eq('user_id', userId)
+    .single()
+
+  if (colError || !colony) {
+    return { error: apiError('FORBIDDEN', 'Colony not found or access denied') }
+  }
 
   const { data: pop } = await getPopulation(colonyId)
   if (!pop) {

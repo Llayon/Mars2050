@@ -28,6 +28,9 @@ interface TwaHudProps {
   onBuild: (type: BuildingTypeKey, x?: number, y?: number) => Promise<void>
   onDemolish: (id: string) => Promise<void>
   onLogout: () => void
+  population: import('@/domains/population/population.types').PopulationState | null
+  populationLoading?: boolean
+  onUpgradePopulation: (fromTier: string, count: number) => void
 }
 
 export function TwaHud({
@@ -44,7 +47,10 @@ export function TwaHud({
   setPlacementMode,
   onBuild,
   onDemolish,
-  onLogout
+  onLogout,
+  population,
+  populationLoading,
+  onUpgradePopulation
 }: TwaHudProps) {
   const colonyScreenProps = {
     colony,
@@ -79,7 +85,14 @@ export function TwaHud({
       </HudBottomSheet>
       
       <HudBottomSheet open={activeTab === 'profile'} onClose={() => setActiveTab('colony')}>
-        <ProfileScreen colony={colony} colonyLoading={colonyLoading} userEmail={userEmail} />
+        <ProfileScreen 
+          colony={colony} 
+          colonyLoading={colonyLoading} 
+          userEmail={userEmail} 
+          population={population}
+          populationLoading={populationLoading}
+          onUpgradePopulation={onUpgradePopulation}
+        />
       </HudBottomSheet>
 
       {placementMode && (

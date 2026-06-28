@@ -6,6 +6,7 @@ import { useColony } from '@/hooks/useColony'
 import { useResources } from '@/hooks/useResources'
 import { useBuildings } from '@/hooks/useBuildings'
 import { useEvents } from '@/hooks/useEvents'
+import { usePopulation } from '@/hooks/usePopulation'
 import { ToastProvider, useToast } from '@/components/ui/toast'
 import { AuthModal } from '@/components/game/AuthModal'
 import type { TabId } from '@/components/screens/BottomNav'
@@ -20,6 +21,7 @@ function GameUI() {
   const { buildings, buildStructure, demolishBuilding } = useBuildings(colonyId)
   const { toast } = useToast()
   const { createEvent } = useEvents(colonyId)
+  const { population, upgradeTier, loading: populationLoading } = usePopulation(colonyId)
 
   const [authMode, setAuthMode] = useState<'login' | 'register' | null>(null)
   const [activeTab, setActiveTab] = useState<TabId>('colony')
@@ -111,6 +113,9 @@ function GameUI() {
         onBuild={handleBuild}
         onDemolish={handleDemolish}
         onLogout={logout}
+        population={population}
+        populationLoading={populationLoading}
+        onUpgradePopulation={upgradeTier}
       />
     )
   }
@@ -133,6 +138,9 @@ function GameUI() {
       onCreateTestEvent={handleCreateTest}
       onPvpResult={(msg) => toast(msg, 'info')}
       onLogout={logout}
+      population={population}
+      populationLoading={populationLoading}
+      onUpgradePopulation={upgradeTier}
     />
   )
 }

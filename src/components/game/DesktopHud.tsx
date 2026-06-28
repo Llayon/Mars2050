@@ -13,6 +13,8 @@ import type { BuildingTypeKey } from '@/domains/building/building.types'
 import type { Colony } from '@/domains/colony/colony.types'
 import type { ResourceRow } from '@/domains/resource/resource.types'
 import type { BuildingRow } from '@/domains/building/building.types'
+import type { PopulationState } from '@/domains/population/population.types'
+import { PopulationPanel } from '@/components/game/PopulationPanel'
 
 interface DesktopHudProps {
   colonyId: string
@@ -31,6 +33,9 @@ interface DesktopHudProps {
   onCreateTestEvent: (id: string, type: string, dur: number) => Promise<boolean>
   onPvpResult: (msg: string) => void
   onLogout: () => void
+  population: PopulationState | null
+  populationLoading?: boolean
+  onUpgradePopulation: (fromTier: string, count: number) => void
 }
 
 export function DesktopHud({
@@ -49,7 +54,10 @@ export function DesktopHud({
   onDemolish,
   onCreateTestEvent,
   onPvpResult,
-  onLogout
+  onLogout,
+  population,
+  populationLoading,
+  onUpgradePopulation
 }: DesktopHudProps) {
   const colonyScreenProps = {
     colony,
@@ -79,9 +87,10 @@ export function DesktopHud({
 
       {!placementMode && (
         <div className="absolute top-0 left-0 right-0 z-10 pointer-events-none p-4 flex justify-between items-start">
-          <div className="w-80 pointer-events-auto space-y-4">
+          <div className="w-80 pointer-events-auto space-y-4 max-h-[90vh] overflow-y-auto custom-scrollbar pr-2">
             <ColonyPanel colony={colony} loading={colonyLoading} />
             <ResourcePanel resources={resources} loading={resourcesLoading} />
+            <PopulationPanel population={population} onUpgrade={onUpgradePopulation} loading={populationLoading} />
           </div>
           <div className="flex flex-col items-end gap-2 pointer-events-auto">
             <div className="hud-panel rounded-lg px-4 py-2 flex items-center gap-4">
