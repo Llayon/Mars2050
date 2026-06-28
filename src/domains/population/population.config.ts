@@ -34,7 +34,7 @@ export const POPULATION_TIERS: Record<PopulationTier, TierConfig> = {
     upgradeBuilding: 'university',
     workforceFor: [
       'advanced_mine', 'geothermal_plant', 'vehicle_bay',
-      'workshop', 'habitat_mk2',
+      'workshop', 'habitat_mk2', 'data_center', 'university',
     ],
   },
   scientist: {
@@ -52,7 +52,7 @@ export const POPULATION_TIERS: Record<PopulationTier, TierConfig> = {
     },
     upgradeBuilding: 'hq',
     workforceFor: [
-      'research_lab', 'biotech_lab', 'data_center', 'nanoforge',
+      'research_lab', 'biotech_lab', 'nanoforge',
     ],
   },
   director: {
