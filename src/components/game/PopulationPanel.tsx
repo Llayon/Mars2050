@@ -1,6 +1,4 @@
 import React from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
 import { POPULATION_TIERS } from '@/domains/population/population.config'
 import type { PopulationState } from '@/domains/population/population.types'
 
@@ -13,10 +11,12 @@ interface PopulationPanelProps {
 export function PopulationPanel({ population, onUpgrade, loading }: PopulationPanelProps) {
   if (!population) {
     return (
-      <Card>
-        <CardHeader><CardTitle>Население</CardTitle></CardHeader>
-        <CardContent>Нет данных...</CardContent>
-      </Card>
+      <div className="bg-transparent text-white">
+        <div className="px-4 py-3 border-b border-mars-border">
+          <h3 className="font-semibold text-sm text-white">👥 Население</h3>
+        </div>
+        <div className="p-4">Нет данных...</div>
+      </div>
     )
   }
 
@@ -28,11 +28,11 @@ export function PopulationPanel({ population, onUpgrade, loading }: PopulationPa
   ]
 
   return (
-    <Card className="bg-transparent border-none shadow-none text-white">
-      <CardHeader className="px-4 py-3 border-b border-mars-border">
-        <CardTitle className="font-semibold text-sm text-white">👥 Население</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4 p-4">
+    <div className="bg-transparent text-white">
+      <div className="px-4 py-3 border-b border-mars-border">
+        <h3 className="font-semibold text-sm text-white">👥 Население</h3>
+      </div>
+      <div className="space-y-4 p-4">
         {tiers.map((tier, idx) => {
           const config = POPULATION_TIERS[tier.key as keyof typeof POPULATION_TIERS]
           const isLocked = tier.count === 0 && tier.key !== 'worker' // worker is never locked
@@ -64,22 +64,20 @@ export function PopulationPanel({ population, onUpgrade, loading }: PopulationPa
 
                   {/* Only allow upgrade if next tier exists and there's enough population */}
                   {idx < tiers.length - 1 && tier.count >= 10 && (
-                    <Button 
-                      variant="outline" 
-                      size="sm"
+                    <button 
                       onClick={() => onUpgrade(tier.key, 10)}
                       disabled={loading || tier.count < 10}
-                      className="ml-2"
+                      className="ml-2 px-3 py-1 bg-mars-orange hover:bg-orange-600 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded text-xs font-bold transition-colors"
                     >
                       Улучшить (10)
-                    </Button>
+                    </button>
                   )}
                 </div>
               )}
             </div>
           )
         })}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   )
 }

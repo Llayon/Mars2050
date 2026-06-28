@@ -60,7 +60,8 @@ export function useEvents(colonyId: string | null): UseEventsReturn {
   useEffect(() => {
     if (!colonyId) return
     setTimeout(() => processNow(), 0)
-  }, [colonyId, processNow])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [colonyId])
 
   useEffect(() => { mountedRef.current = true; return () => { mountedRef.current = false } }, [])
   useEffect(() => {
