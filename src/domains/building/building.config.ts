@@ -81,7 +81,8 @@ export const BUILDING_CONSUMPTION_MAP: Record<BuildingTypeKey, Record<string, nu
 
 /** Starting resources for a new colony. */
 export const STARTING_RESOURCES: Record<string, number> = {
-  oxygen: 5000, water: 5000, energy: 5000, minerals: 5000, food: 5000, research_points: 5000
+  oxygen: 5000, water: 5000, energy: 5000, minerals: 5000, food: 5000, research_points: 5000,
+  consumer_goods: 0, rare_metals: 0, databanks: 0, nanomaterials: 0
 }
 
 /** Isometric grid settings and rendering limits for TWA performance. */

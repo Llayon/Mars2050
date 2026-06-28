@@ -313,7 +313,7 @@ export interface Database {
   }
 }
 
-export type ResourcesType = 'oxygen' | 'water' | 'energy' | 'minerals' | 'food' | 'research_points'
+export type ResourcesType = 'oxygen' | 'water' | 'energy' | 'minerals' | 'food' | 'research_points' | 'consumer_goods' | 'rare_metals' | 'databanks' | 'nanomaterials'
 export type MapLocationsType = 'plains' | 'mountains' | 'canyon' | 'crater' | 'ice_cap'
 export type EventsType = 'dust_storm' | 'meteor_shower' | 'anomaly_discovered' | 'resource_vein' | 'cold_wave' | 'solar_flare'
 export type PendingEventsType = 'building_complete' | 'attack_arrive' | 'attack_return' | 'research_complete'

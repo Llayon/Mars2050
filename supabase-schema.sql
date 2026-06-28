@@ -29,7 +29,7 @@ create table public.colonies (
 create table public.resources (
   id uuid default uuid_generate_v4() primary key,
   colony_id uuid references public.colonies(id) on delete cascade not null,
-  type text not null check (type in ('oxygen', 'water', 'energy', 'minerals', 'food', 'research_points')),
+  type text not null check (type in ('oxygen', 'water', 'energy', 'minerals', 'food', 'research_points', 'consumer_goods', 'rare_metals', 'databanks', 'nanomaterials')),
   amount numeric default 0 not null,
   production_rate numeric default 0 not null,
   consumption_rate numeric default 0 not null,
@@ -208,10 +208,18 @@ begin
   returning id into new_colony_id;
 
   -- Initialize resources
+  -- Initialize basic resources
   foreach resource_type in array array['oxygen', 'water', 'energy', 'minerals', 'food', 'research_points']
   loop
     insert into public.resources (colony_id, type, amount, production_rate, consumption_rate)
     values (new_colony_id, resource_type, 100, 0, 0);
+  end loop;
+
+  -- Initialize advanced resources (start at 0)
+  foreach resource_type in array array['consumer_goods', 'rare_metals', 'databanks', 'nanomaterials']
+  loop
+    insert into public.resources (colony_id, type, amount, production_rate, consumption_rate)
+    values (new_colony_id, resource_type, 0, 0, 0);
   end loop;
 
   return new_colony_id;
