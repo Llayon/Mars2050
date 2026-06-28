@@ -36,6 +36,7 @@ export interface Database {
           experience?: number
           terrain_grid?: Record<string, unknown>
           unlocked_radius?: number
+          last_calc_at: string
           created_at?: string
           updated_at?: string
         }
@@ -47,6 +48,7 @@ export interface Database {
           experience?: number
           terrain_grid?: Record<string, unknown>
           unlocked_radius?: number
+          last_calc_at?: string
         }
         Update: {
           user_id?: string
@@ -56,6 +58,7 @@ export interface Database {
           experience?: number
           terrain_grid?: Record<string, unknown>
           unlocked_radius?: number
+          last_calc_at?: string
           created_at?: string
           updated_at?: string
         }
@@ -94,6 +97,9 @@ export interface Database {
           name: string
           level?: number
           is_active?: boolean
+          x: number
+          y: number
+          group_id?: string
           created_at?: string
           updated_at?: string
         }
@@ -103,6 +109,9 @@ export interface Database {
           name: string
           level?: number
           is_active?: boolean
+          x: number
+          y: number
+          group_id?: string
         }
         Update: {
           colony_id?: string
@@ -110,6 +119,9 @@ export interface Database {
           name?: string
           level?: number
           is_active?: boolean
+          x?: number
+          y?: number
+          group_id?: string
           created_at?: string
           updated_at?: string
         }

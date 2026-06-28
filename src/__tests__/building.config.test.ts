@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest'
 import { BUILDING_TYPES } from '@/domains/building/building.config'
+import { POPULATION_TIERS } from '@/domains/population/population.config'
 import type { ResourceTypeKey } from '@/domains/resource/resource.types'
+import type { BuildingTypeKey } from '@/domains/building/building.types'
 
 describe('building.config', () => {
   it('every building type has a name', () => {
@@ -43,6 +45,64 @@ describe('building.config', () => {
       for (const [produced] of Object.entries(config.production)) {
         expect(config.consumption[produced as ResourceTypeKey], `${key} produces and consumes ${produced}`).toBeUndefined()
       }
+    }
+  })
+
+  it('every unlockedByTier tier is reachable', () => {
+    const popTiers = ['worker', 'technician', 'scientist', 'director']
+    for (const [key, config] of Object.entries(BUILDING_TYPES)) {
+      if (config.unlockedByTier) {
+        expect(popTiers).toContain(config.unlockedByTier)
+      }
+    }
+  })
+
+  it('every workforce tier has at least one housing source', () => {
+    for (const [tier, config] of Object.entries(POPULATION_TIERS)) {
+      const housingPerBuilding = (config as any).housingPerBuilding
+      expect(Object.keys(housingPerBuilding).length, `${tier} has no housing source`).toBeGreaterThan(0)
+      for (const buildingType of Object.keys(housingPerBuilding)) {
+        expect(BUILDING_TYPES[buildingType as BuildingTypeKey], `Housing building ${buildingType} not found in config`).toBeDefined()
+      }
+    }
+  })
+
+  it('every produced advanced resource has at least one consumer or need', () => {
+    const advancedResources = ['consumer_goods', 'rare_metals', 'databanks', 'nanomaterials']
+    const consumers = new Set<string>()
+
+    for (const [key, config] of Object.entries(BUILDING_TYPES)) {
+      for (const res of Object.keys(config.consumption)) {
+        consumers.add(res)
+      }
+      for (const res of Object.keys(config.cost)) {
+        consumers.add(res)
+      }
+    }
+
+    for (const [tier, config] of Object.entries(POPULATION_TIERS)) {
+      for (const need of (config as any).needs) {
+        consumers.add(need.resource)
+      }
+    }
+
+    for (const res of advancedResources) {
+      expect(consumers.has(res), `Advanced resource ${res} has no consumers or needs`).toBe(true)
+    }
+  })
+
+  it('every consumed advanced resource has at least one producer', () => {
+    const advancedResources = ['consumer_goods', 'rare_metals', 'databanks', 'nanomaterials']
+    const producers = new Set<string>()
+
+    for (const [key, config] of Object.entries(BUILDING_TYPES)) {
+      for (const res of Object.keys(config.production)) {
+        producers.add(res)
+      }
+    }
+
+    for (const res of advancedResources) {
+      expect(producers.has(res), `Advanced resource ${res} is consumed but has no producers in config`).toBe(true)
     }
   })
 })

@@ -21,6 +21,7 @@ create table public.colonies (
   experience bigint default 0,
   terrain_grid jsonb default '[]'::jsonb,
   unlocked_radius integer default 5,
+  last_calc_at timestamp with time zone default timezone('utc'::text, now()) not null,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
@@ -45,6 +46,9 @@ create table public.buildings (
   name text not null,
   level integer default 1 not null,
   is_active boolean default true,
+  x integer not null,
+  y integer not null,
+  group_id text,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
@@ -316,3 +320,41 @@ create policy "Users can view battles they participated in" on public.battles fo
   attacker_colony_id in (select id from public.colonies where user_id = auth.uid()) or
   defender_colony_id in (select id from public.colonies where user_id = auth.uid())
 );
+
+-- Recalculation RPC definition
+create or replace function public.recalculate_resources(
+  p_colony_id uuid
+) returns setof public.resources as $$
+declare
+  v_elapsed_hours numeric;
+  v_now timestamp with time zone := now();
+begin
+  -- Get elapsed time since last calculation
+  select extract(epoch from (v_now - last_calc_at)) / 3600.0
+  into v_elapsed_hours
+  from public.colonies
+  where id = p_colony_id;
+
+  -- Skip if less than 1 second
+  if v_elapsed_hours is null or v_elapsed_hours < 1.0 / 3600.0 then
+    return query select * from public.resources where colony_id = p_colony_id;
+    return;
+  end if;
+
+  -- Update ALL resources in a single statement
+  update public.resources
+  set amount = greatest(0, amount + (production_rate - consumption_rate) * v_elapsed_hours),
+      updated_at = v_now
+  where colony_id = p_colony_id;
+
+  -- Update last_calc_at
+  update public.colonies
+  set last_calc_at = v_now,
+      updated_at = v_now
+  where id = p_colony_id;
+
+  -- Return updated resources
+  return query select * from public.resources where colony_id = p_colony_id;
+end;
+$$ language plpgsql security definer;
+

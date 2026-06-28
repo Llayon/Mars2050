@@ -1,6 +1,7 @@
 export type * from './colony.types'
 export * from './colony.schemas'
 export * from './colony.service'
+export * from './colony.ownership'
 export type * from './colony-terrain.types'
 export * from './colony-terrain.config'
 export * from './colony-terrain.generator'

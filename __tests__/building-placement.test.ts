@@ -91,4 +91,30 @@ describe('Building Placement Validation', () => {
     });
     expect(result.valid).toBe(true);
   });
+
+  it('should reject placement if required terrain is not met', () => {
+    const result = validateBuildingPlacement({
+      ...baseInput,
+      requiredTerrain: ['geothermal']
+    });
+    expect(result.valid).toBe(false);
+    expect(result.error).toContain('требуется особый ландшафт');
+  });
+
+  it('should allow placement if at least one cell touches required terrain', () => {
+    const terrainWithGeothermal: TerrainCell[] = [
+      { x: 19, y: 19, t: 'regolith' },
+      { x: 20, y: 19, t: 'geothermal' },
+      { x: 19, y: 20, t: 'regolith' },
+      { x: 20, y: 20, t: 'regolith' },
+    ];
+    const result = validateBuildingPlacement({
+      ...baseInput,
+      width: 2,
+      height: 2,
+      terrainGrid: terrainWithGeothermal,
+      requiredTerrain: ['geothermal']
+    });
+    expect(result.valid).toBe(true);
+  });
 });

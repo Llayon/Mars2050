@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { recalculateResources } from '@/domains/resource/resource.service'
 import { getCached, setCache, invalidateCache } from '@/lib/cache'
 import { apiError, apiInternalError } from '@/lib/api-error'
+import { checkColonyAuth } from '@/domains/colony/colony.ownership'
 
 /**
  * GET /api/resources?colonyId=xxx
@@ -17,6 +18,9 @@ export async function GET(request: Request) {
     if (!colonyId) {
       return apiError('BAD_REQUEST', 'colonyId is required')
     }
+
+    const { errorResponse } = await checkColonyAuth(request, colonyId)
+    if (errorResponse) return errorResponse
 
     // Check cache (10 second TTL)
     const cacheKey = `resources:${colonyId}`

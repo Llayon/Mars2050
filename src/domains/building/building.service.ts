@@ -1,4 +1,5 @@
 import { getServerClient } from '@/domains/resource/resource.server'
+import type { SupabaseClient } from '@supabase/supabase-js'
 import type { BuildingCreateDTO, BuildingResponse, BuildingRow, BuildingTypeKey } from './building.types'
 import { BUILDING_TYPES } from './building.config'
 import { validateBuildingPlacement } from './building-placement'
@@ -51,7 +52,8 @@ export async function createBuilding(dto: BuildingCreateDTO): Promise<BuildingRe
       height: config.height || 1,
       unlockedRadius: colony.unlocked_radius || 5,
       terrainGrid: (colony.terrain_grid as TerrainCell[]) || [],
-      occupiedCells: mappedBuildings
+      occupiedCells: mappedBuildings,
+      requiredTerrain: config.requiresTerrain
     })
 
     if (!validation.valid) {
@@ -219,4 +221,27 @@ export async function getBuildings(colonyId: string): Promise<BuildingRow[]> {
   }
 
   return data || []
+}
+
+/**
+ * Verifies if a building belongs to a colony.
+ * @param authClient - The authenticated Supabase client
+ * @param buildingId - The building ID to check
+ * @param colonyId - The colony ID to check against
+ * @returns Promise resolving to true if owned, false otherwise
+ */
+export async function verifyBuildingOwnership(
+  authClient: SupabaseClient,
+  buildingId: string,
+  colonyId: string
+): Promise<boolean> {
+  const { data, error } = await authClient
+    .from('buildings')
+    .select('colony_id')
+    .eq('id', buildingId)
+    .maybeSingle()
+
+  if (error || !data) return false
+  return data.colony_id === colonyId
+}
 }
