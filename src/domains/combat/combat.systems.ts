@@ -9,6 +9,7 @@ import { applyStatus, isActionBlockedByStatus, tickStatuses } from './combat.sta
 import { applyCombatDamage } from './combat.damage';
 import { tryDeployMine } from './combat.minefield';
 import { getLinePierceDamageMultiplier, getLinePierceTargets } from './combat.attack-geometry';
+import { applyPullOnHit } from './combat.displacement';
 
 export function tickModifiersSystem(unit: SimUnit, dt: number, actions: BattleAction[]) {
   if (unit.actionCooldown > 0) unit.actionCooldown = Math.max(0, unit.actionCooldown - 1);
@@ -101,6 +102,8 @@ export function actionSystem(unit: SimUnit, target: SimUnit, units: SimUnit[], h
                  }
              }
          }
+
+         applyPullOnHit(unit, target, units, actions);
      }
   }
   return true;

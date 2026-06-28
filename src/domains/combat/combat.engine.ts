@@ -26,7 +26,6 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
   defenderGlobals.forEach(id => { if (GLOBAL_UPGRADES[id]) activeGlobals.push({ team: 'defender', upg: GLOBAL_UPGRADES[id] }) })
 
   const obstacles: Obstacle[] = providedObstacles || generateObstacles(seed);
-
   const flowFieldMap = createPathfindingMap(obstacles);
   const spatialHash = new SpatialHash();
 
@@ -157,6 +156,7 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
         executeThreshold: modExecuteThreshold,
         lifestealMult: modLifestealMult,
         groundDamageMult: modGroundDamageMult,
+        pullOnHit: config.baseStats.pullOnHit ? { radius: config.baseStats.pullOnHit.radius * 40, strength: config.baseStats.pullOnHit.strength * 40, maxTargets: config.baseStats.pullOnHit.maxTargets } : undefined,
         offsetX: ox,
         offsetY: oy,
         x: cx + ox,

@@ -94,6 +94,6 @@ export interface SimUnit {
   groundDamageMult?: number
   damageReductionWhileMoving?: number
   onDeathPuddle?: 'napalm' | 'acid' | 'emp'
-  multishot?: number
-  antiAirDamageMult?: number
+  multishot?: number; antiAirDamageMult?: number
+  pullOnHit?: { radius: number; strength: number; maxTargets?: number }
 }

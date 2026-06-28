@@ -30,6 +30,7 @@ export interface UnitBaseStats {
   aoeRadius?: number; spawnType?: string; actionCooldownMax?: number
   spawnOverrides?: { hp?: number; attack?: number; isTemporary?: boolean; duration?: number }
   linePierce?: { width: number; damageMultiplier: number; maxTargets?: number }
+  pullOnHit?: { radius: number; strength: number; maxTargets?: number }
   statusOnHit?: StatusEffect[]
   supportAuras?: SupportAura[]
   mineOnAction?: { radius: number; damage: number; duration: number }
