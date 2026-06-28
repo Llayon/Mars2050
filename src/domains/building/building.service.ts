@@ -244,4 +244,3 @@ export async function verifyBuildingOwnership(
   if (error || !data) return false
   return data.colony_id === colonyId
 }
-}
