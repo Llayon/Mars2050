@@ -192,7 +192,7 @@ export const BuildingsScreen = memo(function BuildingsScreen({
                   <button
                     key={type}
                     onClick={() => handleBuild(type as BuildingTypeKey)}
-                    disabled={building !== null || (!canAfford && !exists) || !tierMet}
+                    disabled={building !== null || !canAfford || !tierMet}
                     className={`w-full text-left glass-panel-light rounded-xl p-3 transition-all duration-200 ${
                       (canAfford && tierMet) ? 'hover:bg-white/5' : 'opacity-50'
                     } ${exists ? 'ring-1 ring-mars-teal/30' : ''}`}
