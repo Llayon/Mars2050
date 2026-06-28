@@ -149,6 +149,47 @@ export interface Database {
           created_at?: string
         }
       }
+      population: {
+        Row: {
+          id?: string
+          colony_id: string
+          workers?: number
+          technicians?: number
+          scientists?: number
+          directors?: number
+          happiness_workers?: number
+          happiness_technicians?: number
+          happiness_scientists?: number
+          happiness_directors?: number
+          growth_progress?: number
+          updated_at?: string
+        }
+        Insert: {
+          colony_id: string
+          workers?: number
+          technicians?: number
+          scientists?: number
+          directors?: number
+          happiness_workers?: number
+          happiness_technicians?: number
+          happiness_scientists?: number
+          happiness_directors?: number
+          growth_progress?: number
+        }
+        Update: {
+          colony_id?: string
+          workers?: number
+          technicians?: number
+          scientists?: number
+          directors?: number
+          happiness_workers?: number
+          happiness_technicians?: number
+          happiness_scientists?: number
+          happiness_directors?: number
+          growth_progress?: number
+          updated_at?: string
+        }
+      }
       building_types: {
         Row: {
           type: string

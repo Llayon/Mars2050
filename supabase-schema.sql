@@ -63,6 +63,36 @@ create table public.map_locations (
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
+-- Population table
+create table public.population (
+  id uuid default uuid_generate_v4() primary key,
+  colony_id uuid references public.colonies(id) on delete cascade not null unique,
+  workers integer not null default 10,
+  technicians integer not null default 0,
+  scientists integer not null default 0,
+  directors integer not null default 0,
+  happiness_workers integer not null default 50,
+  happiness_technicians integer not null default 50,
+  happiness_scientists integer not null default 50,
+  happiness_directors integer not null default 50,
+  growth_progress numeric not null default 0,
+  updated_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+-- Auto-create population trigger
+create or replace function public.create_population_for_colony()
+returns trigger as $$
+begin
+  insert into public.population (colony_id, workers)
+  values (new.id, 10);
+  return new;
+end;
+$$ language plpgsql security definer;
+
+create trigger trg_colony_population
+  after insert on public.colonies
+  for each row execute function public.create_population_for_colony();
+
 -- Building types catalog
 create table public.building_types (
   type text primary key,
@@ -98,6 +128,15 @@ create policy "Users can update own profile" on public.profiles for update using
 create policy "Users can view own colonies" on public.colonies for select using (auth.uid() = user_id);
 create policy "Users can insert own colonies" on public.colonies for insert with check (auth.uid() = user_id);
 create policy "Users can update own colonies" on public.colonies for update using (auth.uid() = user_id);
+
+-- Population policies
+alter table public.population enable row level security;
+create policy "Users can view own colony population" on public.population for select using (
+  colony_id in (select id from public.colonies where user_id = auth.uid())
+);
+create policy "Users can manage own colony population" on public.population for all using (
+  colony_id in (select id from public.colonies where user_id = auth.uid())
+);
 
 -- Resources policies
 create policy "Users can view resources of own colonies" on public.resources for select using (
