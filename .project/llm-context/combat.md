@@ -58,7 +58,8 @@
 - Damage must go through `applyCombatDamage()` in `combat.damage.ts`. Do not subtract HP directly in attack code except for explicitly modeled hazards/status ticks with tests.
 - Shield overflow is intentional: shields absorb only remaining shield HP; leftover damage reaches HP.
 - `applyCombatDamage()` may emit detailed replay events: `unit_blocked_damage`, `shield_damage`, `shield_break`, `damage`, and `lifesteal`.
-- `combat.systems.ts` still emits legacy `attack` events for replay renderer compatibility. Do not remove them until the renderer is migrated to detailed damage events.
+- `combat.systems.ts` still emits legacy `attack` events for projectile, recoil, and old replay compatibility.
+- `battle-replay-engine.ts` detects detailed damage logs. New logs mutate HP/text from detailed damage events; old attack-only logs keep legacy attack HP handling.
 
 ## Tests & QA
 - `src/__tests__/combat.engine.test.ts` — basic battle outcomes and timeout behavior.

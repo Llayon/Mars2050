@@ -11,6 +11,7 @@ import type { SpriteState } from './battle-replay-units'
 import { addVisualAnimationAssets, getVisualAnimationTexture } from './battle-replay-animation-sequences'
 import { applyProceduralMotion, updateParticles, initMotionVfx } from './battle-replay-motion-vfx'
 import { buildReplayRenderUnits } from './battle-replay-state'
+import { hasDetailedDamageEvents } from './battle-replay-damage-events'
 
 export interface ReplayControls {
   play: () => void;
@@ -31,6 +32,7 @@ export type BattleReplayEngineProps = {
 export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
   const { container, attackerUnits, defenderUnits, initialState, logs, obstacles } = props
   let cleanupEvents: (() => void) | null = null
+  const useDetailedDamageEvents = hasDetailedDamageEvents(logs)
 
   const app = new Application(), BOARD_W = FIELD_WIDTH, BOARD_H = FIELD_HEIGHT
   await app.init({ width: BOARD_W, height: BOARD_H, backgroundColor: 0x1a1a2e, resolution: window.devicePixelRatio || 1, autoDensity: true })
@@ -147,10 +149,12 @@ export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
               s.act = 'shoot'
             }
 
-            tg.hp -= isH ? -a.damage! : a.damage!
-            updateHp(tg)
-            const dmgText = isH ? `+${a.damage}` : (a.isShieldHit && a.damage === 0 ? `БЛОК` : `-${a.damage}`)
-            spawnTxt(dmgText, tg.c.x, tg.c.y, pCol)
+            if (isH || !useDetailedDamageEvents) {
+              tg.hp -= isH ? -a.damage! : a.damage!
+              updateHp(tg)
+              const dmgText = isH ? `+${a.damage}` : (a.isShieldHit && a.damage === 0 ? `БЛОК` : `-${a.damage}`)
+              spawnTxt(dmgText, tg.c.x, tg.c.y, pCol)
+            }
 
             if (s.s && s.baseScale !== undefined) {
                s.s.scale.set(s.baseScale * 1.2)
@@ -178,6 +182,28 @@ export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
               } catch(e) {}
             }
           }
+        } else if (a.type === 'damage') {
+          const tg = sprites[a.targetId!]
+          if (tg) {
+            tg.hp -= a.damage!
+            updateHp(tg)
+            spawnTxt(`-${a.damage}`, tg.c.x, tg.c.y, 0xffaa00)
+          }
+        } else if (a.type === 'shield_damage') {
+          const tg = sprites[a.targetId!]
+          if (tg) spawnTxt(`ЩИТ -${a.damage}`, tg.c.x, tg.c.y, 0x3b82f6)
+        } else if (a.type === 'shield_break') {
+          const tg = sprites[a.targetId!]
+          if (tg) spawnTxt('ЩИТ СЛОМАН', tg.c.x, tg.c.y, 0x60a5fa)
+        } else if (a.type === 'lifesteal') {
+          const tg = sprites[a.targetId ?? a.unitId]
+          if (tg) {
+            tg.hp = Math.min(tg.maxHp, tg.hp + (a.damage ?? 0))
+            updateHp(tg)
+            spawnTxt(`+${a.damage}`, tg.c.x, tg.c.y, 0x4ade80)
+          }
+        } else if (a.type === 'unit_blocked_damage') {
+          spawnTxt(`БЛОК ${a.damage}`, s.c.x, s.c.y, 0x94a3b8)
         } else if (a.type === 'die') {
           s.c.alpha = 0.3; s.hpBar.alpha = 0
           if (s.s) s.s.tint = 0x555555

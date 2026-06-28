@@ -160,9 +160,10 @@ The detailed replay stream can emit:
 | `lifesteal` | Attacker healed from actual HP damage dealt. |
 | `unit_blocked_damage` | Damage removed by defense, status reduction, or other mitigation. |
 
-The legacy `attack` replay action is still emitted for renderer compatibility.
-Do not remove it until `battle-replay-engine.ts` consumes the detailed damage
-actions directly.
+The legacy `attack` replay action is still emitted for projectile, recoil, and
+old replay compatibility. `battle-replay-engine.ts` detects whether a log
+contains detailed damage events. New logs use detailed events for HP/text, while
+old attack-only logs keep legacy HP handling.
 
 ## Advanced Mechanics / Upgrade Primitives
 
@@ -423,18 +424,15 @@ Missing upgrade categories:
 
 ## Next Implementation Slices
 
-1. Wire `battle-replay-engine.ts` to consume detailed `damage`,
-   `shield_damage`, `shield_break`, `lifesteal`, and `unit_blocked_damage`
-   events without double-counting HP.
-2. Add regression tests for no-op utility support and control-role units.
-3. Normalize anti-air capability in config and tests.
-4. Split utility support healing/repair/buff behavior.
-5. Implement defensive primitives: flat damage block, damage sharing, status
+1. Add regression tests for no-op utility support and control-role units.
+2. Normalize anti-air capability in config and tests.
+3. Split utility support healing/repair/buff behavior.
+4. Implement defensive primitives: flat damage block, damage sharing, status
    immunity, reactive armor charges, cleanse-on-action, and projectile
    interception.
-6. Add transform/control primitives: stance transforms, target marks, burrow,
+5. Add transform/control primitives: stance transforms, target marks, burrow,
    ramp/charge scaling, and percent-HP damage.
-7. Add weapon/death primitives: split fire, chain attacks, periodic side
+6. Add weapon/death primitives: split fire, chain attacks, periodic side
    weapons, on-death effects, and on-kill recycling.
-8. Add remaining attack shapes: beams, cones, barrage, and richer temporary
+7. Add remaining attack shapes: beams, cones, barrage, and richer temporary
    battlefield objects.
