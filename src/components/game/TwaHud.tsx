@@ -7,6 +7,7 @@ import { BuildingsScreen } from '@/components/screens/BuildingsScreen'
 import { MapScreen } from '@/components/screens/MapScreen'
 import { OperationsScreen } from '@/components/screens/OperationsScreen'
 import { ProfileScreen } from '@/components/screens/ProfileScreen'
+import { PopulationScreen } from '@/components/screens/PopulationScreen'
 import { HudBottomSheet } from '@/components/ui/hud/HudBottomSheet'
 import type { BuildingTypeKey } from '@/domains/building/building.types'
 import type { Colony } from '@/domains/colony/colony.types'
@@ -76,20 +77,24 @@ export function TwaHud({
       <HudBottomSheet open={activeTab === 'buildings'} onClose={() => setActiveTab('colony')}>
         <BuildingsScreen buildings={buildings} colonyId={colonyId} resources={resources} resourcesLoading={resourcesLoading} onBuild={onBuild} onDemolish={onDemolish} population={population} />
       </HudBottomSheet>
-      
+
+      <HudBottomSheet open={activeTab === 'population'} onClose={() => setActiveTab('colony')}>
+        <PopulationScreen population={population} buildings={buildings} resources={resources} onUpgrade={async (t, c) => onUpgradePopulation(t, c)} />
+      </HudBottomSheet>
+
       <HudBottomSheet open={activeTab === 'map'} onClose={() => setActiveTab('colony')}>
         <MapScreen colonyId={colonyId} resources={resources} resourcesLoading={resourcesLoading} />
       </HudBottomSheet>
-      
+
       <HudBottomSheet open={activeTab === 'operations'} onClose={() => setActiveTab('colony')}>
         <OperationsScreen colonyId={colonyId} resources={resources} />
       </HudBottomSheet>
-      
+
       <HudBottomSheet open={activeTab === 'profile'} onClose={() => setActiveTab('colony')}>
         <ProfileScreen 
-          colony={colony} 
-          colonyLoading={colonyLoading} 
-          userEmail={userEmail} 
+          colony={colony}
+          colonyLoading={colonyLoading}
+          userEmail={userEmail}
           population={population}
           populationLoading={populationLoading}
           onUpgradePopulation={onUpgradePopulation}

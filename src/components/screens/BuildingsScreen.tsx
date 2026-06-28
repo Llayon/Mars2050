@@ -112,9 +112,7 @@ export const BuildingsScreen = memo(function BuildingsScreen({
                 onClick={() => {
                   setSelectedBuilding(prev => prev?.id === b.id ? null : b)
                 }}
-                className={`glass-panel rounded-xl p-3 text-left transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] ${
-                  selectedBuilding?.id === b.id ? 'ring-2 ring-mars-orange glow-gold' : ''
-                }`}
+                className="glass-panel rounded-xl p-3 text-left transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
               >
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-lg leading-none">{BUILDING_TYPES[b.type as BuildingTypeKey]?.name.charAt(0) || '🏗'}</span>

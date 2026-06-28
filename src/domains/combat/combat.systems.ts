@@ -8,6 +8,7 @@ import { isMeleeEngagementReady } from './combat.melee-engagement';
 import { applyStatus, isActionBlockedByStatus, tickStatuses } from './combat.status';
 import { applyCombatDamage } from './combat.damage';
 import { tryDeployMine } from './combat.minefield';
+import { getLinePierceDamageMultiplier, getLinePierceTargets } from './combat.attack-geometry';
 
 export function tickModifiersSystem(unit: SimUnit, dt: number, actions: BattleAction[]) {
   if (unit.actionCooldown > 0) unit.actionCooldown = Math.max(0, unit.actionCooldown - 1);
@@ -81,6 +82,8 @@ export function actionSystem(unit: SimUnit, target: SimUnit, units: SimUnit[], h
              handleDeath(target, unit, units, actions, hazards, rng);
          }
 
+         processLinePierce(unit, target, units, actions, hazards, rng);
+
          if (unit.attackType === 'aoe' && unit.aoeRadius) {
              const radius = unit.aoeRadius;
              const splashEnemies = units.filter(e => !e.isDead && e.team !== unit.team && e.id !== target.id);
@@ -107,6 +110,18 @@ function applyOnHitStatuses(unit: SimUnit, target: SimUnit, actions: BattleActio
   if (unit.appliesEmp) applyStatus(target, { type: 'emp', duration: 30, sourceUnitId: unit.id }, actions);
   for (const status of unit.statusOnHit ?? []) {
     applyStatus(target, { ...status, sourceUnitId: unit.id }, actions);
+  }
+}
+
+function processLinePierce(unit: SimUnit, target: SimUnit, units: SimUnit[], actions: BattleAction[], hazards: SimHazard[], rng: PRNG): void {
+  const multiplier = getLinePierceDamageMultiplier(unit);
+  if (!multiplier) return;
+
+  for (const secondary of getLinePierceTargets(unit, target, units)) {
+    const hit = applyCombatDamage(unit, secondary, Math.floor(unit.attack * multiplier));
+    actions.push({ unitId: unit.id, type: 'attack', targetId: secondary.id, damage: hit.damage, isShieldHit: hit.isShieldHit });
+    applyOnHitStatuses(unit, secondary, actions);
+    if (secondary.hp <= 0 && !secondary.isDead) handleDeath(secondary, unit, units, actions, hazards, rng);
   }
 }
 

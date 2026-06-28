@@ -2,7 +2,7 @@
 
 import { memo } from 'react'
 
-export type TabId = 'colony' | 'buildings' | 'map' | 'operations' | 'profile'
+export type TabId = 'colony' | 'buildings' | 'population' | 'map' | 'operations' | 'profile'
 
 interface TabDef {
   id: TabId
@@ -13,6 +13,7 @@ interface TabDef {
 const TABS: TabDef[] = [
   { id: 'colony', label: 'Колония', icon: '🏠' },
   { id: 'buildings', label: 'Стройка', icon: '🏗' },
+  { id: 'population', label: 'Люди', icon: '👥' },
   { id: 'map', label: 'Карта', icon: '🗺' },
   { id: 'operations', label: 'Операции', icon: '⚔️' },
   { id: 'profile', label: 'Профиль', icon: '👤' },
