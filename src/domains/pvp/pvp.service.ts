@@ -1,6 +1,7 @@
 import { getServerClient } from '@/domains/resource/resource.server'
 import { simulateBattle } from '@/domains/combat/combat.engine'
 import type { UnitRow, BattleTick, Obstacle, SimUnit } from '@/domains/combat/combat.types'
+import type { DeploymentPoint } from '@/domains/combat/combat.deployment'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { loadOwnedColony } from './pvp.ownership'
 import {
@@ -77,7 +78,7 @@ export async function executeAttack(
   attackerColonyId: string,
   defenderColonyId: string,
   clientSeed?: number,
-  attackerUnitsPlacement?: { unitId: string, x: number, y: number }[]
+  attackerUnitsPlacement?: DeploymentPoint[]
 ): Promise<{
   success: boolean
   error?: string

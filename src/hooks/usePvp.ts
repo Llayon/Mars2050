@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import type { AttackResult, TradeResult } from '@/domains/pvp/pvp.types'
+import type { DeploymentPoint } from '@/domains/combat/combat.deployment'
 
 export function usePvp(colonyId: string | null) {
   const [attacking, setAttacking] = useState(false)
@@ -9,7 +10,10 @@ export function usePvp(colonyId: string | null) {
   const [error, setError] = useState<string | null>(null)
   const [cooldownRemaining, setCooldownRemaining] = useState<number>(0)
 
-  async function attack(defenderColonyId: string): Promise<AttackResult | null> {
+  async function attack(
+    defenderColonyId: string,
+    attackerUnitsPlacement?: DeploymentPoint[]
+  ): Promise<AttackResult | null> {
     if (!colonyId) return null
 
     setAttacking(true)
@@ -19,7 +23,7 @@ export function usePvp(colonyId: string | null) {
       const res = await fetch('/api/pvp/attack', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ defenderColonyId })
+        body: JSON.stringify({ attackerColonyId: colonyId, defenderColonyId, attackerUnitsPlacement })
       })
 
       const data = await res.json()

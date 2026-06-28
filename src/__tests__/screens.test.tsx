@@ -50,7 +50,7 @@ describe('BottomNav', () => {
   it('highlights active tab', () => {
     const { container } = render(<BottomNav activeTab="buildings" onTabChange={() => {}} />)
     const buttons = container.querySelectorAll('button')
-    expect(buttons[1].className).toContain('text-mars-orange')
+    expect(buttons[1].className).toContain('text-cyan-400')
   })
 
   it('calls onTabChange on click', () => {

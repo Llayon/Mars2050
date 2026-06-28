@@ -1,14 +1,20 @@
 import { z } from 'zod'
+import { FIELD_HEIGHT, FIELD_WIDTH } from '@/domains/combat/combat.utils'
+import { isInDeploymentZone } from '@/domains/combat/combat.deployment'
+
+const attackDeploymentPointSchema = z.object({
+  unitId: z.string().uuid(),
+  x: z.number().int().min(0).max(FIELD_WIDTH),
+  y: z.number().int().min(0).max(FIELD_HEIGHT),
+}).strict().refine(point => isInDeploymentZone('attack', point.x, point.y), {
+  message: 'Attacker units must be deployed in the attack zone',
+})
 
 export const attackSchema = z.object({
   attackerColonyId: z.string().uuid('Invalid attacker colony ID'),
   defenderColonyId: z.string().uuid('Invalid defender colony ID'),
   clientSeed: z.number().int().min(0).max(2_147_483_647).optional(),
-  attackerUnitsPlacement: z.array(z.object({
-    unitId: z.string().uuid(),
-    x: z.number().int().min(0).max(17),
-    y: z.number().int().min(16).max(31),
-  })).optional()
+  attackerUnitsPlacement: z.array(attackDeploymentPointSchema).optional()
 })
 
 export const tradeSchema = z.object({

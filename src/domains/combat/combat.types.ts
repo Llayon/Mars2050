@@ -18,6 +18,7 @@ export interface TargetingProfileConfig {
   distanceWeight: number
   currentTargetBonus: number
   lowHpWeight: number
+  targetingCooldownTicks?: number
   preferredTags?: Partial<Record<CombatTag, number>>
   avoidedTags?: Partial<Record<CombatTag, number>>
 }

@@ -4,8 +4,8 @@ import type { SpatialHash } from './spatial-hash'
 
 export const MOVEMENT_NEIGHBOR_RADIUS = 220
 
-const SEPARATION_RADIUS_MULT = 2.4
-const SEPARATION_WEIGHT = 0.9
+const SEPARATION_RADIUS_MULT = 1.2
+const SEPARATION_WEIGHT = 0.25
 const ALIGNMENT_RADIUS = 120
 const ALIGNMENT_WEIGHT = 0.25
 
@@ -50,11 +50,11 @@ export function getSteeringContext(unit: SimUnit, neighbors: SimUnit[], myRadius
     const minDist = (myRadius + otherRadius) * 0.95
     const separateRadius = Math.max(minDist * SEPARATION_RADIUS_MULT, 45)
 
-    if (dist < separateRadius) {
+    if (!unit.isFlying && other.team === unit.team && dist < separateRadius) {
       const direction = getAwayVector(unit, other, dist)
       const soft = Math.max(0, (separateRadius - dist) / separateRadius)
       const emergency = dist < minDist ? getEmergencyPush(unit, other, myRadius, otherRadius, dist, isInRange) : 0
-      const force = soft * soft * unit.speed * SEPARATION_WEIGHT * getSoftSeparationMultiplier(unit, other, isInRange) +
+      const force = soft * soft * unit.speed * SEPARATION_WEIGHT * getSoftSeparationMultiplier(isInRange) * getSeparationMassMultiplier(unit, other) +
         emergency * getEmergencySeparationMultiplier(isInRange)
 
       separationX += direction.x * force
@@ -107,18 +107,22 @@ function getEmergencyPush(unit: SimUnit, other: SimUnit, myRadius: number, other
   const overlap = Math.max(0, minDist - dist)
   const myMass = getSizeMass(unit.size)
   const otherMass = getSizeMass(other.size)
-  const pushRatio = (otherMass / (myMass + otherMass)) * 2
-  const stanceMultiplier = isInRange ? 0.5 : 1.0
-  return Math.min(overlap * 2, unit.speed * 1.5) * pushRatio * stanceMultiplier
+  const pushRatio = otherMass / (myMass + otherMass)
+  const stanceMultiplier = isInRange ? 0.25 : 0.65
+  return Math.min(overlap * 1.2, unit.speed * 0.9) * pushRatio * stanceMultiplier
 }
 
-function getSoftSeparationMultiplier(unit: SimUnit, other: SimUnit, isInRange: boolean): number {
-  if (!isInRange) return 1
-  return unit.team === other.team ? 0.35 : 0.1
+function getSoftSeparationMultiplier(isInRange: boolean): number {
+  return isInRange ? 0.05 : 1
 }
 
 function getEmergencySeparationMultiplier(isInRange: boolean): number {
-  return isInRange ? 0.35 : 1
+  return isInRange ? 0.1 : 0.55
+}
+
+function getSeparationMassMultiplier(unit: SimUnit, other: SimUnit): number {
+  const ratio = getSizeMass(other.size) / getSizeMass(unit.size)
+  return Math.max(0.08, Math.min(1.25, Math.sqrt(ratio)))
 }
 
 function getDeterministicPairAngle(unitId: string, otherId: string): number {

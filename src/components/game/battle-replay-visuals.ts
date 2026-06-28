@@ -52,7 +52,7 @@ export const UNIT_VISUALS: Partial<Record<UnitTypeKey, UnitVisualConfig>> = {
 
   stealth_operative: { scale: 1.5, muzzleOffset: 15, fxType: 'fx_muzzle_cyan', vfxScale: 0.6 },
   hologram_projector: { scale: 1.1 },
-  gravity_manipulator: { scale: 1.15, yOffset: -10, hoverAmplitude: 2, hoverSpeed: 0.04 },
+  gravity_manipulator: { scale: 1.15, yOffset: -10, hoverAmplitude: 2, hoverSpeed: 0.04, locomotion: 'hover' },
   nanite_generator: { scale: 1.1 },
   bounty_hunter: { scale: 1.4, muzzleOffset: 20, fxType: 'fx_muzzle_orange', vfxScale: 0.8 },
 

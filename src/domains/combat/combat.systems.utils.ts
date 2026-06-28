@@ -46,6 +46,8 @@ export function handleDeath(t: SimUnit, unit: SimUnit, units: SimUnit[], actions
             shield: unit.maxShield,
             statusEffects: [],
             attackTargetId: undefined,
+            meleeSlotTargetId: undefined,
+            meleeSlotIndex: undefined,
             aggroLockTicks: 0,
             velocity: { x: 0, y: 0 },
             isDead: false,

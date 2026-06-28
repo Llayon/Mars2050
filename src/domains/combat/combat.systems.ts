@@ -4,6 +4,7 @@ import type { UnitTypeKey } from './combat.types';
 import { UNIT_TYPES } from './combat.config';
 import { handleDeath, processSpawnAction } from './combat.systems.utils';
 import { getDistance, FIELD_WIDTH, FIELD_HEIGHT, PRNG, getSizeRadius } from './combat.utils';
+import { isMeleeEngagementReady } from './combat.melee-engagement';
 
 export function tickModifiersSystem(unit: SimUnit, dt: number, actions: BattleAction[]) {
   if (unit.actionCooldown > 0) unit.actionCooldown = Math.max(0, unit.actionCooldown - 1);
@@ -30,6 +31,7 @@ export function actionSystem(unit: SimUnit, target: SimUnit, units: SimUnit[], h
                  (unit.attackType === 'heal' && target.hp < target.maxHp && distEdge <= unit.range);
 
   if (!inRange) return false;
+  if (!isMeleeEngagementReady(unit, target)) return false;
 
   // Check if facing target
   const targetAngle = Math.atan2(target.y - unit.y, target.x - unit.x);

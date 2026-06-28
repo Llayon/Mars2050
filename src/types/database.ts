@@ -34,6 +34,8 @@ export interface Database {
           location_id?: string
           level?: number
           experience?: number
+          terrain_grid?: Record<string, unknown>
+          unlocked_radius?: number
           created_at?: string
           updated_at?: string
         }
@@ -43,6 +45,8 @@ export interface Database {
           location_id?: string
           level?: number
           experience?: number
+          terrain_grid?: Record<string, unknown>
+          unlocked_radius?: number
         }
         Update: {
           user_id?: string
@@ -50,6 +54,8 @@ export interface Database {
           location_id?: string
           level?: number
           experience?: number
+          terrain_grid?: Record<string, unknown>
+          unlocked_radius?: number
           created_at?: string
           updated_at?: string
         }
@@ -301,31 +307,6 @@ export interface Database {
           rewards?: Record<string, unknown>
           trophies_change?: Record<string, unknown>
           created_at?: string
-        }
-      }
-      battle_snapshots: {
-        Row: {
-          id?: string
-          battle_id: string
-          seed: number
-          initial_state: Record<string, unknown>
-          log: Record<string, unknown>
-          version?: number
-          created_at?: string
-        }
-        Insert: {
-          battle_id: string
-          seed: number
-          initial_state: Record<string, unknown>
-          log: Record<string, unknown>
-          version?: number
-        }
-        Update: {
-          battle_id?: string
-          seed?: number
-          initial_state?: Record<string, unknown>
-          log?: Record<string, unknown>
-          version?: number
         }
       }
     }

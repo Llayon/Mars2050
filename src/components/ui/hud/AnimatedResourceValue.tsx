@@ -13,7 +13,7 @@ export function AnimatedResourceValue({ value, className = '' }: { value: number
     setIsFlashing(true)
     const flashTimeout = setTimeout(() => setIsFlashing(false), 300)
     
-    let start = prevValue.current
+    const start = prevValue.current
     const end = value
     const duration = 400
     const startTime = performance.now()

@@ -51,7 +51,7 @@ describe('combat.engine', () => {
       }
     ]
 
-    const result = simulateBattle(attackerUnits, defenderUnits)
+    const result = simulateBattle(attackerUnits, defenderUnits, 123, [])
 
     expect(result.winner).toBe('attacker')
     expect(result.survivors.length).toBeGreaterThan(0)

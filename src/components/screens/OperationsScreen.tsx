@@ -3,10 +3,12 @@
 import { memo, useState } from 'react'
 import { useEvents } from '@/hooks/useEvents'
 import { usePvp } from '@/hooks/usePvp'
+import { useCombat } from '@/hooks/useCombat'
 import { useToast } from '@/components/ui/toast'
 import { BattleReplayModal } from '@/components/game/BattleReplayModal'
 import { ArmyPanel } from '@/components/game/ArmyPanel'
 import { BattleHistoryPanel } from '@/components/game/BattleHistoryPanel'
+import { DeploymentBoard } from '@/components/game/DeploymentBoard'
 import type { ResourceRow } from '@/domains/resource/resource.types'
 import type { AttackResult } from '@/domains/pvp/pvp.types'
 
@@ -21,14 +23,17 @@ export const OperationsScreen = memo(function OperationsScreen({ colonyId, resou
   const [activeTab, setActiveTab] = useState<OpsTab>('events')
   const { events, loading: eventsLoading } = useEvents(colonyId)
   const { attack, attacking, error: pvpError } = usePvp(colonyId)
+  const { units } = useCombat(colonyId)
   const { toast } = useToast()
 
   const [targetId, setTargetId] = useState('')
   const [replayData, setReplayData] = useState<AttackResult | null>(null)
+  const [showAttackDeployment, setShowAttackDeployment] = useState(false)
+  const [attackPlacement, setAttackPlacement] = useState<{ unitId: string, x: number, y: number }[] | undefined>()
 
   async function handleAttack() {
     if (!targetId.trim() || !colonyId) return
-    const result = await attack(targetId.trim())
+    const result = await attack(targetId.trim(), attackPlacement)
     if (result?.message) toast(result.message, result.message.includes('успешна') ? 'success' : 'error')
     if (result?.logs && result?.attackerUnits) setReplayData(result)
   }
@@ -152,11 +157,30 @@ export const OperationsScreen = memo(function OperationsScreen({ colonyId, resou
                     {attacking ? 'Атака в процессе...' : 'Начать атаку всей армией'}
                   </button>
                 </div>
+                <button
+                  onClick={() => setShowAttackDeployment(true)}
+                  disabled={units.length === 0}
+                  className="w-full border border-cyan-500/30 bg-cyan-950/30 hover:bg-cyan-900/40 disabled:opacity-40 px-5 py-2 rounded-lg text-sm font-medium transition-colors"
+                >
+                  Расстановка атаки {attackPlacement ? `(${attackPlacement.length})` : ''}
+                </button>
               </div>
             </div>
           </div>
         )}
       </div>
+      {showAttackDeployment && (
+        <DeploymentBoard
+          units={units}
+          mode="attack"
+          onSave={(placement) => {
+            setAttackPlacement(placement)
+            setShowAttackDeployment(false)
+            toast('Расстановка атаки сохранена для следующего боя', 'success')
+          }}
+          onCancel={() => setShowAttackDeployment(false)}
+        />
+      )}
       {replayData && (
         <BattleReplayModal
           attackerUnits={replayData.attackerUnits || []}

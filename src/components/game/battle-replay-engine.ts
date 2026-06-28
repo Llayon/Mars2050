@@ -10,6 +10,7 @@ import { createU, getSvgFrameTexture, updateHp } from './battle-replay-units'
 import type { SpriteState } from './battle-replay-units'
 import { addVisualAnimationAssets, getVisualAnimationTexture } from './battle-replay-animation-sequences'
 import { applyProceduralMotion, updateParticles, initMotionVfx } from './battle-replay-motion-vfx'
+import { buildReplayRenderUnits } from './battle-replay-state'
 
 export interface ReplayControls {
   play: () => void;
@@ -95,11 +96,9 @@ export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
   const layer = new Container(), fxLayer = new Container(), overlayGfx = new Graphics()
   layer.sortableChildren = true
   world.addChild(layer, fxLayer, overlayGfx)
-  if (initialState) {
-    initialState.forEach(u => createU(u, u.team, true, layer, sprites))
-  } else {
-    attackerUnits.forEach(u => createU(u, 'attacker', false, layer, sprites)); defenderUnits.forEach(u => createU(u, 'defender', false, layer, sprites))
-  }
+  buildReplayRenderUnits(attackerUnits, defenderUnits, logs, initialState).forEach(({ unit, team, isSimUnit }) => {
+    createU(unit, team, isSimUnit, layer, sprites)
+  })
 
   let tick = 0, time = 0, globalTime = 0
   const DUR = 150

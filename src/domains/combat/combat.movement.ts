@@ -5,45 +5,48 @@ import { FlowFieldMap, getFlowVector } from './combat.pathfinding';
 import type { SpatialHash } from './spatial-hash';
 import { getMovementNeighbors, getSteeringContext } from './combat.steering';
 import { getStuckRecoveryForce, updateStuckRecovery } from './combat.stuck-recovery';
+import { getPositioningDecision } from './combat.positioning';
+import { getFormationCohesionForce } from './combat.formation';
 
 export function movementSystem(unit: SimUnit, target: SimUnit, units: SimUnit[], actions: BattleAction[], dt: number, rng: PRNG, flowFieldMap: FlowFieldMap, obstacles: Obstacle[], spatialHash?: SpatialHash) {
-  if (unit.speed <= 0) return;
-  
   let vx = 0;
   let vy = 0;
   
   if (!unit.velocity) unit.velocity = { x: 0, y: 0 };
 
   const neighbors = getMovementNeighbors(unit, units, spatialHash);
-  const isBug = unit.type.startsWith('alien_');
 
   const distToTarget = getDistance(unit.x, unit.y, target.x, target.y);
   const targetRadius = getSizeRadius(target.size);
   const myRadius = getSizeRadius(unit.size);
-  const isInRange = (distToTarget - targetRadius - myRadius) <= unit.range;
-  updateStuckRecovery(unit, target, distToTarget, isInRange);
-  const steering = getSteeringContext(unit, neighbors, myRadius, isInRange);
+  const distEdge = distToTarget - targetRadius - myRadius;
+  const positioning = getPositioningDecision(unit, target, distEdge, targetRadius, myRadius);
+  const steeringInRange = positioning.combatInRange && !positioning.shouldMove;
+  updateStuckRecovery(unit, target, distToTarget, steeringInRange);
+  const steering = getSteeringContext(unit, neighbors, myRadius, steeringInRange);
   const { squadCx, squadCy, squadCount } = steering;
 
   // Turn logic: if in a squad, aim parallel to the squad's direction to the target to prevent converging and crushing
+  const facingPoint = positioning.shouldMove ? positioning.point : { x: target.x, y: target.y };
+
   let targetAngle = (unit.squadId && squadCount > 1 && distToTarget > unit.range * 1.5) 
-      ? Math.atan2(target.y - squadCy, target.x - squadCx)
-      : Math.atan2(target.y - unit.y, target.x - unit.x);
+      ? Math.atan2(positioning.point.y - squadCy, positioning.point.x - squadCx)
+      : Math.atan2(facingPoint.y - unit.y, facingPoint.x - unit.x);
   
   let isNavigatingObstacle = false;
 
   // Use Flow Field if not flying to avoid obstacles
-  if (!unit.isFlying && distToTarget > unit.range) {
-      const flowAngle = getFlowVector(flowFieldMap, unit.x, unit.y, target.x, target.y);
+  if (!unit.isFlying && positioning.shouldMove && getDistance(unit.x, unit.y, positioning.point.x, positioning.point.y) > 20) {
+      const flowAngle = getFlowVector(flowFieldMap, unit.x, unit.y, positioning.point.x, positioning.point.y);
       if (flowAngle !== null) {
-          const directAngle = Math.atan2(target.y - unit.y, target.x - unit.x);
+          const directAngle = Math.atan2(positioning.point.y - unit.y, positioning.point.x - unit.x);
           let diff = flowAngle - directAngle;
           while (diff > Math.PI) diff -= Math.PI * 2;
           while (diff < -Math.PI) diff += Math.PI * 2;
           const diffAbs = Math.abs(diff);
           
           if (unit.isNavigatingObstacle) {
-             if (diffAbs > 0.4) { // Stay in flow field mode longer
+             if (diffAbs > 0.25) { // Stay in flow field mode until the direct path is clearly open
                  targetAngle = flowAngle;
                  isNavigatingObstacle = true;
              } else {
@@ -51,7 +54,7 @@ export function movementSystem(unit: SimUnit, target: SimUnit, units: SimUnit[],
                  unit.isNavigatingObstacle = false;
              }
           } else {
-             if (diffAbs > 0.8) { // Require strong deviation to enter obstacle mode
+             if (diffAbs > 0.55) { // Enter obstacle mode before diagonal routes are ignored
                  targetAngle = flowAngle;
                  isNavigatingObstacle = true;
                  unit.isNavigatingObstacle = true;
@@ -77,7 +80,49 @@ export function movementSystem(unit: SimUnit, target: SimUnit, units: SimUnit[],
   while (unit.currentAngle > Math.PI) unit.currentAngle -= Math.PI * 2;
   while (unit.currentAngle < -Math.PI) unit.currentAngle += Math.PI * 2;
 
-  if (!isInRange) {
+  if (unit.speed <= 0) {
+    unit.velocity.x = 0;
+    unit.velocity.y = 0;
+    unit.isMoving = false;
+    if (Math.abs(angleDiff) > 0.2) {
+      const r = (v: number) => Math.round(v * 100) / 100;
+      actions.push({
+        unitId: unit.id,
+        type: 'move',
+        targetId: target.id,
+        fromX: r(unit.x),
+        fromY: r(unit.y),
+        toX: r(unit.x),
+        toY: r(unit.y),
+        facingAngle: r(unit.currentAngle),
+        isWalking: false
+      });
+    }
+    return;
+  }
+
+  if (steeringInRange) {
+    unit.velocity.x = 0;
+    unit.velocity.y = 0;
+    unit.isMoving = false;
+    if (Math.abs(angleDiff) > 0.2) {
+      const r = (v: number) => Math.round(v * 100) / 100;
+      actions.push({
+        unitId: unit.id,
+        type: 'move',
+        targetId: target.id,
+        fromX: r(unit.x),
+        fromY: r(unit.y),
+        toX: r(unit.x),
+        toY: r(unit.y),
+        facingAngle: r(unit.currentAngle),
+        isWalking: false
+      });
+    }
+    return;
+  }
+
+  if (positioning.shouldMove) {
     vx = Math.cos(unit.currentAngle) * unit.speed;
     vy = Math.sin(unit.currentAngle) * unit.speed;
     unit.isMoving = true;
@@ -93,43 +138,16 @@ export function movementSystem(unit: SimUnit, target: SimUnit, units: SimUnit[],
         if (dist > 0 && dist < minDist) {
            const overlap = minDist - dist;
            const pushAngle = Math.atan2(unit.y - obs.y, unit.x - obs.x);
-           const pushForce = overlap * 15; // strong push away from obstacles
+           const pushForce = Math.min(overlap * 2.5, Math.max(10, unit.speed * 0.6));
            vx += Math.cos(pushAngle) * pushForce;
            vy += Math.sin(pushAngle) * pushForce;
         }
      }
   }
 
-  // Apply Cohesion Force (Formations)
-  if (squadCount > 1) {
-    
-    let targetCx = squadCx;
-    let targetCy = squadCy;
-    
-    if (!isBug && unit.offsetX !== undefined && unit.offsetY !== undefined && unit.initialAngle !== undefined) {
-      // Humans keep strict military formation relative to squad center
-      // Rotate the local offset to match the angle from squad center to target
-      // This prevents the formation from spinning wildly when units individually adjust their angles
-      const squadAngle = Math.atan2(target.y - squadCy, target.x - squadCx);
-      const rotation = squadAngle - unit.initialAngle;
-      
-      const rotatedOx = unit.offsetX * Math.cos(rotation) - unit.offsetY * Math.sin(rotation);
-      const rotatedOy = unit.offsetX * Math.sin(rotation) + unit.offsetY * Math.cos(rotation);
-      
-      targetCx += rotatedOx;
-      targetCy += rotatedOy;
-    }
-
-    const cohDist = getDistance(unit.x, unit.y, targetCx, targetCy);
-    const cohThreshold = isBug ? 60 : 10; // Bugs are loose, Humans are strict
-    
-    if (cohDist > cohThreshold) {
-      const cohAngle = Math.atan2(targetCy - unit.y, targetCx - unit.x);
-      const pullForce = unit.speed * (isInRange ? 0 : (isNavigatingObstacle ? 0.1 : (isBug ? 0.5 : 0.8))); 
-      vx += Math.cos(cohAngle) * pullForce;
-      vy += Math.sin(cohAngle) * pullForce;
-    }
-  }
+  const cohesion = getFormationCohesionForce(unit, positioning.point, squadCx, squadCy, squadCount, distEdge, isNavigatingObstacle);
+  vx += cohesion.x;
+  vy += cohesion.y;
 
   vx += steering.separationX + steering.alignmentX;
   vy += steering.separationY + steering.alignmentY;
@@ -139,8 +157,8 @@ export function movementSystem(unit: SimUnit, target: SimUnit, units: SimUnit[],
   vy += recovery.forceY;
   if (recovery.isRecovering) unit.isNavigatingObstacle = true;
 
-  // Allow a high minimum maxSpeed so collision resolution isn't throttled when speed is low or fighting
-  const maxSpeed = Math.max(unit.speed * 1.5, 40);
+  // Keep auxiliary steering responsive without letting slow units lurch from force spikes.
+  const maxSpeed = Math.max(unit.speed * 1.6, 18);
   const desiredMag = Math.hypot(vx, vy);
   
   if (desiredMag < 0.5) {

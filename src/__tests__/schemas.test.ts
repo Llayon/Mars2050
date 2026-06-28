@@ -4,6 +4,7 @@ import { discoverLocationSchema } from '@/domains/map/map.schemas'
 import { colonyInitSchema, colonyCreateSchema } from '@/domains/colony/colony.schemas'
 import { attackSchema, tradeSchema } from '@/domains/pvp/pvp.schemas'
 import { resourceUpdateSchema } from '@/domains/resource/resource.schemas'
+import { setGarrisonSchema } from '@/domains/combat/combat.schemas'
 
 describe('building.schemas', () => {
   const valid = { colonyId: '550e8400-e29b-41d4-a716-446655440000', type: 'solar_panels', name: 'Test', x: 10, y: 20 }
@@ -100,20 +101,29 @@ describe('pvp.schemas', () => {
     expect(frac.success).toBe(false)
   })
 
-  it('attackSchema enforces grid placement bounds', () => {
+  it('attackSchema enforces attack deployment bounds', () => {
     const ok = attackSchema.safeParse({
       attackerColonyId: '550e8400-e29b-41d4-a716-446655440000',
       defenderColonyId: '550e8400-e29b-41d4-a716-446655440001',
-      attackerUnitsPlacement: [{ unitId: '550e8400-e29b-41d4-a716-446655440000', x: 0, y: 16 }],
+      attackerUnitsPlacement: [{ unitId: '550e8400-e29b-41d4-a716-446655440000', x: 300, y: 900 }],
     })
     expect(ok.success).toBe(true)
 
     const bad = attackSchema.safeParse({
       attackerColonyId: '550e8400-e29b-41d4-a716-446655440000',
       defenderColonyId: '550e8400-e29b-41d4-a716-446655440001',
-      attackerUnitsPlacement: [{ unitId: '550e8400-e29b-41d4-a716-446655440000', x: 99, y: 16 }],
+      attackerUnitsPlacement: [{ unitId: '550e8400-e29b-41d4-a716-446655440000', x: 300, y: 500 }],
     })
     expect(bad.success).toBe(false)
+  })
+
+  it('attackSchema rejects extra deployment fields', () => {
+    const result = attackSchema.safeParse({
+      attackerColonyId: '550e8400-e29b-41d4-a716-446655440000',
+      defenderColonyId: '550e8400-e29b-41d4-a716-446655440001',
+      attackerUnitsPlacement: [{ unitId: '550e8400-e29b-41d4-a716-446655440000', x: 300, y: 900, order: 'rush' }],
+    })
+    expect(result.success).toBe(false)
   })
 
   it('tradeSchema validates required fields', () => {
@@ -174,5 +184,21 @@ describe('resource.schemas', () => {
       operation: ' multiply'
     })
     expect(result.success).toBe(false)
+  })
+})
+
+describe('combat.schemas deployment', () => {
+  it('setGarrisonSchema accepts only defense-zone pixel coordinates', () => {
+    const ok = setGarrisonSchema.safeParse({
+      colonyId: '550e8400-e29b-41d4-a716-446655440000',
+      units: [{ unitId: '550e8400-e29b-41d4-a716-446655440001', x: 300, y: 240 }],
+    })
+    expect(ok.success).toBe(true)
+
+    const bad = setGarrisonSchema.safeParse({
+      colonyId: '550e8400-e29b-41d4-a716-446655440000',
+      units: [{ unitId: '550e8400-e29b-41d4-a716-446655440001', x: 300, y: 900 }],
+    })
+    expect(bad.success).toBe(false)
   })
 })

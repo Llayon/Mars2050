@@ -2,6 +2,8 @@ import { getServerClient } from '@/domains/resource/resource.server'
 import type { BuildingCreateDTO, BuildingResponse, BuildingRow } from './building.types'
 import { BUILDING_TYPES, BUILDING_PRODUCTION_MAP, BUILDING_CONSUMPTION_MAP } from './building.config'
 import { updateResourceRate, PRODUCTION_TYPE } from './building.utils'
+import { validateBuildingPlacement } from './building-placement'
+import type { TerrainCell } from '@/domains/colony/colony-terrain.types'
 
 /**
  * Creates a new building for a colony.
@@ -17,18 +19,42 @@ export async function createBuilding(dto: BuildingCreateDTO): Promise<BuildingRe
     return { building: null, error: 'Invalid building type', status: 400 }
   }
 
-  // 1. Check if cell is already occupied
+  // 1. Placement validation
   if (dto.x !== undefined && dto.y !== undefined) {
-    const { data: existingAtCoords } = await supabase
-      .from('buildings')
-      .select('id')
-      .eq('colony_id', dto.colonyId)
-      .eq('x', dto.x)
-      .eq('y', dto.y)
-      .limit(1)
+    const { data: colony } = await supabase
+      .from('colonies')
+      .select('terrain_grid, unlocked_radius')
+      .eq('id', dto.colonyId)
+      .single()
 
-    if (existingAtCoords && existingAtCoords.length > 0) {
-      return { building: null, error: 'Клетка уже занята другим зданием', status: 400 }
+    if (!colony) {
+      return { building: null, error: 'Колония не найдена', status: 404 }
+    }
+
+    const { data: buildings } = await supabase
+      .from('buildings')
+      .select('type, x, y')
+      .eq('colony_id', dto.colonyId)
+      .not('x', 'is', null)
+      .not('y', 'is', null)
+
+    const mappedBuildings = (buildings || []).map(b => {
+      const cfg = BUILDING_TYPES[b.type as string]
+      return { x: b.x as number, y: b.y as number, width: cfg?.width || 1, height: cfg?.height || 1 }
+    })
+
+    const validation = validateBuildingPlacement({
+      x: dto.x,
+      y: dto.y,
+      width: config.width || 1,
+      height: config.height || 1,
+      unlockedRadius: colony.unlocked_radius || 5,
+      terrainGrid: (colony.terrain_grid as TerrainCell[]) || [],
+      occupiedCells: mappedBuildings
+    })
+
+    if (!validation.valid) {
+      return { building: null, error: validation.error || 'Invalid placement', status: 400 }
     }
   }
 

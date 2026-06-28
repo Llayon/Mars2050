@@ -2,7 +2,9 @@
 
 import { memo, useState } from 'react'
 import { usePvp } from '@/hooks/usePvp'
+import { useCombat } from '@/hooks/useCombat'
 import { BattleReplayModal } from './BattleReplayModal'
+import { DeploymentBoard } from './DeploymentBoard'
 import type { AttackResult } from '@/domains/pvp/pvp.types'
 
 interface PvpPanelProps {
@@ -12,12 +14,15 @@ interface PvpPanelProps {
 
 export const PvpPanel = memo(function PvpPanel({ colonyId, onResult }: PvpPanelProps) {
   const { attack, trade, attacking, trading, error } = usePvp(colonyId)
+  const { units } = useCombat(colonyId)
   const [targetId, setTargetId] = useState('')
   const [replayData, setReplayData] = useState<AttackResult | null>(null)
+  const [showDeployment, setShowDeployment] = useState(false)
+  const [attackPlacement, setAttackPlacement] = useState<{ unitId: string, x: number, y: number }[] | undefined>()
 
   async function handleAttack() {
     if (!targetId.trim()) return
-    const result = await attack(targetId.trim())
+    const result = await attack(targetId.trim(), attackPlacement)
     if (result?.message && onResult) onResult(result.message)
     if (result?.logs && result?.attackerUnits) {
       setReplayData(result)
@@ -54,7 +59,25 @@ export const PvpPanel = memo(function PvpPanel({ colonyId, onResult }: PvpPanelP
             {attacking ? 'Атака в процессе...' : '⚔️ Начать атаку всей армией'}
           </button>
         </div>
+        <button
+          onClick={() => setShowDeployment(true)}
+          disabled={units.length === 0}
+          className="w-full border border-cyan-500/30 bg-cyan-950/30 hover:bg-cyan-900/40 disabled:opacity-40 px-4 py-2 rounded text-sm text-cyan-100"
+        >
+          Расстановка атаки {attackPlacement ? `(${attackPlacement.length})` : ''}
+        </button>
       </div>
+      {showDeployment && (
+        <DeploymentBoard
+          units={units}
+          mode="attack"
+          onSave={(placement) => {
+            setAttackPlacement(placement)
+            setShowDeployment(false)
+          }}
+          onCancel={() => setShowDeployment(false)}
+        />
+      )}
       {replayData && (
         <BattleReplayModal
           attackerUnits={replayData.attackerUnits || []}

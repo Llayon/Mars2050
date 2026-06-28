@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { simulateBattle } from '@/domains/combat/combat.engine'
-import type { UnitRow, BattleTick } from '@/domains/combat/combat.types'
+import type { UnitRow, BattleTick, SimUnit, Obstacle } from '@/domains/combat/combat.types'
 import { BattleReplayModal } from './BattleReplayModal'
 import { RESOURCE_NAMES } from '@/domains/resource/resource.types'
 
@@ -49,6 +49,8 @@ export function BattleHistoryPanel({ colonyId }: BattleHistoryPanelProps) {
       attackerUnits: battle.attacker_units,
       defenderUnits: battle.defender_units,
       logs: result.logs,
+      initialState: result.initialState,
+      obstacles: result.obstacles,
       message: `Победитель: ${battle.winner === 'attacker' ? 'Атакующий' : battle.winner === 'defender' ? 'Защитник' : 'Ничья'}`
     })
   }
@@ -121,6 +123,8 @@ export function BattleHistoryPanel({ colonyId }: BattleHistoryPanelProps) {
         <BattleReplayModal
           attackerUnits={replayData.attackerUnits as UnitRow[]}
           defenderUnits={replayData.defenderUnits as UnitRow[]}
+          initialState={replayData.initialState as SimUnit[]}
+          obstacles={replayData.obstacles as Obstacle[]}
           logs={replayData.logs as BattleTick[]}
           onClose={() => setReplayData(null)}
         />

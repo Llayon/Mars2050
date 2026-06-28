@@ -41,7 +41,6 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
 
     const cx = Number(u.grid_x)
     const cy = Number(u.grid_y)
-
     const squadId = squadSize > 1 ? `${u.id}_squad` : undefined
     const formation = config.formation || 'grid'
 
@@ -205,9 +204,9 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
       const unitCountBeforeActions = units.length;
       processSpawnerLogic(unit, target, units, hazards, actions, rng);
 
-      reserveMeleeEngagementSlot(unit, target, meleeEngagement);
+      const hasEngagement = reserveMeleeEngagementSlot(unit, target, meleeEngagement);
 
-      const acted = actionSystem(unit, target, units, hazards, actions, rng);
+      const acted = hasEngagement && actionSystem(unit, target, units, hazards, actions, rng);
 
       for (let i = unitCountBeforeActions; i < units.length; i++) {
         if (!units[i].isDead) spatialHash.insert(units[i]);

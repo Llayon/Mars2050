@@ -19,6 +19,8 @@ create table public.colonies (
   location_id uuid,
   level integer default 1,
   experience bigint default 0,
+  terrain_grid jsonb default '[]'::jsonb,
+  unlocked_radius integer default 5,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null
 );

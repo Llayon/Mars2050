@@ -1,0 +1,94 @@
+{
+  "group_id": "32d1c63e-3dda-4953-8e2c-0d83f15c245f",
+  "states": [
+    {
+      "character": {
+        "id": "af3e2d8a-6c24-4d1f-9760-3ad3cd921475",
+        "name": "A compact athletic mannequin in (copy)",
+        "prompt": "A compact athletic mannequin in neutral gray light tactical armor, featuring a smooth minimalist combat helmet and clean-cut plating, standing in a neutral combat stance with arms hanging relaxed at the sides, crisp black outlines, low top-down perspective.",
+        "size": {
+          "width": 120,
+          "height": 120
+        },
+        "template_id": "mannequin",
+        "directions": 8,
+        "view": "low top-down",
+        "created_at": "2026-06-25T10:45:02.859999+00:00"
+      },
+      "folder": "A_compact_athletic_mannequin_in_copy",
+      "frames": {
+        "rotations": {
+          "south": "A_compact_athletic_mannequin_in_copy/rotations/south.png",
+          "south-east": "A_compact_athletic_mannequin_in_copy/rotations/south-east.png",
+          "east": "A_compact_athletic_mannequin_in_copy/rotations/east.png",
+          "north-east": "A_compact_athletic_mannequin_in_copy/rotations/north-east.png",
+          "north": "A_compact_athletic_mannequin_in_copy/rotations/north.png",
+          "north-west": "A_compact_athletic_mannequin_in_copy/rotations/north-west.png",
+          "west": "A_compact_athletic_mannequin_in_copy/rotations/west.png",
+          "south-west": "A_compact_athletic_mannequin_in_copy/rotations/south-west.png"
+        },
+        "animations": {}
+      }
+    },
+    {
+      "character": {
+        "id": "d7d3ae2d-4ffc-427c-b13b-a7e6f430d14f",
+        "name": "holding a compact st",
+        "prompt": "A compact athletic mannequin in neutral gray light tactical armor, featuring a smooth minimalist combat helmet and clean-cut plating, standing in a neutral combat stance with arms hanging relaxed at the sides, crisp black outlines, low top-down perspective.",
+        "size": {
+          "width": 120,
+          "height": 120
+        },
+        "template_id": "mannequin",
+        "directions": 8,
+        "view": "low top-down",
+        "created_at": "2026-06-25T10:53:32.652886+00:00"
+      },
+      "folder": "holding_a_compact_st",
+      "frames": {
+        "rotations": {
+          "south": "holding_a_compact_st/rotations/south.png",
+          "south-east": "holding_a_compact_st/rotations/south-east.png",
+          "east": "holding_a_compact_st/rotations/east.png",
+          "north-east": "holding_a_compact_st/rotations/north-east.png",
+          "north": "holding_a_compact_st/rotations/north.png",
+          "north-west": "holding_a_compact_st/rotations/north-west.png",
+          "west": "holding_a_compact_st/rotations/west.png",
+          "south-west": "holding_a_compact_st/rotations/south-west.png"
+        },
+        "animations": {}
+      }
+    },
+    {
+      "character": {
+        "id": "e9e64339-1e5f-45c1-b41d-a1bf6de8020a",
+        "name": "Futuristic combat me",
+        "prompt": "A compact athletic mannequin in neutral gray light tactical armor, featuring a smooth minimalist combat helmet and clean-cut plating, standing in a neutral combat stance with arms hanging relaxed at the sides, crisp black outlines, low top-down perspective.",
+        "size": {
+          "width": 120,
+          "height": 120
+        },
+        "template_id": "mannequin",
+        "directions": 8,
+        "view": "low top-down",
+        "created_at": "2026-06-25T13:34:18.582946+00:00"
+      },
+      "folder": "Futuristic_combat_me",
+      "frames": {
+        "rotations": {
+          "south": "Futuristic_combat_me/rotations/south.png",
+          "south-east": "Futuristic_combat_me/rotations/south-east.png",
+          "east": "Futuristic_combat_me/rotations/east.png",
+          "north-east": "Futuristic_combat_me/rotations/north-east.png",
+          "north": "Futuristic_combat_me/rotations/north.png",
+          "north-west": "Futuristic_combat_me/rotations/north-west.png",
+          "west": "Futuristic_combat_me/rotations/west.png",
+          "south-west": "Futuristic_combat_me/rotations/south-west.png"
+        },
+        "animations": {}
+      }
+    }
+  ],
+  "export_version": "3.0",
+  "export_date": "2026-06-25T19:38:33.551414"
+}

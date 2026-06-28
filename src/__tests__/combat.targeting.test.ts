@@ -86,7 +86,7 @@ describe('targetingSystem aggro', () => {
 
     expect(target?.id).toBe('far')
     expect(sniper.attackTargetId).toBe('far')
-    expect(sniper.aggroLockTicks).toBe(10)
+    expect(sniper.aggroLockTicks).toBe(12)
   })
 
   it('drives global acquisition from unit config', () => {
@@ -102,7 +102,7 @@ describe('targetingSystem aggro', () => {
 
       expect(target?.id).toBe('far')
       expect(marine.attackTargetId).toBe('far')
-      expect(marine.aggroLockTicks).toBe(10)
+      expect(marine.aggroLockTicks).toBe(12)
     } finally {
       UNIT_TYPES.marine.baseStats.targetingProfile = previousProfile
     }
@@ -139,6 +139,18 @@ describe('targetingSystem aggro', () => {
     const frontline = makeUnit({ id: 'frontline', team: 'attacker', type: 'marine', x: 260, y: 0 })
     const enemy = makeUnit({ id: 'enemy', team: 'defender', x: 280, y: 0 })
     const units = [medic, otherSupport, frontline, enemy]
+
+    const target = targetingSystem(medic, units, createMeleeEngagementState(), makeHash(units))
+
+    expect(target?.id).toBe('frontline')
+  })
+
+  it('keeps healers near local frontline instead of chasing far wounded allies', () => {
+    const medic = makeUnit({ id: 'medic', team: 'attacker', type: 'medic', x: 0, y: 0, attackType: 'heal' })
+    const frontline = makeUnit({ id: 'frontline', team: 'attacker', type: 'marine', x: 220, y: 0 })
+    const enemy = makeUnit({ id: 'enemy', team: 'defender', x: 250, y: 0 })
+    const farWounded = makeUnit({ id: 'far-wounded', team: 'attacker', type: 'marine', x: 900, y: 0, hp: 10 })
+    const units = [medic, frontline, enemy, farWounded]
 
     const target = targetingSystem(medic, units, createMeleeEngagementState(), makeHash(units))
 
@@ -209,5 +221,27 @@ describe('targetingSystem aggro', () => {
 
     expect(target?.id).toBe('open')
     expect(attacker.attackTargetId).toBe('open')
+  })
+
+  it('clears a stale melee slot when a locked target is no longer valid', () => {
+    const attacker = makeUnit({
+      id: 'attacker',
+      team: 'attacker',
+      x: 0,
+      y: 0,
+      range: 40,
+      attackTargetId: 'dead',
+      aggroLockTicks: 2,
+      meleeSlotTargetId: 'dead',
+      meleeSlotIndex: 1,
+    })
+    const dead = makeUnit({ id: 'dead', team: 'defender', x: 40, y: 0, isDead: true })
+    const units = [attacker, dead]
+
+    const target = targetingSystem(attacker, units, createMeleeEngagementState(), makeHash(units))
+
+    expect(target).toBeNull()
+    expect(attacker.meleeSlotTargetId).toBeUndefined()
+    expect(attacker.meleeSlotIndex).toBeUndefined()
   })
 })

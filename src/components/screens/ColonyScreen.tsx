@@ -106,12 +106,22 @@ export default function ColonyScreen({
     <div className="relative w-full h-full overflow-hidden bg-black">
       <Suspense fallback={<div className="flex items-center justify-center h-full text-white">Загрузка колонии...</div>}>
         <ColonyCanvas 
+          colony={colony}
           buildings={buildings} 
           onBuildingClick={setSelectedBuilding} 
           placementMode={placementMode ?? null}
           onConfirmPlacement={handleConfirmPlacement}
         />
       </Suspense>
+
+      {colony && (
+        <div className="absolute top-4 left-4 pointer-events-none">
+          <div className="hud-panel px-4 py-2">
+            <p className="text-white font-semibold leading-tight">{colony.name}</p>
+            <p className="text-xs text-cyan-300">Уровень {colony.level}</p>
+          </div>
+        </div>
+      )}
       
       {/* Children overlay */}
       {children && (

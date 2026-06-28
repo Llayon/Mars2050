@@ -4,6 +4,8 @@ import {
   getMeleeSlotCount,
   hasMeleeEngagementSlot,
   reserveMeleeEngagementSlot,
+  getMeleeEngagementPoint,
+  isMeleeEngagementReady,
 } from '@/domains/combat/combat.melee-engagement'
 import type { SimUnit, Team } from '@/domains/combat/combat.types'
 
@@ -66,5 +68,54 @@ describe('melee engagement slots', () => {
 
     expect(reserveMeleeEngagementSlot(ranged, target, state)).toBe(true)
     expect(state.slotsByTarget[target.id]).toBeUndefined()
+  })
+
+  it('keeps a melee unit on its assigned slot across ticks', () => {
+    const target = makeUnit({ id: 'target', team: 'defender', x: 100, y: 100 })
+    const unit = makeUnit({ id: 'unit', team: 'attacker', x: 140, y: 100 })
+    const firstTick = createMeleeEngagementState()
+
+    expect(reserveMeleeEngagementSlot(unit, target, firstTick)).toBe(true)
+    const firstSlot = unit.meleeSlotIndex
+
+    unit.x = 60
+    unit.y = 100
+
+    expect(reserveMeleeEngagementSlot(unit, target, createMeleeEngagementState())).toBe(true)
+    expect(unit.meleeSlotIndex).toBe(firstSlot)
+  })
+
+  it('returns the assigned engagement point instead of the target center', () => {
+    const target = makeUnit({ id: 'target', team: 'defender', x: 100, y: 100 })
+    const unit = makeUnit({ id: 'unit', team: 'attacker', x: 140, y: 100 })
+
+    reserveMeleeEngagementSlot(unit, target, createMeleeEngagementState())
+    const point = getMeleeEngagementPoint(unit, target)
+
+    expect(point.x).not.toBe(target.x)
+    expect(point.y).not.toBe(target.y)
+  })
+
+  it('blocks attacking from the wrong side of an assigned melee slot', () => {
+    const target = makeUnit({ id: 'target', team: 'defender', x: 100, y: 100 })
+    const unit = makeUnit({ id: 'unit', team: 'attacker', x: 140, y: 100 })
+
+    reserveMeleeEngagementSlot(unit, target, createMeleeEngagementState())
+    unit.x = 60
+    unit.y = 100
+
+    expect(isMeleeEngagementReady(unit, target)).toBe(false)
+  })
+
+  it('allows attacking near the assigned melee slot', () => {
+    const target = makeUnit({ id: 'target', team: 'defender', x: 100, y: 100 })
+    const unit = makeUnit({ id: 'unit', team: 'attacker', x: 140, y: 100 })
+
+    reserveMeleeEngagementSlot(unit, target, createMeleeEngagementState())
+    const point = getMeleeEngagementPoint(unit, target)
+    unit.x = point.x
+    unit.y = point.y
+
+    expect(isMeleeEngagementReady(unit, target)).toBe(true)
   })
 })

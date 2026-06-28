@@ -1,6 +1,6 @@
 import type { SimUnit } from './combat.sim.types';
 import type { MeleeEngagementState } from './combat.melee-engagement';
-import { hasMeleeEngagementSlot } from './combat.melee-engagement';
+import { clearMeleeEngagementSlot, hasMeleeEngagementSlot, setMeleeWaitingTarget } from './combat.melee-engagement';
 import { getTargetingProfile, getTargetScore } from './combat.targeting-score';
 import { getDistance } from './combat.utils';
 import type { SpatialHash } from './spatial-hash';
@@ -9,10 +9,11 @@ const AGGRO_LOCK_TICKS = 10;
 const AGGRO_LEASH_MULTIPLIER = 1.5;
 const MELEE_ACQUISITION_RADIUS = 240;
 const RANGED_ACQUISITION_BUFFER = 120;
+const SUPPORT_ACQUISITION_RADIUS = 420;
 
 export function targetingSystem(unit: SimUnit, units: SimUnit[], meleeEngagement: MeleeEngagementState, spatialHash?: SpatialHash): SimUnit | null {
   if (unit.attackType === 'heal') {
-    return selectHealTarget(unit, units);
+    return selectHealTarget(unit, units, spatialHash);
   }
 
   const lockedTarget = getLockedTarget(unit, units, meleeEngagement);
@@ -26,27 +27,34 @@ export function targetingSystem(unit: SimUnit, units: SimUnit[], meleeEngagement
   if (enemies.length === 0) {
     unit.attackTargetId = undefined;
     unit.aggroLockTicks = 0;
+    clearMeleeEngagementSlot(unit);
     return selectMovementFallback(unit, units, meleeEngagement);
   }
   
   // Filter out enemies that are already fully surrounded (if this is a melee unit)
   let validEnemies = enemies;
+  const profile = getTargetingProfile(unit);
   if (unit.range <= 60) {
      validEnemies = enemies.filter(e => hasMeleeEngagementSlot(unit, e, meleeEngagement));
-     
-     // Fallback: if all enemies are perfectly surrounded, just walk towards the best one anyway
-     if (validEnemies.length === 0) validEnemies = enemies;
+     if (validEnemies.length === 0) {
+       unit.attackTargetId = undefined;
+       unit.aggroLockTicks = 0;
+       const waitingTarget = selectAggroTarget(unit, enemies, profile);
+       if (waitingTarget) setMeleeWaitingTarget(unit, waitingTarget);
+       return waitingTarget;
+     }
   }
 
-  const target = selectAggroTarget(unit, validEnemies);
+  const target = selectAggroTarget(unit, validEnemies, profile);
   if (!target) {
     unit.attackTargetId = undefined;
     unit.aggroLockTicks = 0;
+    clearMeleeEngagementSlot(unit);
     return null;
   }
 
   unit.attackTargetId = target.id;
-  unit.aggroLockTicks = AGGRO_LOCK_TICKS;
+  unit.aggroLockTicks = profile.targetingCooldownTicks ?? AGGRO_LOCK_TICKS;
   return target;
 }
 
@@ -58,11 +66,18 @@ function getAcquisitionCandidates(unit: SimUnit, units: SimUnit[], spatialHash?:
   return units.filter(candidate => getDistance(unit.x, unit.y, candidate.x, candidate.y) <= radius);
 }
 
-function selectHealTarget(unit: SimUnit, candidates: SimUnit[]): SimUnit | null {
+function selectHealTarget(unit: SimUnit, units: SimUnit[], spatialHash?: SpatialHash): SimUnit | null {
+  const candidates = getSupportCandidates(unit, units, spatialHash);
   const woundedAllies = candidates.filter(a => !a.isDead && a.team === unit.team && a.hp < a.maxHp && a.id !== unit.id);
   if (woundedAllies.length > 0) return selectNearestAlly(unit, woundedAllies);
 
-  return selectSupportAnchor(unit, candidates);
+  return selectSupportAnchor(unit, candidates) ?? selectSupportAnchor(unit, units);
+}
+
+function getSupportCandidates(unit: SimUnit, units: SimUnit[], spatialHash?: SpatialHash): SimUnit[] {
+  const candidates = spatialHash?.query(unit.x, unit.y, SUPPORT_ACQUISITION_RADIUS) ??
+    units.filter(candidate => getDistance(unit.x, unit.y, candidate.x, candidate.y) <= SUPPORT_ACQUISITION_RADIUS);
+  return candidates.some(candidate => candidate.team === unit.team && candidate.id !== unit.id) ? candidates : units;
 }
 
 function selectNearestAlly(unit: SimUnit, allies: SimUnit[]): SimUnit | null {
@@ -120,6 +135,7 @@ function getLockedTarget(unit: SimUnit, candidates: SimUnit[], meleeEngagement: 
 
   unit.attackTargetId = undefined;
   unit.aggroLockTicks = 0;
+  clearMeleeEngagementSlot(unit);
   return null;
 }
 
@@ -130,7 +146,11 @@ function selectMovementFallback(unit: SimUnit, units: SimUnit[], meleeEngagement
   let validEnemies = enemies;
   if (unit.range <= 60) {
     validEnemies = enemies.filter(e => hasMeleeEngagementSlot(unit, e, meleeEngagement));
-    if (validEnemies.length === 0) validEnemies = enemies;
+    if (validEnemies.length === 0) {
+      const waitingTarget = selectNearestTarget(unit, enemies);
+      if (waitingTarget) setMeleeWaitingTarget(unit, waitingTarget);
+      return waitingTarget;
+    }
   }
 
   return selectNearestTarget(unit, validEnemies);
@@ -157,10 +177,9 @@ function isWithinLeash(unit: SimUnit, target: SimUnit): boolean {
   return getDistance(unit.x, unit.y, target.x, target.y) <= getAcquisitionRadius(unit) * AGGRO_LEASH_MULTIPLIER;
 }
 
-function selectAggroTarget(unit: SimUnit, enemies: SimUnit[]): SimUnit | null {
+function selectAggroTarget(unit: SimUnit, enemies: SimUnit[], profile = getTargetingProfile(unit)): SimUnit | null {
   let target: SimUnit | null = null;
   let bestScore = -Infinity;
-  const profile = getTargetingProfile(unit);
   const nearestDistance = getNearestDistance(unit, enemies);
 
   for (const enemy of enemies) {

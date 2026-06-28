@@ -45,7 +45,7 @@ describe('combat steering', () => {
     expect(firstContext.separationY + secondContext.separationY).toBeCloseTo(0, 5)
   })
 
-  it('dampens enemy soft separation while in attack range', () => {
+  it('does not use enemies as physical separation sources', () => {
     const defender = makeUnit({ id: 'defender', team: 'defender', x: 100, y: 100 })
     const melee = makeUnit({ id: 'melee', team: 'attacker', x: 125, y: 100, range: 40 })
     const radius = getSizeRadius(defender.size)
@@ -53,7 +53,30 @@ describe('combat steering', () => {
     const movingContext = getSteeringContext(defender, [defender, melee], radius, false)
     const combatContext = getSteeringContext(defender, [defender, melee], radius, true)
 
-    expect(combatContext.separationX).toBeLessThan(0)
-    expect(Math.abs(combatContext.separationX)).toBeLessThan(Math.abs(movingContext.separationX) * 0.2)
+    expect(movingContext.separationX).toBe(0)
+    expect(movingContext.separationY).toBe(0)
+    expect(combatContext.separationX).toBe(0)
+    expect(combatContext.separationY).toBe(0)
+  })
+
+  it('does not apply physical separation between flying units', () => {
+    const first = makeUnit({ id: 'first', team: 'attacker', x: 100, y: 100, isFlying: true })
+    const second = makeUnit({ id: 'second', team: 'attacker', x: 100, y: 100, isFlying: true })
+    const context = getSteeringContext(first, [first, second], getSizeRadius(first.size), false)
+
+    expect(context.separationX).toBe(0)
+    expect(context.separationY).toBe(0)
+  })
+
+  it('pushes light units away from heavy units more than heavy units away from light units', () => {
+    const light = makeUnit({ id: 'light', team: 'attacker', x: 100, y: 100, size: 'S' })
+    const heavy = makeUnit({ id: 'heavy', team: 'attacker', x: 105, y: 100, size: 'XL' })
+
+    const lightContext = getSteeringContext(light, [light, heavy], getSizeRadius(light.size), false)
+    const heavyContext = getSteeringContext(heavy, [light, heavy], getSizeRadius(heavy.size), false)
+
+    expect(Math.hypot(lightContext.separationX, lightContext.separationY)).toBeGreaterThan(
+      Math.hypot(heavyContext.separationX, heavyContext.separationY) * 4
+    )
   })
 })
