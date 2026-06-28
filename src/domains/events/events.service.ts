@@ -174,4 +174,32 @@ async function applyEventRewards(colonyId: string, event: GameEvent): Promise<vo
       p_amount: effect.research_bonus,
     })
   }
+
+  // Повреждение зданий (Hazard)
+  if (effect?.building_damage) {
+    const { data: buildings } = await supabase
+      .from('buildings')
+      .select('id, type')
+      .eq('colony_id', colonyId)
+      .eq('is_active', true)
+
+    if (buildings && buildings.length > 0) {
+      let targets = buildings
+      if (effect.building_damage.type) {
+        targets = buildings.filter(b => b.type === effect.building_damage?.type)
+      }
+
+      if (targets.length > 0) {
+        // Выбираем X процентов зданий для отключения
+        const countToDamage = Math.max(1, Math.floor(targets.length * (effect.building_damage.damage_percent / 100)))
+        const shuffled = targets.sort(() => 0.5 - Math.random())
+        const toDamage = shuffled.slice(0, countToDamage).map(b => b.id)
+
+        await supabase
+          .from('buildings')
+          .update({ is_active: false }) // TODO: proper repair mechanics / HP
+          .in('id', toDamage)
+      }
+    }
+  }
 }

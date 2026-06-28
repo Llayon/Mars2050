@@ -2,6 +2,8 @@ import { BUILDING_TYPES } from './building.config'
 import type { BuildingRow } from './building.types'
 import type { PopulationState, PopulationTier } from '@/domains/population/population.types'
 import type { TerrainCell } from '@/domains/colony/colony-terrain.types'
+import { TERRAIN_BUILDING_MODIFIERS } from '@/domains/colony/colony-terrain.config'
+import { calculateAdjacencyModifier } from './building.adjacency'
 
 /**
  * Counts total job slots of a tier across all buildings.
@@ -60,13 +62,13 @@ export function getEffectiveProduction(
   }
 
   // 3. Terrain modifier
-  // const cell = terrainGrid.find(c => c.x === building.x && c.y === building.y)
-  // const terrainMod = 1 // TODO: add TERRAIN_BUILDING_MODIFIERS when implemented
-  const terrainMod = 1
+  const cell = terrainGrid.find(c => c.x === building.x && c.y === building.y)
+  const terrainMod = cell 
+    ? 1 + (TERRAIN_BUILDING_MODIFIERS[cell.t]?.bonuses?.[building.type] ?? 0) - Math.abs(TERRAIN_BUILDING_MODIFIERS[cell.t]?.penalties?.[building.type] ?? 0)
+    : 1
 
   // 4. Adjacency modifier
-  // const adjMod = calculateAdjacencyModifier(building, allBuildings)
-  const adjMod = 1
+  const adjMod = calculateAdjacencyModifier(building, allBuildings)
 
   // Final modifier for production
   const totalMod = fillRatio * happinessMod * terrainMod * adjMod

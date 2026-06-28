@@ -6,6 +6,7 @@ import type { ResourceRow } from './resource.types'
 import { getEffectiveProduction } from '@/domains/building/building.production'
 import { POPULATION_TIERS } from '@/domains/population/population.config'
 import type { PopulationState, PopulationTier } from '@/domains/population/population.types'
+import { calculateArmyUpkeep } from '@/domains/combat/combat.upkeep'
 
 /**
  * Lazy resource calculation.
@@ -32,10 +33,14 @@ export async function recalculateResources(colonyId: string) {
     return null
   }
 
-  // 1.5 Calculate dynamic rates based on buildings and population
+  // 1.5 Calculate dynamic rates based on buildings, population, and units
   try {
+    const { data: colony } = await supabase.from('colonies').select('terrain_grid').eq('id', colonyId).single()
     const { data: population } = await supabase.from('population').select('*').eq('colony_id', colonyId).single()
     const { data: buildings } = await supabase.from('buildings').select('*').eq('colony_id', colonyId)
+    const { data: units } = await supabase.from('units').select('*').eq('colony_id', colonyId)
+
+    const terrainGrid = colony?.terrain_grid || []
 
     const newProd: Record<string, number> = {}
     const newCons: Record<string, number> = {}
@@ -49,7 +54,7 @@ export async function recalculateResources(colonyId: string) {
     // Buildings production & consumption
     if (buildings) {
       for (const b of buildings) {
-        const { production, consumption } = getEffectiveProduction(b, population as PopulationState | null, buildings)
+        const { production, consumption } = getEffectiveProduction(b, population as PopulationState | null, buildings, terrainGrid)
         for (const [res, val] of Object.entries(production)) newProd[res] = (newProd[res] || 0) + val
         for (const [res, val] of Object.entries(consumption)) newCons[res] = (newCons[res] || 0) + val
       }
@@ -68,6 +73,14 @@ export async function recalculateResources(colonyId: string) {
             newCons[need.resource] = (newCons[need.resource] || 0) + (need.amountPer10 * (count / 10))
           }
         }
+      }
+    }
+
+    // Army upkeep
+    if (units) {
+      const armyUpkeep = calculateArmyUpkeep(units)
+      for (const [res, val] of Object.entries(armyUpkeep)) {
+        newCons[res] = (newCons[res] || 0) + val
       }
     }
 

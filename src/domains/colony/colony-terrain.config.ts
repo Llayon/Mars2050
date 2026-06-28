@@ -36,6 +36,14 @@ export const TERRAIN_CONFIG: Record<TerrainType, TerrainConfig> = {
   },
 };
 
+export const TERRAIN_BUILDING_MODIFIERS: Record<TerrainType, { bonuses?: Record<string, number>; penalties?: Record<string, number> }> = {
+  regolith: {},
+  iron_deposit: { bonuses: { mine: 0.5, advanced_mine: 0.5 } },
+  ice_pocket: { bonuses: { water_extractor: 0.4 }, penalties: { solar_panels: -0.3 } },
+  geothermal: { bonuses: { geothermal_plant: 1.0 } },
+  blocked_rock: {},
+};
+
 // Global grid constants
 export const COLONY_GRID_SIZE = 40;
 export const COLONY_CENTER_COORD = 19.5; // True center of 0-39 range is 19.5
