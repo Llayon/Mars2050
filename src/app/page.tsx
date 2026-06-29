@@ -11,6 +11,7 @@ import { ToastProvider, useToast } from '@/components/ui/toast'
 import { AuthModal } from '@/components/game/AuthModal'
 import type { TabId } from '@/components/screens/BottomNav'
 import type { BuildingTypeKey } from '@/domains/building/building.types'
+import { BUILDING_TYPES } from '@/domains/building/building.config'
 import { TwaHud } from '@/components/game/TwaHud'
 import { DesktopHud } from '@/components/game/DesktopHud'
 
@@ -30,16 +31,29 @@ function GameUI() {
 
   const handleBuild = useCallback(async (type: BuildingTypeKey, x?: number, y?: number) => {
     if (x !== undefined && y !== undefined) {
-      await buildStructure(type, x, y)
+      try {
+        await buildStructure(type, x, y)
+        const config = BUILDING_TYPES[type]
+        if (config) toast(`${config.name} построен!`, 'success')
+      } catch (err) {
+        toast(err instanceof Error ? err.message : String(err), 'error')
+        throw err
+      }
     } else {
       if (viewMode === 'isometric') {
         setPlacementMode(type)
         if (isTWA) setActiveTab('colony')
       } else {
-        await buildStructure(type, 10, 10)
+        try {
+          await buildStructure(type, 10, 10)
+          const config = BUILDING_TYPES[type]
+          if (config) toast(`${config.name} построен!`, 'success')
+        } catch (err) {
+          toast(err instanceof Error ? err.message : String(err), 'error')
+        }
       }
     }
-  }, [buildStructure, isTWA, viewMode])
+  }, [buildStructure, isTWA, viewMode, toast])
   const handleDemolish = useCallback((id: string) => demolishBuilding(id), [demolishBuilding])
   const handleCreateTest = useCallback((id: string, type: string, dur: number) => createEvent(id, type, dur), [createEvent])
 

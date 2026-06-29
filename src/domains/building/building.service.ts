@@ -119,7 +119,7 @@ export async function createBuilding(dto: BuildingCreateDTO): Promise<BuildingRe
       .update({ amount: Math.max(0, newAmount) })
       .eq('colony_id', dto.colonyId)
       .eq('type', resourceType)
-      .eq('amount', currentAmount) // OCC to prevent race conditions
+      .gte('amount', cost) // OCC to prevent race conditions without exact float matching
       .select('id')
 
     if (updateError || !updated || updated.length === 0) {
