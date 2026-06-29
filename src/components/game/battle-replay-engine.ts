@@ -131,6 +131,39 @@ export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
 
       logs[tick].actions.forEach(a => {
         const s = sprites[a.unitId]
+        if (a.type === 'damage') {
+          const tg = sprites[a.targetId!]
+          if (tg) {
+            tg.hp -= a.damage!
+            updateHp(tg)
+            spawnTxt(`-${a.damage}`, tg.c.x, tg.c.y, 0xffaa00)
+          }
+          return
+        }
+        if (a.type === 'shield_damage') {
+          const tg = sprites[a.targetId!]
+          if (tg) spawnTxt(`ЩИТ -${a.damage}`, tg.c.x, tg.c.y, 0x3b82f6)
+          return
+        }
+        if (a.type === 'shield_break') {
+          const tg = sprites[a.targetId!]
+          if (tg) spawnTxt('ЩИТ СЛОМАН', tg.c.x, tg.c.y, 0x60a5fa)
+          return
+        }
+        if (a.type === 'lifesteal') {
+          const tg = sprites[a.targetId ?? a.unitId]
+          if (tg) {
+            tg.hp = Math.min(tg.maxHp, tg.hp + (a.damage ?? 0))
+            updateHp(tg)
+            spawnTxt(`+${a.damage}`, tg.c.x, tg.c.y, 0x4ade80)
+          }
+          return
+        }
+        if (a.type === 'unit_blocked_damage') {
+          const blocker = s ?? sprites[a.targetId ?? '']
+          if (blocker) spawnTxt(`БЛОК ${a.damage}`, blocker.c.x, blocker.c.y, 0x94a3b8)
+          return
+        }
         if (!s) return
         if (a.type === 'move') {
           s.sX = a.fromX!; s.sY = a.fromY!
@@ -183,28 +216,6 @@ export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
               } catch(e) {}
             }
           }
-        } else if (a.type === 'damage') {
-          const tg = sprites[a.targetId!]
-          if (tg) {
-            tg.hp -= a.damage!
-            updateHp(tg)
-            spawnTxt(`-${a.damage}`, tg.c.x, tg.c.y, 0xffaa00)
-          }
-        } else if (a.type === 'shield_damage') {
-          const tg = sprites[a.targetId!]
-          if (tg) spawnTxt(`ЩИТ -${a.damage}`, tg.c.x, tg.c.y, 0x3b82f6)
-        } else if (a.type === 'shield_break') {
-          const tg = sprites[a.targetId!]
-          if (tg) spawnTxt('ЩИТ СЛОМАН', tg.c.x, tg.c.y, 0x60a5fa)
-        } else if (a.type === 'lifesteal') {
-          const tg = sprites[a.targetId ?? a.unitId]
-          if (tg) {
-            tg.hp = Math.min(tg.maxHp, tg.hp + (a.damage ?? 0))
-            updateHp(tg)
-            spawnTxt(`+${a.damage}`, tg.c.x, tg.c.y, 0x4ade80)
-          }
-        } else if (a.type === 'unit_blocked_damage') {
-          spawnTxt(`БЛОК ${a.damage}`, s.c.x, s.c.y, 0x94a3b8)
         } else if (a.type === 'die') {
           s.c.alpha = 0.3; s.hpBar.alpha = 0
           if (s.s) s.s.tint = 0x555555

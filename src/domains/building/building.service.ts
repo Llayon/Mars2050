@@ -23,14 +23,19 @@ export async function createBuilding(dto: BuildingCreateDTO): Promise<BuildingRe
 
   // 1. Placement validation
   if (dto.x !== undefined && dto.y !== undefined) {
-    const { data: colony } = await supabase
+    const { data: colony, error: colonyError } = await supabase
       .from('colonies')
       .select('terrain_grid, unlocked_radius')
       .eq('id', dto.colonyId)
       .single()
 
-    if (!colony) {
-      return { building: null, error: 'Колония не найдена', status: 404 }
+    if (colonyError || !colony) {
+      console.error('Failed to load colony in createBuilding:', colonyError)
+      return {
+        building: null,
+        error: colonyError ? `Колония не найдена: ${colonyError.message}` : 'Колония не найдена',
+        status: 404
+      }
     }
 
     const { data: buildings } = await supabase

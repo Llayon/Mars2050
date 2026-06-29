@@ -21,7 +21,7 @@ export function processHazards(hazards: SimHazard[], units: SimUnit[], actions: 
         const targets = units.filter(u => !u.isDead && !u.isFlying && getDistance(u.x, u.y, h.x, h.y) <= h.radius);
         for (const t of targets) {
            t.hp -= h.damagePerTick;
-           actions.push({ unitId: h.id, type: 'attack', targetId: t.id, damage: h.damagePerTick });
+           actions.push({ unitId: h.id, type: 'damage', targetId: t.id, damage: h.damagePerTick });
            if (t.hp <= 0 && !t.isDead) {
              t.isDead = true;
              actions.push({ unitId: t.id, type: 'die' });
@@ -39,7 +39,7 @@ function processMine(h: SimHazard, units: SimUnit[], actions: BattleAction[]): b
 
   for (const target of targets) {
     target.hp -= h.damagePerTick;
-    actions.push({ unitId: h.id, type: 'attack', targetId: target.id, damage: h.damagePerTick });
+    actions.push({ unitId: h.id, type: 'damage', targetId: target.id, damage: h.damagePerTick });
     if (target.hp <= 0 && !target.isDead) {
       target.isDead = true;
       actions.push({ unitId: target.id, type: 'die' });

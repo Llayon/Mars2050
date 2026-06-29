@@ -74,7 +74,7 @@ describe('combat.minefield', () => {
     expect(enemy.hp).toBe(35)
     expect(ally.hp).toBe(100)
     expect(flyer.hp).toBe(100)
-    expect(actions).toEqual([{ unitId: 'mine-1', type: 'attack', targetId: 'enemy', damage: 65 }])
+    expect(actions).toEqual([{ unitId: 'mine-1', type: 'damage', targetId: 'enemy', damage: 65 }])
   })
 
   it('uses actionSystem to deploy mines through normal cooldown and facing rules', () => {
