@@ -52,12 +52,14 @@ export function useBuildings(colonyId: string | null) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ colonyId, type, name: config.name, x: x ?? 10, y: y ?? 10 })
       })
+      const data = await res.json()
       if (!res.ok) {
-        const data = await res.json()
         throw new Error(data.error?.message || 'Failed to build')
       }
-      const { building } = await res.json()
-      setBuildings(prev => [...prev, building])
+      const building = data.building
+      if (building) {
+        setBuildings(prev => prev.some(b => b.id === building.id) ? prev : [...prev, building])
+      }
       return building
     } catch (err) {
       setError(String(err))
