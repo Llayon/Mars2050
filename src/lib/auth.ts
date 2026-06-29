@@ -7,11 +7,26 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
  * This client respects RLS because it is scoped to the user, not the service role.
  * Use it for any read that must reflect the request's authorization.
  */
+function getCookie(cookieStr: string, name: string): string | null {
+  const matches = cookieStr.match(new RegExp('(?:^|; )' + name.replace(/([\.$?*|{}\(\)\[\]\\\/\+^])/g, '\\$1') + '=([^;]*)'))
+  return matches ? decodeURIComponent(matches[1]) : null
+}
+
 export function getAuthClient(request: Request): SupabaseClient {
+  const cookieStr = request.headers.get('cookie') ?? ''
+  const token = getCookie(cookieStr, 'supabase-access-token')
+  
+  const headers: Record<string, string> = {
+    cookie: cookieStr
+  }
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`
+  }
+
   return createClient(supabaseUrl, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
     auth: { persistSession: false, autoRefreshToken: false },
     global: {
-      headers: { cookie: request.headers.get('cookie') ?? '' },
+      headers,
       fetch: (...args) => fetch(args[0], { ...args[1], cache: 'no-store' }),
     },
   })

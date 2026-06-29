@@ -46,6 +46,11 @@ export function useAuth() {
   // Always subscribe to auth state changes (works for both web and TWA after signInWithPassword)
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session) {
+        document.cookie = `supabase-access-token=${session.access_token}; path=/; max-age=${session.expires_in}; SameSite=Lax; Secure`
+      } else {
+        document.cookie = `supabase-access-token=; path=/; max-age=0`
+      }
       setState(prev => {
         // Load colony when user signs in and colonyId not yet set
         if (session?.user && !prev.colonyId) {
@@ -62,11 +67,10 @@ export function useAuth() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  function formatError(err: unknown): string {
-    const msg = String(err)
-    return msg.includes('Failed to fetch') || msg.includes('NetworkError') || msg.includes('ERR_NAME_NOT_RESOLVED')
-      ? 'Сервер Supabase недоступен. Возможно, проект приостановлен — восстановите его в дашборде Supabase.'
-      : msg
+  const formatError = (err: unknown) => {
+    const m = String(err)
+    return m.includes('Failed to fetch') || m.includes('NetworkError') || m.includes('ERR_NAME_NOT_RESOLVED')
+      ? 'Сервер Supabase недоступен. Возможно, проект приостановлен — восстановите его в дашборде Supabase.' : m
   }
 
   async function checkSession() {
@@ -92,25 +96,16 @@ export function useAuth() {
         .limit(1)
 
       if (colonies && colonies.length > 0) {
-        setState(prev => ({ ...prev, colonyId: (colonies[0] as Record<string, unknown>).id as string }))
+        setState(prev => ({ ...prev, colonyId: colonies[0].id }))
       } else {
         const res = await fetch('/api/colonies', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ userId })
         })
-
-        if (!res.ok) {
-          setState(prev => ({ ...prev, error: 'Ошибка сервера при создании колонии' }))
-          return
-        }
-
+        if (!res.ok) return setState(prev => ({ ...prev, error: 'Ошибка сервера при создании колонии' }))
         const data = await res.json()
-        if (data.colonyId) {
-          setState(prev => ({ ...prev, colonyId: data.colonyId }))
-        } else {
-          setState(prev => ({ ...prev, error: data.error || 'Failed to create colony' }))
-        }
+        setState(prev => ({ ...prev, colonyId: data.colonyId || null, error: data.colonyId ? null : (data.error || 'Failed to create colony') }))
       }
     } catch (error) {
       setState(prev => ({ ...prev, error: formatError(error) }))
@@ -120,8 +115,8 @@ export function useAuth() {
   const login = useCallback(async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) {
-      const msg = error.message ?? ''
-      if (msg.includes('Failed to fetch') || error.status === 0) throw new Error('Сервер Supabase недоступен. Возможно, проект приостановлен.')
+      if ((error.message ?? '').includes('Failed to fetch') || error.status === 0)
+        throw new Error('Сервер Supabase недоступен. Возможно, проект приостановлен.')
       throw error
     }
   }, [])
@@ -132,14 +127,15 @@ export function useAuth() {
       options: { emailRedirectTo: `${window.location.origin}/auth/callback` }
     })
     if (error) {
-      const msg = error.message ?? ''
-      if (msg.includes('Failed to fetch') || error.status === 0) throw new Error('Ошибка подключения к серверу. Проверьте подключение к интернету.')
+      if ((error.message ?? '').includes('Failed to fetch') || error.status === 0)
+        throw new Error('Ошибка подключения к серверу. Проверьте подключение к интернету.')
       throw error
     }
   }, [])
 
   const logout = useCallback(async () => {
     await supabase.auth.signOut()
+    document.cookie = `supabase-access-token=; path=/; max-age=0`
     try { sessionStorage.removeItem('mars2050_tg_user') } catch { /* ignore */ }
     setState({ user: null, colonyId: null, loading: false, error: null, isTWA: false, tgUser: null })
   }, [])

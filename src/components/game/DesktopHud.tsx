@@ -14,7 +14,7 @@ import type { Colony } from '@/domains/colony/colony.types'
 import type { ResourceRow } from '@/domains/resource/resource.types'
 import type { BuildingRow } from '@/domains/building/building.types'
 import type { PopulationState, PopulationTier } from '@/domains/population/population.types'
-import { PopulationPanel } from '@/components/game/PopulationPanel'
+import { PopulationSummary } from '@/components/game/PopulationSummary'
 
 interface DesktopHudProps {
   colonyId: string
@@ -89,8 +89,11 @@ export function DesktopHud({
         <div className="absolute top-0 left-0 right-0 z-10 pointer-events-none p-4 flex justify-between items-start">
           <div className="w-80 pointer-events-auto space-y-4 max-h-[90vh] overflow-y-auto custom-scrollbar pr-2">
             <ColonyPanel colony={colony} loading={colonyLoading} />
+            <PopulationSummary population={population} loading={populationLoading} />
             <ResourcePanel resources={resources} loading={resourcesLoading} />
-            <PopulationPanel population={population} onUpgrade={onUpgradePopulation} loading={populationLoading} />
+            <EventsPanel colonyId={colonyId} onCreateTest={onCreateTestEvent} />
+            <PvpPanel colonyId={colonyId} onResult={onPvpResult} />
+            <ArmyPanel colonyId={colonyId} resources={resources} />
           </div>
           <div className="flex flex-col items-end gap-2 pointer-events-auto">
             <div className="hud-panel rounded-lg px-4 py-2 flex items-center gap-4">
@@ -102,16 +105,6 @@ export function DesktopHud({
                <button onClick={() => setViewMode('isometric')} className={`flex-1 py-1.5 rounded text-[10px] font-bold transition-all border ${viewMode === 'isometric' ? 'bg-mars-orange border-mars-orange text-white shadow-[0_0_10px_rgba(255,107,0,0.4)]' : 'bg-transparent border-transparent text-gray-400 hover:bg-white/5'}`}>БАЗА</button>
                <button onClick={() => setViewMode('classic')} className={`flex-1 py-1.5 rounded text-[10px] font-bold transition-all border ${viewMode === 'classic' ? 'bg-mars-orange border-mars-orange text-white shadow-[0_0_10px_rgba(255,107,0,0.4)]' : 'bg-transparent border-transparent text-gray-400 hover:bg-white/5'}`}>КАРТА</button>
             </div>
-          </div>
-        </div>
-      )}
-
-      {!placementMode && (
-        <div className="absolute top-48 left-4 bottom-4 w-80 z-10 pointer-events-none overflow-y-auto">
-          <div className="pointer-events-auto space-y-4 pb-4">
-            <EventsPanel colonyId={colonyId} onCreateTest={onCreateTestEvent} />
-            <PvpPanel colonyId={colonyId} onResult={onPvpResult} />
-            <ArmyPanel colonyId={colonyId} resources={resources} />
           </div>
         </div>
       )}
