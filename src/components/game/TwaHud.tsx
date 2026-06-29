@@ -1,5 +1,6 @@
 'use client'
 
+import { TopResourceBar } from '@/components/game/hud/TopResourceBar'
 import { BottomNav } from '@/components/screens/BottomNav'
 import type { TabId } from '@/components/screens/BottomNav'
 import ColonyScreen from '@/components/screens/ColonyScreen'
@@ -73,6 +74,10 @@ export function TwaHud({
       <div className="absolute inset-0 z-0">
         <ColonyScreen {...colonyScreenProps} />
       </div>
+      
+      {!placementMode && (
+        <TopResourceBar resources={resources} population={population} colony={colony} isMobile={true} />
+      )}
       
       <HudBottomSheet open={activeTab === 'buildings'} onClose={() => setActiveTab('colony')}>
         <BuildingsScreen buildings={buildings} colonyId={colonyId} resources={resources} resourcesLoading={resourcesLoading} onBuild={async (type) => { setPlacementMode(type); setActiveTab('colony'); }} onDemolish={onDemolish} population={population} />
