@@ -45,6 +45,7 @@ export function handleDeath(t: SimUnit, unit: SimUnit, units: SimUnit[], actions
             actionCooldown: 0,
             shield: unit.maxShield,
             statusEffects: [],
+            targetMark: undefined,
             attackTargetId: undefined,
             meleeSlotTargetId: undefined,
             meleeSlotIndex: undefined,
@@ -76,6 +77,13 @@ export function handleDeath(t: SimUnit, unit: SimUnit, units: SimUnit[], actions
  * @returns true if the spawn was successful
  */
 export function processSpawnAction(unit: SimUnit, target: SimUnit, units: SimUnit[], actions: BattleAction[], rng: PRNG): boolean {
+     if (isSpawnCapReached(unit, units)) {
+        const cap = unit.spawnCap ?? 0;
+        unit.actionCooldown = Math.min(5, unit.actionCooldownMax);
+        actions.push({ unitId: unit.id, type: 'spawn_blocked', value: cap });
+        return false;
+     }
+
      // Spawn a turret directly in front of the engineer (towards target)
      const dx = target.x - unit.x;
      const dy = target.y - unit.y;
@@ -108,6 +116,8 @@ export function processSpawnAction(unit: SimUnit, target: SimUnit, units: SimUni
        range: spawnConfig.baseStats.range,
        attackType: spawnConfig.baseStats.attackType || 'single',
        aoeRadius: spawnConfig.baseStats.aoeRadius,
+       spawnType: spawnConfig.baseStats.spawnType,
+       spawnCap: spawnConfig.baseStats.spawnCap,
        actionCooldownMax: spawnConfig.baseStats.actionCooldownMax || 5,
        actionCooldown: 0,
        isFlying: spawnConfig.baseStats.isFlying || false,
@@ -119,6 +129,7 @@ export function processSpawnAction(unit: SimUnit, target: SimUnit, units: SimUni
        size: spawnConfig.baseStats.size || 'M',
        x: spawnX,
        y: spawnY,
+       summonOwnerId: unit.id,
        aggroLockTicks: 0,
        velocity: { x: 0, y: 0 },
        isDead: false,
@@ -126,6 +137,7 @@ export function processSpawnAction(unit: SimUnit, target: SimUnit, units: SimUni
        maxShield: 0,
        statusEffects: [],
        statusOnHit: spawnConfig.baseStats.statusOnHit ? spawnConfig.baseStats.statusOnHit.map(status => ({ ...status })) : undefined,
+       markOnHit: spawnConfig.baseStats.markOnHit ? { ...spawnConfig.baseStats.markOnHit } : undefined,
        supportAuras: spawnConfig.baseStats.supportAuras ? spawnConfig.baseStats.supportAuras.map(aura => ({ ...aura })) : undefined
      });
 
@@ -140,4 +152,10 @@ export function processSpawnAction(unit: SimUnit, target: SimUnit, units: SimUni
        targetId: newId
      });
      return true;
+}
+
+function isSpawnCapReached(unit: SimUnit, units: SimUnit[]): boolean {
+     if (unit.spawnCap === undefined) return false;
+     const activeSummons = units.filter(u => !u.isDead && u.summonOwnerId === unit.id).length;
+     return activeSummons >= unit.spawnCap;
 }

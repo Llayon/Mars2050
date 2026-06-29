@@ -1,5 +1,5 @@
 import { Database, UnitsType } from '@/types/database'
-import type { StatusEffect, SupportAura } from './combat.sim.types'
+import type { StatusEffect, SupportAura, TargetMarkConfig } from './combat.sim.types'
 
 export type UnitRow = Database['public']['Tables']['units']['Row']
 export type BattleRow = Database['public']['Tables']['battles']['Row']
@@ -27,12 +27,13 @@ export interface TargetingProfileConfig {
 export interface UnitBaseStats {
   hp: number; attack: number; defense: number; speed: number; range: number
   attackType: 'single' | 'aoe' | 'heal' | 'spawn'
-  aoeRadius?: number; spawnType?: string; actionCooldownMax?: number
+  aoeRadius?: number; spawnType?: string; spawnCap?: number; actionCooldownMax?: number
   spawnOverrides?: { hp?: number; attack?: number; isTemporary?: boolean; duration?: number }
   linePierce?: { width: number; damageMultiplier: number; maxTargets?: number }
   pullOnHit?: { radius: number; strength: number; maxTargets?: number }
   reactiveArmor?: { charges: number; block: number }; damageShare?: { radius: number; ratio: number; maxTargets?: number }
   statusOnHit?: StatusEffect[]
+  markOnHit?: TargetMarkConfig
   supportAuras?: SupportAura[]
   mineOnAction?: { radius: number; damage: number; duration: number }
   isFlying?: boolean; canTargetAir?: boolean
@@ -51,6 +52,6 @@ export interface UnitTypeConfig {
   formation?: 'line' | 'wedge' | 'grid'
 }
 
-export type { Team, StatusEffect, StatusType, SupportAura, SupportAuraType, Obstacle, SimHazard, SimUnit } from './combat.sim.types'
+export type { Team, StatusEffect, StatusType, SupportAura, SupportAuraType, TargetMark, TargetMarkConfig, Obstacle, SimHazard, SimUnit } from './combat.sim.types'
 export * from './combat.actions'
 

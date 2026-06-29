@@ -5,7 +5,7 @@ export type BattleActionType =
   | 'move' | 'attack' | 'heal' | 'die' | 'spawn' | 'hazard_spawn'
   | 'damage' | 'damage_share' | 'shield_damage' | 'shield_break' | 'lifesteal' | 'unit_blocked_damage'
   | 'status_apply' | 'status_expire' | 'status_cleanse' | 'status_tick' | 'status_immune'
-  | 'shield_apply'
+  | 'shield_apply' | 'target_mark' | 'target_mark_expire' | 'spawn_blocked'
 
 export interface BattleAction {
   unitId: string

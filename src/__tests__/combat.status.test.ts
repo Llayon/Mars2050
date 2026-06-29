@@ -4,6 +4,7 @@ import { actionSystem } from '@/domains/combat/combat.systems'
 import {
   applyStatus,
   cleanseStatuses,
+  getEffectiveActionRange,
   getMovementSpeedMultiplier,
   getStatusValue,
   hasStatus,
@@ -62,6 +63,14 @@ describe('combat.status', () => {
 
     expect(getStatusValue(target, 'slow')).toBe(0.4)
     expect(getMovementSpeedMultiplier(target)).toBe(0.4)
+  })
+
+  it('computes effective action range from range suppression', () => {
+    const attacker = makeUnit({ id: 'attacker', team: 'attacker', range: 200 })
+
+    applyStatus(attacker, { type: 'range_suppressed', duration: 5, value: 0.25, sourceUnitId: 'sonic' })
+
+    expect(getEffectiveActionRange(attacker)).toBe(150)
   })
 
   it('ticks statuses and emits deterministic expire actions', () => {
@@ -135,6 +144,20 @@ describe('combat.status', () => {
     const actions: BattleAction[] = []
     const hazards: SimHazard[] = []
     applyStatus(attacker, { type: 'hacked', duration: 5 })
+
+    const acted = actionSystem(attacker, target, [attacker, target], hazards, actions, new PRNG(1))
+
+    expect(acted).toBe(false)
+    expect(actions).toEqual([])
+    expect(target.hp).toBe(100)
+  })
+
+  it('uses range suppression for attack range checks', () => {
+    const attacker = makeUnit({ id: 'attacker', team: 'attacker', range: 100 })
+    const target = makeUnit({ id: 'target', team: 'defender', x: 100, y: 0 })
+    const actions: BattleAction[] = []
+    const hazards: SimHazard[] = []
+    applyStatus(attacker, { type: 'range_suppressed', duration: 5, value: 0.5 })
 
     const acted = actionSystem(attacker, target, [attacker, target], hazards, actions, new PRNG(1))
 

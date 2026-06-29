@@ -3,7 +3,7 @@ import type { MeleeEngagementState } from './combat.melee-engagement';
 import { clearMeleeEngagementSlot, hasMeleeEngagementSlot, setMeleeWaitingTarget } from './combat.melee-engagement';
 import { getTargetingProfile, getTargetScore } from './combat.targeting-score';
 import { getDistance } from './combat.utils';
-import { hasStatus } from './combat.status';
+import { getEffectiveActionRange, hasStatus } from './combat.status';
 import type { SpatialHash } from './spatial-hash';
 
 const AGGRO_LOCK_TICKS = 10;
@@ -13,6 +13,13 @@ const RANGED_ACQUISITION_BUFFER = 120;
 const SUPPORT_ACQUISITION_RADIUS = 420;
 
 export function targetingSystem(unit: SimUnit, units: SimUnit[], meleeEngagement: MeleeEngagementState, spatialHash?: SpatialHash): SimUnit | null {
+  if (hasStatus(unit, 'hacked')) {
+    unit.attackTargetId = undefined;
+    unit.aggroLockTicks = 0;
+    clearMeleeEngagementSlot(unit);
+    return null;
+  }
+
   if (unit.attackType === 'heal') {
     return selectHealTarget(unit, units, spatialHash);
   }
@@ -178,7 +185,7 @@ function isReachableEnemy(unit: SimUnit, enemy: SimUnit): boolean {
 
 function getAcquisitionRadius(unit: SimUnit): number {
   if (unit.range <= 60) return MELEE_ACQUISITION_RADIUS;
-  return Math.max(MELEE_ACQUISITION_RADIUS, unit.range + RANGED_ACQUISITION_BUFFER);
+  return Math.max(MELEE_ACQUISITION_RADIUS, getEffectiveActionRange(unit) + RANGED_ACQUISITION_BUFFER);
 }
 
 function isFullMapAcquisitionUnit(unit: SimUnit): boolean {

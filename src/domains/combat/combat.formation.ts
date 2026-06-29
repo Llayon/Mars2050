@@ -1,4 +1,5 @@
 import type { SimUnit } from './combat.sim.types'
+import { getEffectiveActionRange } from './combat.status'
 import { getDistance, getSizeRadius } from './combat.utils'
 
 export interface FormationCohesionForce {
@@ -18,7 +19,7 @@ export function getFormationCohesionForce(
   if (squadCount <= 1) return { x: 0, y: 0 }
 
   const isBug = unit.type.startsWith('alien_')
-  const nearEngagement = distEdge <= unit.range + getEngagementCohesionBuffer(unit)
+  const nearEngagement = distEdge <= getEffectiveActionRange(unit) + getEngagementCohesionBuffer(unit)
   const threshold = isBug ? 60 : (nearEngagement ? 36 : 14)
   const target = getFormationAnchor(unit, targetPoint, squadCx, squadCy, isBug)
   const distance = getDistance(unit.x, unit.y, target.x, target.y)

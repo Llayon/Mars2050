@@ -3,16 +3,18 @@ import type { SimHazard, SimUnit } from './combat.sim.types';
 import { handleDeath, processSpawnAction } from './combat.systems.utils';
 import { getDistance, PRNG, getSizeRadius } from './combat.utils';
 import { isMeleeEngagementReady } from './combat.melee-engagement';
-import { applyStatus, isActionBlockedByStatus, tickStatuses } from './combat.status';
+import { applyStatus, getEffectiveActionRange, isActionBlockedByStatus, tickStatuses } from './combat.status';
 import { applyCombatDamage } from './combat.damage';
 import { tryDeployMine } from './combat.minefield';
 import { getLinePierceDamageMultiplier, getLinePierceTargets } from './combat.attack-geometry';
 import { applyPullOnHit } from './combat.displacement';
+import { applyTargetMark, tickTargetMark } from './combat.mark';
 
 export function tickModifiersSystem(unit: SimUnit, dt: number, actions: BattleAction[]) {
   if (unit.actionCooldown > 0) unit.actionCooldown = Math.max(0, unit.actionCooldown - 1);
   tickTemporaryUnit(unit, actions);
   tickStatuses(unit, actions);
+  tickTargetMark(unit, actions);
 }
 
 export function actionSystem(unit: SimUnit, target: SimUnit, units: SimUnit[], hazards: SimHazard[], actions: BattleAction[], rng: PRNG): boolean {
@@ -21,8 +23,9 @@ export function actionSystem(unit: SimUnit, target: SimUnit, units: SimUnit[], h
   const myRadius = getSizeRadius(unit.size);
   const distEdge = dist - targetRadius - myRadius;
   
-  const inRange = unit.attackType === 'spawn' || (unit.attackType !== 'heal' && distEdge <= unit.range) || 
-                 (unit.attackType === 'heal' && target.hp < target.maxHp && distEdge <= unit.range);
+  const effectiveRange = getEffectiveActionRange(unit);
+  const inRange = unit.attackType === 'spawn' || (unit.attackType !== 'heal' && distEdge <= effectiveRange) ||
+                 (unit.attackType === 'heal' && target.hp < target.maxHp && distEdge <= effectiveRange);
 
   if (!inRange) return false;
   if (!isMeleeEngagementReady(unit, target)) return false;
@@ -62,6 +65,7 @@ export function actionSystem(unit: SimUnit, target: SimUnit, units: SimUnit[], h
          unit.hasAttacked = true;
 
          applyOnHitStatuses(unit, target, actions);
+         applyTargetMark(unit, target, actions);
 
          if (unit.leavesPuddle) {
              hazards.push({
@@ -91,6 +95,7 @@ export function actionSystem(unit: SimUnit, target: SimUnit, units: SimUnit[], h
                      applyCombatDamage(unit, e, Math.floor(unit.attack * 0.5), actions, createDamageContext(unit, units, actions, hazards, rng));
 
                      applyOnHitStatuses(unit, e, actions);
+                     applyTargetMark(unit, e, actions);
 
                      if (e.hp <= 0 && !e.isDead) {
                          handleDeath(e, unit, units, actions, hazards, rng);
@@ -124,6 +129,7 @@ function processLinePierce(unit: SimUnit, target: SimUnit, units: SimUnit[], act
     emitAttackIntent(unit, secondary, actions);
     applyCombatDamage(unit, secondary, Math.floor(unit.attack * multiplier), actions, createDamageContext(unit, units, actions, hazards, rng));
     applyOnHitStatuses(unit, secondary, actions);
+    applyTargetMark(unit, secondary, actions);
     if (secondary.hp <= 0 && !secondary.isDead) handleDeath(secondary, unit, units, actions, hazards, rng);
   }
 }

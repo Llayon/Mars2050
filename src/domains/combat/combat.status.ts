@@ -149,6 +149,19 @@ export function getMovementSpeedMultiplier(unit: SimUnit): number {
   return multiplier
 }
 
+/**
+ * Computes attack and support range after active range-control statuses.
+ * @param unit Unit to inspect
+ * @returns effective action range in simulation units
+ */
+export function getEffectiveActionRange(unit: SimUnit): number {
+  const suppression = getStatusValue(unit, 'range_suppressed')
+  if (suppression === undefined || suppression <= 0) return unit.range
+
+  const reduction = suppression <= 1 ? suppression : suppression / 100
+  return Math.max(0, unit.range * Math.max(0.05, 1 - Math.min(0.95, reduction)))
+}
+
 function normalizeStatus(effect: StatusEffect): StatusEffect {
   return {
     ...effect,

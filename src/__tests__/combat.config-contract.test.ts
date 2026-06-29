@@ -10,6 +10,7 @@ function hasUtilityBehavior(stats: UnitBaseStats): boolean {
   return stats.attackType === 'spawn'
     || stats.attackType === 'heal'
     || (stats.statusOnHit?.length ?? 0) > 0
+    || stats.markOnHit !== undefined
     || (stats.supportAuras?.length ?? 0) > 0
     || stats.mineOnAction !== undefined
     || stats.pullOnHit !== undefined
@@ -25,6 +26,7 @@ describe('combat unit config contract', () => {
       }
       if (stats.attackType === 'spawn') {
         expect(stats.spawnType, `${unitType} uses spawn without spawnType`).toBeTruthy()
+        expect(stats.spawnCap, `${unitType} uses spawn without positive spawnCap`).toBeGreaterThan(0)
       }
       if (stats.attackType === 'heal') {
         expect(stats.attack, `${unitType} uses heal without positive heal amount`).toBeGreaterThan(0)
@@ -40,6 +42,10 @@ describe('combat unit config contract', () => {
         if (stats.damageShare.maxTargets !== undefined) {
           expect(stats.damageShare.maxTargets, `${unitType} has damage share without positive maxTargets`).toBeGreaterThan(0)
         }
+      }
+      if (stats.markOnHit) {
+        expect(stats.markOnHit.duration, `${unitType} has target mark without positive duration`).toBeGreaterThan(0)
+        expect((stats.markOnHit.damageMultiplier ?? 0) + (stats.markOnHit.executeThreshold ?? 0), `${unitType} has target mark without effect`).toBeGreaterThan(0)
       }
     }
   })
@@ -58,6 +64,7 @@ describe('combat unit config contract', () => {
       if (tags.has('summoner')) {
         expect(stats.attackType, `${unitType} is tagged summoner without spawn attack type`).toBe('spawn')
         expect(stats.spawnType, `${unitType} is tagged summoner without spawnType`).toBeTruthy()
+        expect(stats.spawnCap, `${unitType} is tagged summoner without positive spawnCap`).toBeGreaterThan(0)
       }
     }
   })

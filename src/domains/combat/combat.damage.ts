@@ -1,5 +1,6 @@
 import type { BattleAction } from './combat.actions'
 import type { SimUnit } from './combat.sim.types'
+import { getMarkedDamageMultiplier, getMarkedExecuteThreshold } from './combat.mark'
 import { getStatusValue } from './combat.status'
 import { getDistance } from './combat.utils'
 
@@ -49,6 +50,7 @@ export function applyCombatDamage(
   }
 
   damage = applyStatusDamageModifiers(target, damage)
+  damage = applyMarkDamageModifier(attacker, target, damage)
   const blockedDamage = Math.max(0, raw - damage)
   const shieldResult = applyShield(target, damage)
   damage = shieldResult.damage
@@ -57,7 +59,8 @@ export function applyCombatDamage(
   const shareResult = applyDamageSharing(target, damage, context)
   damage = shareResult.damage
 
-  if (attacker.executeThreshold && target.hp <= attacker.executeThreshold) damage = target.hp
+  const executeThreshold = Math.max(attacker.executeThreshold ?? 0, getMarkedExecuteThreshold(attacker, target))
+  if (executeThreshold > 0 && target.hp <= executeThreshold) damage = target.hp
   let lifesteal = 0
   if (attacker.lifestealMult && damage + shareResult.sharedDamage > 0) {
     lifesteal = Math.floor((damage + shareResult.sharedDamage) * attacker.lifestealMult)
@@ -75,6 +78,12 @@ export function applyCombatDamage(
   }
   emitDamageActions(attacker, target, result, actions)
   return result
+}
+
+function applyMarkDamageModifier(attacker: SimUnit, target: SimUnit, damage: number): number {
+  const multiplier = getMarkedDamageMultiplier(attacker, target)
+  if (multiplier <= 0) return damage
+  return Math.max(0, Math.floor(damage * (1 + multiplier)))
 }
 
 function getEffectiveDefense(target: SimUnit): number {

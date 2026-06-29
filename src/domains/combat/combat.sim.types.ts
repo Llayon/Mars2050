@@ -3,13 +3,10 @@ export type StatusType =
   | 'emp' | 'slow' | 'burn' | 'acid' | 'vulnerable' | 'range_suppressed' | 'revealed'
   | 'hacked' | 'damage_reduction' | 'regen' | 'output_suppressed' | 'armor_broken' | 'degeneration' | 'haste' | 'status_immunity'
 
-export interface StatusEffect {
-  type: StatusType
-  duration: number
-  value?: number
-  sourceUnitId?: string
-  stackKey?: string
-}
+export interface StatusEffect { type: StatusType; duration: number; value?: number; sourceUnitId?: string; stackKey?: string }
+
+export interface TargetMark { sourceUnitId: string; duration: number; damageMultiplier?: number; executeThreshold?: number }
+export type TargetMarkConfig = Omit<TargetMark, 'sourceUnitId'>
 
 export type SupportAuraType = 'shield' | 'regen' | 'reveal' | 'damage_reduction' | 'cleanse' | 'status_immunity'
 export type SupportAuraTarget = 'allies' | 'enemies'
@@ -47,6 +44,7 @@ export interface SimUnit {
   attackType: 'single' | 'aoe' | 'heal' | 'spawn'
   aoeRadius?: number
   spawnType?: string
+  spawnCap?: number
   actionCooldownMax: number
   actionCooldown: number
   isFlying: boolean
@@ -56,6 +54,7 @@ export interface SimUnit {
   y: number
   isDead: boolean
   squadId?: string
+  summonOwnerId?: string
   attackTargetId?: string
   aggroLockTicks: number
   meleeSlotTargetId?: string
@@ -70,7 +69,7 @@ export interface SimUnit {
   shield: number
   maxShield: number
   statusEffects: StatusEffect[]
-  statusOnHit?: StatusEffect[]
+  statusOnHit?: StatusEffect[]; markOnHit?: TargetMarkConfig; targetMark?: TargetMark
   supportAuras?: SupportAura[]
   appliesEmp?: boolean
   leavesPuddle?: boolean
