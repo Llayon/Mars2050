@@ -76,7 +76,7 @@ export function recordCombatActions(
 
   for (const action of actions) {
     if (action.type === 'attack') recordAttackIntent(metrics, tick, action, unitById)
-    if (action.type === 'damage') recordDamageAction(metrics, action, unitById)
+    if (action.type === 'damage' || action.type === 'damage_share') recordDamageAction(metrics, action, unitById)
     if (action.type === 'heal') recordHealAction(metrics, action, unitById)
     if (action.type === 'die') metrics.hpByUnitId.set(action.unitId, 0)
   }

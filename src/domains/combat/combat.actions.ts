@@ -3,8 +3,8 @@ import type { CombatMetrics } from './combat.metrics'
 
 export type BattleActionType =
   | 'move' | 'attack' | 'heal' | 'die' | 'spawn' | 'hazard_spawn'
-  | 'damage' | 'shield_damage' | 'shield_break' | 'lifesteal' | 'unit_blocked_damage'
-  | 'status_apply' | 'status_expire' | 'status_cleanse' | 'status_tick'
+  | 'damage' | 'damage_share' | 'shield_damage' | 'shield_break' | 'lifesteal' | 'unit_blocked_damage'
+  | 'status_apply' | 'status_expire' | 'status_cleanse' | 'status_tick' | 'status_immune'
   | 'shield_apply'
 
 export interface BattleAction {

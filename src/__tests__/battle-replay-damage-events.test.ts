@@ -21,6 +21,7 @@ describe('battle replay damage events', () => {
 
   it('classifies every detailed damage action type', () => {
     expect(isDetailedDamageAction('damage')).toBe(true)
+    expect(isDetailedDamageAction('damage_share')).toBe(true)
     expect(isDetailedDamageAction('shield_damage')).toBe(true)
     expect(isDetailedDamageAction('shield_break')).toBe(true)
     expect(isDetailedDamageAction('lifesteal')).toBe(true)

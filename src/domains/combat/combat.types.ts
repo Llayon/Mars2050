@@ -31,6 +31,7 @@ export interface UnitBaseStats {
   spawnOverrides?: { hp?: number; attack?: number; isTemporary?: boolean; duration?: number }
   linePierce?: { width: number; damageMultiplier: number; maxTargets?: number }
   pullOnHit?: { radius: number; strength: number; maxTargets?: number }
+  reactiveArmor?: { charges: number; block: number }; damageShare?: { radius: number; ratio: number; maxTargets?: number }
   statusOnHit?: StatusEffect[]
   supportAuras?: SupportAura[]
   mineOnAction?: { radius: number; damage: number; duration: number }

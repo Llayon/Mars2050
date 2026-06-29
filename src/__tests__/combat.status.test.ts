@@ -103,6 +103,18 @@ describe('combat.status', () => {
     expect(actions).toEqual([{ unitId: 'target', type: 'status_cleanse', statusType: 'burn' }])
   })
 
+  it('blocks harmful status applications while status immunity is active', () => {
+    const target = makeUnit({ id: 'target', team: 'defender' })
+    const actions: BattleAction[] = []
+    applyStatus(target, { type: 'status_immunity', duration: 5, sourceUnitId: 'engineer' })
+
+    const applied = applyStatus(target, { type: 'burn', duration: 5, sourceUnitId: 'flame' }, actions)
+
+    expect(applied).toBe(false)
+    expect(hasStatus(target, 'burn')).toBe(false)
+    expect(actions).toEqual([{ unitId: 'target', type: 'status_immune', statusType: 'burn' }])
+  })
+
   it('blocks attacks while EMP is active', () => {
     const attacker = makeUnit({ id: 'attacker', team: 'attacker' })
     const target = makeUnit({ id: 'target', team: 'defender', x: 80, y: 0 })

@@ -57,7 +57,7 @@ export function actionSystem(unit: SimUnit, target: SimUnit, units: SimUnit[], h
          if (target.isDead) break;
 
          emitAttackIntent(unit, target, actions);
-         applyCombatDamage(unit, target, unit.attack, actions);
+         applyCombatDamage(unit, target, unit.attack, actions, createDamageContext(unit, units, actions, hazards, rng));
 
          unit.hasAttacked = true;
 
@@ -88,7 +88,7 @@ export function actionSystem(unit: SimUnit, target: SimUnit, units: SimUnit[], h
              for (const e of splashEnemies) {
                  if (getDistance(target.x, target.y, e.x, e.y) <= radius) {
                      emitAttackIntent(unit, e, actions);
-                     applyCombatDamage(unit, e, Math.floor(unit.attack * 0.5), actions);
+                     applyCombatDamage(unit, e, Math.floor(unit.attack * 0.5), actions, createDamageContext(unit, units, actions, hazards, rng));
 
                      applyOnHitStatuses(unit, e, actions);
 
@@ -122,10 +122,14 @@ function processLinePierce(unit: SimUnit, target: SimUnit, units: SimUnit[], act
 
   for (const secondary of getLinePierceTargets(unit, target, units)) {
     emitAttackIntent(unit, secondary, actions);
-    applyCombatDamage(unit, secondary, Math.floor(unit.attack * multiplier), actions);
+    applyCombatDamage(unit, secondary, Math.floor(unit.attack * multiplier), actions, createDamageContext(unit, units, actions, hazards, rng));
     applyOnHitStatuses(unit, secondary, actions);
     if (secondary.hp <= 0 && !secondary.isDead) handleDeath(secondary, unit, units, actions, hazards, rng);
   }
+}
+
+function createDamageContext(unit: SimUnit, units: SimUnit[], actions: BattleAction[], hazards: SimHazard[], rng: PRNG) {
+  return { units, onUnitDeath: (target: SimUnit) => handleDeath(target, unit, units, actions, hazards, rng) };
 }
 
 function tickTemporaryUnit(unit: SimUnit, actions: BattleAction[]): void {

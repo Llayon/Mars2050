@@ -1,6 +1,6 @@
 import type { BattleAction } from './combat.actions'
 import type { SimUnit, SupportAura } from './combat.sim.types'
-import { applyStatus } from './combat.status'
+import { applyStatus, cleanseStatuses, HARMFUL_STATUS_TYPES } from './combat.status'
 import { getDistance } from './combat.utils'
 
 const DEFAULT_AURA_INTERVAL = 10
@@ -65,6 +65,20 @@ function applyAura(source: SimUnit, target: SimUnit, aura: SupportAura, actions:
   if (aura.type === 'reveal') {
     applyStatus(target, {
       type: 'revealed',
+      duration: aura.duration ?? (aura.interval ?? DEFAULT_AURA_INTERVAL) + 1,
+      sourceUnitId: source.id
+    }, actions)
+    return
+  }
+
+  if (aura.type === 'cleanse') {
+    cleanseStatuses(target, HARMFUL_STATUS_TYPES, actions)
+    return
+  }
+
+  if (aura.type === 'status_immunity') {
+    applyStatus(target, {
+      type: 'status_immunity',
       duration: aura.duration ?? (aura.interval ?? DEFAULT_AURA_INTERVAL) + 1,
       sourceUnitId: source.id
     }, actions)

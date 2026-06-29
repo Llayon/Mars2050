@@ -29,6 +29,18 @@ describe('combat unit config contract', () => {
       if (stats.attackType === 'heal') {
         expect(stats.attack, `${unitType} uses heal without positive heal amount`).toBeGreaterThan(0)
       }
+      if (stats.reactiveArmor) {
+        expect(stats.reactiveArmor.charges, `${unitType} has reactive armor without positive charges`).toBeGreaterThan(0)
+        expect(stats.reactiveArmor.block, `${unitType} has reactive armor without positive block`).toBeGreaterThan(0)
+      }
+      if (stats.damageShare) {
+        expect(stats.damageShare.radius, `${unitType} has damage share without positive radius`).toBeGreaterThan(0)
+        expect(stats.damageShare.ratio, `${unitType} has damage share without positive ratio`).toBeGreaterThan(0)
+        expect(stats.damageShare.ratio, `${unitType} has damage share ratio above safety cap`).toBeLessThanOrEqual(0.9)
+        if (stats.damageShare.maxTargets !== undefined) {
+          expect(stats.damageShare.maxTargets, `${unitType} has damage share without positive maxTargets`).toBeGreaterThan(0)
+        }
+      }
     }
   })
 
@@ -59,6 +71,24 @@ describe('combat unit config contract', () => {
       if (stats.attack > 0 || isStaticBlocker) continue
 
       expect(hasUtilityBehavior(stats), `${unitType} has zero attack and no utility behavior`).toBe(true)
+    }
+  })
+
+  it('keeps support aura configs complete', () => {
+    for (const [unitType, config] of Object.entries(UNIT_TYPES) as [string, UnitTypeConfig][]) {
+      for (const aura of config.baseStats.supportAuras ?? []) {
+        expect(aura.radius, `${unitType} has support aura without positive radius`).toBeGreaterThan(0)
+        expect(['allies', 'enemies'], `${unitType} has support aura with invalid target`).toContain(aura.target)
+        if (aura.interval !== undefined) {
+          expect(aura.interval, `${unitType} has support aura without positive interval`).toBeGreaterThan(0)
+        }
+        if (['shield', 'regen', 'damage_reduction'].includes(aura.type)) {
+          expect(aura.value, `${unitType} has ${aura.type} aura without positive value`).toBeGreaterThan(0)
+        }
+        if (aura.type === 'status_immunity') {
+          expect(aura.duration, `${unitType} has status immunity aura without explicit duration`).toBeGreaterThan(0)
+        }
+      }
     }
   })
 })

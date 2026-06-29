@@ -131,12 +131,12 @@ export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
 
       logs[tick].actions.forEach(a => {
         const s = sprites[a.unitId]
-        if (a.type === 'damage') {
+        if (a.type === 'damage' || a.type === 'damage_share') {
           const tg = sprites[a.targetId!]
           if (tg) {
             tg.hp -= a.damage!
             updateHp(tg)
-            spawnTxt(`-${a.damage}`, tg.c.x, tg.c.y, 0xffaa00)
+            spawnTxt(a.type === 'damage_share' ? `РАЗДЕЛ -${a.damage}` : `-${a.damage}`, tg.c.x, tg.c.y, 0xffaa00)
           }
           return
         }

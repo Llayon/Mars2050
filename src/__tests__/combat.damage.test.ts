@@ -110,6 +110,54 @@ describe('combat.damage', () => {
     ])
   })
 
+  it('spends reactive armor charges only after shield overflow reaches HP', () => {
+    const attacker = makeUnit({ id: 'attacker', team: 'attacker', attack: 50 })
+    const target = makeUnit({
+      id: 'target',
+      team: 'defender',
+      shield: 15,
+      maxShield: 15,
+      reactiveArmorCharges: 1,
+      reactiveArmorBlock: 30,
+    })
+    const actions: BattleAction[] = []
+
+    const result = applyCombatDamage(attacker, target, attacker.attack, actions)
+
+    expect(result).toMatchObject({ damage: 5, shieldDamage: 15, shieldBroken: true, blockedDamage: 30 })
+    expect(target.hp).toBe(95)
+    expect(target.shield).toBe(0)
+    expect(target.reactiveArmorCharges).toBe(0)
+    expect(actions).toEqual([
+      { unitId: 'target', type: 'unit_blocked_damage', targetId: 'attacker', damage: 30 },
+      { unitId: 'attacker', type: 'shield_damage', targetId: 'target', damage: 15, isShieldHit: true },
+      { unitId: 'attacker', type: 'shield_break', targetId: 'target' },
+      { unitId: 'attacker', type: 'damage', targetId: 'target', damage: 5 },
+    ])
+  })
+
+  it('shares final HP damage across nearby allies deterministically', () => {
+    const attacker = makeUnit({ id: 'attacker', team: 'attacker', attack: 80 })
+    const target = makeUnit({ id: 'target', team: 'defender', damageShareRadius: 120, damageShareRatio: 0.25, damageShareMaxTargets: 2 })
+    const allyB = makeUnit({ id: 'ally-b', team: 'defender', x: 40, y: 0 })
+    const allyA = makeUnit({ id: 'ally-a', team: 'defender', x: 30, y: 0 })
+    const farAlly = makeUnit({ id: 'ally-far', team: 'defender', x: 200, y: 0 })
+    const actions: BattleAction[] = []
+
+    const result = applyCombatDamage(attacker, target, attacker.attack, actions, { units: [attacker, target, allyB, allyA, farAlly] })
+
+    expect(result).toMatchObject({ damage: 60, sharedDamage: 20 })
+    expect(target.hp).toBe(40)
+    expect(allyA.hp).toBe(90)
+    expect(allyB.hp).toBe(90)
+    expect(farAlly.hp).toBe(100)
+    expect(actions).toEqual([
+      { unitId: 'attacker', type: 'damage', targetId: 'target', damage: 60 },
+      { unitId: 'attacker', type: 'damage_share', targetId: 'ally-a', damage: 10 },
+      { unitId: 'attacker', type: 'damage_share', targetId: 'ally-b', damage: 10 },
+    ])
+  })
+
   it('keeps attack actions as animation intent while damage actions carry HP loss', () => {
     const attacker = makeUnit({ id: 'attacker', team: 'attacker', attack: 30 })
     const target = makeUnit({ id: 'target', team: 'defender', x: 80, y: 0 })

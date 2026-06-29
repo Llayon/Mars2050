@@ -1,7 +1,7 @@
 export type Team = 'attacker' | 'defender'
 export type StatusType =
   | 'emp' | 'slow' | 'burn' | 'acid' | 'vulnerable' | 'range_suppressed' | 'revealed'
-  | 'hacked' | 'damage_reduction' | 'regen' | 'output_suppressed' | 'armor_broken' | 'degeneration' | 'haste'
+  | 'hacked' | 'damage_reduction' | 'regen' | 'output_suppressed' | 'armor_broken' | 'degeneration' | 'haste' | 'status_immunity'
 
 export interface StatusEffect {
   type: StatusType
@@ -11,7 +11,7 @@ export interface StatusEffect {
   stackKey?: string
 }
 
-export type SupportAuraType = 'shield' | 'regen' | 'reveal' | 'damage_reduction'
+export type SupportAuraType = 'shield' | 'regen' | 'reveal' | 'damage_reduction' | 'cleanse' | 'status_immunity'
 export type SupportAuraTarget = 'allies' | 'enemies'
 
 export interface SupportAura {
@@ -95,5 +95,5 @@ export interface SimUnit {
   damageReductionWhileMoving?: number
   onDeathPuddle?: 'napalm' | 'acid' | 'emp'
   multishot?: number; antiAirDamageMult?: number
-  pullOnHit?: { radius: number; strength: number; maxTargets?: number }
+  pullOnHit?: { radius: number; strength: number; maxTargets?: number }; reactiveArmorCharges?: number; reactiveArmorBlock?: number; damageShareRadius?: number; damageShareRatio?: number; damageShareMaxTargets?: number
 }

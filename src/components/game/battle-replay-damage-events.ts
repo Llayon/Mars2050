@@ -2,6 +2,7 @@ import type { BattleAction, BattleTick } from '@/domains/combat/combat.types'
 
 const DETAILED_DAMAGE_TYPES = new Set<BattleAction['type']>([
   'damage',
+  'damage_share',
   'shield_damage',
   'shield_break',
   'lifesteal',

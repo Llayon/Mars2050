@@ -20,7 +20,6 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
   const dt = 0.1
   const units: SimUnit[] = []
   const hazards: SimHazard[] = []
-
   const activeGlobals: { team: Team, upg: GlobalUpgradeConfig }[] = []
   attackerGlobals.forEach(id => { if (GLOBAL_UPGRADES[id]) activeGlobals.push({ team: 'attacker', upg: GLOBAL_UPGRADES[id] }) })
   defenderGlobals.forEach(id => { if (GLOBAL_UPGRADES[id]) activeGlobals.push({ team: 'defender', upg: GLOBAL_UPGRADES[id] }) })
@@ -157,6 +156,7 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
         lifestealMult: modLifestealMult,
         groundDamageMult: modGroundDamageMult,
         pullOnHit: config.baseStats.pullOnHit ? { radius: config.baseStats.pullOnHit.radius * 40, strength: config.baseStats.pullOnHit.strength * 40, maxTargets: config.baseStats.pullOnHit.maxTargets } : undefined,
+        reactiveArmorCharges: config.baseStats.reactiveArmor?.charges, reactiveArmorBlock: config.baseStats.reactiveArmor?.block, damageShareRadius: config.baseStats.damageShare?.radius ? config.baseStats.damageShare.radius * 40 : undefined, damageShareRatio: config.baseStats.damageShare?.ratio, damageShareMaxTargets: config.baseStats.damageShare?.maxTargets,
         offsetX: ox,
         offsetY: oy,
         x: cx + ox,

@@ -1,14 +1,22 @@
 import type { BattleAction } from './combat.actions'
 import type { SimUnit } from './combat.sim.types'
 import { getStatusValue } from './combat.status'
+import { getDistance } from './combat.utils'
 
 export interface CombatDamageResult {
   damage: number
+  sharedDamage: number
+  sharedDamageEvents: { targetId: string; damage: number }[]
   isShieldHit: boolean
   shieldDamage: number
   shieldBroken: boolean
   blockedDamage: number
   lifesteal: number
+}
+
+export interface CombatDamageContext {
+  units?: SimUnit[]
+  onUnitDeath?: (unit: SimUnit) => void
 }
 
 /**
@@ -17,13 +25,15 @@ export interface CombatDamageResult {
  * @param target Unit receiving damage
  * @param rawDamage Damage before target defense
  * @param actions Optional replay action sink for detailed damage events
+ * @param context Optional unit context for defensive primitives
  * @returns final HP damage and shield-hit flag
  */
 export function applyCombatDamage(
   attacker: SimUnit,
   target: SimUnit,
   rawDamage: number,
-  actions?: BattleAction[]
+  actions?: BattleAction[],
+  context: CombatDamageContext = {}
 ): CombatDamageResult {
   const raw = Math.floor(rawDamage)
   if (raw <= 0) return createDamageResult()
@@ -42,11 +52,15 @@ export function applyCombatDamage(
   const blockedDamage = Math.max(0, raw - damage)
   const shieldResult = applyShield(target, damage)
   damage = shieldResult.damage
+  const reactiveArmorBlock = applyReactiveArmor(target, damage)
+  damage -= reactiveArmorBlock
+  const shareResult = applyDamageSharing(target, damage, context)
+  damage = shareResult.damage
 
   if (attacker.executeThreshold && target.hp <= attacker.executeThreshold) damage = target.hp
   let lifesteal = 0
-  if (attacker.lifestealMult && damage > 0) {
-    lifesteal = Math.floor(damage * attacker.lifestealMult)
+  if (attacker.lifestealMult && damage + shareResult.sharedDamage > 0) {
+    lifesteal = Math.floor((damage + shareResult.sharedDamage) * attacker.lifestealMult)
     attacker.hp = Math.min(attacker.maxHp, attacker.hp + lifesteal)
   }
   if (damage > 0) target.hp -= damage
@@ -54,7 +68,9 @@ export function applyCombatDamage(
   const result = {
     ...shieldResult,
     damage,
-    blockedDamage,
+    sharedDamage: shareResult.sharedDamage,
+    sharedDamageEvents: shareResult.events,
+    blockedDamage: blockedDamage + reactiveArmorBlock,
     lifesteal,
   }
   emitDamageActions(attacker, target, result, actions)
@@ -107,12 +123,59 @@ function applyShield(target: SimUnit, damage: number): CombatDamageResult {
   })
 }
 
+function applyDamageSharing(target: SimUnit, damage: number, context: CombatDamageContext): { damage: number; sharedDamage: number; events: { targetId: string; damage: number }[] } {
+  const ratio = Math.max(0, Math.min(0.9, target.damageShareRatio ?? 0))
+  if (damage <= 0 || ratio <= 0 || !target.damageShareRadius || !context.units) return { damage, sharedDamage: 0, events: [] }
+
+  const recipients = context.units
+    .filter(unit => !unit.isDead && unit.team === target.team && unit.id !== target.id && getDistance(unit.x, unit.y, target.x, target.y) <= target.damageShareRadius!)
+    .sort((a, b) => a.id.localeCompare(b.id))
+    .slice(0, Math.max(1, target.damageShareMaxTargets ?? Number.MAX_SAFE_INTEGER))
+  if (recipients.length === 0) return { damage, sharedDamage: 0, events: [] }
+
+  const shareBudget = Math.floor(damage * ratio)
+  const events = distributeSharedDamage(shareBudget, recipients, context)
+  const sharedDamage = events.reduce((sum, event) => sum + event.damage, 0)
+  return { damage: damage - sharedDamage, sharedDamage, events }
+}
+
+function distributeSharedDamage(shareBudget: number, recipients: SimUnit[], context: CombatDamageContext): { targetId: string; damage: number }[] {
+  if (shareBudget <= 0) return []
+  const baseDamage = Math.floor(shareBudget / recipients.length)
+  let remainder = shareBudget % recipients.length
+  const events: { targetId: string; damage: number }[] = []
+
+  for (const recipient of recipients) {
+    const damage = baseDamage + (remainder > 0 ? 1 : 0)
+    remainder = Math.max(0, remainder - 1)
+    if (damage <= 0) continue
+
+    recipient.hp -= damage
+    events.push({ targetId: recipient.id, damage })
+    if (recipient.hp <= 0 && !recipient.isDead) {
+      if (context.onUnitDeath) context.onUnitDeath(recipient)
+      else recipient.isDead = true
+    }
+  }
+
+  return events
+}
+
+function applyReactiveArmor(target: SimUnit, damage: number): number {
+  if (damage <= 0 || !target.reactiveArmorCharges || !target.reactiveArmorBlock) return 0
+
+  target.reactiveArmorCharges--
+  return Math.min(damage, Math.max(0, Math.floor(target.reactiveArmorBlock)))
+}
+
 function createDamageResult(overrides: Partial<CombatDamageResult> = {}): CombatDamageResult {
   return {
     damage: 0,
     isShieldHit: false,
     shieldDamage: 0,
     shieldBroken: false,
+    sharedDamage: 0,
+    sharedDamageEvents: [],
     blockedDamage: 0,
     lifesteal: 0,
     ...overrides,
@@ -138,6 +201,9 @@ function emitDamageActions(
   }
   if (result.damage > 0) {
     actions.push({ unitId: attacker.id, type: 'damage', targetId: target.id, damage: result.damage })
+  }
+  for (const event of result.sharedDamageEvents) {
+    actions.push({ unitId: attacker.id, type: 'damage_share', targetId: event.targetId, damage: event.damage })
   }
   if (result.lifesteal > 0) {
     actions.push({ unitId: attacker.id, type: 'lifesteal', targetId: attacker.id, damage: result.lifesteal })

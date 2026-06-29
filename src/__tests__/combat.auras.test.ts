@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { BattleAction } from '@/domains/combat/combat.actions'
 import { processSupportAuras } from '@/domains/combat/combat.auras'
 import { createMeleeEngagementState } from '@/domains/combat/combat.melee-engagement'
-import { hasStatus } from '@/domains/combat/combat.status'
+import { applyStatus, hasStatus } from '@/domains/combat/combat.status'
 import { targetingSystem } from '@/domains/combat/combat.targeting'
 import type { SimUnit, Team } from '@/domains/combat/combat.types'
 import { SpatialHash } from '@/domains/combat/spatial-hash'
@@ -75,6 +75,51 @@ describe('combat.auras', () => {
 
     expect(hasStatus(ally, 'regen')).toBe(true)
     expect(actions).toContainEqual({ unitId: 'ally', type: 'status_apply', statusType: 'regen', value: 6 })
+  })
+
+  it('cleanses harmful statuses without removing beneficial statuses', () => {
+    const engineer = makeUnit({
+      id: 'engineer',
+      team: 'attacker',
+      type: 'engineer',
+      supportAuras: [{ type: 'cleanse', radius: 160, value: 0, interval: 10, target: 'allies' }],
+    })
+    const ally = makeUnit({ id: 'ally', team: 'attacker', x: 60, y: 0 })
+    const actions: BattleAction[] = []
+    applyStatus(ally, { type: 'burn', duration: 20, sourceUnitId: 'flame' })
+    applyStatus(ally, { type: 'regen', duration: 20, value: 4, sourceUnitId: 'nanites' })
+    applyStatus(ally, { type: 'revealed', duration: 20, sourceUnitId: 'radar' })
+
+    processSupportAuras(0, [engineer, ally], actions)
+
+    expect(hasStatus(ally, 'burn')).toBe(false)
+    expect(hasStatus(ally, 'revealed')).toBe(false)
+    expect(hasStatus(ally, 'regen')).toBe(true)
+    expect(actions).toEqual([
+      { unitId: 'ally', type: 'status_cleanse', statusType: 'revealed' },
+      { unitId: 'ally', type: 'status_cleanse', statusType: 'burn' },
+    ])
+  })
+
+  it('applies status immunity through support aura', () => {
+    const engineer = makeUnit({
+      id: 'engineer',
+      team: 'attacker',
+      type: 'engineer',
+      supportAuras: [{ type: 'status_immunity', radius: 160, value: 0, duration: 8, interval: 10, target: 'allies' }],
+    })
+    const ally = makeUnit({ id: 'ally', team: 'attacker', x: 60, y: 0 })
+    const actions: BattleAction[] = []
+
+    processSupportAuras(0, [engineer, ally], actions)
+    applyStatus(ally, { type: 'emp', duration: 10, sourceUnitId: 'drone' }, actions)
+
+    expect(hasStatus(ally, 'status_immunity')).toBe(true)
+    expect(hasStatus(ally, 'emp')).toBe(false)
+    expect(actions).toEqual([
+      { unitId: 'ally', type: 'status_apply', statusType: 'status_immunity', value: undefined },
+      { unitId: 'ally', type: 'status_immune', statusType: 'emp' },
+    ])
   })
 
   it('lets radar reveal make stealth targets reachable', () => {

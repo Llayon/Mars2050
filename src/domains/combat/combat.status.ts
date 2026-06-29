@@ -2,6 +2,19 @@ import type { BattleAction } from './combat.actions'
 import type { SimUnit, StatusEffect, StatusType } from './combat.sim.types'
 
 const ACTION_BLOCKING_STATUSES = new Set<StatusType>(['emp', 'hacked'])
+export const HARMFUL_STATUS_TYPES: StatusType[] = [
+  'emp',
+  'slow',
+  'burn',
+  'acid',
+  'vulnerable',
+  'range_suppressed',
+  'revealed',
+  'hacked',
+  'output_suppressed',
+  'armor_broken',
+  'degeneration',
+]
 
 /**
  * Applies or refreshes a status effect using deterministic stack identity.
@@ -13,6 +26,10 @@ const ACTION_BLOCKING_STATUSES = new Set<StatusType>(['emp', 'hacked'])
 export function applyStatus(target: SimUnit, effect: StatusEffect, actions?: BattleAction[]): boolean {
   const normalized = normalizeStatus(effect)
   if (normalized.duration <= 0) return false
+  if (isStatusBlockedByImmunity(target, normalized.type)) {
+    actions?.push({ unitId: target.id, type: 'status_immune', statusType: normalized.type })
+    return false
+  }
 
   const existing = target.statusEffects.find(status => getStatusStackId(status) === getStatusStackId(normalized))
   if (existing) {
@@ -25,6 +42,11 @@ export function applyStatus(target: SimUnit, effect: StatusEffect, actions?: Bat
   target.statusEffects.push(normalized)
   actions?.push({ unitId: target.id, type: 'status_apply', statusType: normalized.type, value: normalized.value })
   return true
+}
+
+function isStatusBlockedByImmunity(target: SimUnit, type: StatusType): boolean {
+  if (type === 'status_immunity') return false
+  return HARMFUL_STATUS_TYPES.includes(type) && hasStatus(target, 'status_immunity')
 }
 
 /**
