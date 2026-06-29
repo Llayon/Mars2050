@@ -143,13 +143,14 @@ export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
           const tg = sprites[a.targetId!]
           if (tg) {
             const isH = a.type === 'heal', pCol = isH ? 0x4ade80 : (a.isShieldHit ? 0x3b82f6 : 0xffaa00)
+            const hasLegacyDamage = typeof a.damage === 'number'
             spawnProj(s.c.x, s.c.y, tg.c.x, tg.c.y, pCol)
             if (s.s) {
               s.dir = getDir(tg.c.x - s.c.x, tg.c.y - s.c.y);
               s.act = 'shoot'
             }
 
-            if (isH || !useDetailedDamageEvents) {
+            if (isH || (!useDetailedDamageEvents && hasLegacyDamage)) {
               tg.hp -= isH ? -a.damage! : a.damage!
               updateHp(tg)
               const dmgText = isH ? `+${a.damage}` : (a.isShieldHit && a.damage === 0 ? `БЛОК` : `-${a.damage}`)

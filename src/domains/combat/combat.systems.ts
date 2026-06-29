@@ -1,9 +1,7 @@
 import type { BattleAction } from './combat.actions';
 import type { SimHazard, SimUnit } from './combat.sim.types';
-import type { UnitTypeKey } from './combat.types';
-import { UNIT_TYPES } from './combat.config';
 import { handleDeath, processSpawnAction } from './combat.systems.utils';
-import { getDistance, FIELD_WIDTH, FIELD_HEIGHT, PRNG, getSizeRadius } from './combat.utils';
+import { getDistance, PRNG, getSizeRadius } from './combat.utils';
 import { isMeleeEngagementReady } from './combat.melee-engagement';
 import { applyStatus, isActionBlockedByStatus, tickStatuses } from './combat.status';
 import { applyCombatDamage } from './combat.damage';
@@ -58,11 +56,10 @@ export function actionSystem(unit: SimUnit, target: SimUnit, units: SimUnit[], h
      for (let shot = 0; shot < numShots; shot++) {
          if (target.isDead) break;
 
-         const damageResult = applyCombatDamage(unit, target, unit.attack, actions);
-         
+         emitAttackIntent(unit, target, actions);
+         applyCombatDamage(unit, target, unit.attack, actions);
+
          unit.hasAttacked = true;
-         
-         actions.push({ unitId: unit.id, type: 'attack', targetId: target.id, damage: damageResult.damage, isShieldHit: damageResult.isShieldHit });
 
          applyOnHitStatuses(unit, target, actions);
 
@@ -90,10 +87,9 @@ export function actionSystem(unit: SimUnit, target: SimUnit, units: SimUnit[], h
              const splashEnemies = units.filter(e => !e.isDead && e.team !== unit.team && e.id !== target.id);
              for (const e of splashEnemies) {
                  if (getDistance(target.x, target.y, e.x, e.y) <= radius) {
-                     const splash = applyCombatDamage(unit, e, Math.floor(unit.attack * 0.5), actions);
-                     
-                     actions.push({ unitId: unit.id, type: 'attack', targetId: e.id, damage: splash.damage, isShieldHit: splash.isShieldHit });
-                     
+                     emitAttackIntent(unit, e, actions);
+                     applyCombatDamage(unit, e, Math.floor(unit.attack * 0.5), actions);
+
                      applyOnHitStatuses(unit, e, actions);
 
                      if (e.hp <= 0 && !e.isDead) {
@@ -116,13 +112,17 @@ function applyOnHitStatuses(unit: SimUnit, target: SimUnit, actions: BattleActio
   }
 }
 
+function emitAttackIntent(unit: SimUnit, target: SimUnit, actions: BattleAction[]): void {
+  actions.push({ unitId: unit.id, type: 'attack', targetId: target.id });
+}
+
 function processLinePierce(unit: SimUnit, target: SimUnit, units: SimUnit[], actions: BattleAction[], hazards: SimHazard[], rng: PRNG): void {
   const multiplier = getLinePierceDamageMultiplier(unit);
   if (!multiplier) return;
 
   for (const secondary of getLinePierceTargets(unit, target, units)) {
-    const hit = applyCombatDamage(unit, secondary, Math.floor(unit.attack * multiplier), actions);
-    actions.push({ unitId: unit.id, type: 'attack', targetId: secondary.id, damage: hit.damage, isShieldHit: hit.isShieldHit });
+    emitAttackIntent(unit, secondary, actions);
+    applyCombatDamage(unit, secondary, Math.floor(unit.attack * multiplier), actions);
     applyOnHitStatuses(unit, secondary, actions);
     if (secondary.hp <= 0 && !secondary.isDead) handleDeath(secondary, unit, units, actions, hazards, rng);
   }

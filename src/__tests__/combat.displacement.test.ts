@@ -80,7 +80,7 @@ describe('combat.displacement', () => {
 
     expect(acted).toBe(true)
     expect(nearby.x).toBe(198)
-    expect(actions.map(action => action.type)).toEqual(['damage', 'attack', 'damage', 'attack', 'move'])
+    expect(actions.map(action => action.type)).toEqual(['attack', 'damage', 'attack', 'damage', 'move'])
     expect(actions.at(-1)).toMatchObject({ unitId: 'nearby', type: 'move', fromX: 230, toX: 198 })
   })
 })

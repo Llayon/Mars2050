@@ -24,8 +24,8 @@ interface DesktopHudProps {
   resources: ResourceRow[]
   resourcesLoading: boolean
   userEmail?: string
-  viewMode: 'classic' | 'isometric'
-  setViewMode: (mode: 'classic' | 'isometric') => void
+  viewMode: 'colony' | 'map'
+  setViewMode: (mode: 'colony' | 'map') => void
   placementMode: BuildingTypeKey | null
   setPlacementMode: (mode: BuildingTypeKey | null) => void
   onBuild: (type: BuildingTypeKey, x?: number, y?: number) => Promise<void>
@@ -76,10 +76,9 @@ export function DesktopHud({
   return (
     <div className="min-h-[100dvh] bg-black text-white relative overflow-hidden">
       <div className="absolute inset-0 z-0">
-        {viewMode === 'isometric' ? (
-          <ColonyScreen {...colonyScreenProps} />
-        ) : (
-          <div className="w-full h-full bg-mars-surface p-4 pt-24 overflow-y-auto">
+        <ColonyScreen {...colonyScreenProps} />
+        {viewMode === 'map' && (
+          <div className="absolute inset-0 z-10 bg-black/60 backdrop-blur-md p-4 pt-24 overflow-y-auto pointer-events-auto">
              <GameMapPanel colonyId={colonyId} />
           </div>
         )}
@@ -87,14 +86,16 @@ export function DesktopHud({
 
       {!placementMode && (
         <div className="absolute top-0 left-0 right-0 z-10 pointer-events-none p-4 flex justify-between items-start">
-          <div className="w-80 pointer-events-auto space-y-4 max-h-[90vh] overflow-y-auto custom-scrollbar pr-2">
-            <ColonyPanel colony={colony} loading={colonyLoading} />
-            <PopulationSummary population={population} loading={populationLoading} />
-            <ResourcePanel resources={resources} loading={resourcesLoading} />
-            <EventsPanel colonyId={colonyId} onCreateTest={onCreateTestEvent} />
-            <PvpPanel colonyId={colonyId} onResult={onPvpResult} />
-            <ArmyPanel colonyId={colonyId} resources={resources} />
-          </div>
+          {viewMode === 'colony' ? (
+            <div className="w-80 pointer-events-auto space-y-4 max-h-[90vh] overflow-y-auto custom-scrollbar pr-2">
+              <ColonyPanel colony={colony} loading={colonyLoading} />
+              <PopulationSummary population={population} loading={populationLoading} />
+              <ResourcePanel resources={resources} loading={resourcesLoading} />
+              <EventsPanel colonyId={colonyId} onCreateTest={onCreateTestEvent} />
+              <PvpPanel colonyId={colonyId} onResult={onPvpResult} />
+              <ArmyPanel colonyId={colonyId} resources={resources} />
+            </div>
+          ) : <div />}
           <div className="flex flex-col items-end gap-2 pointer-events-auto">
             <div className="hud-panel rounded-lg px-4 py-2 flex items-center gap-4">
               <span className="text-sm font-bold text-gray-200">{colony?.name || 'Колония'}</span>
@@ -102,14 +103,14 @@ export function DesktopHud({
               <button onClick={onLogout} className="text-[10px] uppercase text-red-400 hover:text-red-300 ml-2">Выход</button>
             </div>
             <div className="hud-panel rounded-lg p-1 flex gap-1 w-48">
-               <button onClick={() => setViewMode('isometric')} className={`flex-1 py-1.5 rounded text-[10px] font-bold transition-all border ${viewMode === 'isometric' ? 'bg-mars-orange border-mars-orange text-white shadow-[0_0_10px_rgba(255,107,0,0.4)]' : 'bg-transparent border-transparent text-gray-400 hover:bg-white/5'}`}>БАЗА</button>
-               <button onClick={() => setViewMode('classic')} className={`flex-1 py-1.5 rounded text-[10px] font-bold transition-all border ${viewMode === 'classic' ? 'bg-mars-orange border-mars-orange text-white shadow-[0_0_10px_rgba(255,107,0,0.4)]' : 'bg-transparent border-transparent text-gray-400 hover:bg-white/5'}`}>КАРТА</button>
+               <button onClick={() => setViewMode('colony')} className={`flex-1 py-1.5 rounded text-[10px] font-bold transition-all border ${viewMode === 'colony' ? 'bg-mars-orange border-mars-orange text-white shadow-[0_0_10px_rgba(255,107,0,0.4)]' : 'bg-transparent border-transparent text-gray-400 hover:bg-white/5'}`}>БАЗА</button>
+               <button onClick={() => setViewMode('map')} className={`flex-1 py-1.5 rounded text-[10px] font-bold transition-all border ${viewMode === 'map' ? 'bg-mars-orange border-mars-orange text-white shadow-[0_0_10px_rgba(255,107,0,0.4)]' : 'bg-transparent border-transparent text-gray-400 hover:bg-white/5'}`}>КАРТА</button>
             </div>
           </div>
         </div>
       )}
 
-      {!placementMode && (
+      {!placementMode && viewMode === 'colony' && (
         <div className="absolute top-24 right-4 bottom-4 w-96 z-10 pointer-events-none overflow-y-auto">
           <div className="pointer-events-auto space-y-4 pb-4">
             <BuildingsPanel buildings={buildings} resources={resources} onBuild={onBuild} onDemolish={onDemolish} />

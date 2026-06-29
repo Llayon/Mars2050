@@ -75,7 +75,8 @@ export function recordCombatActions(
   const unitById = new Map(units.map(unit => [unit.id, unit]))
 
   for (const action of actions) {
-    if (action.type === 'attack') recordAttackAction(metrics, tick, action, unitById)
+    if (action.type === 'attack') recordAttackIntent(metrics, tick, action, unitById)
+    if (action.type === 'damage') recordDamageAction(metrics, action, unitById)
     if (action.type === 'heal') recordHealAction(metrics, action, unitById)
     if (action.type === 'die') metrics.hpByUnitId.set(action.unitId, 0)
   }
@@ -109,7 +110,7 @@ export function finalizeCombatMetrics(
   }
 }
 
-function recordAttackAction(
+function recordAttackIntent(
   metrics: CombatMetricsCollector,
   tick: number,
   action: BattleAction,
@@ -118,18 +119,27 @@ function recordAttackAction(
   if (metrics.firstAttackTick === null) metrics.firstAttackTick = tick
   if (!metrics.firstEngageTickByUnitId.has(action.unitId)) metrics.firstEngageTickByUnitId.set(action.unitId, tick)
 
+  if (!action.targetId) return
+  const target = unitById.get(action.targetId)
+  const attacker = unitById.get(action.unitId)
+  if (attacker && target) {
+    metrics.engagementDistanceTotal += Math.hypot(attacker.x - target.x, attacker.y - target.y)
+    metrics.engagementDistanceSamples++
+  }
+}
+
+function recordDamageAction(
+  metrics: CombatMetricsCollector,
+  action: BattleAction,
+  unitById: Map<string, SimUnit>
+): void {
   const damage = Math.max(0, action.damage ?? 0)
   const attackerType = unitById.get(action.unitId)?.type ?? 'unknown'
   metrics.damageByUnitType[attackerType] = (metrics.damageByUnitType[attackerType] ?? 0) + damage
 
   if (!action.targetId || damage <= 0) return
   const target = unitById.get(action.targetId)
-  const attacker = unitById.get(action.unitId)
   if (target) metrics.damageTakenByUnitType[target.type] = (metrics.damageTakenByUnitType[target.type] ?? 0) + damage
-  if (attacker && target) {
-    metrics.engagementDistanceTotal += Math.hypot(attacker.x - target.x, attacker.y - target.y)
-    metrics.engagementDistanceSamples++
-  }
   const previousHp = metrics.hpByUnitId.get(action.targetId) ?? unitById.get(action.targetId)?.hp ?? 0
   metrics.overkillDamage += Math.max(0, damage - Math.max(0, previousHp))
   metrics.hpByUnitId.set(action.targetId, Math.max(0, previousHp - damage))

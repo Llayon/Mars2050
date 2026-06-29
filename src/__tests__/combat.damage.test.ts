@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { applyCombatDamage } from '@/domains/combat/combat.damage'
 import { applyStatus } from '@/domains/combat/combat.status'
+import { actionSystem } from '@/domains/combat/combat.systems'
 import type { BattleAction } from '@/domains/combat/combat.actions'
-import type { SimUnit, Team } from '@/domains/combat/combat.types'
+import type { SimHazard, SimUnit, Team } from '@/domains/combat/combat.types'
+import { PRNG } from '@/domains/combat/combat.utils'
 
 function makeUnit(overrides: Partial<SimUnit> & { id: string; team: Team }): SimUnit {
   return {
@@ -106,5 +108,20 @@ describe('combat.damage', () => {
       { unitId: 'attacker', type: 'damage', targetId: 'target', damage: 25 },
       { unitId: 'attacker', type: 'lifesteal', targetId: 'attacker', damage: 12 },
     ])
+  })
+
+  it('keeps attack actions as animation intent while damage actions carry HP loss', () => {
+    const attacker = makeUnit({ id: 'attacker', team: 'attacker', attack: 30 })
+    const target = makeUnit({ id: 'target', team: 'defender', x: 80, y: 0 })
+    const actions: BattleAction[] = []
+    const hazards: SimHazard[] = []
+
+    const acted = actionSystem(attacker, target, [attacker, target], hazards, actions, new PRNG(1))
+
+    expect(acted).toBe(true)
+    expect(target.hp).toBe(70)
+    expect(actions[0]).toEqual({ unitId: 'attacker', type: 'attack', targetId: 'target' })
+    expect(actions[1]).toEqual({ unitId: 'attacker', type: 'damage', targetId: 'target', damage: 30 })
+    expect(actions[0].damage).toBeUndefined()
   })
 })

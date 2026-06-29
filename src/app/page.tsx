@@ -26,7 +26,7 @@ function GameUI() {
 
   const [authMode, setAuthMode] = useState<'login' | 'register' | null>(null)
   const [activeTab, setActiveTab] = useState<TabId>('colony')
-  const [viewMode, setViewMode] = useState<'classic' | 'isometric'>('isometric')
+  const [viewMode, setViewMode] = useState<'colony' | 'map'>('colony')
   const [placementMode, setPlacementMode] = useState<BuildingTypeKey | null>(null)
 
   const handleBuild = useCallback(async (type: BuildingTypeKey, x?: number, y?: number) => {
@@ -40,20 +40,10 @@ function GameUI() {
         throw err
       }
     } else {
-      if (viewMode === 'isometric') {
-        setPlacementMode(type)
-        if (isTWA) setActiveTab('colony')
-      } else {
-        try {
-          await buildStructure(type, 10, 10)
-          const config = BUILDING_TYPES[type]
-          if (config) toast(`${config.name} построен!`, 'success')
-        } catch (err) {
-          toast(err instanceof Error ? err.message : String(err), 'error')
-        }
-      }
+      setPlacementMode(type)
+      if (isTWA) setActiveTab('colony')
     }
-  }, [buildStructure, isTWA, viewMode, toast])
+  }, [buildStructure, isTWA, toast])
   const handleDemolish = useCallback((id: string) => demolishBuilding(id), [demolishBuilding])
   const handleCreateTest = useCallback((id: string, type: string, dur: number) => createEvent(id, type, dur), [createEvent])
 
