@@ -54,7 +54,7 @@ export function useBuildings(colonyId: string | null) {
       })
       if (!res.ok) {
         const data = await res.json()
-        throw new Error(data.error || 'Failed to build')
+        throw new Error(data.error?.message || 'Failed to build')
       }
       const { building } = await res.json()
       setBuildings(prev => [...prev, building])

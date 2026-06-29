@@ -48,7 +48,6 @@ export const BuildingsPanel = memo(function BuildingsPanel({ buildings, resource
     setBuilding(type)
     try {
       await onBuild(type)
-      toast(`${config.name} построен!`, 'success')
       setShowMenu(false)
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Ошибка строительства'

@@ -56,7 +56,6 @@ export const BuildingsScreen = memo(function BuildingsScreen({
     setBuilding(type)
     try {
       await onBuild(type)
-      toast(`${config.name} построен!`, 'success')
       setShowBuildMenu(false)
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Ошибка строительства'
