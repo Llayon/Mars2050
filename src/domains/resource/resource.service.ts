@@ -20,11 +20,20 @@ import { processPopulationTick } from '@/domains/population/population.tick'
 export async function recalculateResources(colonyId: string) {
   const supabase = getServerClient()
 
-  // 1. Fetch current resources to get types and rates
-  const { data: resources, error: resError } = await supabase
-    .from('resources')
-    .select('*')
-    .eq('colony_id', colonyId)
+  // 1. Fetch all colony data in parallel (1 network roundtrip instead of 5 sequential ones)
+  const [
+    { data: resources, error: resError },
+    { data: colony },
+    { data: population },
+    { data: buildings },
+    { data: units }
+  ] = await Promise.all([
+    supabase.from('resources').select('*').eq('colony_id', colonyId),
+    supabase.from('colonies').select('terrain_grid, last_calc_at').eq('id', colonyId).single(),
+    supabase.from('population').select('*').eq('colony_id', colonyId).single(),
+    supabase.from('buildings').select('*').eq('colony_id', colonyId),
+    supabase.from('units').select('*').eq('colony_id', colonyId)
+  ])
 
   if (resError || !resources) {
     console.error('recalculateResources: failed to fetch resources', resError)
@@ -36,14 +45,10 @@ export async function recalculateResources(colonyId: string) {
 
   // 2. Calculate dynamic rates based on buildings, population, and units
   try {
-    const { data: colony } = await supabase.from('colonies').select('terrain_grid, last_calc_at').eq('id', colonyId).single()
     if (colony?.last_calc_at) {
       const lastCalc = new Date(colony.last_calc_at).getTime()
       elapsedHours = Math.max(0, (Date.now() - lastCalc) / 3600000.0)
     }
-    const { data: population } = await supabase.from('population').select('*').eq('colony_id', colonyId).single()
-    const { data: buildings } = await supabase.from('buildings').select('*').eq('colony_id', colonyId)
-    const { data: units } = await supabase.from('units').select('*').eq('colony_id', colonyId)
 
     const terrainGrid = colony?.terrain_grid || []
 
@@ -89,20 +94,25 @@ export async function recalculateResources(colonyId: string) {
       }
     }
 
-    // Update resources in DB if rates changed
+    // Update resources in DB in parallel if rates changed
+    const updatePromises: PromiseLike<any>[] = []
     for (const r of resources as ResourceRow[]) {
       const p = newProd[r.type] || 0
       const c = newCons[r.type] || 0
       
       if (Math.abs(r.production_rate - p) > 0.01 || Math.abs(r.consumption_rate - c) > 0.01) {
-        await supabase
-          .from('resources')
-          .update({ production_rate: p, consumption_rate: c })
-          .eq('id', r.id)
-          
+        updatePromises.push(
+          supabase
+            .from('resources')
+            .update({ production_rate: p, consumption_rate: c })
+            .eq('id', r.id)
+        )
         r.production_rate = p
         r.consumption_rate = c
       }
+    }
+    if (updatePromises.length > 0) {
+      await Promise.all(updatePromises)
     }
   } catch (err) {
     console.error('Error calculating dynamic rates:', err)
@@ -118,9 +128,13 @@ export async function recalculateResources(colonyId: string) {
     updatedResources = finalResources
   }
 
-  // 3.5 Process population tick (growth & happiness) based on elapsed time
+  // 3.5 Process population tick (growth & happiness) based on elapsed time using prefetched data
   if (elapsedHours > 0) {
-    await processPopulationTick(colonyId, elapsedHours).catch(err => 
+    await processPopulationTick(colonyId, elapsedHours, {
+      population,
+      buildings: buildings || [],
+      resources: updatedResources
+    }).catch(err => 
       console.error('Error processing population tick:', err)
     )
   }

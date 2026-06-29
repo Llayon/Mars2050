@@ -2,7 +2,8 @@ import { getServerClient } from '@/domains/resource/resource.server'
 import { POPULATION_TIERS } from './population.config'
 import { calculateTierHappiness, calculateGrowthDelta } from './population.growth'
 import type { PopulationState, PopulationTier } from './population.types'
-import type { BuildingTypeKey } from '@/domains/building/building.types'
+import type { BuildingTypeKey, BuildingRow } from '@/domains/building/building.types'
+import type { ResourceRow } from '@/domains/resource/resource.types'
 
 /**
  * Recalculates housing capacity, happiness per tier, and processes growth/decline.
@@ -11,13 +12,32 @@ import type { BuildingTypeKey } from '@/domains/building/building.types'
  * @param colonyId - Colony ID to process
  * @param elapsedHours - Elapsed time since last tick
  */
-export async function processPopulationTick(colonyId: string, elapsedHours: number) {
+export async function processPopulationTick(
+  colonyId: string,
+  elapsedHours: number,
+  prefetched?: {
+    population: PopulationState | null
+    buildings: BuildingRow[]
+    resources: ResourceRow[]
+  }
+) {
   const supabase = getServerClient()
 
-  // 1. Fetch population, buildings, and resources
-  const { data: pop } = await supabase.from('population').select('*').eq('colony_id', colonyId).single()
-  const { data: buildings } = await supabase.from('buildings').select('*').eq('colony_id', colonyId)
-  const { data: resources } = await supabase.from('resources').select('*').eq('colony_id', colonyId)
+  // 1. Fetch population, buildings, and resources (or use prefetched)
+  let pop = prefetched?.population
+  let buildings = prefetched?.buildings
+  let resources = prefetched?.resources
+
+  if (!pop || !buildings || !resources) {
+    const [popRes, bldRes, resRes] = await Promise.all([
+      supabase.from('population').select('*').eq('colony_id', colonyId).single(),
+      supabase.from('buildings').select('*').eq('colony_id', colonyId),
+      supabase.from('resources').select('*').eq('colony_id', colonyId)
+    ])
+    pop = popRes.data
+    buildings = bldRes.data || []
+    resources = resRes.data || []
+  }
 
   if (!pop || !buildings || !resources) return
 
