@@ -22,7 +22,7 @@ export async function GET(request: Request) {
     const { errorResponse } = await checkColonyAuth(request, colonyId)
     if (errorResponse) return errorResponse
 
-    // Check cache (10 second TTL)
+    // Check cache (30 second TTL)
     const cacheKey = `resources:${colonyId}`
     const cached = getCached(cacheKey)
     if (cached) {
@@ -36,7 +36,7 @@ export async function GET(request: Request) {
       return apiError('INTERNAL_ERROR', 'Failed to recalculate resources')
     }
 
-    setCache(cacheKey, resources, 10)
+    setCache(cacheKey, resources, 30)
 
     // Invalidate old colonies list after resource change
     invalidateCache(`colonies:${colonyId}`)

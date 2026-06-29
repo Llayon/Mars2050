@@ -405,3 +405,7 @@ exception when others then
 end;
 $$ language plpgsql security definer;
 
+-- Optimization Indexes
+create index if not exists units_colony_id_idx on public.units(colony_id);
+create index if not exists battles_attacker_colony_id_idx on public.battles(attacker_colony_id);
+create index if not exists battles_defender_colony_id_idx on public.battles(defender_colony_id);
