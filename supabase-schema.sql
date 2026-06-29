@@ -358,3 +358,50 @@ begin
 end;
 $$ language plpgsql security definer;
 
+-- Atomic transaction for building placement: resource check, deduction, and building creation.
+create or replace function public.create_building_transaction(
+  p_colony_id uuid,
+  p_building_type text,
+  p_building_name text,
+  p_x integer,
+  p_y integer,
+  p_costs jsonb,
+  p_group_id text default null
+) returns jsonb as $$
+declare
+  r_type text;
+  r_cost numeric;
+  v_available numeric;
+  v_inserted_row public.buildings%rowtype;
+begin
+  -- 1. Lock resource rows and check if balance is sufficient
+  for r_type, r_cost in select * from jsonb_each_text(p_costs) loop
+    select amount into v_available from public.resources 
+      where colony_id = p_colony_id and type = r_type for update;
+      
+    if v_available is null or v_available < r_cost::numeric then
+      raise exception 'Недостаточно ресурса %: требуется %, доступно %', r_type, r_cost, coalesce(v_available, 0);
+    end if;
+  end loop;
+
+  -- 2. Deduct resources atomically by subtraction
+  for r_type, r_cost in select * from jsonb_each_text(p_costs) loop
+    update public.resources 
+      set amount = amount - r_cost::numeric
+      where colony_id = p_colony_id and type = r_type;
+  end loop;
+
+  -- 3. Insert building
+  insert into public.buildings (colony_id, type, name, level, is_active, x, y, group_id)
+    values (p_colony_id, p_building_type, p_building_name, 1, true, p_x, p_y, p_group_id)
+    returning * into v_inserted_row;
+
+  return jsonb_build_object(
+    'success', true,
+    'building', row_to_json(v_inserted_row)::jsonb
+  );
+exception when others then
+  return jsonb_build_object('success', false, 'error', sqlerrm);
+end;
+$$ language plpgsql security definer;
+

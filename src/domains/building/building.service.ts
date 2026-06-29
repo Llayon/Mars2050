@@ -80,94 +80,30 @@ export async function createBuilding(dto: BuildingCreateDTO): Promise<BuildingRe
     }
   }
 
-  // 2. Check if colony has enough resources
-  const { data: resources, error: resourcesError } = await supabase
-    .from('resources')
-    .select('type, amount')
-    .eq('colony_id', dto.colonyId)
+  // 2. Execute atomic placement transaction in database (1 roundtrip)
+  const { data: txResult, error: txError } = await supabase.rpc('create_building_transaction', {
+    p_colony_id: dto.colonyId,
+    p_building_type: dto.type,
+    p_building_name: dto.name,
+    p_x: dto.x ?? 10,
+    p_y: dto.y ?? 10,
+    p_costs: config.cost,
+    p_group_id: dto.group_id || null
+  })
 
-  if (resourcesError || !resources) {
-    return { building: null, error: 'Failed to fetch resources', status: 500 }
+  if (txError || !txResult) {
+    return { building: null, error: txError?.message || 'Database transaction failed', status: 500 }
   }
 
-  const resourceMap: Record<string, number> = {}
-  for (const r of resources) {
-    resourceMap[r.type] = r.amount
+  const result = txResult as { success: boolean; building?: BuildingRow; error?: string }
+  if (!result.success) {
+    return { building: null, error: result.error || 'Transaction failed', status: 400 }
   }
 
-  for (const [resourceType, cost] of Object.entries(config.cost)) {
-    const available = resourceMap[resourceType] || 0
-    if (available < cost) {
-      return {
-        building: null,
-        error: `Not enough ${resourceType}. Need ${cost}, have ${Math.floor(available)}`,
-        status: 400
-      }
-    }
-  }
-
-  // 3. Deduct building cost with Optimistic Concurrency Control
-  const deductedResources: string[] = []
-  let deductionFailed = false
-
-  for (const [resourceType, cost] of Object.entries(config.cost)) {
-    const currentAmount = resourceMap[resourceType] || 0
-    const newAmount = currentAmount - cost
-
-    const { data: updated, error: updateError } = await supabase
-      .from('resources')
-      .update({ amount: Math.max(0, newAmount) })
-      .eq('colony_id', dto.colonyId)
-      .eq('type', resourceType)
-      .gte('amount', cost) // OCC to prevent race conditions without exact float matching
-      .select('id')
-
-    if (updateError || !updated || updated.length === 0) {
-      console.error('Failed to deduct resource (race condition):', resourceType)
-      deductionFailed = true
-      break
-    }
-    deductedResources.push(resourceType)
-  }
-
-  if (deductionFailed) {
-    // Rollback successful deductions
-    for (const resType of deductedResources) {
-      const cost = config.cost[resType as keyof typeof config.cost]
-      const current = resourceMap[resType] || 0
-      await supabase
-        .from('resources')
-        .update({ amount: current })
-        .eq('colony_id', dto.colonyId)
-        .eq('type', resType)
-    }
-    return { building: null, error: 'Транзакция отменена: ресурсы были изменены другим процессом. Попробуйте снова.', status: 409 }
-  }
-
-  // 3. Create building record
-  const { data: building, error } = await supabase
-    .from('buildings')
-    .insert({
-      colony_id: dto.colonyId,
-      type: dto.type,
-      name: dto.name,
-      level: 1,
-      is_active: true,
-      x: dto.x,
-      y: dto.y,
-      group_id: dto.group_id
-    })
-    .select()
-    .single()
-
-  if (error) {
-    return { building: null, error: error.message, status: 500 }
-  }
-
-  // 4. Trigger full resource recalculation
+  // 3. Trigger full resource recalculation
   await recalculateResources(dto.colonyId)
 
-  return { building, error: null, status: 201 }
+  return { building: result.building || null, error: null, status: 201 }
 }
 
 /**
