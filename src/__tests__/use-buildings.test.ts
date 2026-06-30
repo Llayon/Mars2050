@@ -6,6 +6,9 @@ import { useBuildings } from '@/hooks/useBuildings'
 const mockFrom = vi.fn()
 vi.mock('@/lib/supabase', () => ({
   supabase: {
+    auth: {
+      getSession: vi.fn().mockResolvedValue({ data: { session: null } }),
+    },
     from: (...args: unknown[]) => mockFrom(...args),
   },
 }))

@@ -115,8 +115,8 @@ export function DeploymentPlanner({ units, mode, onSave, onCancel, saveLabel }: 
   }
 
   return (
-    <div className="h-full w-full grid grid-cols-1 lg:grid-cols-[280px_1fr_280px] text-white">
-      <aside className="border-r border-cyan-400/20 bg-black/45 p-4 overflow-y-auto">
+    <div className="w-full h-auto min-h-full lg:h-full grid grid-cols-1 lg:grid-cols-[280px_1fr_280px] text-white">
+      <aside className="border-r border-cyan-400/20 bg-black/45 p-4 lg:overflow-y-auto">
           <div className="text-xs uppercase tracking-[0.2em] text-cyan-300">Deployment Phase</div>
           <h2 className="text-xl font-bold mt-1">{mode === 'defense' ? 'Оборона базы' : 'Подготовка к атаке'}</h2>
           <div className="mt-4 grid grid-cols-2 gap-2">

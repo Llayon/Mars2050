@@ -12,7 +12,9 @@ const attackDeploymentPointSchema = z.object({
 
 export const attackSchema = z.object({
   attackerColonyId: z.string().uuid('Invalid attacker colony ID'),
-  defenderColonyId: z.string().uuid('Invalid defender colony ID'),
+  defenderColonyId: z.string().refine(val => val.startsWith('npc_') || z.string().uuid().safeParse(val).success, {
+    message: 'Invalid defender colony ID (must be UUID or npc_ target)',
+  }),
   clientSeed: z.number().int().min(0).max(2_147_483_647).optional(),
   attackerUnitsPlacement: z.array(attackDeploymentPointSchema).optional()
 })

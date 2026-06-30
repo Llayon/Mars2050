@@ -3,6 +3,7 @@ import type { SimHazard, SimUnit } from './combat.sim.types';
 import type { UnitTypeKey } from './combat.types';
 import { UNIT_TYPES } from './combat.config';
 import { PRNG, FIELD_WIDTH, FIELD_HEIGHT } from './combat.utils';
+import { applyOnKillEffects } from './combat.on-kill';
 
 /**
  * Handles death logic for a unit, including resurrections, on-death puddles, and clone spawning.
@@ -22,6 +23,7 @@ export function handleDeath(t: SimUnit, unit: SimUnit, units: SimUnit[], actions
     }
     t.isDead = true;
     actions.push({ unitId: t.id, type: 'die' });
+    applyOnKillEffects(unit, t, actions);
     if (t.onDeathPuddle) {
         hazards.push({
             id: 'hazard_' + Math.floor(rng.next() * 1000000),

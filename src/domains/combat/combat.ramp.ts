@@ -1,6 +1,5 @@
 import type { BattleAction } from './combat.actions'
 import { UNIT_TYPES } from './combat.config'
-import type { UnitTypeKey } from './combat.types'
 import type { SimUnit } from './combat.sim.types'
 
 /**
@@ -13,7 +12,9 @@ import type { SimUnit } from './combat.sim.types'
  * @returns Damage after deterministic ramp scaling.
  */
 export function getRampDamage(attacker: SimUnit, target: SimUnit, baseDamage: number, actions: BattleAction[]): number {
-  const config = UNIT_TYPES[attacker.type as UnitTypeKey]?.baseStats.rampDamage
+  if (!hasUnitConfig(attacker.type)) return baseDamage
+
+  const config = UNIT_TYPES[attacker.type].baseStats.rampDamage
   if (!config) return baseDamage
 
   const previousMultiplier = attacker.rampTargetId === target.id ? attacker.rampMultiplier ?? 1 : 1
@@ -24,4 +25,8 @@ export function getRampDamage(attacker: SimUnit, target: SimUnit, baseDamage: nu
   actions.push({ unitId: attacker.id, type: 'ramp_charge', targetId: target.id, value: multiplier })
 
   return Math.floor(baseDamage * multiplier)
+}
+
+function hasUnitConfig(unitType: string): unitType is keyof typeof UNIT_TYPES {
+  return unitType in UNIT_TYPES
 }

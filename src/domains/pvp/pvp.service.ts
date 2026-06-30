@@ -66,6 +66,8 @@ export async function executeTrade(
   return { success: true, message: 'Торговля завершена!' }
 }
 
+import { generateNpcUnits } from './pvp.practice'
+
 /**
  * Execute an attack between two colonies.
  * Validates ownership, applies the cooldown check, simulates the battle,
@@ -99,11 +101,13 @@ export async function executeAttack(
     return { success: false, error: 'You do not own the attacker colony' }
   }
 
+  const isPractice = defenderColonyId.startsWith('npc_')
+
   const cooldownRemaining = await getAttackCooldownSeconds(
     attackerColonyId,
     ATTACK_COOLDOWN_SECONDS
   )
-  if (cooldownRemaining > 0) {
+  if (!isPractice && cooldownRemaining > 0) {
     return {
       success: false,
       error: `Attack cooldown active: ${cooldownRemaining}s remaining`,
@@ -114,8 +118,15 @@ export async function executeAttack(
   const supabase = getServerClient()
   const { data: attackerUnits } = await supabase
     .from('units').select('*').eq('colony_id', attackerColonyId)
-  const { data: defenderUnits } = await supabase
-    .from('units').select('*').eq('colony_id', defenderColonyId)
+    
+  let defenderUnits: UnitRow[] = []
+  if (isPractice) {
+    defenderUnits = generateNpcUnits(defenderColonyId)
+  } else {
+    const { data } = await supabase
+      .from('units').select('*').eq('colony_id', defenderColonyId)
+    defenderUnits = data || []
+  }
 
   if (!attackerUnits || attackerUnits.length === 0) {
     return { success: false, error: 'У вас нет армии для атаки!' }
@@ -144,48 +155,57 @@ export async function executeAttack(
     clientSeed
   )
 
-  const { deadAttackerBaseIds, deadDefenderBaseIds, hpUpdates } = computeBattlePersistence(
-    attackerUnits as UnitRow[],
-    (defenderUnits || []) as UnitRow[],
-    battleResult.survivors
-  )
+  let stolen: Record<string, number> = {}
+  let battleId: string | undefined = undefined
 
-  const allDeadIds = [...deadAttackerBaseIds, ...deadDefenderBaseIds]
-  if (allDeadIds.length > 0) {
-    await supabase.from('units').delete().in('id', allDeadIds)
-  }
-  for (const upd of hpUpdates) {
-    await supabase.from('units').update({ hp_current: upd.hp_current }).eq('id', upd.id)
-  }
+  if (!isPractice) {
+    const { deadAttackerBaseIds, deadDefenderBaseIds, hpUpdates } = computeBattlePersistence(
+      attackerUnits as UnitRow[],
+      (defenderUnits || []) as UnitRow[],
+      battleResult.survivors
+    )
 
-  const stolen =
-    battleResult.winner === 'attacker'
+    const allDeadIds = [...deadAttackerBaseIds, ...deadDefenderBaseIds]
+    if (allDeadIds.length > 0) {
+      await supabase.from('units').delete().in('id', allDeadIds)
+    }
+    for (const upd of hpUpdates) {
+      await supabase.from('units').update({ hp_current: upd.hp_current }).eq('id', upd.id)
+    }
+
+    stolen = battleResult.winner === 'attacker'
       ? await applyAttackRewards(attackerColonyId, defenderColonyId)
       : {}
 
-  const battleId = await persistBattleWithSnapshot(
-    {
-      attacker_colony_id: attackerColonyId,
-      defender_colony_id: defenderColonyId,
-      winner: battleResult.winner,
-      attacker_units: attackerUnits as unknown as Record<string, unknown>,
-      defender_units: (defenderUnits || []) as unknown as Record<string, unknown>,
-      rewards: stolen,
-    },
-    {
-      seed: battleResult.seed ?? clientSeed ?? 0,
-      initial_state: battleResult.initialState as unknown as Record<string, unknown>,
-      log: battleResult.logs as unknown as Record<string, unknown>,
-      simulationVersion: SNAPSHOT_VERSION,
-    }
-  )
+    const snapId = await persistBattleWithSnapshot(
+      {
+        attacker_colony_id: attackerColonyId,
+        defender_colony_id: defenderColonyId,
+        winner: battleResult.winner,
+        attacker_units: attackerUnits as unknown as Record<string, unknown>,
+        defender_units: (defenderUnits || []) as unknown as Record<string, unknown>,
+        rewards: stolen,
+      },
+      {
+        seed: battleResult.seed ?? clientSeed ?? 0,
+        initial_state: battleResult.initialState as unknown as Record<string, unknown>,
+        log: battleResult.logs as unknown as Record<string, unknown>,
+        simulationVersion: SNAPSHOT_VERSION,
+      }
+    )
+    if (snapId) battleId = snapId
+  }
 
-  const winMsg =
+  let winMsg =
     battleResult.winner === 'attacker'
       ? 'Атака успешна! Враг разбит, ресурсы захвачены.'
       : battleResult.winner === 'defender'
         ? 'Атака провалилась! Защитники отбились.'
         : 'Ничья! Обе стороны понесли тяжелые потери.'
+        
+  if (isPractice) {
+    winMsg = `[PRACTICE] ${winMsg} (Юниты не потеряны)`
+  }
 
   return {
     success: true,

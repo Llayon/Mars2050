@@ -9,7 +9,7 @@ export type BattleActionType =
   | 'cone_attack' | 'beam_tick'
   | 'barrage_marker' | 'barrage_impact'
   | 'chain_jump'
-  | 'side_weapon_attack' | 'ramp_charge'
+  | 'side_weapon_attack' | 'ramp_charge' | 'on_kill'
 
 export interface BattleAction {
   unitId: string
