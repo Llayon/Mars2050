@@ -4,6 +4,7 @@ import { hireUnitSchema } from '@/domains/combat/combat.schemas'
 import { hireUnit } from '@/domains/combat/combat.service'
 import { getServerClient } from '@/domains/resource/resource.server'
 import { getOrCreateColony } from '@/domains/auth/auth.service'
+import type { UnitTypeKey } from '@/domains/combat/combat.types'
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,7 +17,7 @@ export async function POST(request: NextRequest) {
 
     const colonyId = parsed.data.colonyId
 
-    const result = await hireUnit(colonyId, parsed.data.unitType)
+    const result = await hireUnit(colonyId, parsed.data.unitType as UnitTypeKey)
 
     if (!result.success) {
       return apiError('BAD_REQUEST', result.error || 'Failed to hire unit')

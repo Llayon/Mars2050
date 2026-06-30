@@ -9,10 +9,13 @@ import { fetchWithAuth } from '@/lib/fetch-with-auth'
 export function useCombat(colonyId: string | null) {
   const fetcher = async () => {
     if (!colonyId) return []
-    const res = await fetchWithAuth(`/api/combat/units?colonyId=${colonyId}`)
-    const data = await res.json()
-    if (!res.ok) throw new Error(data.error?.message || 'Failed to fetch units')
-    return data.units as UnitRow[]
+    const { data, error } = await supabase
+      .from('units')
+      .select('*')
+      .eq('colony_id', colonyId)
+    
+    if (error) throw new Error(error.message)
+    return data as UnitRow[]
   }
 
   const { data: units, error, mutate, isLoading } = useSWR<UnitRow[]>(

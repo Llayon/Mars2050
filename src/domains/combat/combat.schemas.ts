@@ -12,7 +12,7 @@ const defenseDeploymentPointSchema = z.object({
 
 export const hireUnitSchema = z.object({
   colonyId: z.string().uuid(),
-  unitType: z.enum(['marine', 'exosuit', 'sniper', 'medic', 'rocketeer', 'engineer', 'wall', 'turret']),
+  unitType: z.string().min(1),
 })
 
 export const upgradeUnitSchema = z.object({
