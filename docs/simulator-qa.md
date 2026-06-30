@@ -29,6 +29,7 @@
 | `lifesteal` | Лечение считается от фактически нанесенного HP/shared урона. |
 | `ramp_charge` | Focus-fire юнит наращивает множитель только по той же primary цели. |
 | `percent_hp_damage` | Anti-giant бонус добавляется к primary hit до mitigation и не появляется у обычных/secondary ударов. |
+| `projectile_intercept` | Projectile-defense юнит сбил interceptable hit до shield/HP damage. |
 | `on_kill` | On-kill эффекты появляются только после подтвержденной смерти, не после resurrection. |
 
 ## Known Limitations
@@ -56,5 +57,6 @@
 | **11. Side Weapons** | Goliath против нескольких целей | Primary цель получает основной удар, side targets получают отдельный урон. | Есть `side_weapon_attack`; side weapons не копируют primary statuses. |
 | **12. Ramp Damage** | Ion Crawler долго стреляет в одну heavy цель | Primary урон растет до cap, при смене цели сбрасывается. | `ramp_charge` значения 1 → 1.25 → ... |
 | **13. Percent HP Damage** | Railgun Walker против Behemoth/Titan | Дополнительный урон растет от max HP цели, но упирается в cap. | Есть `percent_hp_damage`, затем обычный `damage`. |
-| **14. On-kill Effects** | Stealth Operative добивает цель | После kill сбрасывается cooldown и применяется self-heal. | Есть `on_kill`; нет срабатывания при revive/resurrection. |
-| **15. Summon Caps / Decoys** | Drone Carrier, Mobile Factory, Hologram Projector | Summons не бесконечны, temporary units исчезают по таймеру. | Есть `spawn_blocked`, temporary death не ломает replay. |
+| **14. Projectile Interception** | Shield Emitter рядом с целью против Missile Buggy / Artillery Crawler | Первый дальний explosive/barrage hit блокируется до shield/HP. | Есть `projectile_intercept`; нет `damage` для сбитого удара. |
+| **15. On-kill Effects** | Stealth Operative добивает цель | После kill сбрасывается cooldown и применяется self-heal. | Есть `on_kill`; нет срабатывания при revive/resurrection. |
+| **16. Summon Caps / Decoys** | Drone Carrier, Mobile Factory, Hologram Projector | Summons не бесконечны, temporary units исчезают по таймеру. | Есть `spawn_blocked`, temporary death не ломает replay. |

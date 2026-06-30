@@ -21,6 +21,7 @@
 - `src/domains/combat/combat.side-weapon.ts` — deterministic side weapon target selection.
 - `src/domains/combat/combat.ramp.ts` — same-target focused-fire damage scaling.
 - `src/domains/combat/combat.percent-damage.ts` — capped percent-HP anti-giant damage.
+- `src/domains/combat/combat.projectile-defense.ts` — deterministic projectile interception.
 - `src/domains/combat/combat.on-kill.ts` — deterministic on-kill effects.
 - `src/domains/combat/combat.weapon-rules.ts` — shared weapon constraints such as minimum range.
 - `src/domains/combat/combat.positioning.ts` — approach/back-away positioning decisions.
@@ -75,12 +76,11 @@
 - Scaling: `rampDamage` increases primary damage while a unit keeps focusing the same target; `percentHpDamage` adds capped anti-giant bonus damage to primary hits before mitigation.
 - Death/kill: temporary spawns expire deterministically, on-death puddles create hazards, and `onKill` can reset cooldown/heal/apply a status.
 - Summons: `spawnCap` prevents infinite mobile factory/drone carrier/decoy loops.
-- Defensive primitives: shield aura, regen aura, cleanse, status immunity, damage sharing, reactive armor charges.
+- Defensive primitives: shield aura, regen aura, cleanse, status immunity, damage sharing, reactive armor charges, projectile interception.
 - Battlefield objects: barriers/temporary spawns, mines, decoys, hazards, and deterministic pull displacement.
 - Minimum range is handled by `combat.weapon-rules.ts` and `combat.positioning.ts`; artillery can back away instead of firing point blank.
 
 ## Current Known Gaps
-- Projectile interception is not yet a full attack-event filter.
 - Stance/mode transforms are not implemented as a reusable primitive.
 - Charge scaling is still a future anti-giant/carry tool.
 - Hack control currently disables actions; conversion/redirect behavior is future work.

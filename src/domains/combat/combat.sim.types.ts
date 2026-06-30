@@ -42,9 +42,7 @@ export interface SimUnit {
   speed: number
   range: number
   attackType: 'single' | 'aoe' | 'heal' | 'spawn'
-  aoeRadius?: number
-  spawnType?: string
-  spawnCap?: number
+  aoeRadius?: number; spawnType?: string; spawnCap?: number
   actionCooldownMax: number
   actionCooldown: number
   isFlying: boolean
@@ -96,4 +94,5 @@ export interface SimUnit {
   onDeathPuddle?: 'napalm' | 'acid' | 'emp'
   multishot?: number; antiAirDamageMult?: number
   pullOnHit?: { radius: number; strength: number; maxTargets?: number }; reactiveArmorCharges?: number; reactiveArmorBlock?: number; damageShareRadius?: number; damageShareRatio?: number; damageShareMaxTargets?: number
+  projectileInterceptRadius?: number; projectileInterceptCooldownMax?: number; projectileInterceptCooldown?: number; projectileInterceptMaxDamage?: number
 }

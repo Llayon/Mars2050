@@ -41,6 +41,7 @@ export interface UnitBaseStats {
   linePierce?: { width: number; damageMultiplier: number; maxTargets?: number }
   pullOnHit?: { radius: number; strength: number; maxTargets?: number }
   reactiveArmor?: { charges: number; block: number }; damageShare?: { radius: number; ratio: number; maxTargets?: number }
+  projectileInterception?: { radius: number; cooldownTicks: number; maxDamage?: number }
   statusOnHit?: StatusEffect[]
   markOnHit?: TargetMarkConfig
   supportAuras?: SupportAura[]

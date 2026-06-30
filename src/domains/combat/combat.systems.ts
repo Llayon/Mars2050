@@ -12,9 +12,11 @@ import { applyTargetMark, tickTargetMark } from './combat.mark';
 import { getMinimumActionRange } from './combat.weapon-rules';
 import { getSideWeaponDamage, getSideWeaponTargets } from './combat.side-weapon';
 import { getRampDamage } from './combat.ramp';
+import { isProjectileInterceptableAttack } from './combat.projectile-defense';
 
 export function tickModifiersSystem(unit: SimUnit, dt: number, actions: BattleAction[]) {
   if (unit.actionCooldown > 0) unit.actionCooldown = Math.max(0, unit.actionCooldown - 1);
+  if ((unit.projectileInterceptCooldown ?? 0) > 0) unit.projectileInterceptCooldown = Math.max(0, (unit.projectileInterceptCooldown ?? 0) - 1);
   tickTemporaryUnit(unit, actions);
   tickStatuses(unit, actions);
   tickTargetMark(unit, actions);
@@ -64,9 +66,16 @@ export function actionSystem(unit: SimUnit, target: SimUnit, units: SimUnit[], h
          if (target.isDead) break;
 
          emitAttackIntent(unit, target, actions);
-         applyCombatDamage(unit, target, getRampDamage(unit, target, unit.attack, actions), actions, createDamageContext(unit, units, actions, hazards, rng));
+         const damageResult = applyCombatDamage(
+           unit,
+           target,
+           getRampDamage(unit, target, unit.attack, actions),
+           actions,
+           createDamageContext(unit, units, actions, hazards, rng, true, isProjectileInterceptableAttack(unit))
+         );
 
          unit.hasAttacked = true;
+         if (damageResult.intercepted) continue;
 
          applyOnHitStatuses(unit, target, actions);
          applyTargetMark(unit, target, actions);
@@ -101,7 +110,7 @@ export function actionSystem(unit: SimUnit, target: SimUnit, units: SimUnit[], h
              for (const e of splashEnemies) {
                  if (getDistance(target.x, target.y, e.x, e.y) <= radius) {
                      emitAttackIntent(unit, e, actions);
-                     applyCombatDamage(unit, e, Math.floor(unit.attack * 0.5), actions, createDamageContext(unit, units, actions, hazards, rng, false));
+                     applyCombatDamage(unit, e, Math.floor(unit.attack * 0.5), actions, createDamageContext(unit, units, actions, hazards, rng, false, false));
 
                      applyOnHitStatuses(unit, e, actions);
                      applyTargetMark(unit, e, actions);
@@ -136,7 +145,7 @@ function processLinePierce(unit: SimUnit, target: SimUnit, units: SimUnit[], act
 
   for (const secondary of getLinePierceTargets(unit, target, units)) {
     emitAttackIntent(unit, secondary, actions);
-    applyCombatDamage(unit, secondary, Math.floor(unit.attack * multiplier), actions, createDamageContext(unit, units, actions, hazards, rng, false));
+    applyCombatDamage(unit, secondary, Math.floor(unit.attack * multiplier), actions, createDamageContext(unit, units, actions, hazards, rng, false, false));
     applyOnHitStatuses(unit, secondary, actions);
     applyTargetMark(unit, secondary, actions);
     if (secondary.hp <= 0 && !secondary.isDead) handleDeath(secondary, unit, units, actions, hazards, rng);
@@ -165,7 +174,7 @@ function processBarrageAttack(unit: SimUnit, target: SimUnit, units: SimUnit[], 
 
   for (const impact of getBarrageImpacts(unit, target)) {
     actions.push({ unitId: unit.id, type: 'barrage_marker', targetId: target.id, toX: impact.x, toY: impact.y, radius: impact.radius, value: impact.index });
-    applySecondaryWeaponTargets(unit, getBarrageTargets(unit, impact, units), multiplier, units, actions, hazards, rng);
+    applySecondaryWeaponTargets(unit, getBarrageTargets(unit, impact, units), multiplier, units, actions, hazards, rng, true);
     actions.push({ unitId: unit.id, type: 'barrage_impact', targetId: target.id, toX: impact.x, toY: impact.y, radius: impact.radius, value: impact.index });
   }
 }
@@ -173,7 +182,7 @@ function processBarrageAttack(unit: SimUnit, target: SimUnit, units: SimUnit[], 
 function processChainAttack(unit: SimUnit, target: SimUnit, units: SimUnit[], actions: BattleAction[], hazards: SimHazard[], rng: PRNG): void {
   for (const hit of getChainTargets(unit, target, units)) {
     actions.push({ unitId: unit.id, type: 'chain_jump', targetId: hit.target.id, value: hit.jump });
-    applyCombatDamage(unit, hit.target, Math.floor(unit.attack * hit.multiplier), actions, createDamageContext(unit, units, actions, hazards, rng, false));
+    applyCombatDamage(unit, hit.target, Math.floor(unit.attack * hit.multiplier), actions, createDamageContext(unit, units, actions, hazards, rng, false, false));
     applyOnHitStatuses(unit, hit.target, actions);
     applyTargetMark(unit, hit.target, actions);
     if (hit.target.hp <= 0 && !hit.target.isDead) handleDeath(hit.target, unit, units, actions, hazards, rng);
@@ -186,22 +195,23 @@ function processSideWeaponAttack(unit: SimUnit, target: SimUnit, units: SimUnit[
 
   for (const secondary of getSideWeaponTargets(unit, target, units)) {
     actions.push({ unitId: unit.id, type: 'side_weapon_attack', targetId: secondary.id });
-    applyCombatDamage(unit, secondary, damage, actions, createDamageContext(unit, units, actions, hazards, rng, false));
+    applyCombatDamage(unit, secondary, damage, actions, createDamageContext(unit, units, actions, hazards, rng, false, false));
     if (secondary.hp <= 0 && !secondary.isDead) handleDeath(secondary, unit, units, actions, hazards, rng);
   }
 }
 
-function applySecondaryWeaponTargets(unit: SimUnit, targets: SimUnit[], multiplier: number, units: SimUnit[], actions: BattleAction[], hazards: SimHazard[], rng: PRNG): void {
+function applySecondaryWeaponTargets(unit: SimUnit, targets: SimUnit[], multiplier: number, units: SimUnit[], actions: BattleAction[], hazards: SimHazard[], rng: PRNG, interceptable = false): void {
   for (const secondary of targets) {
-    applyCombatDamage(unit, secondary, Math.floor(unit.attack * multiplier), actions, createDamageContext(unit, units, actions, hazards, rng, false));
+    const result = applyCombatDamage(unit, secondary, Math.floor(unit.attack * multiplier), actions, createDamageContext(unit, units, actions, hazards, rng, false, interceptable));
+    if (result.intercepted) continue;
     applyOnHitStatuses(unit, secondary, actions);
     applyTargetMark(unit, secondary, actions);
     if (secondary.hp <= 0 && !secondary.isDead) handleDeath(secondary, unit, units, actions, hazards, rng);
   }
 }
 
-function createDamageContext(unit: SimUnit, units: SimUnit[], actions: BattleAction[], hazards: SimHazard[], rng: PRNG, allowPercentHpDamage = true) {
-  return { units, allowPercentHpDamage, onUnitDeath: (target: SimUnit) => handleDeath(target, unit, units, actions, hazards, rng) };
+function createDamageContext(unit: SimUnit, units: SimUnit[], actions: BattleAction[], hazards: SimHazard[], rng: PRNG, allowPercentHpDamage = true, interceptable = false) {
+  return { units, allowPercentHpDamage, interceptable, onUnitDeath: (target: SimUnit) => handleDeath(target, unit, units, actions, hazards, rng) };
 }
 
 function tickTemporaryUnit(unit: SimUnit, actions: BattleAction[]): void {

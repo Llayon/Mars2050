@@ -156,6 +156,7 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
         groundDamageMult: modGroundDamageMult,
         pullOnHit: config.baseStats.pullOnHit ? { radius: config.baseStats.pullOnHit.radius * 40, strength: config.baseStats.pullOnHit.strength * 40, maxTargets: config.baseStats.pullOnHit.maxTargets } : undefined,
         reactiveArmorCharges: config.baseStats.reactiveArmor?.charges, reactiveArmorBlock: config.baseStats.reactiveArmor?.block, damageShareRadius: config.baseStats.damageShare?.radius ? config.baseStats.damageShare.radius * 40 : undefined, damageShareRatio: config.baseStats.damageShare?.ratio, damageShareMaxTargets: config.baseStats.damageShare?.maxTargets,
+        projectileInterceptRadius: config.baseStats.projectileInterception?.radius, projectileInterceptCooldownMax: config.baseStats.projectileInterception?.cooldownTicks, projectileInterceptCooldown: 0, projectileInterceptMaxDamage: config.baseStats.projectileInterception?.maxDamage,
         offsetX: ox,
         offsetY: oy,
         x: cx + ox,

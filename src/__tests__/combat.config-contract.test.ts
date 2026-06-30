@@ -14,6 +14,7 @@ function hasUtilityBehavior(stats: UnitBaseStats): boolean {
     || (stats.supportAuras?.length ?? 0) > 0
     || stats.mineOnAction !== undefined
     || stats.pullOnHit !== undefined
+    || stats.projectileInterception !== undefined
 }
 
 describe('combat unit config contract', () => {
@@ -87,6 +88,13 @@ describe('combat unit config contract', () => {
         expect(stats.percentHpDamage.percent, `${unitType} has percent HP damage without positive percent`).toBeGreaterThan(0)
         expect(stats.percentHpDamage.percent, `${unitType} has percent HP damage above 100%`).toBeLessThanOrEqual(1)
         expect(stats.percentHpDamage.maxBonus, `${unitType} has percent HP damage without positive cap`).toBeGreaterThan(0)
+      }
+      if (stats.projectileInterception) {
+        expect(stats.projectileInterception.radius, `${unitType} has projectile interception without positive radius`).toBeGreaterThan(0)
+        expect(stats.projectileInterception.cooldownTicks, `${unitType} has projectile interception without positive cooldown`).toBeGreaterThan(0)
+        if (stats.projectileInterception.maxDamage !== undefined) {
+          expect(stats.projectileInterception.maxDamage, `${unitType} has projectile interception without positive max damage`).toBeGreaterThan(0)
+        }
       }
       if (stats.onKill) {
         expect(Boolean(stats.onKill.cooldownReset || stats.onKill.healPercent || stats.onKill.status), `${unitType} has on-kill without an effect`).toBe(true)

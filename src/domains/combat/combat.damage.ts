@@ -2,6 +2,7 @@ import type { BattleAction } from './combat.actions'
 import type { SimUnit } from './combat.sim.types'
 import { getMarkedDamageMultiplier, getMarkedExecuteThreshold } from './combat.mark'
 import { getPercentHpDamage } from './combat.percent-damage'
+import { tryInterceptProjectile } from './combat.projectile-defense'
 import { getStatusValue } from './combat.status'
 import { getDistance } from './combat.utils'
 
@@ -14,12 +15,14 @@ export interface CombatDamageResult {
   shieldBroken: boolean
   blockedDamage: number
   lifesteal: number
+  intercepted: boolean
 }
 
 export interface CombatDamageContext {
   units?: SimUnit[]
   onUnitDeath?: (unit: SimUnit) => void
   allowPercentHpDamage?: boolean
+  interceptable?: boolean
 }
 
 /**
@@ -44,6 +47,9 @@ export function applyCombatDamage(
   const raw = baseRaw + percentHpDamage
   if (percentHpDamage > 0 && actions) {
     actions.push({ unitId: attacker.id, type: 'percent_hp_damage', targetId: target.id, value: percentHpDamage })
+  }
+  if (context.interceptable && context.units && tryInterceptProjectile(attacker, target, raw, context.units, actions)) {
+    return createDamageResult({ blockedDamage: raw, intercepted: true })
   }
 
   const defense = getEffectiveDefense(target)
@@ -194,6 +200,7 @@ function createDamageResult(overrides: Partial<CombatDamageResult> = {}): Combat
     sharedDamageEvents: [],
     blockedDamage: 0,
     lifesteal: 0,
+    intercepted: false,
     ...overrides,
   }
 }

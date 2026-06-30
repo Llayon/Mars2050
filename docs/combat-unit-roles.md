@@ -152,15 +152,15 @@ The following mechanics are now implemented as reusable runtime primitives:
 | Mine placement | `combat.minefield.ts` | `minelayer_rover` |
 | Pull / forced displacement | `combat.displacement.ts` | `gravity_manipulator` |
 | Decoys / temporary barriers | `combat.systems.utils.ts` | `hologram_projector`, `shield_emitter` |
+| Projectile interception | `combat.projectile-defense.ts`, `combat.damage.ts` | `shield_emitter` |
 | Cone / beam / barrage / chain / side weapons | `combat.attack-geometry.ts`, `combat.side-weapon.ts` | `flamethrower`, `sonic_devastator`, `ion_crawler`, `artillery_crawler`, `plasma_tank`, `goliath_gunship` |
 | Minimum range / back-away positioning | `combat.weapon-rules.ts`, `combat.positioning.ts` | `artillery_crawler` |
 | Ramp focused-fire damage | `combat.ramp.ts` | `ion_crawler` |
 | Percent-HP damage | `combat.percent-damage.ts`, `combat.damage.ts` | `railgun_walker` |
 | On-kill effects | `combat.on-kill.ts` | `stealth_operative` |
 
-Remaining major gaps are projectile interception, stance/mode transforms,
-charge scaling, richer hack-control behavior, and richer vision/smoke
-mechanics.
+Remaining major gaps are stance/mode transforms, charge scaling, richer
+hack-control behavior, and richer vision/smoke mechanics.
 
 ### Damage / shield pipeline
 
@@ -216,7 +216,7 @@ upgrades, auras, or hazards without hardcoding one-off behavior.
 ### Primitive implementation order
 
 1. Defensive primitives: flat damage block, damage sharing, status immunity,
-   reactive armor charges. Mostly implemented except projectile interception.
+   reactive armor charges, and projectile interception are implemented.
 2. Role-transform primitives: target marks are implemented; stance/mode transform and burrow remain future work.
 3. Scaling primitives: ramp damage and percent HP damage are implemented; charge scaling remains future work.
 4. Weapon primitives: chain attacks and side weapons are implemented; richer split fire remains future work.
@@ -285,7 +285,7 @@ upgrades, auras, or hazards without hardcoding one-off behavior.
 | `railgun_walker` | Range pressure/anti-heavy | 280 range, `long_range_priority`, line pierce, capped percent-HP bonus | Ready | Good heavy hunter. Disable-control rounds upgrade fits well. |
 | `drone_carrier` | Air summoner/screen producer | Flying, `spawn`, summons scout drones | Tune | Good concept. Validate spawn cadence and target behavior. |
 | `cryo_tank` | Movement control/screen clear | AoE plus `slow` status on hit | Tune | Freeze/root can remain an upgrade; baseline slow is implemented. |
-| `shield_emitter` | Guard/projectile defense | Shield aura plus temporary barrier spawn | Partial | Projectile interception is still missing. |
+| `shield_emitter` | Guard/projectile defense | Shield aura, temporary barrier spawn, projectile interception | Tune | Now has a real projectile-defense hook. Tune cooldown, max damage, and visual clarity. |
 | `interceptor` | Air superiority specialist | Flying, can AA, `anti_air` | Ready | Clear anti-air flyer. Should be mediocre vs ground. |
 | `hacker_rover` | Hack control/specialist counter | Attack 0, support hunter, applies `hacked` action disable | Partial | Conversion/redirect behavior is still future work. |
 | `artillery_crawler` | Extreme range pressure | Minimum range plus deterministic barrage impacts | Ready | Clear late-game artillery. Watch overkill and minimum-range retreat behavior. |
@@ -314,7 +314,7 @@ completion before their role is considered finished:
 3. `sonic_devastator` - applies suppression and cone damage, but true knockback/disruption is still partial.
 4. `radar_zepplin` - reveal aura exists; range relay / targeting relay is still future work.
 5. `officer` - still behaves too much like a healer; needs command aura/buff identity.
-6. `shield_emitter` - shield aura and temporary barrier exist; projectile interception is still missing.
+6. `shield_emitter` - shield aura, temporary barrier, and projectile interception exist; cooldown/max-damage tuning remains.
 7. `hologram_projector` - temporary low-HP decoys exist; needs final target-priority and visual clarity tuning.
 
 ### P0.5: Status contract
@@ -441,7 +441,7 @@ Missing upgrade categories:
 1. Add regression tests for no-op utility support and control-role units.
 2. Normalize anti-air capability in config and tests.
 3. Split utility support healing/repair/buff behavior.
-4. Implement defensive primitives: flat damage block, damage sharing, status
+4. Tune defensive primitives: flat damage block, damage sharing, status
    immunity, reactive armor charges, cleanse-on-action, and projectile
    interception.
 5. Add transform/control primitives: stance transforms, target marks, burrow,
