@@ -26,9 +26,15 @@ export interface TargetingProfileConfig {
 
 export interface UnitBaseStats {
   hp: number; attack: number; defense: number; speed: number; range: number
+  minimumRange?: number
   attackType: 'single' | 'aoe' | 'heal' | 'spawn'
   aoeRadius?: number; spawnType?: string; spawnCap?: number; actionCooldownMax?: number
   spawnOverrides?: { hp?: number; attack?: number; isTemporary?: boolean; duration?: number }
+  coneAttack?: { angleDeg: number; damageMultiplier: number; maxTargets?: number }
+  beamAttack?: { width: number; damageMultiplier: number; maxTargets?: number }
+  barrageAttack?: { impacts: number; radius: number; spreadRadius: number; damageMultiplier: number; maxTargetsPerImpact?: number }
+  chainAttack?: { jumps: number; radius: number; damageMultiplier: number; falloff?: number }
+  sideWeapon?: { damage: number; range: number; maxTargets: number; canTargetAir?: boolean }
   linePierce?: { width: number; damageMultiplier: number; maxTargets?: number }
   pullOnHit?: { radius: number; strength: number; maxTargets?: number }
   reactiveArmor?: { charges: number; block: number }; damageShare?: { radius: number; ratio: number; maxTargets?: number }

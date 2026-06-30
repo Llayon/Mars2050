@@ -47,6 +47,38 @@ describe('combat unit config contract', () => {
         expect(stats.markOnHit.duration, `${unitType} has target mark without positive duration`).toBeGreaterThan(0)
         expect((stats.markOnHit.damageMultiplier ?? 0) + (stats.markOnHit.executeThreshold ?? 0), `${unitType} has target mark without effect`).toBeGreaterThan(0)
       }
+      if (stats.coneAttack) {
+        expect(stats.coneAttack.angleDeg, `${unitType} has cone attack without positive angle`).toBeGreaterThan(0)
+        expect(stats.coneAttack.angleDeg, `${unitType} has cone attack above 180 degrees`).toBeLessThanOrEqual(180)
+        expect(stats.coneAttack.damageMultiplier, `${unitType} has cone attack without positive damage`).toBeGreaterThan(0)
+      }
+      if (stats.beamAttack) {
+        expect(stats.beamAttack.width, `${unitType} has beam attack without positive width`).toBeGreaterThan(0)
+        expect(stats.beamAttack.damageMultiplier, `${unitType} has beam attack without positive damage`).toBeGreaterThan(0)
+      }
+      if (stats.minimumRange !== undefined) {
+        expect(stats.minimumRange, `${unitType} has negative minimum range`).toBeGreaterThanOrEqual(0)
+        expect(stats.minimumRange, `${unitType} has minimum range greater than or equal to range`).toBeLessThan(stats.range)
+      }
+      if (stats.barrageAttack) {
+        expect(stats.barrageAttack.impacts, `${unitType} has barrage without positive impacts`).toBeGreaterThan(0)
+        expect(stats.barrageAttack.radius, `${unitType} has barrage without positive radius`).toBeGreaterThan(0)
+        expect(stats.barrageAttack.spreadRadius, `${unitType} has barrage with negative spread`).toBeGreaterThanOrEqual(0)
+        expect(stats.barrageAttack.damageMultiplier, `${unitType} has barrage without positive damage`).toBeGreaterThan(0)
+      }
+      if (stats.chainAttack) {
+        expect(stats.chainAttack.jumps, `${unitType} has chain attack without positive jumps`).toBeGreaterThan(0)
+        expect(stats.chainAttack.radius, `${unitType} has chain attack without positive radius`).toBeGreaterThan(0)
+        expect(stats.chainAttack.damageMultiplier, `${unitType} has chain attack without positive damage`).toBeGreaterThan(0)
+        if (stats.chainAttack.falloff !== undefined) {
+          expect(stats.chainAttack.falloff, `${unitType} has chain attack without positive falloff`).toBeGreaterThan(0)
+        }
+      }
+      if (stats.sideWeapon) {
+        expect(stats.sideWeapon.damage, `${unitType} has side weapon without positive damage`).toBeGreaterThan(0)
+        expect(stats.sideWeapon.range, `${unitType} has side weapon without positive range`).toBeGreaterThan(0)
+        expect(stats.sideWeapon.maxTargets, `${unitType} has side weapon without positive maxTargets`).toBeGreaterThan(0)
+      }
     }
   })
 

@@ -17,14 +17,15 @@ import {
 } from '@/domains/combat/combat.deployment'
 import { DeploymentBoardField } from './deployment-board-field'
 
-interface DeploymentBoardProps {
+export interface DeploymentPlannerProps {
   units: UnitRow[]
   mode: 'defense' | 'attack'
   onSave: (placement: DeploymentPoint[]) => void
-  onCancel: () => void
+  onCancel?: () => void
+  saveLabel?: string
 }
 
-export function DeploymentBoard({ units, mode, onSave, onCancel }: DeploymentBoardProps) {
+export function DeploymentPlanner({ units, mode, onSave, onCancel, saveLabel }: DeploymentPlannerProps) {
   const [placement, setPlacement] = useState<Record<string, { x: number, y: number }>>(() => {
     const initial: Record<string, { x: number, y: number }> = {}
     units.forEach(u => {
@@ -114,9 +115,8 @@ export function DeploymentBoard({ units, mode, onSave, onCancel }: DeploymentBoa
   }
 
   return (
-    <div className="fixed inset-0 bg-[#070b12] z-50 text-white">
-      <div className="h-full grid grid-cols-1 lg:grid-cols-[280px_1fr_280px]">
-        <aside className="border-r border-cyan-400/20 bg-black/45 p-4 overflow-y-auto">
+    <div className="h-full w-full grid grid-cols-1 lg:grid-cols-[280px_1fr_280px] text-white">
+      <aside className="border-r border-cyan-400/20 bg-black/45 p-4 overflow-y-auto">
           <div className="text-xs uppercase tracking-[0.2em] text-cyan-300">Deployment Phase</div>
           <h2 className="text-xl font-bold mt-1">{mode === 'defense' ? 'Оборона базы' : 'Подготовка к атаке'}</h2>
           <div className="mt-4 grid grid-cols-2 gap-2">
@@ -188,17 +188,26 @@ export function DeploymentBoard({ units, mode, onSave, onCancel }: DeploymentBoa
           )}
 
           <div className="mt-auto flex gap-2">
-            <button onClick={onCancel} className="flex-1 border border-white/15 bg-white/5 hover:bg-white/10 px-3 py-2">Отмена</button>
+            {onCancel && (
+              <button onClick={onCancel} className="flex-1 border border-white/15 bg-white/5 hover:bg-white/10 px-3 py-2">Отмена</button>
+            )}
             <button
               onClick={() => canSave && onSave(serializeDeployment(placement))}
               disabled={!canSave}
               className="flex-1 border border-green-300/40 bg-green-700/70 hover:bg-green-600 disabled:opacity-40 disabled:hover:bg-green-700/70 px-3 py-2"
             >
-              Сохранить
+              {saveLabel || 'Сохранить'}
             </button>
           </div>
         </aside>
-      </div>
+    </div>
+  )
+}
+
+export function DeploymentBoard(props: DeploymentPlannerProps) {
+  return (
+    <div className="fixed inset-0 bg-[#070b12] z-50 text-white">
+      <DeploymentPlanner {...props} />
     </div>
   )
 }

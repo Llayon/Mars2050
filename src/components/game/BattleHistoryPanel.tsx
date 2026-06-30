@@ -4,11 +4,24 @@ import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { simulateBattle } from '@/domains/combat/combat.engine'
 import type { UnitRow, BattleTick, SimUnit, Obstacle } from '@/domains/combat/combat.types'
+import type { AttackResult } from '@/domains/pvp/pvp.types'
+import { usePvp } from '@/hooks/usePvp'
+import { useToast } from '@/components/ui/toast'
 import { BattleReplayModal } from './BattleReplayModal'
 import { RESOURCE_NAMES } from '@/domains/resource/resource.types'
 
+export interface BattleReplayPayload {
+  attackerUnits: UnitRow[]
+  defenderUnits: UnitRow[]
+  initialState?: SimUnit[]
+  logs: BattleTick[]
+  obstacles?: Obstacle[]
+  message: string
+}
+
 interface BattleHistoryPanelProps {
   colonyId: string
+  onReplay?: (payload: BattleReplayPayload) => void
 }
 
 interface BattleRow {
@@ -22,10 +35,12 @@ interface BattleRow {
   created_at: string
 }
 
-export function BattleHistoryPanel({ colonyId }: BattleHistoryPanelProps) {
+export function BattleHistoryPanel({ colonyId, onReplay }: BattleHistoryPanelProps) {
   const [battles, setBattles] = useState<BattleRow[]>([])
   const [loading, setLoading] = useState(true)
   const [replayData, setReplayData] = useState<Record<string, unknown> | null>(null)
+  const { fetchBattle } = usePvp(colonyId)
+  const { toast } = useToast()
 
   useEffect(() => {
     async function loadBattles() {
@@ -42,17 +57,38 @@ export function BattleHistoryPanel({ colonyId }: BattleHistoryPanelProps) {
     loadBattles()
   }, [colonyId])
 
-  function handleReplay(battle: BattleRow) {
-    // Reconstruct battle log deterministically
-    const result = simulateBattle(battle.attacker_units as UnitRow[], battle.defender_units as UnitRow[])
-    setReplayData({
-      attackerUnits: battle.attacker_units,
-      defenderUnits: battle.defender_units,
-      logs: result.logs,
-      initialState: result.initialState,
-      obstacles: result.obstacles,
-      message: `Победитель: ${battle.winner === 'attacker' ? 'Атакующий' : battle.winner === 'defender' ? 'Защитник' : 'Ничья'}`
-    })
+  async function handleReplay(battle: BattleRow) {
+    let payload: BattleReplayPayload
+
+    try {
+      const data = await fetchBattle(battle.id) as AttackResult
+      payload = {
+        attackerUnits: data.attackerUnits || battle.attacker_units,
+        defenderUnits: data.defenderUnits || battle.defender_units,
+        initialState: data.initialState,
+        logs: data.logs || [],
+        obstacles: data.obstacles,
+        message: `Победитель: ${battle.winner === 'attacker' ? 'Атакующий' : battle.winner === 'defender' ? 'Защитник' : 'Ничья'}`
+      }
+    } catch (e) {
+      toast('Серверный реплей недоступен, симулируем локально', 'error')
+      // Fallback: reconstruct deterministically if API fails
+      const result = simulateBattle(battle.attacker_units as UnitRow[], battle.defender_units as UnitRow[])
+      payload = {
+        attackerUnits: battle.attacker_units,
+        defenderUnits: battle.defender_units,
+        logs: result.logs,
+        initialState: result.initialState,
+        obstacles: result.obstacles,
+        message: `Победитель: ${battle.winner === 'attacker' ? 'Атакующий' : battle.winner === 'defender' ? 'Защитник' : 'Ничья'}`
+      }
+    }
+
+    if (onReplay) {
+      onReplay(payload)
+      return
+    }
+    setReplayData(payload as unknown as Record<string, unknown>)
   }
 
   if (loading) return <div className="text-center py-4 text-gray-400">Загрузка...</div>

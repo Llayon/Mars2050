@@ -4,6 +4,7 @@ interface ActionBottomBarProps {
   onToggleArmy: () => void
   onToggleBuild: () => void
   onToggleManagement: () => void
+  onToggleIntel: () => void
 }
 
 export function ActionBottomBar({
@@ -11,7 +12,8 @@ export function ActionBottomBar({
   onViewChange,
   onToggleArmy,
   onToggleBuild,
-  onToggleManagement
+  onToggleManagement,
+  onToggleIntel
 }: ActionBottomBarProps) {
   
   const baseTabClass = "px-6 py-2.5 rounded-t-lg font-bold text-xs tracking-widest uppercase transition-all border-t border-l border-r relative flex items-center gap-2"
@@ -59,11 +61,11 @@ export function ActionBottomBar({
         <div className="w-8"></div>
 
         <button 
-          onClick={onToggleManagement} 
-          className="px-6 py-2 mb-1 rounded font-bold text-xs tracking-widest uppercase transition-all bg-slate-800/80 border border-slate-600 hover:border-amber-400 hover:text-amber-200 text-slate-300 flex items-center gap-2"
+          onClick={onToggleIntel} 
+          className="px-6 py-2 mb-1 rounded font-bold text-xs tracking-widest uppercase transition-all bg-purple-900/40 border border-purple-500/50 hover:border-purple-400 hover:text-purple-200 text-purple-300 flex items-center gap-2 shadow-[0_0_15px_rgba(168,85,247,0.1)]"
         >
-          <span className="w-2 h-2 bg-slate-400 rounded-sm" />
-          Управление
+          <span className="w-2 h-2 bg-purple-400 rounded-sm shadow-[0_0_8px_rgba(168,85,247,0.8)]" />
+          Данные
         </button>
       </div>
     </div>

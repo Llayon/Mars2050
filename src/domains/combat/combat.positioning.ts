@@ -2,6 +2,7 @@ import type { SimUnit } from './combat.sim.types'
 import { getMeleeEngagementPoint, isMeleeEngagementReady, isMeleeWaitingReady } from './combat.melee-engagement'
 import { getEffectiveActionRange } from './combat.status'
 import { getDistance } from './combat.utils'
+import { getMinimumActionRange } from './combat.weapon-rules'
 
 const MELEE_RANGE = 60
 export interface PositioningDecision {
@@ -21,9 +22,10 @@ export function getPositioningDecision(
   if (unit.speed <= 0 || unit.attackType === 'spawn') return { point: targetPoint, shouldMove: false, combatInRange: true }
 
   const effectiveRange = getEffectiveActionRange(unit)
+  const minimumRange = getMinimumActionRange(unit)
   const combatInRange = unit.attackType === 'heal'
     ? target.hp < target.maxHp && distEdge <= effectiveRange
-    : distEdge <= effectiveRange
+    : (minimumRange <= 0 || distEdge >= minimumRange) && distEdge <= effectiveRange
 
   if (unit.range <= MELEE_RANGE && unit.attackType !== 'heal') {
     const ready = isMeleeEngagementReady(unit, target)
@@ -38,6 +40,10 @@ export function getPositioningDecision(
   if (unit.attackType === 'heal') {
     const shouldMove = distEdge > effectiveRange
     return { point: getPreferredRangePoint(unit, target, targetRadius, myRadius, effectiveRange, 0.65), shouldMove, combatInRange }
+  }
+
+  if (minimumRange > 0 && distEdge < minimumRange) {
+    return { point: getPreferredRangePoint(unit, target, targetRadius, myRadius, effectiveRange, 0.75), shouldMove: true, combatInRange: false }
   }
 
   if (distEdge > effectiveRange) return { point: targetPoint, shouldMove: true, combatInRange: false }

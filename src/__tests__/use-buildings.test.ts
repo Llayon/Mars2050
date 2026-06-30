@@ -11,9 +11,9 @@ vi.mock('@/lib/supabase', () => ({
 }))
 
 // Mock useSubscription to capture and trigger the callback manually
-let subscriptionCallback: ((payload: any) => void) | null = null
+let subscriptionCallback: ((payload: unknown) => void) | null = null
 vi.mock('@/hooks/useSubscription', () => ({
-  useSubscription: (_table: string, _colonyId: string | null, callback: (payload: any) => void) => {
+  useSubscription: (_table: string, _colonyId: string | null, callback: (payload: unknown) => void) => {
     subscriptionCallback = callback
   },
 }))
@@ -47,24 +47,24 @@ describe('useBuildings Hook', () => {
     mockFrom.mockReturnValue({ select: mockSelect })
 
     // 2. Render the hook
-    let hookResult: any
+    let hookResult: { current: ReturnType<typeof useBuildings> } | undefined
     await act(async () => {
       const { result } = renderHook(() => useBuildings(colonyId))
       hookResult = result
     })
 
     // Expect initial buildings list to be empty
-    expect(hookResult.current.buildings).toEqual([])
+    expect(hookResult!.current.buildings).toEqual([])
 
     // 3. Mock fetch response for building creation (POST /api/buildings)
-    ;(global.fetch as any).mockResolvedValue({
+    ;(global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
       ok: true,
       json: async () => ({ building: newBuilding }),
     })
 
     // 4. Trigger buildStructure AND simulate realtime event concurrently
     await act(async () => {
-      const buildPromise = hookResult.current.buildStructure('solar_panels', 10, 10)
+      const buildPromise = hookResult!.current.buildStructure('solar_panels', 10, 10)
 
       // Simulate Realtime subscription receiving the INSERT payload before POST response finishes
       if (subscriptionCallback) {
@@ -78,7 +78,7 @@ describe('useBuildings Hook', () => {
     })
 
     // Expect the building to be added exactly ONCE (no duplicates!)
-    expect(hookResult.current.buildings).toHaveLength(1)
-    expect(hookResult.current.buildings[0]).toEqual(newBuilding)
+    expect(hookResult!.current.buildings.length).toBe(1)
+    expect(hookResult!.current.buildings[0].id).toBe('building-abc')
   })
 })

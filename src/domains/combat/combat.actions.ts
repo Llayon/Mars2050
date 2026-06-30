@@ -6,6 +6,10 @@ export type BattleActionType =
   | 'damage' | 'damage_share' | 'shield_damage' | 'shield_break' | 'lifesteal' | 'unit_blocked_damage'
   | 'status_apply' | 'status_expire' | 'status_cleanse' | 'status_tick' | 'status_immune'
   | 'shield_apply' | 'target_mark' | 'target_mark_expire' | 'spawn_blocked'
+  | 'cone_attack' | 'beam_tick'
+  | 'barrage_marker' | 'barrage_impact'
+  | 'chain_jump'
+  | 'side_weapon_attack'
 
 export interface BattleAction {
   unitId: string

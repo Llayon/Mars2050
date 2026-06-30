@@ -6,9 +6,11 @@ import { isMeleeEngagementReady } from './combat.melee-engagement';
 import { applyStatus, getEffectiveActionRange, isActionBlockedByStatus, tickStatuses } from './combat.status';
 import { applyCombatDamage } from './combat.damage';
 import { tryDeployMine } from './combat.minefield';
-import { getLinePierceDamageMultiplier, getLinePierceTargets } from './combat.attack-geometry';
+import { getBarrageDamageMultiplier, getBarrageImpacts, getBarrageTargets, getBeamDamageMultiplier, getBeamTargets, getChainTargets, getConeDamageMultiplier, getConeTargets, getLinePierceDamageMultiplier, getLinePierceTargets } from './combat.attack-geometry';
 import { applyPullOnHit } from './combat.displacement';
 import { applyTargetMark, tickTargetMark } from './combat.mark';
+import { getMinimumActionRange } from './combat.weapon-rules';
+import { getSideWeaponDamage, getSideWeaponTargets } from './combat.side-weapon';
 
 export function tickModifiersSystem(unit: SimUnit, dt: number, actions: BattleAction[]) {
   if (unit.actionCooldown > 0) unit.actionCooldown = Math.max(0, unit.actionCooldown - 1);
@@ -24,7 +26,8 @@ export function actionSystem(unit: SimUnit, target: SimUnit, units: SimUnit[], h
   const distEdge = dist - targetRadius - myRadius;
   
   const effectiveRange = getEffectiveActionRange(unit);
-  const inRange = unit.attackType === 'spawn' || (unit.attackType !== 'heal' && distEdge <= effectiveRange) ||
+  const minimumRange = getMinimumActionRange(unit);
+  const inRange = unit.attackType === 'spawn' || (unit.attackType !== 'heal' && (minimumRange <= 0 || distEdge >= minimumRange) && distEdge <= effectiveRange) ||
                  (unit.attackType === 'heal' && target.hp < target.maxHp && distEdge <= effectiveRange);
 
   if (!inRange) return false;
@@ -85,6 +88,11 @@ export function actionSystem(unit: SimUnit, target: SimUnit, units: SimUnit[], h
          }
 
          processLinePierce(unit, target, units, actions, hazards, rng);
+         processConeAttack(unit, target, units, actions, hazards, rng);
+         processBeamAttack(unit, target, units, actions, hazards, rng);
+         processBarrageAttack(unit, target, units, actions, hazards, rng);
+         processChainAttack(unit, target, units, actions, hazards, rng);
+         processSideWeaponAttack(unit, target, units, actions, hazards, rng);
 
          if (unit.attackType === 'aoe' && unit.aoeRadius) {
              const radius = unit.aoeRadius;
@@ -127,6 +135,63 @@ function processLinePierce(unit: SimUnit, target: SimUnit, units: SimUnit[], act
 
   for (const secondary of getLinePierceTargets(unit, target, units)) {
     emitAttackIntent(unit, secondary, actions);
+    applyCombatDamage(unit, secondary, Math.floor(unit.attack * multiplier), actions, createDamageContext(unit, units, actions, hazards, rng));
+    applyOnHitStatuses(unit, secondary, actions);
+    applyTargetMark(unit, secondary, actions);
+    if (secondary.hp <= 0 && !secondary.isDead) handleDeath(secondary, unit, units, actions, hazards, rng);
+  }
+}
+
+function processConeAttack(unit: SimUnit, target: SimUnit, units: SimUnit[], actions: BattleAction[], hazards: SimHazard[], rng: PRNG): void {
+  const multiplier = getConeDamageMultiplier(unit);
+  if (!multiplier) return;
+
+  actions.push({ unitId: unit.id, type: 'cone_attack', targetId: target.id, radius: unit.range, value: multiplier });
+  applySecondaryWeaponTargets(unit, getConeTargets(unit, target, units), multiplier, units, actions, hazards, rng);
+}
+
+function processBeamAttack(unit: SimUnit, target: SimUnit, units: SimUnit[], actions: BattleAction[], hazards: SimHazard[], rng: PRNG): void {
+  const multiplier = getBeamDamageMultiplier(unit);
+  if (!multiplier) return;
+
+  actions.push({ unitId: unit.id, type: 'beam_tick', targetId: target.id, radius: unit.range, value: multiplier });
+  applySecondaryWeaponTargets(unit, getBeamTargets(unit, target, units), multiplier, units, actions, hazards, rng);
+}
+
+function processBarrageAttack(unit: SimUnit, target: SimUnit, units: SimUnit[], actions: BattleAction[], hazards: SimHazard[], rng: PRNG): void {
+  const multiplier = getBarrageDamageMultiplier(unit);
+  if (!multiplier) return;
+
+  for (const impact of getBarrageImpacts(unit, target)) {
+    actions.push({ unitId: unit.id, type: 'barrage_marker', targetId: target.id, toX: impact.x, toY: impact.y, radius: impact.radius, value: impact.index });
+    applySecondaryWeaponTargets(unit, getBarrageTargets(unit, impact, units), multiplier, units, actions, hazards, rng);
+    actions.push({ unitId: unit.id, type: 'barrage_impact', targetId: target.id, toX: impact.x, toY: impact.y, radius: impact.radius, value: impact.index });
+  }
+}
+
+function processChainAttack(unit: SimUnit, target: SimUnit, units: SimUnit[], actions: BattleAction[], hazards: SimHazard[], rng: PRNG): void {
+  for (const hit of getChainTargets(unit, target, units)) {
+    actions.push({ unitId: unit.id, type: 'chain_jump', targetId: hit.target.id, value: hit.jump });
+    applyCombatDamage(unit, hit.target, Math.floor(unit.attack * hit.multiplier), actions, createDamageContext(unit, units, actions, hazards, rng));
+    applyOnHitStatuses(unit, hit.target, actions);
+    applyTargetMark(unit, hit.target, actions);
+    if (hit.target.hp <= 0 && !hit.target.isDead) handleDeath(hit.target, unit, units, actions, hazards, rng);
+  }
+}
+
+function processSideWeaponAttack(unit: SimUnit, target: SimUnit, units: SimUnit[], actions: BattleAction[], hazards: SimHazard[], rng: PRNG): void {
+  const damage = getSideWeaponDamage(unit);
+  if (damage <= 0) return;
+
+  for (const secondary of getSideWeaponTargets(unit, target, units)) {
+    actions.push({ unitId: unit.id, type: 'side_weapon_attack', targetId: secondary.id });
+    applyCombatDamage(unit, secondary, damage, actions, createDamageContext(unit, units, actions, hazards, rng));
+    if (secondary.hp <= 0 && !secondary.isDead) handleDeath(secondary, unit, units, actions, hazards, rng);
+  }
+}
+
+function applySecondaryWeaponTargets(unit: SimUnit, targets: SimUnit[], multiplier: number, units: SimUnit[], actions: BattleAction[], hazards: SimHazard[], rng: PRNG): void {
+  for (const secondary of targets) {
     applyCombatDamage(unit, secondary, Math.floor(unit.attack * multiplier), actions, createDamageContext(unit, units, actions, hazards, rng));
     applyOnHitStatuses(unit, secondary, actions);
     applyTargetMark(unit, secondary, actions);

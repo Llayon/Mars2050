@@ -95,7 +95,7 @@ export async function recalculateResources(colonyId: string) {
     }
 
     // Update resources in DB in parallel if rates changed
-    const updatePromises: PromiseLike<any>[] = []
+    const updatePromises: PromiseLike<unknown>[] = []
     for (const r of resources as ResourceRow[]) {
       const p = newProd[r.type] || 0
       const c = newCons[r.type] || 0
