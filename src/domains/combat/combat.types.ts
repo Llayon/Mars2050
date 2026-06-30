@@ -35,6 +35,7 @@ export interface UnitBaseStats {
   barrageAttack?: { impacts: number; radius: number; spreadRadius: number; damageMultiplier: number; maxTargetsPerImpact?: number }
   chainAttack?: { jumps: number; radius: number; damageMultiplier: number; falloff?: number }
   sideWeapon?: { damage: number; range: number; maxTargets: number; canTargetAir?: boolean }
+  rampDamage?: { step: number; maxMultiplier: number }
   linePierce?: { width: number; damageMultiplier: number; maxTargets?: number }
   pullOnHit?: { radius: number; strength: number; maxTargets?: number }
   reactiveArmor?: { charges: number; block: number }; damageShare?: { radius: number; ratio: number; maxTargets?: number }

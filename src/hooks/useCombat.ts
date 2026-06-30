@@ -1,6 +1,7 @@
 import useSWR from 'swr'
 import { supabase } from '@/lib/supabase'
 import type { UnitRow, UnitTypeKey } from '@/domains/combat/combat.types'
+import { fetchWithAuth } from '@/lib/fetch-with-auth'
 
 /**
  * Hook for managing the colony's army (hiring, dismissing, fetching).
@@ -8,25 +9,21 @@ import type { UnitRow, UnitTypeKey } from '@/domains/combat/combat.types'
 export function useCombat(colonyId: string | null) {
   const fetcher = async () => {
     if (!colonyId) return []
-    const { data, error } = await supabase
-      .from('units')
-      .select('*')
-      .eq('colony_id', colonyId)
-      .order('created_at', { ascending: true })
-
-    if (error) throw new Error(error.message)
-    return data as UnitRow[]
+    const res = await fetchWithAuth(`/api/combat/units?colonyId=${colonyId}`)
+    const data = await res.json()
+    if (!res.ok) throw new Error(data.error?.message || 'Failed to fetch units')
+    return data.units as UnitRow[]
   }
 
-  const { data: units, error, mutate } = useSWR(
-    colonyId ? `combat-units-${colonyId}` : null,
+  const { data: units, error, mutate, isLoading } = useSWR<UnitRow[]>(
+    colonyId ? `/api/combat/units?colonyId=${colonyId}` : null,
     fetcher
   )
 
   const hireUnit = async (unitType: UnitTypeKey) => {
-    if (!colonyId) return { error: 'No colony ID' }
+    if (!colonyId) throw new Error('No colony active')
     try {
-      const res = await fetch('/api/combat/hire', {
+      const res = await fetchWithAuth('/api/combat/hire', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ colonyId, unitType })
@@ -41,9 +38,9 @@ export function useCombat(colonyId: string | null) {
   }
 
   const dismissUnit = async (unitId: string) => {
-    if (!colonyId) return { error: 'No colony ID' }
+    if (!colonyId) throw new Error('No colony active')
     try {
-      const res = await fetch('/api/combat/dismiss', {
+      const res = await fetchWithAuth('/api/combat/dismiss', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ colonyId, unitId })
@@ -58,9 +55,9 @@ export function useCombat(colonyId: string | null) {
   }
 
   const saveGarrison = async (units: { unitId: string, x: number, y: number }[]) => {
-    if (!colonyId) return { error: 'No colony ID' }
+    if (!colonyId) throw new Error('No colony active')
     try {
-      const res = await fetch('/api/combat/garrison', {
+      const res = await fetchWithAuth('/api/combat/garrison', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ colonyId, units })

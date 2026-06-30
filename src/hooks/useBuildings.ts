@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase'
 import { BUILDING_TYPES } from '@/domains/building/building.config'
 import type { BuildingRow, BuildingTypeKey } from '@/domains/building/building.types'
 import { useSubscription } from './useSubscription'
+import { fetchWithAuth } from '@/lib/fetch-with-auth'
 
 export function useBuildings(colonyId: string | null) {
   const [buildings, setBuildings] = useState<BuildingRow[]>([])
@@ -46,8 +47,9 @@ export function useBuildings(colonyId: string | null) {
     if (!colonyId) return
     const config = BUILDING_TYPES[type]
     if (!config) throw new Error('Invalid building type')
+    if (!colonyId) throw new Error('No colony active')
     try {
-      const res = await fetch('/api/buildings', {
+      const res = await fetchWithAuth('/api/buildings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ colonyId, type, name: config.name, x: x ?? 10, y: y ?? 10 })
@@ -68,8 +70,9 @@ export function useBuildings(colonyId: string | null) {
   }, [colonyId])
 
   const demolishBuilding = useCallback(async (buildingId: string) => {
+    if (!colonyId) throw new Error('No colony active')
     try {
-      const res = await fetch(`/api/buildings?buildingId=${buildingId}&colonyId=${colonyId}`, { method: 'DELETE' })
+      const res = await fetchWithAuth(`/api/buildings?buildingId=${buildingId}&colonyId=${colonyId}`, { method: 'DELETE' })
       if (!res.ok) {
         const data = await res.json()
         throw new Error(data.error || 'Failed to demolish')

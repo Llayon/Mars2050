@@ -11,6 +11,7 @@ import { applyPullOnHit } from './combat.displacement';
 import { applyTargetMark, tickTargetMark } from './combat.mark';
 import { getMinimumActionRange } from './combat.weapon-rules';
 import { getSideWeaponDamage, getSideWeaponTargets } from './combat.side-weapon';
+import { getRampDamage } from './combat.ramp';
 
 export function tickModifiersSystem(unit: SimUnit, dt: number, actions: BattleAction[]) {
   if (unit.actionCooldown > 0) unit.actionCooldown = Math.max(0, unit.actionCooldown - 1);
@@ -63,7 +64,7 @@ export function actionSystem(unit: SimUnit, target: SimUnit, units: SimUnit[], h
          if (target.isDead) break;
 
          emitAttackIntent(unit, target, actions);
-         applyCombatDamage(unit, target, unit.attack, actions, createDamageContext(unit, units, actions, hazards, rng));
+         applyCombatDamage(unit, target, getRampDamage(unit, target, unit.attack, actions), actions, createDamageContext(unit, units, actions, hazards, rng));
 
          unit.hasAttacked = true;
 

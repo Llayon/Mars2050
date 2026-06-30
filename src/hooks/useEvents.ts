@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useSubscription } from './useSubscription'
+import { fetchWithAuth } from '@/lib/fetch-with-auth'
 
 interface GameEvent {
   id: string
@@ -22,7 +23,7 @@ interface UseEventsReturn {
   error: string | null
   processing: boolean
   refetch: () => Promise<void>
-  createEvent: (colonyId: string, type: string, durationMinutes?: number) => Promise<boolean>
+  createEvent: (colonyId: string, type?: string, durationMinutes?: number) => Promise<boolean>
   processNow: () => Promise<void>
 }
 
@@ -35,7 +36,7 @@ export function useEvents(colonyId: string | null): UseEventsReturn {
 
   const fetchEvents = useCallback(async () => {
     if (!colonyId) return []
-    const res = await fetch(`/api/events?colony_id=${colonyId}&active_only=true`)
+    const res = await fetchWithAuth(`/api/events?colony_id=${colonyId}&active_only=true`)
     if (!res.ok) throw new Error('Failed to fetch events')
     return await res.json()
   }, [colonyId])
@@ -44,7 +45,7 @@ export function useEvents(colonyId: string | null): UseEventsReturn {
     if (!colonyId || processing) return
     setProcessing(true)
     try {
-      await fetch('/api/events/process', {
+      await fetchWithAuth('/api/events/process', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ colony_id: colonyId }),
@@ -93,7 +94,7 @@ export function useEvents(colonyId: string | null): UseEventsReturn {
     try {
       const EVENT_TYPES = ['dust_storm', 'meteor_shower', 'anomaly_discovered', 'resource_vein', 'cold_wave', 'solar_flare'] as const
       const eventType = type || EVENT_TYPES[Math.floor(Math.random() * EVENT_TYPES.length)]
-      const res = await fetch('/api/events', {
+      const res = await fetchWithAuth('/api/events', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ colony_id: colonyId, type: eventType, duration_minutes: durationMinutes }),

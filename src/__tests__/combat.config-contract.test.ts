@@ -79,6 +79,10 @@ describe('combat unit config contract', () => {
         expect(stats.sideWeapon.range, `${unitType} has side weapon without positive range`).toBeGreaterThan(0)
         expect(stats.sideWeapon.maxTargets, `${unitType} has side weapon without positive maxTargets`).toBeGreaterThan(0)
       }
+      if (stats.rampDamage) {
+        expect(stats.rampDamage.step, `${unitType} has ramp damage without positive step`).toBeGreaterThan(0)
+        expect(stats.rampDamage.maxMultiplier, `${unitType} has ramp damage without useful max multiplier`).toBeGreaterThan(1)
+      }
     }
   })
 

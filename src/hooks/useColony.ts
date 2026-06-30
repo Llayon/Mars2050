@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { Colony } from '@/domains/colony/colony.types'
+import { fetchWithAuth } from '@/lib/fetch-with-auth'
 
 export function useColony(colonyId: string | null) {
   const [colony, setColony] = useState<Colony | null>(null)

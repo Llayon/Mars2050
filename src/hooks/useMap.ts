@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase'
 import type { MapLocation } from '@/domains/map/map.types'
 import { EXPLORATION_COST } from '@/domains/map/map.config'
 import { useSubscription } from './useSubscription'
+import { fetchWithAuth } from '@/lib/fetch-with-auth'
 
 export function useMap() {
   const [locations, setLocations] = useState<MapLocation[]>([])
@@ -41,7 +42,8 @@ export function useMap() {
 
   const discoverLocation = useCallback(async (locationId: string, colonyId: string) => {
     try {
-      const res = await fetch('/api/explore', {
+      setLoading(true)
+      const res = await fetchWithAuth('/api/explore', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ locationId, colonyId })

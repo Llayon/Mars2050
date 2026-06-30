@@ -4,9 +4,8 @@ let supabaseInstance: SupabaseClient | null = null
 
 function checkConnectivity(url: string, key: string): void {
   if (typeof window === 'undefined') return
-  fetch(`${url.replace(/\/$/, '')}/rest/v1/`, {
+  fetch(`${url.replace(/\/$/, '')}/rest/v1/?apikey=${key}&limit=1`, {
     method: 'HEAD',
-    headers: { apikey: key }
   }).then(r => {
     if (!r.ok && r.status === 0) console.warn('Mars2050: Supabase project may be paused — DNS not resolving')
   }).catch(() => {

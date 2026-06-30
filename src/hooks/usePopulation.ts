@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { PopulationState } from '@/domains/population/population.types'
 import type { UpgradePopulationDto } from '@/domains/population/population.schemas'
+import { fetchWithAuth } from '@/lib/fetch-with-auth'
 
 export function usePopulation(colonyId: string | null) {
   const [population, setPopulation] = useState<PopulationState | null>(null)
@@ -54,7 +55,7 @@ export function usePopulation(colonyId: string | null) {
   const upgradeTier = async (fromTier: UpgradePopulationDto['fromTier'], count: number) => {
     if (!colonyId) return
 
-    const res = await fetch('/api/population/upgrade', {
+    const res = await fetchWithAuth('/api/population/upgrade', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ colonyId, fromTier, count })

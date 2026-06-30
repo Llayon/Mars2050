@@ -57,12 +57,13 @@ export function TopResourceBar({ resources, population, colony, isMobile }: TopR
             {displayResources.slice(0, 4).map(res => {
               const delta = res.production_rate - res.consumption_rate
               const deltaColor = delta > 0 ? 'text-green-400' : delta < 0 ? 'text-red-400' : 'text-gray-400'
+              const roundedDelta = Math.round(delta)
               return (
                 <div key={res.type} className="flex items-center gap-1">
                   <span className="text-gray-300">{RESOURCE_ICONS[res.type] || '📦'}</span>
                   <span className="font-bold text-white">{Math.floor(res.amount)}</span>
                   <span className={`${deltaColor}`}>
-                    {delta > 0 ? '+' : ''}{delta}/h
+                    {roundedDelta > 0 ? '+' : ''}{roundedDelta}/h
                   </span>
                 </div>
               )
@@ -105,6 +106,7 @@ export function TopResourceBar({ resources, population, colony, isMobile }: TopR
           {displayResources.map(res => {
             const delta = res.production_rate - res.consumption_rate
             const deltaColor = delta > 0 ? 'text-green-400' : delta < 0 ? 'text-red-400' : 'text-gray-500'
+            const roundedDelta = Math.round(delta)
             const name = RESOURCE_NAMES[res.type] || res.type
             return (
               <div key={res.type} className="flex flex-col items-center min-w-[70px]">
@@ -115,7 +117,7 @@ export function TopResourceBar({ resources, population, colony, isMobile }: TopR
                 <div className="flex items-baseline gap-1.5">
                   <span className="text-white font-bold">{Math.floor(res.amount)}</span>
                   <span className={`text-[10px] ${deltaColor}`}>
-                    {delta > 0 ? '+' : ''}{delta}/h
+                    {roundedDelta > 0 ? '+' : ''}{roundedDelta}/h
                   </span>
                 </div>
               </div>

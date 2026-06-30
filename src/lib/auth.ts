@@ -14,7 +14,14 @@ function getCookie(cookieStr: string, name: string): string | null {
 
 export function getAuthClient(request: Request): SupabaseClient {
   const cookieStr = request.headers.get('cookie') ?? ''
-  const token = getCookie(cookieStr, 'supabase-access-token')
+  
+  let token = getCookie(cookieStr, 'supabase-access-token')
+  if (!token) {
+    const authHeader = request.headers.get('authorization')
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.substring(7)
+    }
+  }
   
   const headers: Record<string, string> = {
     cookie: cookieStr

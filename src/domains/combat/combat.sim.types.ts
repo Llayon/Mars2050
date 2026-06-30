@@ -56,6 +56,7 @@ export interface SimUnit {
   squadId?: string
   summonOwnerId?: string
   attackTargetId?: string
+  rampTargetId?: string; rampMultiplier?: number
   aggroLockTicks: number
   meleeSlotTargetId?: string
   meleeSlotIndex?: number

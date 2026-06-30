@@ -4,9 +4,10 @@ import { useState, useEffect, useRef } from 'react'
 import useSWR from 'swr'
 import type { ResourceRow } from '@/domains/resource/resource.types'
 import { useSubscription } from './useSubscription'
+import { fetchWithAuth } from '@/lib/fetch-with-auth'
 
 const fetcher = async (url: string) => {
-  const res = await fetch(url)
+  const res = await fetchWithAuth(url)
   const data = await res.json()
   if (!res.ok) throw new Error(data.error || 'Failed to fetch resources')
   return data.resources ?? []
