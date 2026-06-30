@@ -4,18 +4,21 @@ import { useState } from 'react'
 import { DefenseTab } from './DefenseTab'
 import { OperationsTab } from './OperationsTab'
 import { IntelTab } from './IntelTab'
+import { RecruitmentTab } from '../base-operations/RecruitmentTab'
+import type { ResourceRow } from '@/domains/resource/resource.types'
 import type { BattleReplayPayload } from '@/components/game/BattleHistoryPanel'
 
 interface CommandCenterOverlayProps {
   colonyId: string
+  resources: ResourceRow[]
   onClose: () => void
   onReplay: (payload: BattleReplayPayload) => void
 }
 
-type TabKey = 'defense' | 'operations' | 'intel'
+type TabKey = 'recruitment' | 'defense' | 'operations' | 'intel'
 
-export function CommandCenterOverlay({ colonyId, onClose, onReplay }: CommandCenterOverlayProps) {
-  const [activeTab, setActiveTab] = useState<TabKey>('defense')
+export function CommandCenterOverlay({ colonyId, resources, onClose, onReplay }: CommandCenterOverlayProps) {
+  const [activeTab, setActiveTab] = useState<TabKey>('recruitment')
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-md p-4 lg:p-12">
@@ -28,6 +31,9 @@ export function CommandCenterOverlay({ colonyId, onClose, onReplay }: CommandCen
               Command Center
             </h1>
             <div className="flex gap-2">
+              <NavButton active={activeTab === 'recruitment'} onClick={() => setActiveTab('recruitment')}>
+                [ RECRUITMENT ]
+              </NavButton>
               <NavButton active={activeTab === 'defense'} onClick={() => setActiveTab('defense')}>
                 [ DEFENSE ]
               </NavButton>
@@ -49,6 +55,7 @@ export function CommandCenterOverlay({ colonyId, onClose, onReplay }: CommandCen
 
         {/* Content Area */}
         <div className="flex-1 overflow-hidden relative">
+          {activeTab === 'recruitment' && <RecruitmentTab colonyId={colonyId} resources={resources} />}
           {activeTab === 'defense' && <DefenseTab colonyId={colonyId} />}
           {activeTab === 'operations' && <OperationsTab colonyId={colonyId} onReplay={onReplay} />}
           {activeTab === 'intel' && <IntelTab colonyId={colonyId} onReplay={onReplay} />}

@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { ConstructionTab } from './ConstructionTab'
-import { RecruitmentTab } from './RecruitmentTab'
 import { EconomyTab } from './EconomyTab'
 import type { BuildingRow, BuildingTypeKey } from '@/domains/building/building.types'
 import type { ResourceRow } from '@/domains/resource/resource.types'
@@ -19,7 +18,7 @@ export interface BaseOperationsOverlayProps {
   onClose: () => void
 }
 
-type TabType = 'construction' | 'recruitment' | 'economy'
+type TabType = 'construction' | 'economy'
 
 export function BaseOperationsOverlay({
   colonyId,
@@ -53,12 +52,6 @@ export function BaseOperationsOverlay({
               Construction
             </TabButton>
             <TabButton 
-              active={activeTab === 'recruitment'} 
-              onClick={() => setActiveTab('recruitment')}
-            >
-              Recruitment
-            </TabButton>
-            <TabButton 
               active={activeTab === 'economy'} 
               onClick={() => setActiveTab('economy')}
             >
@@ -80,13 +73,7 @@ export function BaseOperationsOverlay({
               buildings={buildings} 
               resources={resources} 
               onBuild={onBuild} 
-              onClose={onClose} 
-            />
-          )}
-          {activeTab === 'recruitment' && (
-            <RecruitmentTab 
-              colonyId={colonyId} 
-              resources={resources} 
+              onClose={onClose}
             />
           )}
           {activeTab === 'economy' && (

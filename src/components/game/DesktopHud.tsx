@@ -166,6 +166,7 @@ export function DesktopHud({
       {armyOpen && !placementMode && (
         <CommandCenterOverlay 
           colonyId={colonyId} 
+          resources={resources}
           onClose={() => setArmyOpen(false)} 
           onReplay={handleReplay} 
         />
