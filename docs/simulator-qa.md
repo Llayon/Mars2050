@@ -28,6 +28,7 @@
 | `unit_blocked_damage` | Показывает урон, снятый защитой, armor/status reduction или reactive armor. |
 | `lifesteal` | Лечение считается от фактически нанесенного HP/shared урона. |
 | `ramp_charge` | Focus-fire юнит наращивает множитель только по той же primary цели. |
+| `charge_damage` | Movement-distance бонус применяется только к primary hit и сбрасывается после атаки. |
 | `percent_hp_damage` | Anti-giant бонус добавляется к primary hit до mitigation и не появляется у обычных/secondary ударов. |
 | `projectile_intercept` | Projectile-defense юнит сбил interceptable hit до shield/HP damage. |
 | `on_kill` | On-kill эффекты появляются только после подтвержденной смерти, не после resurrection. |
@@ -56,7 +57,8 @@
 | **10. Weapon Shapes** | Огнемет, ионный излучатель, артиллерия, плазмо-танк | Cone/beam/barrage/chain выбирают цели детерминированно. | Нет случайного порядка целей; VFX совпадает с action stream. |
 | **11. Side Weapons** | Goliath против нескольких целей | Primary цель получает основной удар, side targets получают отдельный урон. | Есть `side_weapon_attack`; side weapons не копируют primary statuses. |
 | **12. Ramp Damage** | Ion Crawler долго стреляет в одну heavy цель | Primary урон растет до cap, при смене цели сбрасывается. | `ramp_charge` значения 1 → 1.25 → ... |
-| **13. Percent HP Damage** | Railgun Walker против Behemoth/Titan | Дополнительный урон растет от max HP цели, но упирается в cap. | Есть `percent_hp_damage`, затем обычный `damage`. |
-| **14. Projectile Interception** | Shield Emitter рядом с целью против Missile Buggy / Artillery Crawler | Первый дальний explosive/barrage hit блокируется до shield/HP. | Есть `projectile_intercept`; нет `damage` для сбитого удара. |
-| **15. On-kill Effects** | Stealth Operative добивает цель | После kill сбрасывается cooldown и применяется self-heal. | Есть `on_kill`; нет срабатывания при revive/resurrection. |
-| **16. Summon Caps / Decoys** | Drone Carrier, Mobile Factory, Hologram Projector | Summons не бесконечны, temporary units исчезают по таймеру. | Есть `spawn_blocked`, temporary death не ломает replay. |
+| **13. Charge Damage** | Scavenger Buggy разгоняется перед первым контактом | Primary hit получает capped burst, затем charge сбрасывается. | Есть `charge_damage`, затем `damage`; secondary hits не получают бонус. |
+| **14. Percent HP Damage** | Railgun Walker против Behemoth/Titan | Дополнительный урон растет от max HP цели, но упирается в cap. | Есть `percent_hp_damage`, затем обычный `damage`. |
+| **15. Projectile Interception** | Shield Emitter рядом с целью против Missile Buggy / Artillery Crawler | Первый дальний explosive/barrage hit блокируется до shield/HP. | Есть `projectile_intercept`; нет `damage` для сбитого удара. |
+| **16. On-kill Effects** | Stealth Operative добивает цель | После kill сбрасывается cooldown и применяется self-heal. | Есть `on_kill`; нет срабатывания при revive/resurrection. |
+| **17. Summon Caps / Decoys** | Drone Carrier, Mobile Factory, Hologram Projector | Summons не бесконечны, temporary units исчезают по таймеру. | Есть `spawn_blocked`, temporary death не ломает replay. |

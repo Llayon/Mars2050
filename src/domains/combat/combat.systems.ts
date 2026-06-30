@@ -13,6 +13,7 @@ import { getMinimumActionRange } from './combat.weapon-rules';
 import { getSideWeaponDamage, getSideWeaponTargets } from './combat.side-weapon';
 import { getRampDamage } from './combat.ramp';
 import { isProjectileInterceptableAttack } from './combat.projectile-defense';
+import { getChargeDamage } from './combat.charge';
 
 export function tickModifiersSystem(unit: SimUnit, dt: number, actions: BattleAction[]) {
   if (unit.actionCooldown > 0) unit.actionCooldown = Math.max(0, unit.actionCooldown - 1);
@@ -66,10 +67,11 @@ export function actionSystem(unit: SimUnit, target: SimUnit, units: SimUnit[], h
          if (target.isDead) break;
 
          emitAttackIntent(unit, target, actions);
+         const primaryDamage = getChargeDamage(unit, target, getRampDamage(unit, target, unit.attack, actions), actions);
          const damageResult = applyCombatDamage(
            unit,
            target,
-           getRampDamage(unit, target, unit.attack, actions),
+           primaryDamage,
            actions,
            createDamageContext(unit, units, actions, hazards, rng, true, isProjectileInterceptableAttack(unit))
          );

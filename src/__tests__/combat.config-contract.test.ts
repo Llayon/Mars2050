@@ -84,6 +84,11 @@ describe('combat unit config contract', () => {
         expect(stats.rampDamage.step, `${unitType} has ramp damage without positive step`).toBeGreaterThan(0)
         expect(stats.rampDamage.maxMultiplier, `${unitType} has ramp damage without useful max multiplier`).toBeGreaterThan(1)
       }
+      if (stats.chargeDamage) {
+        expect(stats.chargeDamage.minDistance, `${unitType} has charge damage with negative min distance`).toBeGreaterThanOrEqual(0)
+        expect(stats.chargeDamage.maxDistance, `${unitType} has charge damage without useful max distance`).toBeGreaterThan(stats.chargeDamage.minDistance)
+        expect(stats.chargeDamage.maxMultiplier, `${unitType} has charge damage without useful multiplier`).toBeGreaterThan(1)
+      }
       if (stats.percentHpDamage) {
         expect(stats.percentHpDamage.percent, `${unitType} has percent HP damage without positive percent`).toBeGreaterThan(0)
         expect(stats.percentHpDamage.percent, `${unitType} has percent HP damage above 100%`).toBeLessThanOrEqual(1)

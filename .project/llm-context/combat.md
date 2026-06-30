@@ -20,6 +20,7 @@
 - `src/domains/combat/combat.displacement.ts` — deterministic pull displacement.
 - `src/domains/combat/combat.side-weapon.ts` — deterministic side weapon target selection.
 - `src/domains/combat/combat.ramp.ts` — same-target focused-fire damage scaling.
+- `src/domains/combat/combat.charge.ts` — movement-distance charge damage scaling.
 - `src/domains/combat/combat.percent-damage.ts` — capped percent-HP anti-giant damage.
 - `src/domains/combat/combat.projectile-defense.ts` — deterministic projectile interception.
 - `src/domains/combat/combat.on-kill.ts` — deterministic on-kill effects.
@@ -75,6 +76,7 @@
 - Attack geometry: single target, AoE, line pierce, cone, beam, barrage, chain, and side weapons.
 - Scaling: `rampDamage` increases primary damage while a unit keeps focusing the same target; `percentHpDamage` adds capped anti-giant bonus damage to primary hits before mitigation.
 - Death/kill: temporary spawns expire deterministically, on-death puddles create hazards, and `onKill` can reset cooldown/heal/apply a status.
+- Movement scaling: `chargeDamage` converts actual movement distance into a capped primary-hit burst and then resets.
 - Summons: `spawnCap` prevents infinite mobile factory/drone carrier/decoy loops.
 - Defensive primitives: shield aura, regen aura, cleanse, status immunity, damage sharing, reactive armor charges, projectile interception.
 - Battlefield objects: barriers/temporary spawns, mines, decoys, hazards, and deterministic pull displacement.
@@ -82,7 +84,6 @@
 
 ## Current Known Gaps
 - Stance/mode transforms are not implemented as a reusable primitive.
-- Charge scaling is still a future anti-giant/carry tool.
 - Hack control currently disables actions; conversion/redirect behavior is future work.
 - Richer smoke/vision suppression and projectile accuracy are still future work.
 
@@ -98,6 +99,7 @@
 - `src/__tests__/combat.chain.test.ts` — deterministic chain jumps.
 - `src/__tests__/combat.side-weapon.test.ts` — side weapon targeting/damage.
 - `src/__tests__/combat.ramp.test.ts` — focused-fire ramp damage.
+- `src/__tests__/combat.charge.test.ts` — movement-distance charge damage.
 - `src/__tests__/combat.damage.test.ts` — includes capped percent-HP damage regression coverage.
 - `src/__tests__/combat.on-kill.test.ts` — on-kill cooldown/heal behavior.
 - `docs/simulator-qa.md` — Visual simulator QA matrix and metrics guide.

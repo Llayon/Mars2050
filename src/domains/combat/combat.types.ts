@@ -36,6 +36,7 @@ export interface UnitBaseStats {
   chainAttack?: { jumps: number; radius: number; damageMultiplier: number; falloff?: number }
   sideWeapon?: { damage: number; range: number; maxTargets: number; canTargetAir?: boolean }
   rampDamage?: { step: number; maxMultiplier: number }
+  chargeDamage?: { minDistance: number; maxDistance: number; maxMultiplier: number }
   percentHpDamage?: { percent: number; maxBonus: number }
   onKill?: { cooldownReset?: boolean; healPercent?: number; status?: StatusEffect }
   linePierce?: { width: number; damageMultiplier: number; maxTargets?: number }

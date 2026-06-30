@@ -156,11 +156,12 @@ The following mechanics are now implemented as reusable runtime primitives:
 | Cone / beam / barrage / chain / side weapons | `combat.attack-geometry.ts`, `combat.side-weapon.ts` | `flamethrower`, `sonic_devastator`, `ion_crawler`, `artillery_crawler`, `plasma_tank`, `goliath_gunship` |
 | Minimum range / back-away positioning | `combat.weapon-rules.ts`, `combat.positioning.ts` | `artillery_crawler` |
 | Ramp focused-fire damage | `combat.ramp.ts` | `ion_crawler` |
+| Charge damage scaling | `combat.charge.ts`, `combat.movement.ts` | `scavenger_buggy` |
 | Percent-HP damage | `combat.percent-damage.ts`, `combat.damage.ts` | `railgun_walker` |
 | On-kill effects | `combat.on-kill.ts` | `stealth_operative` |
 
-Remaining major gaps are stance/mode transforms, charge scaling, richer
-hack-control behavior, and richer vision/smoke mechanics.
+Remaining major gaps are stance/mode transforms, richer hack-control behavior,
+and richer vision/smoke mechanics.
 
 ### Damage / shield pipeline
 
@@ -218,7 +219,7 @@ upgrades, auras, or hazards without hardcoding one-off behavior.
 1. Defensive primitives: flat damage block, damage sharing, status immunity,
    reactive armor charges, and projectile interception are implemented.
 2. Role-transform primitives: target marks are implemented; stance/mode transform and burrow remain future work.
-3. Scaling primitives: ramp damage and percent HP damage are implemented; charge scaling remains future work.
+3. Scaling primitives: ramp damage, charge scaling, and percent HP damage are implemented.
 4. Weapon primitives: chain attacks and side weapons are implemented; richer split fire remains future work.
 5. Death/kill primitives: on-death puddles and on-kill effects are implemented; richer spawn-on-death variants remain future work.
 6. Attack-shape primitives: beam, cone, line pierce, and barrage are implemented; temporary battlefield objects exist as mines/barriers/decoys.
@@ -267,7 +268,7 @@ upgrades, auras, or hazards without hardcoding one-off behavior.
 | `scout_drone` | Fast air screen/scout | 5 units, high speed, can AA | Tune | Strong generalist flyer. Needs fragility or scouting utility. |
 | `medic` | Organic utility support | 3 units, heal attack, short support range | Ready | Good early support. Should not be a damage unit. |
 | `sniper` | Precision range pressure/assassin | 2 units, 280 range, `assassin`, can AA | Tune | Good role, but AA may dilute anti-air specialists. |
-| `scavenger_buggy` | Tempo pressure/flanker | 3 vehicles, very fast, short range | Tune | Needs raider/cleanup identity: low-HP bonus, flank, or resource/pillage theme. |
+| `scavenger_buggy` | Tempo pressure/flanker | 3 vehicles, very fast, short range, movement-distance charge damage | Tune | Now has raider burst identity. Tune charge cap, cooldown, and counterplay. |
 | `grenadier` | Mid-range screen clear | 4 units, AoE, explosive tag | Ready | Solid anti-clump role. Can gain AA through upgrade only. |
 | `heavy_gunner` | Sustained carry/suppression | 6 units, 200 range, high DPS, can AA | Tune | Overlaps marine/gatling. Should become suppression or screen clear specialist. |
 | `sapper` | Demolition assassin | 3 units, high AoE burst, low HP | Ready | Good high-risk unit. Ensure it does not overperform with melee slots. |
@@ -425,7 +426,7 @@ Missing upgrade categories:
 20. Stance/mode transformations that alter movement, range, and targeting.
 21. Target-mark upgrades for priority overrides and focus-fire control.
 22. Burrow/underground movement states with clear reveal and counter rules.
-23. Ramp/charge scaling upgrades for anti-giant and late-fight carry units.
+23. Additional ramp/charge scaling upgrades for anti-giant and late-fight carry units.
 24. Multi-weapon, split-fire, and chain-attack upgrades.
 25. On-death and on-kill effects with deterministic caps.
 26. Additional percent-HP damage upgrades for anti-giant roles.
@@ -445,7 +446,7 @@ Missing upgrade categories:
    immunity, reactive armor charges, cleanse-on-action, and projectile
    interception.
 5. Add transform/control primitives: stance transforms, target marks, burrow,
-   ramp/charge scaling, and percent-HP damage.
+   and richer mode-switch behavior.
 6. Add weapon/death primitives: split fire, chain attacks, periodic side
    weapons, on-death effects, and on-kill recycling.
 7. Add remaining attack shapes: beams, cones, barrage, and richer temporary

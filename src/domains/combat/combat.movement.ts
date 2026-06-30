@@ -8,6 +8,7 @@ import { getStuckRecoveryForce, updateStuckRecovery } from './combat.stuck-recov
 import { getPositioningDecision } from './combat.positioning';
 import { getFormationCohesionForce } from './combat.formation';
 import { getMovementSpeedMultiplier } from './combat.status';
+import { recordChargeMovement } from './combat.charge';
 
 export function movementSystem(unit: SimUnit, target: SimUnit, units: SimUnit[], actions: BattleAction[], dt: number, rng: PRNG, flowFieldMap: FlowFieldMap, obstacles: Obstacle[], spatialHash?: SpatialHash) {
   let vx = 0;
@@ -199,6 +200,7 @@ export function movementSystem(unit: SimUnit, target: SimUnit, units: SimUnit[],
   if (Math.hypot(nx - unit.x, ny - unit.y) > 0.1 || Math.abs(angleDiff) > 0.2) { // Only emit move if significantly moved or turned
     const fromX = unit.x, fromY = unit.y;
     unit.x = nx; unit.y = ny;
+    recordChargeMovement(unit, Math.hypot(nx - fromX, ny - fromY));
     // Round to 2 decimal places to save JSON size but keep movement smooth
     const r = (v: number) => Math.round(v * 100) / 100;
     actions.push({ 
