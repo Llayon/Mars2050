@@ -33,18 +33,22 @@ export function RecruitmentTab({ colonyId, resources }: RecruitmentTabProps) {
 
     setIsHiring(true)
     let successes = 0
-    let errors = 0
+    const errors: string[] = []
     
     // Sequential hire to support bulk without changing backend yet
     for (let i = 0; i < count; i++) {
       const res = await hireUnit(type)
       if (res.success) successes++
-      else errors++
+      else errors.push(res.error || 'Неизвестная ошибка')
     }
     
     setIsHiring(false)
     if (successes > 0) toast(`Успешно нанято: ${successes}`, 'success')
-    if (errors > 0) toast(`Ошибок найма: ${errors}`, 'error')
+    if (errors.length > 0) {
+      // Get unique errors
+      const uniqueErrors = Array.from(new Set(errors))
+      toast(`Ошибка найма: ${uniqueErrors.join(', ')}`, 'error')
+    }
     
     // Reset queue for this type
     setQueues(prev => ({ ...prev, [type]: 0 }))
