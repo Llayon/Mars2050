@@ -16,7 +16,21 @@ The current stack is Next.js 16 App Router, React 19, TypeScript, Tailwind CSS 4
 - `docs/simulator-qa.md` — Combat Simulator QA instructions.
 
 Important domains include `building`, `resource`, `map`, `colony`, `pvp`, `events`, and `combat`.
-The combat domain contains the tick-based battle simulator, targeting, movement, spatial hash, steering, hazards, upgrades, and replay output.
+The combat domain contains the tick-based battle simulator, deterministic targeting, movement,
+spatial hash, steering, statuses, damage/shield pipeline, hazards, auras, weapon primitives, upgrades,
+and replay output.
+
+## Current Gameplay Systems
+
+- Economy: dynamic building production, workforce requirements, population happiness, housing, and terrain requirements.
+- Combat: deterministic seeded simulation with local aggro, steering, status effects, detailed damage events, shields, auras, mines, displacement, attack geometry, ramp damage, and on-kill effects.
+- PvP: authenticated attack/trade routes, ownership checks, battle snapshots, replay access checks, cooldowns, and practice NPC targets.
+- UI: desktop HUD shell, Command Center for army/PvP, Base Operations overlay, TWA screens, and a combat simulator at `/simulator2`.
+
+Useful docs:
+- `docs/combat-unit-roles.md` — balancing vocabulary and unit role review.
+- `docs/simulator-qa.md` — manual QA matrix for combat and replay diagnostics.
+- `.project/llm-context/` — short domain-specific context for agents.
 
 ## Development Commands
 

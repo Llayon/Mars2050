@@ -30,6 +30,11 @@
 | Services | 250 | Business logic |
 | React components | 250 | JSX cohesive |
 | Hooks | 150 | Narrow responsibility |
+| Replay/render engines | 320 | Pixi/replay orchestration only |
+
+Replay/render engine exception applies only to `battle-replay-engine.ts` and `*-replay-engine.ts`.
+Self-contained rendering logic must still be extracted into focused modules such as
+`battle-replay-units.ts`, `battle-replay-overlays.ts`, or `battle-replay-motion-vfx.ts`.
 
 ## Architecture Patterns
 

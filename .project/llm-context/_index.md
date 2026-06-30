@@ -14,6 +14,9 @@
 | `pvp.md` | Домен PvP (атака, торговля) | Работа с PvP |
 | `combat.md` | Тиковая симуляция боя | Работа с battle engine, targeting, movement, replay |
 | `auth.md` | Домен авторизации | Работа с auth |
+| `ui.md` | HUD, overlays, desktop/TWA screens | Работа с игровым UI |
+| `events.md` | События колонии и modifiers | Работа с events |
+| `leaderboard.md` | Рейтинг колоний | Работа с leaderboard |
 
 ## Быстрый старт
 

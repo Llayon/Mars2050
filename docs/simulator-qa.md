@@ -17,6 +17,19 @@
 - **Векторы движения**: Показ желаемого направления движения. Полезно для отладки Steering.
 - **Линии атак**: Отрисовка постоянных красных линий при атаке.
 
+## Damage / Replay Diagnostics
+Новые replay-логи могут содержать подробные damage events. Визуальный replay должен использовать их для HP/text, а legacy `attack` оставлять для projectile/recoil/VFX и старых логов.
+
+| Action | Что проверять |
+| --- | --- |
+| `damage` | HP уменьшается только на финальный урон после защиты/щита/статусов. |
+| `shield_damage` | Щит теряет ровно поглощенную часть удара. |
+| `shield_break` | Срабатывает при уходе shield HP в 0. |
+| `unit_blocked_damage` | Показывает урон, снятый защитой, armor/status reduction или reactive armor. |
+| `lifesteal` | Лечение считается от фактически нанесенного HP/shared урона. |
+| `ramp_charge` | Focus-fire юнит наращивает множитель только по той же primary цели. |
+| `on_kill` | On-kill эффекты появляются только после подтвержденной смерти, не после resurrection. |
+
 ## Known Limitations
 - Анимации выстрелов интерполируются и могут не всегда точно совпадать с физическим тиком попадания на скорости 4.0x.
 - Оверлеи векторов рисуются только если юнит перемещается (deltaX/deltaY > 0).
@@ -36,3 +49,10 @@
 | **5. Shield / Status** | Юниты с щитами против EMP | Щиты поглощают урон, EMP вешает визуальный статус. | Отрисовка эффекта "БЛОК" и синих кругов EMP. |
 | **6. 100+ Units Stress** | Пресет "Стенка на стенку (100+)" | Симуляция рассчитывается без падения вкладки. | Плавный FPS реплея, корректные векторы. |
 | **7. Deterministic Replay** | Ввести одинаковый Seed дважды | Идентичный результат (победитель, остаток HP) 100% случаев. | Сравнить метрики и выживших. |
+| **8. Shield Overflow** | Сильный одиночный удар по юниту с малым щитом | Остаток урона проходит в HP после разрушения щита. | Есть `shield_damage`, `shield_break`, затем `damage`. |
+| **9. Control Statuses** | EMP/хакер/крио против тяжелого юнита | EMP/hacked блокируют действия, slow меняет скорость. | `status_apply`, `status_expire`, отсутствие атак под контролем. |
+| **10. Weapon Shapes** | Огнемет, ионный излучатель, артиллерия, плазмо-танк | Cone/beam/barrage/chain выбирают цели детерминированно. | Нет случайного порядка целей; VFX совпадает с action stream. |
+| **11. Side Weapons** | Goliath против нескольких целей | Primary цель получает основной удар, side targets получают отдельный урон. | Есть `side_weapon_attack`; side weapons не копируют primary statuses. |
+| **12. Ramp Damage** | Ion Crawler долго стреляет в одну heavy цель | Primary урон растет до cap, при смене цели сбрасывается. | `ramp_charge` значения 1 → 1.25 → ... |
+| **13. On-kill Effects** | Stealth Operative добивает цель | После kill сбрасывается cooldown и применяется self-heal. | Есть `on_kill`; нет срабатывания при revive/resurrection. |
+| **14. Summon Caps / Decoys** | Drone Carrier, Mobile Factory, Hologram Projector | Summons не бесконечны, temporary units исчезают по таймеру. | Есть `spawn_blocked`, temporary death не ломает replay. |

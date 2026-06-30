@@ -18,6 +18,14 @@
 - `src/domains/combat/combat.minefield.ts` — deterministic mine deployment.
 - `src/domains/combat/combat.attack-geometry.ts` — line pierce and reusable attack geometry helpers.
 - `src/domains/combat/combat.displacement.ts` — deterministic pull displacement.
+- `src/domains/combat/combat.side-weapon.ts` — deterministic side weapon target selection.
+- `src/domains/combat/combat.ramp.ts` — same-target focused-fire damage scaling.
+- `src/domains/combat/combat.on-kill.ts` — deterministic on-kill effects.
+- `src/domains/combat/combat.weapon-rules.ts` — shared weapon constraints such as minimum range.
+- `src/domains/combat/combat.positioning.ts` — approach/back-away positioning decisions.
+- `src/domains/combat/combat.deployment.ts` — attack/defense placement zones and validation.
+- `src/domains/combat/combat.melee-engagement.ts` — melee engagement slot readiness.
+- `src/domains/combat/combat.metrics.ts` — optional simulation metrics for simulator QA.
 - `src/domains/combat/combat.upgrades.ts` — unit and global upgrade definitions.
 - `src/domains/combat/combat.pathfinding.ts` — static obstacle flow field.
 
@@ -61,6 +69,22 @@
 - `combat.systems.ts` still emits legacy `attack` events for projectile, recoil, and old replay compatibility.
 - `battle-replay-engine.ts` detects detailed damage logs. New logs mutate HP/text from detailed damage events; old attack-only logs keep legacy attack HP handling.
 
+## Current Weapon / Utility Primitives
+- Attack geometry: single target, AoE, line pierce, cone, beam, barrage, chain, and side weapons.
+- Scaling: `rampDamage` increases primary damage while a unit keeps focusing the same target.
+- Death/kill: temporary spawns expire deterministically, on-death puddles create hazards, and `onKill` can reset cooldown/heal/apply a status.
+- Summons: `spawnCap` prevents infinite mobile factory/drone carrier/decoy loops.
+- Defensive primitives: shield aura, regen aura, cleanse, status immunity, damage sharing, reactive armor charges.
+- Battlefield objects: barriers/temporary spawns, mines, decoys, hazards, and deterministic pull displacement.
+- Minimum range is handled by `combat.weapon-rules.ts` and `combat.positioning.ts`; artillery can back away instead of firing point blank.
+
+## Current Known Gaps
+- Projectile interception is not yet a full attack-event filter.
+- Stance/mode transforms are not implemented as a reusable primitive.
+- Percent-HP damage and charge scaling are still future anti-giant/carry tools.
+- Hack control currently disables actions; conversion/redirect behavior is future work.
+- Richer smoke/vision suppression and projectile accuracy are still future work.
+
 ## Tests & QA
 - `src/__tests__/combat.engine.test.ts` — basic battle outcomes and timeout behavior.
 - `src/__tests__/combat.spatial-hash.test.ts` — deterministic spatial query behavior.
@@ -68,6 +92,12 @@
 - `src/__tests__/combat.metrics.test.ts` — replay determinism and crowd movement metrics.
 - `src/__tests__/combat.status.test.ts` — status stacking, ticking, cleanse, and action blocking.
 - `src/__tests__/combat.damage.test.ts` — damage mitigation, shield overflow, and detailed damage replay actions.
+- `src/__tests__/combat.weapon-shapes.test.ts` — cone and beam targeting/damage.
+- `src/__tests__/combat.barrage.test.ts` — barrage impacts and minimum range behavior.
+- `src/__tests__/combat.chain.test.ts` — deterministic chain jumps.
+- `src/__tests__/combat.side-weapon.test.ts` — side weapon targeting/damage.
+- `src/__tests__/combat.ramp.test.ts` — focused-fire ramp damage.
+- `src/__tests__/combat.on-kill.test.ts` — on-kill cooldown/heal behavior.
 - `docs/simulator-qa.md` — Visual simulator QA matrix and metrics guide.
 
 ## Commands
@@ -78,4 +108,4 @@
 ## Design Direction
 - Do not add a hard `role` field to units.
 - Use `targetingProfile` for targeting behavior, not broad strategic roles.
-- Use future `combatTags` only for UI/analytics with neutral terms (`screening`, `swarm`, `anti_swarm`, `siege`, `support`), not as simulation logic.
+- Use `combatTags` for mechanical properties and targeting score modifiers, not rigid one-role-per-unit classes.

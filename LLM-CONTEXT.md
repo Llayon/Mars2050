@@ -10,7 +10,7 @@
 
 ## Ключевые директории
 - `src/domains/`: бизнес-логика по доменам (`auth`, `building`, `colony`, `combat`, `events`, `leaderboard`, `map`, `pvp`, `resource`).
-- `src/domains/combat/`: тиковый battle simulator, spatial hash, targeting, steering, pathfinding, upgrades, hazards, replay.
+- `src/domains/combat/`: тиковый battle simulator, spatial hash, targeting, steering, pathfinding, statuses, damage pipeline, weapon primitives, upgrades, hazards, replay.
 - `src/app/api/`: тонкие API-роуты (валидация → сервис → ответ).
 - `src/app/simulator2/`: UI-песочница для тестирования и балансировки боя.
 - `src/hooks/`: клиентские хуки по доменам.
@@ -44,7 +44,9 @@
 
 ## Текущее состояние
 - ✅ Core gameplay domains implemented: auth, building, colony, combat, events, leaderboard, map, pvp, resource.
-- ✅ Combat domain implemented: tick loop, squads, AoE, flying/ground targeting, statuses, upgrades, hazards, replay, spatial hash, sticky aggro, steering.
+- ✅ Combat domain implemented: tick loop, squads, local aggro, flying/ground targeting, statuses, damage/shield pipeline, support auras, mines, displacement, barriers/decoys, attack geometry, ramp damage, on-kill effects, upgrades, hazards, replay, spatial hash, sticky aggro, steering.
+- ✅ PvP hardening implemented: auth ownership checks, battle snapshots, replay access contract, cooldowns, simulation version, practice NPC targets.
+- ✅ Economy hardening in progress/implemented locally: dynamic production rates, workforce, happiness, housing, terrain requirements.
 - ✅ Supabase Cloud project active: `gkvsnzwvgonfpuespafm`.
 - ✅ Architecture enforcer and git hooks configured.
 - ✅ Vitest suite includes combat regression coverage.

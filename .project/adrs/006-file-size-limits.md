@@ -26,9 +26,13 @@ affects: [architecture.md, check-limits.ts, *.ts, *.tsx]
    - Services ≤250 строк (бизнес-логика)
    - Components ≤250 строк (UI)
    - Hooks ≤150 строк (узкая ответственность)
+   - Replay/render engines ≤320 строк только для `battle-replay-engine.ts` и `*-replay-engine.ts`
 
 ## Decision
 - Файлы не должны превышать лимиты (проверяется `npm run lint:limits`)
+- Исключение 320 строк применяется только к replay/render engine файлам. Вспомогательная
+  логика отрисовки всё равно выносится в модули (`battle-replay-units.ts`,
+  `battle-replay-overlays.ts`, `battle-replay-motion-vfx.ts`).
 - При превышении лимита — рефакторинг:
   - Выделить sub-модули (utils, helpers)
   - Разбить компоненты на подкомпоненты

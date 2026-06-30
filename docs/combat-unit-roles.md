@@ -141,6 +141,26 @@ Adjacent non-status state still lives on `SimUnit`: `shield`,
 8. Shield, stealth, lifesteal, pull/knockback, mines, barriers, and decoys
    remain explicit mechanics with their own tests.
 
+### Implemented primitive status
+
+The following mechanics are now implemented as reusable runtime primitives:
+
+| Primitive | Runtime files | Current users |
+| --- | --- | --- |
+| Detailed damage/shield events | `combat.damage.ts` | all attacks through `applyCombatDamage` |
+| Shield aura / regen / cleanse / immunity | `combat.auras.ts`, `combat.status.ts` | `shield_emitter`, `engineer`, `nanite_generator` |
+| Mine placement | `combat.minefield.ts` | `minelayer_rover` |
+| Pull / forced displacement | `combat.displacement.ts` | `gravity_manipulator` |
+| Decoys / temporary barriers | `combat.systems.utils.ts` | `hologram_projector`, `shield_emitter` |
+| Cone / beam / barrage / chain / side weapons | `combat.attack-geometry.ts`, `combat.side-weapon.ts` | `flamethrower`, `sonic_devastator`, `ion_crawler`, `artillery_crawler`, `plasma_tank`, `goliath_gunship` |
+| Minimum range / back-away positioning | `combat.weapon-rules.ts`, `combat.positioning.ts` | `artillery_crawler` |
+| Ramp focused-fire damage | `combat.ramp.ts` | `ion_crawler` |
+| On-kill effects | `combat.on-kill.ts` | `stealth_operative` |
+
+Remaining major gaps are projectile interception, stance/mode transforms,
+percent-HP damage, charge scaling, richer hack-control behavior, and richer
+vision/smoke mechanics.
+
 ### Damage / shield pipeline
 
 Damage now flows through `combat.damage.ts` before HP is mutated. The current
@@ -195,13 +215,12 @@ upgrades, auras, or hazards without hardcoding one-off behavior.
 ### Primitive implementation order
 
 1. Defensive primitives: flat damage block, damage sharing, status immunity,
-   reactive armor charges.
-2. Role-transform primitives: stance/mode transform, target marks, burrow.
-3. Scaling primitives: ramp damage, charge scaling, percent HP damage.
-4. Weapon primitives: split fire, chain attacks, periodic side weapons.
-5. Death/kill primitives: on-death explosions/spawns and on-kill recycling.
-6. Attack-shape primitives: beam, cone, line pierce, barrage, and temporary
-   battlefield objects.
+   reactive armor charges. Mostly implemented except projectile interception.
+2. Role-transform primitives: target marks are implemented; stance/mode transform and burrow remain future work.
+3. Scaling primitives: ramp damage is implemented; charge scaling and percent HP damage remain future work.
+4. Weapon primitives: chain attacks and side weapons are implemented; richer split fire remains future work.
+5. Death/kill primitives: on-death puddles and on-kill effects are implemented; richer spawn-on-death variants remain future work.
+6. Attack-shape primitives: beam, cone, line pierce, and barrage are implemented; temporary battlefield objects exist as mines/barriers/decoys.
 
 ## Global Findings
 
@@ -259,58 +278,52 @@ upgrades, auras, or hazards without hardcoding one-off behavior.
 | `missile_buggy` | Mobile anti-air specialist | 3 vehicles, long range, `anti_air` | Ready | Clear, should be weaker into ground general targets. |
 | `gunship` | Air-to-ground carry | 2 flying armored units, ground-only | Ready | Good air pressure. Needs dedicated AA counters to matter. |
 | `engineer` | Mechanical utility support | Currently healer with weak attack | Needs mechanic | Should repair mechanical/shields, not heal organic equally. |
-| `emp_drone` | Flying disable control specialist | Attack 0, support hunter, no EMP flag in base config | Needs mechanic | Critical fix. Should apply EMP or disable, not chip for 1 damage. |
-| `minelayer_rover` | Area denial/movement control | Currently normal attack vehicle | Needs mechanic | Needs mine placement, delayed trigger, or hazard generation. |
+| `emp_drone` | Flying disable control specialist | Attack 0, support hunter, applies `emp` on hit | Tune | Needs cadence/counter tuning so zero-damage utility is valuable but not oppressive. |
+| `minelayer_rover` | Area denial/movement control | Deploys deterministic mines through `mineOnAction` | Tune | Needs visual clarity and trigger/radius balance. |
 | `siege_tank` | Range pressure/screen clear | 320 range, AoE, `siege` profile | Ready | Strong identity. Watch target acquisition and overkill. |
 | `railgun_walker` | Range pressure/anti-heavy | 280 range, `long_range_priority` | Ready | Good heavy hunter. Disable-control rounds upgrade fits well. |
 | `drone_carrier` | Air summoner/screen producer | Flying, `spawn`, summons scout drones | Tune | Good concept. Validate spawn cadence and target behavior. |
-| `cryo_tank` | Movement control/screen clear | Currently AoE damage only | Needs mechanic | Should apply slow/freeze or DR debuff. |
-| `shield_emitter` | Guard/projectile defense | Currently no aura/shield action | Needs mechanic | Must grant shields/DR aura or intercept projectiles. |
+| `cryo_tank` | Movement control/screen clear | AoE plus `slow` status on hit | Tune | Freeze/root can remain an upgrade; baseline slow is implemented. |
+| `shield_emitter` | Guard/projectile defense | Shield aura plus temporary barrier spawn | Partial | Projectile interception is still missing. |
 | `interceptor` | Air superiority specialist | Flying, can AA, `anti_air` | Ready | Clear anti-air flyer. Should be mediocre vs ground. |
-| `hacker_rover` | Hack control/specialist counter | Attack 0, support hunter, no hack mechanic | Needs mechanic | Should disable shields/summoners/targeting or convert temporarily. |
-| `artillery_crawler` | Extreme range pressure | 400 range, massive AoE hit, slow cooldown | Ready | Clear late-game artillery. Needs minimum range or vulnerability. |
+| `hacker_rover` | Hack control/specialist counter | Attack 0, support hunter, applies `hacked` action disable | Partial | Conversion/redirect behavior is still future work. |
+| `artillery_crawler` | Extreme range pressure | Minimum range plus deterministic barrage impacts | Ready | Clear late-game artillery. Watch overkill and minimum-range retreat behavior. |
 | `titan_mech` | XL damage tank/carry | 800 HP, AoE, can AA, anti-armor | Tune | Too many strengths. Needs explicit weakness: EMP, screen pressure, slow turn. |
 | `behemoth_tank` | XL damage tank | 1200 HP, single target, default profile | Ready | Good pure tank. Needs threat low enough to be ignorable or body-blocking value. |
-| `ion_crawler` | Anti-giant carry | 600 HP, rapid low attack, anti-armor | Tune | Needs ramping/beam identity; otherwise it is just another heavy DPS unit. |
+| `ion_crawler` | Anti-giant carry | Beam secondary hits plus same-target `rampDamage` | Ready | Now has anti-giant focused-fire identity; tune cap and vulnerable uptime. |
 | `goliath_gunship` | XL air fortress anchor/AA carry | 1000 HP, can AA, anti-air profile | Tune | Very strong profile. Needs hard counters from AA/EMP. |
 | `mobile_factory` | Summoner/fortress anchor | 900 HP, spawns exosuits | Tune | Good boss unit. Validate snowball and spawn cap. |
-| `sonic_devastator` | XL formation disruptor/screen clear | Currently AoE damage only | Needs mechanic | Should apply knockback/stun/disruption, not plain AoE. |
-| `radar_zepplin` | Utility support/reveal | No attack, no reveal/targeting buff | Needs mechanic | Should provide true sight, range, anti-stealth, or targeting relay. |
-| `stealth_operative` | Stealth assassin/backline killer | Stealth tag/profile, high single damage | Tune | Needs full stealth/reveal contract with radar/hunter counters. |
-| `hologram_projector` | Decoy summoner | Spawns exosuits currently | Needs mechanic | Should spawn low-HP decoys, not real exosuits unless intentional. |
-| `gravity_manipulator` | Formation disruptor/guard | Very low DPS AoE, no gravity effect | Needs mechanic | Should pull, slow, clump, or disrupt formations. |
-| `nanite_generator` | AoE utility support | Currently generic heal vehicle | Needs mechanic | Should be regen aura or mechanical repair specialist. |
-| `bounty_hunter` | Assassin/anti-heavy | Long range, can AA, assassin profile | Tune | Clear role, but may overlap sniper/stealth operative. Needs unique execute/mark mechanic. |
+| `sonic_devastator` | XL formation disruptor/screen clear | Cone attack plus output/range suppression | Partial | True knockback/disruption is still future work. |
+| `radar_zepplin` | Utility support/reveal | Reveal aura exists, no damage | Partial | Range/targeting relay is still future work. |
+| `stealth_operative` | Stealth assassin/backline killer | Stealth tag/profile, high single damage, on-kill reset/heal | Tune | Needs full stealth/reveal tuning with radar/hunter counters. |
+| `hologram_projector` | Decoy summoner | Spawns temporary low-HP exosuit decoys | Partial | Needs final target-priority and visual clarity tuning. |
+| `gravity_manipulator` | Formation disruptor/guard | AoE plus deterministic pull-on-hit | Tune | Watch anti-sumo limits and collision side effects. |
+| `nanite_generator` | AoE utility support | Heal action plus regen aura | Tune | Could specialize further into mechanical repair/cleanse. |
+| `bounty_hunter` | Assassin/anti-heavy | Long range, can AA, assassin profile, target mark execute setup | Tune | Clear role, but may overlap sniper/stealth operative. |
 
 ## Priority Fix List
 
-### P0: Broken or misleading units
+### P0: Remaining partial or misleading units
 
-These units promise a mechanic that the simulation does not currently provide:
+These units now have at least one runtime hook, but still need design/balance
+completion before their role is considered finished:
 
-1. `emp_drone` - add base EMP application or a dedicated disable-control attack.
-2. `shield_emitter` - add shield aura or periodic shield grant.
-3. `hacker_rover` - add hack-control or temporary conversion behavior.
-4. `cryo_tank` - add movement-control slow/freeze.
-5. `gravity_manipulator` - add pull/clump formation disruption or movement control.
-6. `radar_zepplin` - add reveal/targeting relay.
-7. `minelayer_rover` - add mine/hazard placement.
-8. `sonic_devastator` - add knockback/stun formation disruption or disable control.
-9. `hologram_projector` - spawn decoys, not normal combat units.
-10. `officer` - replace generic heal with command aura/buff.
+1. `emp_drone` - applies EMP, but needs tuning around zero-damage utility cadence and counters.
+2. `hacker_rover` - applies `hacked` disable, but conversion/redirect behavior is not implemented.
+3. `sonic_devastator` - applies suppression and cone damage, but true knockback/disruption is still partial.
+4. `radar_zepplin` - reveal aura exists; range relay / targeting relay is still future work.
+5. `officer` - still behaves too much like a healer; needs command aura/buff identity.
+6. `shield_emitter` - shield aura and temporary barrier exist; projectile interception is still missing.
+7. `hologram_projector` - temporary low-HP decoys exist; needs final target-priority and visual clarity tuning.
 
 ### P0.5: Status contract
 
-Before adding more control units, normalize status behavior:
+The status kernel is implemented. Remaining work is mostly balance and UX:
 
-1. Expand `StatusEffect.type` from `emp | burn | slow` to the core list in
-   Status / State Model.
-2. Define deterministic stacking: refresh duration for same `sourceUnitId`, keep
-   strongest `value`, and avoid unbounded duplicate stacks.
-3. Emit replay actions for `status_apply`, `status_tick` when visible damage or
-   healing happens, and `status_expire`.
-4. Add balance tests for duration, stacking, shield interaction, stealth reveal,
-   and replay determinism.
+1. Tune durations/values for EMP, hacked, slow, burn, acid, vulnerable, and suppression.
+2. Make status VFX readable in the replay without hiding unit silhouettes.
+3. Add dedicated manual QA scenarios for cleanse/status immunity and control-heavy armies.
+4. Decide whether hack should stay as disable-only or gain conversion/redirect behavior.
 
 ### P1: Anti-air cleanup
 
