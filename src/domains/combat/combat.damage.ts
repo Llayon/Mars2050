@@ -1,6 +1,7 @@
 import type { BattleAction } from './combat.actions'
 import type { SimUnit } from './combat.sim.types'
 import { getMarkedDamageMultiplier, getMarkedExecuteThreshold } from './combat.mark'
+import { getPercentHpDamage } from './combat.percent-damage'
 import { getStatusValue } from './combat.status'
 import { getDistance } from './combat.utils'
 
@@ -18,6 +19,7 @@ export interface CombatDamageResult {
 export interface CombatDamageContext {
   units?: SimUnit[]
   onUnitDeath?: (unit: SimUnit) => void
+  allowPercentHpDamage?: boolean
 }
 
 /**
@@ -36,8 +38,13 @@ export function applyCombatDamage(
   actions?: BattleAction[],
   context: CombatDamageContext = {}
 ): CombatDamageResult {
-  const raw = Math.floor(rawDamage)
-  if (raw <= 0) return createDamageResult()
+  const baseRaw = Math.floor(rawDamage)
+  if (baseRaw <= 0) return createDamageResult()
+  const percentHpDamage = context.allowPercentHpDamage === false ? 0 : getPercentHpDamage(attacker, target)
+  const raw = baseRaw + percentHpDamage
+  if (percentHpDamage > 0 && actions) {
+    actions.push({ unitId: attacker.id, type: 'percent_hp_damage', targetId: target.id, value: percentHpDamage })
+  }
 
   const defense = getEffectiveDefense(target)
   let damage = Math.max(1, raw - defense)

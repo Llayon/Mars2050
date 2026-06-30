@@ -155,11 +155,12 @@ The following mechanics are now implemented as reusable runtime primitives:
 | Cone / beam / barrage / chain / side weapons | `combat.attack-geometry.ts`, `combat.side-weapon.ts` | `flamethrower`, `sonic_devastator`, `ion_crawler`, `artillery_crawler`, `plasma_tank`, `goliath_gunship` |
 | Minimum range / back-away positioning | `combat.weapon-rules.ts`, `combat.positioning.ts` | `artillery_crawler` |
 | Ramp focused-fire damage | `combat.ramp.ts` | `ion_crawler` |
+| Percent-HP damage | `combat.percent-damage.ts`, `combat.damage.ts` | `railgun_walker` |
 | On-kill effects | `combat.on-kill.ts` | `stealth_operative` |
 
 Remaining major gaps are projectile interception, stance/mode transforms,
-percent-HP damage, charge scaling, richer hack-control behavior, and richer
-vision/smoke mechanics.
+charge scaling, richer hack-control behavior, and richer vision/smoke
+mechanics.
 
 ### Damage / shield pipeline
 
@@ -217,7 +218,7 @@ upgrades, auras, or hazards without hardcoding one-off behavior.
 1. Defensive primitives: flat damage block, damage sharing, status immunity,
    reactive armor charges. Mostly implemented except projectile interception.
 2. Role-transform primitives: target marks are implemented; stance/mode transform and burrow remain future work.
-3. Scaling primitives: ramp damage is implemented; charge scaling and percent HP damage remain future work.
+3. Scaling primitives: ramp damage and percent HP damage are implemented; charge scaling remains future work.
 4. Weapon primitives: chain attacks and side weapons are implemented; richer split fire remains future work.
 5. Death/kill primitives: on-death puddles and on-kill effects are implemented; richer spawn-on-death variants remain future work.
 6. Attack-shape primitives: beam, cone, line pierce, and barrage are implemented; temporary battlefield objects exist as mines/barriers/decoys.
@@ -281,7 +282,7 @@ upgrades, auras, or hazards without hardcoding one-off behavior.
 | `emp_drone` | Flying disable control specialist | Attack 0, support hunter, applies `emp` on hit | Tune | Needs cadence/counter tuning so zero-damage utility is valuable but not oppressive. |
 | `minelayer_rover` | Area denial/movement control | Deploys deterministic mines through `mineOnAction` | Tune | Needs visual clarity and trigger/radius balance. |
 | `siege_tank` | Range pressure/screen clear | 320 range, AoE, `siege` profile | Ready | Strong identity. Watch target acquisition and overkill. |
-| `railgun_walker` | Range pressure/anti-heavy | 280 range, `long_range_priority` | Ready | Good heavy hunter. Disable-control rounds upgrade fits well. |
+| `railgun_walker` | Range pressure/anti-heavy | 280 range, `long_range_priority`, line pierce, capped percent-HP bonus | Ready | Good heavy hunter. Disable-control rounds upgrade fits well. |
 | `drone_carrier` | Air summoner/screen producer | Flying, `spawn`, summons scout drones | Tune | Good concept. Validate spawn cadence and target behavior. |
 | `cryo_tank` | Movement control/screen clear | AoE plus `slow` status on hit | Tune | Freeze/root can remain an upgrade; baseline slow is implemented. |
 | `shield_emitter` | Guard/projectile defense | Shield aura plus temporary barrier spawn | Partial | Projectile interception is still missing. |
@@ -427,7 +428,7 @@ Missing upgrade categories:
 23. Ramp/charge scaling upgrades for anti-giant and late-fight carry units.
 24. Multi-weapon, split-fire, and chain-attack upgrades.
 25. On-death and on-kill effects with deterministic caps.
-26. Percent-HP damage upgrades for anti-giant roles.
+26. Additional percent-HP damage upgrades for anti-giant roles.
 27. Output-suppression upgrades that reduce attack cadence without full EMP.
 28. Armor-break, armor-pierce, and shield-bypass upgrades.
 29. Degeneration upgrades for anti-regen and anti-giant pressure.

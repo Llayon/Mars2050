@@ -83,6 +83,11 @@ describe('combat unit config contract', () => {
         expect(stats.rampDamage.step, `${unitType} has ramp damage without positive step`).toBeGreaterThan(0)
         expect(stats.rampDamage.maxMultiplier, `${unitType} has ramp damage without useful max multiplier`).toBeGreaterThan(1)
       }
+      if (stats.percentHpDamage) {
+        expect(stats.percentHpDamage.percent, `${unitType} has percent HP damage without positive percent`).toBeGreaterThan(0)
+        expect(stats.percentHpDamage.percent, `${unitType} has percent HP damage above 100%`).toBeLessThanOrEqual(1)
+        expect(stats.percentHpDamage.maxBonus, `${unitType} has percent HP damage without positive cap`).toBeGreaterThan(0)
+      }
       if (stats.onKill) {
         expect(Boolean(stats.onKill.cooldownReset || stats.onKill.healPercent || stats.onKill.status), `${unitType} has on-kill without an effect`).toBe(true)
         if (stats.onKill.healPercent !== undefined) {

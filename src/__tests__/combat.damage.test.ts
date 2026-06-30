@@ -110,6 +110,54 @@ describe('combat.damage', () => {
     ])
   })
 
+  it('adds capped percent HP bonus before mitigation for anti-giant weapons', () => {
+    const attacker = makeUnit({ id: 'rail', team: 'attacker', type: 'railgun_walker', attack: 100 })
+    const target = makeUnit({ id: 'giant', team: 'defender', hp: 1000, maxHp: 1000 })
+    const actions: BattleAction[] = []
+
+    const result = applyCombatDamage(attacker, target, attacker.attack, actions)
+
+    expect(result.damage).toBe(160)
+    expect(target.hp).toBe(840)
+    expect(actions[0]).toEqual({ unitId: 'rail', type: 'percent_hp_damage', targetId: 'giant', value: 60 })
+    expect(actions[1]).toEqual({ unitId: 'rail', type: 'damage', targetId: 'giant', damage: 160 })
+  })
+
+  it('caps percent HP bonus on very large targets', () => {
+    const attacker = makeUnit({ id: 'rail', team: 'attacker', type: 'railgun_walker', attack: 100 })
+    const target = makeUnit({ id: 'fortress', team: 'defender', hp: 3000, maxHp: 3000 })
+    const actions: BattleAction[] = []
+
+    const result = applyCombatDamage(attacker, target, attacker.attack, actions)
+
+    expect(result.damage).toBe(190)
+    expect(target.hp).toBe(2810)
+    expect(actions[0]).toEqual({ unitId: 'rail', type: 'percent_hp_damage', targetId: 'fortress', value: 90 })
+  })
+
+  it('does not emit percent HP action for units without percent HP config', () => {
+    const attacker = makeUnit({ id: 'marine', team: 'attacker', type: 'marine', attack: 100 })
+    const target = makeUnit({ id: 'target', team: 'defender', hp: 1000, maxHp: 1000 })
+    const actions: BattleAction[] = []
+
+    const result = applyCombatDamage(attacker, target, attacker.attack, actions)
+
+    expect(result.damage).toBe(100)
+    expect(actions).toEqual([{ unitId: 'marine', type: 'damage', targetId: 'target', damage: 100 }])
+  })
+
+  it('can disable percent HP bonus for secondary weapon hits', () => {
+    const attacker = makeUnit({ id: 'rail', team: 'attacker', type: 'railgun_walker', attack: 100 })
+    const target = makeUnit({ id: 'secondary', team: 'defender', hp: 1000, maxHp: 1000 })
+    const actions: BattleAction[] = []
+
+    const result = applyCombatDamage(attacker, target, attacker.attack, actions, { allowPercentHpDamage: false })
+
+    expect(result.damage).toBe(100)
+    expect(target.hp).toBe(900)
+    expect(actions).toEqual([{ unitId: 'rail', type: 'damage', targetId: 'secondary', damage: 100 }])
+  })
+
   it('spends reactive armor charges only after shield overflow reaches HP', () => {
     const attacker = makeUnit({ id: 'attacker', team: 'attacker', attack: 50 })
     const target = makeUnit({

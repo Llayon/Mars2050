@@ -69,9 +69,10 @@ describe('combat.attack-geometry', () => {
     const acted = actionSystem(attacker, primary, [attacker, primary, secondary, offLine], hazards, actions, new PRNG(1))
 
     expect(acted).toBe(true)
-    expect(primary.hp).toBe(80)
+    expect(primary.hp).toBe(68)
     expect(secondary.hp).toBe(34)
     expect(offLine.hp).toBe(100)
+    expect(actions).toContainEqual({ unitId: 'attacker', type: 'percent_hp_damage', targetId: 'primary', value: 12 })
     expect(actions.filter(action => action.type === 'attack').map(action => action.targetId)).toEqual(['primary', 'secondary'])
   })
 })
