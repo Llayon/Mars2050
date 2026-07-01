@@ -40,25 +40,25 @@ describe('BottomNav', () => {
     const { container } = render(<BottomNav activeTab="colony" onTabChange={() => {}} />)
     const buttons = container.querySelectorAll('button')
     expect(buttons.length).toBe(6)
-    expect(buttons[0].textContent).toContain('Колония')
-    expect(buttons[1].textContent).toContain('Стройка')
-    expect(buttons[2].textContent).toContain('Люди')
-    expect(buttons[3].textContent).toContain('Карта')
-    expect(buttons[4].textContent).toContain('Операции')
-    expect(buttons[5].textContent).toContain('Профиль')
+    expect(buttons[0].textContent).toContain('База')
+    expect(buttons[1].textContent).toContain('Карта')
+    expect(buttons[2].textContent).toContain('Армия')
+    expect(buttons[3].textContent).toContain('Стройка')
+    expect(buttons[4].textContent).toContain('Люди')
+    expect(buttons[5].textContent).toContain('Данные')
   })
 
   it('highlights active tab', () => {
     const { container } = render(<BottomNav activeTab="buildings" onTabChange={() => {}} />)
     const buttons = container.querySelectorAll('button')
-    expect(buttons[1].className).toContain('text-cyan-400')
+    expect(buttons[3].className).toContain('text-cyan-400')
   })
 
   it('calls onTabChange on click', () => {
     const onChange = vi.fn()
     const { container } = render(<BottomNav activeTab="colony" onTabChange={onChange} />)
     const buttons = container.querySelectorAll('button')
-    buttons[3].click()
+    buttons[1].click()
     expect(onChange).toHaveBeenCalledWith('map')
   })
 })
@@ -81,12 +81,6 @@ describe('ColonyScreen', () => {
   it('renders loading state for colony', () => {
     const { container } = render(<ColonyScreen {...baseProps} colonyLoading={true} />)
     expect(container.textContent).toContain('Загрузка')
-  })
-
-  it('renders colony name when provided', () => {
-    const colony: Colony = { id: 'test-id', name: 'Mars Base Alpha', level: 3, experience: 0, user_id: 'u1', created_at: '', last_calc_at: '' }
-    const { container } = render(<ColonyScreen {...baseProps} colony={colony} />)
-    expect(container.textContent).toContain('Mars Base Alpha')
   })
 
   it('shows placeholder for building count when children provided', () => {

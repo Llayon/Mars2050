@@ -35,10 +35,10 @@ export function GameAlerts({ colonyId, population, resources, housingCapacity = 
 
   // 1. Critical Population Alerts
   if (hasWorkerWarning) {
-    alerts.push({ id: 'workers', icon: '👷', label: 'Нет рабочих', value: '0', type: 'critical' })
+    alerts.push({ id: 'workers', icon: <span className="text-red-400"><ResourceIcon type="worker" className="w-4 h-4" /></span>, label: 'Нет рабочих', value: '0', type: 'critical' })
   }
   if (hasHousingWarning) {
-    alerts.push({ id: 'housing', icon: '🏠', label: 'Нехватка жилья', value: `${totalPop}/${housingCapacity}`, type: 'warning' })
+    alerts.push({ id: 'housing', icon: <span className="text-amber-400"><ResourceIcon type="housing" className="w-4 h-4" /></span>, label: 'Нехватка жилья', value: `${totalPop}/${housingCapacity}`, type: 'warning' })
   }
 
   // 2. Resource Deficits

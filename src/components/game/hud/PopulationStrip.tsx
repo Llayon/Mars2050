@@ -1,4 +1,5 @@
 import type { PopulationState } from '@/domains/population/population.types'
+import { ResourceIcon } from '@/components/ui/icons/ResourceIcon'
 
 interface PopulationStripProps {
   population: PopulationState | null
@@ -49,11 +50,11 @@ export function PopulationStrip({ population, isMobile }: PopulationStripProps) 
   return (
     <div className="flex items-center gap-4 text-xs font-bold shrink-0">
       <div className="flex items-center gap-2 text-gray-200" title={`Рабочие: ${workers} | Инженеры: ${technicians} | Ученые: ${scientists}`}>
-        <span className="opacity-80 drop-shadow-md">👥</span> 
+        <span className="opacity-80 drop-shadow-md text-cyan-200"><ResourceIcon type="population" className="w-4 h-4" /></span> 
         <span>{totalPop} <span className="text-gray-500 font-normal">/ {housingCapacity}</span></span>
       </div>
       <div className={`flex items-center gap-1.5 ${lowHappiness ? 'text-red-400 animate-pulse' : 'text-green-400'}`}>
-        <span className="opacity-80 drop-shadow-md">😊</span> 
+        <span className="opacity-80 drop-shadow-md text-green-300"><ResourceIcon type="happiness" className="w-4 h-4" /></span> 
         <span>{weightedHappiness}%</span>
       </div>
     </div>

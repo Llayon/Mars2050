@@ -61,7 +61,7 @@ export const PopulationScreen = memo(function PopulationScreen({
             return (
               <div key={tierKey} className="hud-panel p-4 opacity-50 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <span className="text-3xl opacity-50">{config.icon}</span>
+                  <span className="text-gray-500"><ResourceIcon type={tierKey} className="w-8 h-8" /></span>
                   <div>
                     <h3 className="font-bold text-gray-400">{config.name}</h3>
                     <p className="text-xs text-gray-500">
@@ -77,14 +77,14 @@ export const PopulationScreen = memo(function PopulationScreen({
           
           return (
             <div key={tierKey} className="hud-panel p-4 relative overflow-hidden">
-              <div className="absolute top-0 right-0 p-4 opacity-10 text-6xl pointer-events-none">
-                {config.icon}
+              <div className="absolute top-0 right-0 p-4 opacity-10 pointer-events-none">
+                <ResourceIcon type={tierKey} className="w-16 h-16 text-white" />
               </div>
               
               <div className="flex items-start justify-between relative z-10">
                 <div className="flex gap-4 items-center">
-                  <div className="bg-black/40 p-3 rounded-xl border border-white/5">
-                    <span className="text-4xl">{config.icon}</span>
+                  <div className="bg-black/40 p-3 rounded-xl border border-white/5 text-cyan-400">
+                    <ResourceIcon type={tierKey} className="w-10 h-10 drop-shadow-md" />
                   </div>
                   <div>
                     <h2 className="text-xl font-bold text-white flex items-center gap-2">
@@ -95,10 +95,10 @@ export const PopulationScreen = memo(function PopulationScreen({
                     </h2>
                     <div className="flex gap-3 mt-2 text-sm">
                       <span className="flex items-center gap-1 text-yellow-400">
-                        😊 {happiness}%
+                        <ResourceIcon type="happiness" className="w-4 h-4" /> {happiness}%
                       </span>
                       <span className={`flex items-center gap-1 ${count > housing ? 'text-red-400' : 'text-gray-300'}`}>
-                        🏠 {count} / {housing}
+                        <ResourceIcon type="housing" className="w-4 h-4" /> {count} / {housing}
                       </span>
                     </div>
                   </div>

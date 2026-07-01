@@ -109,11 +109,11 @@ export function TopResourceBar({ resources, population, colony, isMobile }: TopR
         {/* Population Compact */}
         <div className="flex gap-4 items-center mr-6">
            <div className="flex items-center gap-2 text-xs font-bold text-gray-200" title={`Рабочие: ${workers} | Инженеры: ${technicians} | Ученые: ${scientists}`}>
-             <span className="opacity-80">👥</span> 
+             <span className="opacity-80 text-cyan-200"><ResourceIcon type="population" className="w-4 h-4" /></span> 
              <span>{totalPop} <span className="text-gray-500 font-normal">/ {housingCapacity}</span></span>
            </div>
            <div className={`flex items-center gap-1.5 text-xs font-bold ${lowHappiness ? 'text-red-400 animate-pulse' : 'text-green-400'}`}>
-             <span className="opacity-80">😊</span> 
+             <span className="opacity-80 text-green-300"><ResourceIcon type="happiness" className="w-4 h-4" /></span> 
              <span>{weightedHappiness}%</span>
            </div>
         </div>
