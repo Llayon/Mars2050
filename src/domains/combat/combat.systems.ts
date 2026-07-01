@@ -6,14 +6,19 @@ import { isMeleeEngagementReady } from './combat.melee-engagement';
 import { applyStatus, getEffectiveActionRange, isActionBlockedByStatus, tickStatuses } from './combat.status';
 import { applyCombatDamage } from './combat.damage';
 import { tryDeployMine } from './combat.minefield';
+import { tryDeploySmoke } from './combat.smoke';
 import { getBarrageDamageMultiplier, getBarrageImpacts, getBarrageTargets, getBeamDamageMultiplier, getBeamTargets, getChainTargets, getConeDamageMultiplier, getConeTargets, getLinePierceDamageMultiplier, getLinePierceTargets } from './combat.attack-geometry';
-import { applyPullOnHit } from './combat.displacement';
+import { applyKnockbackOnHit, applyPullOnHit } from './combat.displacement';
 import { applyTargetMark, tickTargetMark } from './combat.mark';
 import { getMinimumActionRange } from './combat.weapon-rules';
 import { getSideWeaponDamage, getSideWeaponTargets } from './combat.side-weapon';
 import { getRampDamage } from './combat.ramp';
 import { isProjectileInterceptableAttack } from './combat.projectile-defense';
 import { getChargeDamage } from './combat.charge';
+import { getSplitFireDamageMultiplier, getSplitFireTargets } from './combat.split-fire';
+import { canReceiveHealAction } from './combat.support';
+import { canAttackControlledTarget } from './combat.control';
+import { getStanceActionCooldown, getStanceSetupActionRange, prepareStanceForAction } from './combat.stance';
 
 export function tickModifiersSystem(unit: SimUnit, dt: number, actions: BattleAction[]) {
   if (unit.actionCooldown > 0) unit.actionCooldown = Math.max(0, unit.actionCooldown - 1);
@@ -31,8 +36,9 @@ export function actionSystem(unit: SimUnit, target: SimUnit, units: SimUnit[], h
   
   const effectiveRange = getEffectiveActionRange(unit);
   const minimumRange = getMinimumActionRange(unit);
-  const inRange = unit.attackType === 'spawn' || (unit.attackType !== 'heal' && (minimumRange <= 0 || distEdge >= minimumRange) && distEdge <= effectiveRange) ||
-                 (unit.attackType === 'heal' && target.hp < target.maxHp && distEdge <= effectiveRange);
+  const setupRange = getStanceSetupActionRange(unit, effectiveRange);
+  const inRange = unit.attackType === 'spawn' || (unit.attackType !== 'heal' && (minimumRange <= 0 || distEdge >= minimumRange) && distEdge <= setupRange) ||
+                 (unit.attackType === 'heal' && canReceiveHealAction(unit, target) && target.hp < target.maxHp && distEdge <= effectiveRange);
 
   if (!inRange) return false;
   if (!isMeleeEngagementReady(unit, target)) return false;
@@ -48,9 +54,11 @@ export function actionSystem(unit: SimUnit, target: SimUnit, units: SimUnit[], h
 
   if (unit.actionCooldown > 0) return false;
   if (isActionBlockedByStatus(unit)) return false;
+  if (unit.attackType !== 'heal' && target.team === unit.team && !canAttackControlledTarget(unit, target)) return false;
+  if (!prepareStanceForAction(unit, actions)) return true;
 
-  unit.actionCooldown = unit.actionCooldownMax; // Reset cooldown
-  if (tryDeployMine(unit, target, hazards, actions, rng)) return true;
+  unit.actionCooldown = getStanceActionCooldown(unit); // Reset cooldown
+  if (tryDeployMine(unit, target, hazards, actions, rng) || tryDeploySmoke(unit, target, hazards, actions, rng)) return true;
 
   if (unit.attackType === 'spawn') {
       return processSpawnAction(unit, target, units, actions, rng);
@@ -104,6 +112,7 @@ export function actionSystem(unit: SimUnit, target: SimUnit, units: SimUnit[], h
          processBeamAttack(unit, target, units, actions, hazards, rng);
          processBarrageAttack(unit, target, units, actions, hazards, rng);
          processChainAttack(unit, target, units, actions, hazards, rng);
+         processSplitFireAttack(unit, target, units, actions, hazards, rng);
          processSideWeaponAttack(unit, target, units, actions, hazards, rng);
 
          if (unit.attackType === 'aoe' && unit.aoeRadius) {
@@ -125,6 +134,7 @@ export function actionSystem(unit: SimUnit, target: SimUnit, units: SimUnit[], h
          }
 
          applyPullOnHit(unit, target, units, actions);
+         applyKnockbackOnHit(unit, target, units, actions);
      }
   }
   return true;
@@ -188,6 +198,19 @@ function processChainAttack(unit: SimUnit, target: SimUnit, units: SimUnit[], ac
     applyOnHitStatuses(unit, hit.target, actions);
     applyTargetMark(unit, hit.target, actions);
     if (hit.target.hp <= 0 && !hit.target.isDead) handleDeath(hit.target, unit, units, actions, hazards, rng);
+  }
+}
+
+function processSplitFireAttack(unit: SimUnit, target: SimUnit, units: SimUnit[], actions: BattleAction[], hazards: SimHazard[], rng: PRNG): void {
+  const multiplier = getSplitFireDamageMultiplier(unit);
+  if (!multiplier) return;
+
+  for (const secondary of getSplitFireTargets(unit, target, units)) {
+    actions.push({ unitId: unit.id, type: 'split_fire', targetId: secondary.id });
+    applyCombatDamage(unit, secondary, Math.floor(unit.attack * multiplier), actions, createDamageContext(unit, units, actions, hazards, rng, false, false));
+    applyOnHitStatuses(unit, secondary, actions);
+    applyTargetMark(unit, secondary, actions);
+    if (secondary.hp <= 0 && !secondary.isDead) handleDeath(secondary, unit, units, actions, hazards, rng);
   }
 }
 

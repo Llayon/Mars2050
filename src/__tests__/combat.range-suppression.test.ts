@@ -51,4 +51,17 @@ describe('range_suppressed status', () => {
     expect(attacker.attackTargetId).toBeUndefined()
     expect(attacker.aggroLockTicks).toBe(0)
   })
+
+  it('lets range boost expand local ranged acquisition', () => {
+    const attacker = makeUnit({ id: 'attacker', team: 'attacker', x: 0, y: 0, range: 160 })
+    const far = makeUnit({ id: 'far', team: 'defender', x: 330, y: 0 })
+    const units = [attacker, far]
+    applyStatus(attacker, { type: 'range_boost', duration: 5, value: 0.5 })
+
+    const target = targetingSystem(attacker, units, createMeleeEngagementState(), makeHash(units))
+
+    expect(target?.id).toBe('far')
+    expect(attacker.attackTargetId).toBe('far')
+    expect(attacker.aggroLockTicks).toBe(10)
+  })
 })

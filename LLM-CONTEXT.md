@@ -44,8 +44,9 @@
 
 ## Текущее состояние
 - ✅ Core gameplay domains implemented: auth, building, colony, combat, events, leaderboard, map, pvp, resource.
-- ✅ Combat domain implemented: tick loop, squads, local aggro, flying/ground targeting, statuses, damage/shield pipeline, support auras, mines, displacement, barriers/decoys, attack geometry, ramp damage, on-kill effects, upgrades, hazards, replay, spatial hash, sticky aggro, steering.
+- ✅ Combat domain implemented: tick loop, squads, local aggro, flying/ground targeting, statuses, damage/shield pipeline, support auras, mines, displacement, barriers/decoys, attack geometry, ramp damage, on-kill effects, upgrades, hazards, replay, spatial hash, sticky aggro, steering, stances, smoke suppression, split-fire, anti-summoner, armor pierce, shield breaker.
 - ✅ PvP hardening implemented: auth ownership checks, battle snapshots, replay access contract, cooldowns, simulation version, practice NPC targets.
+- ✅ UI Architecture overhauled: transitioned to full-screen TWA screens (Operations, Map, Colony, Buildings, Profile) with bottom navigation and Anno-style HUDs, removing old legacy desktop panels.
 - ✅ Economy hardening in progress/implemented locally: dynamic production rates, workforce, happiness, housing, terrain requirements.
 - ✅ Supabase Cloud project active: `gkvsnzwvgonfpuespafm`.
 - ✅ Architecture enforcer and git hooks configured.

@@ -2,15 +2,15 @@ import type { Team, SimUnit, Obstacle } from './combat.sim.types'
 import type { CombatMetrics } from './combat.metrics'
 
 export type BattleActionType =
-  | 'move' | 'attack' | 'heal' | 'die' | 'spawn' | 'hazard_spawn'
+  | 'move' | 'knockback' | 'attack' | 'heal' | 'die' | 'spawn' | 'hazard_spawn'
   | 'damage' | 'damage_share' | 'shield_damage' | 'shield_break' | 'lifesteal' | 'unit_blocked_damage'
   | 'status_apply' | 'status_expire' | 'status_cleanse' | 'status_tick' | 'status_immune'
-  | 'shield_apply' | 'target_mark' | 'target_mark_expire' | 'spawn_blocked'
+  | 'shield_apply' | 'target_mark' | 'target_mark_expire' | 'spawn_blocked' | 'stance_change'
   | 'projectile_intercept'
   | 'cone_attack' | 'beam_tick'
   | 'barrage_marker' | 'barrage_impact'
   | 'chain_jump'
-  | 'side_weapon_attack' | 'ramp_charge' | 'charge_damage' | 'percent_hp_damage' | 'on_kill'
+  | 'split_fire' | 'side_weapon_attack' | 'ramp_charge' | 'charge_damage' | 'percent_hp_damage' | 'on_kill'
 
 export interface BattleAction {
   unitId: string
@@ -31,6 +31,8 @@ export interface BattleAction {
   hazardId?: string
   radius?: number
   statusType?: string
+  controlMode?: string
+  stanceMode?: string
   value?: number
 }
 

@@ -21,37 +21,49 @@ export function CommandCenterOverlay({ colonyId, resources, onClose, onReplay }:
   const [activeTab, setActiveTab] = useState<TabKey>('recruitment')
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-md p-4 lg:p-12">
-      <div className="w-full h-full max-w-7xl max-h-[90vh] bg-slate-950/90 border border-cyan-500/30 flex flex-col shadow-2xl shadow-cyan-900/20 rounded-sm overflow-hidden">
-        
-        {/* Header / Nav */}
-        <div className="flex items-center justify-between bg-black/60 border-b border-cyan-500/30 p-4">
-          <div className="flex items-center gap-6">
-            <h1 className="text-xl font-bold tracking-widest text-white uppercase">
-              Command Center
-            </h1>
-            <div className="flex gap-2">
-              <NavButton active={activeTab === 'recruitment'} onClick={() => setActiveTab('recruitment')}>
-                [ RECRUITMENT ]
-              </NavButton>
-              <NavButton active={activeTab === 'defense'} onClick={() => setActiveTab('defense')}>
-                [ DEFENSE ]
-              </NavButton>
-              <NavButton active={activeTab === 'operations'} onClick={() => setActiveTab('operations')}>
-                [ OPERATIONS ]
-              </NavButton>
-              <NavButton active={activeTab === 'intel'} onClick={() => setActiveTab('intel')}>
-                [ INTEL / REPLAYS ]
-              </NavButton>
+    <>
+      {/* Soft Backdrop */}
+      <div 
+        className="absolute inset-0 z-20 bg-black/40 backdrop-blur-[2px] transition-opacity" 
+        onClick={onClose} 
+      />
+
+      {/* Side Panel (Wide for Command Center) */}
+      <div className="absolute top-[60px] bottom-[60px] left-0 right-0 z-30 flex flex-col bg-gray-900/95 backdrop-blur-xl border-t border-b border-gray-700/80 shadow-[0_0_40px_rgba(0,0,0,0.9)] animate-slide-in-right overflow-hidden">
+        <div className="flex flex-col h-full relative">
+          
+          {/* Header / Nav */}
+          <header className="flex-none flex items-center justify-between px-6 py-4 border-b border-gray-700/50 bg-black/20">
+            <div className="flex flex-col gap-3 w-full">
+              <div className="flex justify-between items-center w-full">
+                <h1 className="text-xl font-bold text-white tracking-widest uppercase flex items-center gap-3">
+                  <span className="w-3 h-3 bg-cyan-500 rounded-sm shadow-[0_0_10px_rgba(6,182,212,0.8)] rotate-45" />
+                  Command Center
+                </h1>
+                <button 
+                  onClick={onClose}
+                  className="text-gray-400 hover:text-white flex items-center justify-center w-8 h-8 font-mono border border-transparent hover:border-red-500/50 hover:bg-red-500/10 transition-all rounded"
+                  title="Close"
+                >
+                  <span className="text-lg leading-none">&times;</span>
+                </button>
+              </div>
+              <div className="flex gap-2">
+                <NavButton active={activeTab === 'recruitment'} onClick={() => setActiveTab('recruitment')}>
+                  RECRUITMENT
+                </NavButton>
+                <NavButton active={activeTab === 'defense'} onClick={() => setActiveTab('defense')}>
+                  DEFENSE
+                </NavButton>
+                <NavButton active={activeTab === 'operations'} onClick={() => setActiveTab('operations')}>
+                  OPERATIONS
+                </NavButton>
+                <NavButton active={activeTab === 'intel'} onClick={() => setActiveTab('intel')}>
+                  INTEL / REPLAYS
+                </NavButton>
+              </div>
             </div>
-          </div>
-          <button 
-            onClick={onClose}
-            className="text-gray-400 hover:text-white px-3 py-1 font-mono text-xl border border-transparent hover:border-red-500/50 hover:bg-red-500/10 transition-colors"
-          >
-            [ X ]
-          </button>
-        </div>
+          </header>
 
         {/* Content Area */}
         <div className="flex-1 overflow-hidden relative">
@@ -60,9 +72,9 @@ export function CommandCenterOverlay({ colonyId, resources, onClose, onReplay }:
           {activeTab === 'operations' && <OperationsTab colonyId={colonyId} onReplay={onReplay} />}
           {activeTab === 'intel' && <IntelTab colonyId={colonyId} onReplay={onReplay} />}
         </div>
-
       </div>
     </div>
+    </>
   )
 }
 

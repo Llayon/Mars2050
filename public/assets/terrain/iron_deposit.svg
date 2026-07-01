@@ -1,0 +1,17 @@
+<svg width="128" height="64" viewBox="0 0 128 64" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <radialGradient id="ironGrad" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#a0522d"/>
+            <stop offset="100%" stop-color="#5c2e16"/>
+          </radialGradient>
+        </defs>
+        <polygon points="64,0 128,32 64,64 0,32" fill="url(#ironGrad)" stroke="#3a1d0e" stroke-width="1" />
+        <!-- Iron veins -->
+        <path d="M30,32 L50,20 L70,30 L90,25 L100,40 L70,50 L40,45 Z" fill="#404040" stroke="#707070" stroke-width="1.5" opacity="0.8"/>
+        <path d="M40,32 L50,25 L60,35 L80,28" stroke="#808080" fill="none" stroke-width="2" stroke-dasharray="2 2" />
+        <!-- Shiny dots -->
+        <circle cx="50" cy="20" r="1.5" fill="#ffffff" opacity="0.6"/>
+        <circle cx="70" cy="30" r="1" fill="#ffffff" opacity="0.6"/>
+        <circle cx="90" cy="25" r="2" fill="#ffffff" opacity="0.6"/>
+        <circle cx="70" cy="50" r="1.5" fill="#ffffff" opacity="0.6"/>
+      </svg>

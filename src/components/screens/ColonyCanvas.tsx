@@ -22,6 +22,14 @@ const TYPE_COLORS: Record<string, number> = {
   spaceport: 0x1E90FF, military_academy: 0x8B0000, hq: 0x4B0082, executive_dome: 0xFFDF00
 }
 
+const TERRAIN_ASSETS: Record<string, string> = {
+  regolith: '/assets/terrain/regolith.svg',
+  iron_deposit: '/assets/terrain/iron_deposit.svg',
+  ice_pocket: '/assets/terrain/ice_pocket.svg',
+  geothermal: '/assets/terrain/geothermal.svg',
+  blocked_rock: '/assets/terrain/blocked_rock.svg'
+}
+
 function drawBuilding(b: BuildingRow, textures: Record<string, PIXI.Texture>) {
   const { TILE_WIDTH, TILE_HEIGHT } = RENDER_LIMITS
   const bConfig = BUILDING_TYPES[b.type], bw = bConfig?.width || 1, bh = bConfig?.height || 1
@@ -48,7 +56,7 @@ export default function ColonyCanvas({ colony, buildings, onBuildingClick, place
   placementMode: BuildingTypeKey | null; onConfirmPlacement: (x: number, y: number) => void
 }) {
   const containerRef = useRef<HTMLDivElement>(null), appRef = useRef<PIXI.Application | null>(null)
-  const worldRef = useRef<PIXI.Container | null>(null), buildingsRef = useRef<PIXI.Container | null>(null), terrainRef = useRef<PIXI.Graphics | null>(null)
+  const worldRef = useRef<PIXI.Container | null>(null), buildingsRef = useRef<PIXI.Container | null>(null), terrainRef = useRef<PIXI.Container | null>(null)
   const ghostRef = useRef<PIXI.Graphics | null>(null), texturesRef = useRef<Record<string, PIXI.Texture>>({})
   const ghostTextRef = useRef<PIXI.Text | null>(null)
   const isDragging = useRef(false), lastPos = useRef({ x: 0, y: 0 }), startDragPos = useRef({ x: 0, y: 0 })
@@ -67,6 +75,7 @@ export default function ColonyCanvas({ colony, buildings, onBuildingClick, place
       if (!containerRef.current) return
       containerRef.current.appendChild(app.canvas); appRef.current = app
       await Promise.all(Object.entries(ASSET_MANIFEST).map(async ([t, p]) => { try { texturesRef.current[t] = await PIXI.Assets.load(p) } catch {} }))
+      await Promise.all(Object.entries(TERRAIN_ASSETS).map(async ([t, p]) => { try { texturesRef.current['terrain_' + t] = await PIXI.Assets.load(p) } catch {} }))
       if (cancelled) return
       const world = new PIXI.Container(); world.sortableChildren = true; worldRef.current = world
       world.x = app.screen.width / 2; world.y = app.screen.height / 2 - 320; app.stage.addChild(world)
@@ -76,7 +85,7 @@ export default function ColonyCanvas({ colony, buildings, onBuildingClick, place
         grid.moveTo(s1.x, s1.y).lineTo(e1.x, e1.y).moveTo(s2.x, s2.y).lineTo(e2.x, e2.y)
       }
       grid.stroke(); grid.zIndex = -1; world.addChild(grid)
-      const terrainLayer = new PIXI.Graphics(); terrainLayer.zIndex = -2; world.addChild(terrainLayer); terrainRef.current = terrainLayer
+      const terrainLayer = new PIXI.Container(); terrainLayer.zIndex = -2; world.addChild(terrainLayer); terrainRef.current = terrainLayer
       const bl = new PIXI.Container(); bl.sortableChildren = true; buildingsRef.current = bl; world.addChild(bl)
       const g = new PIXI.Graphics(); g.zIndex = 9999; ghostRef.current = g; world.addChild(g)
       const gt = new PIXI.Text({ text: '', style: { fontFamily: 'Arial', fontSize: 14, fill: 0xffffff, align: 'center', stroke: { color: 0x000000, width: 3 } } }); gt.zIndex = 10000; gt.anchor.set(0.5, 1); ghostTextRef.current = gt; world.addChild(gt)
@@ -107,21 +116,26 @@ export default function ColonyCanvas({ colony, buildings, onBuildingClick, place
     const world = worldRef.current, app = appRef.current, bl = buildingsRef.current, ghost = ghostRef.current, terrain = terrainRef.current
     if (!initDone || !world || !app || !bl || !ghost || !terrain) return
 
-    terrain.clear()
     const tg = colony?.terrain_grid as TerrainGrid | undefined
     const radius = colony?.unlocked_radius || 5
     if (tg) {
-      const { TILE_WIDTH, TILE_HEIGHT } = RENDER_LIMITS
-      const w2 = TILE_WIDTH / 2, h2 = TILE_HEIGHT / 2
-      tg.forEach(cell => {
-        const config = TERRAIN_CONFIG[cell.t]
+      const created = terrain.children.length > 0
+      tg.forEach((cell, i) => {
         const pos = gridToScreen(cell.x + 0.5, cell.y + 0.5)
         const maxDist = Math.max(Math.abs(cell.x - 19.5), Math.abs(cell.y - 19.5))
         const isUnlocked = maxDist <= radius - 0.5
-        const color = config ? config.color : 0x8B4513
         const alpha = isUnlocked ? 1.0 : 0.2
-        terrain.moveTo(pos.x, pos.y - h2).lineTo(pos.x + w2, pos.y).lineTo(pos.x, pos.y + h2).lineTo(pos.x - w2, pos.y).closePath().fill({ color, alpha })
-        if (isUnlocked) terrain.stroke({ width: 1, color: 0x333333, alpha: 0.5 })
+        
+        let s: PIXI.Sprite
+        if (!created) {
+          s = new PIXI.Sprite(texturesRef.current[`terrain_${cell.t}`] || texturesRef.current['terrain_regolith'])
+          s.anchor.set(0.5, cell.t === 'blocked_rock' ? 0.75 : 0.5)
+          s.x = pos.x; s.y = pos.y
+          terrain.addChild(s)
+        } else {
+          s = terrain.children[i] as PIXI.Sprite
+        }
+        s.alpha = alpha
       })
     }
     bl.removeChildren().forEach(c => c.destroy()); buildings.forEach(b => {

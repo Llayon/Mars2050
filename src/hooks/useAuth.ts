@@ -90,24 +90,14 @@ export function useAuth() {
 
   async function loadColony(userId: string) {
     try {
-      const { data: colonies } = await supabase
-        .from('colonies')
-        .select('id')
-        .eq('user_id', userId)
-        .limit(1)
-
-      if (colonies && colonies.length > 0) {
-        setState(prev => ({ ...prev, colonyId: colonies[0].id }))
-      } else {
-        const res = await fetch('/api/colonies', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId })
-        })
-        if (!res.ok) return setState(prev => ({ ...prev, error: 'Ошибка сервера при создании колонии' }))
-        const data = await res.json()
-        setState(prev => ({ ...prev, colonyId: data.colonyId || null, error: data.colonyId ? null : (data.error || 'Failed to create colony') }))
-      }
+      const res = await fetch('/api/colonies', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId })
+      })
+      if (!res.ok) return setState(prev => ({ ...prev, error: 'Ошибка сервера при создании/загрузке колонии' }))
+      const data = await res.json()
+      setState(prev => ({ ...prev, colonyId: data.colonyId || null, error: data.colonyId ? null : (data.error || 'Failed to get colony') }))
     } catch (error) {
       setState(prev => ({ ...prev, error: formatError(error) }))
     }

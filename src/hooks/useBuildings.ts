@@ -75,7 +75,7 @@ export function useBuildings(colonyId: string | null) {
       const res = await fetchWithAuth(`/api/buildings?buildingId=${buildingId}&colonyId=${colonyId}`, { method: 'DELETE' })
       if (!res.ok) {
         const data = await res.json()
-        throw new Error(data.error || 'Failed to demolish')
+        throw new Error(data.error?.message || data.error || 'Failed to demolish')
       }
       setBuildings(prev => prev.filter(b => b.id !== buildingId))
     } catch (err) {

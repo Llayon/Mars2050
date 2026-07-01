@@ -1,5 +1,6 @@
 import type { BattleAction } from './combat.actions';
 import type { SimHazard, SimUnit } from './combat.sim.types';
+import { applyStatus } from './combat.status';
 import { getDistance } from './combat.utils';
 
 export function processHazards(hazards: SimHazard[], units: SimUnit[], actions: BattleAction[]) {
@@ -15,6 +16,10 @@ export function processHazards(hazards: SimHazard[], units: SimUnit[], actions: 
         if (processMine(h, units, actions)) hazards.splice(i, 1);
         continue;
      }
+     if (h.type === 'smoke') {
+        processSmoke(h, units, actions);
+        continue;
+     }
      
      // Every 10 ticks (approx 1 sec), apply damage
      if (h.duration % 10 === 0) {
@@ -28,6 +33,21 @@ export function processHazards(hazards: SimHazard[], units: SimUnit[], actions: 
            }
         }
      }
+  }
+}
+
+function processSmoke(h: SimHazard, units: SimUnit[], actions: BattleAction[]): void {
+  if (h.duration % 10 !== 0) return;
+  const effects = h.statusEffects ?? [];
+  if (effects.length === 0) return;
+
+  const targets = units
+    .filter(u => !u.isDead && !u.isFlying && getDistance(u.x, u.y, h.x, h.y) <= h.radius)
+    .sort((a, b) => a.id.localeCompare(b.id));
+  for (const target of targets) {
+    for (const effect of effects) {
+      applyStatus(target, { ...effect, sourceUnitId: h.id, stackKey: h.id }, actions);
+    }
   }
 }
 

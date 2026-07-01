@@ -1,9 +1,23 @@
 import type { BattleAction } from './combat.actions'
 import type { SimUnit, SupportAura } from './combat.sim.types'
 import { applyStatus, cleanseStatuses, HARMFUL_STATUS_TYPES } from './combat.status'
+import { getEffectiveCombatTags } from './combat.targeting-score'
+import { UPGRADES } from './combat.upgrades'
 import { getDistance } from './combat.utils'
 
 const DEFAULT_AURA_INTERVAL = 10
+
+export function getUnitSupportAuras(baseAuras: SupportAura[] | undefined, upgradePath: unknown): SupportAura[] | undefined {
+  const auras = baseAuras?.map(aura => ({ ...aura })) ?? []
+  if (Array.isArray(upgradePath)) {
+    for (const upgradeId of upgradePath) {
+      if (typeof upgradeId !== 'string') continue
+      const revealAura = UPGRADES[upgradeId]?.modifiers.grantRevealAura
+      if (revealAura) auras.push({ type: 'reveal', radius: revealAura.radius, value: 0, duration: revealAura.duration, interval: revealAura.interval, target: 'enemies', targetTags: ['stealth'] })
+    }
+  }
+  return auras.length > 0 ? auras : undefined
+}
 
 /**
  * Processes deterministic support auras for one simulation tick.
@@ -37,7 +51,14 @@ function isAuraTarget(source: SimUnit, target: SimUnit, aura: SupportAura): bool
   if (target.isDead || target.id === source.id) return false
   if (aura.target === 'allies' && target.team !== source.team) return false
   if (aura.target === 'enemies' && target.team === source.team) return false
+  if (!matchesAuraTags(target, aura)) return false
   return getDistance(source.x, source.y, target.x, target.y) <= aura.radius
+}
+
+function matchesAuraTags(target: SimUnit, aura: SupportAura): boolean {
+  if (!aura.targetTags || aura.targetTags.length === 0) return true
+  const targetTags = new Set(getEffectiveCombatTags(target))
+  return aura.targetTags.some(tag => targetTags.has(tag))
 }
 
 function applyAura(source: SimUnit, target: SimUnit, aura: SupportAura, actions: BattleAction[]): void {
@@ -48,6 +69,16 @@ function applyAura(source: SimUnit, target: SimUnit, aura: SupportAura, actions:
     const granted = shieldCap - target.shield
     target.maxShield = Math.max(target.maxShield, shieldCap)
     target.shield = shieldCap
+    actions.push({ unitId: source.id, type: 'shield_apply', targetId: target.id, damage: granted })
+    return
+  }
+
+  if (aura.type === 'shield_repair') {
+    const repair = Math.max(0, Math.floor(aura.value))
+    if (repair <= 0 || target.maxShield <= 0 || target.shield >= target.maxShield) return
+
+    const granted = Math.min(repair, target.maxShield - target.shield)
+    target.shield += granted
     actions.push({ unitId: source.id, type: 'shield_apply', targetId: target.id, damage: granted })
     return
   }
@@ -85,10 +116,32 @@ function applyAura(source: SimUnit, target: SimUnit, aura: SupportAura, actions:
     return
   }
 
-  applyStatus(target, {
-    type: 'damage_reduction',
-    duration: aura.duration ?? (aura.interval ?? DEFAULT_AURA_INTERVAL) + 1,
-    value: aura.value,
-    sourceUnitId: source.id
-  }, actions)
+  if (aura.type === 'haste') {
+    applyStatus(target, {
+      type: 'haste',
+      duration: aura.duration ?? (aura.interval ?? DEFAULT_AURA_INTERVAL) + 1,
+      value: aura.value,
+      sourceUnitId: source.id
+    }, actions)
+    return
+  }
+
+  if (aura.type === 'range_boost') {
+    applyStatus(target, {
+      type: 'range_boost',
+      duration: aura.duration ?? (aura.interval ?? DEFAULT_AURA_INTERVAL) + 1,
+      value: aura.value,
+      sourceUnitId: source.id
+    }, actions)
+    return
+  }
+
+  if (aura.type === 'damage_reduction') {
+    applyStatus(target, {
+      type: 'damage_reduction',
+      duration: aura.duration ?? (aura.interval ?? DEFAULT_AURA_INTERVAL) + 1,
+      value: aura.value,
+      sourceUnitId: source.id
+    }, actions)
+  }
 }

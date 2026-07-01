@@ -6,7 +6,7 @@ import { usePvp } from '@/hooks/usePvp'
 import { useCombat } from '@/hooks/useCombat'
 import { useToast } from '@/components/ui/toast'
 import { BattleReplayModal } from '@/components/game/BattleReplayModal'
-import { ArmyPanel } from '@/components/game/ArmyPanel'
+import { RecruitmentTab } from '@/components/game/base-operations/RecruitmentTab'
 import { BattleHistoryPanel } from '@/components/game/BattleHistoryPanel'
 import { DeploymentBoard } from '@/components/game/DeploymentBoard'
 import type { ResourceRow } from '@/domains/resource/resource.types'
@@ -84,7 +84,7 @@ export const OperationsScreen = memo(function OperationsScreen({ colonyId, resou
         )}
         {activeTab === 'army' && (
           <div className="mt-2">
-            <ArmyPanel colonyId={colonyId!} resources={resources} />
+            <RecruitmentTab colonyId={colonyId!} resources={resources} />
           </div>
         )}
         {activeTab === 'events' && (

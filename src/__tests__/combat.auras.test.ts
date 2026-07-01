@@ -61,6 +61,26 @@ describe('combat.auras', () => {
     expect(actions).toEqual([{ unitId: 'emitter', type: 'shield_apply', targetId: 'ally', damage: 60 }])
   })
 
+  it('repairs existing shields only for aura tag matches', () => {
+    const engineer = makeUnit({
+      id: 'engineer',
+      team: 'attacker',
+      type: 'engineer',
+      supportAuras: [{ type: 'shield_repair', radius: 140, value: 25, interval: 10, target: 'allies', targetTags: ['mechanical'] }],
+    })
+    const tank = makeUnit({ id: 'tank', team: 'attacker', type: 'siege_tank', x: 60, y: 0, shield: 30, maxShield: 80 })
+    const marine = makeUnit({ id: 'marine', team: 'attacker', type: 'marine', x: 70, y: 0, shield: 30, maxShield: 80 })
+    const unshielded = makeUnit({ id: 'buggy', team: 'attacker', type: 'missile_buggy', x: 80, y: 0, shield: 0, maxShield: 0 })
+    const actions: BattleAction[] = []
+
+    processSupportAuras(0, [engineer, tank, marine, unshielded], actions)
+
+    expect(tank.shield).toBe(55)
+    expect(marine.shield).toBe(30)
+    expect(unshielded.shield).toBe(0)
+    expect(actions).toEqual([{ unitId: 'engineer', type: 'shield_apply', targetId: 'tank', damage: 25 }])
+  })
+
   it('applies regen status through support aura', () => {
     const nanites = makeUnit({
       id: 'nanites',
@@ -75,6 +95,24 @@ describe('combat.auras', () => {
 
     expect(hasStatus(ally, 'regen')).toBe(true)
     expect(actions).toContainEqual({ unitId: 'ally', type: 'status_apply', statusType: 'regen', value: 6 })
+  })
+
+  it('applies haste status through command aura', () => {
+    const officer = makeUnit({
+      id: 'officer',
+      team: 'attacker',
+      type: 'officer',
+      supportAuras: [{ type: 'haste', radius: 160, value: 0.18, duration: 8, interval: 8, target: 'allies' }],
+    })
+    const ally = makeUnit({ id: 'ally', team: 'attacker', x: 60, y: 0 })
+    const enemy = makeUnit({ id: 'enemy', team: 'defender', x: 60, y: 0 })
+    const actions: BattleAction[] = []
+
+    processSupportAuras(0, [officer, ally, enemy], actions)
+
+    expect(hasStatus(ally, 'haste')).toBe(true)
+    expect(hasStatus(enemy, 'haste')).toBe(false)
+    expect(actions).toEqual([{ unitId: 'ally', type: 'status_apply', statusType: 'haste', value: 0.18 }])
   })
 
   it('cleanses harmful statuses without removing beneficial statuses', () => {
@@ -148,6 +186,24 @@ describe('combat.auras', () => {
 
     expect(hasStatus(stealth, 'revealed')).toBe(true)
     expect(target?.id).toBe('stealth')
+  })
+
+  it('applies range boost through radar relay aura', () => {
+    const radar = makeUnit({
+      id: 'radar',
+      team: 'attacker',
+      type: 'radar_zepplin',
+      supportAuras: [{ type: 'range_boost', radius: 260, value: 0.25, duration: 8, interval: 8, target: 'allies' }],
+    })
+    const ally = makeUnit({ id: 'ally', team: 'attacker', x: 80, y: 0 })
+    const enemy = makeUnit({ id: 'enemy', team: 'defender', x: 80, y: 0 })
+    const actions: BattleAction[] = []
+
+    processSupportAuras(0, [radar, ally, enemy], actions)
+
+    expect(hasStatus(ally, 'range_boost')).toBe(true)
+    expect(hasStatus(enemy, 'range_boost')).toBe(false)
+    expect(actions).toEqual([{ unitId: 'ally', type: 'status_apply', statusType: 'range_boost', value: 0.25 }])
   })
 
   it('uses passive aura units as support anchors instead of enemy attackers', () => {

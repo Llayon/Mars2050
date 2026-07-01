@@ -1,6 +1,7 @@
 import { UNIT_TYPES } from './combat.config'
 import type { SimUnit } from './combat.sim.types'
 import type { UnitTypeKey } from './combat.types'
+import { canTargetUnit } from './combat.targeting-rules'
 import { getDistance, getSizeRadius } from './combat.utils'
 
 export interface BarrageImpact { index: number; x: number; y: number; radius: number }
@@ -119,7 +120,7 @@ export function getBarrageTargets(attacker: SimUnit, impact: BarrageImpact, unit
   if (!config) return []
 
   return units
-    .filter(unit => !unit.isDead && unit.team !== attacker.team && (!unit.isFlying || attacker.canTargetAir))
+    .filter(unit => !unit.isDead && unit.team !== attacker.team && canTargetUnit(attacker, unit))
     .map(unit => ({ unit, distance: getDistance(impact.x, impact.y, unit.x, unit.y) }))
     .filter(hit => hit.distance <= impact.radius + getSizeRadius(hit.unit.size))
     .sort((a, b) => a.distance - b.distance || a.unit.id.localeCompare(b.unit.id))
@@ -159,7 +160,7 @@ function isAreaWeaponCandidate(attacker: SimUnit, primary: SimUnit, candidate: S
   return !candidate.isDead &&
     candidate.id !== primary.id &&
     candidate.team !== attacker.team &&
-    (!candidate.isFlying || attacker.canTargetAir)
+    canTargetUnit(attacker, candidate)
 }
 
 function getLineProgress(attacker: SimUnit, target: SimUnit, ux: number, uy: number): number {
@@ -174,7 +175,7 @@ function getLineDistance(attacker: SimUnit, target: SimUnit, ux: number, uy: num
 
 function getNextChainTarget(attacker: SimUnit, origin: SimUnit, units: SimUnit[], visited: Set<string>, radius: number): SimUnit | null {
   return units
-    .filter(unit => !unit.isDead && !visited.has(unit.id) && unit.team !== attacker.team && (!unit.isFlying || attacker.canTargetAir))
+    .filter(unit => !unit.isDead && !visited.has(unit.id) && unit.team !== attacker.team && canTargetUnit(attacker, unit))
     .map(unit => ({ unit, distance: getDistance(origin.x, origin.y, unit.x, unit.y) }))
     .filter(hit => hit.distance <= radius + getSizeRadius(hit.unit.size))
     .sort((a, b) => a.distance - b.distance || a.unit.id.localeCompare(b.unit.id))[0]?.unit ?? null

@@ -77,7 +77,6 @@ export const BattleReplayModal = memo(function BattleReplayModal({ attackerUnits
 
       if (isDestroyed) {
         if (result.cleanupEvents) result.cleanupEvents()
-        try { result.app.destroy(true) } catch(e) {}
         return
       }
 
@@ -97,7 +96,6 @@ export const BattleReplayModal = memo(function BattleReplayModal({ attackerUnits
       isDestroyed = true
       if (app) {
         if (cleanupEvents) cleanupEvents()
-        try { app.destroy(true) } catch(e) {}
       }
     }
   }, [attackerUnits, defenderUnits, initialState, logs, obstacles])

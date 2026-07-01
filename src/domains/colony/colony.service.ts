@@ -33,3 +33,30 @@ export async function initColonyResources(colonyId: string): Promise<{ success: 
 
   return { success: true, count: rows.length }
 }
+
+/**
+ * Initialize starting population for a colony.
+ */
+export async function initColonyPopulation(colonyId: string): Promise<{ success: boolean; error?: string }> {
+  const supabase = getServerClient()
+  const { data: existing } = await supabase.from('population').select('id').eq('colony_id', colonyId).single()
+  
+  if (existing) {
+    return { success: true }
+  }
+
+  const { error } = await supabase.from('population').insert({
+    colony_id: colonyId,
+    workers: 10,
+    technicians: 0,
+    scientists: 0,
+    directors: 0,
+    happiness_workers: 100,
+    happiness_technicians: 100,
+    happiness_scientists: 100,
+    happiness_directors: 100
+  })
+
+  if (error) return { success: false, error: error.message }
+  return { success: true }
+}

@@ -1,7 +1,9 @@
 import type { BattleAction } from './combat.actions'
 import type { SimUnit, StatusEffect, StatusType } from './combat.sim.types'
+import { chooseHackControlMode, isHackActionBlocked, normalizeHackControlMode } from './combat.control'
+import { getStanceRangeMultiplier } from './combat.stance'
 
-const ACTION_BLOCKING_STATUSES = new Set<StatusType>(['emp', 'hacked'])
+const ACTION_BLOCKING_STATUSES = new Set<StatusType>(['emp'])
 export const HARMFUL_STATUS_TYPES: StatusType[] = [
   'emp',
   'slow',
@@ -12,6 +14,7 @@ export const HARMFUL_STATUS_TYPES: StatusType[] = [
   'revealed',
   'hacked',
   'output_suppressed',
+  'accuracy_reduced',
   'armor_broken',
   'degeneration',
 ]
@@ -35,12 +38,13 @@ export function applyStatus(target: SimUnit, effect: StatusEffect, actions?: Bat
   if (existing) {
     existing.duration = Math.max(existing.duration, normalized.duration)
     existing.value = chooseStatusValue(existing.type, existing.value, normalized.value)
-    actions?.push({ unitId: target.id, type: 'status_apply', statusType: existing.type, value: existing.value })
+    existing.controlMode = chooseHackControlMode(existing.controlMode, normalized.controlMode)
+    actions?.push(createStatusApplyAction(target.id, existing))
     return false
   }
 
   target.statusEffects.push(normalized)
-  actions?.push({ unitId: target.id, type: 'status_apply', statusType: normalized.type, value: normalized.value })
+  actions?.push(createStatusApplyAction(target.id, normalized))
   return true
 }
 
@@ -130,7 +134,8 @@ export function getStatusValue(unit: SimUnit, type: StatusType): number | undefi
  * @returns true when attacks, heals, or spawns should be skipped
  */
 export function isActionBlockedByStatus(unit: SimUnit): boolean {
-  return unit.statusEffects.some(effect => ACTION_BLOCKING_STATUSES.has(effect.type) && effect.duration > 0)
+  return unit.statusEffects.some(effect => ACTION_BLOCKING_STATUSES.has(effect.type) && effect.duration > 0) ||
+    isHackActionBlocked(unit)
 }
 
 /**
@@ -155,19 +160,33 @@ export function getMovementSpeedMultiplier(unit: SimUnit): number {
  * @returns effective action range in simulation units
  */
 export function getEffectiveActionRange(unit: SimUnit): number {
+  const boost = getStatusValue(unit, 'range_boost')
   const suppression = getStatusValue(unit, 'range_suppressed')
-  if (suppression === undefined || suppression <= 0) return unit.range
+  let effectiveRange = unit.range * getStanceRangeMultiplier(unit)
+
+  if (boost !== undefined && boost > 0) {
+    const boostMultiplier = boost >= 1 ? boost : 1 + boost
+    effectiveRange *= Math.min(3, boostMultiplier)
+  }
+  if (suppression === undefined || suppression <= 0) return effectiveRange
 
   const reduction = suppression <= 1 ? suppression : suppression / 100
-  return Math.max(0, unit.range * Math.max(0.05, 1 - Math.min(0.95, reduction)))
+  return Math.max(0, effectiveRange * Math.max(0.05, 1 - Math.min(0.95, reduction)))
 }
 
 function normalizeStatus(effect: StatusEffect): StatusEffect {
   return {
     ...effect,
     duration: Math.max(0, Math.floor(effect.duration)),
-    value: effect.value === undefined ? undefined : Number(effect.value)
+    value: effect.value === undefined ? undefined : Number(effect.value),
+    controlMode: normalizeHackControlMode(effect.controlMode),
   }
+}
+
+function createStatusApplyAction(unitId: string, effect: StatusEffect): BattleAction {
+  const action: BattleAction = { unitId, type: 'status_apply', statusType: effect.type, value: effect.value }
+  if (effect.controlMode !== undefined) action.controlMode = effect.controlMode
+  return action
 }
 
 function getStatusStackId(effect: StatusEffect): string {

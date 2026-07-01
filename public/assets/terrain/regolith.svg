@@ -1,0 +1,18 @@
+<svg width="128" height="64" viewBox="0 0 128 64" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <radialGradient id="regoGrad" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#b05b33"/>
+            <stop offset="100%" stop-color="#8b4513"/>
+          </radialGradient>
+          <filter id="noise">
+            <feTurbulence type="fractalNoise" baseFrequency="0.1" numOctaves="3" result="noise"/>
+            <feColorMatrix type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 0.15 0" in="noise" result="coloredNoise"/>
+            <feComposite operator="in" in="coloredNoise" in2="SourceGraphic" result="composite"/>
+            <feBlend mode="multiply" in="composite" in2="SourceGraphic"/>
+          </filter>
+        </defs>
+        <polygon points="64,0 128,32 64,64 0,32" fill="url(#regoGrad)" stroke="#663300" stroke-width="1" />
+        <polygon points="64,0 128,32 64,64 0,32" fill="none" filter="url(#noise)" />
+        <!-- Grid overlay slightly visible -->
+        <polygon points="64,0 128,32 64,64 0,32" fill="none" stroke="#ffffff" stroke-width="0.5" stroke-opacity="0.1" />
+      </svg>

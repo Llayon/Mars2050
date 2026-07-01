@@ -1,5 +1,5 @@
 import { Database, UnitsType } from '@/types/database'
-import type { StatusEffect, SupportAura, TargetMarkConfig } from './combat.sim.types'
+import type { StatusEffect, SupportAura, TargetMarkConfig, UnitStanceConfig } from './combat.sim.types'
 
 export type UnitRow = Database['public']['Tables']['units']['Row']
 export type BattleRow = Database['public']['Tables']['battles']['Row']
@@ -8,7 +8,7 @@ export type TargetingAcquisition = 'local' | 'global'
 export type CombatTag =
   | 'infantry' | 'vehicle' | 'aircraft' | 'structure'
   | 'organic' | 'mechanical' | 'armored' | 'light' | 'heavy'
-  | 'shielded' | 'healer' | 'summoner' | 'stealth' | 'explosive'
+  | 'shielded' | 'healer' | 'summoner' | 'summoned' | 'stealth' | 'explosive'
 export type TargetingProfileKey =
   | 'default_local' | 'long_range_priority' | 'anti_air'
   | 'anti_armor' | 'siege' | 'assassin' | 'support_hunter'
@@ -34,19 +34,25 @@ export interface UnitBaseStats {
   beamAttack?: { width: number; damageMultiplier: number; maxTargets?: number }
   barrageAttack?: { impacts: number; radius: number; spreadRadius: number; damageMultiplier: number; maxTargetsPerImpact?: number }
   chainAttack?: { jumps: number; radius: number; damageMultiplier: number; falloff?: number }
+  splitFire?: { maxTargets: number; damageMultiplier: number; range?: number; canTargetAir?: boolean }
   sideWeapon?: { damage: number; range: number; maxTargets: number; canTargetAir?: boolean }
   rampDamage?: { step: number; maxMultiplier: number }
   chargeDamage?: { minDistance: number; maxDistance: number; maxMultiplier: number }
   percentHpDamage?: { percent: number; maxBonus: number }
+  shieldDamageMult?: number; armorPierceRatio?: number; summonCounterDamageMult?: number; accuracyPenaltyResist?: number
   onKill?: { cooldownReset?: boolean; healPercent?: number; status?: StatusEffect }
   linePierce?: { width: number; damageMultiplier: number; maxTargets?: number }
   pullOnHit?: { radius: number; strength: number; maxTargets?: number }
+  knockbackOnHit?: { radius: number; strength: number; maxTargets?: number }
+  stance?: UnitStanceConfig
   reactiveArmor?: { charges: number; block: number }; damageShare?: { radius: number; ratio: number; maxTargets?: number }
   projectileInterception?: { radius: number; cooldownTicks: number; maxDamage?: number }
+  healTargetTags?: CombatTag[]
   statusOnHit?: StatusEffect[]
   markOnHit?: TargetMarkConfig
   supportAuras?: SupportAura[]
   mineOnAction?: { radius: number; damage: number; duration: number }
+  smokeOnAction?: { radius: number; duration: number; rangeSuppression?: number; outputSuppression?: number; accuracySuppression?: number }
   isFlying?: boolean; canTargetAir?: boolean
   targetingProfile?: TargetingProfile
   combatTags?: CombatTag[]
@@ -63,6 +69,6 @@ export interface UnitTypeConfig {
   formation?: 'line' | 'wedge' | 'grid'
 }
 
-export type { Team, StatusEffect, StatusType, SupportAura, SupportAuraType, TargetMark, TargetMarkConfig, Obstacle, SimHazard, SimUnit } from './combat.sim.types'
+export type { Team, StatusEffect, StatusType, HackControlMode, StanceMode, UnitStanceConfig, SupportAura, SupportAuraType, TargetMark, TargetMarkConfig, Obstacle, SimHazard, SimUnit } from './combat.sim.types'
 export * from './combat.actions'
 

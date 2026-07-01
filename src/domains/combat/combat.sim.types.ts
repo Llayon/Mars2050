@@ -1,35 +1,29 @@
+import type { CombatTag } from './combat.types'
+
 export type Team = 'attacker' | 'defender'
 export type StatusType =
   | 'emp' | 'slow' | 'burn' | 'acid' | 'vulnerable' | 'range_suppressed' | 'revealed'
-  | 'hacked' | 'damage_reduction' | 'regen' | 'output_suppressed' | 'armor_broken' | 'degeneration' | 'haste' | 'status_immunity'
+  | 'hacked' | 'damage_reduction' | 'regen' | 'output_suppressed' | 'accuracy_reduced' | 'armor_broken' | 'degeneration' | 'haste' | 'range_boost' | 'status_immunity'
+export type HackControlMode = 'disable' | 'redirect' | 'confuse'
+export type StanceMode = 'mobile' | 'deployed'
+export interface UnitStanceConfig { mode: 'siege' | 'entrenched'; deployTicks: number; rangeMultiplier?: number; cooldownMultiplier?: number; speedMultiplier?: number }
 
-export interface StatusEffect { type: StatusType; duration: number; value?: number; sourceUnitId?: string; stackKey?: string }
+export interface StatusEffect { type: StatusType; duration: number; value?: number; sourceUnitId?: string; stackKey?: string; controlMode?: HackControlMode }
 
 export interface TargetMark { sourceUnitId: string; duration: number; damageMultiplier?: number; executeThreshold?: number }
 export type TargetMarkConfig = Omit<TargetMark, 'sourceUnitId'>
 
-export type SupportAuraType = 'shield' | 'regen' | 'reveal' | 'damage_reduction' | 'cleanse' | 'status_immunity'
+export type SupportAuraType = 'shield' | 'shield_repair' | 'regen' | 'reveal' | 'damage_reduction' | 'haste' | 'range_boost' | 'cleanse' | 'status_immunity'
 export type SupportAuraTarget = 'allies' | 'enemies'
 
 export interface SupportAura {
-  type: SupportAuraType; radius: number; value: number
-  duration?: number
-  interval?: number
-  target: SupportAuraTarget
+  type: SupportAuraType; radius: number; value: number; duration?: number; interval?: number
+  target: SupportAuraTarget; targetTags?: CombatTag[]
 }
 
 export interface Obstacle { x: number; y: number; radius: number }
 
-export interface SimHazard {
-  id: string
-  team: Team
-  type: 'napalm' | 'radiation' | 'emp_field' | 'acid' | 'emp' | 'mine'
-  x: number
-  y: number
-  radius: number
-  damagePerTick: number
-  duration: number
-}
+export interface SimHazard { id: string; team: Team; type: 'napalm' | 'radiation' | 'emp_field' | 'acid' | 'emp' | 'mine' | 'smoke'; x: number; y: number; radius: number; damagePerTick: number; duration: number; statusEffects?: StatusEffect[] }
 
 export interface SimUnit {
   id: string
@@ -89,10 +83,12 @@ export interface SimUnit {
   resurrectOnce?: boolean
   executeThreshold?: number
   lifestealMult?: number
-  groundDamageMult?: number
+  groundDamageMult?: number; shieldDamageMult?: number; armorPierceRatio?: number; summonCounterDamageMult?: number; accuracyPenaltyResist?: number
   damageReductionWhileMoving?: number
   onDeathPuddle?: 'napalm' | 'acid' | 'emp'
   multishot?: number; antiAirDamageMult?: number
-  pullOnHit?: { radius: number; strength: number; maxTargets?: number }; reactiveArmorCharges?: number; reactiveArmorBlock?: number; damageShareRadius?: number; damageShareRatio?: number; damageShareMaxTargets?: number
+  smokeOnAction?: { radius: number; duration: number; rangeSuppression?: number; outputSuppression?: number; accuracySuppression?: number }
+  stanceConfig?: UnitStanceConfig; stanceMode?: StanceMode; stanceTicks?: number
+  pullOnHit?: { radius: number; strength: number; maxTargets?: number }; knockbackOnHit?: { radius: number; strength: number; maxTargets?: number }; reactiveArmorCharges?: number; reactiveArmorBlock?: number; damageShareRadius?: number; damageShareRatio?: number; damageShareMaxTargets?: number
   projectileInterceptRadius?: number; projectileInterceptCooldownMax?: number; projectileInterceptCooldown?: number; projectileInterceptMaxDamage?: number
 }

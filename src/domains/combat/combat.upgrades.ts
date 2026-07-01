@@ -31,6 +31,11 @@ export interface UpgradeConfig {
     executeThreshold?: number
     lifestealMult?: number
     groundDamageMult?: number
+    shieldDamageMult?: number
+    armorPierceRatio?: number
+    summonCounterDamageMult?: number
+    accuracyPenaltyResist?: number
+    grantRevealAura?: { radius: number; duration: number; interval?: number }
   }
 }
 
@@ -67,12 +72,12 @@ export const UPGRADES: Record<string, UpgradeConfig> = {
     cost: 250, allowedUnits: ['sniper'], modifiers: { multishot: 2, attackMult: 0.85 } 
   },
   aerial_specialization: { 
-    id: 'aerial_specialization', name: 'ПВО-Специализация', description: 'Урон по летающим целям +90%.', 
-    cost: 250, allowedUnits: ['sniper', 'marine', 'aa_turret'], modifiers: { antiAirDamageMult: 1.9 } 
+    id: 'aerial_specialization', name: 'ПВО-Специализация', description: 'Позволяет атаковать воздух. Урон по летающим целям +90%.', 
+    cost: 250, allowedUnits: ['sniper', 'aa_turret', 'gatling_rover', 'missile_buggy', 'interceptor'], modifiers: { grantAntiAir: true, antiAirDamageMult: 1.9 } 
   },
   anti_aircraft_ammo: { 
     id: 'anti_aircraft_ammo', name: 'Зенитные боеприпасы', description: 'Позволяет атаковать летающие цели.', 
-    cost: 300, allowedUnits: ['flamethrower', 'grenadier'], modifiers: { grantAntiAir: true } 
+    cost: 300, allowedUnits: ['marine', 'heavy_gunner', 'grenadier'], modifiers: { grantAntiAir: true } 
   },
   incendiary_ammo: {
     id: 'incendiary_ammo', name: 'Зажигательные снаряды', description: 'Оставляет огненную лужу (Напалм), но базовый урон снижен.', 
@@ -80,6 +85,21 @@ export const UPGRADES: Record<string, UpgradeConfig> = {
   },
   emp_rounds: {
     id: 'emp_rounds', name: 'ЭМИ-снаряды', description: 'Отключает технологии цели на 3 секунды', cost: 300, allowedUnits: ['sniper', 'railgun_walker', 'heavy_gunner'], modifiers: { disableEnemyTech: true }
+  },
+  shield_breaker_rounds: {
+    id: 'shield_breaker_rounds', name: 'Разрушители щитов', description: 'Урон по щитам +125%, базовый урон -10%.', cost: 350, allowedUnits: ['railgun_walker', 'plasma_tank', 'missile_buggy'], modifiers: { shieldDamageMult: 2.25, attackMult: 0.9 }
+  },
+  armor_piercing_rounds: {
+    id: 'armor_piercing_rounds', name: 'Бронебойные сердечники', description: 'Игнорирует 50% брони цели, базовый урон -10%.', cost: 300, allowedUnits: ['sniper', 'heavy_gunner', 'railgun_walker', 'plasma_tank'], modifiers: { armorPierceRatio: 0.5, attackMult: 0.9 }
+  },
+  anti_summoner_protocol: {
+    id: 'anti_summoner_protocol', name: 'Протокол подавления роя', description: 'Урон по призывателям и их временным юнитам +75%, базовый урон -10%.', cost: 325, allowedUnits: ['bounty_hunter', 'stealth_operative', 'sniper'], modifiers: { summonCounterDamageMult: 1.75, attackMult: 0.9 }
+  },
+  sensor_suite: {
+    id: 'sensor_suite', name: 'Сенсорный комплекс', description: 'Периодически раскрывает скрытые цели рядом с носителем.', cost: 275, allowedUnits: ['scout_drone', 'officer', 'bounty_hunter'], modifiers: { grantRevealAura: { radius: 220, duration: 12, interval: 5 } }
+  },
+  thermal_optics: {
+    id: 'thermal_optics', name: 'Тепловизионная оптика', description: 'Снижает штраф точности от дыма и подавления на 60%.', cost: 225, allowedUnits: ['sniper', 'heavy_gunner', 'railgun_walker', 'bounty_hunter', 'scout_drone'], modifiers: { accuracyPenaltyResist: 0.6 }
   },
   overclock: {
     id: 'overclock', name: 'Разгон ядра', description: 'Урон +100%, Скорость атаки +50%, Здоровье -50%', cost: 300, allowedUnits: ['plasma_tank', 'siege_tank', 'titan_mech', 'cryo_tank'], modifiers: { attackMult: 2.0, cooldownMult: 0.5, hpMult: 0.5 }

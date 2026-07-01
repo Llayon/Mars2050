@@ -1,5 +1,5 @@
 import { getServerClient } from '@/domains/resource/resource.server'
-import { initColonyResources } from '@/domains/colony/colony.service'
+import { initColonyResources, initColonyPopulation } from '@/domains/colony/colony.service'
 import { generateColonyTerrain } from '@/domains/colony/colony-terrain.generator'
 import type { AuthResult } from './auth.types'
 
@@ -31,6 +31,9 @@ export async function getOrCreateColony(userId: string): Promise<AuthResult & { 
       await supabase.from('colonies').update({ terrain_grid: terrainGrid }).eq('id', colonyId)
     }
 
+    // Lazy Backfill for population
+    await initColonyPopulation(colonyId)
+
     return { user: null, error: null, colonyId }
   }
 
@@ -56,6 +59,9 @@ export async function getOrCreateColony(userId: string): Promise<AuthResult & { 
   if (resourceResult.error) {
     return { user: null, error: resourceResult.error, colonyId }
   }
+
+  // Initialize population
+  await initColonyPopulation(colonyId)
 
   return { user: null, error: null, colonyId }
 }

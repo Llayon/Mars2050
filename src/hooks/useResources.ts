@@ -9,7 +9,7 @@ import { fetchWithAuth } from '@/lib/fetch-with-auth'
 const fetcher = async (url: string) => {
   const res = await fetchWithAuth(url)
   const data = await res.json()
-  if (!res.ok) throw new Error(data.error || 'Failed to fetch resources')
+  if (!res.ok) throw new Error(data.error?.message || data.error || 'Failed to fetch resources')
   return data.resources ?? []
 }
 

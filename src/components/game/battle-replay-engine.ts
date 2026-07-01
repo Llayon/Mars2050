@@ -117,7 +117,7 @@ export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
     fxLayer.addChild(p); projs.push({ g: p, sX: x1, sY: y1, tX: x2, tY: y2, p: 0, col: c })
   }
 
-  app.ticker.add(({ deltaMS: dt }) => {
+  const tickerLoop = ({ deltaMS: dt }: { deltaMS: number }) => {
     if (!isPlaying) return
     time += dt * playbackSpeed
     globalTime += dt * playbackSpeed
@@ -165,7 +165,7 @@ export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
           return
         }
         if (!s) return
-        if (a.type === 'move') {
+        if (a.type === 'move' || a.type === 'knockback') {
           s.sX = a.fromX!; s.sY = a.fromY!
           s.tX = a.toX!; s.tY = a.toY!
           if (s.s) {
@@ -224,7 +224,7 @@ export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
           const newS = sprites[a.targetId!]
           if (newS) { newS.sX = a.toX!; newS.sY = a.toY!; newS.tX = a.toX!; newS.tY = a.toY!; }
         } else if (a.type === 'hazard_spawn') {
-          const hGfx = new Graphics().circle(0, 0, a.radius || 60).fill({ color: 0xff4400, alpha: 0.3 })
+          const hGfx = new Graphics().circle(0, 0, a.radius || 60).fill({ color: a.statusType === 'smoke' ? 0x94a3b8 : 0xff4400, alpha: a.statusType === 'smoke' ? 0.24 : 0.3 })
           hGfx.position.set(a.toX!, a.toY!)
           gridContainer.addChild(hGfx)
           hazardFxs.push({ g: hGfx, life: 1.0 })
@@ -240,6 +240,8 @@ export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
           if (a.statusType === 'emp' && s.empGfx) {
              s.empGfx.visible = false
           }
+        } else if (a.type === 'stance_change') {
+          spawnTxt(a.stanceMode === 'deployed' ? 'РАЗВЕРНУТ' : 'МОБИЛЕН', s.c.x, s.c.y, 0xfacc15)
         }
       })
       tick++
@@ -276,9 +278,17 @@ export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
     updateParticles(dt * playbackSpeed)
     processVisualEffects(fts, projs, hazardFxs, dt * playbackSpeed)
     drawOverlays(overlayGfx, overlays, sprites, projs)
-  })
+  }
+
+  app.ticker.add(tickerLoop)
 
   cleanupEvents = setupCameraControls(app, world)
 
-  return { app, cleanupEvents, controls }
+  const finalCleanup = () => {
+    app.ticker.remove(tickerLoop)
+    if (cleanupEvents) cleanupEvents()
+    try { app.destroy(true, true) } catch(e) {}
+  }
+
+  return { app, cleanupEvents: finalCleanup, controls }
 }

@@ -1,0 +1,28 @@
+<svg width="128" height="128" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="rockGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#8b5a42"/>
+            <stop offset="50%" stop-color="#69412e"/>
+            <stop offset="100%" stop-color="#3a2318"/>
+          </linearGradient>
+        </defs>
+        <!-- Offset the Y by TILE_H so the base sits at the bottom half -->
+        <g transform="translate(0, 64)">
+          <polygon points="64,0 128,32 64,64 0,32" fill="#4a2e20" stroke="#2a1a12" stroke-width="1" />
+        </g>
+        <!-- The tall rock -->
+        <path d="
+          M 20,96 
+          L 40,30 
+          L 60,10 
+          L 80,40 
+          L 100,96 
+          L 64,114 
+          Z" 
+        fill="url(#rockGrad)" stroke="#1a0f0a" stroke-width="1.5"/>
+        
+        <!-- Rock highlights/facets -->
+        <path d="M 20,96 L 60,10 L 64,114 Z" fill="#9c684d" opacity="0.3"/>
+        <path d="M 60,10 L 100,96 L 64,114 Z" fill="#000000" opacity="0.3"/>
+        <path d="M 40,30 L 60,10 L 64,114 Z" fill="#ffffff" opacity="0.1"/>
+      </svg>

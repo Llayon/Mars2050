@@ -1,0 +1,24 @@
+<svg width="128" height="64" viewBox="0 0 128 64" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <radialGradient id="geoGrad" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#ff4500"/>
+            <stop offset="100%" stop-color="#8b0000"/>
+          </radialGradient>
+          <filter id="lavaGlow">
+            <feGaussianBlur stdDeviation="3" result="blur"/>
+            <feMerge>
+              <feMergeNode in="blur"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
+        </defs>
+        <polygon points="64,0 128,32 64,64 0,32" fill="#5c2e16" stroke="#3a1d0e" stroke-width="1" />
+        <!-- Lava vent -->
+        <path d="M50,32 Q64,20 78,32 Q64,44 50,32" fill="url(#geoGrad)" filter="url(#lavaGlow)"/>
+        <!-- Core hot spot -->
+        <ellipse cx="64" cy="32" rx="10" ry="5" fill="#ffff00" filter="url(#lavaGlow)"/>
+        <!-- Steam plumes (subtle) -->
+        <circle cx="60" cy="20" r="5" fill="#ffffff" opacity="0.2" filter="url(#lavaGlow)"/>
+        <circle cx="70" cy="25" r="8" fill="#ffffff" opacity="0.15" filter="url(#lavaGlow)"/>
+        <circle cx="55" cy="40" r="6" fill="#ffffff" opacity="0.2" filter="url(#lavaGlow)"/>
+      </svg>

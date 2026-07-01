@@ -220,4 +220,5 @@ describe('combat.damage', () => {
     expect(actions[1]).toEqual({ unitId: 'attacker', type: 'damage', targetId: 'target', damage: 30 })
     expect(actions[0].damage).toBeUndefined()
   })
+
 })

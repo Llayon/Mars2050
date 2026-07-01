@@ -5,6 +5,9 @@ import { getTargetingProfile, getTargetScore } from './combat.targeting-score';
 import { getDistance } from './combat.utils';
 import { getEffectiveActionRange, hasStatus } from './combat.status';
 import type { SpatialHash } from './spatial-hash';
+import { canReceiveHealAction } from './combat.support';
+import { canTargetUnit } from './combat.targeting-rules';
+import { selectHackControlTarget } from './combat.control';
 
 const AGGRO_LOCK_TICKS = 10;
 const AGGRO_LEASH_MULTIPLIER = 1.5;
@@ -13,12 +16,8 @@ const RANGED_ACQUISITION_BUFFER = 120;
 const SUPPORT_ACQUISITION_RADIUS = 420;
 
 export function targetingSystem(unit: SimUnit, units: SimUnit[], meleeEngagement: MeleeEngagementState, spatialHash?: SpatialHash): SimUnit | null {
-  if (hasStatus(unit, 'hacked')) {
-    unit.attackTargetId = undefined;
-    unit.aggroLockTicks = 0;
-    clearMeleeEngagementSlot(unit);
-    return null;
-  }
+  const controlTarget = selectHackControlTarget(unit, getAcquisitionCandidates(unit, units, spatialHash), meleeEngagement);
+  if (controlTarget.handled) return controlTarget.target;
 
   if (unit.attackType === 'heal') {
     return selectHealTarget(unit, units, spatialHash);
@@ -79,7 +78,7 @@ function getAcquisitionCandidates(unit: SimUnit, units: SimUnit[], spatialHash?:
 
 function selectHealTarget(unit: SimUnit, units: SimUnit[], spatialHash?: SpatialHash): SimUnit | null {
   const candidates = getSupportCandidates(unit, units, spatialHash);
-  const woundedAllies = candidates.filter(a => !a.isDead && a.team === unit.team && a.hp < a.maxHp && a.id !== unit.id);
+  const woundedAllies = candidates.filter(a => !a.isDead && a.team === unit.team && a.hp < a.maxHp && a.id !== unit.id && canReceiveHealAction(unit, a));
   if (woundedAllies.length > 0) return selectNearestAlly(unit, woundedAllies);
 
   return selectSupportAnchor(unit, candidates) ?? selectSupportAnchor(unit, units);
@@ -179,7 +178,7 @@ function selectMovementFallback(unit: SimUnit, units: SimUnit[], meleeEngagement
 function isReachableEnemy(unit: SimUnit, enemy: SimUnit): boolean {
   return !enemy.isDead &&
     enemy.team !== unit.team &&
-    (!enemy.isFlying || unit.canTargetAir) &&
+    canTargetUnit(unit, enemy) &&
     !(enemy.stealthUntilAttack && !enemy.hasAttacked && !hasStatus(enemy, 'revealed'));
 }
 

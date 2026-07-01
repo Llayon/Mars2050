@@ -13,7 +13,10 @@ function hasUtilityBehavior(stats: UnitBaseStats): boolean {
     || stats.markOnHit !== undefined
     || (stats.supportAuras?.length ?? 0) > 0
     || stats.mineOnAction !== undefined
+    || stats.smokeOnAction !== undefined
     || stats.pullOnHit !== undefined
+    || stats.knockbackOnHit !== undefined
+    || stats.stance !== undefined
     || stats.projectileInterception !== undefined
 }
 
@@ -75,6 +78,13 @@ describe('combat unit config contract', () => {
           expect(stats.chainAttack.falloff, `${unitType} has chain attack without positive falloff`).toBeGreaterThan(0)
         }
       }
+      if (stats.splitFire) {
+        expect(stats.splitFire.maxTargets, `${unitType} has split fire without positive maxTargets`).toBeGreaterThan(0)
+        expect(stats.splitFire.damageMultiplier, `${unitType} has split fire without positive damage`).toBeGreaterThan(0)
+        if (stats.splitFire.range !== undefined) {
+          expect(stats.splitFire.range, `${unitType} has split fire without positive range`).toBeGreaterThan(0)
+        }
+      }
       if (stats.sideWeapon) {
         expect(stats.sideWeapon.damage, `${unitType} has side weapon without positive damage`).toBeGreaterThan(0)
         expect(stats.sideWeapon.range, `${unitType} has side weapon without positive range`).toBeGreaterThan(0)
@@ -94,12 +104,52 @@ describe('combat unit config contract', () => {
         expect(stats.percentHpDamage.percent, `${unitType} has percent HP damage above 100%`).toBeLessThanOrEqual(1)
         expect(stats.percentHpDamage.maxBonus, `${unitType} has percent HP damage without positive cap`).toBeGreaterThan(0)
       }
+      if (stats.shieldDamageMult !== undefined) {
+        expect(stats.shieldDamageMult, `${unitType} has shield damage multiplier below baseline`).toBeGreaterThanOrEqual(1)
+      }
+      if (stats.armorPierceRatio !== undefined) {
+        expect(stats.armorPierceRatio, `${unitType} has negative armor pierce ratio`).toBeGreaterThanOrEqual(0)
+        expect(stats.armorPierceRatio, `${unitType} has armor pierce ratio above 100%`).toBeLessThanOrEqual(1)
+      }
+      if (stats.summonCounterDamageMult !== undefined) {
+        expect(stats.summonCounterDamageMult, `${unitType} has summon counter multiplier below baseline`).toBeGreaterThanOrEqual(1)
+      }
+      if (stats.healTargetTags) {
+        expect(stats.attackType, `${unitType} has heal target tags without heal attack type`).toBe('heal')
+        expect(stats.healTargetTags.length, `${unitType} has empty heal target tag list`).toBeGreaterThan(0)
+      }
       if (stats.projectileInterception) {
         expect(stats.projectileInterception.radius, `${unitType} has projectile interception without positive radius`).toBeGreaterThan(0)
         expect(stats.projectileInterception.cooldownTicks, `${unitType} has projectile interception without positive cooldown`).toBeGreaterThan(0)
         if (stats.projectileInterception.maxDamage !== undefined) {
           expect(stats.projectileInterception.maxDamage, `${unitType} has projectile interception without positive max damage`).toBeGreaterThan(0)
         }
+      }
+      if (stats.smokeOnAction) {
+        expect(stats.smokeOnAction.radius, `${unitType} has smoke without positive radius`).toBeGreaterThan(0)
+        expect(stats.smokeOnAction.duration, `${unitType} has smoke without positive duration`).toBeGreaterThan(0)
+        expect((stats.smokeOnAction.rangeSuppression ?? 0) + (stats.smokeOnAction.outputSuppression ?? 0) + (stats.smokeOnAction.accuracySuppression ?? 0), `${unitType} has smoke without suppression effect`).toBeGreaterThan(0)
+      }
+      if (stats.pullOnHit) {
+        expect(stats.pullOnHit.radius, `${unitType} has pull without positive radius`).toBeGreaterThan(0)
+        expect(stats.pullOnHit.strength, `${unitType} has pull without positive strength`).toBeGreaterThan(0)
+        if (stats.pullOnHit.maxTargets !== undefined) {
+          expect(stats.pullOnHit.maxTargets, `${unitType} has pull without positive maxTargets`).toBeGreaterThan(0)
+        }
+      }
+      if (stats.knockbackOnHit) {
+        expect(stats.knockbackOnHit.radius, `${unitType} has knockback without positive radius`).toBeGreaterThan(0)
+        expect(stats.knockbackOnHit.strength, `${unitType} has knockback without positive strength`).toBeGreaterThan(0)
+        if (stats.knockbackOnHit.maxTargets !== undefined) {
+          expect(stats.knockbackOnHit.maxTargets, `${unitType} has knockback without positive maxTargets`).toBeGreaterThan(0)
+        }
+      }
+      if (stats.stance) {
+        expect(['siege', 'entrenched'], `${unitType} has invalid stance mode`).toContain(stats.stance.mode)
+        expect(stats.stance.deployTicks, `${unitType} has stance without non-negative deployTicks`).toBeGreaterThanOrEqual(0)
+        expect(stats.stance.rangeMultiplier ?? 1, `${unitType} has stance without positive range multiplier`).toBeGreaterThan(0)
+        expect(stats.stance.cooldownMultiplier ?? 1, `${unitType} has stance without positive cooldown multiplier`).toBeGreaterThan(0)
+        expect(stats.stance.speedMultiplier ?? 1, `${unitType} has stance with negative speed multiplier`).toBeGreaterThanOrEqual(0)
       }
       if (stats.onKill) {
         expect(Boolean(stats.onKill.cooldownReset || stats.onKill.healPercent || stats.onKill.status), `${unitType} has on-kill without an effect`).toBe(true)
@@ -150,8 +200,11 @@ describe('combat unit config contract', () => {
         if (aura.interval !== undefined) {
           expect(aura.interval, `${unitType} has support aura without positive interval`).toBeGreaterThan(0)
         }
-        if (['shield', 'regen', 'damage_reduction'].includes(aura.type)) {
+        if (['shield', 'shield_repair', 'regen', 'damage_reduction', 'haste', 'range_boost'].includes(aura.type)) {
           expect(aura.value, `${unitType} has ${aura.type} aura without positive value`).toBeGreaterThan(0)
+        }
+        if (aura.targetTags) {
+          expect(aura.targetTags.length, `${unitType} has support aura with empty targetTags`).toBeGreaterThan(0)
         }
         if (aura.type === 'status_immunity') {
           expect(aura.duration, `${unitType} has status immunity aura without explicit duration`).toBeGreaterThan(0)

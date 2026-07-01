@@ -65,6 +65,7 @@ export function getEffectiveCombatTags(unit: SimUnit): CombatTag[] {
   if (unit.shield > 0) tags.add('shielded')
   if (unit.attackType === 'heal') tags.add('healer')
   if (unit.attackType === 'spawn') tags.add('summoner')
+  if (unit.summonOwnerId || unit.isTemporary) tags.add('summoned')
   return [...tags].sort()
 }
 

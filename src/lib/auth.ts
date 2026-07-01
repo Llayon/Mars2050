@@ -15,12 +15,14 @@ function getCookie(cookieStr: string, name: string): string | null {
 export function getAuthClient(request: Request): SupabaseClient {
   const cookieStr = request.headers.get('cookie') ?? ''
   
-  let token = getCookie(cookieStr, 'supabase-access-token')
+  let token: string | null = null
+  const authHeader = request.headers.get('authorization')
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    token = authHeader.substring(7)
+  }
+  
   if (!token) {
-    const authHeader = request.headers.get('authorization')
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      token = authHeader.substring(7)
-    }
+    token = getCookie(cookieStr, 'supabase-access-token')
   }
   
   const headers: Record<string, string> = {
@@ -51,9 +53,24 @@ export interface AuthContext {
  * Never reads userId from request body/query — only from the JWT.
  */
 export async function getAuthContext(request: Request): Promise<AuthContext | null> {
+  const cookieStr = request.headers.get('cookie') ?? ''
+  let token: string | null = null
+  const authHeader = request.headers.get('authorization')
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    token = authHeader.substring(7)
+  }
+  if (!token) {
+    token = getCookie(cookieStr, 'supabase-access-token')
+  }
+
   const client = getAuthClient(request)
-  const { data, error } = await client.auth.getUser()
-  if (error || !data.user) return null
+  const { data, error } = await (token ? client.auth.getUser(token) : client.auth.getUser())
+  
+  if (error || !data.user) {
+    console.log('[Auth Debug] getUser failed:', error?.message, 'Token exists:', !!token)
+    return null
+  }
+  
   return {
     userId: data.user.id,
     email: data.user.email ?? null,

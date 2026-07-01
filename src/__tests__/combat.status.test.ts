@@ -73,6 +73,15 @@ describe('combat.status', () => {
     expect(getEffectiveActionRange(attacker)).toBe(150)
   })
 
+  it('computes effective action range from range boost and suppression', () => {
+    const attacker = makeUnit({ id: 'attacker', team: 'attacker', range: 200 })
+
+    applyStatus(attacker, { type: 'range_boost', duration: 5, value: 0.5, sourceUnitId: 'radar' })
+    applyStatus(attacker, { type: 'range_suppressed', duration: 5, value: 0.25, sourceUnitId: 'sonic' })
+
+    expect(getEffectiveActionRange(attacker)).toBe(225)
+  })
+
   it('ticks statuses and emits deterministic expire actions', () => {
     const target = makeUnit({ id: 'target', team: 'defender' })
     const actions: BattleAction[] = []
@@ -150,6 +159,15 @@ describe('combat.status', () => {
     expect(acted).toBe(false)
     expect(actions).toEqual([])
     expect(target.hp).toBe(100)
+  })
+
+  it('emits control mode when applying hacked control statuses', () => {
+    const target = makeUnit({ id: 'target', team: 'defender' })
+    const actions: BattleAction[] = []
+
+    applyStatus(target, { type: 'hacked', duration: 5, controlMode: 'redirect' }, actions)
+
+    expect(actions).toEqual([{ unitId: 'target', type: 'status_apply', statusType: 'hacked', value: undefined, controlMode: 'redirect' }])
   })
 
   it('uses range suppression for attack range checks', () => {

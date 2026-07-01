@@ -49,7 +49,7 @@ export function useMap() {
         body: JSON.stringify({ locationId, colonyId })
       })
       const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'Failed to discover location')
+      if (!res.ok) throw new Error(data.error?.message || data.error || 'Failed to discover location')
       setLocations(prev => prev.map(l => l.id === locationId ? { ...l, is_discovered: true } : l))
       return data
     } catch (err) {

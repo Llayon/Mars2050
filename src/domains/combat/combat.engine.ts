@@ -3,7 +3,7 @@ import { GLOBAL_UPGRADES, UPGRADES, GlobalUpgradeConfig } from './combat.upgrade
 import { processGlobals } from './combat.globals'
 import { processHazards } from './combat.hazards'
 import { processSpawnerLogic } from './combat.spawner'
-import { processSupportAuras } from './combat.auras'
+import { getUnitSupportAuras, processSupportAuras } from './combat.auras'
 import type { UnitRow, BattleAction, BattleTick, BattleResult, UnitTypeKey } from './combat.types'
 import type { Team, SimUnit, Obstacle, SimHazard } from './combat.sim.types'
 import { actionSystem, tickModifiersSystem } from './combat.systems'
@@ -14,6 +14,7 @@ import { createCombatMetrics, finalizeCombatMetrics, recordCombatActions, record
 import { FIELD_WIDTH, FIELD_HEIGHT, PRNG, generateObstacles } from './combat.utils'
 import { createPathfindingMap } from './combat.pathfinding'
 import { SpatialHash } from './spatial-hash'
+import { canAttackControlledTarget } from './combat.control'
 export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[], providedSeed?: number, providedObstacles?: Obstacle[], attackerGlobals: string[] = [], defenderGlobals: string[] = [], options: BattleSimulationOptions = {}): BattleResult {
   const seed = providedSeed ?? Date.now()
   const rng = new PRNG(seed)
@@ -25,8 +26,7 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
   defenderGlobals.forEach(id => { if (GLOBAL_UPGRADES[id]) activeGlobals.push({ team: 'defender', upg: GLOBAL_UPGRADES[id] }) })
 
   const obstacles: Obstacle[] = providedObstacles || generateObstacles(seed);
-  const flowFieldMap = createPathfindingMap(obstacles);
-  const spatialHash = new SpatialHash();
+  const flowFieldMap = createPathfindingMap(obstacles), spatialHash = new SpatialHash();
 
   const createSquad = (u: UnitRow, t: Team) => {
     const config = UNIT_TYPES[u.unit_type as keyof typeof UNIT_TYPES]
@@ -57,7 +57,7 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
     let modDamageReductionWhileMoving = 0, modOnDeathPuddle: 'napalm' | 'acid' | 'emp' | undefined = undefined;
     let modMultishot = 1, modAntiAirDamageMult = 1.0, modReplicateOnKill = false;
     let modResurrectOnce = false, modStealthUntilAttack = false, modExecuteThreshold = 0;
-    let modLifestealMult = 0, modGroundDamageMult = 1.0;
+    let modLifestealMult = 0, modGroundDamageMult = 1.0, modShieldDamageMult = config.baseStats.shieldDamageMult ?? 1.0, modArmorPierceRatio = config.baseStats.armorPierceRatio ?? 0, modSummonCounterDamageMult = config.baseStats.summonCounterDamageMult ?? 1.0, modAccuracyPenaltyResist = config.baseStats.accuracyPenaltyResist ?? 0;
 
     if (u.upgrade_path && Array.isArray(u.upgrade_path)) {
       for (const upgradeId of u.upgrade_path) {
@@ -75,7 +75,7 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
         if (m.onDeathPuddle) modOnDeathPuddle = m.onDeathPuddle;
         if (m.replicateOnKill) modReplicateOnKill = true; if (m.resurrectOnce) modResurrectOnce = true;
         if (m.stealthUntilAttack) modStealthUntilAttack = true; if (m.executeThreshold) modExecuteThreshold = m.executeThreshold;
-        if (m.lifestealMult) modLifestealMult = m.lifestealMult; if (m.groundDamageMult) modGroundDamageMult = m.groundDamageMult;
+        if (m.lifestealMult) modLifestealMult = m.lifestealMult; if (m.groundDamageMult) modGroundDamageMult = m.groundDamageMult; if (m.shieldDamageMult) modShieldDamageMult *= m.shieldDamageMult; if (m.armorPierceRatio !== undefined) modArmorPierceRatio = Math.max(modArmorPierceRatio, m.armorPierceRatio); if (m.summonCounterDamageMult) modSummonCounterDamageMult *= m.summonCounterDamageMult; if (m.accuracyPenaltyResist !== undefined) modAccuracyPenaltyResist = Math.max(modAccuracyPenaltyResist, m.accuracyPenaltyResist);
         if (m.damageReductionWhileMoving) modDamageReductionWhileMoving = m.damageReductionWhileMoving;
         if (m.multishot) modMultishot = m.multishot; if (m.antiAirDamageMult) modAntiAirDamageMult = m.antiAirDamageMult;
         if (m.grantAntiAir) modCanTargetAir = true;
@@ -94,8 +94,7 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
         ox = (i - (squadSize - 1) / 2) * spacing
         oy = 0
       } else if (formation === 'wedge') {
-        // Wedge: 1 in front, 2 behind, 3 behind that
-        // Let's do a simple V shape
+        // Wedge: simple V formation.
         const isLeader = i === 0
         if (isLeader) {
           ox = 0; oy = spacing
@@ -140,7 +139,7 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
         maxShield: Math.round(modShield),
         statusEffects: [],
         statusOnHit: config.baseStats.statusOnHit ? config.baseStats.statusOnHit.map(status => ({ ...status })) : undefined, markOnHit: config.baseStats.markOnHit ? { ...config.baseStats.markOnHit } : undefined,
-        supportAuras: config.baseStats.supportAuras ? config.baseStats.supportAuras.map(aura => ({ ...aura })) : undefined,
+        supportAuras: getUnitSupportAuras(config.baseStats.supportAuras, u.upgrade_path),
         appliesEmp,
         leavesPuddle,
         spawnerConfig: spawnerConfig ? { ...spawnerConfig } : undefined,
@@ -153,8 +152,9 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
         stealthUntilAttack: modStealthUntilAttack,
         executeThreshold: modExecuteThreshold,
         lifestealMult: modLifestealMult,
-        groundDamageMult: modGroundDamageMult,
-        pullOnHit: config.baseStats.pullOnHit ? { radius: config.baseStats.pullOnHit.radius * 40, strength: config.baseStats.pullOnHit.strength * 40, maxTargets: config.baseStats.pullOnHit.maxTargets } : undefined,
+        groundDamageMult: modGroundDamageMult, shieldDamageMult: modShieldDamageMult, armorPierceRatio: modArmorPierceRatio || undefined, summonCounterDamageMult: modSummonCounterDamageMult === 1 ? undefined : modSummonCounterDamageMult, accuracyPenaltyResist: modAccuracyPenaltyResist || undefined,
+        smokeOnAction: config.baseStats.smokeOnAction ? { ...config.baseStats.smokeOnAction } : undefined, stanceConfig: config.baseStats.stance ? { ...config.baseStats.stance } : undefined, stanceMode: config.baseStats.stance ? 'mobile' : undefined, stanceTicks: 0,
+        pullOnHit: config.baseStats.pullOnHit ? { radius: config.baseStats.pullOnHit.radius * 40, strength: config.baseStats.pullOnHit.strength * 40, maxTargets: config.baseStats.pullOnHit.maxTargets } : undefined, knockbackOnHit: config.baseStats.knockbackOnHit ? { radius: config.baseStats.knockbackOnHit.radius * 40, strength: config.baseStats.knockbackOnHit.strength * 40, maxTargets: config.baseStats.knockbackOnHit.maxTargets } : undefined,
         reactiveArmorCharges: config.baseStats.reactiveArmor?.charges, reactiveArmorBlock: config.baseStats.reactiveArmor?.block, damageShareRadius: config.baseStats.damageShare?.radius ? config.baseStats.damageShare.radius * 40 : undefined, damageShareRatio: config.baseStats.damageShare?.ratio, damageShareMaxTargets: config.baseStats.damageShare?.maxTargets,
         projectileInterceptRadius: config.baseStats.projectileInterception?.radius, projectileInterceptCooldownMax: config.baseStats.projectileInterception?.cooldownTicks, projectileInterceptCooldown: 0, projectileInterceptMaxDamage: config.baseStats.projectileInterception?.maxDamage,
         offsetX: ox,
@@ -208,7 +208,7 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
       const unitCountBeforeActions = units.length;
       processSpawnerLogic(unit, target, units, hazards, actions, rng);
 
-      const canActOnTarget = target.team !== unit.team || unit.attackType === 'heal';
+      const canActOnTarget = target.team !== unit.team || unit.attackType === 'heal' || canAttackControlledTarget(unit, target);
       const hasEngagement = canActOnTarget ? reserveMeleeEngagementSlot(unit, target, meleeEngagement) : true;
 
       const acted = canActOnTarget && hasEngagement && actionSystem(unit, target, units, hazards, actions, rng);

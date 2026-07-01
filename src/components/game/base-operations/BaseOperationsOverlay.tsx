@@ -35,36 +35,49 @@ export function BaseOperationsOverlay({
   const [activeTab, setActiveTab] = useState<TabType>('construction')
 
   return (
-    <div className="absolute inset-0 z-30 flex flex-col bg-[#070b12] animate-slide-in-right">
-      <div className="flex flex-col h-full relative">
-        {/* Header / Tabs */}
-        <header className="flex-none flex items-center justify-between px-6 py-4 border-b border-cyan-900/50 bg-black/40">
-          <div className="flex gap-1 items-center">
-            <h2 className="text-xl font-bold text-white tracking-widest uppercase mr-8 flex items-center gap-3">
-              <span className="w-3 h-3 bg-cyan-500 rounded-sm shadow-[0_0_10px_rgba(6,182,212,0.8)]" />
-              Infrastructure
-            </h2>
-            
-            <TabButton 
-              active={activeTab === 'construction'} 
-              onClick={() => setActiveTab('construction')}
-            >
-              Construction
-            </TabButton>
-            <TabButton 
-              active={activeTab === 'economy'} 
-              onClick={() => setActiveTab('economy')}
-            >
-              Economy
-            </TabButton>
-          </div>
-          <button 
-            onClick={onClose}
-            className="text-gray-400 hover:text-white px-3 py-1 font-mono uppercase tracking-widest border border-transparent hover:border-red-500/50 hover:bg-red-500/10 transition-all rounded"
-          >
-            [ X ] CLOSE
-          </button>
-        </header>
+    <>
+      {/* Soft Backdrop */}
+      <div 
+        className="absolute inset-0 z-20 bg-black/30 backdrop-blur-[2px] transition-opacity" 
+        onClick={onClose} 
+      />
+
+      {/* Side Panel */}
+      <div className="absolute top-[60px] bottom-[60px] right-0 w-[460px] z-30 flex flex-col bg-gray-900/95 backdrop-blur-xl border-l border-t border-b border-gray-700/80 rounded-l-3xl shadow-[-10px_0_40px_rgba(0,0,0,0.9)] animate-slide-in-right overflow-hidden">
+        <div className="flex flex-col h-full relative">
+          {/* Header / Tabs */}
+          <header className="flex-none flex items-center justify-between px-6 py-4 border-b border-gray-700/50 bg-black/20">
+            <div className="flex flex-col gap-3 w-full">
+              <div className="flex justify-between items-center w-full">
+                <h2 className="text-xl font-bold text-white tracking-widest uppercase flex items-center gap-3">
+                  <span className="w-3 h-3 bg-cyan-500 rounded-sm shadow-[0_0_10px_rgba(6,182,212,0.8)]" />
+                  Infrastructure
+                </h2>
+                <button 
+                  onClick={onClose}
+                  className="text-gray-400 hover:text-white flex items-center justify-center w-8 h-8 font-mono border border-transparent hover:border-red-500/50 hover:bg-red-500/10 transition-all rounded"
+                  title="Close"
+                >
+                  <span className="text-lg leading-none">&times;</span>
+                </button>
+              </div>
+              
+              <div className="flex gap-2">
+                <TabButton 
+                  active={activeTab === 'construction'} 
+                  onClick={() => setActiveTab('construction')}
+                >
+                  Construction
+                </TabButton>
+                <TabButton 
+                  active={activeTab === 'economy'} 
+                  onClick={() => setActiveTab('economy')}
+                >
+                  Economy
+                </TabButton>
+              </div>
+            </div>
+          </header>
 
         {/* Content Area */}
         <div className="flex-1 overflow-hidden relative">
@@ -87,6 +100,7 @@ export function BaseOperationsOverlay({
         </div>
       </div>
     </div>
+    </>
   )
 }
 

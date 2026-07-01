@@ -51,7 +51,7 @@ export const TARGETING_PROFILES: Record<TargetingProfileKey, TargetingProfileCon
     currentTargetBonus: 80,
     lowHpWeight: 50,
     targetingCooldownTicks: 12,
-    preferredTags: { healer: 700, summoner: 300, light: 80, stealth: 80 },
+    preferredTags: { healer: 700, summoner: 300, summoned: 120, light: 80, stealth: 80 },
     avoidedTags: { structure: 250, heavy: 80 },
   },
   support_hunter: {
@@ -60,7 +60,7 @@ export const TARGETING_PROFILES: Record<TargetingProfileKey, TargetingProfileCon
     currentTargetBonus: 70,
     lowHpWeight: 35,
     targetingCooldownTicks: 12,
-    preferredTags: { healer: 600, summoner: 450, shielded: 120 },
+    preferredTags: { healer: 600, summoner: 450, summoned: 160, shielded: 120 },
     avoidedTags: { structure: 120 },
   },
 }

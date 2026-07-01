@@ -182,6 +182,12 @@ export async function verifyBuildingOwnership(
     .eq('id', buildingId)
     .maybeSingle()
 
-  if (error || !data) return false
+  if (error || !data) {
+    const srvClient = getServerClient()
+    const { data: srvData } = await srvClient.from('buildings').select('colony_id').eq('id', buildingId).maybeSingle()
+    console.error('[Building Ownership] Failed:', { buildingId, colonyId, error, data, existsInDb: !!srvData, realColonyId: srvData?.colony_id })
+    return false
+  }
+  
   return data.colony_id === colonyId
 }

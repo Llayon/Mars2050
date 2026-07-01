@@ -33,7 +33,7 @@ export function usePvp(colonyId: string | null) {
         setError(data?.error?.message ?? 'Cooldown active')
         return null
       }
-      if (!res.ok) throw new Error(data.error || 'Attack failed')
+      if (!res.ok) throw new Error(data.error?.message || data.error || 'Attack failed')
       setCooldownRemaining(0)
       return data
     } catch (err) {
@@ -63,7 +63,7 @@ export function usePvp(colonyId: string | null) {
       })
 
       const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'Trade failed')
+      if (!res.ok) throw new Error(data.error?.message || data.error || 'Trade failed')
       return data
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
@@ -77,7 +77,7 @@ export function usePvp(colonyId: string | null) {
   async function fetchBattle(battleId: string): Promise<unknown> {
     const res = await fetch(`/api/pvp/battle/${battleId}`)
     const data = await res.json()
-    if (!res.ok) throw new Error(data.error || 'Fetch failed')
+    if (!res.ok) throw new Error(data.error?.message || data.error || 'Fetch failed')
     return data
   }
 

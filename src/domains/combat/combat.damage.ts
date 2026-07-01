@@ -1,9 +1,11 @@
 import type { BattleAction } from './combat.actions'
 import type { SimUnit } from './combat.sim.types'
+import { applyAccuracyPenalty } from './combat.accuracy'
 import { getMarkedDamageMultiplier, getMarkedExecuteThreshold } from './combat.mark'
 import { getPercentHpDamage } from './combat.percent-damage'
 import { tryInterceptProjectile } from './combat.projectile-defense'
 import { getStatusValue } from './combat.status'
+import { applySummonCounterDamage } from './combat.summon-counter'
 import { getDistance } from './combat.utils'
 
 export interface CombatDamageResult {
@@ -52,12 +54,14 @@ export function applyCombatDamage(
     return createDamageResult({ blockedDamage: raw, intercepted: true })
   }
 
-  const defense = getEffectiveDefense(target)
+  const defense = getEffectiveDefense(attacker, target)
   let damage = Math.max(1, raw - defense)
   damage = applyOutputSuppression(attacker, damage)
+  damage = applyAccuracyPenalty(attacker, damage)
 
   if (target.isFlying && attacker.antiAirDamageMult) damage = Math.floor(damage * attacker.antiAirDamageMult)
   if (!target.isFlying && attacker.groundDamageMult) damage = Math.floor(damage * attacker.groundDamageMult)
+  damage = applySummonCounterDamage(attacker, target, damage)
   if (target.isMoving && target.damageReductionWhileMoving) {
     damage = Math.floor(damage * (1 - target.damageReductionWhileMoving))
   }
@@ -65,7 +69,7 @@ export function applyCombatDamage(
   damage = applyStatusDamageModifiers(target, damage)
   damage = applyMarkDamageModifier(attacker, target, damage)
   const blockedDamage = Math.max(0, raw - damage)
-  const shieldResult = applyShield(target, damage)
+  const shieldResult = applyShield(target, damage, attacker.shieldDamageMult)
   damage = shieldResult.damage
   const reactiveArmorBlock = applyReactiveArmor(target, damage)
   damage -= reactiveArmorBlock
@@ -99,10 +103,12 @@ function applyMarkDamageModifier(attacker: SimUnit, target: SimUnit, damage: num
   return Math.max(0, Math.floor(damage * (1 + multiplier)))
 }
 
-function getEffectiveDefense(target: SimUnit): number {
+function getEffectiveDefense(attacker: SimUnit, target: SimUnit): number {
   const armorBroken = getStatusValue(target, 'armor_broken') ?? 0
   const defenseReduction = armorBroken <= 1 ? target.defense * armorBroken : armorBroken
-  return Math.max(0, target.defense - defenseReduction)
+  const remainingDefense = Math.max(0, target.defense - defenseReduction)
+  const pierceRatio = Math.max(0, Math.min(1, attacker.armorPierceRatio ?? 0))
+  return Math.floor(remainingDefense * (1 - pierceRatio))
 }
 
 function applyStatusDamageModifiers(target: SimUnit, damage: number): number {
@@ -122,23 +128,25 @@ function applyOutputSuppression(attacker: SimUnit, damage: number): number {
   return Math.max(0, Math.floor(damage * Math.max(0, 1 - suppression)))
 }
 
-function applyShield(target: SimUnit, damage: number): CombatDamageResult {
+function applyShield(target: SimUnit, damage: number, shieldDamageMult = 1): CombatDamageResult {
   if (target.shield <= 0) return createDamageResult({ damage })
 
+  const multiplier = Math.max(1, shieldDamageMult)
+  const shieldDamageBudget = Math.max(1, Math.floor(damage * multiplier))
   const currentShield = target.shield
-  if (target.shield >= damage) {
-    target.shield -= damage
+  if (target.shield >= shieldDamageBudget) {
+    target.shield -= shieldDamageBudget
     return createDamageResult({
       damage: 0,
       isShieldHit: true,
-      shieldDamage: damage,
+      shieldDamage: shieldDamageBudget,
       shieldBroken: target.shield === 0,
     })
   }
 
   target.shield = 0
   return createDamageResult({
-    damage: damage - currentShield,
+    damage: Math.max(0, damage - Math.ceil(currentShield / multiplier)),
     isShieldHit: true,
     shieldDamage: currentShield,
     shieldBroken: true,

@@ -9,14 +9,13 @@ import { getPositioningDecision } from './combat.positioning';
 import { getFormationCohesionForce } from './combat.formation';
 import { getMovementSpeedMultiplier } from './combat.status';
 import { recordChargeMovement } from './combat.charge';
+import { getStanceMovementSpeedMultiplier, undeployStanceForMovement } from './combat.stance';
 
 export function movementSystem(unit: SimUnit, target: SimUnit, units: SimUnit[], actions: BattleAction[], dt: number, rng: PRNG, flowFieldMap: FlowFieldMap, obstacles: Obstacle[], spatialHash?: SpatialHash) {
   let vx = 0;
   let vy = 0;
   
   if (!unit.velocity) unit.velocity = { x: 0, y: 0 };
-  const effectiveSpeed = unit.speed * getMovementSpeedMultiplier(unit);
-
   const neighbors = getMovementNeighbors(unit, units, spatialHash);
 
   const distToTarget = getDistance(unit.x, unit.y, target.x, target.y);
@@ -24,6 +23,8 @@ export function movementSystem(unit: SimUnit, target: SimUnit, units: SimUnit[],
   const myRadius = getSizeRadius(unit.size);
   const distEdge = distToTarget - targetRadius - myRadius;
   const positioning = getPositioningDecision(unit, target, distEdge, targetRadius, myRadius);
+  undeployStanceForMovement(unit, positioning.shouldMove, actions);
+  const effectiveSpeed = unit.speed * getMovementSpeedMultiplier(unit) * getStanceMovementSpeedMultiplier(unit);
   const steeringInRange = positioning.combatInRange && !positioning.shouldMove;
   updateStuckRecovery(unit, target, distToTarget, steeringInRange);
   const steering = getSteeringContext(unit, neighbors, myRadius, steeringInRange);

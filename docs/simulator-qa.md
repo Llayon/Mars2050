@@ -25,13 +25,15 @@
 | `damage` | HP уменьшается только на финальный урон после защиты/щита/статусов. |
 | `shield_damage` | Щит теряет ровно поглощенную часть удара. |
 | `shield_break` | Срабатывает при уходе shield HP в 0. |
-| `unit_blocked_damage` | Показывает урон, снятый защитой, armor/status reduction или reactive armor. |
+| `unit_blocked_damage` | Показывает урон, снятый защитой, armor/status reduction или reactive armor; при armor pierce должен быть ниже baseline. |
 | `lifesteal` | Лечение считается от фактически нанесенного HP/shared урона. |
 | `ramp_charge` | Focus-fire юнит наращивает множитель только по той же primary цели. |
 | `charge_damage` | Movement-distance бонус применяется только к primary hit и сбрасывается после атаки. |
 | `percent_hp_damage` | Anti-giant бонус добавляется к primary hit до mitigation и не появляется у обычных/secondary ударов. |
 | `projectile_intercept` | Projectile-defense юнит сбил interceptable hit до shield/HP damage. |
 | `on_kill` | On-kill эффекты появляются только после подтвержденной смерти, не после resurrection. |
+| `stance_change` | Siege/entrenchment режим развернулся или сбросился перед движением. |
+| `hazard_spawn` + `statusType: smoke` | Smoke field появился как suppression-зона без прямого урона; accuracy loss виден через меньший `damage`. |
 
 ## Known Limitations
 - Анимации выстрелов интерполируются и могут не всегда точно совпадать с физическим тиком попадания на скорости 4.0x.
@@ -53,6 +55,11 @@
 | **6. 100+ Units Stress** | Пресет "Стенка на стенку (100+)" | Симуляция рассчитывается без падения вкладки. | Плавный FPS реплея, корректные векторы. |
 | **7. Deterministic Replay** | Ввести одинаковый Seed дважды | Идентичный результат (победитель, остаток HP) 100% случаев. | Сравнить метрики и выживших. |
 | **8. Shield Overflow** | Сильный одиночный удар по юниту с малым щитом | Остаток урона проходит в HP после разрушения щита. | Есть `shield_damage`, `shield_break`, затем `damage`. |
+| **8B. Shield Breaker** | Railgun/Plasma/Missile Buggy с `shield_breaker_rounds` против щитовой цели | Щит теряет больше HP, чем обычный удар той же силы; без щита HP-урон не растет. | `shield_damage` выше base hit, `damage` появляется только после пробития щита. |
+| **8C. Armor Pierce** | Railgun/Sniper/Plasma с `armor_piercing_rounds` против Wall/Behemoth | Defense mitigation ниже baseline, но урон по цели без брони не растет. | `unit_blocked_damage` ниже, `damage` выше; нет `status_apply` для `armor_broken`. |
+| **8D. Anti-Summoner** | Bounty Hunter/Sniper/Stealth Operative с `anti_summoner_protocol` против Drone Carrier / Mobile Factory / Hologram Projector | Урон выше по summoner, spawned и temporary целям, но не по обычному frontline. | `damage` выше baseline; spawned/temporary цели имеют target tag `summoned`; нет нового status. |
+| **8E. Anti-Stealth Reveal** | Officer/Scout/Bounty Hunter с `sensor_suite` против Stealth Operative | Скрытая цель становится доступна targeting до первой атаки, обычные цели не получают reveal. | Есть `status_apply` `revealed` на stealth цели; после reveal стрелки выбирают stealth по обычным targeting rules. |
+| **8F. Accuracy Suppression** | Smoke field или тестовый smokeOnAction с `accuracySuppression`; повторить с `thermal_optics` | Без optics удар становится glancing damage; с optics штраф ниже, clean-hit DPS не растет. | Есть `status_apply` `accuracy_reduced`; последующий `damage` ниже baseline, но без случайных miss events. |
 | **9. Control Statuses** | EMP/хакер/крио против тяжелого юнита | EMP/hacked блокируют действия, slow меняет скорость. | `status_apply`, `status_expire`, отсутствие атак под контролем. |
 | **10. Weapon Shapes** | Огнемет, ионный излучатель, артиллерия, плазмо-танк | Cone/beam/barrage/chain выбирают цели детерминированно. | Нет случайного порядка целей; VFX совпадает с action stream. |
 | **11. Side Weapons** | Goliath против нескольких целей | Primary цель получает основной удар, side targets получают отдельный урон. | Есть `side_weapon_attack`; side weapons не копируют primary statuses. |
@@ -62,3 +69,5 @@
 | **15. Projectile Interception** | Shield Emitter рядом с целью против Missile Buggy / Artillery Crawler | Первый дальний explosive/barrage hit блокируется до shield/HP. | Есть `projectile_intercept`; нет `damage` для сбитого удара. |
 | **16. On-kill Effects** | Stealth Operative добивает цель | После kill сбрасывается cooldown и применяется self-heal. | Есть `on_kill`; нет срабатывания при revive/resurrection. |
 | **17. Summon Caps / Decoys** | Drone Carrier, Mobile Factory, Hologram Projector | Summons не бесконечны, temporary units исчезают по таймеру. | Есть `spawn_blocked`, temporary death не ломает replay. |
+| **18. Stance Transforms** | Artillery Crawler против дальней static цели | Артиллерия сначала разворачивается, затем стреляет; при необходимости движения сбрасывает режим. | Есть `stance_change`; range/cooldown меняются только в deployed mode. |
+| **19. Smoke Fields** | Тестовый smokeOnAction юнит или будущий smoke upgrade | Smoke hazard режет range/output/accuracy у наземных юнитов внутри радиуса, не дамажит напрямую. | Есть `hazard_spawn` smoke и `status_apply`; flyers не получают smoke suppression. |
