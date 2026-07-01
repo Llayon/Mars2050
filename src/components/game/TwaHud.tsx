@@ -10,6 +10,8 @@ import { OperationsScreen } from '@/components/screens/OperationsScreen'
 import { ProfileScreen } from '@/components/screens/ProfileScreen'
 import { PopulationScreen } from '@/components/screens/PopulationScreen'
 import { HudBottomSheet } from '@/components/ui/hud/HudBottomSheet'
+import { BuildCatalogSheet } from '@/components/game/hud/BuildCatalogSheet'
+import { PlacementActionBar } from '@/components/game/hud/PlacementActionBar'
 import type { BuildingTypeKey } from '@/domains/building/building.types'
 import type { Colony } from '@/domains/colony/colony.types'
 import type { ResourceRow } from '@/domains/resource/resource.types'
@@ -79,9 +81,14 @@ export function TwaHud({
         <TopResourceBar resources={resources} population={population} colony={colony} isMobile={true} />
       )}
       
-      <HudBottomSheet open={activeTab === 'buildings'} onClose={() => setActiveTab('colony')}>
-        <BuildingsScreen buildings={buildings} colonyId={colonyId} resources={resources} resourcesLoading={resourcesLoading} onBuild={async (type) => { setPlacementMode(type); setActiveTab('colony'); }} onDemolish={onDemolish} population={population} />
-      </HudBottomSheet>
+      {activeTab === 'buildings' && !placementMode && (
+        <BuildCatalogSheet 
+          resources={resources}
+          isMobile={true}
+          onBuild={async (type) => { setPlacementMode(type); setActiveTab('colony'); }}
+          onClose={() => setActiveTab('colony')}
+        />
+      )}
 
       <HudBottomSheet open={activeTab === 'population'} onClose={() => setActiveTab('colony')}>
         <PopulationScreen population={population} buildings={buildings} resources={resources} onUpgrade={async (t, c) => onUpgradePopulation(t, c)} />
@@ -107,12 +114,11 @@ export function TwaHud({
       </HudBottomSheet>
 
       {placementMode && (
-        <div className="absolute bottom-8 left-0 right-0 z-50 flex justify-center pointer-events-none">
-          <div className="hud-panel rounded-full px-5 py-2.5 flex items-center gap-3 pointer-events-auto animate-slide-up shadow-2xl shadow-black">
-            <span className="text-xs font-bold text-cyan-300 uppercase">Стройка: {placementMode}</span>
-            <button onClick={() => setPlacementMode(null)} className="bg-red-600 hover:bg-red-500 text-white px-3 py-1.5 rounded-full text-[10px] font-bold transition-colors">ОТМЕНА</button>
-          </div>
-        </div>
+        <PlacementActionBar 
+          placementMode={placementMode} 
+          resources={resources} 
+          onCancel={() => setPlacementMode(null)} 
+        />
       )}
 
       {!placementMode && (

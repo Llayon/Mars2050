@@ -2,7 +2,7 @@
 
 import { useState, Suspense, lazy, useCallback, useRef } from 'react'
 import { ColonyPanel } from '@/components/game/ColonyPanel'
-import { BuildingActionModal } from '@/components/game/BuildingActionModal'
+import { EntityInspector } from '@/components/game/hud/EntityInspector'
 import type { Colony } from '@/domains/colony/colony.types'
 import type { ResourceRow } from '@/domains/resource/resource.types'
 import type { BuildingRow, BuildingTypeKey } from '@/domains/building/building.types'
@@ -114,14 +114,7 @@ export default function ColonyScreen({
         />
       </Suspense>
 
-      {colony && (
-        <div className="absolute top-4 left-4 pointer-events-none">
-          <div className="hud-panel px-4 py-2">
-            <p className="text-white font-semibold leading-tight">{colony.name}</p>
-            <p className="text-xs text-cyan-300">Уровень {colony.level}</p>
-          </div>
-        </div>
-      )}
+
       
       {/* Children overlay */}
       {children && (
@@ -132,10 +125,11 @@ export default function ColonyScreen({
         </div>
       )}
 
-      <BuildingActionModal 
+      <EntityInspector 
         building={selectedBuilding} 
         onClose={() => setSelectedBuilding(null)} 
         onDemolish={onDemolish} 
+        isMobile={typeof window !== 'undefined' && window.innerWidth < 768}
       />
     </div>
   )

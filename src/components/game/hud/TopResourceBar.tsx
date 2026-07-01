@@ -88,36 +88,50 @@ export function TopResourceBar({ resources, population, colony, isMobile }: TopR
     )
   }
 
-  // Desktop: Two-tier HUD
+  // Desktop: Ultra minimal single-tier HUD (Anno style)
   return (
-    <div className="absolute top-0 left-0 right-0 z-40 bg-black/60 backdrop-blur-md border-b border-cyan-500/30 p-2 flex flex-col gap-2 pointer-events-auto shadow-[0_0_20px_rgba(0,0,0,0.8)]">
-      {/* Tier 1: Resources */}
-      <div className="flex justify-between items-center text-sm px-4">
-        <div className="flex items-center gap-3">
-          <div className="bg-cyan-900/40 border border-cyan-500/50 text-cyan-300 font-bold px-3 py-1 rounded flex items-center gap-2 shadow-[0_0_10px_rgba(6,182,212,0.2)]">
-            <span className="text-lg">⬡</span>
-            <span className="tracking-wider uppercase">{colony?.name || 'Base: Alpha'}</span>
-            <span className="text-cyan-100/50">|</span>
-            <span className="text-xs">Lv. {colony?.level || 1}</span>
-          </div>
+    <div className="absolute top-0 left-0 right-0 z-40 bg-gradient-to-b from-black/80 via-black/40 to-transparent pt-2 pb-8 px-6 flex justify-between items-start pointer-events-none">
+      
+      {/* Left: Colony Info */}
+      <div className="flex flex-col pointer-events-auto">
+        <div className="text-xl font-serif text-white tracking-widest uppercase drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+          {colony?.name || 'Base: Alpha'}
         </div>
+        <div className="text-xs text-cyan-400 font-bold uppercase tracking-widest drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+          Уровень {colony?.level || 1}
+        </div>
+      </div>
+      
+      {/* Center: Global Resources & Population */}
+      <div className="flex items-center bg-black/40 backdrop-blur-md border border-white/10 rounded-full px-6 py-1.5 pointer-events-auto shadow-2xl">
         
+        {/* Population Compact */}
+        <div className="flex gap-4 items-center mr-6">
+           <div className="flex items-center gap-2 text-xs font-bold text-gray-200" title={`Рабочие: ${workers} | Инженеры: ${technicians} | Ученые: ${scientists}`}>
+             <span className="opacity-80">👥</span> 
+             <span>{totalPop} <span className="text-gray-500 font-normal">/ {housingCapacity}</span></span>
+           </div>
+           <div className={`flex items-center gap-1.5 text-xs font-bold ${lowHappiness ? 'text-red-400 animate-pulse' : 'text-green-400'}`}>
+             <span className="opacity-80">😊</span> 
+             <span>{weightedHappiness}%</span>
+           </div>
+        </div>
+
+        <div className="w-px h-5 bg-white/10 mr-6"></div>
+
+        {/* Resources */}
         <div className="flex gap-6 items-center">
           {displayResources.map(res => {
             const delta = res.production_rate - res.consumption_rate
             const deltaColor = delta > 0 ? 'text-green-400' : delta < 0 ? 'text-red-400' : 'text-gray-500'
             const roundedDelta = Math.round(delta)
-            const name = RESOURCE_NAMES[res.type] || res.type
             return (
-              <div key={res.type} className="flex flex-col items-center min-w-[70px]">
-                <div className="flex items-center gap-1.5 text-gray-300 text-xs font-bold uppercase tracking-wide">
-                  <span>{RESOURCE_ICONS[res.type] || '📦'}</span>
-                  {name.substring(0, 8)}
-                </div>
+              <div key={res.type} className="flex items-center gap-2 group cursor-default" title={RESOURCE_NAMES[res.type] || res.type}>
+                <span className="text-gray-300 drop-shadow-md text-sm opacity-80 group-hover:opacity-100 transition-opacity">{RESOURCE_ICONS[res.type] || '📦'}</span>
                 <div className="flex items-baseline gap-1.5">
-                  <span className="text-white font-bold">{Math.floor(res.amount)}</span>
-                  <span className={`text-[10px] ${deltaColor}`}>
-                    {roundedDelta > 0 ? '+' : ''}{roundedDelta}/h
+                  <span className="text-white font-bold text-sm drop-shadow-md">{Math.floor(res.amount)}</span>
+                  <span className={`text-[10px] font-mono ${deltaColor}`}>
+                    {roundedDelta > 0 ? '+' : ''}{roundedDelta}
                   </span>
                 </div>
               </div>
@@ -126,35 +140,8 @@ export function TopResourceBar({ resources, population, colony, isMobile }: TopR
         </div>
       </div>
 
-      {/* Tier 2: Population & Economy */}
-      <div className="flex justify-center px-4">
-        <div className="flex gap-8 items-center bg-slate-900/60 border border-slate-700/50 rounded-full px-8 py-1.5 text-xs shadow-inner">
-          <div className={`flex items-center gap-2 ${hasWorkerWarning ? 'text-red-400 animate-pulse font-bold' : 'text-cyan-100'}`}>
-            <span className="w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_5px_rgba(34,211,238,0.8)]"></span>
-            <span className="uppercase tracking-wider">Workers: {workers}</span>
-          </div>
-          <div className="text-slate-600">|</div>
-          <div className="flex items-center gap-2 text-blue-200">
-            <span className="w-2 h-2 rounded-full bg-blue-400 shadow-[0_0_5px_rgba(96,165,250,0.8)]"></span>
-            <span className="uppercase tracking-wider">Techs: {technicians}</span>
-          </div>
-          <div className="text-slate-600">|</div>
-          <div className="flex items-center gap-2 text-purple-200">
-            <span className="w-2 h-2 rounded-full bg-purple-400 shadow-[0_0_5px_rgba(192,132,252,0.8)]"></span>
-            <span className="uppercase tracking-wider">Sci: {scientists}</span>
-          </div>
-          <div className="text-slate-600">|</div>
-          <div className={`flex items-center gap-2 ${lowHappiness ? 'text-red-400 animate-pulse font-bold' : 'text-green-300'}`}>
-            <span className="w-2 h-2 bg-green-400 shadow-[0_0_5px_rgba(74,222,128,0.8)] rotate-45"></span>
-            <span className="uppercase tracking-wider">Happiness: {weightedHappiness}%</span>
-          </div>
-          <div className="text-slate-600">|</div>
-          <div className="flex items-center gap-2 text-amber-200">
-            <span className="w-2 h-2 bg-amber-400 shadow-[0_0_5px_rgba(251,191,36,0.8)] rotate-45"></span>
-            <span className="uppercase tracking-wider">Housing: {totalPop}/{housingCapacity}</span>
-          </div>
-        </div>
-      </div>
+      {/* Right: Placeholder for symmetry */}
+      <div className="w-32"></div>
     </div>
   )
 }
