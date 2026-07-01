@@ -11,13 +11,7 @@ export type ResourceTypeKey =
   | 'databanks'
   | 'nanomaterials'
 
-/** Resource icons for UI display. */
-export const RESOURCE_ICONS: Record<string, string> = {
-  oxygen: '🫁', water: '💧', energy: '⚡',
-  minerals: '⛏️', food: '🌾', research_points: '🔬',
-  consumer_goods: '📦', rare_metals: '💎',
-  databanks: '💾', nanomaterials: '🔩'
-}
+
 
 /** Resource display names (Russian). */
 export const RESOURCE_NAMES: Record<string, string> = {

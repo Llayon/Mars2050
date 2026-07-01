@@ -6,7 +6,7 @@ import type { PopulationState, PopulationTier } from '@/domains/population/popul
 import type { BuildingRow } from '@/domains/building/building.types'
 import type { ResourceRow } from '@/domains/resource/resource.types'
 import { sumJobsForTier, getEffectiveProduction } from '@/domains/building/building.production'
-import { RESOURCE_ICONS } from '@/domains/resource/resource.types'
+import { ResourceIcon } from '@/components/ui/icons/ResourceIcon'
 
 interface PopulationScreenProps {
   population: PopulationState | null
@@ -131,7 +131,7 @@ export const PopulationScreen = memo(function PopulationScreen({
                         <div key={need.resource} className="flex flex-col gap-1">
                           <div className="flex justify-between text-xs">
                             <span className="flex items-center gap-1 text-gray-300">
-                              {RESOURCE_ICONS[need.resource] || '📦'} {need.resource}
+                              <span className="text-cyan-400"><ResourceIcon type={need.resource} className="w-3.5 h-3.5" /></span> {need.resource}
                               <span className="text-[10px] text-gray-500 ml-1">
                                 ({need.category})
                               </span>

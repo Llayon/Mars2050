@@ -1,7 +1,8 @@
 'use client'
 
 import { memo } from 'react'
-import { RESOURCE_ICONS, RESOURCE_NAMES } from '@/domains/resource/resource.types'
+import { RESOURCE_NAMES } from '@/domains/resource/resource.types'
+import { ResourceIcon } from '@/components/ui/icons/ResourceIcon'
 import type { ResourceRow } from '@/domains/resource/resource.types'
 
 interface ResourcePanelProps {
@@ -19,7 +20,7 @@ export const ResourcePanel = memo(function ResourcePanel({ resources, loading }:
         {resources.map(r => (
           <div key={r.type} className="bg-gray-700 p-3 rounded-md">
             <div className="flex items-center justify-between">
-              <span className="text-2xl">{RESOURCE_ICONS[r.type] || '❓'}</span>
+              <span className="text-cyan-400 drop-shadow-md"><ResourceIcon type={r.type} className="w-6 h-6" /></span>
               <span className="text-lg font-semibold text-white">{Math.floor(r.amount).toLocaleString('ru-RU')}</span>
             </div>
             <div className="text-sm text-gray-300 mt-1">{RESOURCE_NAMES[r.type] || r.type}</div>

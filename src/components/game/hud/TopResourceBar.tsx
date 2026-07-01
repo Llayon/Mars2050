@@ -1,5 +1,6 @@
 import type { ResourceRow, ResourceTypeKey } from '@/domains/resource/resource.types'
-import { RESOURCE_ICONS, RESOURCE_NAMES } from '@/domains/resource/resource.types'
+import { RESOURCE_NAMES } from '@/domains/resource/resource.types'
+import { ResourceIcon } from '@/components/ui/icons/ResourceIcon'
 import type { PopulationState } from '@/domains/population/population.types'
 import type { Colony } from '@/domains/colony/colony.types'
 
@@ -60,7 +61,7 @@ export function TopResourceBar({ resources, population, colony, isMobile }: TopR
               const roundedDelta = Math.round(delta)
               return (
                 <div key={res.type} className="flex items-center gap-1">
-                  <span className="text-gray-300">{RESOURCE_ICONS[res.type] || '📦'}</span>
+                  <span className="text-cyan-400 drop-shadow-md"><ResourceIcon type={res.type} className="w-3.5 h-3.5" /></span>
                   <span className="font-bold text-white">{Math.floor(res.amount)}</span>
                   <span className={`${deltaColor}`}>
                     {roundedDelta > 0 ? '+' : ''}{roundedDelta}/h
@@ -127,7 +128,9 @@ export function TopResourceBar({ resources, population, colony, isMobile }: TopR
             const roundedDelta = Math.round(delta)
             return (
               <div key={res.type} className="flex items-center gap-2 group cursor-default" title={RESOURCE_NAMES[res.type] || res.type}>
-                <span className="text-gray-300 drop-shadow-md text-sm opacity-80 group-hover:opacity-100 transition-opacity">{RESOURCE_ICONS[res.type] || '📦'}</span>
+                <span className="text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.5)] opacity-80 group-hover:opacity-100 transition-opacity">
+                  <ResourceIcon type={res.type} className="w-5 h-5" />
+                </span>
                 <div className="flex items-baseline gap-1.5">
                   <span className="text-white font-bold text-sm drop-shadow-md">{Math.floor(res.amount)}</span>
                   <span className={`text-[10px] font-mono ${deltaColor}`}>

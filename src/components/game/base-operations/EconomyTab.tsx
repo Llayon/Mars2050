@@ -1,5 +1,6 @@
 import type { ResourceRow } from '@/domains/resource/resource.types'
-import { RESOURCE_NAMES, RESOURCE_ICONS } from '@/domains/resource/resource.types'
+import { RESOURCE_NAMES } from '@/domains/resource/resource.types'
+import { ResourceIcon } from '@/components/ui/icons/ResourceIcon'
 import type { BuildingRow } from '@/domains/building/building.types'
 import type { PopulationState, PopulationTier } from '@/domains/population/population.types'
 import { POPULATION_TIERS } from '@/domains/population/population.config'
@@ -80,22 +81,69 @@ export function EconomyTab({ resources, population, buildings, onUpgradePopulati
             const netColor = net > 0 ? 'text-green-400' : net < 0 ? 'text-red-400' : 'text-gray-500'
             const netSign = net > 0 ? '+' : ''
             
+            // Calculate breakdown
+            const producers: Record<string, number> = {}
+            const consumers: Record<string, number> = {}
+            
+            buildings.forEach(b => {
+              if (!b.is_active) return
+              const typeConfig = BUILDING_TYPES[b.type as keyof typeof BUILDING_TYPES]
+              if (!typeConfig) return
+              
+              const prod = typeConfig.production?.[r.type as keyof typeof typeConfig.production] || 0
+              if (prod > 0) {
+                producers[b.type] = (producers[b.type] || 0) + prod
+              }
+              const cons = typeConfig.consumption?.[r.type as keyof typeof typeConfig.consumption] || 0
+              if (cons > 0) {
+                consumers[b.type] = (consumers[b.type] || 0) + cons
+              }
+            })
+            
             return (
-              <div key={r.type} className="bg-gray-800/40 border border-gray-700 p-4 rounded flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <span className="text-2xl">{RESOURCE_ICONS[r.type] || '📦'}</span>
-                  <div>
-                    <div className="font-bold text-white">{RESOURCE_NAMES[r.type] || r.type}</div>
-                    <div className="text-xs text-gray-400">Stock: {Math.floor(r.amount).toLocaleString('ru-RU')}</div>
+              <div key={r.type} className="bg-gray-800/40 border border-gray-700 p-4 rounded flex flex-col gap-2">
+                <div className="flex items-center justify-between border-b border-gray-700/50 pb-2">
+                  <div className="flex items-center gap-3">
+                    <span className="text-cyan-400 drop-shadow-md"><ResourceIcon type={r.type} className="w-6 h-6" /></span>
+                    <div>
+                      <div className="font-bold text-white">{RESOURCE_NAMES[r.type] || r.type}</div>
+                      <div className="text-xs text-gray-400">Stock: {Math.floor(r.amount).toLocaleString('ru-RU')}</div>
+                    </div>
+                  </div>
+                  <div className="text-right flex items-center gap-4 text-sm">
+                    <div className="text-gray-400">
+                      <span className="text-green-400">+{Math.round(r.production_rate)}/h</span> | 
+                      <span className="text-red-400"> -{Math.round(r.consumption_rate)}/h</span>
+                    </div>
+                    <div className={`font-mono font-bold w-16 text-right ${netColor}`}>
+                      {netSign}{Math.round(net)}
+                    </div>
                   </div>
                 </div>
-                <div className="text-right flex items-center gap-4 text-sm">
-                  <div className="text-gray-400">
-                    <span className="text-green-400">+{Math.round(r.production_rate)}/h</span> | 
-                    <span className="text-red-400"> -{Math.round(r.consumption_rate)}/h</span>
+                
+                {/* Breakdown details */}
+                <div className="flex gap-4 text-xs pt-1">
+                  <div className="flex-1 space-y-1">
+                    <div className="text-gray-500 uppercase tracking-wider mb-1">Sources (Buildings)</div>
+                    {Object.entries(producers).length > 0 ? (
+                      Object.entries(producers).map(([type, amount]) => (
+                        <div key={type} className="flex justify-between text-green-300/80">
+                          <span>{BUILDING_TYPES[type as keyof typeof BUILDING_TYPES]?.name || type}</span>
+                          <span>+{amount}/h</span>
+                        </div>
+                      ))
+                    ) : <div className="text-gray-600">-</div>}
                   </div>
-                  <div className={`font-mono font-bold w-16 text-right ${netColor}`}>
-                    {netSign}{Math.round(net)}
+                  <div className="flex-1 space-y-1">
+                    <div className="text-gray-500 uppercase tracking-wider mb-1">Consumers (Buildings)</div>
+                    {Object.entries(consumers).length > 0 ? (
+                      Object.entries(consumers).map(([type, amount]) => (
+                        <div key={type} className="flex justify-between text-red-300/80">
+                          <span>{BUILDING_TYPES[type as keyof typeof BUILDING_TYPES]?.name || type}</span>
+                          <span>-{amount}/h</span>
+                        </div>
+                      ))
+                    ) : <div className="text-gray-600">-</div>}
                   </div>
                 </div>
               </div>

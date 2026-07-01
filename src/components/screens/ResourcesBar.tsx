@@ -1,7 +1,7 @@
 'use client'
 
 import { memo } from 'react'
-import { RESOURCE_ICONS } from '@/domains/resource/resource.types'
+import { ResourceIcon } from '@/components/ui/icons/ResourceIcon'
 import type { ResourceRow } from '@/domains/resource/resource.types'
 import { HudPanel } from '@/components/ui/hud/HudPanel'
 import { AnimatedResourceValue } from '@/components/ui/hud/AnimatedResourceValue'
@@ -32,7 +32,7 @@ export const ResourcesBar = memo(function ResourcesBar({ resources, loading }: R
             key={r.type}
             className="flex items-center gap-1.5 bg-black/30 rounded-lg px-2.5 py-1 min-w-fit hover:bg-black/50 transition-colors duration-200"
           >
-            <span className="text-base leading-none">{RESOURCE_ICONS[r.type] || '❓'}</span>
+            <span className="text-cyan-400 drop-shadow-md"><ResourceIcon type={r.type} className="w-5 h-5" /></span>
             <div className="flex items-baseline gap-1">
               <AnimatedResourceValue 
                 value={Math.floor(r.amount)} 

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { EXPLORATION_COST, EXPLORATION_BASE_REWARD } from '@/domains/map/map.config'
-import { RESOURCE_ICONS, RESOURCE_NAMES } from '@/domains/resource/resource.types'
+import { RESOURCE_NAMES } from '@/domains/resource/resource.types'
 import { LOCATION_COLORS, LOCATION_LABELS } from '@/domains/map/map.config'
 
 describe('map.config', () => {
@@ -46,12 +46,6 @@ describe('map.config', () => {
 
 describe('resource.types', () => {
   const resourceKeys = ['oxygen', 'water', 'energy', 'minerals', 'food', 'research_points'] as const
-
-  it('RESOURCE_ICONS has all resource types', () => {
-    for (const key of resourceKeys) {
-      expect(RESOURCE_ICONS[key], `missing icon for ${key}`).toBeDefined()
-    }
-  })
 
   it('RESOURCE_NAMES has all resource types', () => {
     for (const key of resourceKeys) {
