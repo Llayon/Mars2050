@@ -6,7 +6,7 @@ import { BattleReplayModal } from '@/components/game/BattleReplayModal'
 import type { BattleReplayPayload } from '@/components/game/BattleHistoryPanel'
 import ColonyScreen from '@/components/screens/ColonyScreen'
 import type { Colony } from '@/domains/colony/colony.types'
-import type { BuildingRow, BuildingTypeKey } from '@/domains/building/building.types'
+import type { BuildingRow, BuildingSettingsUpdate, BuildingTypeKey } from '@/domains/building/building.types'
 import type { ResourceRow } from '@/domains/resource/resource.types'
 import type { PopulationState, PopulationTier } from '@/domains/population/population.types'
 
@@ -33,6 +33,7 @@ interface DesktopHudProps {
   setPlacementMode: (mode: BuildingTypeKey | null) => void
   onBuild: (type: BuildingTypeKey, x?: number, y?: number) => Promise<void>
   onDemolish: (id: string) => Promise<void>
+  onUpdateSettings: (id: string, settings: BuildingSettingsUpdate) => Promise<void>
   onCreateTestEvent: (id: string, type: string, dur: number) => Promise<boolean>
   onPvpResult: (msg: string) => void
   onLogout: () => void
@@ -55,6 +56,7 @@ export function DesktopHud({
   setPlacementMode,
   onBuild,
   onDemolish,
+  onUpdateSettings,
   onCreateTestEvent,
   onPvpResult,
   onLogout,
@@ -97,6 +99,7 @@ export function DesktopHud({
     resourcesLoading,
     onLogout,
     onDemolish,
+    onUpdateSettings,
     onBuild,
     placementMode,
     setPlacementMode

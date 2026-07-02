@@ -4,6 +4,7 @@ import { processCompletedEvents } from './resource.events'
 import { generateRandomEvent } from '@/domains/events/events.generator'
 import type { ResourceRow } from './resource.types'
 import { getEffectiveProduction } from '@/domains/building/building.production'
+import { allocateBuildingStaffing } from '@/domains/building/building.staffing'
 import { POPULATION_TIERS } from '@/domains/population/population.config'
 import type { PopulationState, PopulationTier } from '@/domains/population/population.types'
 import { calculateArmyUpkeep } from '@/domains/combat/combat.upkeep'
@@ -60,6 +61,26 @@ export async function recalculateResources(colonyId: string) {
       newProd[r.type] = 0
       newCons[r.type] = 0
     })
+
+    // 2.5 Allocate staffing
+    if (buildings && population) {
+      const assignments = allocateBuildingStaffing(buildings, population as PopulationState)
+      const buildingUpdates: PromiseLike<unknown>[] = []
+  
+      for (const b of buildings) {
+        if (b.assigned_workers !== assignments[b.id]) {
+          b.assigned_workers = assignments[b.id]
+          buildingUpdates.push(
+            supabase.from('buildings')
+              .update({ assigned_workers: b.assigned_workers })
+              .eq('id', b.id)
+          )
+        }
+      }
+      if (buildingUpdates.length > 0) {
+        await Promise.all(buildingUpdates).catch(err => console.error('Failed to update building assignments', err))
+      }
+    }
 
     // Buildings production & consumption
     if (buildings) {

@@ -36,7 +36,7 @@ export interface Database {
           experience?: number
           terrain_grid?: Record<string, unknown>
           unlocked_radius?: number
-          last_calc_at: string
+          last_calc_at?: string
           created_at?: string
           updated_at?: string
         }
@@ -100,6 +100,10 @@ export interface Database {
           x: number
           y: number
           group_id?: string
+          staffing_mode?: BuildingsStaffingModeType
+          assigned_workers?: number
+          work_priority?: BuildingsWorkPriorityType
+          paused?: boolean
           created_at?: string
           updated_at?: string
         }
@@ -112,6 +116,10 @@ export interface Database {
           x: number
           y: number
           group_id?: string
+          staffing_mode?: BuildingsStaffingModeType
+          assigned_workers?: number
+          work_priority?: BuildingsWorkPriorityType
+          paused?: boolean
         }
         Update: {
           colony_id?: string
@@ -122,6 +130,10 @@ export interface Database {
           x?: number
           y?: number
           group_id?: string
+          staffing_mode?: BuildingsStaffingModeType
+          assigned_workers?: number
+          work_priority?: BuildingsWorkPriorityType
+          paused?: boolean
           created_at?: string
           updated_at?: string
         }
@@ -367,6 +379,8 @@ export interface Database {
 }
 
 export type ResourcesType = 'oxygen' | 'water' | 'energy' | 'minerals' | 'food' | 'research_points' | 'consumer_goods' | 'rare_metals' | 'databanks' | 'nanomaterials'
+export type BuildingsStaffingModeType = 'auto' | 'manual'
+export type BuildingsWorkPriorityType = 'low' | 'normal' | 'high'
 export type MapLocationsType = 'plains' | 'mountains' | 'canyon' | 'crater' | 'ice_cap'
 export type EventsType = 'dust_storm' | 'meteor_shower' | 'anomaly_discovered' | 'resource_vein' | 'cold_wave' | 'solar_flare'
 export type PendingEventsType = 'building_complete' | 'attack_arrive' | 'attack_return' | 'research_complete'

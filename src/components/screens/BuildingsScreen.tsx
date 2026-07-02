@@ -141,9 +141,9 @@ export const BuildingsScreen = memo(function BuildingsScreen({
               {Object.entries(BUILDING_TYPES[selectedBuilding.type as BuildingTypeKey]?.production || {}).map(([k, v]) => (
                 <p key={k} className="text-sm text-green-400">+{v} {RESOURCE_NAMES[k] || k}/ч</p>
               ))}
-              {BUILDING_TYPES[selectedBuilding.type as BuildingTypeKey]?.workforce && (
+              {BUILDING_TYPES[selectedBuilding.type as BuildingTypeKey]?.staffing && (
                 <p className="text-xs text-blue-300 mt-2">
-                  Штат: {BUILDING_TYPES[selectedBuilding.type as BuildingTypeKey].workforce.count} {BUILDING_TYPES[selectedBuilding.type as BuildingTypeKey].workforce.tier}s
+                  Штат: {BUILDING_TYPES[selectedBuilding.type as BuildingTypeKey].staffing?.slots} {BUILDING_TYPES[selectedBuilding.type as BuildingTypeKey].staffing?.tier}s
                 </p>
               )}
             </div>
@@ -204,9 +204,9 @@ export const BuildingsScreen = memo(function BuildingsScreen({
                     <p className="text-xs text-gray-400 mt-1">
                       Стоимость: {Object.entries(config.cost).map(([k, v]) => `${v} ${RESOURCE_NAMES[k] || k}`).join(', ')}
                     </p>
-                    {config.workforce && config.workforce.count > 0 && (
+                    {config.staffing && config.staffing?.slots > 0 && (
                       <p className="text-[10px] text-blue-300">
-                        👷 {config.workforce.count} {config.workforce.tier}s
+                        👷 {config.staffing?.slots} {config.staffing?.tier}s
                       </p>
                     )}
                     <p className="text-xs text-green-400/80">

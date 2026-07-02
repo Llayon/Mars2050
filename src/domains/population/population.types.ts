@@ -1,5 +1,5 @@
 import { ResourceTypeKey } from '@/domains/resource/resource.types'
-
+import { BuildingTypeKey } from '@/domains/building/building.types'
 /** Population tiers (Anno-style) */
 export type PopulationTier = 'worker' | 'technician' | 'scientist' | 'director'
 
@@ -15,9 +15,10 @@ export interface TierConfig {
   name: string
   icon: string
   needs: TierNeed[]
-  housingPerBuilding: Record<string, number>
-  upgradeBuilding: string | null
-  workforceFor: string[]
+  housingPerBuilding: Partial<Record<BuildingTypeKey, number>>
+  upgradeBuilding: BuildingTypeKey | null
+  upgradeCost?: Record<string, number>
+  staffingFor: BuildingTypeKey[]
 }
 
 /** DB row mapping for the population table */

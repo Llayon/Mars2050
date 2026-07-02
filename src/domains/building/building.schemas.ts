@@ -17,9 +17,14 @@ export const buildingCreateSchema = z.object({
 
 /** Schema for updating a building level. */
 export const buildingUpdateSchema = z.object({
+  colonyId: z.string().uuid('Invalid colony ID'),
   buildingId: z.string().uuid('Invalid building ID'),
   level: z.number().int().min(1).optional(),
-  isActive: z.boolean().optional()
+  isActive: z.boolean().optional(),
+  staffing_mode: z.enum(['auto', 'manual']).optional(),
+  assigned_workers: z.number().int().min(0).optional(),
+  work_priority: z.enum(['low', 'normal', 'high']).optional(),
+  paused: z.boolean().optional()
 })
 
 /** Schema for deleting a building. */

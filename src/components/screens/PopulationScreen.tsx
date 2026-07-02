@@ -164,7 +164,7 @@ export const PopulationScreen = memo(function PopulationScreen({
                     {buildings
                       .filter(b => b.is_active)
                       .reduce((acc, b) => {
-                        const bConf = POPULATION_TIERS[tierKey].workforceFor.includes(b.type)
+                        const bConf = POPULATION_TIERS[tierKey].staffingFor.includes(b.type)
                         if (bConf) {
                           acc[b.type] = (acc[b.type] || 0) + 1
                         }
@@ -211,9 +211,9 @@ function JobListInner({ buildings, tier }: { buildings: BuildingRow[], tier: Pop
   for (const b of buildings) {
     if (!b.is_active) continue
     const conf = BUILDING_TYPES[b.type]
-    if (conf && conf.workforce.tier === tier && conf.workforce.count > 0) {
-      jobMap[b.type] = (jobMap[b.type] || 0) + conf.workforce.count
-      totalJobs += conf.workforce.count
+    if (conf && conf.staffing?.tier === tier && conf.staffing?.slots > 0) {
+      jobMap[b.type] = (jobMap[b.type] || 0) + conf.staffing?.slots
+      totalJobs += conf.staffing?.slots
     }
   }
 

@@ -1,10 +1,12 @@
 import { NextResponse } from 'next/server'
-import { buildingCreateSchema } from '@/domains/building/building.schemas'
-import { createBuilding, deleteBuilding, getBuildings, verifyBuildingOwnership } from '@/domains/building/building.service'
+import { buildingCreateSchema, buildingUpdateSchema } from '@/domains/building/building.schemas'
+import { createBuilding, deleteBuilding, getBuildings, updateBuilding, verifyBuildingOwnership } from '@/domains/building/building.service'
 import { recalculateResources } from '@/domains/resource/resource.service'
 import { getCached, setCache, invalidateCache } from '@/lib/cache'
 import { apiError, apiInternalError, apiValidationError } from '@/lib/api-error'
 import { checkColonyAuth } from '@/domains/colony/colony.ownership'
+
+const invalidateBuildingState = (colonyId: string) => { invalidateCache(`resources:${colonyId}`); invalidateCache(`buildings:${colonyId}`) }
 
 export async function GET(request: Request) {
   try {
@@ -31,8 +33,7 @@ export async function POST(request: Request) {
     if (errorResponse) return errorResponse
     await recalculateResources(parsed.data.colonyId)
     const result = await createBuilding(parsed.data)
-    invalidateCache(`resources:${parsed.data.colonyId}`)
-    invalidateCache(`buildings:${parsed.data.colonyId}`)
+    invalidateBuildingState(parsed.data.colonyId)
     if (result.error) return apiError('BAD_REQUEST', result.error)
     return NextResponse.json({ building: result.building }, { status: 201 })
   } catch (e) {
@@ -51,8 +52,24 @@ export async function DELETE(request: Request) {
     if (!isOwned) return apiError('FORBIDDEN', 'Building not found or access denied')
     await recalculateResources(colonyId)
     const result = await deleteBuilding(buildingId, colonyId)
-    invalidateCache(`resources:${colonyId}`)
-    invalidateCache(`buildings:${colonyId}`)
+    invalidateBuildingState(colonyId)
+    if (result.error) return apiError('INTERNAL_ERROR', result.error)
+    return NextResponse.json({ success: true })
+  } catch (e) {
+    return apiInternalError(e)
+  }
+}
+
+export async function PATCH(request: Request) {
+  try {
+    const parsed = buildingUpdateSchema.safeParse(await request.json())
+    if (!parsed.success) return apiValidationError(parsed.error.flatten())
+    const { errorResponse, auth } = await checkColonyAuth(request, parsed.data.colonyId)
+    if (errorResponse) return errorResponse
+    const isOwned = await verifyBuildingOwnership(auth.client, parsed.data.buildingId, parsed.data.colonyId)
+    if (!isOwned) return apiError('FORBIDDEN', 'Building not found or access denied')
+    const result = await updateBuilding(parsed.data)
+    invalidateBuildingState(parsed.data.colonyId)
     if (result.error) return apiError('INTERNAL_ERROR', result.error)
     return NextResponse.json({ success: true })
   } catch (e) {

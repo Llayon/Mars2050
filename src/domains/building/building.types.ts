@@ -3,6 +3,9 @@ import type { ResourceTypeKey } from '@/domains/resource/resource.types'
 import type { PopulationTier } from '@/domains/population/population.types'
 import type { TerrainType } from '@/domains/colony/colony-terrain.types'
 
+export type BuildingStaffingMode = 'auto' | 'manual'
+export type BuildingWorkPriority = 'low' | 'normal' | 'high'
+
 /** Represents a building type definition with cost and production rates. */
 export interface BuildingType {
   name: string
@@ -12,9 +15,10 @@ export interface BuildingType {
   description: string
   width: number
   height: number
-  workforce: {
+  staffing?: {
     tier: PopulationTier
-    count: number
+    slots: number
+    minActiveSlots: number
   }
   requiresTerrain?: TerrainType[]
   unlockedByTier?: PopulationTier
@@ -67,9 +71,15 @@ export interface BuildingRow {
   x: number
   y: number
   group_id?: string | null
+  staffing_mode: BuildingStaffingMode
+  assigned_workers: number
+  work_priority: BuildingWorkPriority
+  paused: boolean
   created_at: string
   updated_at: string
 }
+
+export type BuildingSettingsUpdate = Partial<Pick<BuildingRow, 'staffing_mode' | 'assigned_workers' | 'work_priority' | 'paused'>>
 
 /** DTO for creating a new building. */
 export interface BuildingCreateDTO {

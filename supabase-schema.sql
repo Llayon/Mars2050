@@ -49,6 +49,10 @@ create table public.buildings (
   x integer not null,
   y integer not null,
   group_id text,
+  staffing_mode text default 'auto' not null check (staffing_mode in ('auto', 'manual')),
+  assigned_workers integer default 0 not null,
+  work_priority text default 'normal' not null check (work_priority in ('low', 'normal', 'high')),
+  paused boolean default false not null,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null
 );

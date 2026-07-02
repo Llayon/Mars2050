@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import { BUILDING_TYPES } from '@/domains/building/building.config'
-import type { BuildingRow, BuildingTypeKey } from '@/domains/building/building.types'
+import type { BuildingRow, BuildingSettingsUpdate, BuildingTypeKey } from '@/domains/building/building.types'
 import { useSubscription } from './useSubscription'
 import { fetchWithAuth } from '@/lib/fetch-with-auth'
 
@@ -84,5 +84,26 @@ export function useBuildings(colonyId: string | null) {
     }
   }, [colonyId])
 
-  return { buildings, loading, error, buildStructure, demolishBuilding, refetch: fetchBuildings }
+  const updateBuildingSettings = useCallback(async (buildingId: string, settings: BuildingSettingsUpdate) => {
+    if (!colonyId) throw new Error('No colony active')
+    try {
+      const payload = { colonyId, buildingId, ...settings }
+      const res = await fetchWithAuth('/api/buildings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error?.message || data.error || 'Failed to update settings')
+      }
+      // Optimistic update
+      setBuildings(prev => prev.map(b => b.id === buildingId ? { ...b, ...settings } : b))
+    } catch (err) {
+      setError(String(err))
+      throw err
+    }
+  }, [colonyId])
+
+  return { buildings, loading, error, buildStructure, demolishBuilding, updateBuildingSettings, refetch: fetchBuildings }
 }

@@ -15,7 +15,7 @@ import { PlacementActionBar } from '@/components/game/hud/PlacementActionBar'
 import type { BuildingTypeKey } from '@/domains/building/building.types'
 import type { Colony } from '@/domains/colony/colony.types'
 import type { ResourceRow } from '@/domains/resource/resource.types'
-import type { BuildingRow } from '@/domains/building/building.types'
+import type { BuildingRow, BuildingSettingsUpdate } from '@/domains/building/building.types'
 import type { PopulationState, PopulationTier } from '@/domains/population/population.types'
 
 interface TwaHudProps {
@@ -32,6 +32,7 @@ interface TwaHudProps {
   setPlacementMode: (mode: BuildingTypeKey | null) => void
   onBuild: (type: BuildingTypeKey, x?: number, y?: number) => Promise<void>
   onDemolish: (id: string) => Promise<void>
+  onUpdateSettings: (id: string, settings: BuildingSettingsUpdate) => Promise<void>
   onLogout: () => void
   population: PopulationState | null
   populationLoading?: boolean
@@ -52,6 +53,7 @@ export function TwaHud({
   setPlacementMode,
   onBuild,
   onDemolish,
+  onUpdateSettings,
   onLogout,
   population,
   populationLoading,
@@ -66,6 +68,7 @@ export function TwaHud({
     resourcesLoading,
     onLogout,
     onDemolish,
+    onUpdateSettings,
     onBuild,
     placementMode,
     setPlacementMode

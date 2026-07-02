@@ -90,6 +90,17 @@ function toCamelCase(name: string): string {
   return name.replace(/_([a-z])/g, (_, c) => c.toUpperCase())
 }
 
+function toPascalCase(name: string): string {
+  const camel = toCamelCase(name)
+  return camel.charAt(0).toUpperCase() + camel.slice(1)
+}
+
+function getEnumName(table: TableDef, column: ColumnDef): string {
+  const tableName = toPascalCase(table.name)
+  const enumCount = table.columns.filter(col => col.enumValues && col.enumValues.length > 0).length
+  return enumCount > 1 ? `${tableName}${toPascalCase(column.name)}Type` : `${tableName}Type`
+}
+
 function generate(tables: TableDef[]): string {
   const lines: string[] = [
     '// Auto-generated from supabase-schema.sql',
@@ -101,16 +112,13 @@ function generate(tables: TableDef[]): string {
   ]
 
   for (const table of tables) {
-    const tsName = toCamelCase(table.name)
-    const enumName = `${tsName.charAt(0).toUpperCase() + tsName.slice(1)}Type`
-
     lines.push(`      ${table.name}: {`)
     lines.push(`        Row: {`)
 
     for (const col of table.columns) {
       const tsType = col.isArray ? `${toTsType(col.type)}[]` : toTsType(col.type)
       const optional = col.nullable ? '?' : ''
-      const typeRef = col.enumValues ? enumName : tsType
+      const typeRef = col.enumValues ? getEnumName(table, col) : tsType
       lines.push(`          ${col.name}${optional}: ${typeRef}`)
     }
 
@@ -120,7 +128,7 @@ function generate(tables: TableDef[]): string {
       if (col.isPrimary || col.name === 'created_at' || col.name === 'updated_at') continue
       const tsType = col.isArray ? `${toTsType(col.type)}[]` : toTsType(col.type)
       const optional = col.nullable ? '?' : ''
-      const typeRef = col.enumValues ? enumName : tsType
+      const typeRef = col.enumValues ? getEnumName(table, col) : tsType
       lines.push(`          ${col.name}${optional}: ${typeRef}`)
     }
     lines.push(`        }`)
@@ -129,7 +137,7 @@ function generate(tables: TableDef[]): string {
     for (const col of table.columns) {
       if (col.isPrimary) continue
       const tsType = col.isArray ? `${toTsType(col.type)}[]` : toTsType(col.type)
-      const typeRef = col.enumValues ? enumName : tsType
+      const typeRef = col.enumValues ? getEnumName(table, col) : tsType
       lines.push(`          ${col.name}?: ${typeRef}`)
     }
     lines.push(`        }`)
@@ -146,8 +154,7 @@ function generate(tables: TableDef[]): string {
   for (const table of tables) {
     for (const col of table.columns) {
       if (col.enumValues && col.enumValues.length > 0) {
-        const tsName = toCamelCase(table.name)
-        const enumName = `${tsName.charAt(0).toUpperCase() + tsName.slice(1)}Type`
+        const enumName = getEnumName(table, col)
         if (seenEnums.has(enumName)) continue
         seenEnums.add(enumName)
         lines.push(`export type ${enumName} = ${col.enumValues.map(v => `'${v}'`).join(' | ')}`)

@@ -5,7 +5,7 @@ import { ColonyPanel } from '@/components/game/ColonyPanel'
 import { EntityInspector } from '@/components/game/hud/EntityInspector'
 import type { Colony } from '@/domains/colony/colony.types'
 import type { ResourceRow } from '@/domains/resource/resource.types'
-import type { BuildingRow, BuildingTypeKey } from '@/domains/building/building.types'
+import type { BuildingRow, BuildingSettingsUpdate, BuildingTypeKey } from '@/domains/building/building.types'
 
 // Lazy load the heavy PixiJS component
 const ColonyCanvas = lazy(() => import('./ColonyCanvas').catch(() => ({
@@ -21,6 +21,7 @@ interface ColonyScreenProps {
   resourcesLoading: boolean
   onLogout: () => void
   onDemolish: (id: string) => Promise<void>
+  onUpdateSettings?: (id: string, settings: BuildingSettingsUpdate) => Promise<void>
   placementMode?: BuildingTypeKey | null
   setPlacementMode?: (type: BuildingTypeKey | null) => void
   onBuild?: (type: BuildingTypeKey, x: number, y: number) => Promise<void>
@@ -36,6 +37,7 @@ export default function ColonyScreen({
   buildings,
   onLogout,
   onDemolish,
+  onUpdateSettings,
   placementMode,
   setPlacementMode,
   onBuild,
@@ -129,6 +131,7 @@ export default function ColonyScreen({
         building={selectedBuilding} 
         onClose={() => setSelectedBuilding(null)} 
         onDemolish={onDemolish} 
+        onUpdateSettings={onUpdateSettings}
         isMobile={typeof window !== 'undefined' && window.innerWidth < 768}
       />
     </div>

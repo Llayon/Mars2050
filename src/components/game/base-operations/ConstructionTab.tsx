@@ -101,7 +101,7 @@ export function ConstructionTab({ buildings, resources, onBuild, onClose }: Cons
               </div>
               <div className="flex justify-between border-b border-gray-800 pb-1">
                 <span className="text-gray-500">Workforce</span>
-                <span className="text-cyan-300">{selectedConfig.workforce.count > 0 ? `${selectedConfig.workforce.count} ${selectedConfig.workforce.tier}` : 'None'}</span>
+                <span className="text-cyan-300">{(selectedConfig.staffing?.slots || 0) > 0 ? `${selectedConfig.staffing?.slots} ${selectedConfig.staffing?.tier}` : 'None'}</span>
               </div>
               {selectedConfig.requiresTerrain && (
                 <div className="flex justify-between border-b border-gray-800 pb-1">

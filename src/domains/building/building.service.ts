@@ -191,3 +191,33 @@ export async function verifyBuildingOwnership(
   
   return data.colony_id === colonyId
 }
+
+/**
+ * Updates a building's settings and triggers resource recalculation.
+ * @param dto - Building update data
+ * @returns Success status or error message
+ */
+export async function updateBuilding(dto: import('./building.schemas').BuildingUpdateInput): Promise<{ success: boolean; error: string | null }> {
+  const supabase = getServerClient()
+
+  // Extract fields to update
+  const { buildingId, colonyId, ...updates } = dto
+  
+  if (Object.keys(updates).length === 0) {
+    return { success: true, error: null }
+  }
+
+  const { error } = await supabase
+    .from('buildings')
+    .update(updates)
+    .eq('id', buildingId)
+
+  if (error) {
+    return { success: false, error: error.message }
+  }
+
+  // Settings change (paused, priority, mode) might affect staffing
+  await recalculateResources(colonyId)
+
+  return { success: true, error: null }
+}

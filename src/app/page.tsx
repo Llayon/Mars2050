@@ -10,7 +10,7 @@ import { usePopulation } from '@/hooks/usePopulation'
 import { ToastProvider, useToast } from '@/components/ui/toast'
 import { AuthModal } from '@/components/game/AuthModal'
 import type { TabId } from '@/components/screens/BottomNav'
-import type { BuildingTypeKey } from '@/domains/building/building.types'
+import type { BuildingSettingsUpdate, BuildingTypeKey } from '@/domains/building/building.types'
 import { BUILDING_TYPES } from '@/domains/building/building.config'
 import { TwaHud } from '@/components/game/TwaHud'
 import { DesktopHud } from '@/components/game/DesktopHud'
@@ -19,7 +19,7 @@ function GameUI() {
   const { user, colonyId, loading, error: authError, login, signup, logout, isTWA } = useAuth()
   const { colony, loading: colonyLoading } = useColony(colonyId)
   const { resources, loading: resourcesLoading } = useResources(colonyId)
-  const { buildings, buildStructure, demolishBuilding } = useBuildings(colonyId)
+  const { buildings, buildStructure, demolishBuilding, updateBuildingSettings } = useBuildings(colonyId)
   const { toast } = useToast()
   const { createEvent } = useEvents(colonyId)
   const { population, upgradeTier, loading: populationLoading } = usePopulation(colonyId)
@@ -45,6 +45,14 @@ function GameUI() {
     }
   }, [buildStructure, isTWA, toast])
   const handleDemolish = useCallback((id: string) => demolishBuilding(id), [demolishBuilding])
+  const handleUpdateSettings = useCallback(async (id: string, settings: BuildingSettingsUpdate) => {
+    try {
+      await updateBuildingSettings(id, settings)
+    } catch (err) {
+      toast(err instanceof Error ? err.message : String(err), 'error')
+      throw err
+    }
+  }, [updateBuildingSettings, toast])
   const handleCreateTest = useCallback((id: string, type: string, dur: number) => createEvent(id, type, dur), [createEvent])
 
   if (loading) {
@@ -116,6 +124,7 @@ function GameUI() {
         setPlacementMode={setPlacementMode}
         onBuild={handleBuild}
         onDemolish={handleDemolish}
+        onUpdateSettings={handleUpdateSettings}
         onLogout={logout}
         population={population}
         populationLoading={populationLoading}
@@ -139,6 +148,7 @@ function GameUI() {
       setPlacementMode={setPlacementMode}
       onBuild={handleBuild}
       onDemolish={handleDemolish}
+      onUpdateSettings={handleUpdateSettings}
       onCreateTestEvent={handleCreateTest}
       onPvpResult={(msg) => toast(msg, 'info')}
       onLogout={logout}

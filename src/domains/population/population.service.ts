@@ -1,5 +1,6 @@
 import { getServerClient } from '@/domains/resource/resource.server'
 import type { PopulationState } from './population.types'
+import { POPULATION_TIERS } from './population.config'
 import { apiError } from '@/lib/api-error'
 
 /**
@@ -47,16 +48,20 @@ export async function upgradePopulation(userId: string, colonyId: string, fromTi
   // Determine upgrade path
   let fromField = ''
   let toField = ''
+  let toTierKey: keyof typeof POPULATION_TIERS
   
   if (fromTier === 'worker') {
     fromField = 'workers'
     toField = 'technicians'
+    toTierKey = 'technician'
   } else if (fromTier === 'technician') {
     fromField = 'technicians'
     toField = 'scientists'
+    toTierKey = 'scientist'
   } else if (fromTier === 'scientist') {
     fromField = 'scientists'
     toField = 'directors'
+    toTierKey = 'director'
   } else {
     return { error: apiError('BAD_REQUEST', 'Invalid tier for upgrade') }
   }
@@ -66,10 +71,75 @@ export async function upgradePopulation(userId: string, colonyId: string, fromTi
     return { error: apiError('BAD_REQUEST', `Not enough ${fromTier}s to upgrade`) }
   }
 
-  // Deduct from current, add to next
+  // Enforce Anno-style upgrade constraints
+  const tierConfig = POPULATION_TIERS[fromTier as keyof typeof POPULATION_TIERS]
+  const toTierConfig = POPULATION_TIERS[toTierKey]
+  
+  // 1. Check Needs (Happiness)
+  const happinessField = `happiness_${fromField}` as keyof PopulationState
+  const currentHappiness = pop[happinessField] as number
+  if (currentHappiness < 80) {
+    return { error: apiError('BAD_REQUEST', 'Уровень счастья должен быть не ниже 80% для модернизации (потребности не удовлетворены)') }
+  }
+
+  // 2. Check Upgrade Building
+  const { data: buildings } = await supabase
+    .from('buildings')
+    .select('type')
+    .eq('colony_id', colonyId)
+    .eq('is_active', true)
+
+  if (tierConfig.upgradeBuilding) {
+    const hasUpgrader = buildings?.some(b => b.type === tierConfig.upgradeBuilding)
+    if (!hasUpgrader) {
+      return { error: apiError('BAD_REQUEST', `Для улучшения требуется активное здание: ${tierConfig.upgradeBuilding}`) }
+    }
+  }
+
+  // 3. Check Housing Capacity for new tier
+  let maxHousing = 0
+  buildings?.forEach(b => {
+    const housing = toTierConfig.housingPerBuilding[b.type as keyof typeof toTierConfig.housingPerBuilding]
+    if (housing) maxHousing += housing
+  })
+
+  const currentTo = pop[toField as keyof PopulationState] as number
+  if (currentTo + count > maxHousing) {
+    return { error: apiError('BAD_REQUEST', `Не хватает жилья для расселения ${toTierConfig.name} (Максимум: ${maxHousing})`) }
+  }
+
+  // 4. Check and Deduct Upgrade Cost
+  if (tierConfig.upgradeCost) {
+    const { data: resources } = await supabase
+      .from('resources')
+      .select('*')
+      .eq('colony_id', colonyId)
+
+    // Validate all costs first
+    for (const [resType, costPerUnit] of Object.entries(tierConfig.upgradeCost)) {
+      const totalCost = costPerUnit * count
+      const currentRes = resources?.find(r => r.type === resType)
+      if (!currentRes || currentRes.amount < totalCost) {
+        return { error: apiError('BAD_REQUEST', `Недостаточно ресурсов. Требуется ${totalCost} ${resType}`) }
+      }
+    }
+
+    // Deduct costs (using sequential updates since it's outside the Postgres RPC for now)
+    for (const [resType, costPerUnit] of Object.entries(tierConfig.upgradeCost)) {
+      const totalCost = costPerUnit * count
+      const currentAmount = resources!.find(r => r.type === resType)!.amount
+      await supabase
+        .from('resources')
+        .update({ amount: currentAmount - totalCost })
+        .eq('colony_id', colonyId)
+        .eq('type', resType)
+    }
+  }
+
+  // 5. Deduct from current, add to next
   const updates: Partial<PopulationState> = {}
   updates[fromField as keyof PopulationState] = currentFrom - count as never
-  updates[toField as keyof PopulationState] = (pop[toField as keyof PopulationState] as number) + count as never
+  updates[toField as keyof PopulationState] = currentTo + count as never
 
   const { data: updated, error } = await supabase
     .from('population')

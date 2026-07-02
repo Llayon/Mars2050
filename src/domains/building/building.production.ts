@@ -15,7 +15,7 @@ export function sumJobsForTier(
   return buildings.reduce((sum, b) => {
     const config = BUILDING_TYPES[b.type]
     if (!config || !b.is_active) return sum
-    if (config.workforce.tier === tier) return sum + config.workforce.count
+    if (config.staffing?.tier === tier) return sum + config.staffing.slots
     return sum
   }, 0)
 }
@@ -32,30 +32,25 @@ export function getEffectiveProduction(
   const config = BUILDING_TYPES[building.type]
   if (!config) return { production: {}, consumption: {} }
 
-  if (!building.is_active) {
+  if (!building.is_active || building.paused) {
     return { production: {}, consumption: {} }
   }
 
-  // 1. Workforce ratio (0..1)
-  const requiredWorkers = config.workforce.count
+  // 1. Staffing Efficiency (0..1)
+  const totalSlots = config.staffing?.slots || 0
+  const tier = config.staffing?.tier
   let fillRatio = 1
 
-  if (requiredWorkers > 0 && population) {
-    const tierField = `${config.workforce.tier}s` as keyof PopulationState
-    const totalTierPop = (population[tierField] as number) || 0
-    const totalTierJobs = sumJobsForTier(config.workforce.tier, allBuildings)
-    
-    if (totalTierJobs > 0) {
-      fillRatio = Math.min(totalTierPop / totalTierJobs, 1)
-    }
-  } else if (requiredWorkers > 0 && !population) {
-    fillRatio = 0 // Needs workers but no population data available
+  if (totalSlots > 0) {
+    const assignedWorkers = Math.max(0, building.assigned_workers)
+    const minActiveSlots = config.staffing?.minActiveSlots ?? 1
+    fillRatio = assignedWorkers < minActiveSlots ? 0 : Math.min(assignedWorkers / totalSlots, 1)
   }
 
   // 2. Happiness modifier
   let happinessMod = 1
-  if (requiredWorkers > 0 && population) {
-    const hapField = `happiness_${config.workforce.tier}s` as keyof PopulationState
+  if (totalSlots > 0 && population && tier) {
+    const hapField = `happiness_${tier}s` as keyof PopulationState
     const happiness = (population[hapField] as number) || 50
     // 100 hap = x2, 50 hap = x1, 25 hap = x0.5
     happinessMod = happiness / 50

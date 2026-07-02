@@ -13,7 +13,8 @@ export const POPULATION_TIERS: Record<PopulationTier, TierConfig> = {
       habitat: 10,
     },
     upgradeBuilding: 'community_hall',
-    workforceFor: [
+    upgradeCost: { consumer_goods: 20, minerals: 50 },
+    staffingFor: [
       'mine', 'solar_panels', 'water_extractor',
       'oxygen_generator', 'greenhouse', 'workshop',
     ],
@@ -32,7 +33,8 @@ export const POPULATION_TIERS: Record<PopulationTier, TierConfig> = {
       habitat: 4,
     },
     upgradeBuilding: 'university',
-    workforceFor: [
+    upgradeCost: { databanks: 25, nanomaterials: 10 },
+    staffingFor: [
       'advanced_mine', 'geothermal_plant', 'vehicle_bay',
       'workshop', 'habitat_mk2', 'data_center', 'university',
     ],
@@ -51,7 +53,8 @@ export const POPULATION_TIERS: Record<PopulationTier, TierConfig> = {
       habitat_mk3: 4,
     },
     upgradeBuilding: 'hq',
-    workforceFor: [
+    upgradeCost: { rare_metals: 10, energy: 100 },
+    staffingFor: [
       'research_lab', 'biotech_lab', 'nanoforge',
     ],
   },
@@ -70,7 +73,7 @@ export const POPULATION_TIERS: Record<PopulationTier, TierConfig> = {
       executive_dome: 2,
     },
     upgradeBuilding: null,
-    workforceFor: [
+    staffingFor: [
       'hq', 'spaceport', 'military_academy',
     ],
   },

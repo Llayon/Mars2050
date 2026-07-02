@@ -52,9 +52,9 @@ export function EconomyTab({ resources, population, buildings, onUpgradePopulati
     })
 
     // Calculate employment
-    if (typeConfig.workforce && typeConfig.workforce.count > 0) {
-      const wTier = typeConfig.workforce.tier as PopulationTier
-      if (tierStats[wTier]) tierStats[wTier].employed += typeConfig.workforce.count
+    if (typeConfig.staffing && typeConfig.staffing?.slots > 0) {
+      const wTier = typeConfig.staffing?.tier as PopulationTier
+      if (tierStats[wTier]) tierStats[wTier].employed += typeConfig.staffing?.slots
     }
   })
 
