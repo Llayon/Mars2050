@@ -1,7 +1,7 @@
 'use client'
 
 import dynamic from 'next/dynamic'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { BattleReplayPayload } from '@/components/game/BattleHistoryPanel'
 import ColonyScreen from '@/components/screens/ColonyScreen'
 import type { Colony } from '@/domains/colony/colony.types'
@@ -97,6 +97,12 @@ export function DesktopHud({
   const [buildOpen, setBuildOpen] = useState(false)
   const [armyOpen, setArmyOpen] = useState(false)
   const [intelOpen, setIntelOpen] = useState(false)
+  const [alertsReady, setAlertsReady] = useState(false)
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setAlertsReady(true), 2500)
+    return () => window.clearTimeout(timer)
+  }, [])
   
   // Handlers to auto-close other overlays
   const handleToggleBuild = () => {
@@ -152,7 +158,7 @@ export function DesktopHud({
       )}
 
       {/* Left Alerts */}
-      {!placementMode && viewMode === 'colony' && (
+      {alertsReady && !placementMode && viewMode === 'colony' && (
         <GameAlerts colonyId={colonyId} population={population} resources={resources} />
       )}
 

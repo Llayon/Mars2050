@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
+import { getCachedColonyId, setCachedColonyId } from '@/lib/colony-id-cache'
 import { useTelegramAuth } from './useTelegramAuth'
 
 interface AuthUser { id: string; email?: string }
@@ -13,7 +14,7 @@ const e2eAuthBypass = process.env.NODE_ENV !== 'production' && process.env.NEXT_
 const getE2eTwaMode = () => typeof window !== 'undefined' && (new URLSearchParams(window.location.search).get('e2e_twa') === '1' || window.innerWidth < 768)
 
 export function useAuth() {
-  const telegram = useTelegramAuth()
+  const telegram = useTelegramAuth(!e2eAuthBypass)
   const [state, setState] = useState<AuthState>({
     user: null, colonyId: null, loading: true, error: null, isTWA: false, tgUser: null
   })
@@ -74,7 +75,13 @@ export function useAuth() {
       const { data: { session } } = await supabase.auth.getSession()
       if (session?.user) {
         setState(prev => ({ ...prev, user: session.user }))
-        await loadColony(session.user.id)
+        const cachedColonyId = getCachedColonyId(session.user.id)
+        if (cachedColonyId) {
+          setState(prev => ({ ...prev, colonyId: cachedColonyId, error: null, loading: false }))
+          void loadColony(session.user.id)
+        } else {
+          await loadColony(session.user.id)
+        }
       }
     } catch (error) {
       setState(prev => ({ ...prev, error: formatError(error) }))
@@ -88,6 +95,7 @@ export function useAuth() {
       const res = await fetch('/api/colonies', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId }) })
       if (!res.ok) return setState(prev => ({ ...prev, error: 'Ошибка сервера при создании/загрузке колонии' }))
       const data = await res.json()
+      if (data.colonyId) setCachedColonyId(userId, data.colonyId)
       setState(prev => ({ ...prev, colonyId: data.colonyId || null, error: data.colonyId ? null : (data.error || 'Failed to get colony') }))
     } catch (error) {
       setState(prev => ({ ...prev, error: formatError(error) }))

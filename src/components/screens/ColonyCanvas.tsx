@@ -12,7 +12,7 @@ import { validateBuildingPlacement } from '@/domains/building/building-placement
 import type { Colony } from '@/domains/colony/colony.types'
 import { ADJACENCY_RULES } from '@/domains/building/building.adjacency'
 import { drawBuilding, drawTerrain } from './colony-canvas-draw'
-import { loadBaseColonyTextures, loadVisibleColonyTextures, preloadRemainingColonyTextures, scheduleColonyTexturePreload } from './colony-canvas-assets'
+import { loadVisibleColonyTextures, preloadRemainingColonyTextures, scheduleColonyTexturePreload } from './colony-canvas-assets'
 
 export default function ColonyCanvas({ colony, buildings, onBuildingClick, placementMode, onConfirmPlacement, isActive = true }: { 
   colony: Colony | null; buildings: BuildingRow[]; onBuildingClick: (b: BuildingRow) => void 
@@ -40,8 +40,6 @@ export default function ColonyCanvas({ colony, buildings, onBuildingClick, place
       if (cancelled) { try { app.destroy(true) } catch {} return }
       if (!containerRef.current) return
       containerRef.current.appendChild(app.canvas); appRef.current = app
-      await loadBaseColonyTextures(texturesRef.current)
-      if (cancelled) return
       const viewport = new Viewport({
         screenWidth: app.screen.width,
         screenHeight: app.screen.height,

@@ -2,14 +2,14 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
+import { hasTelegramWebAppSignal } from '@/lib/telegram-auth-detection'
 import type { WebAppUser } from '@twa-dev/types'
-
-// Lazy reference — loaded dynamically to avoid SSR crash (@twa-dev/sdk accesses `window` at import time)
 type TwaWebApp = typeof import('@twa-dev/sdk').default
 let _webApp: TwaWebApp | null = null
 
 async function getWebApp(): Promise<TwaWebApp | null> {
   if (typeof window === 'undefined') return null
+  if (!hasTelegramWebAppSignal()) return null
   if (!_webApp) {
     try {
       const mod = await import('@twa-dev/sdk')
@@ -21,15 +21,13 @@ async function getWebApp(): Promise<TwaWebApp | null> {
   return _webApp
 }
 
-const TG_USER_KEY = 'mars2050_tg_user'
-
 function saveTgUser(user: { id: number; first_name: string; username?: string }): void {
-  try { sessionStorage.setItem(TG_USER_KEY, JSON.stringify(user)) } catch { /* ignore */ }
+  try { sessionStorage.setItem('mars2050_tg_user', JSON.stringify(user)) } catch { /* ignore */ }
 }
 
 function loadTgUser(): { id: number; first_name: string; username?: string } | null {
   try {
-    const raw = sessionStorage.getItem(TG_USER_KEY)
+    const raw = sessionStorage.getItem('mars2050_tg_user')
     return raw ? JSON.parse(raw) : null
   } catch { return null }
 }
@@ -51,7 +49,7 @@ function requestFullscreen(webApp: TwaWebApp): void {
   }
 }
 
-export function useTelegramAuth(): TelegramAuthState {
+export function useTelegramAuth(enabled = true): TelegramAuthState {
   const [state, setState] = useState<TelegramAuthState>({
     colonyId: null,
     loading: true,
@@ -60,13 +58,11 @@ export function useTelegramAuth(): TelegramAuthState {
     tgUser: null,
   })
 
-  /** Signs into Supabase with credentials returned by the server, establishing a real session */
   const signInSupabase = useCallback(async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) throw new Error(`Supabase session failed: ${error.message}`)
   }, [])
 
-  /** Loads colony via API and sets state */
   const loadColony = useCallback(async (tgUser: { id: number; first_name: string; username?: string }) => {
     const webApp = await getWebApp()
     if (!webApp?.initData) {
@@ -101,23 +97,24 @@ export function useTelegramAuth(): TelegramAuthState {
   }, [signInSupabase])
 
   useEffect(() => {
+    if (!enabled || !hasTelegramWebAppSignal()) {
+      setState(prev => prev.loading ? { ...prev, loading: false } : prev)
+      return
+    }
+
     async function init() {
-      // Check for existing Supabase session (from previous TWA open)
       const { data: { session } } = await supabase.auth.getSession()
       if (session?.user?.email?.startsWith('tg_')) {
-        // Valid session exists — restore tgUser from sessionStorage and load colony
         const tgUser = loadTgUser()
         setState(prev => ({
           ...prev,
           isTWA: true,
           tgUser,
           loading: false,
-          // colonyId will be set by useAuth via onAuthStateChange
         }))
         return
       }
 
-      // No session — detect TWA and authenticate
       const webApp = await getWebApp()
       if (!webApp?.initData) {
         setState(prev => ({ ...prev, loading: false }))
@@ -143,7 +140,7 @@ export function useTelegramAuth(): TelegramAuthState {
     }
 
     init()
-  }, [loadColony])
+  }, [enabled, loadColony])
 
   return state
 }

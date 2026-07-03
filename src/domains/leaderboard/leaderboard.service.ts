@@ -20,13 +20,26 @@ export async function getLeaderboard(): Promise<{ leaderboard: LeaderboardEntry[
 
   const { data: colonies, error } = await supabase
     .from('colonies')
-    .select('id, name, level, experience, user_id, profiles(username)')
+    .select('id, name, level, experience, user_id')
     .order('experience', { ascending: false })
     .limit(100)
 
   if (error || !colonies) {
     return { leaderboard: [], error: error?.message }
   }
+
+  const userIds = colonies
+    .map((colony: Record<string, unknown>) => colony.user_id)
+    .filter((userId): userId is string => typeof userId === 'string')
+  const { data: profiles } = userIds.length > 0
+    ? await supabase.from('profiles').select('id, username').in('id', userIds)
+    : { data: [] }
+  const profileNames = new Map(
+    profiles?.map((profile: Record<string, unknown>) => [
+      String(profile.id),
+      typeof profile.username === 'string' ? profile.username : 'Unknown'
+    ]) ?? []
+  )
 
   const leaderboard = await Promise.all(
     colonies.map(async (colony: Record<string, unknown>) => {
@@ -36,13 +49,13 @@ export async function getLeaderboard(): Promise<{ leaderboard: LeaderboardEntry[
         .eq('colony_id', colony.id as string)
 
       const totalResources = resources?.reduce((sum: number, r: Record<string, unknown>) => sum + Number(r.amount), 0) || 0
-      const profiles = colony.profiles as Record<string, unknown> | null
       const experience = Number(colony.experience) || 0
+      const userId = typeof colony.user_id === 'string' ? colony.user_id : ''
 
       return {
         colonyId: colony.id as string,
         colonyName: colony.name as string,
-        playerName: (profiles?.username as string) || 'Unknown',
+        playerName: profileNames.get(userId) || 'Unknown',
         level: Number(colony.level) || 1,
         experience,
         totalResources,

@@ -25,12 +25,12 @@ export function usePopulation(colonyId: string | null, options: UsePopulationOpt
       .from('population')
       .select('*')
       .eq('colony_id', colonyId)
-      .single()
+      .limit(1)
 
     if (fetchError) {
       setError(fetchError.message)
-    } else if (data) {
-      setPopulation(data as PopulationState)
+    } else {
+      setPopulation((data?.[0] as PopulationState | undefined) ?? null)
     }
     setLoading(false)
   }, [colonyId])

@@ -2,7 +2,8 @@ import * as PIXI from 'pixi.js'
 import type { BuildingRow, BuildingTypeKey } from '@/domains/building/building.types'
 import { RENDER_LIMITS, BUILDING_TYPES, BUILDING_TYPE_COLORS } from '@/domains/building/building.config'
 import { gridToScreen } from '@/domains/building/building.isometric'
-import type { TerrainGrid } from '@/domains/colony/colony-terrain.types'
+import { TERRAIN_CONFIG } from '@/domains/colony/colony-terrain.config'
+import type { TerrainCell, TerrainGrid } from '@/domains/colony/colony-terrain.types'
 
 /**
  * Draws an isometric building container with its sprite or fallback graphics and label.
@@ -31,6 +32,43 @@ export function drawBuilding(b: BuildingRow, textures: Record<string, PIXI.Textu
   t.anchor.set(0.5); t.y = -45; cont.addChild(t); return cont
 }
 
+function createTerrainSprite(cell: TerrainCell, texture: PIXI.Texture, pos: { x: number; y: number }): PIXI.Sprite {
+  const sprite = new PIXI.Sprite(texture)
+  sprite.anchor.set(0.5, cell.t === 'blocked_rock' ? 0.75 : 0.5)
+  sprite.x = pos.x
+  sprite.y = pos.y
+  return sprite
+}
+
+function drawTerrainFallbackTile(graphics: PIXI.Graphics, cell: TerrainCell, pos: { x: number; y: number }) {
+  const { TILE_WIDTH, TILE_HEIGHT } = RENDER_LIMITS
+  const color = TERRAIN_CONFIG[cell.t]?.color || TERRAIN_CONFIG.regolith.color
+  const w2 = TILE_WIDTH / 2
+  const h2 = TILE_HEIGHT / 2
+
+  graphics.clear()
+  graphics.x = pos.x
+  graphics.y = pos.y
+  graphics
+    .moveTo(0, -h2)
+    .lineTo(w2, 0)
+    .lineTo(0, h2)
+    .lineTo(-w2, 0)
+    .closePath()
+    .fill({ color, alpha: cell.t === 'blocked_rock' ? 0.65 : 0.82 })
+    .stroke({ width: 1, color: 0x2b211c, alpha: 0.45 })
+
+  if (cell.t !== 'regolith') {
+    graphics.circle(0, 0, Math.min(w2, h2) * 0.28).fill({ color: 0xffffff, alpha: 0.18 })
+  }
+}
+
+function createTerrainFallback(cell: TerrainCell, pos: { x: number; y: number }): PIXI.Graphics {
+  const graphics = new PIXI.Graphics()
+  drawTerrainFallbackTile(graphics, cell, pos)
+  return graphics
+}
+
 /**
  * Renders or updates the colony terrain grid and applies the global dirt mask overlay.
  * @param terrain - Container holding all terrain tiles
@@ -46,33 +84,51 @@ export function drawTerrain(
 ) {
   if (tg.length === 0) return
 
-  const created = terrain.children.length > 0
   tg.forEach((cell, i) => {
     const pos = gridToScreen(cell.x + 0.5, cell.y + 0.5)
     const maxDist = Math.max(Math.abs(cell.x - 19.5), Math.abs(cell.y - 19.5))
     const isUnlocked = maxDist <= radius - 0.5
     const alpha = isUnlocked ? 1.0 : 0.2
+    const nextTexture = textures[`terrain_${cell.t}`] || textures['terrain_regolith']
+    const existing = terrain.children[i]
 
-    let s: PIXI.Sprite
-    if (!created) {
-      s = new PIXI.Sprite(textures[`terrain_${cell.t}`] || textures['terrain_regolith'])
-      s.anchor.set(0.5, cell.t === 'blocked_rock' ? 0.75 : 0.5)
-      s.x = pos.x
-      s.y = pos.y
-      terrain.addChild(s)
+    let tile: PIXI.Sprite | PIXI.Graphics
+    if (!existing) {
+      tile = nextTexture ? createTerrainSprite(cell, nextTexture, pos) : createTerrainFallback(cell, pos)
+      terrain.addChildAt(tile, Math.min(i, terrain.children.length))
+    } else if (nextTexture && !(existing instanceof PIXI.Sprite)) {
+      tile = createTerrainSprite(cell, nextTexture, pos)
+      terrain.removeChild(existing)
+      existing.destroy()
+      terrain.addChildAt(tile, Math.min(i, terrain.children.length))
+    } else if (nextTexture && existing instanceof PIXI.Sprite) {
+      if (existing.texture !== nextTexture) existing.texture = nextTexture
+      existing.anchor.set(0.5, cell.t === 'blocked_rock' ? 0.75 : 0.5)
+      existing.x = pos.x
+      existing.y = pos.y
+      tile = existing
+    } else if (existing instanceof PIXI.Graphics) {
+      drawTerrainFallbackTile(existing, cell, pos)
+      tile = existing
     } else {
-      s = terrain.children[i] as PIXI.Sprite
-      const nextTexture = textures[`terrain_${cell.t}`] || textures['terrain_regolith']
-      if (nextTexture && s.texture !== nextTexture) s.texture = nextTexture
-      s.anchor.set(0.5, cell.t === 'blocked_rock' ? 0.75 : 0.5)
+      tile = createTerrainFallback(cell, pos)
+      terrain.removeChild(existing)
+      existing.destroy()
+      terrain.addChildAt(tile, Math.min(i, terrain.children.length))
     }
-    s.alpha = alpha
+    tile.alpha = alpha
   })
 
-  // Add dirt overlay
   const overlayTex = textures['dirt_mask']
   if (overlayTex) {
-    if (!created) {
+    const existingOverlay = terrain.children[tg.length]
+    if (existingOverlay instanceof PIXI.Sprite) {
+      if (existingOverlay.texture !== overlayTex) existingOverlay.texture = overlayTex
+    } else {
+      if (existingOverlay) {
+        terrain.removeChild(existingOverlay)
+        existingOverlay.destroy()
+      }
       const overlay = new PIXI.Sprite(overlayTex)
       overlay.anchor.set(0.5, 0.5)
       overlay.x = 0
@@ -81,7 +137,7 @@ export function drawTerrain(
       overlay.height = 1280
       overlay.alpha = 0.35
       overlay.blendMode = 'multiply'
-      terrain.addChild(overlay)
+      terrain.addChildAt(overlay, Math.min(tg.length, terrain.children.length))
     }
   }
 }

@@ -33,10 +33,6 @@ function getVisibleTerrainTypes(terrainGrid: TerrainGrid | undefined, radius: nu
   return [...types]
 }
 
-export function loadBaseColonyTextures(textures: ColonyTextureMap): Promise<boolean> {
-  return loadTexture(textures, 'terrain_regolith', TERRAIN_ASSETS.regolith)
-}
-
 export async function loadVisibleColonyTextures(
   textures: ColonyTextureMap,
   terrainGrid: TerrainGrid | undefined,
