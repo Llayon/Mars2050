@@ -30,6 +30,7 @@ and replay output.
 Useful docs:
 - `docs/combat-unit-roles.md` — balancing vocabulary and unit role review.
 - `docs/simulator-qa.md` — manual QA matrix for combat and replay diagnostics.
+- `docs/public-load-performance.md` — public auth-page first-load baseline and improvement plan.
 - `.project/llm-context/` — short domain-specific context for agents.
 
 ## Development Commands
