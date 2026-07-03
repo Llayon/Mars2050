@@ -39,6 +39,7 @@ export function useEconomyDebug(colonyId: string | null) {
   }, [colonyId])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void refetch()
   }, [refetch])
 

@@ -63,6 +63,7 @@ export function useWorkOrders(colonyId: string | null): UseWorkOrdersReturn {
 
   useEffect(() => {
     if (!colonyId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setWorkOrders([])
       setLoading(false)
       return

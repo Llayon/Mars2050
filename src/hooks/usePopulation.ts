@@ -37,6 +37,7 @@ export function usePopulation(colonyId: string | null, options: UsePopulationOpt
 
   useEffect(() => {
     if (options.initialData !== undefined) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setPopulation(options.initialData)
       setLoading(false)
       setError(null)

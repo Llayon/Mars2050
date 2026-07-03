@@ -81,6 +81,7 @@ export function useEvents(colonyId: string | null, options: UseEventsOptions = {
   useEffect(() => { mountedRef.current = true; return () => { mountedRef.current = false } }, [])
   useEffect(() => {
     if (!activeColonyId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setEvents([])
       setLoading(false)
       return

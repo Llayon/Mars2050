@@ -31,6 +31,7 @@ export function useBuildings(colonyId: string | null, options: UseBuildingsOptio
 
   useEffect(() => {
     if (options.initialData) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setBuildings(options.initialData)
       setLoading(false)
       setError(null)
@@ -39,6 +40,7 @@ export function useBuildings(colonyId: string | null, options: UseBuildingsOptio
 
   useEffect(() => {
     if (!colonyId || !enabled) return
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true)
     fetchBuildings()
       .then(data => { setBuildings(data); setError(null) })

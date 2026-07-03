@@ -34,6 +34,7 @@ export function useColony(colonyId: string | null, options: UseColonyOptions = {
 
   useEffect(() => {
     if (options.initialData !== undefined) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setColony(options.initialData)
       setLoading(false)
       setError(null)
@@ -42,6 +43,7 @@ export function useColony(colonyId: string | null, options: UseColonyOptions = {
 
   useEffect(() => {
     if (!colonyId || !enabled) return
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true)
     fetchColony()
       .then(data => { if (data) setColony(data); setError(null) })
