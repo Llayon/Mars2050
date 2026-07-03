@@ -6,7 +6,7 @@ interface PublicAuthShellProps {
 
 export function PublicAuthShell({ actions }: PublicAuthShellProps) {
   return (
-    <div data-testid="public-auth-shell" className="min-h-screen bg-gray-900 text-white">
+    <div data-public-auth-shell data-testid="public-auth-shell" className="min-h-screen bg-gray-900 text-white">
       <header className="bg-gray-800 p-4 shadow-lg">
         <div className="container mx-auto">
           <h1 className="text-2xl font-bold text-center">Mars2050 - Колонизация Марса</h1>

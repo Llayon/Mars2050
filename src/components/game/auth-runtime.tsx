@@ -1,6 +1,7 @@
 'use client'
 
 import dynamic from 'next/dynamic'
+import { useEffect } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { ToastProvider } from '@/components/ui/toast'
 import type { GameShellProps } from '@/components/game/GameShell'
@@ -16,6 +17,12 @@ const GameShell = dynamic<GameShellProps>(() => import('@/components/game/GameSh
 
 export function AuthRuntime() {
   const { user, colonyId, loading, error: authError, logout, isTWA, tgUser } = useAuth()
+
+  useEffect(() => {
+    if (!loading && !isTWA && (!user || !colonyId)) {
+      document.documentElement.classList.remove('mars2050-auth-resume')
+    }
+  }, [loading, user, colonyId, isTWA])
 
   if (loading) return null
 

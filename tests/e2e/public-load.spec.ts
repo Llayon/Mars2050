@@ -37,3 +37,18 @@ test('public auth shell appears before Supabase REST work starts', async ({ page
 
   expect(requestsBeforeShell.filter(isSupabaseRest)).toEqual([])
 })
+
+test('stored auth marker shows resume shell before app runtime hydrates', async ({ browser, baseURL }) => {
+  const url = baseURL ?? 'http://127.0.0.1:3100'
+  const context = await browser.newContext({ viewport: { width: 1440, height: 900 } })
+  await context.addCookies([{ name: 'supabase-access-token', value: 'resume-marker', url }])
+  const page = await context.newPage()
+
+  await page.route('**/_next/static/chunks/**', route => route.abort())
+  await page.goto(url, { waitUntil: 'domcontentloaded' })
+
+  await expect(page.getByTestId('auth-resume-shell')).toBeVisible()
+  await expect(page.getByTestId('public-auth-shell')).toBeHidden()
+
+  await context.close()
+})
