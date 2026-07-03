@@ -2,18 +2,6 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js'
 
 let supabaseInstance: SupabaseClient | null = null
 
-function checkConnectivity(url: string, key: string): void {
-  if (typeof window === 'undefined') return
-  if (process.env.NODE_ENV !== 'production' && process.env.NEXT_PUBLIC_E2E_AUTH_BYPASS === '1') return
-  fetch(`${url.replace(/\/$/, '')}/rest/v1/?apikey=${key}&limit=1`, {
-    method: 'HEAD',
-  }).then(r => {
-    if (!r.ok && r.status === 0) console.warn('Mars2050: Supabase project may be paused — DNS not resolving')
-  }).catch(() => {
-    console.warn('Mars2050: Cannot reach Supabase — check if project is active at https://supabase.com/dashboard')
-  })
-}
-
 /** Lazy singleton — safe to import during SSR/build (no crash on missing env vars) */
 export function getSupabaseClient(): SupabaseClient {
   if (!supabaseInstance) {
@@ -30,7 +18,6 @@ export function getSupabaseClient(): SupabaseClient {
         detectSessionInUrl: true
       }
     })
-    if (url && key) checkConnectivity(url, key)
   }
   return supabaseInstance
 }
