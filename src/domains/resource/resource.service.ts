@@ -1,15 +1,37 @@
 import { getServerClient } from '@/domains/resource/resource.server'
+import { isMissingResourceCapacityError } from './resource.schema-compat'
 import { getActiveEvents, applyEventModifiers, processExpiredEvents as processEvts } from '@/domains/events/events.service'
 import { processCompletedEvents } from './resource.events'
 import { generateRandomEvent } from '@/domains/events/events.generator'
 import type { ResourceRow } from './resource.types'
+import { applyInputScarcity, type BuildingRateInput } from './resource.economy'
+import { calculateResourceCapacities, capResourceAmount } from './resource.storage'
 import { getEffectiveProduction } from '@/domains/building/building.production'
 import { allocateBuildingStaffing } from '@/domains/building/building.staffing'
+import type { BuildingRow } from '@/domains/building/building.types'
 import { POPULATION_TIERS } from '@/domains/population/population.config'
 import type { PopulationState, PopulationTier } from '@/domains/population/population.types'
 import { calculateArmyUpkeep } from '@/domains/combat/combat.upkeep'
+import { getReservedWorkOrderSlots, processCompletedWorkOrders } from '@/domains/work-order/work-order.service'
+import type { WorkOrderRow } from '@/domains/work-order/work-order.types'
 
 import { processPopulationTick } from '@/domains/population/population.tick'
+
+type ServerClient = ReturnType<typeof getServerClient>
+
+async function updateResourceRateRow(
+  supabase: ServerClient,
+  resourceId: string,
+  values: { production_rate: number; consumption_rate: number; capacity: number }
+) {
+  const withCapacity = await supabase.from('resources').update(values).eq('id', resourceId)
+  if (!withCapacity.error || !isMissingResourceCapacityError(withCapacity.error)) return withCapacity
+
+  return supabase
+    .from('resources')
+    .update({ production_rate: values.production_rate, consumption_rate: values.consumption_rate })
+    .eq('id', resourceId)
+}
 
 /**
  * Lazy recalculation of colony resources, rates, and population ticks.
@@ -20,20 +42,23 @@ import { processPopulationTick } from '@/domains/population/population.tick'
  */
 export async function recalculateResources(colonyId: string) {
   const supabase = getServerClient()
+  await processCompletedWorkOrders(colonyId).catch(err => console.error('Error processing work orders:', err))
 
-  // 1. Fetch all colony data in parallel (1 network roundtrip instead of 5 sequential ones)
+  // 1. Fetch all colony data in parallel
   const [
     { data: resources, error: resError },
     { data: colony },
     { data: population },
     { data: buildings },
-    { data: units }
+    { data: units },
+    { data: activeWorkOrders }
   ] = await Promise.all([
     supabase.from('resources').select('*').eq('colony_id', colonyId),
     supabase.from('colonies').select('terrain_grid, last_calc_at').eq('id', colonyId).single(),
     supabase.from('population').select('*').eq('colony_id', colonyId).single(),
     supabase.from('buildings').select('*').eq('colony_id', colonyId),
-    supabase.from('units').select('*').eq('colony_id', colonyId)
+    supabase.from('units').select('*').eq('colony_id', colonyId),
+    supabase.from('work_orders').select('*').eq('colony_id', colonyId).eq('status', 'active')
   ])
 
   if (resError || !resources) {
@@ -52,6 +77,7 @@ export async function recalculateResources(colonyId: string) {
     }
 
     const terrainGrid = colony?.terrain_grid || []
+    const capacityByResource = calculateResourceCapacities((buildings || []) as BuildingRow[])
 
     const newProd: Record<string, number> = {}
     const newCons: Record<string, number> = {}
@@ -64,7 +90,8 @@ export async function recalculateResources(colonyId: string) {
 
     // 2.5 Allocate staffing
     if (buildings && population) {
-      const assignments = allocateBuildingStaffing(buildings, population as PopulationState)
+      const reservedSlots = getReservedWorkOrderSlots((activeWorkOrders || []) as unknown as WorkOrderRow[])
+      const assignments = allocateBuildingStaffing(buildings, population as PopulationState, reservedSlots)
       const buildingUpdates: PromiseLike<unknown>[] = []
   
       for (const b of buildings) {
@@ -83,11 +110,22 @@ export async function recalculateResources(colonyId: string) {
     }
 
     // Buildings production & consumption
+    const buildingRateInputs: BuildingRateInput[] = []
     if (buildings) {
       for (const b of buildings) {
         const { production, consumption } = getEffectiveProduction(b, population as PopulationState | null, buildings, terrainGrid)
-        for (const [res, val] of Object.entries(production)) newProd[res] = (newProd[res] || 0) + val
-        for (const [res, val] of Object.entries(consumption)) newCons[res] = (newCons[res] || 0) + val
+        buildingRateInputs.push({
+          buildingId: b.id,
+          buildingType: b.type,
+          production,
+          consumption,
+        })
+      }
+
+      const throttled = applyInputScarcity(buildingRateInputs, resources as ResourceRow[], elapsedHours)
+      for (const building of throttled.buildings) {
+        for (const [res, val] of Object.entries(building.production)) newProd[res] = (newProd[res] || 0) + val
+        for (const [res, val] of Object.entries(building.consumption)) newCons[res] = (newCons[res] || 0) + val
       }
     }
 
@@ -120,16 +158,17 @@ export async function recalculateResources(colonyId: string) {
     for (const r of resources as ResourceRow[]) {
       const p = newProd[r.type] || 0
       const c = newCons[r.type] || 0
+      const capacity = Math.max(capacityByResource[r.type], r.amount)
+      const rateChanged = Math.abs(r.production_rate - p) > 0.01 || Math.abs(r.consumption_rate - c) > 0.01
+      const capacityChanged = Math.abs((r.capacity ?? 0) - capacity) > 0.01
       
-      if (Math.abs(r.production_rate - p) > 0.01 || Math.abs(r.consumption_rate - c) > 0.01) {
+      if (rateChanged || capacityChanged) {
         updatePromises.push(
-          supabase
-            .from('resources')
-            .update({ production_rate: p, consumption_rate: c })
-            .eq('id', r.id)
+          updateResourceRateRow(supabase, r.id, { production_rate: p, consumption_rate: c, capacity })
         )
         r.production_rate = p
         r.consumption_rate = c
+        r.capacity = capacity
       }
     }
     if (updatePromises.length > 0) {
@@ -182,6 +221,6 @@ export async function recalculateResources(colonyId: string) {
   // 7. Return resources with modified rates applied
   return updatedResources.map((r: ResourceRow) => ({
     ...r,
-    amount: Math.round((r.amount + (modifiedRates[r.type] - baseRates[r.type]) || 0) * 100) / 100,
+    amount: Math.round(capResourceAmount(r.amount + ((modifiedRates[r.type] || 0) - (baseRates[r.type] || 0)), r.capacity ?? r.amount) * 100) / 100,
   }))
 }

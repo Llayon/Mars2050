@@ -8,16 +8,17 @@ import type { PopulationState, PopulationTier } from '@/domains/population/popul
  */
 export function allocateBuildingStaffing(
   buildings: BuildingRow[],
-  population: PopulationState
+  population: PopulationState,
+  reservedSlots: Partial<Record<PopulationTier, number>> = {}
 ): Record<string, number> {
   const result: Record<string, number> = {}
 
   // 1. Group available population by tier
   const availablePop: Record<PopulationTier, number> = {
-    worker: population.workers || 0,
-    technician: population.technicians || 0,
-    scientist: population.scientists || 0,
-    director: population.directors || 0,
+    worker: Math.max(0, (population.workers || 0) - (reservedSlots.worker || 0)),
+    technician: Math.max(0, (population.technicians || 0) - (reservedSlots.technician || 0)),
+    scientist: Math.max(0, (population.scientists || 0) - (reservedSlots.scientist || 0)),
+    director: Math.max(0, (population.directors || 0) - (reservedSlots.director || 0)),
   }
 
   // 2. Pre-fill result with 0 for all buildings

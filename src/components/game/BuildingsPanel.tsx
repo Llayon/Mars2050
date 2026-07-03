@@ -52,8 +52,8 @@ export const BuildingsPanel = memo(function BuildingsPanel({ buildings, resource
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Ошибка строительства'
       toast(msg, 'error')
-      isBuildingRef.current = false // Only unlock on error
     } finally {
+      isBuildingRef.current = false
       setBuilding(null)
     }
   }

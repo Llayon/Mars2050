@@ -69,6 +69,7 @@ export interface Database {
           colony_id: string
           type: ResourcesType
           amount?: number
+          capacity?: number
           production_rate?: number
           consumption_rate?: number
           updated_at?: string
@@ -77,6 +78,7 @@ export interface Database {
           colony_id: string
           type: ResourcesType
           amount?: number
+          capacity?: number
           production_rate?: number
           consumption_rate?: number
         }
@@ -84,6 +86,7 @@ export interface Database {
           colony_id?: string
           type?: ResourcesType
           amount?: number
+          capacity?: number
           production_rate?: number
           consumption_rate?: number
           updated_at?: string
@@ -305,6 +308,49 @@ export interface Database {
           created_at?: string
         }
       }
+      work_orders: {
+        Row: {
+          id?: string
+          colony_id: string
+          type: WorkOrdersTypeType
+          status?: WorkOrdersStatusType
+          assigned_tier: WorkOrdersAssignedTierType
+          assigned_slots: number
+          cost?: Record<string, unknown>
+          reward?: Record<string, unknown>
+          started_at?: string
+          completes_at: string
+          claimed_at?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Insert: {
+          colony_id: string
+          type: WorkOrdersTypeType
+          status?: WorkOrdersStatusType
+          assigned_tier: WorkOrdersAssignedTierType
+          assigned_slots: number
+          cost?: Record<string, unknown>
+          reward?: Record<string, unknown>
+          started_at?: string
+          completes_at: string
+          claimed_at?: string
+        }
+        Update: {
+          colony_id?: string
+          type?: WorkOrdersTypeType
+          status?: WorkOrdersStatusType
+          assigned_tier?: WorkOrdersAssignedTierType
+          assigned_slots?: number
+          cost?: Record<string, unknown>
+          reward?: Record<string, unknown>
+          started_at?: string
+          completes_at?: string
+          claimed_at?: string
+          created_at?: string
+          updated_at?: string
+        }
+      }
       units: {
         Row: {
           id?: string
@@ -384,5 +430,8 @@ export type BuildingsWorkPriorityType = 'low' | 'normal' | 'high'
 export type MapLocationsType = 'plains' | 'mountains' | 'canyon' | 'crater' | 'ice_cap'
 export type EventsType = 'dust_storm' | 'meteor_shower' | 'anomaly_discovered' | 'resource_vein' | 'cold_wave' | 'solar_flare'
 export type PendingEventsType = 'building_complete' | 'attack_arrive' | 'attack_return' | 'research_complete'
+export type WorkOrdersTypeType = 'clear_rubble' | 'repair_grid' | 'survey_anomaly' | 'trade_manifest'
+export type WorkOrdersStatusType = 'active' | 'completed' | 'claimed'
+export type WorkOrdersAssignedTierType = 'worker' | 'technician' | 'scientist' | 'director'
 export type UnitsType = 'marine' | 'exosuit' | 'sniper' | 'medic' | 'rocketeer' | 'engineer' | 'wall' | 'turret' | 'alien_worm' | 'alien_spitter' | 'alien_bug' | 'drone' | 'aa_turret' | 'shock_trooper' | 'flamethrower' | 'scout_drone' | 'scavenger_buggy' | 'gatling_rover' | 'plasma_tank' | 'missile_buggy' | 'gunship' | 'emp_drone' | 'minelayer_rover' | 'siege_tank' | 'railgun_walker' | 'drone_carrier' | 'cryo_tank' | 'shield_emitter' | 'interceptor' | 'hacker_rover' | 'artillery_crawler' | 'titan_mech' | 'behemoth_tank' | 'ion_crawler' | 'goliath_gunship' | 'mobile_factory' | 'sonic_devastator' | 'radar_zepplin' | 'stealth_operative' | 'hologram_projector' | 'gravity_manipulator' | 'nanite_generator' | 'bounty_hunter' | 'grenadier' | 'heavy_gunner' | 'sapper' | 'officer' | 'jetpack_trooper'
 export type BattlesType = 'attacker' | 'defender' | 'draw'

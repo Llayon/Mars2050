@@ -1,67 +1,33 @@
 'use client'
 
 import * as PIXI from 'pixi.js'
+import { Viewport } from 'pixi-viewport'
 import { useEffect, useRef, useState } from 'react'
 import { gridToScreen, screenToGrid } from '@/domains/building/building.isometric'
 import type { BuildingRow, BuildingTypeKey } from '@/domains/building/building.types'
 import { RENDER_LIMITS, BUILDING_TYPES } from '@/domains/building/building.config'
-import { ASSET_MANIFEST } from '@/components/colony/sprites/asset-manifest'
-import { COLONY_GRID_SIZE, TERRAIN_CONFIG, TERRAIN_BUILDING_MODIFIERS } from '@/domains/colony/colony-terrain.config'
+import { COLONY_GRID_SIZE, TERRAIN_BUILDING_MODIFIERS } from '@/domains/colony/colony-terrain.config'
 import type { TerrainGrid } from '@/domains/colony/colony-terrain.types'
 import { validateBuildingPlacement } from '@/domains/building/building-placement'
 import type { Colony } from '@/domains/colony/colony.types'
 import { ADJACENCY_RULES } from '@/domains/building/building.adjacency'
+import { drawBuilding, drawTerrain } from './colony-canvas-draw'
+import { loadBaseColonyTextures, loadVisibleColonyTextures, preloadRemainingColonyTextures, scheduleColonyTexturePreload } from './colony-canvas-assets'
 
-const TYPE_COLORS: Record<string, number> = {
-  solar_panels: 0xFFD700, oxygen_generator: 0x00CCFF, water_extractor: 0x3366FF,
-  mine: 0x996633, greenhouse: 0x33FF33, research_lab: 0xCC33FF,
-  habitat: 0xCCCCCC, habitat_mk2: 0xDDDDDD, habitat_mk3: 0xEEEEEE,
-  community_hall: 0xFFB6C1, workshop: 0xCD853F, advanced_mine: 0x8B4513,
-  geothermal_plant: 0xFF4500, vehicle_bay: 0x708090, biotech_lab: 0x32CD32,
-  data_center: 0x00CED1, university: 0x9370DB, nanoforge: 0x4682B4,
-  spaceport: 0x1E90FF, military_academy: 0x8B0000, hq: 0x4B0082, executive_dome: 0xFFDF00
-}
-
-const TERRAIN_ASSETS: Record<string, string> = {
-  regolith: '/assets/terrain/regolith.svg',
-  iron_deposit: '/assets/terrain/iron_deposit.svg',
-  ice_pocket: '/assets/terrain/ice_pocket.svg',
-  geothermal: '/assets/terrain/geothermal.svg',
-  blocked_rock: '/assets/terrain/blocked_rock.svg'
-}
-
-function drawBuilding(b: BuildingRow, textures: Record<string, PIXI.Texture>) {
-  const { TILE_WIDTH, TILE_HEIGHT } = RENDER_LIMITS
-  const bConfig = BUILDING_TYPES[b.type], bw = bConfig?.width || 1, bh = bConfig?.height || 1
-  const cont = new PIXI.Container(), pos = gridToScreen(b.x + bw / 2, b.y + bh / 2)
-  cont.x = pos.x; cont.y = pos.y; cont.zIndex = (b.y + bh - 1) * 100 + (b.x + bw - 1)
-  const tex = textures[b.type]
-  if (tex) {
-    const s = new PIXI.Sprite(tex); s.anchor.set(0.5, 0.85)
-    s.scale.set((TILE_WIDTH * bw) / s.width); cont.addChild(s)
-  } else {
-    const c = TYPE_COLORS[b.type] || 0xcccccc, h = 30 * Math.max(bw, bh), w2 = (TILE_WIDTH * bw) / 2, h2 = (TILE_HEIGHT * bh) / 2, g = new PIXI.Graphics()
-    g.ellipse(0, 0, w2 * 0.8, h2 * 0.8).fill({ color: 0x000000, alpha: 0.2 })
-    g.moveTo(-w2, 0).lineTo(0, h2).lineTo(0, h2 - h).lineTo(-w2, -h).closePath().fill({ color: c, alpha: 0.6 })
-    g.moveTo(w2, 0).lineTo(0, h2).lineTo(0, h2 - h).lineTo(w2, -h).closePath().fill({ color: c, alpha: 0.8 })
-    g.moveTo(0, h2 - h).lineTo(w2, -h).lineTo(0, -h2 - h).lineTo(-w2, -h).closePath().fill({ color: c, alpha: 1 }).stroke({ width: 1, color: 0xffffff, alpha: 0.5 })
-    cont.addChild(g)
-  }
-  const t = new PIXI.Text({ text: b.name.split(' ')[0], style: { fill: '#ffffff', fontSize: 10, fontWeight: 'bold', stroke: { color: '#000000', width: 2 } } })
-  t.anchor.set(0.5); t.y = -45; cont.addChild(t); return cont
-}
-
-export default function ColonyCanvas({ colony, buildings, onBuildingClick, placementMode, onConfirmPlacement }: { 
+export default function ColonyCanvas({ colony, buildings, onBuildingClick, placementMode, onConfirmPlacement, isActive = true }: { 
   colony: Colony | null; buildings: BuildingRow[]; onBuildingClick: (b: BuildingRow) => void 
-  placementMode: BuildingTypeKey | null; onConfirmPlacement: (x: number, y: number) => void
+  placementMode: BuildingTypeKey | null; onConfirmPlacement: (x: number, y: number) => void;
+  isActive?: boolean
 }) {
   const containerRef = useRef<HTMLDivElement>(null), appRef = useRef<PIXI.Application | null>(null)
+  const viewportRef = useRef<Viewport | null>(null)
   const worldRef = useRef<PIXI.Container | null>(null), buildingsRef = useRef<PIXI.Container | null>(null), terrainRef = useRef<PIXI.Container | null>(null)
   const ghostRef = useRef<PIXI.Graphics | null>(null), texturesRef = useRef<Record<string, PIXI.Texture>>({})
   const ghostTextRef = useRef<PIXI.Text | null>(null)
-  const isDragging = useRef(false), lastPos = useRef({ x: 0, y: 0 }), startDragPos = useRef({ x: 0, y: 0 })
+  const startDragPos = useRef({ x: 0, y: 0 })
   const ghostState = useRef({ valid: false, x: 0, y: 0 }), ghostListeners = useRef<{ move: (e: PIXI.FederatedPointerEvent) => void, up: (e: PIXI.FederatedPointerEvent) => void } | null>(null)
   const [initDone, setInitDone] = useState(false)
+  const [assetVersion, setAssetVersion] = useState(0)
 
   useEffect(() => {
     if (!containerRef.current) return
@@ -74,11 +40,44 @@ export default function ColonyCanvas({ colony, buildings, onBuildingClick, place
       if (cancelled) { try { app.destroy(true) } catch {} return }
       if (!containerRef.current) return
       containerRef.current.appendChild(app.canvas); appRef.current = app
-      await Promise.all(Object.entries(ASSET_MANIFEST).map(async ([t, p]) => { try { texturesRef.current[t] = await PIXI.Assets.load(p) } catch {} }))
-      await Promise.all(Object.entries(TERRAIN_ASSETS).map(async ([t, p]) => { try { texturesRef.current['terrain_' + t] = await PIXI.Assets.load(p) } catch {} }))
+      await loadBaseColonyTextures(texturesRef.current)
       if (cancelled) return
-      const world = new PIXI.Container(); world.sortableChildren = true; worldRef.current = world
-      world.x = app.screen.width / 2; world.y = app.screen.height / 2 - 320; app.stage.addChild(world)
+      const viewport = new Viewport({
+        screenWidth: app.screen.width,
+        screenHeight: app.screen.height,
+        worldWidth: 3000,
+        worldHeight: 3000,
+        events: app.renderer.events
+      })
+      app.stage.addChild(viewport)
+      viewportRef.current = viewport
+
+      viewport
+        .drag({ pressDrag: true })
+        .pinch()
+        .wheel()
+        .decelerate()
+
+      viewport.clampZoom({
+        minScale: 0.4,
+        maxScale: 2.0
+      })
+
+      viewport.clamp({
+        left: -1500,
+        right: 1500,
+        top: -500,
+        bottom: 1500,
+        underflow: 'center'
+      })
+
+      viewport.moveCenter(0, 640)
+
+      const world = new PIXI.Container()
+      world.sortableChildren = true
+      worldRef.current = world
+      viewport.addChild(world)
+
       const { MAP_SIZE } = RENDER_LIMITS, grid = new PIXI.Graphics().setStrokeStyle({ width: 1, color: 0x333333, alpha: 0.8 })
       for (let i = 0; i <= COLONY_GRID_SIZE; i++) {
         const s1 = gridToScreen(i, 0), e1 = gridToScreen(i, COLONY_GRID_SIZE), s2 = gridToScreen(0, i), e2 = gridToScreen(COLONY_GRID_SIZE, i)
@@ -89,15 +88,9 @@ export default function ColonyCanvas({ colony, buildings, onBuildingClick, place
       const bl = new PIXI.Container(); bl.sortableChildren = true; buildingsRef.current = bl; world.addChild(bl)
       const g = new PIXI.Graphics(); g.zIndex = 9999; ghostRef.current = g; world.addChild(g)
       const gt = new PIXI.Text({ text: '', style: { fontFamily: 'Arial', fontSize: 14, fill: 0xffffff, align: 'center', stroke: { color: 0x000000, width: 3 } } }); gt.zIndex = 10000; gt.anchor.set(0.5, 1); ghostTextRef.current = gt; world.addChild(gt)
+      
       app.stage.eventMode = 'static'; app.stage.hitArea = app.screen
-      app.stage.on('pointerdown', (e) => { isDragging.current = true; lastPos.current = { x: e.global.x, y: e.global.y }; startDragPos.current = { x: e.global.x, y: e.global.y } })
-      app.stage.on('pointerup', () => { isDragging.current = false }); app.stage.on('pointerupoutside', () => { isDragging.current = false })
-      app.stage.on('pointermove', (e) => {
-        if (isDragging.current && worldRef.current) {
-          worldRef.current.x += e.global.x - lastPos.current.x; worldRef.current.y += e.global.y - lastPos.current.y
-          lastPos.current = { x: e.global.x, y: e.global.y }
-        }
-      })
+      app.stage.on('pointerdown', (e) => { startDragPos.current = { x: e.global.x, y: e.global.y } })
       setInitDone(true)
     }
 
@@ -113,30 +106,74 @@ export default function ColonyCanvas({ colony, buildings, onBuildingClick, place
   }, [])
 
   useEffect(() => {
+    const app = appRef.current
+    if (!app || !initDone) return
+
+    const updatePlayState = () => {
+      if (isActive && document.visibilityState === 'visible') {
+        app.start()
+      } else {
+        app.stop()
+      }
+    }
+
+    updatePlayState()
+
+    document.addEventListener('visibilitychange', updatePlayState)
+    return () => {
+      document.removeEventListener('visibilitychange', updatePlayState)
+    }
+  }, [isActive, initDone])
+
+  useEffect(() => {
+    const container = containerRef.current
+    const app = appRef.current
+    const viewport = viewportRef.current
+    if (!container || !app || !initDone) return
+
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width, height } = entry.contentRect
+        app.renderer.resize(width, height)
+        if (viewport) {
+          viewport.resize(width, height)
+        }
+      }
+    })
+
+    observer.observe(container)
+    return () => {
+      observer.disconnect()
+    }
+  }, [initDone])
+
+  useEffect(() => {
+    if (!initDone) return
+    let cancelled = false
+    const terrainGrid = colony?.terrain_grid as TerrainGrid | undefined
+    void loadVisibleColonyTextures(texturesRef.current, terrainGrid, colony?.unlocked_radius || 5, buildings)
+      .then(changed => { if (!cancelled && changed) setAssetVersion(v => v + 1) })
+    return () => { cancelled = true }
+  }, [initDone, colony?.terrain_grid, colony?.unlocked_radius, buildings])
+
+  useEffect(() => {
+    if (!initDone) return
+    let cancelled = false
+    const cancelPreload = scheduleColonyTexturePreload(() => {
+      void preloadRemainingColonyTextures(texturesRef.current)
+        .then(changed => { if (!cancelled && changed) setAssetVersion(v => v + 1) })
+    })
+    return () => { cancelled = true; cancelPreload() }
+  }, [initDone])
+
+  useEffect(() => {
     const world = worldRef.current, app = appRef.current, bl = buildingsRef.current, ghost = ghostRef.current, terrain = terrainRef.current
     if (!initDone || !world || !app || !bl || !ghost || !terrain) return
 
     const tg = colony?.terrain_grid as TerrainGrid | undefined
     const radius = colony?.unlocked_radius || 5
     if (tg) {
-      const created = terrain.children.length > 0
-      tg.forEach((cell, i) => {
-        const pos = gridToScreen(cell.x + 0.5, cell.y + 0.5)
-        const maxDist = Math.max(Math.abs(cell.x - 19.5), Math.abs(cell.y - 19.5))
-        const isUnlocked = maxDist <= radius - 0.5
-        const alpha = isUnlocked ? 1.0 : 0.2
-        
-        let s: PIXI.Sprite
-        if (!created) {
-          s = new PIXI.Sprite(texturesRef.current[`terrain_${cell.t}`] || texturesRef.current['terrain_regolith'])
-          s.anchor.set(0.5, cell.t === 'blocked_rock' ? 0.75 : 0.5)
-          s.x = pos.x; s.y = pos.y
-          terrain.addChild(s)
-        } else {
-          s = terrain.children[i] as PIXI.Sprite
-        }
-        s.alpha = alpha
-      })
+      drawTerrain(terrain, tg, radius, texturesRef.current)
     }
     bl.removeChildren().forEach(c => c.destroy()); buildings.forEach(b => {
       const cont = drawBuilding(b, texturesRef.current); cont.eventMode = 'static'; cont.cursor = 'pointer'
@@ -205,7 +242,7 @@ export default function ColonyCanvas({ colony, buildings, onBuildingClick, place
       app.stage.on('pointermove', onMove); app.stage.on('pointerup', onUp); ghostListeners.current = { move: onMove, up: onUp }
       updateGhost({ x: app.screen.width / 2, y: app.screen.height / 2 })
     }
-  }, [initDone, buildings, placementMode, onBuildingClick, onConfirmPlacement])
+  }, [initDone, assetVersion, colony, buildings, placementMode, onBuildingClick, onConfirmPlacement])
 
-  return <div ref={containerRef} className="w-full h-full min-h-[500px] bg-[#111111] overflow-hidden cursor-move" />
+  return <div ref={containerRef} data-testid="colony-canvas-host" className="w-full h-full min-h-[500px] bg-[#111111] overflow-hidden cursor-move" />
 }

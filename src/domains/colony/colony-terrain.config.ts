@@ -44,6 +44,14 @@ export const TERRAIN_BUILDING_MODIFIERS: Record<TerrainType, { bonuses?: Record<
   blocked_rock: {},
 };
 
+export const TERRAIN_ASSETS: Record<TerrainType, string> = {
+  regolith: '/assets/terrain/regolith.svg',
+  iron_deposit: '/assets/terrain/iron_deposit.svg',
+  ice_pocket: '/assets/terrain/ice_pocket.svg',
+  geothermal: '/assets/terrain/geothermal.svg',
+  blocked_rock: '/assets/terrain/blocked_rock.svg'
+};
+
 // Global grid constants
 export const COLONY_GRID_SIZE = 40;
 export const COLONY_CENTER_COORD = 19.5; // True center of 0-39 range is 19.5

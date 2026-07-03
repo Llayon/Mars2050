@@ -1,5 +1,5 @@
 import { Database, UnitsType } from '@/types/database'
-import type { StatusEffect, SupportAura, TargetMarkConfig, UnitStanceConfig } from './combat.sim.types'
+import type { BurrowConfig, StatusEffect, SupportAura, TargetMarkConfig, UnitModeSwitchConfig, UnitStanceConfig } from './combat.sim.types'
 
 export type UnitRow = Database['public']['Tables']['units']['Row']
 export type BattleRow = Database['public']['Tables']['battles']['Row']
@@ -45,6 +45,8 @@ export interface UnitBaseStats {
   pullOnHit?: { radius: number; strength: number; maxTargets?: number }
   knockbackOnHit?: { radius: number; strength: number; maxTargets?: number }
   stance?: UnitStanceConfig
+  modeSwitch?: UnitModeSwitchConfig
+  burrowWhileMoving?: BurrowConfig
   reactiveArmor?: { charges: number; block: number }; damageShare?: { radius: number; ratio: number; maxTargets?: number }
   projectileInterception?: { radius: number; cooldownTicks: number; maxDamage?: number }
   healTargetTags?: CombatTag[]
@@ -69,6 +71,6 @@ export interface UnitTypeConfig {
   formation?: 'line' | 'wedge' | 'grid'
 }
 
-export type { Team, StatusEffect, StatusType, HackControlMode, StanceMode, UnitStanceConfig, SupportAura, SupportAuraType, TargetMark, TargetMarkConfig, Obstacle, SimHazard, SimUnit } from './combat.sim.types'
+export type { Team, StatusEffect, StatusType, HackControlMode, StanceMode, MobilityMode, UnitStanceConfig, UnitModeSwitchConfig, BurrowConfig, SupportAura, SupportAuraType, TargetMark, TargetMarkConfig, Obstacle, SimHazard, SimUnit } from './combat.sim.types'
 export * from './combat.actions'
 

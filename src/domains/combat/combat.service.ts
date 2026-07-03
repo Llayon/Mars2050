@@ -1,4 +1,5 @@
 import { getServerClient } from '@/domains/resource/resource.server'
+import { applyResourceDeltaWithCap } from '@/domains/resource/resource.storage'
 import { UNIT_TYPES } from './combat.config'
 import type { UnitTypeKey } from './combat.types'
 
@@ -83,7 +84,7 @@ export async function dismissUnit(colonyId: string, unitId: string) {
     if (refund > 0) {
       const { data: current } = await supabase
         .from('resources')
-        .select('amount')
+        .select('amount, capacity')
         .eq('colony_id', colonyId)
         .eq('type', resType)
         .single()
@@ -91,7 +92,7 @@ export async function dismissUnit(colonyId: string, unitId: string) {
       if (current) {
         await supabase
           .from('resources')
-          .update({ amount: current.amount + refund })
+          .update({ amount: applyResourceDeltaWithCap(current.amount, current.capacity, refund) })
           .eq('colony_id', colonyId)
           .eq('type', resType)
       }

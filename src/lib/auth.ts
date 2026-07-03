@@ -1,4 +1,6 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js'
+import { E2E_AUTH_COOKIE, E2E_USERNAME, isE2eAuthBypassEnabled } from '@/domains/e2e/e2e.config'
+import { getServerClient } from '@/domains/resource/resource.server'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 
@@ -54,6 +56,26 @@ export interface AuthContext {
  */
 export async function getAuthContext(request: Request): Promise<AuthContext | null> {
   const cookieStr = request.headers.get('cookie') ?? ''
+  const e2eUserId = getCookie(cookieStr, E2E_AUTH_COOKIE)
+  if (e2eUserId && isE2eAuthBypassEnabled()) {
+    const client = getServerClient()
+    const { data } = await client
+      .from('profiles')
+      .select('id')
+      .eq('id', e2eUserId)
+      .eq('username', E2E_USERNAME)
+      .maybeSingle()
+
+    if (data) {
+      return {
+        userId: e2eUserId,
+        email: null,
+        client,
+      }
+    }
+    return null
+  }
+
   let token: string | null = null
   const authHeader = request.headers.get('authorization')
   if (authHeader && authHeader.startsWith('Bearer ')) {

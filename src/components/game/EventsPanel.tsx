@@ -9,7 +9,8 @@ interface EventsPanelProps {
 }
 
 export const EventsPanel = memo(function EventsPanel({ colonyId, onCreateTest }: EventsPanelProps) {
-  const { events, loading, error } = useEvents(colonyId)
+  const { events, loading, error, createEvent } = useEvents(colonyId)
+  const createTestEvent = onCreateTest ?? createEvent
 
   if (loading) return <div className="p-4 text-gray-400">Загрузка событий...</div>
   if (error) return <div className="p-4 text-red-400">Ошибка: {error}</div>
@@ -17,14 +18,12 @@ export const EventsPanel = memo(function EventsPanel({ colonyId, onCreateTest }:
     <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
       <h3 className="text-lg font-bold text-white mb-3">⚠️ События</h3>
       <p className="text-gray-400 text-sm mb-2">Событий пока нет</p>
-      {onCreateTest && (
-        <button
-          onClick={() => onCreateTest(colonyId || '', 'dust_storm', 5)}
-          className="bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded text-sm text-white"
-        >
-          + Тест: Пылевая буря (5 мин)
-        </button>
-      )}
+      <button
+        onClick={() => createTestEvent(colonyId || '', 'dust_storm', 5)}
+        className="bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded text-sm text-white"
+      >
+        + Тест: Пылевая буря (5 мин)
+      </button>
     </div>
   )
 
@@ -56,14 +55,12 @@ export const EventsPanel = memo(function EventsPanel({ colonyId, onCreateTest }:
     <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
       <div className="flex justify-between items-center mb-3">
         <h3 className="text-lg font-bold text-white">⚠️ События</h3>
-        {onCreateTest && (
-          <button
-            onClick={() => onCreateTest(colonyId || '', 'dust_storm', 5)}
-            className="bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded text-sm text-white"
-          >
-            + Тест
-          </button>
-        )}
+        <button
+          onClick={() => createTestEvent(colonyId || '', 'dust_storm', 5)}
+          className="bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded text-sm text-white"
+        >
+          + Тест
+        </button>
       </div>
       <div className="space-y-2">
         {events.map((event) => (

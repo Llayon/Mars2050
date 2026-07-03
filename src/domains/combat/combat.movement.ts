@@ -10,6 +10,8 @@ import { getFormationCohesionForce } from './combat.formation';
 import { getMovementSpeedMultiplier } from './combat.status';
 import { recordChargeMovement } from './combat.charge';
 import { getStanceMovementSpeedMultiplier, undeployStanceForMovement } from './combat.stance';
+import { syncBurrowState } from './combat.burrow';
+import { getModeMovementSpeedMultiplier, syncModeForMovement } from './combat.mode';
 
 export function movementSystem(unit: SimUnit, target: SimUnit, units: SimUnit[], actions: BattleAction[], dt: number, rng: PRNG, flowFieldMap: FlowFieldMap, obstacles: Obstacle[], spatialHash?: SpatialHash) {
   let vx = 0;
@@ -24,7 +26,8 @@ export function movementSystem(unit: SimUnit, target: SimUnit, units: SimUnit[],
   const distEdge = distToTarget - targetRadius - myRadius;
   const positioning = getPositioningDecision(unit, target, distEdge, targetRadius, myRadius);
   undeployStanceForMovement(unit, positioning.shouldMove, actions);
-  const effectiveSpeed = unit.speed * getMovementSpeedMultiplier(unit) * getStanceMovementSpeedMultiplier(unit);
+  syncModeForMovement(unit, positioning.shouldMove, actions);
+  const effectiveSpeed = unit.speed * getMovementSpeedMultiplier(unit) * getStanceMovementSpeedMultiplier(unit) * getModeMovementSpeedMultiplier(unit);
   const steeringInRange = positioning.combatInRange && !positioning.shouldMove;
   updateStuckRecovery(unit, target, distToTarget, steeringInRange);
   const steering = getSteeringContext(unit, neighbors, myRadius, steeringInRange);
@@ -88,6 +91,7 @@ export function movementSystem(unit: SimUnit, target: SimUnit, units: SimUnit[],
     unit.velocity.x = 0;
     unit.velocity.y = 0;
     unit.isMoving = false;
+    syncBurrowState(unit, false, actions);
     if (Math.abs(angleDiff) > 0.2) {
       const r = (v: number) => Math.round(v * 100) / 100;
       actions.push({
@@ -109,6 +113,7 @@ export function movementSystem(unit: SimUnit, target: SimUnit, units: SimUnit[],
     unit.velocity.x = 0;
     unit.velocity.y = 0;
     unit.isMoving = false;
+    syncBurrowState(unit, false, actions);
     if (Math.abs(angleDiff) > 0.2) {
       const r = (v: number) => Math.round(v * 100) / 100;
       actions.push({
@@ -130,8 +135,10 @@ export function movementSystem(unit: SimUnit, target: SimUnit, units: SimUnit[],
     vx = Math.cos(unit.currentAngle) * effectiveSpeed;
     vy = Math.sin(unit.currentAngle) * effectiveSpeed;
     unit.isMoving = true;
+    syncBurrowState(unit, true, actions);
   } else {
     unit.isMoving = false;
+    syncBurrowState(unit, false, actions);
   }
 
   // Soft collision with obstacles

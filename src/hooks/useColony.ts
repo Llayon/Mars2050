@@ -3,11 +3,16 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { Colony } from '@/domains/colony/colony.types'
-import { fetchWithAuth } from '@/lib/fetch-with-auth'
 
-export function useColony(colonyId: string | null) {
-  const [colony, setColony] = useState<Colony | null>(null)
-  const [loading, setLoading] = useState(true)
+interface UseColonyOptions {
+  initialData?: Colony | null
+  enabled?: boolean
+}
+
+export function useColony(colonyId: string | null, options: UseColonyOptions = {}) {
+  const enabled = options.enabled ?? true
+  const [colony, setColony] = useState<Colony | null>(options.initialData ?? null)
+  const [loading, setLoading] = useState(Boolean(colonyId && enabled && !options.initialData))
   const [error, setError] = useState<string | null>(null)
   const mountedRef = useRef(true)
 
@@ -28,12 +33,21 @@ export function useColony(colonyId: string | null) {
   }, [])
 
   useEffect(() => {
-    if (!colonyId) return
+    if (options.initialData !== undefined) {
+      setColony(options.initialData)
+      setLoading(false)
+      setError(null)
+    }
+  }, [options.initialData])
+
+  useEffect(() => {
+    if (!colonyId || !enabled) return
+    setLoading(true)
     fetchColony()
       .then(data => { if (data) setColony(data); setError(null) })
       .catch(err => setError(String(err)))
       .finally(() => { if (mountedRef.current) setLoading(false) })
-  }, [fetchColony, colonyId])
+  }, [fetchColony, colonyId, enabled])
 
   return { colony, loading, error, refetch: fetchColony }
 }

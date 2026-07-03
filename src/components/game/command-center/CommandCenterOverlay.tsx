@@ -1,12 +1,29 @@
 'use client'
 
+import dynamic from 'next/dynamic'
 import { useState } from 'react'
-import { DefenseTab } from './DefenseTab'
-import { OperationsTab } from './OperationsTab'
-import { IntelTab } from './IntelTab'
-import { RecruitmentTab } from '../base-operations/RecruitmentTab'
 import type { ResourceRow } from '@/domains/resource/resource.types'
 import type { BattleReplayPayload } from '@/components/game/BattleHistoryPanel'
+
+const DefenseTab = dynamic(() => import('./DefenseTab').then(mod => mod.DefenseTab), {
+  ssr: false,
+  loading: () => null
+})
+
+const OperationsTab = dynamic(() => import('./OperationsTab').then(mod => mod.OperationsTab), {
+  ssr: false,
+  loading: () => null
+})
+
+const IntelTab = dynamic(() => import('./IntelTab').then(mod => mod.IntelTab), {
+  ssr: false,
+  loading: () => null
+})
+
+const RecruitmentTab = dynamic(() => import('../base-operations/RecruitmentTab').then(mod => mod.RecruitmentTab), {
+  ssr: false,
+  loading: () => null
+})
 
 interface CommandCenterOverlayProps {
   colonyId: string
@@ -29,7 +46,7 @@ export function CommandCenterOverlay({ colonyId, resources, onClose, onReplay }:
       />
 
       {/* Side Panel (Wide for Command Center) */}
-      <div className="absolute top-[60px] bottom-[60px] left-0 right-0 z-30 flex flex-col bg-gray-900/95 backdrop-blur-xl border-t border-b border-gray-700/80 shadow-[0_0_40px_rgba(0,0,0,0.9)] animate-slide-in-right overflow-hidden">
+      <div data-testid="command-center-overlay" className="absolute top-[60px] bottom-[60px] left-0 right-0 z-30 flex flex-col bg-gray-900/95 backdrop-blur-xl border-t border-b border-gray-700/80 shadow-[0_0_40px_rgba(0,0,0,0.9)] animate-slide-in-right overflow-hidden">
         <div className="flex flex-col h-full relative">
           
           {/* Header / Nav */}
@@ -49,16 +66,16 @@ export function CommandCenterOverlay({ colonyId, resources, onClose, onReplay }:
                 </button>
               </div>
               <div className="flex gap-2">
-                <NavButton active={activeTab === 'recruitment'} onClick={() => setActiveTab('recruitment')}>
+                <NavButton testId="command-center-tab-recruitment" active={activeTab === 'recruitment'} onClick={() => setActiveTab('recruitment')}>
                   RECRUITMENT
                 </NavButton>
-                <NavButton active={activeTab === 'defense'} onClick={() => setActiveTab('defense')}>
+                <NavButton testId="command-center-tab-defense" active={activeTab === 'defense'} onClick={() => setActiveTab('defense')}>
                   DEFENSE
                 </NavButton>
-                <NavButton active={activeTab === 'operations'} onClick={() => setActiveTab('operations')}>
+                <NavButton testId="command-center-tab-operations" active={activeTab === 'operations'} onClick={() => setActiveTab('operations')}>
                   OPERATIONS
                 </NavButton>
-                <NavButton active={activeTab === 'intel'} onClick={() => setActiveTab('intel')}>
+                <NavButton testId="command-center-tab-intel" active={activeTab === 'intel'} onClick={() => setActiveTab('intel')}>
                   INTEL / REPLAYS
                 </NavButton>
               </div>
@@ -78,9 +95,10 @@ export function CommandCenterOverlay({ colonyId, resources, onClose, onReplay }:
   )
 }
 
-function NavButton({ active, onClick, children }: { active: boolean, onClick: () => void, children: React.ReactNode }) {
+function NavButton({ active, onClick, children, testId }: { active: boolean, onClick: () => void, children: React.ReactNode, testId: string }) {
   return (
     <button
+      data-testid={testId}
       onClick={onClick}
       className={`px-4 py-2 font-mono text-sm transition-all duration-200 ${
         active 

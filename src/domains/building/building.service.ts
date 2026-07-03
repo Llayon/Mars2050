@@ -4,6 +4,7 @@ import type { BuildingCreateDTO, BuildingResponse, BuildingRow, BuildingTypeKey 
 import { BUILDING_TYPES } from './building.config'
 import { validateBuildingPlacement } from './building-placement'
 import { recalculateResources } from '@/domains/resource/resource.service'
+import { ensureColonyTerrain } from '@/domains/colony/colony.service'
 import type { TerrainCell } from '@/domains/colony/colony-terrain.types'
 import type { PopulationState } from '@/domains/population/population.types'
 
@@ -50,13 +51,22 @@ export async function createBuilding(dto: BuildingCreateDTO): Promise<BuildingRe
       return { x: b.x as number, y: b.y as number, width: cfg?.width || 1, height: cfg?.height || 1 }
     })
 
+    let terrainGrid = (colony.terrain_grid as TerrainCell[]) || []
+    if (!Array.isArray(terrainGrid) || terrainGrid.length === 0) {
+      const terrainResult = await ensureColonyTerrain(dto.colonyId)
+      if (!terrainResult.success || !terrainResult.terrainGrid) {
+        return { building: null, error: terrainResult.error || 'Failed to initialize terrain', status: 500 }
+      }
+      terrainGrid = terrainResult.terrainGrid
+    }
+
     const validation = validateBuildingPlacement({
       x: dto.x,
       y: dto.y,
       width: config.width || 1,
       height: config.height || 1,
       unlockedRadius: colony.unlocked_radius || 5,
-      terrainGrid: (colony.terrain_grid as TerrainCell[]) || [],
+      terrainGrid,
       occupiedCells: mappedBuildings,
       requiredTerrain: config.requiresTerrain
     })

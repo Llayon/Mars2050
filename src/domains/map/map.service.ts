@@ -2,6 +2,7 @@ import { getServerClient } from '@/domains/resource/resource.server'
 import type { MapLocation } from './map.types'
 import { generateMarsMap, getDefaultMapConfig } from './map.generator'
 import { EXPLORATION_COST, EXPLORATION_BASE_REWARD } from './map.config'
+import { applyResourceDeltaWithCap } from '@/domains/resource/resource.storage'
 
 /**
  * Gets all map locations, generating them if the map is empty.
@@ -80,7 +81,7 @@ export async function discoverLocation(
   // 3. Check colony has enough resources
   const { data: resources, error: resError } = await supabase
     .from('resources')
-    .select('type, amount')
+    .select('type, amount, capacity')
     .eq('colony_id', colonyId)
 
   if (resError || !resources) {
@@ -88,8 +89,10 @@ export async function discoverLocation(
   }
 
   const resourceMap: Record<string, number> = {}
+  const capacityMap: Record<string, number> = {}
   for (const r of resources) {
     resourceMap[r.type] = r.amount
+    capacityMap[r.type] = r.capacity
   }
 
   // Verify cost can be paid
@@ -134,12 +137,14 @@ export async function discoverLocation(
       if (resourceType.startsWith('_')) continue
       const reward = Math.round(multiplier * EXPLORATION_BASE_REWARD / 100)
       if (reward > 0) {
-        rewards[resourceType] = reward
-
         const currentAmount = resourceMap[resourceType] || 0
+        const capacity = capacityMap[resourceType] ?? currentAmount
+        const nextAmount = applyResourceDeltaWithCap(currentAmount, capacity, reward)
+        const storedReward = Math.max(0, nextAmount - currentAmount)
+        if (storedReward > 0) rewards[resourceType] = storedReward
         const { error: rewardError } = await supabase
           .from('resources')
-          .update({ amount: currentAmount + reward })
+          .update({ amount: nextAmount })
           .eq('colony_id', colonyId)
           .eq('type', resourceType)
 

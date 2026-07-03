@@ -65,7 +65,7 @@ export function BuildCatalogSheet({ resources, isMobile, onBuild, onClose }: Bui
       <div className="absolute inset-0 z-30 pointer-events-auto" onClick={onClose} />
 
       {/* Compact Floating Sheet anchored above CommandDock */}
-      <div className="absolute bottom-[70px] left-1/2 -translate-x-1/2 z-40 bg-gray-900/95 backdrop-blur-xl border border-gray-700/80 rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.8)] animate-slide-up pointer-events-auto flex flex-col w-max max-w-[95vw]">
+      <div data-testid="build-catalog-sheet" className="absolute bottom-[70px] left-1/2 -translate-x-1/2 z-40 bg-gray-900/95 backdrop-blur-xl border border-gray-700/80 rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.8)] animate-slide-up pointer-events-auto flex flex-col w-max max-w-[95vw]">
         
         {/* Hover Tooltip (appears above the sheet when hovering a building) */}
         {previewBuilding && (
@@ -74,7 +74,7 @@ export function BuildCatalogSheet({ resources, isMobile, onBuild, onClose }: Bui
             <p className="text-[10px] text-gray-400 mb-2 leading-tight">{BUILDING_TYPES[previewBuilding].description}</p>
             <div className="grid grid-cols-2 gap-1 text-[10px]">
               <div><span className="text-gray-500">Размер: </span><span className="text-gray-200">{BUILDING_TYPES[previewBuilding].width}x{BUILDING_TYPES[previewBuilding].height}</span></div>
-              <div><span className="text-gray-500">Рабочие: </span><span className="text-gray-200">{BUILDING_TYPES[previewBuilding].workforce.count}</span></div>
+              <div><span className="text-gray-500">Рабочие: </span><span className="text-gray-200">{BUILDING_TYPES[previewBuilding].staffing?.slots}</span></div>
             </div>
             
             {(Object.keys(BUILDING_TYPES[previewBuilding].production).length > 0 || Object.keys(BUILDING_TYPES[previewBuilding].consumption).length > 0) && (
@@ -120,6 +120,7 @@ export function BuildCatalogSheet({ resources, isMobile, onBuild, onClose }: Bui
             return (
               <div 
                 key={type}
+                data-testid={`build-card-${type}`}
                 onClick={() => handleInteraction(type)}
                 onMouseEnter={() => !isMobile && setPreviewBuilding(type)}
                 onMouseLeave={() => !isMobile && setPreviewBuilding(null)}

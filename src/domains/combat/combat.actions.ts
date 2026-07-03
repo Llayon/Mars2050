@@ -5,7 +5,7 @@ export type BattleActionType =
   | 'move' | 'knockback' | 'attack' | 'heal' | 'die' | 'spawn' | 'hazard_spawn'
   | 'damage' | 'damage_share' | 'shield_damage' | 'shield_break' | 'lifesteal' | 'unit_blocked_damage'
   | 'status_apply' | 'status_expire' | 'status_cleanse' | 'status_tick' | 'status_immune'
-  | 'shield_apply' | 'target_mark' | 'target_mark_expire' | 'spawn_blocked' | 'stance_change'
+  | 'shield_apply' | 'target_mark' | 'target_mark_expire' | 'spawn_blocked' | 'stance_change' | 'burrow_change' | 'mode_change'
   | 'projectile_intercept'
   | 'cone_attack' | 'beam_tick'
   | 'barrage_marker' | 'barrage_impact'
@@ -33,6 +33,7 @@ export interface BattleAction {
   statusType?: string
   controlMode?: string
   stanceMode?: string
+  modeState?: string
   value?: number
 }
 

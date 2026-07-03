@@ -1,6 +1,5 @@
 import { getServerClient } from '@/domains/resource/resource.server'
-import { initColonyResources, initColonyPopulation } from '@/domains/colony/colony.service'
-import { generateColonyTerrain } from '@/domains/colony/colony-terrain.generator'
+import { ensureColonyTerrain, initColonyResources, initColonyPopulation } from '@/domains/colony/colony.service'
 import type { AuthResult } from './auth.types'
 
 /**
@@ -15,23 +14,24 @@ export async function getOrCreateColony(userId: string): Promise<AuthResult & { 
   // Check for existing colony
   const { data: colonies } = await supabase
     .from('colonies')
-    .select('id, terrain_grid')
+    .select('id')
     .eq('user_id', userId)
     .limit(1)
 
   if (colonies && colonies.length > 0) {
     const colony = colonies[0] as Record<string, unknown>
     const colonyId = colony.id as string
-    
-    const terrainGrid = colony.terrain_grid as unknown[] | null
-    
-    // Lazy Backfill for existing colonies without terrain
-    if (!terrainGrid || (Array.isArray(terrainGrid) && terrainGrid.length === 0)) {
-      const terrainGrid = generateColonyTerrain(colonyId)
-      await supabase.from('colonies').update({ terrain_grid: terrainGrid }).eq('id', colonyId)
+
+    const terrainResult = await ensureColonyTerrain(colonyId)
+    if (terrainResult.error) {
+      return { user: null, error: terrainResult.error, colonyId }
     }
 
-    // Lazy Backfill for population
+    const resourceResult = await initColonyResources(colonyId)
+    if (resourceResult.error) {
+      return { user: null, error: resourceResult.error, colonyId }
+    }
+
     await initColonyPopulation(colonyId)
 
     return { user: null, error: null, colonyId }
@@ -50,9 +50,10 @@ export async function getOrCreateColony(userId: string): Promise<AuthResult & { 
 
   const colonyId = (newColony as Record<string, unknown>).id as string
 
-  // Generate terrain deterministically based on colonyId
-  const terrainGrid = generateColonyTerrain(colonyId)
-  await supabase.from('colonies').update({ terrain_grid: terrainGrid }).eq('id', colonyId)
+  const terrainResult = await ensureColonyTerrain(colonyId)
+  if (terrainResult.error) {
+    return { user: null, error: terrainResult.error, colonyId }
+  }
 
   // Initialize starting resources
   const resourceResult = await initColonyResources(colonyId)

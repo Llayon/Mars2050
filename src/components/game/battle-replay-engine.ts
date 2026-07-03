@@ -242,6 +242,9 @@ export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
           }
         } else if (a.type === 'stance_change') {
           spawnTxt(a.stanceMode === 'deployed' ? 'РАЗВЕРНУТ' : 'МОБИЛЕН', s.c.x, s.c.y, 0xfacc15)
+        } else if (a.type === 'mode_change') {
+          s.mobilityMode = a.modeState
+          spawnTxt(a.modeState === 'air' ? 'ВЗЛЕТ' : 'ПОСАДКА', s.c.x, s.c.y, 0x38bdf8)
         }
       })
       tick++

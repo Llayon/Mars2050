@@ -52,9 +52,9 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
     let modCanTargetAir = config.baseStats.canTargetAir || false;
     let modAoe = config.baseStats.aoeRadius ? config.baseStats.aoeRadius * 40 : undefined;
     let attackType = config.baseStats.attackType || 'single';
-    let modShield = 0, modFlying = config.baseStats.isFlying || false;
+    let modShield = 0, modFlying = config.baseStats.isFlying || false; const modeSwitchConfig = config.baseStats.modeSwitch ? { ...config.baseStats.modeSwitch } : undefined;
     let appliesEmp = false, leavesPuddle = false, spawnerConfig: { unitType: string, interval: number, timer: number } | undefined = undefined;
-    let modDamageReductionWhileMoving = 0, modOnDeathPuddle: 'napalm' | 'acid' | 'emp' | undefined = undefined;
+    let modDamageReductionWhileMoving = 0, modOnDeathPuddle: 'napalm' | 'acid' | 'emp' | undefined = undefined, modBurrowConfig = config.baseStats.burrowWhileMoving ? { ...config.baseStats.burrowWhileMoving } : undefined;
     let modMultishot = 1, modAntiAirDamageMult = 1.0, modReplicateOnKill = false;
     let modResurrectOnce = false, modStealthUntilAttack = false, modExecuteThreshold = 0;
     let modLifestealMult = 0, modGroundDamageMult = 1.0, modShieldDamageMult = config.baseStats.shieldDamageMult ?? 1.0, modArmorPierceRatio = config.baseStats.armorPierceRatio ?? 0, modSummonCounterDamageMult = config.baseStats.summonCounterDamageMult ?? 1.0, modAccuracyPenaltyResist = config.baseStats.accuracyPenaltyResist ?? 0;
@@ -76,7 +76,7 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
         if (m.replicateOnKill) modReplicateOnKill = true; if (m.resurrectOnce) modResurrectOnce = true;
         if (m.stealthUntilAttack) modStealthUntilAttack = true; if (m.executeThreshold) modExecuteThreshold = m.executeThreshold;
         if (m.lifestealMult) modLifestealMult = m.lifestealMult; if (m.groundDamageMult) modGroundDamageMult = m.groundDamageMult; if (m.shieldDamageMult) modShieldDamageMult *= m.shieldDamageMult; if (m.armorPierceRatio !== undefined) modArmorPierceRatio = Math.max(modArmorPierceRatio, m.armorPierceRatio); if (m.summonCounterDamageMult) modSummonCounterDamageMult *= m.summonCounterDamageMult; if (m.accuracyPenaltyResist !== undefined) modAccuracyPenaltyResist = Math.max(modAccuracyPenaltyResist, m.accuracyPenaltyResist);
-        if (m.damageReductionWhileMoving) modDamageReductionWhileMoving = m.damageReductionWhileMoving;
+        if (m.damageReductionWhileMoving) modDamageReductionWhileMoving = m.damageReductionWhileMoving; if (m.burrowWhileMoving) modBurrowConfig = { ...m.burrowWhileMoving };
         if (m.multishot) modMultishot = m.multishot; if (m.antiAirDamageMult) modAntiAirDamageMult = m.antiAirDamageMult;
         if (m.grantAntiAir) modCanTargetAir = true;
         if (m.addAoE) {
@@ -128,7 +128,7 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
         attackType: attackType,
         spawnType: config.baseStats.spawnType, spawnCap: config.baseStats.spawnCap, actionCooldownMax: modCooldown,
         actionCooldown: 0,
-        isFlying: modFlying,
+        isFlying: modeSwitchConfig ? (modeSwitchConfig.startMode ?? 'ground') === 'air' : modFlying,
         canTargetAir: modCanTargetAir,
         turnSpeed: config.baseStats.turnSpeed || 0.5,
         currentAngle: t === 'attacker' ? Math.PI / 2 : -Math.PI / 2,
@@ -143,7 +143,7 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
         appliesEmp,
         leavesPuddle,
         spawnerConfig: spawnerConfig ? { ...spawnerConfig } : undefined,
-        damageReductionWhileMoving: modDamageReductionWhileMoving,
+        damageReductionWhileMoving: modDamageReductionWhileMoving, burrowConfig: modBurrowConfig ? { ...modBurrowConfig } : undefined, isBurrowed: false,
         onDeathPuddle: modOnDeathPuddle,
         multishot: modMultishot,
         antiAirDamageMult: modAntiAirDamageMult,
@@ -153,7 +153,7 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
         executeThreshold: modExecuteThreshold,
         lifestealMult: modLifestealMult,
         groundDamageMult: modGroundDamageMult, shieldDamageMult: modShieldDamageMult, armorPierceRatio: modArmorPierceRatio || undefined, summonCounterDamageMult: modSummonCounterDamageMult === 1 ? undefined : modSummonCounterDamageMult, accuracyPenaltyResist: modAccuracyPenaltyResist || undefined,
-        smokeOnAction: config.baseStats.smokeOnAction ? { ...config.baseStats.smokeOnAction } : undefined, stanceConfig: config.baseStats.stance ? { ...config.baseStats.stance } : undefined, stanceMode: config.baseStats.stance ? 'mobile' : undefined, stanceTicks: 0,
+        smokeOnAction: config.baseStats.smokeOnAction ? { ...config.baseStats.smokeOnAction } : undefined, stanceConfig: config.baseStats.stance ? { ...config.baseStats.stance } : undefined, stanceMode: config.baseStats.stance ? 'mobile' : undefined, stanceTicks: 0, modeSwitchConfig, mobilityMode: modeSwitchConfig ? (modeSwitchConfig.startMode ?? 'ground') : undefined,
         pullOnHit: config.baseStats.pullOnHit ? { radius: config.baseStats.pullOnHit.radius * 40, strength: config.baseStats.pullOnHit.strength * 40, maxTargets: config.baseStats.pullOnHit.maxTargets } : undefined, knockbackOnHit: config.baseStats.knockbackOnHit ? { radius: config.baseStats.knockbackOnHit.radius * 40, strength: config.baseStats.knockbackOnHit.strength * 40, maxTargets: config.baseStats.knockbackOnHit.maxTargets } : undefined,
         reactiveArmorCharges: config.baseStats.reactiveArmor?.charges, reactiveArmorBlock: config.baseStats.reactiveArmor?.block, damageShareRadius: config.baseStats.damageShare?.radius ? config.baseStats.damageShare.radius * 40 : undefined, damageShareRatio: config.baseStats.damageShare?.ratio, damageShareMaxTargets: config.baseStats.damageShare?.maxTargets,
         projectileInterceptRadius: config.baseStats.projectileInterception?.radius, projectileInterceptCooldownMax: config.baseStats.projectileInterception?.cooldownTicks, projectileInterceptCooldown: 0, projectileInterceptMaxDamage: config.baseStats.projectileInterception?.maxDamage,

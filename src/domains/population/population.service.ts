@@ -1,7 +1,20 @@
 import { getServerClient } from '@/domains/resource/resource.server'
-import type { PopulationState } from './population.types'
+import type { PopulationState, PopulationTier } from './population.types'
 import { POPULATION_TIERS } from './population.config'
 import { apiError } from '@/lib/api-error'
+
+interface UpgradePopulationTransactionResult {
+  success?: boolean
+  population?: PopulationState
+  error?: string
+}
+
+function getTargetTier(fromTier: string): PopulationTier | null {
+  if (fromTier === 'worker') return 'technician'
+  if (fromTier === 'technician') return 'scientist'
+  if (fromTier === 'scientist') return 'director'
+  return null
+}
 
 /**
  * Gets population state for a colony.
@@ -40,117 +53,37 @@ export async function upgradePopulation(userId: string, colonyId: string, fromTi
     return { error: apiError('FORBIDDEN', 'Colony not found or access denied') }
   }
 
-  const { data: pop } = await getPopulation(colonyId)
-  if (!pop) {
-    return { error: apiError('NOT_FOUND', 'Population not found') }
-  }
-
-  // Determine upgrade path
-  let fromField = ''
-  let toField = ''
-  let toTierKey: keyof typeof POPULATION_TIERS
-  
-  if (fromTier === 'worker') {
-    fromField = 'workers'
-    toField = 'technicians'
-    toTierKey = 'technician'
-  } else if (fromTier === 'technician') {
-    fromField = 'technicians'
-    toField = 'scientists'
-    toTierKey = 'scientist'
-  } else if (fromTier === 'scientist') {
-    fromField = 'scientists'
-    toField = 'directors'
-    toTierKey = 'director'
-  } else {
+  const targetTier = getTargetTier(fromTier)
+  if (!targetTier) {
     return { error: apiError('BAD_REQUEST', 'Invalid tier for upgrade') }
   }
 
-  const currentFrom = pop[fromField as keyof PopulationState] as number
-  if (currentFrom < count) {
-    return { error: apiError('BAD_REQUEST', `Not enough ${fromTier}s to upgrade`) }
-  }
+  const sourceTier = fromTier as PopulationTier
+  const sourceConfig = POPULATION_TIERS[sourceTier]
+  const targetConfig = POPULATION_TIERS[targetTier]
 
-  // Enforce Anno-style upgrade constraints
-  const tierConfig = POPULATION_TIERS[fromTier as keyof typeof POPULATION_TIERS]
-  const toTierConfig = POPULATION_TIERS[toTierKey]
-  
-  // 1. Check Needs (Happiness)
-  const happinessField = `happiness_${fromField}` as keyof PopulationState
-  const currentHappiness = pop[happinessField] as number
-  if (currentHappiness < 80) {
-    return { error: apiError('BAD_REQUEST', 'Уровень счастья должен быть не ниже 80% для модернизации (потребности не удовлетворены)') }
-  }
-
-  // 2. Check Upgrade Building
-  const { data: buildings } = await supabase
-    .from('buildings')
-    .select('type')
-    .eq('colony_id', colonyId)
-    .eq('is_active', true)
-
-  if (tierConfig.upgradeBuilding) {
-    const hasUpgrader = buildings?.some(b => b.type === tierConfig.upgradeBuilding)
-    if (!hasUpgrader) {
-      return { error: apiError('BAD_REQUEST', `Для улучшения требуется активное здание: ${tierConfig.upgradeBuilding}`) }
-    }
-  }
-
-  // 3. Check Housing Capacity for new tier
-  let maxHousing = 0
-  buildings?.forEach(b => {
-    const housing = toTierConfig.housingPerBuilding[b.type as keyof typeof toTierConfig.housingPerBuilding]
-    if (housing) maxHousing += housing
+  const { data: txResult, error: txError } = await supabase.rpc('upgrade_population_transaction', {
+    p_colony_id: colonyId,
+    p_from_tier: sourceTier,
+    p_count: count,
+    p_costs: sourceConfig.upgradeCost ?? {},
+    p_upgrade_building: sourceConfig.upgradeBuilding,
+    p_target_housing: targetConfig.housingPerBuilding,
+    p_min_happiness: 80
   })
 
-  const currentTo = pop[toField as keyof PopulationState] as number
-  if (currentTo + count > maxHousing) {
-    return { error: apiError('BAD_REQUEST', `Не хватает жилья для расселения ${toTierConfig.name} (Максимум: ${maxHousing})`) }
+  if (txError) {
+    return { error: apiError('INTERNAL_ERROR', txError.message) }
   }
 
-  // 4. Check and Deduct Upgrade Cost
-  if (tierConfig.upgradeCost) {
-    const { data: resources } = await supabase
-      .from('resources')
-      .select('*')
-      .eq('colony_id', colonyId)
-
-    // Validate all costs first
-    for (const [resType, costPerUnit] of Object.entries(tierConfig.upgradeCost)) {
-      const totalCost = costPerUnit * count
-      const currentRes = resources?.find(r => r.type === resType)
-      if (!currentRes || currentRes.amount < totalCost) {
-        return { error: apiError('BAD_REQUEST', `Недостаточно ресурсов. Требуется ${totalCost} ${resType}`) }
-      }
-    }
-
-    // Deduct costs (using sequential updates since it's outside the Postgres RPC for now)
-    for (const [resType, costPerUnit] of Object.entries(tierConfig.upgradeCost)) {
-      const totalCost = costPerUnit * count
-      const currentAmount = resources!.find(r => r.type === resType)!.amount
-      await supabase
-        .from('resources')
-        .update({ amount: currentAmount - totalCost })
-        .eq('colony_id', colonyId)
-        .eq('type', resType)
-    }
+  const result = txResult as UpgradePopulationTransactionResult
+  if (!result.success) {
+    return { error: apiError('BAD_REQUEST', result.error || 'Population upgrade failed') }
   }
 
-  // 5. Deduct from current, add to next
-  const updates: Partial<PopulationState> = {}
-  updates[fromField as keyof PopulationState] = currentFrom - count as never
-  updates[toField as keyof PopulationState] = currentTo + count as never
-
-  const { data: updated, error } = await supabase
-    .from('population')
-    .update(updates)
-    .eq('colony_id', colonyId)
-    .select()
-    .single()
-
-  if (error || !updated) {
-    return { error: apiError('INTERNAL_ERROR', error?.message || 'Failed to update population') }
+  if (!result.population) {
+    return { error: apiError('INTERNAL_ERROR', 'Population upgrade returned no data') }
   }
 
-  return { data: updated as PopulationState }
+  return { data: result.population }
 }

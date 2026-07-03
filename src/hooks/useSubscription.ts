@@ -4,7 +4,7 @@ import { useEffect, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js'
 
-type TableName = 'resources' | 'events' | 'buildings' | 'map_locations' | 'pending_events'
+type TableName = 'resources' | 'events' | 'buildings' | 'map_locations' | 'pending_events' | 'work_orders' | 'population'
 
 type ChangePayload = {
   table: TableName
@@ -19,49 +19,33 @@ type Subscriber = {
   callback: (payload: ChangePayload) => void
 }
 
-const subscribers: Subscriber[] = []
-let channel: ReturnType<typeof supabase.channel> | null = null
-let activeSubCount = 0
-
-function matchesFilter(row: Record<string, unknown>, colonyId?: string | null): boolean {
-  if (!colonyId) return true
-  return row.colony_id === colonyId
+type ChannelEntry = {
+  channel: ReturnType<typeof supabase.channel>
+  subscribers: Subscriber[]
 }
 
-function dispatchToSubscribers(table: TableName, eventType: 'INSERT' | 'UPDATE' | 'DELETE', newRow: Record<string, unknown>, oldRow: Record<string, unknown>) {
-  for (const sub of subscribers) {
-    if (sub.table !== table) continue
-    if (!matchesFilter(newRow, sub.colonyId)) continue
-    sub.callback({ table, eventType, new: newRow, old: oldRow })
-  }
+const channels = new Map<string, ChannelEntry>()
+
+function channelKey(table: TableName, colonyId: string): string {
+  return `${table}:${colonyId}`
 }
 
-function ensureChannel() {
-  if (channel) return
-  channel = supabase
-    .channel('mars2050-sync')
-    .on('postgres_changes', { event: '*' as const, schema: 'public', table: 'resources' }, (p: RealtimePostgresChangesPayload<Record<string, unknown>>) => {
-      dispatchToSubscribers('resources', p.eventType, p.new, p.old)
-    })
-    .on('postgres_changes', { event: '*' as const, schema: 'public', table: 'events' }, (p: RealtimePostgresChangesPayload<Record<string, unknown>>) => {
-      dispatchToSubscribers('events', p.eventType, p.new, p.old)
-    })
-    .on('postgres_changes', { event: '*' as const, schema: 'public', table: 'buildings' }, (p: RealtimePostgresChangesPayload<Record<string, unknown>>) => {
-      dispatchToSubscribers('buildings', p.eventType, p.new, p.old)
-    })
-    .on('postgres_changes', { event: '*' as const, schema: 'public', table: 'map_locations' }, (p: RealtimePostgresChangesPayload<Record<string, unknown>>) => {
-      dispatchToSubscribers('map_locations', p.eventType, p.new, p.old)
-    })
-    .on('postgres_changes', { event: '*' as const, schema: 'public', table: 'pending_events' }, (p: RealtimePostgresChangesPayload<Record<string, unknown>>) => {
-      dispatchToSubscribers('pending_events', p.eventType, p.new, p.old)
-    })
+function createChannelEntry(table: TableName, colonyId: string): ChannelEntry {
+  const subscribers: Subscriber[] = []
+  const channel = supabase
+    .channel(`mars2050-sync-${table}-${colonyId}`)
+    .on(
+      'postgres_changes',
+      { event: '*' as const, schema: 'public', table, filter: `colony_id=eq.${colonyId}` },
+      (payload: RealtimePostgresChangesPayload<Record<string, unknown>>) => {
+        for (const sub of subscribers) {
+          sub.callback({ table, eventType: payload.eventType, new: payload.new, old: payload.old })
+        }
+      }
+    )
     .subscribe()
-}
 
-function destroyChannelIfEmpty() {
-  if (activeSubCount > 0 || !channel) return
-  supabase.removeChannel(channel)
-  channel = null
+  return { channel, subscribers }
 }
 
 export function useSubscription(
@@ -80,15 +64,23 @@ export function useSubscription(
     if (!enabled || !colonyId) return
 
     const sub: Subscriber = { table, colonyId, callback: (p) => callbackRef.current(p) }
-    subscribers.push(sub)
-    activeSubCount++
-    ensureChannel()
+    const key = channelKey(table, colonyId)
+    let entry = channels.get(key)
+    if (!entry) {
+      entry = createChannelEntry(table, colonyId)
+      channels.set(key, entry)
+    }
+    entry.subscribers.push(sub)
 
     return () => {
-      const idx = subscribers.indexOf(sub)
-      if (idx >= 0) subscribers.splice(idx, 1)
-      activeSubCount--
-      destroyChannelIfEmpty()
+      const currentEntry = channels.get(key)
+      if (!currentEntry) return
+      const idx = currentEntry.subscribers.indexOf(sub)
+      if (idx >= 0) currentEntry.subscribers.splice(idx, 1)
+      if (currentEntry.subscribers.length === 0) {
+        channels.delete(key)
+        supabase.removeChannel(currentEntry.channel)
+      }
     }
   }, [table, colonyId, enabled])
 }

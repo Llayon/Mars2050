@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, Suspense, lazy, useCallback, useRef } from 'react'
+import { useState, Suspense, lazy, useCallback, useRef, useEffect } from 'react'
 import { ColonyPanel } from '@/components/game/ColonyPanel'
 import { EntityInspector } from '@/components/game/hud/EntityInspector'
 import type { Colony } from '@/domains/colony/colony.types'
@@ -25,6 +25,7 @@ interface ColonyScreenProps {
   placementMode?: BuildingTypeKey | null
   setPlacementMode?: (type: BuildingTypeKey | null) => void
   onBuild?: (type: BuildingTypeKey, x: number, y: number) => Promise<void>
+  isActive?: boolean
   children?: React.ReactNode
 }
 /**
@@ -41,10 +42,21 @@ export default function ColonyScreen({
   placementMode,
   setPlacementMode,
   onBuild,
+  isActive = true,
   children 
 }: Omit<ColonyScreenProps, 'colonyId' | 'resources' | 'resourcesLoading'>) {
   const [selectedBuilding, setSelectedBuilding] = useState<BuildingRow | null>(null)
   const isBuildingRef = useRef(false)
+
+  useEffect(() => {
+    if (placementMode) isBuildingRef.current = false
+  }, [placementMode])
+
+  useEffect(() => {
+    if (!selectedBuilding) return
+    const updatedBuilding = buildings.find(building => building.id === selectedBuilding.id)
+    if (updatedBuilding) setSelectedBuilding(updatedBuilding)
+  }, [buildings, selectedBuilding])
   
   const handleConfirmPlacement = useCallback(async (x: number, y: number) => {
     if (isBuildingRef.current) return
@@ -56,11 +68,6 @@ export default function ColonyScreen({
     
     try {
       await onBuild(currentMode, x, y)
-      // Do NOT reset isBuildingRef here!
-      // If it succeeded, placementMode becomes null in the UI.
-      // We want this function locked forever for this closure.
-      // The parent will re-render and pass a NEW handleConfirmPlacement 
-      // with a NEW isBuildingRef.current = false if they re-enter placement mode.
     } catch (e) {
       if (setPlacementMode) setPlacementMode(currentMode) // restore if failed
       isBuildingRef.current = false // Only unlock if it failed, so they can try again
@@ -105,7 +112,7 @@ export default function ColonyScreen({
   }
 
   return (
-    <div className="relative w-full h-full overflow-hidden bg-black">
+    <div data-testid="colony-screen" className="relative w-full h-full overflow-hidden bg-black">
       <Suspense fallback={<div className="flex items-center justify-center h-full text-white">Загрузка колонии...</div>}>
         <ColonyCanvas 
           colony={colony}
@@ -113,11 +120,10 @@ export default function ColonyScreen({
           onBuildingClick={setSelectedBuilding} 
           placementMode={placementMode ?? null}
           onConfirmPlacement={handleConfirmPlacement}
+          isActive={isActive}
         />
       </Suspense>
 
-
-      
       {/* Children overlay */}
       {children && (
         <div className="absolute top-4 left-4 right-4 pointer-events-none">

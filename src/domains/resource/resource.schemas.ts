@@ -10,4 +10,9 @@ export const resourceUpdateSchema = z.object({
   operation: z.enum(['add', 'subtract', 'set'], { message: 'Invalid operation' })
 })
 
+export const resourceDebugQuerySchema = z.object({
+  colonyId: z.string().uuid('Invalid colony ID'),
+})
+
 export type ResourceUpdateInput = z.infer<typeof resourceUpdateSchema>
+export type ResourceDebugQueryInput = z.infer<typeof resourceDebugQuerySchema>

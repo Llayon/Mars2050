@@ -98,8 +98,8 @@ describe('ColonyScreen', () => {
 describe('ResourcesBar', () => {
   it('renders resource icons and amounts', () => {
     const resources: ResourceRow[] = [
-      { id: '1', colony_id: '', type: 'energy' as const, amount: 150, production_rate: 10, consumption_rate: 5, updated_at: '' },
-      { id: '2', colony_id: '', type: 'oxygen' as const, amount: 200, production_rate: 8, consumption_rate: 3, updated_at: '' },
+      { id: '1', colony_id: '', type: 'energy' as const, amount: 150, capacity: 1000, production_rate: 10, consumption_rate: 5, updated_at: '' },
+      { id: '2', colony_id: '', type: 'oxygen' as const, amount: 200, capacity: 1000, production_rate: 8, consumption_rate: 3, updated_at: '' },
     ]
     const { container } = render(<ResourcesBar resources={resources} loading={false} />)
     expect(container.textContent).toContain('150')

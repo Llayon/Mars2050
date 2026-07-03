@@ -1,22 +1,42 @@
 'use client'
 
+import dynamic from 'next/dynamic'
 import { TopResourceBar } from '@/components/game/hud/TopResourceBar'
 import { BottomNav } from '@/components/screens/BottomNav'
 import type { TabId } from '@/components/screens/BottomNav'
 import ColonyScreen from '@/components/screens/ColonyScreen'
-import { BuildingsScreen } from '@/components/screens/BuildingsScreen'
-import { MapScreen } from '@/components/screens/MapScreen'
-import { OperationsScreen } from '@/components/screens/OperationsScreen'
-import { ProfileScreen } from '@/components/screens/ProfileScreen'
-import { PopulationScreen } from '@/components/screens/PopulationScreen'
 import { HudBottomSheet } from '@/components/ui/hud/HudBottomSheet'
-import { BuildCatalogSheet } from '@/components/game/hud/BuildCatalogSheet'
 import { PlacementActionBar } from '@/components/game/hud/PlacementActionBar'
 import type { BuildingTypeKey } from '@/domains/building/building.types'
 import type { Colony } from '@/domains/colony/colony.types'
 import type { ResourceRow } from '@/domains/resource/resource.types'
 import type { BuildingRow, BuildingSettingsUpdate } from '@/domains/building/building.types'
 import type { PopulationState, PopulationTier } from '@/domains/population/population.types'
+
+const BuildCatalogSheet = dynamic(() => import('@/components/game/hud/BuildCatalogSheet').then(mod => mod.BuildCatalogSheet), {
+  ssr: false,
+  loading: () => null
+})
+
+const PopulationScreen = dynamic(() => import('@/components/screens/PopulationScreen').then(mod => mod.PopulationScreen), {
+  ssr: false,
+  loading: () => null
+})
+
+const MapScreen = dynamic(() => import('@/components/screens/MapScreen').then(mod => mod.MapScreen), {
+  ssr: false,
+  loading: () => null
+})
+
+const OperationsScreen = dynamic(() => import('@/components/screens/OperationsScreen').then(mod => mod.OperationsScreen), {
+  ssr: false,
+  loading: () => null
+})
+
+const ProfileScreen = dynamic(() => import('@/components/screens/ProfileScreen').then(mod => mod.ProfileScreen), {
+  ssr: false,
+  loading: () => null
+})
 
 interface TwaHudProps {
   colonyId: string
@@ -26,6 +46,9 @@ interface TwaHudProps {
   resources: ResourceRow[]
   resourcesLoading: boolean
   userEmail?: string
+  userId?: string
+  tgUser?: { id: number; first_name: string; username?: string } | null
+  isTWA?: boolean
   activeTab: TabId
   setActiveTab: (tab: TabId) => void
   placementMode: BuildingTypeKey | null
@@ -47,6 +70,9 @@ export function TwaHud({
   resources,
   resourcesLoading,
   userEmail,
+  userId,
+  tgUser,
+  isTWA,
   activeTab,
   setActiveTab,
   placementMode,
@@ -71,11 +97,12 @@ export function TwaHud({
     onUpdateSettings,
     onBuild,
     placementMode,
-    setPlacementMode
+    setPlacementMode,
+    isActive: activeTab === 'colony'
   }
 
   return (
-    <div className="min-h-[100dvh] bg-black text-white flex flex-col relative overflow-hidden">
+    <div data-testid="twa-hud" className="min-h-[100dvh] bg-black text-white flex flex-col relative overflow-hidden">
       <div className="absolute inset-0 z-0">
         <ColonyScreen {...colonyScreenProps} />
       </div>
@@ -110,9 +137,14 @@ export function TwaHud({
           colony={colony}
           colonyLoading={colonyLoading}
           userEmail={userEmail}
+          userId={userId}
+          colonyId={colonyId}
+          tgUser={tgUser}
+          isTWA={isTWA}
           population={population}
           populationLoading={populationLoading}
           onUpgradePopulation={onUpgradePopulation}
+          onLogout={onLogout}
         />
       </HudBottomSheet>
 

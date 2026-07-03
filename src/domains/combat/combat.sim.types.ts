@@ -6,7 +6,10 @@ export type StatusType =
   | 'hacked' | 'damage_reduction' | 'regen' | 'output_suppressed' | 'accuracy_reduced' | 'armor_broken' | 'degeneration' | 'haste' | 'range_boost' | 'status_immunity'
 export type HackControlMode = 'disable' | 'redirect' | 'confuse'
 export type StanceMode = 'mobile' | 'deployed'
+export type MobilityMode = 'ground' | 'air'
 export interface UnitStanceConfig { mode: 'siege' | 'entrenched'; deployTicks: number; rangeMultiplier?: number; cooldownMultiplier?: number; speedMultiplier?: number }
+export interface BurrowConfig { damageReduction: number }
+export interface UnitModeSwitchConfig { trigger: 'while_moving'; startMode?: MobilityMode; groundForAction?: boolean; airSpeedMultiplier?: number; groundSpeedMultiplier?: number }
 
 export interface StatusEffect { type: StatusType; duration: number; value?: number; sourceUnitId?: string; stackKey?: string; controlMode?: HackControlMode }
 
@@ -85,6 +88,8 @@ export interface SimUnit {
   lifestealMult?: number
   groundDamageMult?: number; shieldDamageMult?: number; armorPierceRatio?: number; summonCounterDamageMult?: number; accuracyPenaltyResist?: number
   damageReductionWhileMoving?: number
+  burrowConfig?: BurrowConfig; isBurrowed?: boolean
+  modeSwitchConfig?: UnitModeSwitchConfig; mobilityMode?: MobilityMode
   onDeathPuddle?: 'napalm' | 'acid' | 'emp'
   multishot?: number; antiAirDamageMult?: number
   smokeOnAction?: { radius: number; duration: number; rangeSuppression?: number; outputSuppression?: number; accuracySuppression?: number }

@@ -1,5 +1,4 @@
 import type { ResourceTypeKey } from '@/domains/resource/resource.types'
-
 import type { PopulationTier } from '@/domains/population/population.types'
 import type { TerrainType } from '@/domains/colony/colony-terrain.types'
 
@@ -12,6 +11,7 @@ export interface BuildingType {
   cost: ResourceCost
   production: ResourceProduction
   consumption: ResourceProduction
+  storage?: ResourceCost
   description: string
   width: number
   height: number
@@ -27,32 +27,10 @@ export interface BuildingType {
 
 /** Keys for all available building types. */
 export type BuildingTypeKey =
-  // Tier 1
-  | 'solar_panels'
-  | 'oxygen_generator'
-  | 'water_extractor'
-  | 'mine'
-  | 'greenhouse'
-  | 'research_lab'
-  | 'habitat'
-  | 'community_hall'
-  // Tier 2
-  | 'workshop'
-  | 'advanced_mine'
-  | 'geothermal_plant'
-  | 'vehicle_bay'
-  | 'habitat_mk2'
-  // Tier 3
-  | 'biotech_lab'
-  | 'data_center'
-  | 'nanoforge'
-  | 'university'
-  | 'habitat_mk3'
-  // Tier 4
-  | 'hq'
-  | 'spaceport'
-  | 'military_academy'
-  | 'executive_dome'
+  | 'solar_panels' | 'oxygen_generator' | 'water_extractor' | 'mine' | 'greenhouse' | 'research_lab' | 'habitat' | 'community_hall' | 'storage_depot'
+  | 'workshop' | 'advanced_mine' | 'geothermal_plant' | 'vehicle_bay' | 'habitat_mk2'
+  | 'biotech_lab' | 'data_center' | 'nanoforge' | 'university' | 'habitat_mk3'
+  | 'hq' | 'spaceport' | 'military_academy' | 'executive_dome'
 
 /** Resource cost mapping (resource type → amount). */
 export type ResourceCost = Partial<Record<ResourceTypeKey, number>>

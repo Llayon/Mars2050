@@ -13,10 +13,21 @@ interface TopResourceBarProps {
 
 export function TopResourceBar({ resources, population, colony, isMobile }: TopResourceBarProps) {
   // Sort resources in a standard order for UI (using actual keys)
-  const orderedKeys: ResourceTypeKey[] = ['energy', 'minerals', 'water', 'oxygen', 'food', 'research_points']
+  const orderedKeys: ResourceTypeKey[] = [
+    'energy',
+    'minerals',
+    'water',
+    'oxygen',
+    'food',
+    'research_points',
+    'consumer_goods',
+    'rare_metals',
+    'databanks',
+    'nanomaterials'
+  ]
   const displayResources = orderedKeys.map(key => {
     const res = resources.find(r => r.type === key)
-    return res || { type: key, amount: 0, production_rate: 0, consumption_rate: 0 }
+    return res || { type: key, amount: 0, capacity: 0, production_rate: 0, consumption_rate: 0 }
   })
 
   // Calculations for population
@@ -47,24 +58,25 @@ export function TopResourceBar({ resources, population, colony, isMobile }: TopR
   if (isMobile) {
     // Mobile: ultra compact
     return (
-      <div className="absolute top-0 left-0 right-0 z-40 bg-black/70 backdrop-blur-md border-b border-cyan-500/30 p-2 flex flex-col gap-1 pointer-events-auto shadow-[0_0_15px_rgba(0,0,0,0.8)]">
+      <div data-testid="top-resource-bar" className="absolute top-0 left-0 right-0 z-40 bg-black/70 backdrop-blur-md border-b border-cyan-500/30 p-2 flex flex-col gap-1 pointer-events-auto shadow-[0_0_15px_rgba(0,0,0,0.8)]">
         <div className="flex justify-between items-center text-xs">
-          <div className="flex items-center gap-1 font-bold">
+          <div className="flex items-center gap-1 font-bold flex-shrink-0">
             <span className="text-cyan-400 bg-cyan-900/40 px-2 py-0.5 rounded border border-cyan-500/50">
               Lv. {colony?.level || 1}
             </span>
           </div>
-          <div className="flex gap-3 overflow-x-auto custom-scrollbar no-scrollbar text-[10px]">
-            {displayResources.slice(0, 4).map(res => {
+          <div className="flex gap-2 overflow-x-auto scrollbar-none no-scrollbar text-[10px] flex-1 ml-2 pr-1 select-none">
+            {displayResources.map(res => {
               const delta = res.production_rate - res.consumption_rate
               const deltaColor = delta > 0 ? 'text-green-400' : delta < 0 ? 'text-red-400' : 'text-gray-400'
               const roundedDelta = Math.round(delta)
+              const isNearCap = res.capacity > 0 && res.amount >= res.capacity * 0.95
               return (
-                <div key={res.type} className="flex items-center gap-1">
-                  <span className="text-cyan-400 drop-shadow-md"><ResourceIcon type={res.type} className="w-3.5 h-3.5" /></span>
+                <div key={res.type} className={`flex items-center gap-1 flex-shrink-0 bg-gray-800/40 px-2 py-0.5 rounded border ${isNearCap ? 'border-orange-400/60' : 'border-gray-700/30'}`}>
+                  <span className="text-cyan-400"><ResourceIcon type={res.type} className="w-3.5 h-3.5" /></span>
                   <span className="font-bold text-white">{Math.floor(res.amount)}</span>
-                  <span className={`${deltaColor}`}>
-                    {roundedDelta > 0 ? '+' : ''}{roundedDelta}/h
+                  <span className={`${deltaColor} font-mono text-[9px] font-semibold`}>
+                    {roundedDelta > 0 ? '+' : ''}{roundedDelta}
                   </span>
                 </div>
               )
@@ -91,7 +103,7 @@ export function TopResourceBar({ resources, population, colony, isMobile }: TopR
 
   // Desktop: Ultra minimal single-tier HUD (Anno style)
   return (
-    <div className="absolute top-0 left-0 right-0 z-40 bg-gradient-to-b from-black/80 via-black/40 to-transparent pt-2 pb-8 px-6 flex justify-between items-start pointer-events-none">
+    <div data-testid="top-resource-bar" className="absolute top-0 left-0 right-0 z-40 bg-gradient-to-b from-black/80 via-black/40 to-transparent pt-2 pb-8 px-6 flex justify-between items-start pointer-events-none">
       
       {/* Left: Colony Info */}
       <div className="flex flex-col pointer-events-auto">
@@ -126,8 +138,9 @@ export function TopResourceBar({ resources, population, colony, isMobile }: TopR
             const delta = res.production_rate - res.consumption_rate
             const deltaColor = delta > 0 ? 'text-green-400' : delta < 0 ? 'text-red-400' : 'text-gray-500'
             const roundedDelta = Math.round(delta)
+            const title = `${RESOURCE_NAMES[res.type] || res.type}: ${Math.floor(res.amount).toLocaleString('ru-RU')}/${Math.floor(res.capacity).toLocaleString('ru-RU')}`
             return (
-              <div key={res.type} className="flex items-center gap-2 group cursor-default" title={RESOURCE_NAMES[res.type] || res.type}>
+              <div key={res.type} className="flex items-center gap-2 group cursor-default" title={title}>
                 <span className="text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.5)] opacity-80 group-hover:opacity-100 transition-opacity">
                   <ResourceIcon type={res.type} className="w-5 h-5" />
                 </span>

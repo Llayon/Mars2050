@@ -5,33 +5,53 @@ import { useLeaderboard } from '@/hooks/useLeaderboard'
 import type { Colony } from '@/domains/colony/colony.types'
 import type { PopulationState, PopulationTier } from '@/domains/population/population.types'
 import { PopulationPanel } from '@/components/game/PopulationPanel'
+import { AccountPanel } from '@/components/game/AccountPanel'
 
 interface ProfileScreenProps {
   colony: Colony | null
   colonyLoading: boolean
   userEmail?: string
+  userId?: string
+  colonyId: string | null
+  tgUser?: { id: number; first_name: string; username?: string } | null
+  isTWA?: boolean
   population?: PopulationState | null
   populationLoading?: boolean
   onUpgradePopulation?: (fromTier: PopulationTier, count: number) => void
+  onLogout: () => void
 }
 
 export const ProfileScreen = memo(function ProfileScreen({ 
   colony, 
   colonyLoading, 
   userEmail,
+  userId,
+  colonyId,
+  tgUser,
+  isTWA,
   population,
   populationLoading,
-  onUpgradePopulation
+  onUpgradePopulation,
+  onLogout
 }: ProfileScreenProps) {
   const { leaderboard, loading: lbLoading } = useLeaderboard()
 
   return (
-    <div className="flex flex-col h-full">
+    <div data-testid="profile-screen" className="flex flex-col h-full">
       <div className="p-3 pb-0">
         <h2 className="text-lg font-bold text-white">Профиль</h2>
       </div>
 
       <div className="flex-1 overflow-y-auto p-3 pb-24 space-y-3">
+        <AccountPanel
+          userEmail={userEmail}
+          userId={userId}
+          colonyId={colonyId}
+          tgUser={tgUser}
+          isTWA={isTWA}
+          onLogout={onLogout}
+        />
+
         <div className="glass-panel rounded-xl p-4">
           {colonyLoading ? (
             <div className="h-16 bg-gray-700/30 rounded-lg animate-pulse" />

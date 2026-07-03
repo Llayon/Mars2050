@@ -1,4 +1,5 @@
 import { getServerClient } from '@/domains/resource/resource.server'
+import { applyResourceDeltaWithCap } from '@/domains/resource/resource.storage'
 import { EXPLORATION_BASE_REWARD } from './map.config'
 
 /**
@@ -82,17 +83,23 @@ export async function attackAlienNest(colonyId: string, locationId: string) {
     await supabase.from('map_locations').update({ resources }).eq('id', locationId)
 
     // Grant resources
-    const { data: colonyRes } = await supabase.from('resources').select('type, amount').eq('colony_id', colonyId)
+    const { data: colonyRes } = await supabase.from('resources').select('type, amount, capacity').eq('colony_id', colonyId)
     const resourceMap: Record<string, number> = {}
-    if (colonyRes) colonyRes.forEach(r => resourceMap[r.type] = r.amount)
+    const capacityMap: Record<string, number> = {}
+    if (colonyRes) colonyRes.forEach(r => {
+      resourceMap[r.type] = r.amount
+      capacityMap[r.type] = r.capacity
+    })
 
     for (const [resType, multiplier] of Object.entries(resources)) {
       if (resType.startsWith('_')) continue
       const reward = Math.round(multiplier * EXPLORATION_BASE_REWARD / 100) * 2 // 2x reward for PvE
       if (reward > 0) {
-        rewards[resType] = reward
         const currentAmount = resourceMap[resType] || 0
-        await supabase.from('resources').update({ amount: currentAmount + reward }).eq('colony_id', colonyId).eq('type', resType)
+        const nextAmount = applyResourceDeltaWithCap(currentAmount, capacityMap[resType] ?? currentAmount, reward)
+        const storedReward = Math.max(0, nextAmount - currentAmount)
+        if (storedReward > 0) rewards[resType] = storedReward
+        await supabase.from('resources').update({ amount: nextAmount }).eq('colony_id', colonyId).eq('type', resType)
       }
     }
   }

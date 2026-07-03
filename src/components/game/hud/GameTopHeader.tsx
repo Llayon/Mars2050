@@ -17,7 +17,7 @@ export function GameTopHeader({ resources, population, colony, isMobile }: GameT
   if (isMobile) {
     // Mobile: Ultra compact, two stacked rows
     return (
-      <div className="absolute top-0 left-0 right-0 z-50 bg-black/70 backdrop-blur-md border-b border-cyan-500/30 p-2 flex flex-col gap-1 pointer-events-auto shadow-[0_0_15px_rgba(0,0,0,0.8)]">
+      <div data-testid="top-hud" className="absolute top-0 left-0 right-0 z-50 bg-black/70 backdrop-blur-md border-b border-cyan-500/30 p-2 flex flex-col gap-1 pointer-events-auto shadow-[0_0_15px_rgba(0,0,0,0.8)]">
         <div className="flex justify-between items-center text-xs">
           <ColonyStatusBlock colony={colony} isMobile={true} />
           <ResourceStrip resources={resources} isMobile={true} />
@@ -31,7 +31,7 @@ export function GameTopHeader({ resources, population, colony, isMobile }: GameT
 
   // Desktop: Unified Full-Width Header (Anno Style - minimal)
   return (
-    <div className="absolute top-0 left-0 right-0 z-40 bg-gradient-to-b from-black/80 via-black/40 to-transparent pt-2 pb-8 px-6 flex justify-between items-start pointer-events-none">
+    <div data-testid="top-hud" className="absolute top-0 left-0 right-0 z-40 bg-gradient-to-b from-black/80 via-black/40 to-transparent pt-2 pb-8 px-6 flex justify-between items-start pointer-events-none">
       
       {/* Left: Colony Info */}
       <div className="pointer-events-auto mt-2">

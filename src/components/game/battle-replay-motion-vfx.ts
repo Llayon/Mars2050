@@ -94,7 +94,7 @@ export function applyProceduralMotion(s: SpriteState, config: MotionVfxConfig, f
   // Hover logic (from engine)
   let hoverY = 0;
   const isFlying = UNIT_TYPES[s.type as UnitTypeKey]?.baseStats.isFlying;
-  const hasHoverVisual = isFlying || vConf.locomotion === 'hover' || vConf.hoverAmplitude !== undefined;
+  const hasHoverVisual = isFlying || s.mobilityMode === 'air' || vConf.locomotion === 'hover' || vConf.hoverAmplitude !== undefined;
   if (hasHoverVisual) {
      const hAmp = vConf.hoverAmplitude || 3;
      const hSpeed = vConf.hoverSpeed || 0.05;

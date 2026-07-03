@@ -9,6 +9,7 @@ interface MockQueryBuilder {
   select: () => MockQueryBuilder
   update: () => MockQueryBuilder
   eq: () => MockQueryBuilder
+  lte: () => Promise<{ data: unknown[]; error: null }>
   single: () => Promise<{ data: unknown; error: null }>
   then: (onfulfilled: (value: QueryResult) => unknown) => Promise<unknown>
 }
@@ -22,6 +23,7 @@ const mockSupabase = {
         return queryBuilder
       }),
       eq: vi.fn().mockImplementation(() => queryBuilder),
+      lte: vi.fn().mockResolvedValue({ data: [], error: null }),
       single: vi.fn().mockImplementation(() => {
         if (table === 'colonies') return Promise.resolve({ data: { terrain_grid: [] }, error: null })
         if (table === 'population') return Promise.resolve({ data: { workers: 10 }, error: null })
@@ -74,6 +76,6 @@ beforeEach(() => {
 describe('Resource Recalculation Order', () => {
   it('updates rates in DB before calling recalculate_resources RPC', async () => {
     await recalculateResources('colony-1')
-    expect(callOrder).toEqual(['update', 'rpc'])
+    expect(callOrder).toEqual(['update', 'update', 'rpc'])
   })
 })

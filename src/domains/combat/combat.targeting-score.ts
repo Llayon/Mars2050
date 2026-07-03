@@ -61,6 +61,7 @@ export function getTargetScore(
 
 export function getEffectiveCombatTags(unit: SimUnit): CombatTag[] {
   const tags = new Set<CombatTag>(UNIT_TYPES[unit.type as keyof typeof UNIT_TYPES]?.baseStats.combatTags ?? [])
+  if (unit.modeSwitchConfig && !unit.isFlying) tags.delete('aircraft')
   if (unit.isFlying) tags.add('aircraft')
   if (unit.shield > 0) tags.add('shielded')
   if (unit.attackType === 'heal') tags.add('healer')

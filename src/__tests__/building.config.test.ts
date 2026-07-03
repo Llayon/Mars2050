@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { BUILDING_TYPES } from '@/domains/building/building.config'
+import { BUILDING_TYPES, STARTING_RESOURCES } from '@/domains/building/building.config'
 import { POPULATION_TIERS } from '@/domains/population/population.config'
 import type { ResourceTypeKey } from '@/domains/resource/resource.types'
 import type { BuildingTypeKey } from '@/domains/building/building.types'
@@ -23,7 +23,7 @@ describe('building.config', () => {
   })
 
   it('every building (except habitats and special structures) has a production rate', () => {
-    const nonProducers = ['habitat', 'habitat_mk2', 'habitat_mk3', 'community_hall', 'vehicle_bay', 'university', 'hq', 'spaceport', 'military_academy', 'executive_dome']
+    const nonProducers = ['habitat', 'habitat_mk2', 'habitat_mk3', 'community_hall', 'storage_depot', 'vehicle_bay', 'university', 'hq', 'spaceport', 'military_academy', 'executive_dome']
     for (const [key, config] of Object.entries(BUILDING_TYPES)) {
       if (nonProducers.includes(key)) continue
       expect(Object.keys(config.production).length, `${key} has no production`).toBeGreaterThan(0)
@@ -68,6 +68,38 @@ describe('building.config', () => {
     }
   })
 
+  it('first population upgrade only requires resources available at colony start', () => {
+    const upgradeCost = POPULATION_TIERS.worker.upgradeCost ?? {}
+    expect(Object.keys(upgradeCost).length).toBeGreaterThan(0)
+
+    for (const resource of Object.keys(upgradeCost)) {
+      expect(
+        STARTING_RESOURCES[resource] ?? 0,
+        `worker upgrade cost uses non-starting resource ${resource}`
+      ).toBeGreaterThan(0)
+    }
+  })
+
+  it('population staffing lists match building staffing configs', () => {
+    const listedBuildings = new Set<string>()
+
+    for (const [tier, config] of Object.entries(POPULATION_TIERS)) {
+      for (const buildingType of (config as TierConfig).staffingFor) {
+        listedBuildings.add(buildingType)
+        expect(BUILDING_TYPES[buildingType], `${tier}.staffingFor references missing building ${buildingType}`).toBeDefined()
+        expect(
+          BUILDING_TYPES[buildingType]?.staffing?.tier,
+          `${buildingType} is listed under ${tier} but has different staffing tier`
+        ).toBe(tier)
+      }
+    }
+
+    for (const [buildingType, config] of Object.entries(BUILDING_TYPES)) {
+      if (!config.staffing) continue
+      expect(listedBuildings.has(buildingType), `${buildingType} has staffing but is absent from staffingFor`).toBe(true)
+    }
+  })
+
   it('every produced advanced resource has at least one consumer or need', () => {
     const advancedResources = ['consumer_goods', 'rare_metals', 'databanks', 'nanomaterials']
     const consumers = new Set<string>()
@@ -89,6 +121,17 @@ describe('building.config', () => {
 
     for (const res of advancedResources) {
       expect(consumers.has(res), `Advanced resource ${res} has no consumers or needs`).toBe(true)
+    }
+  })
+
+  it('storage buildings add positive resource capacity', () => {
+    const storageBuildings = Object.entries(BUILDING_TYPES).filter(([, config]) => config.storage)
+    expect(storageBuildings.length).toBeGreaterThan(0)
+
+    for (const [key, config] of storageBuildings) {
+      for (const [resource, amount] of Object.entries(config.storage || {})) {
+        expect(amount, `${key}.storage.${resource} must be positive`).toBeGreaterThan(0)
+      }
     }
   })
 

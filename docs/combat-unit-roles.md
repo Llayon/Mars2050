@@ -91,7 +91,8 @@ Status application, refresh, strongest-value selection, ticking, expiration,
 and cleanse all emit deterministic replay actions when an action sink is passed.
 Adjacent non-status state still lives on `SimUnit`: `shield`,
 `stealthUntilAttack`, `lifestealMult`, `armorPierceRatio`,
-`summonCounterDamageMult`, `damageReductionWhileMoving`,
+`summonCounterDamageMult`, `damageReductionWhileMoving`, `burrowConfig`,
+`isBurrowed`,
 `onDeathPuddle`, temporary spawns, and hazards.
 
 ### Core statuses to add first
@@ -104,7 +105,7 @@ Adjacent non-status state still lives on `SimUnit`: `shield`,
 | `acid` | Area Denial / Vulnerability Debuff | Deals DoT or weakens armor/giants in a zone. | `alien_bug`, `alien_spitter`, anti-giant upgrades |
 | `vulnerable` | Vulnerability Debuff | Increases incoming damage or reduces armor/defense. | `ion_crawler`, `emp_drone`, `nanite_generator` |
 | `range_suppressed` | Vision / Range Suppression | Reduces range, accuracy, or target acquisition. | `radar_zepplin`, `sonic_devastator`, smoke units |
-| `revealed` | Anti-stealth / Utility Support | Allows targeting stealth units and cancels hidden bonuses. | `radar_zepplin`, `sensor_suite`, `scout_drone`, `officer` |
+| `revealed` | Anti-stealth / Utility Support | Allows targeting stealth units, cancels hidden bonuses, and breaks active burrow. | `radar_zepplin`, `sensor_suite`, `scout_drone`, `officer` |
 | `hacked` | Hack Control | Temporarily converts, confuses, or redirects a target. | `hacker_rover` |
 | `damage_reduction` | Guard / Protector | Reduces incoming damage for a duration. | `shield_emitter`, `officer`, photon-like upgrades |
 | `regen` | Utility Support | Restores HP over time. | `engineer`, `nanite_generator`, repair upgrades |
@@ -130,6 +131,7 @@ Adjacent non-status state still lives on `SimUnit`: `shield`,
 | Revive / reassembly | Needs death interception and delayed respawn logic. |
 | Pull / knockback | Should be a forced movement event with collision and pathing rules. |
 | Projectile interception | Needs projectile or attack-event filtering, not per-unit ticking. |
+| Burrow / underground | Depends on movement intent, replay state changes, and reveal/counter rules. |
 
 ### Implemented runtime contract
 
@@ -142,7 +144,7 @@ Adjacent non-status state still lives on `SimUnit`: `shield`,
 5. `burn`, `acid`, `degeneration`, and `regen` tick every 10 simulation ticks.
 6. `vulnerable`, `damage_reduction`, `armor_broken`,
    `output_suppressed`, and `accuracy_reduced` feed into `combat.damage.ts`.
-7. `revealed` participates in stealth acquisition checks.
+7. `revealed` participates in stealth acquisition checks and breaks/suppresses active burrow defense.
 8. Shield, stealth, lifesteal, armor pierce, anti-summoner damage,
    pull/knockback, mines, barriers, and decoys
    remain explicit mechanics with their own tests.
@@ -170,14 +172,15 @@ The following mechanics are now implemented as reusable runtime primitives:
 | Projectile interception | `combat.projectile-defense.ts`, `combat.damage.ts` | `shield_emitter` |
 | Cone / beam / barrage / chain / split-fire / side weapons | `combat.attack-geometry.ts`, `combat.split-fire.ts`, `combat.side-weapon.ts` | `flamethrower`, `sonic_devastator`, `ion_crawler`, `artillery_crawler`, `plasma_tank`, `gatling_rover`, `goliath_gunship` |
 | Minimum range / back-away positioning | `combat.weapon-rules.ts`, `combat.positioning.ts` | `artillery_crawler` |
-| Stance / mode transform | `combat.stance.ts`, `combat.status.ts`, `combat.movement.ts` | `artillery_crawler` |
+| Stance / mode transform | `combat.stance.ts`, `combat.mode.ts`, `combat.status.ts`, `combat.movement.ts` | `artillery_crawler`, `jetpack_trooper` |
+| Burrow / underground movement | `combat.burrow.ts`, `combat.movement.ts`, `combat.damage.ts` | `subterranean_blitz` |
 | Ramp focused-fire damage | `combat.ramp.ts` | `ion_crawler` |
 | Charge damage scaling | `combat.charge.ts`, `combat.movement.ts` | `scavenger_buggy` |
 | Percent-HP damage | `combat.percent-damage.ts`, `combat.damage.ts` | `railgun_walker` |
 | On-kill effects | `combat.on-kill.ts` | `stealth_operative` |
 
-Remaining major gaps are aerial/ground mode swaps, burrow, permanent conversion
-style hack behavior, and richer line-of-sight/concealment mechanics.
+Remaining major gaps are richer mode-switch variants, richer underground counter
+variants, permanent conversion style hack behavior, and richer line-of-sight/concealment mechanics.
 
 ### Damage / shield pipeline
 
@@ -196,6 +199,10 @@ increasing damage against unarmored targets.
 `summonCounterDamageMult` is attacker-side specialist damage against summoners,
 spawned units, and temporary decoys. It does not increase damage against normal
 frontline units.
+`burrowConfig` is a movement-state defense: the unit emits `burrow_change` when
+it enters or exits underground movement, and the reduction applies only while
+`isBurrowed` is active. Applying `revealed` forces the unit to surface and
+prevents re-entering burrow until reveal expires.
 The detailed replay stream can emit:
 
 | Action | Meaning |
@@ -205,6 +212,8 @@ The detailed replay stream can emit:
 | `shield_break` | Shield reached zero from the hit. |
 | `lifesteal` | Attacker healed from actual HP damage dealt. |
 | `unit_blocked_damage` | Damage removed by defense, status reduction, or other mitigation. |
+| `burrow_change` | Unit entered or exited underground movement state. |
+| `mode_change` | Unit changed runtime ground/air mobility state. |
 
 The legacy `attack` replay action is still emitted for projectile, recoil, and
 old replay compatibility. `battle-replay-engine.ts` detects whether a log
@@ -243,7 +252,7 @@ upgrades, auras, or hazards without hardcoding one-off behavior.
 
 1. Defensive primitives: flat damage block, damage sharing, status immunity,
    reactive armor charges, and projectile interception are implemented.
-2. Role-transform primitives: target marks and initial siege/entrenched stance transforms are implemented; aerial/ground mode swaps and burrow remain future work.
+2. Role-transform primitives: target marks, initial siege/entrenched stance transforms, movement-state burrow with reveal counterplay, and first-pass ground/air mobility mode swaps are implemented; richer mode-switch variants and richer underground counter variants remain future work.
 3. Scaling primitives: ramp damage, charge scaling, and percent HP damage are implemented.
 4. Weapon primitives: chain attacks, split fire, and side weapons are implemented; richer role-specific upgrade variants remain future work.
 5. Death/kill primitives: on-death puddles and on-kill effects are implemented; richer spawn-on-death variants remain future work.
@@ -297,7 +306,7 @@ upgrades, auras, or hazards without hardcoding one-off behavior.
 | `heavy_gunner` | Sustained carry/suppression | 6 units, 200 range, high DPS, no native AA | Tune | Overlaps marine/gatling less after AA cleanup. Should become suppression or screen clear specialist. |
 | `sapper` | Demolition assassin | 3 units, high AoE burst, low HP | Ready | Good high-risk unit. Ensure it does not overperform with melee slots. |
 | `officer` | Command utility support | Passive haste aura for nearby allies; can add sensor-suite reveal | Tune | No longer a generic healer. Tune radius/value so it supports formations without becoming mandatory. |
-| `jetpack_trooper` | Flying flanker/backline killer | 5 flying units, fast melee | Tune | Interesting, but needs clear counter and role versus scout drones. |
+| `jetpack_trooper` | Jump flanker/backline killer | 5 infantry, fast melee, enters air mode while moving and lands before attacking | Tune | Now has a ground/air mode identity: exposed to AA while advancing, targetable by ground weapons when committed. Tune timing and counters versus scout drones. |
 | `exosuit` | Medium damage tank/bruiser | 4 units, armored heavy, low range | Ready | Good bridge between infantry and vehicles. |
 | `gatling_rover` | Anti-air/screen clear specialist | 2 vehicles, rapid fire, `anti_air`, split fire | Ready | Good dedicated AA and light-screen clearer. Tune split-fire multiplier if it crowds out infantry clear. |
 | `plasma_tank` | Anti-heavy specialist | 2 vehicles, `anti_armor`, medium range | Ready | Clear role. Can take armor-piercing rounds; tune chain damage versus medium armor. |
@@ -427,7 +436,7 @@ keep and expand:
 | `anti_summoner_protocol` | Assassin/marksman unit becomes a specialist answer to summoners, spawned units, and decoys. |
 | `sensor_suite` | Scout/officer/hunter unit becomes a local anti-stealth detector without gaining direct DPS. |
 | `thermal_optics` | Precision unit resists smoke/accuracy suppression without gaining raw clean-hit DPS. |
-| `subterranean_blitz` | Screen unit becomes engage/survivability pressure. |
+| `subterranean_blitz` | Screen unit gains explicit underground movement defense while advancing, then surfaces before attacking. |
 | `incendiary_ammo` | Projectile unit becomes area denial/screen clear. |
 
 Missing upgrade categories:
@@ -453,7 +462,7 @@ Missing upgrade categories:
 19. Flat damage block and damage-sharing upgrades for guard and anchor units.
 20. Additional stance/mode transformations that alter movement, range, and targeting.
 21. Target-mark upgrades for priority overrides and focus-fire control.
-22. Burrow/underground movement states with clear reveal and counter rules.
+22. Additional burrow/underground counter variants beyond reveal.
 23. Additional ramp/charge scaling upgrades for anti-giant and late-fight carry units.
 24. Multi-weapon, split-fire, and chain-attack upgrade variants.
 25. On-death and on-kill effects with deterministic caps.
@@ -473,8 +482,8 @@ Missing upgrade categories:
 4. Tune defensive primitives: flat damage block, damage sharing, status
    immunity, reactive armor charges, cleanse-on-action, and projectile
    interception.
-5. Add transform/control primitives: aerial/ground mode swaps, burrow,
-   and richer mode-switch behavior.
+5. Add transform/control primitive variants: richer underground counters beyond
+   reveal and richer mode-switch behavior.
 6. Add weapon/death primitive variants: split-fire upgrades, periodic side
    weapons, richer on-death effects, and on-kill recycling.
 7. Add remaining attack shapes: beams, cones, barrage, and richer temporary

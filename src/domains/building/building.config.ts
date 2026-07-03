@@ -10,6 +10,7 @@ export const BUILDING_TYPES: Record<BuildingTypeKey, BuildingType> = {
   research_lab: { name: 'Исследовательская лаборатория', cost: { minerals: 200, energy: 80 }, production: { research_points: 5 }, consumption: { energy: 15, water: 2 }, description: 'Проводит научные исследования', width: 1, height: 1, staffing: { tier: 'scientist', slots: 2, minActiveSlots: 1 }, unlockedByTier: 'technician' },
   habitat: { name: 'Жилой модуль', cost: { minerals: 150, energy: 30, water: 20 }, production: {}, consumption: {}, description: 'Обеспечивает жильем колонистов', width: 1, height: 1 },
   community_hall: { name: 'Общественный зал', cost: { minerals: 200, energy: 100 }, production: {}, consumption: { energy: 5 }, description: 'Позволяет рабочим становиться техниками', width: 2, height: 1 },
+  storage_depot: { name: 'Складской узел', cost: { minerals: 220, energy: 60 }, production: {}, consumption: { energy: 2 }, storage: { oxygen: 500, water: 500, energy: 500, minerals: 500, food: 500, research_points: 250, consumer_goods: 150, rare_metals: 150, databanks: 150, nanomaterials: 75 }, description: 'Расширяет лимиты хранения ресурсов', width: 2, height: 1 },
   workshop: { name: 'Мастерская', cost: { minerals: 250, energy: 150 }, production: { consumer_goods: 4 }, consumption: { minerals: 3, energy: 8 }, description: 'Производит товары первой необходимости', width: 1, height: 1, staffing: { tier: 'technician', slots: 2, minActiveSlots: 1 }, unlockedByTier: 'technician' },
   advanced_mine: { name: 'Глубинная шахта', cost: { minerals: 400, energy: 200, consumer_goods: 10 }, production: { minerals: 20, rare_metals: 3 }, consumption: { energy: 20 }, description: 'Добывает редкие металлы', width: 2, height: 2, staffing: { tier: 'technician', slots: 2, minActiveSlots: 1 }, requiresTerrain: ['iron_deposit'], unlockedByTier: 'technician' },
   geothermal_plant: { name: 'Геотермальная станция', cost: { minerals: 300, rare_metals: 5 }, production: { energy: 40 }, consumption: {}, description: 'Использует тепло Марса', width: 2, height: 2, staffing: { tier: 'technician', slots: 2, minActiveSlots: 2 }, requiresTerrain: ['geothermal'], unlockedByTier: 'technician' },
@@ -23,13 +24,26 @@ export const BUILDING_TYPES: Record<BuildingTypeKey, BuildingType> = {
   hq: { name: 'Штаб-квартира', cost: { minerals: 2000, nanomaterials: 50 }, production: {}, consumption: { energy: 100 }, description: 'Центр управления', width: 3, height: 3, staffing: { tier: 'director', slots: 1, minActiveSlots: 1 }, unlockedByTier: 'director' },
   spaceport: { name: 'Космопорт', cost: { minerals: 3000, nanomaterials: 100 }, production: {}, consumption: { energy: 200 }, description: 'Торговля и логистика', width: 4, height: 4, staffing: { tier: 'director', slots: 2, minActiveSlots: 2 }, unlockedByTier: 'director' },
   military_academy: { name: 'Военная академия', cost: { minerals: 1500, nanomaterials: 30 }, production: {}, consumption: { energy: 80 }, description: 'Подготовка офицеров', width: 3, height: 3, staffing: { tier: 'director', slots: 2, minActiveSlots: 2 }, unlockedByTier: 'director' },
-  executive_dome: { name: 'Элитный купол', cost: { minerals: 1000, nanomaterials: 10, consumer_goods: 50 }, production: {}, consumption: {}, description: 'Жилье для элиты', width: 2, height: 2, unlockedByTier: 'director' }
+  executive_dome: { name: 'Элитный купол', cost: { minerals: 100, nanomaterials: 10, consumer_goods: 50 }, production: {}, consumption: {}, description: 'Жилье для элиты', width: 2, height: 2, unlockedByTier: 'director' }
 }
+
+export const BUILDING_TYPE_COLORS: Record<BuildingTypeKey, number> = {
+  solar_panels: 0xFFD700, oxygen_generator: 0x00CCFF, water_extractor: 0x3366FF,
+  mine: 0x996633, greenhouse: 0x33FF33, research_lab: 0xCC33FF,
+  habitat: 0xCCCCCC, habitat_mk2: 0xDDDDDD, habitat_mk3: 0xEEEEEE,
+  community_hall: 0xFFB6C1, workshop: 0xCD853F, advanced_mine: 0x8B4513,
+  geothermal_plant: 0xFF4500, vehicle_bay: 0x708090, biotech_lab: 0x32CD32,
+  data_center: 0x00CED1, university: 0x9370DB, nanoforge: 0x4682B4,
+  spaceport: 0x1E90FF, military_academy: 0x8B0000, hq: 0x4B0082, executive_dome: 0xFFDF00,
+  storage_depot: 0x808080
+}
+
 /** Starting resources for a new colony. */
 export const STARTING_RESOURCES: Record<string, number> = {
   oxygen: 500, water: 500, energy: 500, minerals: 500, food: 500, research_points: 100,
   consumer_goods: 0, rare_metals: 0, databanks: 0, nanomaterials: 0
 }
+
 export const RENDER_LIMITS = {
   TILE_WIDTH: 64, TILE_HEIGHT: 32, MAX_SPRITES: 200,
   CANVAS_FALLBACK: true, DISABLE_FILTERS_ON_CANVAS: true, MAP_SIZE: 20,

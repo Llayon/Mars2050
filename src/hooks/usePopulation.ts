@@ -3,9 +3,16 @@ import { supabase } from '@/lib/supabase'
 import type { PopulationState } from '@/domains/population/population.types'
 import type { UpgradePopulationDto } from '@/domains/population/population.schemas'
 import { fetchWithAuth } from '@/lib/fetch-with-auth'
+import { useSubscription } from './useSubscription'
 
-export function usePopulation(colonyId: string | null) {
-  const [population, setPopulation] = useState<PopulationState | null>(null)
+interface UsePopulationOptions {
+  initialData?: PopulationState | null
+  enabled?: boolean
+}
+
+export function usePopulation(colonyId: string | null, options: UsePopulationOptions = {}) {
+  const enabled = options.enabled ?? true
+  const [population, setPopulation] = useState<PopulationState | null>(options.initialData ?? null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -29,28 +36,28 @@ export function usePopulation(colonyId: string | null) {
   }, [colonyId])
 
   useEffect(() => {
-    if (!colonyId) return
+    if (options.initialData !== undefined) {
+      setPopulation(options.initialData)
+      setLoading(false)
+      setError(null)
+    }
+  }, [options.initialData])
+
+  useEffect(() => {
+    if (!colonyId || !enabled) return
 
     const loadTimer = setTimeout(() => {
       void fetchPopulation()
     }, 0)
 
-    // Realtime subscription
-    const channel = supabase.channel(`population-${colonyId}`)
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'population', filter: `colony_id=eq.${colonyId}` },
-        (payload) => {
-          setPopulation(payload.new as PopulationState)
-        }
-      )
-      .subscribe()
-
     return () => {
       clearTimeout(loadTimer)
-      supabase.removeChannel(channel)
     }
-  }, [colonyId, fetchPopulation])
+  }, [colonyId, fetchPopulation, enabled])
+
+  useSubscription('population', colonyId, (payload) => {
+    setPopulation(payload.new as unknown as PopulationState)
+  })
 
   const upgradeTier = async (fromTier: UpgradePopulationDto['fromTier'], count: number) => {
     if (!colonyId) return

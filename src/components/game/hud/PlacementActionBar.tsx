@@ -2,6 +2,7 @@ import { BUILDING_TYPES } from '@/domains/building/building.config'
 import type { BuildingTypeKey } from '@/domains/building/building.types'
 import type { ResourceRow } from '@/domains/resource/resource.types'
 import { RESOURCE_NAMES } from '@/domains/resource/resource.types'
+import { ResourceIcon } from '@/components/ui/icons/ResourceIcon'
 
 interface PlacementActionBarProps {
   placementMode: BuildingTypeKey
@@ -14,7 +15,7 @@ export function PlacementActionBar({ placementMode, resources, onCancel }: Place
   if (!config) return null
 
   return (
-    <div className="absolute bottom-6 md:bottom-12 left-0 right-0 z-50 flex justify-center pointer-events-none px-4">
+    <div data-testid="placement-action-bar" className="absolute bottom-6 md:bottom-12 left-0 right-0 z-50 flex justify-center pointer-events-none px-4">
       <div className="bg-gray-900/95 backdrop-blur-xl border border-cyan-500/50 rounded-2xl p-2 flex items-center gap-3 pointer-events-auto animate-slide-up shadow-[0_10px_40px_rgba(0,0,0,0.8)] max-w-full">
         
         {/* Icon & Name */}
@@ -29,16 +30,19 @@ export function PlacementActionBar({ placementMode, resources, onCancel }: Place
         </div>
 
         {/* Cost */}
-        <div className="hidden sm:flex items-center gap-3 px-2">
+        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar max-w-[45vw] sm:max-w-none sm:gap-3 px-2 select-none">
           {Object.entries(config.cost).map(([resType, amount]) => {
             const res = resources.find(r => r.type === resType)
             const hasEnough = res && res.amount >= amount
             return (
-              <div key={resType} className="flex flex-col items-center">
-                <span className={`text-sm font-mono font-bold ${hasEnough ? 'text-gray-200' : 'text-red-400'}`}>
+              <div key={resType} className="flex items-center gap-1 bg-black/40 px-1.5 py-0.5 rounded border border-gray-700/30 flex-shrink-0 sm:flex-col sm:bg-transparent sm:border-0 sm:p-0">
+                <span className="text-cyan-400 sm:hidden">
+                  <ResourceIcon type={resType} className="w-3.5 h-3.5" />
+                </span>
+                <span className={`text-xs sm:text-sm font-mono font-bold ${hasEnough ? 'text-gray-200' : 'text-red-400'}`}>
                   {amount}
                 </span>
-                <span className="text-[9px] text-gray-500 uppercase tracking-wide">
+                <span className="hidden sm:inline text-[9px] text-gray-500 uppercase tracking-wide">
                   {RESOURCE_NAMES[resType] || resType}
                 </span>
               </div>
@@ -47,8 +51,8 @@ export function PlacementActionBar({ placementMode, resources, onCancel }: Place
         </div>
 
         {/* Hint (Mobile only) */}
-        <div className="sm:hidden text-[10px] text-gray-400 font-medium px-2 leading-tight flex-1 text-center">
-          Тапните по карте<br/>для постройки
+        <div className="hidden md:block text-[10px] text-gray-400 font-medium px-2 leading-tight">
+          Тапните по карте для постройки
         </div>
 
         {/* Action */}

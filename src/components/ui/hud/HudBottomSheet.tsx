@@ -11,7 +11,16 @@ export function HudBottomSheet({ open, onClose, children }: HudBottomSheetProps)
   if (!open) return null
   
   return (
-    <div className="fixed inset-0 z-40 flex items-end" onClick={onClose}>
+    <div 
+      data-testid="hud-bottom-sheet"
+      className="fixed inset-0 z-40 flex items-end" 
+      onClick={onClose}
+      onPointerDown={e => e.stopPropagation()}
+      onPointerMove={e => e.stopPropagation()}
+      onTouchStart={e => e.stopPropagation()}
+      onTouchMove={e => e.stopPropagation()}
+      onWheel={e => e.stopPropagation()}
+    >
       <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px]" />
       <HudPanel 
         chamfer={false} 

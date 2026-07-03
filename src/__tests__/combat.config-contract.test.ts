@@ -17,6 +17,7 @@ function hasUtilityBehavior(stats: UnitBaseStats): boolean {
     || stats.pullOnHit !== undefined
     || stats.knockbackOnHit !== undefined
     || stats.stance !== undefined
+    || stats.modeSwitch !== undefined
     || stats.projectileInterception !== undefined
 }
 
@@ -150,6 +151,16 @@ describe('combat unit config contract', () => {
         expect(stats.stance.rangeMultiplier ?? 1, `${unitType} has stance without positive range multiplier`).toBeGreaterThan(0)
         expect(stats.stance.cooldownMultiplier ?? 1, `${unitType} has stance without positive cooldown multiplier`).toBeGreaterThan(0)
         expect(stats.stance.speedMultiplier ?? 1, `${unitType} has stance with negative speed multiplier`).toBeGreaterThanOrEqual(0)
+      }
+      if (stats.modeSwitch) {
+        expect(stats.modeSwitch.trigger, `${unitType} has invalid mode switch trigger`).toBe('while_moving')
+        expect(['ground', 'air', undefined], `${unitType} has invalid initial mobility mode`).toContain(stats.modeSwitch.startMode)
+        expect(stats.modeSwitch.airSpeedMultiplier ?? 1, `${unitType} has mode switch without positive air speed multiplier`).toBeGreaterThan(0)
+        expect(stats.modeSwitch.groundSpeedMultiplier ?? 1, `${unitType} has mode switch without positive ground speed multiplier`).toBeGreaterThan(0)
+      }
+      if (stats.burrowWhileMoving) {
+        expect(stats.burrowWhileMoving.damageReduction, `${unitType} has burrow without positive damage reduction`).toBeGreaterThan(0)
+        expect(stats.burrowWhileMoving.damageReduction, `${unitType} has burrow damage reduction above safety cap`).toBeLessThanOrEqual(0.9)
       }
       if (stats.onKill) {
         expect(Boolean(stats.onKill.cooldownReset || stats.onKill.healPercent || stats.onKill.status), `${unitType} has on-kill without an effect`).toBe(true)

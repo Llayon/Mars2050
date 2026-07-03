@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { getServerClient } from '@/domains/resource/resource.server'
+import { applyResourceDeltaWithCap, getBaseResourceCapacity } from '@/domains/resource/resource.storage'
 
 const RESOURCE_STEAL_RATIO = 0.1
 
@@ -33,22 +34,26 @@ async function applyResourceDelta(
   }
   const { data: existing } = await supabase
     .from('resources')
-    .select('amount')
+    .select('amount, capacity')
     .eq('colony_id', colonyId)
     .eq('type', resourceType)
     .single()
   if (existing) {
+    const next = applyResourceDeltaWithCap(existing.amount, existing.capacity, delta)
     await supabase
       .from('resources')
-      .update({ amount: existing.amount + delta })
+      .update({ amount: next })
       .eq('colony_id', colonyId)
       .eq('type', resourceType)
+    return next - existing.amount
   } else {
+    const capacity = getBaseResourceCapacity(resourceType)
+    const amount = applyResourceDeltaWithCap(0, capacity, delta)
     await supabase
       .from('resources')
-      .insert({ colony_id: colonyId, type: resourceType, amount: delta })
+      .insert({ colony_id: colonyId, type: resourceType, amount, capacity })
+    return amount
   }
-  return delta
 }
 
 /**
@@ -91,8 +96,9 @@ export async function applyTrade(
   for (const [resourceType, amount] of Object.entries(offerResources)) {
     const actual = await applyResourceDelta(supabase, fromColonyId, resourceType, -amount)
     if (actual > 0) {
-      moved[resourceType] = actual
-      await applyResourceDelta(supabase, toColonyId, resourceType, actual)
+      const credited = await applyResourceDelta(supabase, toColonyId, resourceType, actual)
+      if (credited < actual) await applyResourceDelta(supabase, fromColonyId, resourceType, actual - credited)
+      if (credited > 0) moved[resourceType] = credited
     }
   }
 
@@ -125,9 +131,10 @@ export async function applyAttackRewards(
   for (const r of defenderResources) {
     const amount = Math.floor(r.amount * RESOURCE_STEAL_RATIO)
     if (amount > 0) {
-      rewards[r.type] = amount
       await applyResourceDelta(supabase, defenderColonyId, r.type, -amount)
-      await applyResourceDelta(supabase, attackerColonyId, r.type, amount)
+      const credited = await applyResourceDelta(supabase, attackerColonyId, r.type, amount)
+      if (credited < amount) await applyResourceDelta(supabase, defenderColonyId, r.type, amount - credited)
+      if (credited > 0) rewards[r.type] = credited
     }
   }
   return rewards

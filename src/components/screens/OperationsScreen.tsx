@@ -1,29 +1,51 @@
 'use client'
 
+import dynamic from 'next/dynamic'
 import { memo, useState } from 'react'
 import { useEvents } from '@/hooks/useEvents'
 import { usePvp } from '@/hooks/usePvp'
 import { useCombat } from '@/hooks/useCombat'
 import { useToast } from '@/components/ui/toast'
-import { BattleReplayModal } from '@/components/game/BattleReplayModal'
-import { RecruitmentTab } from '@/components/game/base-operations/RecruitmentTab'
-import { BattleHistoryPanel } from '@/components/game/BattleHistoryPanel'
-import { DeploymentBoard } from '@/components/game/DeploymentBoard'
 import type { ResourceRow } from '@/domains/resource/resource.types'
 import type { AttackResult } from '@/domains/pvp/pvp.types'
+
+const BattleReplayModal = dynamic(() => import('@/components/game/BattleReplayModal').then(mod => mod.BattleReplayModal), {
+  ssr: false,
+  loading: () => null
+})
+
+const RecruitmentTab = dynamic(() => import('@/components/game/base-operations/RecruitmentTab').then(mod => mod.RecruitmentTab), {
+  ssr: false,
+  loading: () => null
+})
+
+const BattleHistoryPanel = dynamic(() => import('@/components/game/BattleHistoryPanel').then(mod => mod.BattleHistoryPanel), {
+  ssr: false,
+  loading: () => null
+})
+
+const DeploymentBoard = dynamic(() => import('@/components/game/DeploymentBoard').then(mod => mod.DeploymentBoard), {
+  ssr: false,
+  loading: () => null
+})
+
+const WorkOrdersPanel = dynamic(() => import('@/components/game/WorkOrdersPanel').then(mod => mod.WorkOrdersPanel), {
+  ssr: false,
+  loading: () => null
+})
 
 interface OperationsScreenProps {
   colonyId: string | null
   resources: ResourceRow[]
 }
 
-type OpsTab = 'events' | 'pvp' | 'army' | 'history'
+type OpsTab = 'events' | 'orders' | 'pvp' | 'army' | 'history'
 
 export const OperationsScreen = memo(function OperationsScreen({ colonyId, resources }: OperationsScreenProps) {
   const [activeTab, setActiveTab] = useState<OpsTab>('events')
   const { events, loading: eventsLoading } = useEvents(colonyId)
   const { attack, attacking, error: pvpError } = usePvp(colonyId)
-  const { units } = useCombat(colonyId)
+  const { units } = useCombat(activeTab === 'pvp' ? colonyId : null)
   const { toast } = useToast()
 
   const [targetId, setTargetId] = useState('')
@@ -55,23 +77,24 @@ export const OperationsScreen = memo(function OperationsScreen({ colonyId, resou
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div data-testid="operations-screen" className="flex flex-col h-full">
       <div className="p-3 pb-0">
         <h2 className="text-lg font-bold text-white">Операции</h2>
       </div>
 
       <div className="flex gap-1 px-3 pt-2">
-        {(['events', 'pvp', 'army', 'history'] as const).map(tab => (
+        {(['events', 'orders', 'pvp', 'army', 'history'] as const).map(tab => (
           <button
             key={tab}
+            data-testid={`operations-tab-${tab}`}
             onClick={() => setActiveTab(tab)}
-            className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
+            className={`flex-1 py-2 rounded-lg text-xs font-medium transition-all ${
               activeTab === tab
                 ? 'glass-panel text-white'
                 : 'text-gray-500 hover:text-gray-300'
             }`}
           >
-            {tab === 'events' ? '⚠️ События' : tab === 'pvp' ? '⚔️ PvP' : tab === 'army' ? '🛡️ Армия' : '📜 Отчеты'}
+            {tab === 'events' ? 'События' : tab === 'orders' ? 'Задания' : tab === 'pvp' ? 'PvP' : tab === 'army' ? 'Армия' : 'Отчеты'}
           </button>
         ))}
       </div>
@@ -126,6 +149,12 @@ export const OperationsScreen = memo(function OperationsScreen({ colonyId, resou
               ))}
             </div>
           )
+        )}
+
+        {activeTab === 'orders' && (
+          <div className="mt-2">
+            <WorkOrdersPanel colonyId={colonyId} resources={resources} compact />
+          </div>
         )}
 
         {activeTab === 'pvp' && (

@@ -23,7 +23,7 @@ interface AlertItem {
 }
 
 export function GameAlerts({ colonyId, population, resources, housingCapacity = '—' }: GameAlertsProps) {
-  const { events } = useEvents(colonyId)
+  const { events } = useEvents(colonyId, { processOnMount: false, subscribePending: false })
   
   const workers = population?.workers || 0
   const totalPop = workers + (population?.technicians || 0) + (population?.scientists || 0) + (population?.directors || 0)

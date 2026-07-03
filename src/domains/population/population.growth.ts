@@ -1,6 +1,27 @@
 import { HAPPINESS_GROWTH_MULT, POPULATION_TIERS } from './population.config'
-import type { PopulationTier } from './population.types'
+import type { PopulationTier, TierNeed } from './population.types'
 import type { ResourceRow } from '@/domains/resource/resource.types'
+
+/**
+ * Calculates average satisfaction for a group of needs.
+ */
+export function calculateNeedsSatisfaction(
+  needs: TierNeed[],
+  tierPop: number,
+  resources: ResourceRow[],
+): number {
+  if (needs.length === 0) return 1
+  if (tierPop <= 0) return 1
+
+  const findResource = (type: string) => resources.find(r => r.type === type)?.amount || 0
+
+  return needs.reduce((sum, need) => {
+    const available = findResource(need.resource)
+    const required = need.amountPer10 * (tierPop / 10)
+    if (required <= 0) return sum + 1
+    return sum + Math.min(available / required, 1)
+  }, 0) / needs.length
+}
 
 /**
  * Calculates happiness for a tier based on needs satisfaction.
@@ -17,44 +38,24 @@ export function calculateTierHappiness(
   const config = POPULATION_TIERS[tier]
   let happiness = 50 // base
 
-  // Helper to find resource amount
-  const findResource = (type: string) => resources.find(r => r.type === type)?.amount || 0
-
-  // +30 max from basic needs satisfaction
+  // Basic needs are survival-critical: satisfied needs grant up to +30,
+  // missing needs apply up to -50. This makes famine/oxygen/water shortages severe.
   const basicNeeds = config.needs.filter(n => n.category === 'basic')
-  if (basicNeeds.length > 0) {
-    const basicSatisfaction = basicNeeds.reduce((sum, need) => {
-      const available = findResource(need.resource)
-      const required = need.amountPer10 * (tierPop / 10)
-      if (required <= 0) return sum + 1
-      return sum + Math.min(available / required, 1)
-    }, 0) / basicNeeds.length
-    happiness += basicSatisfaction * 30
-  } else {
-    happiness += 30
-  }
+  const basicSatisfaction = calculateNeedsSatisfaction(basicNeeds, tierPop, resources)
+  happiness += basicSatisfaction * 30
+  happiness -= (1 - basicSatisfaction) * 50
 
   // +15 max from comfort needs
   const comfortNeeds = config.needs.filter(n => n.category === 'comfort')
   if (comfortNeeds.length > 0) {
-    const comfortSat = comfortNeeds.reduce((sum, need) => {
-      const available = findResource(need.resource)
-      const required = need.amountPer10 * (tierPop / 10)
-      if (required <= 0) return sum + 1
-      return sum + Math.min(available / required, 1)
-    }, 0) / comfortNeeds.length
+    const comfortSat = calculateNeedsSatisfaction(comfortNeeds, tierPop, resources)
     happiness += comfortSat * 15
   }
 
   // +10 max from luxury needs
   const luxuryNeeds = config.needs.filter(n => n.category === 'luxury')
   if (luxuryNeeds.length > 0) {
-    const luxurySat = luxuryNeeds.reduce((sum, need) => {
-      const available = findResource(need.resource)
-      const required = need.amountPer10 * (tierPop / 10)
-      if (required <= 0) return sum + 1
-      return sum + Math.min(available / required, 1)
-    }, 0) / luxuryNeeds.length
+    const luxurySat = calculateNeedsSatisfaction(luxuryNeeds, tierPop, resources)
     happiness += luxurySat * 10
   }
 

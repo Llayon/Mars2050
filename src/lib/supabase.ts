@@ -4,6 +4,7 @@ let supabaseInstance: SupabaseClient | null = null
 
 function checkConnectivity(url: string, key: string): void {
   if (typeof window === 'undefined') return
+  if (process.env.NODE_ENV !== 'production' && process.env.NEXT_PUBLIC_E2E_AUTH_BYPASS === '1') return
   fetch(`${url.replace(/\/$/, '')}/rest/v1/?apikey=${key}&limit=1`, {
     method: 'HEAD',
   }).then(r => {

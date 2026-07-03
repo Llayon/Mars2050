@@ -23,7 +23,7 @@ export const PopulationScreen = memo(function PopulationScreen({
 }: PopulationScreenProps) {
   if (!population) {
     return (
-      <div className="flex flex-col h-full bg-mars-bg pt-safe pb-[80px]">
+      <div data-testid="population-screen" className="flex flex-col h-full bg-mars-bg pt-safe pb-[80px]">
         <div className="flex-1 flex items-center justify-center text-gray-500">
           Данные о населении загружаются...
         </div>
@@ -44,7 +44,7 @@ export const PopulationScreen = memo(function PopulationScreen({
   }
 
   return (
-    <div className="flex flex-col h-full bg-mars-bg pt-safe pb-[80px] overflow-y-auto custom-scrollbar">
+    <div data-testid="population-screen" className="flex flex-col h-full bg-mars-bg pt-safe pb-[80px] overflow-y-auto custom-scrollbar">
       <div className="px-4 py-6 border-b border-mars-border sticky top-0 bg-mars-bg/95 backdrop-blur z-10">
         <h1 className="text-2xl font-bold text-white tracking-wide">НАСЕЛЕНИЕ КОЛОНИИ</h1>
         <p className="text-sm text-gray-400 mt-1">Управление персоналом и потребностями</p>

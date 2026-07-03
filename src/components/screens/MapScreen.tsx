@@ -39,7 +39,7 @@ export const MapScreen = memo(function MapScreen({ colonyId, resources, resource
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div data-testid="map-screen" className="flex flex-col h-full">
       <div className="p-3 pb-0">
         <ResourcesBar resources={resources} loading={resourcesLoading} />
       </div>

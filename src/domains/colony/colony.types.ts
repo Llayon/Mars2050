@@ -1,4 +1,7 @@
 import type { TerrainCell } from './colony-terrain.types'
+import type { BuildingRow } from '@/domains/building/building.types'
+import type { PopulationState } from '@/domains/population/population.types'
+import type { ResourceRow } from '@/domains/resource/resource.types'
 
 export interface Colony {
   id: string
@@ -16,4 +19,11 @@ export interface ColonyInitResult {
   success: boolean
   error?: string
   count?: number
+}
+
+export interface ColonyBootstrapPayload {
+  colony: Colony
+  resources: ResourceRow[]
+  buildings: BuildingRow[]
+  population: PopulationState | null
 }

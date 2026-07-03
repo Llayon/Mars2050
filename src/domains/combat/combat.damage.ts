@@ -1,6 +1,7 @@
 import type { BattleAction } from './combat.actions'
 import type { SimUnit } from './combat.sim.types'
 import { applyAccuracyPenalty } from './combat.accuracy'
+import { getMovementDefenseReduction } from './combat.burrow'
 import { getMarkedDamageMultiplier, getMarkedExecuteThreshold } from './combat.mark'
 import { getPercentHpDamage } from './combat.percent-damage'
 import { tryInterceptProjectile } from './combat.projectile-defense'
@@ -62,9 +63,8 @@ export function applyCombatDamage(
   if (target.isFlying && attacker.antiAirDamageMult) damage = Math.floor(damage * attacker.antiAirDamageMult)
   if (!target.isFlying && attacker.groundDamageMult) damage = Math.floor(damage * attacker.groundDamageMult)
   damage = applySummonCounterDamage(attacker, target, damage)
-  if (target.isMoving && target.damageReductionWhileMoving) {
-    damage = Math.floor(damage * (1 - target.damageReductionWhileMoving))
-  }
+  const movementDefenseReduction = getMovementDefenseReduction(target)
+  if (movementDefenseReduction > 0) damage = Math.floor(damage * (1 - movementDefenseReduction))
 
   damage = applyStatusDamageModifiers(target, damage)
   damage = applyMarkDamageModifier(attacker, target, damage)

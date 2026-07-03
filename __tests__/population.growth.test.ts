@@ -10,9 +10,9 @@ describe('Population Growth Logic', () => {
 
     it('calculates full happiness when basic needs are met', () => {
       const resources: ResourceRow[] = [
-        { id: '1', colony_id: 'c1', type: 'water', amount: 100, production_rate: 0, consumption_rate: 0, updated_at: '' },
-        { id: '2', colony_id: 'c1', type: 'oxygen', amount: 100, production_rate: 0, consumption_rate: 0, updated_at: '' },
-        { id: '3', colony_id: 'c1', type: 'food', amount: 100, production_rate: 0, consumption_rate: 0, updated_at: '' }
+        { id: '1', colony_id: 'c1', type: 'water', amount: 100, capacity: 1000, production_rate: 0, consumption_rate: 0, updated_at: '' },
+        { id: '2', colony_id: 'c1', type: 'oxygen', amount: 100, capacity: 1000, production_rate: 0, consumption_rate: 0, updated_at: '' },
+        { id: '3', colony_id: 'c1', type: 'food', amount: 100, capacity: 1000, production_rate: 0, consumption_rate: 0, updated_at: '' }
       ]
       // base (50) + basic (30) = 80
       expect(calculateTierHappiness('worker', 10, resources, 10)).toBe(80)
@@ -20,9 +20,9 @@ describe('Population Growth Logic', () => {
 
     it('penalizes overcrowding', () => {
       const resources: ResourceRow[] = [
-        { id: '1', colony_id: 'c1', type: 'water', amount: 100, production_rate: 0, consumption_rate: 0, updated_at: '' },
-        { id: '2', colony_id: 'c1', type: 'oxygen', amount: 100, production_rate: 0, consumption_rate: 0, updated_at: '' },
-        { id: '3', colony_id: 'c1', type: 'food', amount: 100, production_rate: 0, consumption_rate: 0, updated_at: '' }
+        { id: '1', colony_id: 'c1', type: 'water', amount: 100, capacity: 1000, production_rate: 0, consumption_rate: 0, updated_at: '' },
+        { id: '2', colony_id: 'c1', type: 'oxygen', amount: 100, capacity: 1000, production_rate: 0, consumption_rate: 0, updated_at: '' },
+        { id: '3', colony_id: 'c1', type: 'food', amount: 100, capacity: 1000, production_rate: 0, consumption_rate: 0, updated_at: '' }
       ]
       // 80 - 20 (overcrowded) = 60
       expect(calculateTierHappiness('worker', 20, resources, 10)).toBe(60)
@@ -30,12 +30,12 @@ describe('Population Growth Logic', () => {
 
     it('calculates full happiness for directors with luxury needs', () => {
       const resources: ResourceRow[] = [
-        { id: '1', colony_id: 'c1', type: 'water', amount: 100, production_rate: 0, consumption_rate: 0, updated_at: '' },
-        { id: '2', colony_id: 'c1', type: 'oxygen', amount: 100, production_rate: 0, consumption_rate: 0, updated_at: '' },
-        { id: '3', colony_id: 'c1', type: 'food', amount: 100, production_rate: 0, consumption_rate: 0, updated_at: '' },
-        { id: '4', colony_id: 'c1', type: 'consumer_goods', amount: 100, production_rate: 0, consumption_rate: 0, updated_at: '' },
-        { id: '5', colony_id: 'c1', type: 'databanks', amount: 100, production_rate: 0, consumption_rate: 0, updated_at: '' },
-        { id: '6', colony_id: 'c1', type: 'nanomaterials', amount: 100, production_rate: 0, consumption_rate: 0, updated_at: '' }
+        { id: '1', colony_id: 'c1', type: 'water', amount: 100, capacity: 1000, production_rate: 0, consumption_rate: 0, updated_at: '' },
+        { id: '2', colony_id: 'c1', type: 'oxygen', amount: 100, capacity: 1000, production_rate: 0, consumption_rate: 0, updated_at: '' },
+        { id: '3', colony_id: 'c1', type: 'food', amount: 100, capacity: 1000, production_rate: 0, consumption_rate: 0, updated_at: '' },
+        { id: '4', colony_id: 'c1', type: 'consumer_goods', amount: 100, capacity: 1000, production_rate: 0, consumption_rate: 0, updated_at: '' },
+        { id: '5', colony_id: 'c1', type: 'databanks', amount: 100, capacity: 1000, production_rate: 0, consumption_rate: 0, updated_at: '' },
+        { id: '6', colony_id: 'c1', type: 'nanomaterials', amount: 100, capacity: 1000, production_rate: 0, consumption_rate: 0, updated_at: '' }
       ]
       // base(50) + basic(30) + comfort(15) + luxury(10) = 105 -> capped at 100
       expect(calculateTierHappiness('director', 10, resources, 10)).toBe(100)

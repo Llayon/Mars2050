@@ -1,24 +1,70 @@
+'use client'
+
+import dynamic from 'next/dynamic'
 import { useState } from 'react'
-import { ColonyPanel } from '@/components/game/ColonyPanel'
-import { LeaderboardPanel } from '@/components/game/LeaderboardPanel'
-import { EventsPanel } from '@/components/game/EventsPanel'
 import type { Colony } from '@/domains/colony/colony.types'
+import type { ResourceRow } from '@/domains/resource/resource.types'
+
+const ColonyPanel = dynamic(() => import('@/components/game/ColonyPanel').then(mod => mod.ColonyPanel), {
+  ssr: false,
+  loading: () => null
+})
+
+const LeaderboardPanel = dynamic(() => import('@/components/game/LeaderboardPanel').then(mod => mod.LeaderboardPanel), {
+  ssr: false,
+  loading: () => null
+})
+
+const EventsPanel = dynamic(() => import('@/components/game/EventsPanel').then(mod => mod.EventsPanel), {
+  ssr: false,
+  loading: () => null
+})
+
+const WorkOrdersPanel = dynamic(() => import('@/components/game/WorkOrdersPanel').then(mod => mod.WorkOrdersPanel), {
+  ssr: false,
+  loading: () => null
+})
+
+const EconomyDebugPanel = dynamic(() => import('@/components/game/EconomyDebugPanel').then(mod => mod.EconomyDebugPanel), {
+  ssr: false,
+  loading: () => null
+})
+
+const StaffingManagementPanel = dynamic(() => import('@/components/game/StaffingManagementPanel').then(mod => mod.StaffingManagementPanel), {
+  ssr: false,
+  loading: () => null
+})
+
+const AccountPanel = dynamic(() => import('@/components/game/AccountPanel').then(mod => mod.AccountPanel), {
+  ssr: false,
+  loading: () => null
+})
 
 export interface GlobalManagementOverlayProps {
   colonyId: string
   colony: Colony | null
   colonyLoading: boolean
-  onCreateTestEvent: (id: string, type: string, duration: number) => Promise<boolean>
+  resources: ResourceRow[]
+  userEmail?: string
+  userId?: string
+  tgUser?: { id: number; first_name: string; username?: string } | null
+  isTWA?: boolean
+  onLogout: () => void
   onClose: () => void
 }
 
-type TabType = 'profile' | 'leaderboard' | 'events'
+type TabType = 'profile' | 'leaderboard' | 'events' | 'orders' | 'staffing' | 'economy'
 
 export function GlobalManagementOverlay({
   colonyId,
   colony,
   colonyLoading,
-  onCreateTestEvent,
+  resources,
+  userEmail,
+  userId,
+  tgUser,
+  isTWA,
+  onLogout,
   onClose
 }: GlobalManagementOverlayProps) {
   const [activeTab, setActiveTab] = useState<TabType>('profile')
@@ -32,7 +78,7 @@ export function GlobalManagementOverlay({
       />
 
       {/* Side Panel */}
-      <div className="absolute top-[60px] bottom-[60px] right-0 w-[460px] z-30 flex flex-col bg-gray-900/95 backdrop-blur-xl border-l border-t border-b border-gray-700/80 rounded-l-3xl shadow-[-10px_0_40px_rgba(0,0,0,0.9)] animate-slide-in-right overflow-hidden">
+      <div data-testid="global-management-overlay" className="absolute top-[60px] bottom-[60px] right-0 w-[460px] z-30 flex flex-col bg-gray-900/95 backdrop-blur-xl border-l border-t border-b border-gray-700/80 rounded-l-3xl shadow-[-10px_0_40px_rgba(0,0,0,0.9)] animate-slide-in-right overflow-hidden">
         <div className="flex flex-col h-full relative">
           {/* Header / Tabs */}
           <header className="flex-none flex items-center justify-between px-6 py-4 border-b border-gray-700/50 bg-black/20">
@@ -51,24 +97,48 @@ export function GlobalManagementOverlay({
                 </button>
               </div>
               
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <TabButton 
+                  testId="global-tab-profile"
                   active={activeTab === 'profile'} 
                   onClick={() => setActiveTab('profile')}
                 >
                   Profile
                 </TabButton>
                 <TabButton 
+                  testId="global-tab-leaderboard"
                   active={activeTab === 'leaderboard'} 
                   onClick={() => setActiveTab('leaderboard')}
                 >
                   Leaderboard
                 </TabButton>
                 <TabButton 
+                  testId="global-tab-events"
                   active={activeTab === 'events'} 
                   onClick={() => setActiveTab('events')}
                 >
                   Events
+                </TabButton>
+                <TabButton 
+                  testId="global-tab-orders"
+                  active={activeTab === 'orders'} 
+                  onClick={() => setActiveTab('orders')}
+                >
+                  Work Orders
+                </TabButton>
+                <TabButton
+                  testId="global-tab-staffing"
+                  active={activeTab === 'staffing'}
+                  onClick={() => setActiveTab('staffing')}
+                >
+                  Staffing
+                </TabButton>
+                <TabButton 
+                  testId="global-tab-economy"
+                  active={activeTab === 'economy'} 
+                  onClick={() => setActiveTab('economy')}
+                >
+                  Economy
                 </TabButton>
               </div>
             </div>
@@ -78,9 +148,17 @@ export function GlobalManagementOverlay({
         <div className="flex-1 overflow-y-auto relative p-6">
           <div className="max-w-4xl mx-auto h-full">
             {activeTab === 'profile' && (
-              <div className="bg-gray-900/60 border border-gray-800 p-6 rounded-lg shadow-2xl h-full">
+              <div className="bg-gray-900/60 border border-gray-800 p-6 rounded-lg shadow-2xl h-full overflow-y-auto">
                 <h3 className="text-sm font-bold text-gray-400 tracking-widest uppercase mb-6">Colony Identity</h3>
-                <div className="max-w-md">
+                <div className="max-w-md space-y-4">
+                  <AccountPanel
+                    userEmail={userEmail}
+                    userId={userId}
+                    colonyId={colonyId}
+                    tgUser={tgUser}
+                    isTWA={isTWA}
+                    onLogout={onLogout}
+                  />
                   <ColonyPanel colony={colony} loading={colonyLoading} />
                 </div>
               </div>
@@ -99,7 +177,34 @@ export function GlobalManagementOverlay({
               <div className="bg-gray-900/60 border border-gray-800 p-6 rounded-lg shadow-2xl h-full overflow-hidden flex flex-col">
                 <h3 className="text-sm font-bold text-gray-400 tracking-widest uppercase mb-6">System Logs</h3>
                 <div className="flex-1 overflow-y-auto">
-                  <EventsPanel colonyId={colonyId} onCreateTest={onCreateTestEvent} />
+                  <EventsPanel colonyId={colonyId} />
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'orders' && (
+              <div className="bg-gray-900/60 border border-gray-800 p-6 rounded-lg shadow-2xl h-full overflow-hidden flex flex-col">
+                <h3 className="text-sm font-bold text-gray-400 tracking-widest uppercase mb-6">Colony Work Orders</h3>
+                <div className="flex-1 overflow-y-auto">
+                  <WorkOrdersPanel colonyId={colonyId} resources={resources} />
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'staffing' && (
+              <div className="bg-gray-900/60 border border-gray-800 p-6 rounded-lg shadow-2xl h-full overflow-hidden flex flex-col">
+                <h3 className="text-sm font-bold text-gray-400 tracking-widest uppercase mb-6">Colony Staffing</h3>
+                <div className="flex-1 overflow-y-auto">
+                  <StaffingManagementPanel colonyId={colonyId} />
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'economy' && (
+              <div className="bg-gray-900/60 border border-gray-800 p-6 rounded-lg shadow-2xl h-full overflow-hidden flex flex-col">
+                <h3 className="text-sm font-bold text-gray-400 tracking-widest uppercase mb-6">Economy Diagnostics</h3>
+                <div className="flex-1 overflow-y-auto">
+                  <EconomyDebugPanel colonyId={colonyId} />
                 </div>
               </div>
             )}
@@ -111,10 +216,10 @@ export function GlobalManagementOverlay({
   )
 }
 
-function TabButton({ active, onClick, children }: { active: boolean, onClick: () => void, children: React.ReactNode }) {
+function TabButton({ active, onClick, children, testId }: { active: boolean, onClick: () => void, children: React.ReactNode, testId: string }) {
   if (active) {
     return (
-      <button className="px-6 py-2 rounded font-bold text-xs tracking-widest uppercase transition-all bg-purple-900/40 border border-purple-400 text-white shadow-[0_0_15px_rgba(168,85,247,0.15)] relative">
+      <button data-testid={testId} className="px-3 py-2 rounded font-bold text-[10px] tracking-widest uppercase transition-all bg-purple-900/40 border border-purple-400 text-white shadow-[0_0_15px_rgba(168,85,247,0.15)] relative">
         <div className="absolute -top-4 left-1/2 -translate-x-1/2 w-1/2 h-0.5 bg-purple-400 shadow-[0_0_10px_rgba(168,85,247,1)]" />
         {children}
       </button>
@@ -123,8 +228,9 @@ function TabButton({ active, onClick, children }: { active: boolean, onClick: ()
   
   return (
     <button 
+      data-testid={testId}
       onClick={onClick}
-      className="px-6 py-2 rounded font-bold text-xs tracking-widest uppercase transition-all bg-black/60 border border-purple-900/30 text-gray-400 hover:text-purple-300 hover:bg-black/80 hover:border-purple-500/50"
+      className="px-3 py-2 rounded font-bold text-[10px] tracking-widest uppercase transition-all bg-black/60 border border-purple-900/30 text-gray-400 hover:text-purple-300 hover:bg-black/80 hover:border-purple-500/50"
     >
       {children}
     </button>

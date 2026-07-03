@@ -33,6 +33,8 @@
 | `projectile_intercept` | Projectile-defense юнит сбил interceptable hit до shield/HP damage. |
 | `on_kill` | On-kill эффекты появляются только после подтвержденной смерти, не после resurrection. |
 | `stance_change` | Siege/entrenchment режим развернулся или сбросился перед движением. |
+| `mode_change` | Ground/air режим переключился: `air` при перемещении, `ground` перед атакой. |
+| `burrow_change` | Юнит вошел в underground movement state, вышел перед атакой или был раскрыт reveal. |
 | `hazard_spawn` + `statusType: smoke` | Smoke field появился как suppression-зона без прямого урона; accuracy loss виден через меньший `damage`. |
 
 ## Known Limitations
@@ -70,4 +72,6 @@
 | **16. On-kill Effects** | Stealth Operative добивает цель | После kill сбрасывается cooldown и применяется self-heal. | Есть `on_kill`; нет срабатывания при revive/resurrection. |
 | **17. Summon Caps / Decoys** | Drone Carrier, Mobile Factory, Hologram Projector | Summons не бесконечны, temporary units исчезают по таймеру. | Есть `spawn_blocked`, temporary death не ломает replay. |
 | **18. Stance Transforms** | Artillery Crawler против дальней static цели | Артиллерия сначала разворачивается, затем стреляет; при необходимости движения сбрасывает режим. | Есть `stance_change`; range/cooldown меняются только в deployed mode. |
+| **18B. Mobility Mode Swap** | Jetpack Trooper против дальней наземной цели; повторить против dedicated AA | Юнит взлетает во время сближения, приземляется перед melee атакой, anti-air видит его только в airborne window. | Есть `mode_change` `air`/`ground`; replay показывает ВЗЛЕТ/ПОСАДКА; ground weapons могут атаковать после посадки. |
+| **18C. Burrow Movement** | Shock Trooper или Alien Bug с `subterranean_blitz` против дальней цели; повторить рядом с Radar Zepplin reveal | Юнит уходит под землю при движении, получает меньше входящего урона, выходит перед атакой или при reveal. | Есть `burrow_change` со значениями 1/0; `damage` по burrowed цели ниже baseline, после `revealed` reduction пропадает. |
 | **19. Smoke Fields** | Тестовый smokeOnAction юнит или будущий smoke upgrade | Smoke hazard режет range/output/accuracy у наземных юнитов внутри радиуса, не дамажит напрямую. | Есть `hazard_spawn` smoke и `status_apply`; flyers не получают smoke suppression. |

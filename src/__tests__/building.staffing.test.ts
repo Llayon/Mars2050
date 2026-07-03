@@ -116,6 +116,20 @@ describe('Building Staffing Allocation', () => {
     expect(result['geo']).toBe(0)
   })
 
+  it('reduces available staffing by reserved work-order slots', () => {
+    const buildings = [
+      { ...baseBuilding, id: 'b1', work_priority: 'high' as const },
+      { ...baseBuilding, id: 'b2', work_priority: 'normal' as const },
+      { ...baseBuilding, id: 'b3', work_priority: 'low' as const }
+    ]
+
+    const result = allocateBuildingStaffing(buildings, mockPop, { worker: 2 })
+
+    expect(result['b1']).toBe(2)
+    expect(result['b2']).toBe(1)
+    expect(result['b3']).toBe(0)
+  })
+
   it('keeps paused and below-minimum buildings from producing or consuming', () => {
     const paused = { ...baseBuilding, assigned_workers: 2, paused: true }
     const belowMinimum = { ...baseBuilding, type: 'geothermal_plant' as const, assigned_workers: 1 }

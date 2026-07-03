@@ -6,21 +6,63 @@ import type { ResourceRow } from '@/domains/resource/resource.types'
 import { useSubscription } from './useSubscription'
 import { fetchWithAuth } from '@/lib/fetch-with-auth'
 
+function finiteNumber(value: unknown, fallback = 0): number {
+  const next = Number(value)
+  return Number.isFinite(next) ? next : fallback
+}
+
+function normalizeResource(resource: ResourceRow): ResourceRow {
+  const amount = finiteNumber(resource.amount)
+  const productionRate = finiteNumber(resource.production_rate)
+  const consumptionRate = finiteNumber(resource.consumption_rate)
+  const capacity = Math.max(amount, finiteNumber(resource.capacity, amount))
+
+  return {
+    ...resource,
+    amount,
+    capacity,
+    production_rate: productionRate,
+    consumption_rate: consumptionRate,
+  }
+}
+
 const fetcher = async (url: string) => {
   const res = await fetchWithAuth(url)
   const data = await res.json()
   if (!res.ok) throw new Error(data.error?.message || data.error || 'Failed to fetch resources')
-  return data.resources ?? []
+  return (data.resources ?? []).map(normalizeResource)
 }
 
-export function useResources(colonyId: string | null) {
+interface UseResourcesOptions {
+  initialData?: ResourceRow[]
+  enabled?: boolean
+}
+
+export function useResources(colonyId: string | null, options: UseResourcesOptions = {}) {
+  const enabled = options.enabled ?? true
   const { data: serverResources, mutate, error, isLoading } = useSWR<ResourceRow[]>(
     colonyId ? `/api/resources?colonyId=${colonyId}` : null,
-    fetcher
+    fetcher,
+    {
+      revalidateOnMount: false,
+      revalidateOnFocus: false,
+    }
   )
 
   const [displayResources, setDisplayResources] = useState<ResourceRow[]>([])
   const exactAmountsRef = useRef<Record<string, number>>({})
+
+  useEffect(() => {
+    if (options.initialData) {
+      void mutate(options.initialData.map(normalizeResource), false)
+    }
+  }, [options.initialData, mutate])
+
+  useEffect(() => {
+    if (enabled && colonyId) {
+      void mutate()
+    }
+  }, [enabled, colonyId, mutate])
 
   useEffect(() => {
     if (serverResources) {
@@ -44,7 +86,7 @@ export function useResources(colonyId: string | null) {
         if (netRatePerHour === 0) return
         const ratePerSec = netRatePerHour / 3600
         const currentExact = exactAmountsRef.current[r.type] ?? r.amount
-        const nextExact = currentExact + ratePerSec
+        const nextExact = Math.max(0, Math.min(r.capacity, currentExact + ratePerSec))
         
         if (Math.floor(nextExact) !== Math.floor(currentExact)) {
           hasChanges = true
@@ -67,5 +109,7 @@ export function useResources(colonyId: string | null) {
 
   useSubscription('resources', colonyId, () => { mutate() })
 
-  return { resources: displayResources, loading: isLoading, error, mutate, refetch: mutate }
+  const loading = Boolean(colonyId && enabled && !serverResources && !error) || isLoading
+
+  return { resources: displayResources, loading, error, mutate, refetch: mutate }
 }

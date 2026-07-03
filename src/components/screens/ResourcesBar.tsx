@@ -31,6 +31,7 @@ export const ResourcesBar = memo(function ResourcesBar({ resources, loading }: R
           <div
             key={r.type}
             className="flex items-center gap-1.5 bg-black/30 rounded-lg px-2.5 py-1 min-w-fit hover:bg-black/50 transition-colors duration-200"
+            title={`${Math.floor(r.amount).toLocaleString('ru-RU')}/${Math.floor(r.capacity).toLocaleString('ru-RU')}`}
           >
             <span className="text-cyan-400 drop-shadow-md"><ResourceIcon type={r.type} className="w-5 h-5" /></span>
             <div className="flex items-baseline gap-1">
@@ -38,6 +39,7 @@ export const ResourcesBar = memo(function ResourcesBar({ resources, loading }: R
                 value={Math.floor(r.amount)} 
                 className="text-sm font-bold text-gray-200 tabular-nums" 
               />
+              <span className="text-[10px] text-gray-500">/{Math.floor(r.capacity).toLocaleString('ru-RU')}</span>
               <span className={`text-[10px] font-medium ${
                 (r.production_rate - r.consumption_rate) >= 0
                   ? 'text-green-400'

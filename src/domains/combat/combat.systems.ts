@@ -19,13 +19,13 @@ import { getSplitFireDamageMultiplier, getSplitFireTargets } from './combat.spli
 import { canReceiveHealAction } from './combat.support';
 import { canAttackControlledTarget } from './combat.control';
 import { getStanceActionCooldown, getStanceSetupActionRange, prepareStanceForAction } from './combat.stance';
+import { syncBurrowState } from './combat.burrow';
+import { syncModeForAction } from './combat.mode';
 
 export function tickModifiersSystem(unit: SimUnit, dt: number, actions: BattleAction[]) {
   if (unit.actionCooldown > 0) unit.actionCooldown = Math.max(0, unit.actionCooldown - 1);
   if ((unit.projectileInterceptCooldown ?? 0) > 0) unit.projectileInterceptCooldown = Math.max(0, (unit.projectileInterceptCooldown ?? 0) - 1);
-  tickTemporaryUnit(unit, actions);
-  tickStatuses(unit, actions);
-  tickTargetMark(unit, actions);
+  tickTemporaryUnit(unit, actions); tickStatuses(unit, actions); tickTargetMark(unit, actions);
 }
 
 export function actionSystem(unit: SimUnit, target: SimUnit, units: SimUnit[], hazards: SimHazard[], actions: BattleAction[], rng: PRNG): boolean {
@@ -57,7 +57,7 @@ export function actionSystem(unit: SimUnit, target: SimUnit, units: SimUnit[], h
   if (unit.attackType !== 'heal' && target.team === unit.team && !canAttackControlledTarget(unit, target)) return false;
   if (!prepareStanceForAction(unit, actions)) return true;
 
-  unit.actionCooldown = getStanceActionCooldown(unit); // Reset cooldown
+  syncModeForAction(unit, actions); syncBurrowState(unit, false, actions); unit.actionCooldown = getStanceActionCooldown(unit); // Reset cooldown
   if (tryDeployMine(unit, target, hazards, actions, rng) || tryDeploySmoke(unit, target, hazards, actions, rng)) return true;
 
   if (unit.attackType === 'spawn') {

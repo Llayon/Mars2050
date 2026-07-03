@@ -1,5 +1,6 @@
 import type { BattleAction } from './combat.actions'
 import type { SimUnit, StatusEffect, StatusType } from './combat.sim.types'
+import { breakBurrowOnReveal } from './combat.burrow'
 import { chooseHackControlMode, isHackActionBlocked, normalizeHackControlMode } from './combat.control'
 import { getStanceRangeMultiplier } from './combat.stance'
 
@@ -40,11 +41,13 @@ export function applyStatus(target: SimUnit, effect: StatusEffect, actions?: Bat
     existing.value = chooseStatusValue(existing.type, existing.value, normalized.value)
     existing.controlMode = chooseHackControlMode(existing.controlMode, normalized.controlMode)
     actions?.push(createStatusApplyAction(target.id, existing))
+    if (existing.type === 'revealed') breakBurrowOnReveal(target, actions)
     return false
   }
 
   target.statusEffects.push(normalized)
   actions?.push(createStatusApplyAction(target.id, normalized))
+  if (normalized.type === 'revealed') breakBurrowOnReveal(target, actions)
   return true
 }
 

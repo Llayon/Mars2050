@@ -13,10 +13,10 @@ export const POPULATION_TIERS: Record<PopulationTier, TierConfig> = {
       habitat: 10,
     },
     upgradeBuilding: 'community_hall',
-    upgradeCost: { consumer_goods: 20, minerals: 50 },
+    upgradeCost: { minerals: 20 },
     staffingFor: [
-      'mine', 'solar_panels', 'water_extractor',
-      'oxygen_generator', 'greenhouse', 'workshop',
+      'mine', 'water_extractor',
+      'oxygen_generator', 'greenhouse',
     ],
   },
   technician: {
@@ -36,7 +36,7 @@ export const POPULATION_TIERS: Record<PopulationTier, TierConfig> = {
     upgradeCost: { databanks: 25, nanomaterials: 10 },
     staffingFor: [
       'advanced_mine', 'geothermal_plant', 'vehicle_bay',
-      'workshop', 'habitat_mk2', 'data_center', 'university',
+      'workshop',
     ],
   },
   scientist: {
@@ -55,7 +55,8 @@ export const POPULATION_TIERS: Record<PopulationTier, TierConfig> = {
     upgradeBuilding: 'hq',
     upgradeCost: { rare_metals: 10, energy: 100 },
     staffingFor: [
-      'research_lab', 'biotech_lab', 'nanoforge',
+      'research_lab', 'biotech_lab', 'data_center',
+      'nanoforge', 'university',
     ],
   },
   director: {

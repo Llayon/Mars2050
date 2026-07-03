@@ -26,7 +26,7 @@ interface BottomNavProps {
 
 export const BottomNav = memo(function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 safe-bottom">
+    <nav data-testid="bottom-nav" className="fixed bottom-0 left-0 right-0 z-50 safe-bottom">
       <div className="bg-gray-900/90 backdrop-blur-xl border-t border-gray-700/80 rounded-t-3xl shadow-[0_-5px_30px_rgba(0,0,0,0.8)]">
         <div className="flex items-center justify-around px-2 py-2">
           {TABS.map(tab => {
@@ -34,6 +34,7 @@ export const BottomNav = memo(function BottomNav({ activeTab, onTabChange }: Bot
             return (
               <button
                 key={tab.id}
+                data-testid={`bottom-nav-${tab.id}`}
                 onClick={() => onTabChange(tab.id)}
                 className={`relative flex flex-col items-center py-2 px-3 min-w-0 transition-all duration-200 rounded-xl active:scale-95 ${
                   isActive

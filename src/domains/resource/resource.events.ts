@@ -1,5 +1,6 @@
 import { SupabaseClient } from '@supabase/supabase-js'
 import { getServerClient } from './resource.server'
+import { applyResourceDeltaWithCap } from './resource.storage'
 
 interface PendingEvent {
   id: string
@@ -17,6 +18,7 @@ interface ResourceSnapshot {
 
 interface ResourceSingle {
   amount: number
+  capacity: number
 }
 
 /**
@@ -97,7 +99,7 @@ async function processAttackArrive(event: PendingEvent, supabase: SupabaseClient
 
         const { data: attackerResource } = await supabase
           .from('resources')
-          .select('amount')
+          .select('amount, capacity')
           .eq('colony_id', event.colony_id)
           .eq('type', resource.type)
           .single()
@@ -106,7 +108,7 @@ async function processAttackArrive(event: PendingEvent, supabase: SupabaseClient
           const ar = attackerResource as unknown as ResourceSingle
           await supabase
             .from('resources')
-            .update({ amount: ar.amount + stolen })
+            .update({ amount: applyResourceDeltaWithCap(ar.amount, ar.capacity, stolen) })
             .eq('colony_id', event.colony_id)
             .eq('type', resource.type)
         }
@@ -133,7 +135,7 @@ async function processResearchComplete(event: PendingEvent, supabase: SupabaseCl
 
   const { data: resource } = await supabase
     .from('resources')
-    .select('amount')
+    .select('amount, capacity')
     .eq('colony_id', event.colony_id)
     .eq('type', 'research_points')
     .single()
@@ -142,7 +144,7 @@ async function processResearchComplete(event: PendingEvent, supabase: SupabaseCl
     const r = resource as unknown as ResourceSingle
     await supabase
       .from('resources')
-      .update({ amount: r.amount + researchPoints })
+      .update({ amount: applyResourceDeltaWithCap(r.amount, r.capacity, researchPoints) })
       .eq('colony_id', event.colony_id)
       .eq('type', 'research_points')
   }

@@ -9,11 +9,13 @@ vi.mock('@/lib/auth', () => ({
 const mockCreateBuilding = vi.fn()
 const mockDeleteBuilding = vi.fn()
 const mockGetBuildings = vi.fn()
+const mockUpdateBuilding = vi.fn()
 const mockVerifyBuildingOwnership = vi.fn()
 vi.mock('@/domains/building/building.service', () => ({
   createBuilding: (...args: unknown[]) => mockCreateBuilding(...args),
   deleteBuilding: (...args: unknown[]) => mockDeleteBuilding(...args),
   getBuildings: (...args: unknown[]) => mockGetBuildings(...args),
+  updateBuilding: (...args: unknown[]) => mockUpdateBuilding(...args),
   verifyBuildingOwnership: (...args: unknown[]) => mockVerifyBuildingOwnership(...args)
 }))
 
@@ -43,7 +45,7 @@ vi.mock('@/domains/colony/colony.ownership', () => ({
   }
 }))
 
-import { GET, POST, DELETE } from '@/app/api/buildings/route'
+import { GET, POST, DELETE, PATCH } from '@/app/api/buildings/route'
 
 const UUID_COLONY = '550e8400-e29b-41d4-a716-446655440000'
 const UUID_BUILDING = '550e8400-e29b-41d4-a716-446655440001'
@@ -96,6 +98,42 @@ describe('Buildings API route', () => {
       const res = await DELETE(req)
       expect(res.status).toBe(403)
       expect(mockDeleteBuilding).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('PATCH /api/buildings', () => {
+    it('updates staffing settings for an owned building', async () => {
+      mockGetAuthContext.mockResolvedValue({
+        userId: 'user-1',
+        client: mockAuthClient
+      })
+      mockLoadOwnedColony.mockResolvedValue({ colony: { id: UUID_COLONY, user_id: 'user-1' }, error: null })
+      mockVerifyBuildingOwnership.mockResolvedValue(true)
+      mockUpdateBuilding.mockResolvedValue({ success: true, error: null })
+
+      const req = new NextRequest('http://localhost/api/buildings', {
+        method: 'PATCH',
+        body: JSON.stringify({
+          colonyId: UUID_COLONY,
+          buildingId: UUID_BUILDING,
+          staffing_mode: 'manual',
+          assigned_workers: 1,
+          work_priority: 'high',
+          paused: true
+        })
+      })
+
+      const res = await PATCH(req)
+
+      expect(res.status).toBe(200)
+      expect(mockUpdateBuilding).toHaveBeenCalledWith({
+        colonyId: UUID_COLONY,
+        buildingId: UUID_BUILDING,
+        staffing_mode: 'manual',
+        assigned_workers: 1,
+        work_priority: 'high',
+        paused: true
+      })
     })
   })
 })

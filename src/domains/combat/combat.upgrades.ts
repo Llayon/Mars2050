@@ -20,6 +20,7 @@ export interface UpgradeConfig {
     disableEnemyTech?: boolean // EMP
     leaveAoePuddle?: boolean // Napalm
     damageReductionWhileMoving?: number // Reduces damage taken while moving
+    burrowWhileMoving?: { damageReduction: number }
     onDeathPuddle?: 'napalm' | 'acid' | 'emp' // Drops hazard on death
     multishot?: number // Number of shots per attack
     antiAirDamageMult?: number // Damage multiplier against flying targets
@@ -53,7 +54,7 @@ export const UPGRADES: Record<string, UpgradeConfig> = {
   },
   subterranean_blitz: { 
     id: 'subterranean_blitz', name: 'Подземный рывок', description: 'Юнит зарывается под землю во время движения, получая на 45% меньше урона и ускоряясь на 20%.', 
-    cost: 350, allowedUnits: ['shock_trooper', 'alien_bug'], modifiers: { damageReductionWhileMoving: 0.45, speedMult: 1.2 } 
+    cost: 350, allowedUnits: ['shock_trooper', 'alien_bug'], modifiers: { burrowWhileMoving: { damageReduction: 0.45 }, speedMult: 1.2 } 
   },
   portable_shield: { 
     id: 'portable_shield', name: 'Портативный щит', description: 'Каждый боец получает персональный энергощит, впитывающий 150 урона.', 

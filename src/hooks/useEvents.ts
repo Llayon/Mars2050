@@ -27,7 +27,18 @@ interface UseEventsReturn {
   processNow: () => Promise<void>
 }
 
-export function useEvents(colonyId: string | null): UseEventsReturn {
+interface UseEventsOptions {
+  enabled?: boolean
+  processOnMount?: boolean
+  subscribePending?: boolean
+}
+
+export function useEvents(colonyId: string | null, options: UseEventsOptions = {}): UseEventsReturn {
+  const enabled = options.enabled ?? true
+  const processOnMount = options.processOnMount ?? true
+  const subscribePending = options.subscribePending ?? true
+  const activeColonyId = enabled ? colonyId : null
+
   const [events, setEvents] = useState<GameEvent[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -35,46 +46,54 @@ export function useEvents(colonyId: string | null): UseEventsReturn {
   const mountedRef = useRef(true)
 
   const fetchEvents = useCallback(async () => {
-    if (!colonyId) return []
-    const res = await fetchWithAuth(`/api/events?colony_id=${colonyId}&active_only=true`)
+    if (!activeColonyId) return []
+    const res = await fetchWithAuth(`/api/events?colony_id=${activeColonyId}&active_only=true`)
     if (!res.ok) throw new Error('Failed to fetch events')
     return await res.json()
-  }, [colonyId])
+  }, [activeColonyId])
 
   const processNow = useCallback(async () => {
-    if (!colonyId || processing) return
+    if (!activeColonyId || processing) return
     setProcessing(true)
     try {
       await fetchWithAuth('/api/events/process', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ colony_id: colonyId }),
+        body: JSON.stringify({ colony_id: activeColonyId }),
       })
     } catch {
       // silent — processing is best-effort
     } finally {
       if (mountedRef.current) setProcessing(false)
     }
-  }, [colonyId, processing])
+  }, [activeColonyId, processing])
 
   // Fetch pending events once on mount, then rely on Realtime
   useEffect(() => {
-    if (!colonyId) return
-    setTimeout(() => processNow(), 0)
+    if (!activeColonyId || !processOnMount) return
+    const processTimer = setTimeout(() => {
+      void processNow()
+    }, 1200)
+    return () => clearTimeout(processTimer)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [colonyId])
 
   useEffect(() => { mountedRef.current = true; return () => { mountedRef.current = false } }, [])
   useEffect(() => {
-    if (!colonyId) return
+    if (!activeColonyId) {
+      setEvents([])
+      setLoading(false)
+      return
+    }
+    setLoading(true)
     fetchEvents()
       .then(data => { setEvents(data); setError(null) })
       .catch(err => setError(err instanceof Error ? err.message : 'Unknown error'))
       .finally(() => { if (mountedRef.current) setLoading(false) })
-  }, [fetchEvents, colonyId])
+  }, [fetchEvents, activeColonyId])
 
   // Realtime: insert → add event, update → sync fields, delete → remove
-  useSubscription('events', colonyId, (payload) => {
+  useSubscription('events', activeColonyId, (payload) => {
     const ev = payload.new as unknown as GameEvent
     if (payload.eventType === 'INSERT') {
       setEvents(prev => prev.some(e => e.id === ev.id) ? prev : [...prev, ev])
@@ -86,9 +105,9 @@ export function useEvents(colonyId: string | null): UseEventsReturn {
   })
 
   // Realtime: listen for pending_events being processed (marker for refresh)
-  useSubscription('pending_events', colonyId, () => {
-    fetchEvents()
-  })
+  useSubscription('pending_events', activeColonyId, () => {
+    void fetchEvents()
+  }, subscribePending)
 
   const createEvent = async (colonyId: string, type?: string, durationMinutes?: number): Promise<boolean> => {
     try {

@@ -1,8 +1,7 @@
 'use client'
 
+import dynamic from 'next/dynamic'
 import { useState } from 'react'
-import { GameMapPanel } from '@/components/game/GameMapPanel'
-import { BattleReplayModal } from '@/components/game/BattleReplayModal'
 import type { BattleReplayPayload } from '@/components/game/BattleHistoryPanel'
 import ColonyScreen from '@/components/screens/ColonyScreen'
 import type { Colony } from '@/domains/colony/colony.types'
@@ -13,11 +12,37 @@ import type { PopulationState, PopulationTier } from '@/domains/population/popul
 // New HUD Components
 import { GameTopHeader } from '@/components/game/hud/GameTopHeader'
 import { CommandDock } from '@/components/game/hud/CommandDock'
-import { GameAlerts } from '@/components/game/hud/GameAlerts'
-import { CommandCenterOverlay } from '@/components/game/command-center/CommandCenterOverlay'
-import { BuildCatalogSheet } from '@/components/game/hud/BuildCatalogSheet'
-import { GlobalManagementOverlay } from '@/components/game/global/GlobalManagementOverlay'
 import { PlacementActionBar } from '@/components/game/hud/PlacementActionBar'
+
+const GameMapPanel = dynamic(() => import('@/components/game/GameMapPanel').then(mod => mod.GameMapPanel), {
+  ssr: false,
+  loading: () => <div className="text-gray-300">Загрузка карты...</div>
+})
+
+const BattleReplayModal = dynamic(() => import('@/components/game/BattleReplayModal').then(mod => mod.BattleReplayModal), {
+  ssr: false,
+  loading: () => null
+})
+
+const CommandCenterOverlay = dynamic(() => import('@/components/game/command-center/CommandCenterOverlay').then(mod => mod.CommandCenterOverlay), {
+  ssr: false,
+  loading: () => null
+})
+
+const BuildCatalogSheet = dynamic(() => import('@/components/game/hud/BuildCatalogSheet').then(mod => mod.BuildCatalogSheet), {
+  ssr: false,
+  loading: () => null
+})
+
+const GlobalManagementOverlay = dynamic(() => import('@/components/game/global/GlobalManagementOverlay').then(mod => mod.GlobalManagementOverlay), {
+  ssr: false,
+  loading: () => null
+})
+
+const GameAlerts = dynamic(() => import('@/components/game/hud/GameAlerts').then(mod => mod.GameAlerts), {
+  ssr: false,
+  loading: () => null
+})
 
 interface DesktopHudProps {
   colonyId: string
@@ -27,6 +52,9 @@ interface DesktopHudProps {
   resources: ResourceRow[]
   resourcesLoading: boolean
   userEmail?: string
+  userId?: string
+  tgUser?: { id: number; first_name: string; username?: string } | null
+  isTWA?: boolean
   viewMode: 'colony' | 'map'
   setViewMode: (mode: 'colony' | 'map') => void
   placementMode: BuildingTypeKey | null
@@ -34,7 +62,6 @@ interface DesktopHudProps {
   onBuild: (type: BuildingTypeKey, x?: number, y?: number) => Promise<void>
   onDemolish: (id: string) => Promise<void>
   onUpdateSettings: (id: string, settings: BuildingSettingsUpdate) => Promise<void>
-  onCreateTestEvent: (id: string, type: string, dur: number) => Promise<boolean>
   onPvpResult: (msg: string) => void
   onLogout: () => void
   population: PopulationState | null
@@ -50,6 +77,9 @@ export function DesktopHud({
   resources,
   resourcesLoading,
   userEmail,
+  userId,
+  tgUser,
+  isTWA,
   viewMode,
   setViewMode,
   placementMode,
@@ -57,7 +87,6 @@ export function DesktopHud({
   onBuild,
   onDemolish,
   onUpdateSettings,
-  onCreateTestEvent,
   onPvpResult,
   onLogout,
   population,
@@ -106,7 +135,7 @@ export function DesktopHud({
   }
 
   return (
-    <div className="min-h-[100dvh] bg-black text-white relative overflow-hidden">
+    <div data-testid="desktop-hud" className="min-h-[100dvh] bg-black text-white relative overflow-hidden">
       {/* Background Canvas Layer */}
       <div className="absolute inset-0 z-0">
         <ColonyScreen {...colonyScreenProps} />
@@ -169,7 +198,12 @@ export function DesktopHud({
           colonyId={colonyId}
           colony={colony}
           colonyLoading={colonyLoading}
-          onCreateTestEvent={onCreateTestEvent}
+          resources={resources}
+          userEmail={userEmail}
+          userId={userId}
+          tgUser={tgUser}
+          isTWA={isTWA}
+          onLogout={onLogout}
           onClose={() => setIntelOpen(false)}
         />
       )}

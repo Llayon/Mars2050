@@ -1,59 +1,25 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import dynamic from 'next/dynamic'
+import { useState } from 'react'
 import { useAuth } from '@/hooks/useAuth'
-import { useColony } from '@/hooks/useColony'
-import { useResources } from '@/hooks/useResources'
-import { useBuildings } from '@/hooks/useBuildings'
-import { useEvents } from '@/hooks/useEvents'
-import { usePopulation } from '@/hooks/usePopulation'
-import { ToastProvider, useToast } from '@/components/ui/toast'
+import { ToastProvider } from '@/components/ui/toast'
 import { AuthModal } from '@/components/game/AuthModal'
-import type { TabId } from '@/components/screens/BottomNav'
-import type { BuildingSettingsUpdate, BuildingTypeKey } from '@/domains/building/building.types'
-import { BUILDING_TYPES } from '@/domains/building/building.config'
-import { TwaHud } from '@/components/game/TwaHud'
-import { DesktopHud } from '@/components/game/DesktopHud'
+import type { GameShellProps } from '@/components/game/GameShell'
+
+const GameShell = dynamic<GameShellProps>(() => import('@/components/game/GameShell').then(mod => mod.GameShell), {
+  ssr: false,
+  loading: () => (
+    <div className="min-h-screen flex items-center justify-center bg-gray-900 text-white">
+      <p>Загрузка колонии...</p>
+    </div>
+  )
+})
 
 function GameUI() {
-  const { user, colonyId, loading, error: authError, login, signup, logout, isTWA } = useAuth()
-  const { colony, loading: colonyLoading } = useColony(colonyId)
-  const { resources, loading: resourcesLoading } = useResources(colonyId)
-  const { buildings, buildStructure, demolishBuilding, updateBuildingSettings } = useBuildings(colonyId)
-  const { toast } = useToast()
-  const { createEvent } = useEvents(colonyId)
-  const { population, upgradeTier, loading: populationLoading } = usePopulation(colonyId)
+  const { user, colonyId, loading, error: authError, login, signup, logout, isTWA, tgUser } = useAuth()
 
   const [authMode, setAuthMode] = useState<'login' | 'register' | null>(null)
-  const [activeTab, setActiveTab] = useState<TabId>('colony')
-  const [viewMode, setViewMode] = useState<'colony' | 'map'>('colony')
-  const [placementMode, setPlacementMode] = useState<BuildingTypeKey | null>(null)
-
-  const handleBuild = useCallback(async (type: BuildingTypeKey, x?: number, y?: number) => {
-    if (x !== undefined && y !== undefined) {
-      try {
-        await buildStructure(type, x, y)
-        const config = BUILDING_TYPES[type]
-        if (config) toast(`${config.name} построен!`, 'success')
-      } catch (err) {
-        toast(err instanceof Error ? err.message : String(err), 'error')
-        throw err
-      }
-    } else {
-      setPlacementMode(type)
-      if (isTWA) setActiveTab('colony')
-    }
-  }, [buildStructure, isTWA, toast])
-  const handleDemolish = useCallback((id: string) => demolishBuilding(id), [demolishBuilding])
-  const handleUpdateSettings = useCallback(async (id: string, settings: BuildingSettingsUpdate) => {
-    try {
-      await updateBuildingSettings(id, settings)
-    } catch (err) {
-      toast(err instanceof Error ? err.message : String(err), 'error')
-      throw err
-    }
-  }, [updateBuildingSettings, toast])
-  const handleCreateTest = useCallback((id: string, type: string, dur: number) => createEvent(id, type, dur), [createEvent])
 
   if (loading) {
     return (
@@ -108,53 +74,13 @@ function GameUI() {
     )
   }
 
-  if (isTWA) {
-    return (
-      <TwaHud 
-        colonyId={colonyId!}
-        colony={colony}
-        colonyLoading={colonyLoading}
-        buildings={buildings}
-        resources={resources}
-        resourcesLoading={resourcesLoading}
-        userEmail={user?.email}
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        placementMode={placementMode}
-        setPlacementMode={setPlacementMode}
-        onBuild={handleBuild}
-        onDemolish={handleDemolish}
-        onUpdateSettings={handleUpdateSettings}
-        onLogout={logout}
-        population={population}
-        populationLoading={populationLoading}
-        onUpgradePopulation={upgradeTier}
-      />
-    )
-  }
-
   return (
-    <DesktopHud 
+    <GameShell
+      user={user}
       colonyId={colonyId!}
-      colony={colony}
-      colonyLoading={colonyLoading}
-      buildings={buildings}
-      resources={resources}
-      resourcesLoading={resourcesLoading}
-      userEmail={user?.email}
-      viewMode={viewMode}
-      setViewMode={setViewMode}
-      placementMode={placementMode}
-      setPlacementMode={setPlacementMode}
-      onBuild={handleBuild}
-      onDemolish={handleDemolish}
-      onUpdateSettings={handleUpdateSettings}
-      onCreateTestEvent={handleCreateTest}
-      onPvpResult={(msg) => toast(msg, 'info')}
+      tgUser={tgUser}
+      isTWA={isTWA}
       onLogout={logout}
-      population={population}
-      populationLoading={populationLoading}
-      onUpgradePopulation={upgradeTier}
     />
   )
 }

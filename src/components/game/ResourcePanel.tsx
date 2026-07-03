@@ -24,6 +24,9 @@ export const ResourcePanel = memo(function ResourcePanel({ resources, loading }:
               <span className="text-lg font-semibold text-white">{Math.floor(r.amount).toLocaleString('ru-RU')}</span>
             </div>
             <div className="text-sm text-gray-300 mt-1">{RESOURCE_NAMES[r.type] || r.type}</div>
+            <div className="text-[11px] text-gray-500">
+              Лимит: {Math.floor(r.capacity).toLocaleString('ru-RU')}
+            </div>
             <div className="text-xs mt-1">
               <span className="text-green-400">+{Math.round(r.production_rate).toLocaleString('ru-RU')}/ч</span>
               {r.consumption_rate > 0 && <span className="text-red-400"> -{Math.round(r.consumption_rate).toLocaleString('ru-RU')}/ч</span>}

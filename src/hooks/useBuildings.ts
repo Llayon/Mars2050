@@ -7,9 +7,15 @@ import type { BuildingRow, BuildingSettingsUpdate, BuildingTypeKey } from '@/dom
 import { useSubscription } from './useSubscription'
 import { fetchWithAuth } from '@/lib/fetch-with-auth'
 
-export function useBuildings(colonyId: string | null) {
-  const [buildings, setBuildings] = useState<BuildingRow[]>([])
-  const [loading, setLoading] = useState(true)
+interface UseBuildingsOptions {
+  initialData?: BuildingRow[]
+  enabled?: boolean
+}
+
+export function useBuildings(colonyId: string | null, options: UseBuildingsOptions = {}) {
+  const enabled = options.enabled ?? true
+  const [buildings, setBuildings] = useState<BuildingRow[]>(options.initialData ?? [])
+  const [loading, setLoading] = useState(Boolean(colonyId && enabled && !options.initialData))
   const [error, setError] = useState<string | null>(null)
 
   const fetchBuildings = useCallback(async () => {
@@ -24,12 +30,21 @@ export function useBuildings(colonyId: string | null) {
   }, [colonyId])
 
   useEffect(() => {
-    if (!colonyId) return
+    if (options.initialData) {
+      setBuildings(options.initialData)
+      setLoading(false)
+      setError(null)
+    }
+  }, [options.initialData])
+
+  useEffect(() => {
+    if (!colonyId || !enabled) return
+    setLoading(true)
     fetchBuildings()
       .then(data => { setBuildings(data); setError(null) })
       .catch(err => setError(String(err)))
       .finally(() => setLoading(false))
-  }, [fetchBuildings, colonyId])
+  }, [fetchBuildings, colonyId, enabled])
 
   // Realtime: sync buildings on INSERT/UPDATE/DELETE
   useSubscription('buildings', colonyId, (payload) => {
@@ -86,6 +101,12 @@ export function useBuildings(colonyId: string | null) {
 
   const updateBuildingSettings = useCallback(async (buildingId: string, settings: BuildingSettingsUpdate) => {
     if (!colonyId) throw new Error('No colony active')
+    let previousBuildings: BuildingRow[] = []
+    setBuildings(prev => {
+      previousBuildings = prev
+      return prev.map(b => b.id === buildingId ? { ...b, ...settings } : b)
+    })
+
     try {
       const payload = { colonyId, buildingId, ...settings }
       const res = await fetchWithAuth('/api/buildings', {
@@ -97,9 +118,8 @@ export function useBuildings(colonyId: string | null) {
         const data = await res.json()
         throw new Error(data.error?.message || data.error || 'Failed to update settings')
       }
-      // Optimistic update
-      setBuildings(prev => prev.map(b => b.id === buildingId ? { ...b, ...settings } : b))
     } catch (err) {
+      setBuildings(previousBuildings)
       setError(String(err))
       throw err
     }

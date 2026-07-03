@@ -8,7 +8,7 @@ export type SpriteState = {
   c: Container, g?: Graphics, s?: Sprite, hpBar: Graphics, empGfx?: Graphics,
   hp: number, maxHp: number, prog: number, sX: number, sY: number, tX: number, tY: number, 
   type: string, team: 'attacker'|'defender', basePath?: string, baseScale?: number, 
-  isAtlas?: boolean, isSvg?: boolean, act?: string, dir?: string,
+  isAtlas?: boolean, isSvg?: boolean, act?: string, dir?: string, mobilityMode?: string,
   recoil?: number, recoilAngle?: number
 }
 
@@ -117,7 +117,7 @@ export function createU(
   sprites[u.id] = { 
     c, g, s, hpBar, hp: isSimUnit ? (u as SimUnit).hp : ('hp_current' in u ? u.hp_current : 1), maxHp, prog: 1, 
     sX: c.x, sY: c.y, tX: c.x, tY: c.y, type: utype, team: t, basePath, baseScale, isAtlas: !!SPRITE_ATLASES[utype], isSvg,
-    act: 'idle', dir: t === 'attacker' ? 'north' : 'south', recoil: 0, recoilAngle: 0
+    act: 'idle', dir: t === 'attacker' ? 'north' : 'south', mobilityMode: isSimUnit ? (u as SimUnit).mobilityMode : undefined, recoil: 0, recoilAngle: 0
   }
   updateHp(sprites[u.id])
 }
