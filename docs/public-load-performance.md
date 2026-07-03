@@ -1,12 +1,12 @@
-# Public Load Performance Plan
+# Public Load Performance
 
 Last updated: 2026-07-04
 
-## Problem
+## Original Problem
 
 Opening `https://mars2050.vercel.app/` in a fresh browser can show the generic loading screen for several seconds before the public auth page appears.
 
-This is separate from authenticated game/canvas loading. The public auth page is currently gated behind client-side auth initialization.
+This is separate from authenticated game/canvas loading. The public auth page was gated behind client-side auth initialization.
 
 ## Live Baseline
 
@@ -26,28 +26,55 @@ Main observed cost before auth UI:
 
 ## Root Cause
 
-`src/app/page.tsx` is a client component and renders `Loading Mars2050...` while `useAuth()` initializes. For an unauthenticated visitor, the browser must download and execute the startup JS bundle, initialize Supabase auth/session state, run effects, and only then render the public auth UI.
+`src/app/page.tsx` was a client component and rendered `Loading Mars2050...` while `useAuth()` initialized. For an unauthenticated visitor, the browser had to download and execute the startup JS bundle, initialize Supabase auth/session state, run effects, and only then render the public auth UI.
 
 The public auth screen should be server/static HTML first. Auth/session resume should run after first paint and redirect into the game only when a real session is found.
 
-## Implementation Plan
+## Shipped Changes
 
-1. Add a public-load Playwright perf smoke for `/` with a fresh browser context.
-2. Split the page into a static public shell and a client runtime boundary.
-3. Render the auth shell immediately from server/static HTML.
-4. Lazy-load auth modal code only after login/register intent.
-5. Keep `GameShell` lazy and load it only after session + colony are known.
-6. Move normal desktop session checking out of the public first-paint path.
-7. Remove or defer the Supabase connectivity probe so it does not issue a public first-load `401`.
-8. Verify unauth first-load chunks do not include game/Pixi/realtime code.
+- `src/app/page.tsx` is now a server/static page.
+- `PublicAuthShell` renders the public auth screen directly in HTML.
+- `PublicAuthActions` lazy-loads `AuthModal` and Supabase auth only after login/register intent.
+- `AuthRuntimeMount` lazy-loads the auth/game runtime after first paint.
+- `GameShell` remains lazy and loads only after session + colony are known.
+- The Supabase connectivity probe was removed from first load; public `/` no longer emits the `401 /rest/v1/` probe.
+- `tests/e2e/public-load.spec.ts` verifies public auth HTML without JavaScript and no Supabase REST work before shell visibility.
+
+## Session Resume Flash Guard
+
+The first static-shell fix caused a short auth-page flash for already-authenticated users: the public auth HTML painted before the client runtime restored the session and mounted the game.
+
+The current fix adds a pre-hydration guard:
+
+- `PublicAuthBoot` runs a small inline script before the auth shell is parsed.
+- The script checks `supabase-access-token` cookie and Supabase `localStorage` auth-token markers.
+- If an auth marker exists, it adds `mars2050-auth-resume` to `<html>`.
+- CSS hides the public auth shell and shows `AuthResumeShell` (`Загрузка колонии... / Восстанавливаем сессию`) before React hydrates.
+- If the marker is stale and no session is found, `AuthRuntime` removes the guard and the public auth shell returns.
+
+Regression coverage:
+
+- `stored auth marker shows resume shell before app runtime hydrates`
+- The test blocks `_next/static/chunks/**` to verify the no-flash behavior before app runtime hydration.
+
+## Current Live Result
+
+After deployment:
+
+| Scenario | Result |
+| --- | --- |
+| Fresh unauthenticated browser | Public auth shell visible at about 1.5 s in live Playwright check |
+| Fresh unauthenticated browser | No bad responses before public shell |
+| Auth marker present, app chunks blocked | Resume shell visible, public auth shell hidden |
 
 ## Acceptance Criteria
 
-- Public auth shell is visible without waiting for Supabase session checks.
+- Public auth shell is visible without waiting for Supabase session checks for unauthenticated users.
+- Already-authenticated users do not see the public auth shell flash during session resume.
 - Fresh unauthenticated first load has no Supabase REST bad response before user action.
 - `GameShell`, Pixi, realtime hooks, and heavy overlays do not load before authenticated game entry.
 - Existing authenticated e2e smoke still passes.
-- Required checks pass:
+- Required checks:
   - `npx tsc --noEmit --pretty false`
   - `npx tsx scripts/check-limits.ts --diff HEAD --json`
   - `npm test`
