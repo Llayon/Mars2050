@@ -75,13 +75,7 @@ export function useColonyBootstrap(colonyId: string | null) {
   const cachedData = useMemo(() => colonyId ? readBootstrapCache(colonyId) : null, [colonyId])
   const [freshResolvedColonyId, setFreshResolvedColonyId] = useState<string | null>(null)
   const [syncResolvedColonyId, setSyncResolvedColonyId] = useState<string | null>(null)
-  const [syncLoading, setSyncLoading] = useState(false)
-
-  useEffect(() => {
-    setFreshResolvedColonyId(null)
-    setSyncResolvedColonyId(null)
-    setSyncLoading(false)
-  }, [colonyId])
+  const [syncLoadingColonyId, setSyncLoadingColonyId] = useState<string | null>(null)
 
   useEffect(() => {
     if (cachedData) markLoadMilestone('cached-bootstrap-used')
@@ -106,7 +100,7 @@ export function useColonyBootstrap(colonyId: string | null) {
     async function runDeferredSync() {
       await waitForFirstCanvas()
       if (cancelled || !colonyId) return
-      setSyncLoading(true)
+      setSyncLoadingColonyId(colonyId)
       try {
         const synced = await syncBootstrap(colonyId)
         if (!cancelled) {
@@ -116,7 +110,9 @@ export function useColonyBootstrap(colonyId: string | null) {
       } catch {
         if (!cancelled) setSyncResolvedColonyId(colonyId)
       } finally {
-        if (!cancelled) setSyncLoading(false)
+        if (!cancelled) {
+          setSyncLoadingColonyId(currentColonyId => currentColonyId === colonyId ? null : currentColonyId)
+        }
       }
     }
     void runDeferredSync()
@@ -124,6 +120,7 @@ export function useColonyBootstrap(colonyId: string | null) {
   }, [colonyId, data, freshResolvedColonyId, syncResolvedColonyId, mutate])
 
   const hasCachedData = !!cachedData
+  const syncLoading = syncLoadingColonyId === colonyId
   const freshLoading = (!!colonyId && isValidating && freshResolvedColonyId !== colonyId) || syncLoading
   const isStale = hasCachedData && freshResolvedColonyId !== colonyId
 
