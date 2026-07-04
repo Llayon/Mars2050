@@ -5,9 +5,13 @@ export const LOAD_MILESTONE_NAMES = [
   'auth-resume',
   'bootstrap-start',
   'bootstrap-end',
+  'cached-bootstrap-used',
   'first-canvas',
+  'game-shell-mounted',
+  'fresh-bootstrap-end',
   'late-assets-ready',
   'overlay-open',
+  'resume-overlay-hidden',
 ] as const
 
 export type LoadMilestoneName = typeof LOAD_MILESTONE_NAMES[number]

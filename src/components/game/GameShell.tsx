@@ -1,7 +1,7 @@
 'use client'
 
 import dynamic from 'next/dynamic'
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useBuildings } from '@/hooks/useBuildings'
 import { useColony } from '@/hooks/useColony'
 import { useColonyBootstrap } from '@/hooks/useColonyBootstrap'
@@ -11,6 +11,7 @@ import { useToast } from '@/components/ui/toast'
 import type { TabId } from '@/components/screens/BottomNav'
 import { BUILDING_TYPES } from '@/domains/building/building.config'
 import type { BuildingSettingsUpdate, BuildingTypeKey } from '@/domains/building/building.types'
+import { markLoadMilestone } from '@/lib/load-milestones'
 
 const TwaHud = dynamic(() => import('@/components/game/TwaHud').then(mod => mod.TwaHud), {
   ssr: false,
@@ -47,6 +48,11 @@ export function GameShell({ user, colonyId, isTWA, tgUser, onLogout }: GameShell
   const [activeTab, setActiveTab] = useState<TabId>('colony')
   const [viewMode, setViewMode] = useState<'colony' | 'map'>('colony')
   const [placementMode, setPlacementMode] = useState<BuildingTypeKey | null>(null)
+  const syncing = bootstrap.freshLoading || bootstrap.isStale
+
+  useEffect(() => {
+    markLoadMilestone('game-shell-mounted')
+  }, [])
 
   const handleBuild = useCallback(async (type: BuildingTypeKey, x?: number, y?: number) => {
     if (x !== undefined && y !== undefined) {
@@ -100,6 +106,7 @@ export function GameShell({ user, colonyId, isTWA, tgUser, onLogout }: GameShell
         population={population}
         populationLoading={bootstrap.loading || populationLoading}
         onUpgradePopulation={upgradeTier}
+        syncing={syncing}
       />
     )
   }
@@ -128,6 +135,7 @@ export function GameShell({ user, colonyId, isTWA, tgUser, onLogout }: GameShell
       population={population}
       populationLoading={bootstrap.loading || populationLoading}
       onUpgradePopulation={upgradeTier}
+      syncing={syncing}
     />
   )
 }

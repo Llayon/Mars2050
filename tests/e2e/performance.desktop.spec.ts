@@ -93,3 +93,67 @@ test('authenticated desktop first canvas stays inside startup budgets', async ({
   expect(resources.supabaseAuthCount).toBe(0)
   network.assertClean()
 })
+
+test('authenticated desktop reload uses cached colony while fresh bootstrap is pending', async ({ page, baseURL }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await resetE2eSession(page)
+  const sessionResponse = await page.request.get('/api/e2e/session')
+  const session = await sessionResponse.json()
+  const colonyId = session.colonyId as string
+  const userId = session.user.id as string
+  const url = baseURL ?? 'http://127.0.0.1:3100'
+  const cachedPayload = {
+    colony: {
+      id: colonyId,
+      name: 'Cached Alpha',
+      level: 1,
+      experience: 0,
+      user_id: userId,
+      last_calc_at: '2026-07-04T12:00:00.000Z',
+      created_at: '2026-07-04T11:00:00.000Z',
+      terrain_grid: [{ x: 0, y: 0, t: 'regolith' }],
+      unlocked_radius: 5,
+    },
+    resources: [],
+    buildings: [{
+      id: '550e8400-e29b-41d4-a716-446655440020',
+      colony_id: colonyId,
+      type: 'solar_panels',
+      name: 'Cached Solar',
+      level: 1,
+      is_active: true,
+      x: 0,
+      y: 0,
+      staffing_mode: 'auto',
+      assigned_workers: 0,
+      work_priority: 'normal',
+      paused: false,
+      created_at: '2026-07-04T11:00:00.000Z',
+      updated_at: '2026-07-04T12:00:00.000Z',
+    }],
+    population: null,
+  }
+
+  await page.context().addCookies([{ name: 'supabase-access-token', value: 'resume-marker', url }])
+  await page.addInitScript(({ id, payload }) => {
+    localStorage.setItem(`mars2050_bootstrap:${id}`, JSON.stringify({
+      schemaVersion: 1,
+      savedAt: Date.now(),
+      data: payload,
+    }))
+  }, { id: colonyId, payload: cachedPayload })
+  await page.route('**/api/colonies/bootstrap**', async route => {
+    await new Promise(resolve => setTimeout(resolve, 2000))
+    await route.continue()
+  })
+
+  await page.goto('/', { waitUntil: 'domcontentloaded' })
+  await expect(page.getByTestId('public-auth-shell')).toBeHidden()
+  await waitForColony(page, 'desktop')
+  await expectLoadMilestone(page, 'cached-bootstrap-used')
+  await expect(page.getByText('Cached Alpha')).toBeVisible()
+  await expect(page.getByTestId('resume-sync-status')).toBeVisible()
+
+  await expectLoadMilestone(page, 'fresh-bootstrap-end')
+  await expect(page.getByTestId('resume-sync-status')).toBeHidden()
+})

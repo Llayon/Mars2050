@@ -14,6 +14,7 @@ import { markLoadMilestone } from '@/lib/load-milestones'
 import { GameTopHeader } from '@/components/game/hud/GameTopHeader'
 import { CommandDock } from '@/components/game/hud/CommandDock'
 import { PlacementActionBar } from '@/components/game/hud/PlacementActionBar'
+import { ResumeSyncStatus } from '@/components/game/hud/ResumeSyncStatus'
 
 const GameMapPanel = dynamic(() => import('@/components/game/GameMapPanel').then(mod => mod.GameMapPanel), {
   ssr: false,
@@ -68,6 +69,7 @@ interface DesktopHudProps {
   population: PopulationState | null
   populationLoading?: boolean
   onUpgradePopulation: (fromTier: PopulationTier, count: number) => Promise<void>
+  syncing?: boolean
 }
 
 export function DesktopHud({
@@ -92,7 +94,8 @@ export function DesktopHud({
   onLogout,
   population,
   populationLoading,
-  onUpgradePopulation
+  onUpgradePopulation,
+  syncing
 }: DesktopHudProps) {
   
   const [buildOpen, setBuildOpen] = useState(false)
@@ -161,6 +164,7 @@ export function DesktopHud({
       {!placementMode && (
         <GameTopHeader resources={resources} population={population} colony={colony} />
       )}
+      <ResumeSyncStatus visible={!!syncing && !placementMode} />
 
       {/* Left Alerts */}
       {alertsReady && !placementMode && viewMode === 'colony' && (

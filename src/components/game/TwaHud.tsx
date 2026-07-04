@@ -7,6 +7,7 @@ import type { TabId } from '@/components/screens/BottomNav'
 import ColonyScreen from '@/components/screens/ColonyScreen'
 import { HudBottomSheet } from '@/components/ui/hud/HudBottomSheet'
 import { PlacementActionBar } from '@/components/game/hud/PlacementActionBar'
+import { ResumeSyncStatus } from '@/components/game/hud/ResumeSyncStatus'
 import type { BuildingTypeKey } from '@/domains/building/building.types'
 import type { Colony } from '@/domains/colony/colony.types'
 import type { ResourceRow } from '@/domains/resource/resource.types'
@@ -60,6 +61,7 @@ interface TwaHudProps {
   population: PopulationState | null
   populationLoading?: boolean
   onUpgradePopulation: (fromTier: PopulationTier, count: number) => void
+  syncing?: boolean
 }
 
 export function TwaHud({
@@ -83,7 +85,8 @@ export function TwaHud({
   onLogout,
   population,
   populationLoading,
-  onUpgradePopulation
+  onUpgradePopulation,
+  syncing
 }: TwaHudProps) {
   const colonyScreenProps = {
     colony,
@@ -110,6 +113,7 @@ export function TwaHud({
       {!placementMode && (
         <TopResourceBar resources={resources} population={population} colony={colony} isMobile={true} />
       )}
+      <ResumeSyncStatus visible={!!syncing && !placementMode} mobile />
       
       {activeTab === 'buildings' && !placementMode && (
         <BuildCatalogSheet 

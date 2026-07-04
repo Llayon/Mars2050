@@ -114,7 +114,7 @@ export default function ColonyScreen({
 
   return (
     <div data-testid="colony-screen" className="relative w-full h-full overflow-hidden bg-black">
-      <Suspense fallback={<div className="flex items-center justify-center h-full text-white">Загрузка колонии...</div>}>
+      <Suspense fallback={<CanvasLoadingFallback />}>
         <ColonyCanvas 
           colony={colony}
           buildings={buildings} 
@@ -152,4 +152,8 @@ function ColonyPanelFallback({ message }: { message: string }) {
       <p className="text-sm opacity-80">{message}. Переключение в упрощенный режим.</p>
     </div>
   )
+}
+
+function CanvasLoadingFallback() {
+  return <div data-testid="colony-canvas-loading" className="h-full w-full bg-black" />
 }

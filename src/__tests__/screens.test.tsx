@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import { processEventsSchema } from '@/domains/events/events.schemas'
 import { BottomNav } from '@/components/screens/BottomNav'
 import ColonyScreen from '@/components/screens/ColonyScreen'
@@ -79,8 +79,8 @@ describe('ColonyScreen', () => {
   }
 
   it('renders loading state for colony', () => {
-    const { container } = render(<ColonyScreen {...baseProps} colonyLoading={true} />)
-    expect(container.textContent).toContain('Загрузка')
+    render(<ColonyScreen {...baseProps} colonyLoading={true} />)
+    expect(screen.getByTestId('colony-canvas-loading')).toBeTruthy()
   })
 
   it('shows placeholder for building count when children provided', () => {

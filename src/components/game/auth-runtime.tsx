@@ -5,21 +5,21 @@ import { useEffect } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { ToastProvider } from '@/components/ui/toast'
 import type { GameShellProps } from '@/components/game/GameShell'
+import { markLoadMilestone } from '@/lib/load-milestones'
 
 const GameShell = dynamic<GameShellProps>(() => import('@/components/game/GameShell').then(mod => mod.GameShell), {
   ssr: false,
-  loading: () => (
-    <div className="min-h-screen flex items-center justify-center bg-gray-900 text-white">
-      <p>Загрузка колонии...</p>
-    </div>
-  ),
+  loading: () => null,
 })
 
 export function AuthRuntime() {
   const { user, colonyId, loading, error: authError, logout, isTWA, tgUser } = useAuth()
 
   useEffect(() => {
-    if (!loading && !isTWA && (!user || !colonyId)) {
+    if (!loading && user && colonyId) {
+      document.documentElement.classList.remove('mars2050-auth-resume')
+      markLoadMilestone('resume-overlay-hidden')
+    } else if (!loading && !isTWA && (!user || !colonyId)) {
       document.documentElement.classList.remove('mars2050-auth-resume')
     }
   }, [loading, user, colonyId, isTWA])

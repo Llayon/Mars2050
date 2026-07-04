@@ -43,6 +43,8 @@ The public auth screen should be server/static HTML first. Auth/session resume s
 - Authenticated refresh now tries `/api/auth/resume` from the existing auth cookie before importing Supabase JS.
 - `/api/auth/resume` returns `{ user, colonyId }` for existing colonies without running first-load backfills on every refresh.
 - Bootstrap uses cookie-first same-origin fetch when possible, avoiding a duplicate `supabase.auth.getSession()` before `/api/colonies/bootstrap`.
+- Authenticated refresh uses a 30-minute display-only bootstrap cache to render the last colony snapshot before fresh bootstrap completes.
+- Game-shell and canvas loading now use one resume flow: no second full-screen `Загрузка колонии...`; fresh sync is shown as a small HUD status.
 
 ## Session Resume Flash Guard
 
@@ -91,9 +93,13 @@ Runtime load milestones use the `mars2050:load:*` performance mark prefix:
 | `public-shell` | Static public auth shell reached first paint window |
 | `auth-resume` | Pre-hydration auth marker guard selected resume shell |
 | `bootstrap-start` / `bootstrap-end` | Authenticated game bootstrap request lifecycle |
+| `cached-bootstrap-used` | A valid local bootstrap snapshot was used for first render |
 | `first-canvas` | Pixi canvas and base fallback grid reached the first visible render |
+| `game-shell-mounted` | Authenticated game shell mounted after auth resume |
+| `fresh-bootstrap-end` | Fresh bootstrap request finished after cached or cold first render |
 | `late-assets-ready` | Remaining colony texture preload finished |
 | `overlay-open` | User opened a lazy heavy overlay |
+| `resume-overlay-hidden` | Static resume overlay was released after game resume |
 
 ## Authenticated Game Entry Budget
 
@@ -136,6 +142,31 @@ Fallback behavior:
 - If the user has no colony yet, `/api/auth/resume` falls back to full colony creation.
 - TWA and mutation requests still use the Authorization-header path when cookies are unavailable.
 
+## Unified Authenticated Refresh UX
+
+Implemented v1 plan:
+
+- Store the latest successful bootstrap payload in `localStorage` as `mars2050_bootstrap:${colonyId}` with `schemaVersion: 1` and a 30-minute TTL.
+- Treat the cached payload as optimistic display state only. It never grants auth, ownership, or mutation rights.
+- On authenticated reload, `useColonyBootstrap` returns cached colony/resources/buildings/population immediately and still requests fresh `/api/colonies/bootstrap`.
+- Fresh bootstrap success refreshes the cache. Fresh `401/403` clears the cache for that colony.
+- The lazy `GameShell` fallback is `null`; `AuthResumeShell` remains the only full-screen resume loading surface before the game mounts.
+- Once the game shell is visible, stale/fresh bootstrap work is represented by the compact `Синхронизация...` HUD status.
+- The Pixi canvas still uses fallback-first rendering when no cache exists.
+
+Deferred out of this slice:
+
+- No `/api/colonies/bootstrap-fast` endpoint yet.
+- No split between first-render reads and post-render economy sync yet.
+
+Verification for this slice:
+
+- `npx tsc --noEmit --pretty false` passed.
+- `npx tsx scripts/check-limits.ts --diff HEAD --json` passed.
+- `npm test` passed: 425 tests.
+- `npm run build` passed.
+- `npm run test:e2e -- --reporter=line` passed: 12 tests.
+
 ## Simulator Routes
 
 `/simulator` and `/simulator2` are static routes but intentionally heavier than `/`: live checks showed roughly 300 KB JS transfer and 18 JS files on the first screen because Pixi/combat/replay code belongs to those entrypoints.
@@ -146,6 +177,8 @@ They are tracked as dev/QA performance debt, not as the primary player-load path
 
 - Public auth shell is visible without waiting for Supabase session checks for unauthenticated users.
 - Already-authenticated users do not see the public auth shell flash during session resume.
+- Already-authenticated users with a valid cache see the cached colony while fresh bootstrap is pending.
+- Authenticated refresh uses a compact sync HUD status instead of multiple full-screen loading screens.
 - Fresh unauthenticated first load has no Supabase REST bad response before user action.
 - Authenticated desktop first canvas stays within the Playwright startup budgets.
 - `GameShell`, Pixi, realtime hooks, and heavy overlays do not load before authenticated game entry.
