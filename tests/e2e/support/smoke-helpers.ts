@@ -8,8 +8,14 @@ export interface NetworkCollector {
   failedRequests: string[]
   badResponses: string[]
   countPath: (path: string) => number
+  countPathPrefix: (prefix: string) => number
   hasChunk: (name: string) => boolean
   assertClean: () => void
+}
+
+export interface BrowserLoadMilestone {
+  name: string
+  startTime: number
 }
 
 export interface ResourceTimingSummary {
@@ -93,6 +99,7 @@ export function collectNetwork(page: Page): NetworkCollector {
     failedRequests,
     badResponses,
     countPath: (path: string) => requests.filter(url => pathname(url) === path).length,
+    countPathPrefix: (prefix: string) => requests.filter(url => pathname(url)?.startsWith(prefix)).length,
     hasChunk: (name: string) => requests.some(url => url.includes('/_next/static/chunks/') && url.includes(name)),
     assertClean: () => {
       expect(consoleErrors, 'console errors').toEqual([])
@@ -101,6 +108,17 @@ export function collectNetwork(page: Page): NetworkCollector {
       expect(badResponses, 'bad responses').toEqual([])
     },
   }
+}
+
+export async function readLoadMilestones(page: Page): Promise<BrowserLoadMilestone[]> {
+  return page.evaluate(() => performance.getEntriesByType('mark')
+    .filter(entry => entry.name.startsWith('mars2050:load:'))
+    .map(entry => ({ name: entry.name.replace('mars2050:load:', ''), startTime: Math.round(entry.startTime) }))
+  )
+}
+
+export async function expectLoadMilestone(page: Page, name: string): Promise<void> {
+  await expect.poll(async () => (await readLoadMilestones(page)).some(mark => mark.name === name)).toBe(true)
 }
 
 export async function summarizeResourceTimings(page: Page): Promise<ResourceTimingSummary> {

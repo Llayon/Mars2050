@@ -11,8 +11,10 @@ import type { TerrainGrid } from '@/domains/colony/colony-terrain.types'
 import { validateBuildingPlacement } from '@/domains/building/building-placement'
 import type { Colony } from '@/domains/colony/colony.types'
 import { ADJACENCY_RULES } from '@/domains/building/building.adjacency'
+import { markLoadMilestone } from '@/lib/load-milestones'
 import { drawBuilding, drawTerrain } from './colony-canvas-draw'
 import { loadVisibleColonyTextures, preloadRemainingColonyTextures, scheduleColonyTexturePreload } from './colony-canvas-assets'
+import type { ColonyTextureMap } from './colony-canvas-asset-types'
 
 export default function ColonyCanvas({ colony, buildings, onBuildingClick, placementMode, onConfirmPlacement, isActive = true }: { 
   colony: Colony | null; buildings: BuildingRow[]; onBuildingClick: (b: BuildingRow) => void 
@@ -22,9 +24,9 @@ export default function ColonyCanvas({ colony, buildings, onBuildingClick, place
   const containerRef = useRef<HTMLDivElement>(null), appRef = useRef<PIXI.Application | null>(null)
   const viewportRef = useRef<Viewport | null>(null)
   const worldRef = useRef<PIXI.Container | null>(null), buildingsRef = useRef<PIXI.Container | null>(null), terrainRef = useRef<PIXI.Container | null>(null)
-  const ghostRef = useRef<PIXI.Graphics | null>(null), texturesRef = useRef<Record<string, PIXI.Texture>>({})
+  const ghostRef = useRef<PIXI.Graphics | null>(null), texturesRef = useRef<ColonyTextureMap>({})
   const ghostTextRef = useRef<PIXI.Text | null>(null)
-  const startDragPos = useRef({ x: 0, y: 0 })
+  const startDragPos = useRef({ x: 0, y: 0 }), firstCanvasMarkedRef = useRef(false)
   const ghostState = useRef({ valid: false, x: 0, y: 0 }), ghostListeners = useRef<{ move: (e: PIXI.FederatedPointerEvent) => void, up: (e: PIXI.FederatedPointerEvent) => void } | null>(null)
   const [initDone, setInitDone] = useState(false)
   const [assetVersion, setAssetVersion] = useState(0)
@@ -36,7 +38,6 @@ export default function ColonyCanvas({ colony, buildings, onBuildingClick, place
 
     const init = async () => {
       await app.init({ width: containerRef.current?.clientWidth || 800, height: containerRef.current?.clientHeight || 600, background: '#121212', antialias: true, resolution: window.devicePixelRatio || 1, autoDensity: true })
-      // If component unmounted before init finished — destroy immediately and bail
       if (cancelled) { try { app.destroy(true) } catch {} return }
       if (!containerRef.current) return
       containerRef.current.appendChild(app.canvas); appRef.current = app
@@ -82,6 +83,7 @@ export default function ColonyCanvas({ colony, buildings, onBuildingClick, place
         grid.moveTo(s1.x, s1.y).lineTo(e1.x, e1.y).moveTo(s2.x, s2.y).lineTo(e2.x, e2.y)
       }
       grid.stroke(); grid.zIndex = -1; world.addChild(grid)
+      if (!firstCanvasMarkedRef.current) { firstCanvasMarkedRef.current = true; markLoadMilestone('first-canvas') }
       const terrainLayer = new PIXI.Container(); terrainLayer.zIndex = -2; world.addChild(terrainLayer); terrainRef.current = terrainLayer
       const bl = new PIXI.Container(); bl.sortableChildren = true; buildingsRef.current = bl; world.addChild(bl)
       const g = new PIXI.Graphics(); g.zIndex = 9999; ghostRef.current = g; world.addChild(g)
@@ -95,7 +97,6 @@ export default function ColonyCanvas({ colony, buildings, onBuildingClick, place
     init()
     return () => {
       cancelled = true
-      // Only destroy if init already attached the app (appRef was set)
       if (appRef.current) {
         try { appRef.current.destroy(true) } catch {}
         appRef.current = null
@@ -159,7 +160,7 @@ export default function ColonyCanvas({ colony, buildings, onBuildingClick, place
     let cancelled = false
     const cancelPreload = scheduleColonyTexturePreload(() => {
       void preloadRemainingColonyTextures(texturesRef.current)
-        .then(changed => { if (!cancelled && changed) setAssetVersion(v => v + 1) })
+        .then(changed => { if (!cancelled) { if (changed) setAssetVersion(v => v + 1); markLoadMilestone('late-assets-ready') } })
     })
     return () => { cancelled = true; cancelPreload() }
   }, [initDone])

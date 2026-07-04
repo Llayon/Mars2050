@@ -4,6 +4,7 @@ import { RENDER_LIMITS, BUILDING_TYPES, BUILDING_TYPE_COLORS } from '@/domains/b
 import { gridToScreen } from '@/domains/building/building.isometric'
 import { TERRAIN_CONFIG } from '@/domains/colony/colony-terrain.config'
 import type { TerrainCell, TerrainGrid } from '@/domains/colony/colony-terrain.types'
+import type { ColonyTextureMap } from './colony-canvas-asset-types'
 
 /**
  * Draws an isometric building container with its sprite or fallback graphics and label.
@@ -11,7 +12,7 @@ import type { TerrainCell, TerrainGrid } from '@/domains/colony/colony-terrain.t
  * @param textures - Map of loaded textures
  * @returns PIXI.Container containing the drawn building
  */
-export function drawBuilding(b: BuildingRow, textures: Record<string, PIXI.Texture>): PIXI.Container {
+export function drawBuilding(b: BuildingRow, textures: ColonyTextureMap): PIXI.Container {
   const { TILE_WIDTH, TILE_HEIGHT } = RENDER_LIMITS
   const bConfig = BUILDING_TYPES[b.type], bw = bConfig?.width || 1, bh = bConfig?.height || 1
   const cont = new PIXI.Container(), pos = gridToScreen(b.x + bw / 2, b.y + bh / 2)
@@ -80,7 +81,7 @@ export function drawTerrain(
   terrain: PIXI.Container,
   tg: TerrainGrid,
   radius: number,
-  textures: Record<string, PIXI.Texture>
+  textures: ColonyTextureMap
 ) {
   if (tg.length === 0) return
 

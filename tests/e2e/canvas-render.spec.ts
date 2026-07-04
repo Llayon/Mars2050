@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { collectNetwork, expectCanvasPainted, resetE2eSession, waitForColony } from './support/smoke-helpers'
+import { collectNetwork, expectCanvasPainted, expectLoadMilestone, resetE2eSession, waitForColony } from './support/smoke-helpers'
 
 test('canvas appears before late assets finish and survives responsive resize', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
@@ -27,6 +27,7 @@ test('canvas appears before late assets finish and survives responsive resize', 
 
   await page.waitForTimeout(1800)
   await expectCanvasPainted(canvas)
+  await expectLoadMilestone(page, 'late-assets-ready')
 
   await page.setViewportSize({ width: 390, height: 844 })
   await expect(canvas).toBeVisible()

@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
 import { getBrowserSupabase, type BrowserSupabase } from '@/lib/browser-supabase'
+import { formatAuthError, loadAuthResume, syncSupabaseAccessTokenCookie } from '@/lib/auth-resume-client'
 import { getCachedColonyId, setCachedColonyId } from '@/lib/colony-id-cache'
 import { useTelegramAuth } from './useTelegramAuth'
 
@@ -14,12 +15,6 @@ export function useAuth() {
   const telegram = useTelegramAuth(!e2eAuthBypass)
   const [state, setState] = useState<AuthState>({ user: null, colonyId: null, loading: true, error: null, isTWA: false, tgUser: null })
 
-  const formatError = (err: unknown) => {
-    const m = String(err)
-    return m.includes('Failed to fetch') || m.includes('NetworkError') || m.includes('ERR_NAME_NOT_RESOLVED')
-      ? 'Сервер Supabase недоступен. Возможно, проект приостановлен — восстановите его в дашборде Supabase.' : m
-  }
-
   useEffect(() => {
     if (!e2eAuthBypass) return
     let cancelled = false
@@ -30,7 +25,7 @@ export function useAuth() {
         if (!res.ok) throw new Error(data.error?.message || 'E2E auth bypass failed')
         if (!cancelled) setState({ user: data.user, colonyId: data.colonyId, loading: false, error: null, isTWA: getE2eTwaMode(), tgUser: null })
       } catch (error) {
-        if (!cancelled) setState(prev => ({ ...prev, loading: false, error: formatError(error) }))
+        if (!cancelled) setState(prev => ({ ...prev, loading: false, error: formatAuthError(error) }))
       }
     }
     void loadE2eSession()
@@ -53,16 +48,19 @@ export function useAuth() {
 
     async function initSupabaseAuth() {
       try {
+        const resumed = await loadAuthResume()
+        if (cancelled) return
+        if (resumed) {
+          setCachedColonyId(resumed.user.id, resumed.colonyId)
+          setState({ user: resumed.user, colonyId: resumed.colonyId, loading: false, error: null, isTWA: false, tgUser: null })
+          return
+        }
+
         const supabase = await getBrowserSupabase()
         if (cancelled) return
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-          if (session) {
-            const secure = typeof window !== 'undefined' && window.location.protocol === 'https:' ? '; Secure' : ''
-            document.cookie = `supabase-access-token=${session.access_token}; path=/; max-age=${session.expires_in}; SameSite=Lax${secure}`
-          } else {
-            document.cookie = `supabase-access-token=; path=/; max-age=0`
-          }
+          syncSupabaseAccessTokenCookie(session)
           setState(prev => {
             if (session?.user && !prev.colonyId) loadColony(session.user.id)
             return { ...prev, user: session?.user ?? null }
@@ -71,7 +69,7 @@ export function useAuth() {
         unsubscribe = () => subscription.unsubscribe()
         await checkSession(supabase)
       } catch (error) {
-        if (!cancelled) setState(prev => ({ ...prev, loading: false, error: formatError(error) }))
+        if (!cancelled) setState(prev => ({ ...prev, loading: false, error: formatAuthError(error) }))
       }
     }
 
@@ -84,6 +82,7 @@ export function useAuth() {
     try {
       const { data: { session } } = await supabase.auth.getSession()
       if (session?.user) {
+        syncSupabaseAccessTokenCookie(session)
         setState(prev => ({ ...prev, user: session.user }))
         const cachedColonyId = getCachedColonyId(session.user.id)
         if (cachedColonyId) {
@@ -94,7 +93,7 @@ export function useAuth() {
         }
       }
     } catch (error) {
-      setState(prev => ({ ...prev, error: formatError(error) }))
+      setState(prev => ({ ...prev, error: formatAuthError(error) }))
     } finally {
       setState(prev => ({ ...prev, loading: (prev.isTWA || telegram.loading) ? prev.loading : false }))
     }
@@ -108,7 +107,7 @@ export function useAuth() {
       if (data.colonyId) setCachedColonyId(userId, data.colonyId)
       setState(prev => ({ ...prev, colonyId: data.colonyId || null, error: data.colonyId ? null : (data.error || 'Failed to get colony') }))
     } catch (error) {
-      setState(prev => ({ ...prev, error: formatError(error) }))
+      setState(prev => ({ ...prev, error: formatAuthError(error) }))
     }
   }
 
@@ -139,7 +138,7 @@ export function useAuth() {
     }
     const supabase = await getBrowserSupabase()
     await supabase.auth.signOut()
-    document.cookie = `supabase-access-token=; path=/; max-age=0`
+    syncSupabaseAccessTokenCookie(null)
     try { sessionStorage.removeItem('mars2050_tg_user') } catch {}
     setState({ user: null, colonyId: null, loading: false, error: null, isTWA: false, tgUser: null })
   }, [])

@@ -3,16 +3,18 @@ import {
   collectNetwork,
   expectBudget,
   expectCanvasPainted,
+  expectLoadMilestone,
+  readLoadMilestones,
   resetE2eSession,
   summarizeResourceTimings,
   waitForColony,
 } from './support/smoke-helpers'
-
-const PUBLIC_AUTH_SHELL_BUDGET_MS = 1_500
-const DESKTOP_FIRST_CANVAS_BUDGET_MS = 6_000
-const DESKTOP_FIRST_CANVAS_JS_TRANSFER_BASELINE_BYTES = 1_600_000
-const DESKTOP_FIRST_CANVAS_JS_TRANSFER_BUDGET_BYTES = Math.ceil(DESKTOP_FIRST_CANVAS_JS_TRANSFER_BASELINE_BYTES * 1.15)
-const DESKTOP_FIRST_CANVAS_JS_CHUNK_BUDGET = 45
+import {
+  DESKTOP_FIRST_CANVAS_JS_TRANSFER_BUDGET_BYTES,
+  EARLY_GAME_API_DENYLIST,
+  PERF_BUDGETS,
+  PUBLIC_ENTRY_HEAVY_CHUNK_MARKERS,
+} from './support/perf-budgets'
 
 function isSupabaseRest(url: string): boolean {
   try {
@@ -31,6 +33,10 @@ function isApiRequest(url: string): boolean {
   }
 }
 
+function hasHeavyPublicChunk(url: string): boolean {
+  return PUBLIC_ENTRY_HEAVY_CHUNK_MARKERS.some(marker => url.includes(marker))
+}
+
 test('public auth shell stays inside startup budget before app work starts', async ({ page }) => {
   const requestsBeforeShell: string[] = []
   let shellVisible = false
@@ -41,12 +47,14 @@ test('public auth shell stays inside startup budget before app work starts', asy
 
   const startedAt = Date.now()
   await page.goto('/', { waitUntil: 'domcontentloaded' })
-  await expect(page.getByTestId('public-auth-shell')).toBeVisible({ timeout: PUBLIC_AUTH_SHELL_BUDGET_MS })
+  await expect(page.getByTestId('public-auth-shell')).toBeVisible({ timeout: PERF_BUDGETS.publicAuthShellMs })
   shellVisible = true
 
-  expectBudget(Date.now() - startedAt, PUBLIC_AUTH_SHELL_BUDGET_MS, 'public auth shell visible')
+  await expectLoadMilestone(page, 'public-shell')
+  expectBudget(Date.now() - startedAt, PERF_BUDGETS.publicAuthShellMs, 'public auth shell visible')
   expect(requestsBeforeShell.filter(isApiRequest), 'API before public auth shell').toEqual([])
   expect(requestsBeforeShell.filter(isSupabaseRest), 'Supabase REST before public auth shell').toEqual([])
+  expect(requestsBeforeShell.filter(hasHeavyPublicChunk), 'heavy game chunks before public auth shell').toEqual([])
 })
 
 test('authenticated desktop first canvas stays inside startup budgets', async ({ page }) => {
@@ -57,17 +65,21 @@ test('authenticated desktop first canvas stays inside startup budgets', async ({
   const startedAt = Date.now()
   await page.goto('/', { waitUntil: 'domcontentloaded' })
   await waitForColony(page, 'desktop')
+  await expectLoadMilestone(page, 'first-canvas')
   const firstCanvasMs = Date.now() - startedAt
+  await expectLoadMilestone(page, 'bootstrap-end')
 
   const canvas = page.getByTestId('colony-canvas-host').locator('canvas')
   await expectCanvasPainted(canvas)
   const resources = await summarizeResourceTimings(page)
   const resourceDebug = JSON.stringify(resources.topTransfers)
+  const milestones = await readLoadMilestones(page)
 
-  expectBudget(firstCanvasMs, DESKTOP_FIRST_CANVAS_BUDGET_MS, 'desktop first canvas visible')
+  expect(milestones.map(mark => mark.name)).toEqual(expect.arrayContaining(['bootstrap-start', 'bootstrap-end', 'first-canvas']))
+  expectBudget(firstCanvasMs, PERF_BUDGETS.desktopFirstCanvasMs, 'desktop first canvas visible')
   expectBudget(
     resources.nextStaticJsCount,
-    DESKTOP_FIRST_CANVAS_JS_CHUNK_BUDGET,
+    PERF_BUDGETS.desktopFirstCanvasJsChunkCount,
     `desktop first canvas JS chunks; top transfers ${resourceDebug}`,
   )
   expectBudget(
@@ -76,9 +88,7 @@ test('authenticated desktop first canvas stays inside startup budgets', async ({
     `desktop first canvas JS transfer; top transfers ${resourceDebug}`,
   )
   expect(network.countPath('/api/colonies/bootstrap')).toBe(1)
-  expect(network.countPath('/api/resources')).toBe(0)
-  expect(network.countPath('/api/events/process')).toBe(0)
-  expect(network.countPath('/api/buildings')).toBe(0)
+  for (const path of EARLY_GAME_API_DENYLIST) expect(network.countPath(path)).toBe(0)
   expect(resources.supabaseRestCount).toBe(0)
   expect(resources.supabaseAuthCount).toBe(0)
   network.assertClean()

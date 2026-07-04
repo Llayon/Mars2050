@@ -8,6 +8,7 @@ import type { Colony } from '@/domains/colony/colony.types'
 import type { BuildingRow, BuildingSettingsUpdate, BuildingTypeKey } from '@/domains/building/building.types'
 import type { ResourceRow } from '@/domains/resource/resource.types'
 import type { PopulationState, PopulationTier } from '@/domains/population/population.types'
+import { markLoadMilestone } from '@/lib/load-milestones'
 
 // New HUD Components
 import { GameTopHeader } from '@/components/game/hud/GameTopHeader'
@@ -107,14 +108,17 @@ export function DesktopHud({
   // Handlers to auto-close other overlays
   const handleToggleBuild = () => {
     if (!buildOpen) { setArmyOpen(false); setIntelOpen(false); }
+    if (!buildOpen) markLoadMilestone('overlay-open')
     setBuildOpen(!buildOpen)
   }
   const handleToggleArmy = () => {
     if (!armyOpen) { setBuildOpen(false); setIntelOpen(false); }
+    if (!armyOpen) markLoadMilestone('overlay-open')
     setArmyOpen(!armyOpen)
   }
   const handleToggleIntel = () => {
     if (!intelOpen) { setArmyOpen(false); setBuildOpen(false); }
+    if (!intelOpen) markLoadMilestone('overlay-open')
     setIntelOpen(!intelOpen)
   }
   
@@ -122,6 +126,7 @@ export function DesktopHud({
 
   const handleReplay = (data: BattleReplayPayload) => {
     setArmyOpen(false)
+    markLoadMilestone('overlay-open')
     setReplayData(data)
   }
 

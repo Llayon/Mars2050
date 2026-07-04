@@ -8,9 +8,9 @@ Opening `https://mars2050.vercel.app/` in a fresh browser can show the generic l
 
 This is separate from authenticated game/canvas loading. The public auth page was gated behind client-side auth initialization.
 
-## Live Baseline
+## Original Live Baseline
 
-Measured with Playwright in fresh browser contexts against production Vercel:
+Measured before the public-shell fixes with Playwright in fresh browser contexts against production Vercel:
 
 | Marker | Observed |
 | --- | --- |
@@ -40,6 +40,9 @@ The public auth screen should be server/static HTML first. Auth/session resume s
 - `useAuth` and `useTelegramAuth` lazy-load the browser Supabase client only when session/login/TWA work actually needs it.
 - The Supabase connectivity probe was removed from first load; public `/` no longer emits the `401 /rest/v1/` probe.
 - `tests/e2e/public-load.spec.ts` verifies public auth HTML without JavaScript and no Supabase REST work before shell visibility.
+- Authenticated refresh now tries `/api/auth/resume` from the existing auth cookie before importing Supabase JS.
+- `/api/auth/resume` returns `{ user, colonyId }` for existing colonies without running first-load backfills on every refresh.
+- Bootstrap uses cookie-first same-origin fetch when possible, avoiding a duplicate `supabase.auth.getSession()` before `/api/colonies/bootstrap`.
 
 ## Session Resume Flash Guard
 
@@ -56,6 +59,7 @@ The current fix adds a pre-hydration guard:
 Regression coverage:
 
 - `stored auth marker shows resume shell before app runtime hydrates`
+- `stored auth marker hydrates without html class mismatch warning`
 - The test blocks `_next/static/chunks/**` to verify the no-flash behavior before app runtime hydration.
 
 ## Current Live Result
@@ -69,11 +73,33 @@ After deployment:
 | Fresh unauthenticated browser | About 220 KB JS transfer and 15 KB CSS transfer before the shell settles |
 | Auth marker present, app chunks blocked | Resume shell visible, public auth shell hidden |
 
+## Integrated Load Contract
+
+The current player-load contract is:
+
+1. Static shell first: `/` renders public/resume auth HTML before app runtime work.
+2. Single bootstrap payload: authenticated game entry starts with exactly one `/api/colonies/bootstrap`.
+3. Route-level code splitting: public auth, auth runtime, game shell, HUD, canvas, overlays, and simulators stay in separate chunks.
+4. Interaction-triggered overlays: command center, global management, battle replay, build catalog, and heavy tabs load only after UI intent.
+5. Fallback-first canvas: Pixi draws grid/terrain/building fallbacks first, then replaces textures as assets arrive.
+6. Performance e2e contract: Playwright enforces timings, API counts, JS transfer, milestones, console cleanliness, and canvas pixel checks.
+
+Runtime load milestones use the `mars2050:load:*` performance mark prefix:
+
+| Milestone | Meaning |
+| --- | --- |
+| `public-shell` | Static public auth shell reached first paint window |
+| `auth-resume` | Pre-hydration auth marker guard selected resume shell |
+| `bootstrap-start` / `bootstrap-end` | Authenticated game bootstrap request lifecycle |
+| `first-canvas` | Pixi canvas and base fallback grid reached the first visible render |
+| `late-assets-ready` | Remaining colony texture preload finished |
+| `overlay-open` | User opened a lazy heavy overlay |
+
 ## Authenticated Game Entry Budget
 
 The next performance target is the already-authenticated path:
 
-`AuthRuntime -> session -> colonyId -> GameShell -> /api/colonies/bootstrap -> HUD/canvas`
+`AuthRuntime -> /api/auth/resume -> GameShell -> fallback canvas -> /api/colonies/bootstrap -> hydrated HUD data`
 
 This is now covered by `tests/e2e/performance.desktop.spec.ts`.
 
@@ -90,6 +116,25 @@ Budgets:
 | Browser Supabase REST/Auth during e2e bypass | 0 requests |
 
 When these budgets fail, treat the Playwright top-transfer output as the first triage source before changing gameplay code.
+
+## Authenticated Refresh Fast Path
+
+The refresh path must not wait for all gameplay recalculation before showing the game frame.
+
+Current sequence for an existing web session:
+
+1. `PublicAuthBoot` detects the auth cookie/localStorage marker and shows `AuthResumeShell`.
+2. `useAuth` calls `/api/auth/resume` if the `supabase-access-token` cookie exists.
+3. The resume endpoint validates the JWT via `getAuthContext()` and resolves an existing colony id with a lightweight `colonies.id` query.
+4. `GameShell` mounts as soon as `user + colonyId` are known.
+5. `ColonyCanvas` draws the fallback grid before bootstrap data and late textures finish.
+6. `/api/colonies/bootstrap` hydrates colony/resources/buildings/population after the first game shell is mounted.
+
+Fallback behavior:
+
+- If the cookie is missing or invalid, `useAuth` falls back to the normal Supabase `getSession()` path.
+- If the user has no colony yet, `/api/auth/resume` falls back to full colony creation.
+- TWA and mutation requests still use the Authorization-header path when cookies are unavailable.
 
 ## Simulator Routes
 

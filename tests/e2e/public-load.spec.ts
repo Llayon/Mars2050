@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { expectLoadMilestone } from './support/smoke-helpers'
 
 function isSupabaseRest(url: string): boolean {
   try {
@@ -49,6 +50,7 @@ test('stored auth marker shows resume shell before app runtime hydrates', async 
 
   await expect(page.getByTestId('auth-resume-shell')).toBeVisible()
   await expect(page.getByTestId('public-auth-shell')).toBeHidden()
+  await expectLoadMilestone(page, 'auth-resume')
 
   await context.close()
 })

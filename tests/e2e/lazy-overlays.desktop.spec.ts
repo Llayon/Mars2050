@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test'
-import { collectNetwork, resetE2eSession, waitForColony } from './support/smoke-helpers'
+import { collectNetwork, expectLoadMilestone, resetE2eSession, waitForColony } from './support/smoke-helpers'
+import { OVERLAY_API_PREFIXES } from './support/perf-budgets'
 
 test('desktop heavy overlays and tabs load only after opening their UI', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
@@ -12,10 +13,12 @@ test('desktop heavy overlays and tabs load only after opening their UI', async (
   expect(network.hasChunk('GlobalManagementOverlay')).toBe(false)
   expect(network.hasChunk('BattleReplayModal')).toBe(false)
   expect(network.hasChunk('OperationsScreen')).toBe(false)
+  for (const prefix of OVERLAY_API_PREFIXES) expect(network.countPathPrefix(prefix)).toBe(0)
 
   await page.getByTestId('command-dock-army').click()
   const commandCenter = page.getByTestId('command-center-overlay')
   await expect(commandCenter).toBeVisible()
+  await expectLoadMilestone(page, 'overlay-open')
   await expect.poll(() => network.hasChunk('CommandCenterOverlay')).toBe(true)
   await expect(commandCenter).toContainText('Current Forces')
 
