@@ -36,8 +36,6 @@ export function useAuth() {
     if (e2eAuthBypass) return
     if (telegram.isTWA) {
       setState(prev => ({ ...prev, colonyId: telegram.colonyId ?? prev.colonyId, loading: telegram.loading, error: telegram.error, isTWA: true, tgUser: telegram.tgUser ?? prev.tgUser }))
-    } else if (!telegram.loading) {
-      setState(prev => prev.loading ? { ...prev, loading: false } : prev)
     }
   }, [telegram.colonyId, telegram.loading, telegram.error, telegram.isTWA, telegram.tgUser])
 

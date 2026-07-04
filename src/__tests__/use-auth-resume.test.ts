@@ -23,6 +23,12 @@ vi.mock('@/lib/browser-supabase', () => ({
 const USER_ID = '550e8400-e29b-41d4-a716-446655440000'
 const COLONY_ID = '550e8400-e29b-41d4-a716-446655440001'
 
+function createPending<T>() {
+  let resolve!: (value: T) => void
+  const promise = new Promise<T>(done => { resolve = done })
+  return { promise, resolve }
+}
+
 beforeEach(() => {
   vi.clearAllMocks()
   vi.resetModules()
@@ -70,5 +76,22 @@ describe('useAuth authenticated resume', () => {
     expect(global.fetch).toHaveBeenCalledWith('/api/auth/resume', { cache: 'no-store' })
     expect(mockGetBrowserSupabase).not.toHaveBeenCalled()
     expect(storage.get(`mars2050_colony_id:${USER_ID}`)).toBe(COLONY_ID)
+  })
+
+  it('keeps loading while browser session fallback is still pending', async () => {
+    cookieJar = ''
+    const pending = createPending<unknown>()
+    mockGetBrowserSupabase.mockReturnValue(pending.promise)
+    global.fetch = vi.fn()
+
+    const { useAuth } = await import('@/hooks/useAuth')
+    const { result, unmount } = renderHook(() => useAuth())
+
+    await waitFor(() => expect(mockGetBrowserSupabase).toHaveBeenCalled())
+
+    expect(result.current.loading).toBe(true)
+    expect(result.current.user).toBeNull()
+    expect(result.current.colonyId).toBeNull()
+    unmount()
   })
 })
