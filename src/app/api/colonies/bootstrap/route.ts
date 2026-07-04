@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server'
 import { checkColonyAuth } from '@/domains/colony/colony.ownership'
 import { colonyInitSchema } from '@/domains/colony/colony.schemas'
-import { getColonyBootstrapData } from '@/domains/colony/colony.service'
+import { getColonyBootstrapFastData } from '@/domains/colony/colony.service'
 import { apiError, apiInternalError, apiValidationError } from '@/lib/api-error'
 
-/** GET /api/colonies/bootstrap?colonyId=xxx — initial colony render payload */
+/** GET /api/colonies/bootstrap?colonyId=xxx — fast initial colony render payload */
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
@@ -14,7 +14,7 @@ export async function GET(request: Request) {
     const { errorResponse } = await checkColonyAuth(request, parsed.data.colonyId)
     if (errorResponse) return errorResponse
 
-    const result = await getColonyBootstrapData(parsed.data.colonyId)
+    const result = await getColonyBootstrapFastData(parsed.data.colonyId)
     if (result.error || !result.data) return apiError('INTERNAL_ERROR', result.error || 'Bootstrap failed')
 
     return NextResponse.json(result.data)

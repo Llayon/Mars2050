@@ -5,7 +5,7 @@ import useSWR from 'swr'
 import type { ColonyBootstrapPayload } from '@/domains/colony/colony.types'
 import { clearBootstrapCache, readBootstrapCache, writeBootstrapCache } from '@/lib/bootstrap-cache'
 import { fetchWithAuth } from '@/lib/fetch-with-auth'
-import { markLoadMilestone } from '@/lib/load-milestones'
+import { LOAD_MILESTONE_EVENT, markLoadMilestone } from '@/lib/load-milestones'
 
 function getColonyIdFromBootstrapUrl(url: string): string | null {
   try {
@@ -33,12 +33,54 @@ async function fetchBootstrap(url: string): Promise<ColonyBootstrapPayload> {
   }
 }
 
+function hasLoadMilestone(name: string): boolean {
+  if (typeof performance === 'undefined') return false
+  return performance.getEntriesByType('mark').some(entry => entry.name === `mars2050:load:${name}`)
+}
+
+function waitForFirstCanvas(): Promise<void> {
+  if (typeof window === 'undefined' || hasLoadMilestone('first-canvas')) return Promise.resolve()
+  return new Promise(resolve => {
+    const onMilestone = (event: Event) => {
+      const detail = (event as CustomEvent<{ name?: string }>).detail
+      if (detail?.name !== 'first-canvas') return
+      window.removeEventListener(LOAD_MILESTONE_EVENT, onMilestone)
+      resolve()
+    }
+    window.addEventListener(LOAD_MILESTONE_EVENT, onMilestone)
+  })
+}
+
+async function syncBootstrap(colonyId: string): Promise<ColonyBootstrapPayload> {
+  markLoadMilestone('bootstrap-sync-start')
+  try {
+    const res = await fetchWithAuth('/api/colonies/sync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ colonyId }),
+    }, { cookieFirst: true })
+    const data = await res.json()
+    if (!res.ok) {
+      if (res.status === 401 || res.status === 403) clearBootstrapCache(colonyId)
+      throw new Error(data.error?.message || data.error || 'Failed to sync colony')
+    }
+    writeBootstrapCache(colonyId, data)
+    return data
+  } finally {
+    markLoadMilestone('bootstrap-sync-end')
+  }
+}
+
 export function useColonyBootstrap(colonyId: string | null) {
   const cachedData = useMemo(() => colonyId ? readBootstrapCache(colonyId) : null, [colonyId])
   const [freshResolvedColonyId, setFreshResolvedColonyId] = useState<string | null>(null)
+  const [syncResolvedColonyId, setSyncResolvedColonyId] = useState<string | null>(null)
+  const [syncLoading, setSyncLoading] = useState(false)
 
   useEffect(() => {
     setFreshResolvedColonyId(null)
+    setSyncResolvedColonyId(null)
+    setSyncLoading(false)
   }, [colonyId])
 
   useEffect(() => {
@@ -57,8 +99,32 @@ export function useColonyBootstrap(colonyId: string | null) {
       onSuccess: () => setFreshResolvedColonyId(colonyId),
     }
   )
+
+  useEffect(() => {
+    if (!colonyId || !data || freshResolvedColonyId !== colonyId || syncResolvedColonyId === colonyId) return
+    let cancelled = false
+    async function runDeferredSync() {
+      await waitForFirstCanvas()
+      if (cancelled || !colonyId) return
+      setSyncLoading(true)
+      try {
+        const synced = await syncBootstrap(colonyId)
+        if (!cancelled) {
+          setSyncResolvedColonyId(colonyId)
+          void mutate(synced, false)
+        }
+      } catch {
+        if (!cancelled) setSyncResolvedColonyId(colonyId)
+      } finally {
+        if (!cancelled) setSyncLoading(false)
+      }
+    }
+    void runDeferredSync()
+    return () => { cancelled = true }
+  }, [colonyId, data, freshResolvedColonyId, syncResolvedColonyId, mutate])
+
   const hasCachedData = !!cachedData
-  const freshLoading = !!colonyId && isValidating && freshResolvedColonyId !== colonyId
+  const freshLoading = (!!colonyId && isValidating && freshResolvedColonyId !== colonyId) || syncLoading
   const isStale = hasCachedData && freshResolvedColonyId !== colonyId
 
   return {

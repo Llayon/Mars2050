@@ -4,6 +4,7 @@ import { SWRConfig } from 'swr'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ColonyBootstrapPayload } from '@/domains/colony/colony.types'
 import { readBootstrapCache, writeBootstrapCache } from '@/lib/bootstrap-cache'
+import { markLoadMilestone } from '@/lib/load-milestones'
 
 const mockFetchWithAuth = vi.fn()
 
@@ -46,6 +47,7 @@ function wrapper({ children }: { children: ReactNode }) {
 
 beforeEach(() => {
   vi.clearAllMocks()
+  performance.clearMarks()
   storage = new Map<string, string>()
   Object.defineProperty(window, 'localStorage', {
     configurable: true,
@@ -97,5 +99,25 @@ describe('useColonyBootstrap cache', () => {
     await waitFor(() => expect(result.current.error).toBe('Not authenticated'))
 
     expect(readBootstrapCache(COLONY_ID)).toBeNull()
+  })
+
+  it('defers full sync until the first canvas milestone', async () => {
+    mockFetchWithAuth
+      .mockResolvedValueOnce({ ok: true, status: 200, json: async () => payload('Fast Alpha') })
+      .mockResolvedValueOnce({ ok: true, status: 200, json: async () => payload('Synced Alpha') })
+
+    const { useColonyBootstrap } = await import('@/hooks/useColonyBootstrap')
+    const { result } = renderHook(() => useColonyBootstrap(COLONY_ID), { wrapper })
+
+    await waitFor(() => expect(result.current.data?.colony.name).toBe('Fast Alpha'))
+    expect(mockFetchWithAuth).toHaveBeenCalledTimes(1)
+
+    act(() => {
+      markLoadMilestone('first-canvas')
+    })
+
+    await waitFor(() => expect(result.current.data?.colony.name).toBe('Synced Alpha'))
+    expect(mockFetchWithAuth).toHaveBeenCalledWith('/api/colonies/sync', expect.objectContaining({ method: 'POST' }), { cookieFirst: true })
+    expect(readBootstrapCache(COLONY_ID)?.colony.name).toBe('Synced Alpha')
   })
 })

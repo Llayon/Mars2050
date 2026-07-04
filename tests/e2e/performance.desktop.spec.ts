@@ -154,6 +154,6 @@ test('authenticated desktop reload uses cached colony while fresh bootstrap is p
   await expect(page.getByText('Cached Alpha')).toBeVisible()
   await expect(page.getByTestId('resume-sync-status')).toBeVisible()
 
-  await expectLoadMilestone(page, 'fresh-bootstrap-end')
+  await expectLoadMilestone(page, 'bootstrap-sync-end')
   await expect(page.getByTestId('resume-sync-status')).toBeHidden()
 })

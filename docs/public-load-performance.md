@@ -45,6 +45,7 @@ The public auth screen should be server/static HTML first. Auth/session resume s
 - Bootstrap uses cookie-first same-origin fetch when possible, avoiding a duplicate `supabase.auth.getSession()` before `/api/colonies/bootstrap`.
 - Authenticated refresh uses a 30-minute display-only bootstrap cache to render the last colony snapshot before fresh bootstrap completes.
 - Game-shell and canvas loading now use one resume flow: no second full-screen `Загрузка колонии...`; fresh sync is shown as a small HUD status.
+- `/api/colonies/bootstrap` is now the fast first-render read path; expensive recalculation runs through deferred `/api/colonies/sync`.
 
 ## Session Resume Flash Guard
 
@@ -97,6 +98,7 @@ Runtime load milestones use the `mars2050:load:*` performance mark prefix:
 | `first-canvas` | Pixi canvas and base fallback grid reached the first visible render |
 | `game-shell-mounted` | Authenticated game shell mounted after auth resume |
 | `fresh-bootstrap-end` | Fresh bootstrap request finished after cached or cold first render |
+| `bootstrap-sync-start` / `bootstrap-sync-end` | Deferred full colony recalculation after first canvas |
 | `late-assets-ready` | Remaining colony texture preload finished |
 | `overlay-open` | User opened a lazy heavy overlay |
 | `resume-overlay-hidden` | Static resume overlay was released after game resume |
@@ -135,6 +137,7 @@ Current sequence for an existing web session:
 4. `GameShell` mounts as soon as `user + colonyId` are known.
 5. `ColonyCanvas` draws the fallback grid before bootstrap data and late textures finish.
 6. `/api/colonies/bootstrap` hydrates colony/resources/buildings/population after the first game shell is mounted.
+7. After `first-canvas`, `/api/colonies/sync` runs recalculation/events/work-orders and updates the displayed payload/cache.
 
 Fallback behavior:
 
@@ -156,14 +159,14 @@ Implemented v1 plan:
 
 Deferred out of this slice:
 
-- No `/api/colonies/bootstrap-fast` endpoint yet.
-- No split between first-render reads and post-render economy sync yet.
+- No separate `/api/colonies/bootstrap-fast` URL; the existing bootstrap endpoint is the fast path.
+- Further backend work can reduce sync cost, but it is no longer on the first-canvas path.
 
 Verification for this slice:
 
 - `npx tsc --noEmit --pretty false` passed.
 - `npx tsx scripts/check-limits.ts --diff HEAD --json` passed.
-- `npm test` passed: 425 tests.
+- `npm test` passed: 430 tests.
 - `npm run build` passed.
 - `npm run test:e2e -- --reporter=line` passed: 12 tests.
 

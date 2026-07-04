@@ -1,4 +1,5 @@
 export const LOAD_MILESTONE_PREFIX = 'mars2050:load:'
+export const LOAD_MILESTONE_EVENT = 'mars2050:load-milestone'
 
 export const LOAD_MILESTONE_NAMES = [
   'public-shell',
@@ -9,6 +10,8 @@ export const LOAD_MILESTONE_NAMES = [
   'first-canvas',
   'game-shell-mounted',
   'fresh-bootstrap-end',
+  'bootstrap-sync-start',
+  'bootstrap-sync-end',
   'late-assets-ready',
   'overlay-open',
   'resume-overlay-hidden',
@@ -22,8 +25,12 @@ export interface LoadMilestone {
 }
 
 export function markLoadMilestone(name: LoadMilestoneName): void {
-  if (typeof performance === 'undefined' || typeof performance.mark !== 'function') return
-  performance.mark(`${LOAD_MILESTONE_PREFIX}${name}`)
+  if (typeof performance !== 'undefined' && typeof performance.mark === 'function') {
+    performance.mark(`${LOAD_MILESTONE_PREFIX}${name}`)
+  }
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent(LOAD_MILESTONE_EVENT, { detail: { name } }))
+  }
 }
 
 export function getLoadMilestones(): LoadMilestone[] {

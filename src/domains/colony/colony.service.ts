@@ -108,7 +108,45 @@ export async function initColonyPopulation(colonyId: string): Promise<{ success:
 }
 
 /**
- * Loads all data required for the first colony render.
+ * Reads the current colony render snapshot without recalculation or lazy ticks.
+ * Falls back to full bootstrap when legacy data is missing.
+ */
+export async function getColonyBootstrapFastData(colonyId: string): Promise<{ data?: ColonyBootstrapPayload; error?: string }> {
+  const supabase = getServerClient()
+
+  const [
+    { data: colony, error: colonyError },
+    { data: resources, error: resourcesError },
+    { data: buildings, error: buildingsError },
+    { data: population, error: populationError }
+  ] = await Promise.all([
+    supabase.from('colonies').select('*').eq('id', colonyId).single(),
+    supabase.from('resources').select('*').eq('colony_id', colonyId),
+    supabase.from('buildings').select('*').eq('colony_id', colonyId).order('created_at', { ascending: true }),
+    supabase.from('population').select('*').eq('colony_id', colonyId).maybeSingle()
+  ])
+
+  const fetchError = colonyError?.message || resourcesError?.message || buildingsError?.message || populationError?.message
+  if (fetchError || !colony) return { error: fetchError || 'Colony not found' }
+
+  const terrainGrid = (colony as { terrain_grid?: unknown }).terrain_grid
+  const hasTerrain = Array.isArray(terrainGrid) && terrainGrid.length > 0
+  if (!hasTerrain || !resources || resources.length === 0 || !population) {
+    return getColonyBootstrapData(colonyId)
+  }
+
+  return {
+    data: {
+      colony: colony as unknown as Colony,
+      resources: resources as ResourceRow[],
+      buildings: (buildings || []) as BuildingRow[],
+      population: population as PopulationState | null,
+    }
+  }
+}
+
+/**
+ * Loads all data required for a fully synchronized colony render.
  * Applies lazy backfills and resource recalculation before returning rows.
  */
 export async function getColonyBootstrapData(colonyId: string): Promise<{ data?: ColonyBootstrapPayload; error?: string }> {
