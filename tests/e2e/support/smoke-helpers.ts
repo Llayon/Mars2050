@@ -12,12 +12,50 @@ export interface NetworkCollector {
   assertClean: () => void
 }
 
+export interface ResourceTimingSummary {
+  nextStaticJsCount: number
+  nextStaticJsTransferBytes: number
+  nextStaticCssTransferBytes: number
+  apiCount: number
+  supabaseRestCount: number
+  supabaseAuthCount: number
+  topTransfers: ResourceTransfer[]
+}
+
+interface BrowserResourceTiming {
+  host: string
+  path: string
+  transferBytes: number
+  encodedBytes: number
+  decodedBytes: number
+  durationMs: number
+}
+
+interface ResourceTransfer {
+  path: string
+  transferBytes: number
+  encodedBytes: number
+  durationMs: number
+}
+
 function pathname(url: string): string | null {
   try {
     return new URL(url).pathname
   } catch {
     return null
   }
+}
+
+function isNextStaticChunk(entry: BrowserResourceTiming, extension: '.js' | '.css'): boolean {
+  return entry.path.startsWith('/_next/static/chunks/') && entry.path.endsWith(extension)
+}
+
+function isSupabaseHost(host: string): boolean {
+  return host.endsWith('.supabase.co')
+}
+
+function resourceSize(entry: BrowserResourceTiming): number {
+  return Math.max(entry.transferBytes, entry.encodedBytes, 0)
 }
 
 export function collectNetwork(page: Page): NetworkCollector {
@@ -63,6 +101,51 @@ export function collectNetwork(page: Page): NetworkCollector {
       expect(badResponses, 'bad responses').toEqual([])
     },
   }
+}
+
+export async function summarizeResourceTimings(page: Page): Promise<ResourceTimingSummary> {
+  const entries = await page.evaluate(() => {
+    return (performance.getEntriesByType('resource') as PerformanceResourceTiming[]).flatMap(entry => {
+      try {
+        const parsed = new URL(entry.name)
+        return [{
+          host: parsed.host,
+          path: parsed.pathname,
+          transferBytes: Math.max(0, Math.round(entry.transferSize || 0)),
+          encodedBytes: Math.max(0, Math.round(entry.encodedBodySize || 0)),
+          decodedBytes: Math.max(0, Math.round(entry.decodedBodySize || 0)),
+          durationMs: Math.max(0, Math.round(entry.duration || 0)),
+        }]
+      } catch {
+        return []
+      }
+    })
+  })
+
+  const jsEntries = entries.filter(entry => isNextStaticChunk(entry, '.js'))
+  const cssEntries = entries.filter(entry => isNextStaticChunk(entry, '.css'))
+
+  return {
+    nextStaticJsCount: jsEntries.length,
+    nextStaticJsTransferBytes: jsEntries.reduce((sum, entry) => sum + resourceSize(entry), 0),
+    nextStaticCssTransferBytes: cssEntries.reduce((sum, entry) => sum + resourceSize(entry), 0),
+    apiCount: entries.filter(entry => entry.path.startsWith('/api/')).length,
+    supabaseRestCount: entries.filter(entry => isSupabaseHost(entry.host) && entry.path.startsWith('/rest/v1')).length,
+    supabaseAuthCount: entries.filter(entry => isSupabaseHost(entry.host) && entry.path.startsWith('/auth/v1')).length,
+    topTransfers: entries
+      .map(entry => ({
+        path: entry.path,
+        transferBytes: resourceSize(entry),
+        encodedBytes: entry.encodedBytes,
+        durationMs: entry.durationMs,
+      }))
+      .sort((left, right) => right.transferBytes - left.transferBytes)
+      .slice(0, 8),
+  }
+}
+
+export function expectBudget(actual: number, max: number, label: string): void {
+  expect(actual, `${label}: expected ${actual} <= ${max}`).toBeLessThanOrEqual(max)
 }
 
 export async function resetE2eSession(page: Page): Promise<void> {

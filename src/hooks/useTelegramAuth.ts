@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { supabase } from '@/lib/supabase'
+import { getBrowserSupabase } from '@/lib/browser-supabase'
 import { hasTelegramWebAppSignal } from '@/lib/telegram-auth-detection'
 import type { WebAppUser } from '@twa-dev/types'
 type TwaWebApp = typeof import('@twa-dev/sdk').default
@@ -59,6 +59,7 @@ export function useTelegramAuth(enabled = true): TelegramAuthState {
   })
 
   const signInSupabase = useCallback(async (email: string, password: string) => {
+    const supabase = await getBrowserSupabase()
     const { error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) throw new Error(`Supabase session failed: ${error.message}`)
   }, [])
@@ -103,32 +104,33 @@ export function useTelegramAuth(enabled = true): TelegramAuthState {
     }
 
     async function init() {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (session?.user?.email?.startsWith('tg_')) {
-        const tgUser = loadTgUser()
-        setState(prev => ({
-          ...prev,
-          isTWA: true,
-          tgUser,
-          loading: false,
-        }))
-        return
-      }
-
-      const webApp = await getWebApp()
-      if (!webApp?.initData) {
-        setState(prev => ({ ...prev, loading: false }))
-        return
-      }
-
-      const tgWebUser = (webApp.initDataUnsafe?.user as WebAppUser | undefined) ?? null
-      if (!tgWebUser) {
-        setState(prev => ({ ...prev, loading: false, error: 'Telegram user not found in initData' }))
-        return
-      }
-
-      const tgUser = { id: tgWebUser.id, first_name: tgWebUser.first_name, username: tgWebUser.username }
       try {
+        const supabase = await getBrowserSupabase()
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session?.user?.email?.startsWith('tg_')) {
+          const tgUser = loadTgUser()
+          setState(prev => ({
+            ...prev,
+            isTWA: true,
+            tgUser,
+            loading: false,
+          }))
+          return
+        }
+
+        const webApp = await getWebApp()
+        if (!webApp?.initData) {
+          setState(prev => ({ ...prev, loading: false }))
+          return
+        }
+
+        const tgWebUser = (webApp.initDataUnsafe?.user as WebAppUser | undefined) ?? null
+        if (!tgWebUser) {
+          setState(prev => ({ ...prev, loading: false, error: 'Telegram user not found in initData' }))
+          return
+        }
+
+        const tgUser = { id: tgWebUser.id, first_name: tgWebUser.first_name, username: tgWebUser.username }
         await loadColony(tgUser)
       } catch (err) {
         setState(prev => ({
@@ -139,7 +141,7 @@ export function useTelegramAuth(enabled = true): TelegramAuthState {
       }
     }
 
-    init()
+    void init()
   }, [enabled, loadColony])
 
   return state

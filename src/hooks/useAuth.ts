@@ -1,23 +1,18 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
-import { supabase } from '@/lib/supabase'
+import { getBrowserSupabase, type BrowserSupabase } from '@/lib/browser-supabase'
 import { getCachedColonyId, setCachedColonyId } from '@/lib/colony-id-cache'
 import { useTelegramAuth } from './useTelegramAuth'
 
 interface AuthUser { id: string; email?: string }
-interface AuthState {
-  user: AuthUser | null; colonyId: string | null; loading: boolean
-  error: string | null; isTWA: boolean; tgUser: { id: number; first_name: string; username?: string } | null
-}
+interface AuthState { user: AuthUser | null; colonyId: string | null; loading: boolean; error: string | null; isTWA: boolean; tgUser: { id: number; first_name: string; username?: string } | null }
 
 const e2eAuthBypass = process.env.NODE_ENV !== 'production' && process.env.NEXT_PUBLIC_E2E_AUTH_BYPASS === '1'
 const getE2eTwaMode = () => typeof window !== 'undefined' && (new URLSearchParams(window.location.search).get('e2e_twa') === '1' || window.innerWidth < 768)
 
 export function useAuth() {
   const telegram = useTelegramAuth(!e2eAuthBypass)
-  const [state, setState] = useState<AuthState>({
-    user: null, colonyId: null, loading: true, error: null, isTWA: false, tgUser: null
-  })
+  const [state, setState] = useState<AuthState>({ user: null, colonyId: null, loading: true, error: null, isTWA: false, tgUser: null })
 
   const formatError = (err: unknown) => {
     const m = String(err)
@@ -53,24 +48,39 @@ export function useAuth() {
 
   useEffect(() => {
     if (e2eAuthBypass) return
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session) {
-        const secure = typeof window !== 'undefined' && window.location.protocol === 'https:' ? '; Secure' : ''
-        document.cookie = `supabase-access-token=${session.access_token}; path=/; max-age=${session.expires_in}; SameSite=Lax${secure}`
-      } else {
-        document.cookie = `supabase-access-token=; path=/; max-age=0`
+    let cancelled = false
+    let unsubscribe: (() => void) | null = null
+
+    async function initSupabaseAuth() {
+      try {
+        const supabase = await getBrowserSupabase()
+        if (cancelled) return
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+          if (session) {
+            const secure = typeof window !== 'undefined' && window.location.protocol === 'https:' ? '; Secure' : ''
+            document.cookie = `supabase-access-token=${session.access_token}; path=/; max-age=${session.expires_in}; SameSite=Lax${secure}`
+          } else {
+            document.cookie = `supabase-access-token=; path=/; max-age=0`
+          }
+          setState(prev => {
+            if (session?.user && !prev.colonyId) loadColony(session.user.id)
+            return { ...prev, user: session?.user ?? null }
+          })
+        })
+        unsubscribe = () => subscription.unsubscribe()
+        await checkSession(supabase)
+      } catch (error) {
+        if (!cancelled) setState(prev => ({ ...prev, loading: false, error: formatError(error) }))
       }
-      setState(prev => {
-        if (session?.user && !prev.colonyId) loadColony(session.user.id)
-        return { ...prev, user: session?.user ?? null }
-      })
-    })
-    checkSession()
-    return () => subscription.unsubscribe()
+    }
+
+    void initSupabaseAuth()
+    return () => { cancelled = true; unsubscribe?.() }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  async function checkSession() {
+  async function checkSession(supabase: BrowserSupabase) {
     try {
       const { data: { session } } = await supabase.auth.getSession()
       if (session?.user) {
@@ -103,6 +113,7 @@ export function useAuth() {
   }
 
   const login = useCallback(async (email: string, password: string) => {
+    const supabase = await getBrowserSupabase()
     const { error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) {
       if ((error.message ?? '').includes('Failed to fetch') || error.status === 0)
@@ -112,6 +123,7 @@ export function useAuth() {
   }, [])
 
   const signup = useCallback(async (email: string, password: string) => {
+    const supabase = await getBrowserSupabase()
     const { error } = await supabase.auth.signUp({ email, password, options: { emailRedirectTo: `${window.location.origin}/auth/callback` } })
     if (error) {
       if ((error.message ?? '').includes('Failed to fetch') || error.status === 0)
@@ -125,6 +137,7 @@ export function useAuth() {
       setState({ user: null, colonyId: null, loading: false, error: null, isTWA: false, tgUser: null })
       return
     }
+    const supabase = await getBrowserSupabase()
     await supabase.auth.signOut()
     document.cookie = `supabase-access-token=; path=/; max-age=0`
     try { sessionStorage.removeItem('mars2050_tg_user') } catch {}
