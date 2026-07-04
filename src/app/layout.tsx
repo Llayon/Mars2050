@@ -23,6 +23,7 @@ export default function RootLayout({
     <html
       lang="ru"
       className="h-full antialiased font-sans"
+      suppressHydrationWarning
     >
       <body className="min-h-[100dvh] flex flex-col bg-gray-900 text-white font-sans">
         {children}

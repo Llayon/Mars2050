@@ -52,3 +52,22 @@ test('stored auth marker shows resume shell before app runtime hydrates', async 
 
   await context.close()
 })
+
+test('stored auth marker hydrates without html class mismatch warning', async ({ browser, baseURL }) => {
+  const url = baseURL ?? 'http://127.0.0.1:3100'
+  const context = await browser.newContext({ viewport: { width: 1440, height: 900 } })
+  await context.addCookies([{ name: 'supabase-access-token', value: 'resume-marker', url }])
+  const page = await context.newPage()
+  const consoleErrors: string[] = []
+
+  page.on('console', message => {
+    if (message.type() === 'error') consoleErrors.push(message.text())
+  })
+
+  await page.goto(url, { waitUntil: 'domcontentloaded' })
+  await expect(page.getByTestId('auth-resume-shell')).toBeVisible()
+  await page.waitForTimeout(1000)
+
+  expect(consoleErrors.filter(error => error.includes('hydrated') || error.includes('Hydration'))).toEqual([])
+  await context.close()
+})
