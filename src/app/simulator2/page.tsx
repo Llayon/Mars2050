@@ -2,12 +2,11 @@
 
 import { useState } from 'react'
 import { UNIT_TYPES } from '@/domains/combat/combat.config'
-import type { BattleTick, Obstacle, SimUnit, UnitRow, UnitTypeKey } from '@/domains/combat/combat.types'
-import { simulateBattle } from '@/domains/combat/combat.engine'
+import type { UnitRow, UnitTypeKey } from '@/domains/combat/combat.types'
 import { generateObstacles } from '@/domains/combat/combat.utils'
-import { getSimulatorPreset } from './simulator.presets'
 import { UnitSelector, GlobalUpgradesSelector, UnitUpgradesPanel, SimulatorGrid } from './simulator.components'
-import { BattleReplayModal } from '@/components/game/BattleReplayModal'
+import { LazyBattleReplayModal } from './simulator.lazy'
+import type { SimulatorReplayData } from './simulator.lazy'
 import Link from 'next/link'
 
 const getRandomInt = (max: number) => Math.floor(Math.random() * max)
@@ -17,21 +16,18 @@ export default function SimulatorPage() {
   const seed = parseInt(seedInput) || 0
   const [obstacles, setObstacles] = useState(() => generateObstacles(12345))
 
-  function handleRegenerateObstacles() {
-    setObstacles(generateObstacles(seed))
-  }
-
   function handleSeedChange(e: React.ChangeEvent<HTMLInputElement>) {
     setSeedInput(e.target.value)
-    const newSeed = parseInt(e.target.value) || 0
-    setObstacles(generateObstacles(newSeed))
+    setObstacles(generateObstacles(parseInt(e.target.value) || 0))
   }
 
   const [attackerUnits, setAttackerUnits] = useState<UnitRow[]>([])
   const [defenderUnits, setDefenderUnits] = useState<UnitRow[]>([])
-  const [replayData, setReplayData] = useState<{ attackerUnits: UnitRow[], defenderUnits: UnitRow[], logs: BattleTick[], winner: string, initialState: SimUnit[], obstacles?: Obstacle[] } | null>(null)
+  const [replayData, setReplayData] = useState<SimulatorReplayData | null>(null)
   const [attackerGlobals, setAttackerGlobals] = useState<string[]>([])
   const [defenderGlobals, setDefenderGlobals] = useState<string[]>([])
+  const [isSimulating, setIsSimulating] = useState(false)
+  const [simulatorError, setSimulatorError] = useState<string | null>(null)
 
   const [selectedUnit, setSelectedUnit] = useState<{team: 'attacker'|'defender', index: number} | null>(null)
 
@@ -86,15 +82,28 @@ export default function SimulatorPage() {
     }
   }
 
-  function handleSimulate() {
-    if (attackerUnits.length === 0 && defenderUnits.length === 0) return alert('Добавьте юнитов!')
-    const aClone = JSON.parse(JSON.stringify(attackerUnits))
-    const dClone = JSON.parse(JSON.stringify(defenderUnits))
-    const result = simulateBattle(aClone, dClone, seed, obstacles, attackerGlobals, defenderGlobals)
-    setReplayData({ attackerUnits: aClone, defenderUnits: dClone, logs: result.logs, winner: result.winner, initialState: result.initialState, obstacles: result.obstacles })
+  async function handleSimulate() {
+    if (attackerUnits.length === 0 && defenderUnits.length === 0) {
+      setSimulatorError('Добавьте юнитов перед запуском симуляции.')
+      return
+    }
+    setIsSimulating(true); setSimulatorError(null)
+    try {
+      const { simulateBattle } = await import('@/domains/combat/combat.engine')
+      const aClone = JSON.parse(JSON.stringify(attackerUnits)) as UnitRow[]
+      const dClone = JSON.parse(JSON.stringify(defenderUnits)) as UnitRow[]
+      const result = simulateBattle(aClone, dClone, seed, obstacles, attackerGlobals, defenderGlobals)
+      setReplayData({ attackerUnits: aClone, defenderUnits: dClone, logs: result.logs, winner: result.winner, initialState: result.initialState, obstacles: result.obstacles })
+    } catch (err) {
+      setSimulatorError(err instanceof Error ? err.message : 'Не удалось запустить симуляцию.')
+    } finally {
+      setIsSimulating(false)
+    }
   }
 
-  function loadPreset(presetName: string) {
+  async function loadPreset(presetName: string) {
+    if (!presetName) return
+    const { getSimulatorPreset } = await import('./simulator.presets')
     const preset = getSimulatorPreset(presetName)
     if (preset) {
        setAttackerUnits(preset.attackers)
@@ -103,13 +112,11 @@ export default function SimulatorPage() {
   }
 
   const toggleAttackerGlobal = (upgId: string) => {
-    if (attackerGlobals.includes(upgId)) setAttackerGlobals(attackerGlobals.filter(id => id !== upgId));
-    else setAttackerGlobals([...attackerGlobals, upgId]);
+    setAttackerGlobals(current => current.includes(upgId) ? current.filter(id => id !== upgId) : [...current, upgId])
   }
 
   const toggleDefenderGlobal = (upgId: string) => {
-    if (defenderGlobals.includes(upgId)) setDefenderGlobals(defenderGlobals.filter(id => id !== upgId));
-    else setDefenderGlobals([...defenderGlobals, upgId]);
+    setDefenderGlobals(current => current.includes(upgId) ? current.filter(id => id !== upgId) : [...current, upgId])
   }
 
   const toggleUpgrade = (team: 'attacker'|'defender', index: number, upgId: string) => {
@@ -144,7 +151,7 @@ export default function SimulatorPage() {
           </div>
           <div>
             <label className="text-gray-400 text-sm block mb-1">Obstacles</label>
-            <button onClick={handleRegenerateObstacles} className="bg-gray-800 hover:bg-gray-700 text-white px-3 py-1 rounded border border-gray-700 transition-colors">
+            <button onClick={() => setObstacles(generateObstacles(seed))} className="bg-gray-800 hover:bg-gray-700 text-white px-3 py-1 rounded border border-gray-700 transition-colors">
               Пересоздать кратеры
             </button>
           </div>
@@ -201,9 +208,10 @@ export default function SimulatorPage() {
               </div>
             </div>
             
-            <button onClick={handleSimulate} disabled={attackerUnits.length === 0 && defenderUnits.length === 0} className="bg-green-600 hover:bg-green-500 disabled:bg-gray-700 text-white font-bold text-xl py-4 rounded-xl mt-4">
-              ⚔️ НАЧАТЬ СИМУЛЯЦИЮ
+            <button onClick={handleSimulate} disabled={isSimulating || (attackerUnits.length === 0 && defenderUnits.length === 0)} className="bg-green-600 hover:bg-green-500 disabled:bg-gray-700 text-white font-bold text-xl py-4 rounded-xl mt-4">
+              {isSimulating ? 'СИМУЛЯЦИЯ...' : '⚔️ НАЧАТЬ СИМУЛЯЦИЮ'}
             </button>
+            {simulatorError && <p className="text-sm text-red-300">{simulatorError}</p>}
           </div>
 
           {/* Визуальная сетка */}
@@ -227,7 +235,7 @@ export default function SimulatorPage() {
       </div>
 
       {replayData && (
-        <BattleReplayModal
+        <LazyBattleReplayModal
           attackerUnits={replayData.attackerUnits}
           defenderUnits={replayData.defenderUnits}
           initialState={replayData.initialState}

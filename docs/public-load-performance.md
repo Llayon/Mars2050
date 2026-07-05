@@ -172,9 +172,17 @@ Verification for this slice:
 
 ## Simulator Routes
 
-`/simulator` and `/simulator2` are static routes but intentionally heavier than `/`: live checks showed roughly 300 KB JS transfer and 18 JS files on the first screen because Pixi/combat/replay code belongs to those entrypoints.
+`/simulator` and `/simulator2` are static routes but historically loaded heavier than `/`. A live `/simulator2` check before the route split showed about 304 KB JS transfer, 18 JS files, and a 36 s first-screen delay on a slow production request because replay/Pixi/combat chunks were part of the first screen graph.
 
-They are tracked as dev/QA performance debt, not as the primary player-load path. If these routes become player-facing, lazy-load replay/Pixi work after the user starts a simulation.
+`/simulator2` now follows the same intent-driven rule as gameplay overlays:
+
+- The first screen renders only the simulator shell, unit selectors, and grid.
+- Battle replay/Pixi code loads through `LazyBattleReplayModal` only after simulation data exists.
+- The deterministic combat engine imports only when the player starts a simulation.
+- Preset data imports only after a preset is selected.
+- `tests/e2e/simulator2-load.spec.ts` guards that replay/Pixi chunks and API requests are absent from the initial simulator screen.
+
+`/simulator` remains tracked as dev/QA performance debt. If it becomes player-facing, apply the same lazy replay/combat split.
 
 ## Acceptance Criteria
 
