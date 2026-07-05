@@ -65,7 +65,7 @@ export function TopResourceBar({ resources, population, colony, isMobile }: TopR
               Lv. {colony?.level || 1}
             </span>
           </div>
-          <div className="flex gap-2 overflow-x-auto scrollbar-none no-scrollbar text-[10px] flex-1 ml-2 pr-1 select-none">
+          <div className="flex gap-2 overflow-x-auto scrollbar-none no-scrollbar text-[10px] flex-1 min-w-0 ml-2 pr-1 select-none">
             {displayResources.map(res => {
               const delta = res.production_rate - res.consumption_rate
               const deltaColor = delta > 0 ? 'text-green-400' : delta < 0 ? 'text-red-400' : 'text-gray-400'

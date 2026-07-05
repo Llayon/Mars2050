@@ -36,7 +36,7 @@ export const BottomNav = memo(function BottomNav({ activeTab, onTabChange }: Bot
                 key={tab.id}
                 data-testid={`bottom-nav-${tab.id}`}
                 onClick={() => onTabChange(tab.id)}
-                className={`relative flex flex-col items-center py-2 px-3 min-w-0 transition-all duration-200 rounded-xl active:scale-95 ${
+                className={`relative flex flex-col items-center py-2 px-1 sm:px-3 min-w-0 transition-all duration-200 rounded-xl active:scale-95 ${
                   isActive
                     ? 'text-cyan-400 bg-cyan-900/20'
                     : 'text-gray-500 hover:text-cyan-200 hover:bg-gray-800/50'
@@ -45,7 +45,7 @@ export const BottomNav = memo(function BottomNav({ activeTab, onTabChange }: Bot
                 <span className={`text-xl leading-none transition-transform duration-300 flex items-center justify-center h-6 ${isActive ? 'scale-110 text-cyan-400' : 'text-gray-500'}`}>
                   {tab.icon}
                 </span>
-                <span className={`text-[10px] mt-1 font-bold tracking-wider uppercase ${
+                <span className={`text-[8px] sm:text-[10px] mt-1 font-bold tracking-wider uppercase whitespace-nowrap ${
                   isActive ? 'opacity-100 text-cyan-300' : 'opacity-70'
                 }`}>
                   {tab.label}

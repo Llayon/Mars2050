@@ -14,8 +14,8 @@ interface ResourcesBarProps {
 export const ResourcesBar = memo(function ResourcesBar({ resources, loading }: ResourcesBarProps) {
   if (loading) {
     return (
-      <HudPanel className="px-3 py-2">
-        <div className="flex gap-3 overflow-x-auto">
+      <HudPanel className="px-3 py-2 w-full overflow-hidden">
+        <div className="flex gap-3 overflow-x-auto min-w-0">
           {[1, 2, 3, 4].map(i => (
             <div key={i} className="h-7 w-20 bg-gray-700/50 rounded animate-pulse" />
           ))}
@@ -25,8 +25,8 @@ export const ResourcesBar = memo(function ResourcesBar({ resources, loading }: R
   }
 
   return (
-    <HudPanel className="px-3 py-2">
-      <div className="flex gap-2 overflow-x-auto scrollbar-none">
+    <HudPanel className="px-3 py-2 w-full overflow-hidden">
+      <div className="flex gap-2 overflow-x-auto scrollbar-none min-w-0">
         {resources.map(r => (
           <div
             key={r.type}
