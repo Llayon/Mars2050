@@ -11,20 +11,19 @@ export const UnitSelector = ({ onAddUnit }: { onAddUnit: (key: UnitTypeKey) => v
         <div className="flex flex-wrap gap-2">
           {cat.keys.map(key => {
             const cfg = UNIT_TYPES[key];
+            const statsTitle = `${cfg.name}
+HP: ${cfg.baseStats.hp} | Атака: ${cfg.baseStats.attack}
+Броня: ${cfg.baseStats.defense} | Скорость: ${cfg.baseStats.speed}
+Тип: ${cfg.baseStats.attackType}${cfg.baseStats.isFlying ? ' | Летает' : ''}
+Отряд: ${cfg.squadSize || 1} шт.`
             return (
               <button 
                 key={key} 
                 onClick={() => onAddUnit(key)} 
-                className="bg-gray-800 hover:bg-gray-700 border border-gray-700 hover:border-gray-500 px-3 py-1.5 rounded-lg text-sm transition-all group relative flex items-center gap-2"
+                title={statsTitle}
+                className="bg-gray-800 hover:bg-gray-700 border border-gray-700 hover:border-gray-500 px-3 py-1.5 rounded-lg text-sm transition-all flex items-center gap-2"
               >
                 <span className="text-gray-300 font-medium">+ {cfg.name}</span>
-                <div className="absolute bottom-full left-0 mb-2 hidden group-hover:block w-48 bg-gray-900 border border-gray-700 p-2 rounded shadow-xl z-50 text-xs text-left">
-                   <p className="font-bold text-blue-300 mb-1">{cfg.name}</p>
-                   <p className="text-gray-400">HP: <span className="text-white">{cfg.baseStats.hp}</span> | Атака: <span className="text-white">{cfg.baseStats.attack}</span></p>
-                   <p className="text-gray-400">Броня: <span className="text-white">{cfg.baseStats.defense}</span> | Скорость: <span className="text-white">{cfg.baseStats.speed}</span></p>
-                   <p className="text-gray-400">Тип: <span className="text-white">{cfg.baseStats.attackType}</span> {cfg.baseStats.isFlying ? '✈️' : ''}</p>
-                   <p className="text-gray-400">Отряд: <span className="text-white">{cfg.squadSize || 1} шт.</span></p>
-                </div>
               </button>
             )
           })}

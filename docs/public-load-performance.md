@@ -180,6 +180,7 @@ Verification for this slice:
 - Battle replay/Pixi code loads through `LazyBattleReplayModal` only after simulation data exists.
 - The deterministic combat engine imports only when the player starts a simulation.
 - Preset data imports only after a preset is selected.
+- Hidden unit tooltip DOM was removed from the prerendered shell; compact button `title` text keeps unit stats available without duplicating large hidden markup.
 - `tests/e2e/simulator2-load.spec.ts` guards that replay/Pixi chunks and API requests are absent from the initial simulator screen.
 
 `/simulator` remains tracked as dev/QA performance debt. If it becomes player-facing, apply the same lazy replay/combat split.
