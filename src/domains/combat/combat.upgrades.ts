@@ -1,3 +1,5 @@
+import type { AttackChargeConfig, ConditionalAttackModeConfig, ControlBeamConfig, DelayedReassemblyConfig, FieldEffectConfig, FormationModifiersConfig, PeriodicAbilityConfig, StatGrowthConfig, SweepAttackConfig, TargetPriorityProfile, TransformModeConfig, TriggerEffectConfig } from './combat.sim.types'
+
 export interface UpgradeConfig {
   id: string
   name: string
@@ -37,6 +39,18 @@ export interface UpgradeConfig {
     summonCounterDamageMult?: number
     accuracyPenaltyResist?: number
     grantRevealAura?: { radius: number; duration: number; interval?: number }
+    periodicAbilities?: PeriodicAbilityConfig[]
+    triggerEffects?: TriggerEffectConfig[]
+    transformMode?: TransformModeConfig[]
+    controlBeam?: ControlBeamConfig
+    fieldEffect?: FieldEffectConfig[]
+    formationModifiers?: FormationModifiersConfig
+    statGrowth?: StatGrowthConfig
+    attackCharge?: AttackChargeConfig
+    reassembly?: DelayedReassemblyConfig
+    targetPriorityProfile?: TargetPriorityProfile
+    conditionalAttackMode?: ConditionalAttackModeConfig
+    sweepAttack?: SweepAttackConfig
   }
 }
 

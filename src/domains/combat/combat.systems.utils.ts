@@ -4,6 +4,8 @@ import type { UnitTypeKey } from './combat.types';
 import { UNIT_TYPES } from './combat.config';
 import { PRNG, FIELD_WIDTH, FIELD_HEIGHT } from './combat.utils';
 import { applyOnKillEffects } from './combat.on-kill';
+import { processDeathTriggers, processKillTriggers } from './combat.triggers';
+import { startReassembly } from './combat.reassembly';
 
 /**
  * Handles death logic for a unit, including resurrections, on-death puddles, and clone spawning.
@@ -21,11 +23,15 @@ export function handleDeath(t: SimUnit, unit: SimUnit, units: SimUnit[], actions
         actions.push({ unitId: t.id, type: 'heal', targetId: t.id, damage: t.maxHp });
         return;
     }
+    if (t.reassemblyConfig) startReassembly(t, t.reassemblyConfig, t.id, actions);
     t.isDead = true;
     actions.push({ unitId: t.id, type: 'die' });
+    const triggerContext = { units, hazards, actions, rng, onUnitDeath: (target: SimUnit, source: SimUnit) => handleDeath(target, source, units, actions, hazards, rng) };
+    processDeathTriggers(t, unit, triggerContext);
     applyOnKillEffects(unit, t, actions);
+    processKillTriggers(unit, t, triggerContext);
     if (t.onDeathPuddle) {
-        hazards.push({
+        const hazard: SimHazard = {
             id: 'hazard_' + Math.floor(rng.next() * 1000000),
             team: t.team,
             type: t.onDeathPuddle,
@@ -34,7 +40,9 @@ export function handleDeath(t: SimUnit, unit: SimUnit, units: SimUnit[], actions
             radius: 50,
             damagePerTick: t.onDeathPuddle === 'acid' ? Math.floor(t.maxHp * 0.1) : 10,
             duration: 40
-        });
+        };
+        hazards.push(hazard);
+        actions.push({ unitId: t.id, type: 'hazard_spawn', hazardId: hazard.id, statusType: hazard.type, toX: hazard.x, toY: hazard.y, radius: hazard.radius });
     }
     if (unit.replicateOnKill) {
         const newId = 'clone_' + Math.floor(rng.next() * 1000000);

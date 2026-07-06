@@ -1,5 +1,5 @@
 import type { BattleAction } from './combat.actions'
-import type { SimUnit } from './combat.sim.types'
+import type { SimUnit, TargetMarkConfig } from './combat.sim.types'
 
 /**
  * Applies a source-specific target mark from an attacker's config.
@@ -11,12 +11,17 @@ import type { SimUnit } from './combat.sim.types'
 export function applyTargetMark(attacker: SimUnit, target: SimUnit, actions?: BattleAction[]): boolean {
   if (!attacker.markOnHit || target.isDead) return false
 
-  target.targetMark = { ...attacker.markOnHit, sourceUnitId: attacker.id }
+  return applyConfiguredTargetMark(attacker, target, attacker.markOnHit, actions)
+}
+
+export function applyConfiguredTargetMark(attacker: SimUnit, target: SimUnit, mark: TargetMarkConfig, actions?: BattleAction[]): boolean {
+  if (target.isDead) return false
+  target.targetMark = { ...mark, sourceUnitId: attacker.id }
   actions?.push({
     unitId: attacker.id,
     type: 'target_mark',
     targetId: target.id,
-    value: target.targetMark.damageMultiplier ?? target.targetMark.executeThreshold,
+    value: target.targetMark.damageMultiplier ?? target.targetMark.executeThreshold ?? target.targetMark.focusPriority,
   })
   return true
 }

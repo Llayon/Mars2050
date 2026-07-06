@@ -1,14 +1,10 @@
 import { Database, UnitsType } from '@/types/database'
-import type { BurrowConfig, StatusEffect, SupportAura, TargetMarkConfig, UnitModeSwitchConfig, UnitStanceConfig } from './combat.sim.types'
+import type { AttackChargeConfig, BurrowConfig, CombatTag, ConditionalAttackModeConfig, ControlBeamConfig, DelayedReassemblyConfig, FieldEffectConfig, FormationModifiersConfig, PercentHpDamageConfig, PeriodicAbilityConfig, StatGrowthConfig, StatusEffect, SupportAura, SweepAttackConfig, TargetMarkConfig, TargetPriorityProfile, TransformModeConfig, TriggerEffectConfig, UnitModeSwitchConfig, UnitStanceConfig } from './combat.sim.types'
 
 export type UnitRow = Database['public']['Tables']['units']['Row']
 export type BattleRow = Database['public']['Tables']['battles']['Row']
 export type UnitTypeKey = UnitsType
 export type TargetingAcquisition = 'local' | 'global'
-export type CombatTag =
-  | 'infantry' | 'vehicle' | 'aircraft' | 'structure'
-  | 'organic' | 'mechanical' | 'armored' | 'light' | 'heavy'
-  | 'shielded' | 'healer' | 'summoner' | 'summoned' | 'stealth' | 'explosive'
 export type TargetingProfileKey =
   | 'default_local' | 'long_range_priority' | 'anti_air'
   | 'anti_armor' | 'siege' | 'assassin' | 'support_hunter'
@@ -38,7 +34,7 @@ export interface UnitBaseStats {
   sideWeapon?: { damage: number; range: number; maxTargets: number; canTargetAir?: boolean }
   rampDamage?: { step: number; maxMultiplier: number }
   chargeDamage?: { minDistance: number; maxDistance: number; maxMultiplier: number }
-  percentHpDamage?: { percent: number; maxBonus: number }
+  percentHpDamage?: PercentHpDamageConfig & { maxBonus: number }
   shieldDamageMult?: number; armorPierceRatio?: number; summonCounterDamageMult?: number; accuracyPenaltyResist?: number
   onKill?: { cooldownReset?: boolean; healPercent?: number; status?: StatusEffect }
   linePierce?: { width: number; damageMultiplier: number; maxTargets?: number }
@@ -55,6 +51,9 @@ export interface UnitBaseStats {
   supportAuras?: SupportAura[]
   mineOnAction?: { radius: number; damage: number; duration: number }
   smokeOnAction?: { radius: number; duration: number; rangeSuppression?: number; outputSuppression?: number; accuracySuppression?: number }
+  periodicAbilities?: PeriodicAbilityConfig[]; triggerEffects?: TriggerEffectConfig[]; transformMode?: TransformModeConfig[]; controlBeam?: ControlBeamConfig; fieldEffect?: FieldEffectConfig[]; formationModifiers?: FormationModifiersConfig
+  statGrowth?: StatGrowthConfig; attackCharge?: AttackChargeConfig; reassembly?: DelayedReassemblyConfig
+  targetPriorityProfile?: TargetPriorityProfile; conditionalAttackMode?: ConditionalAttackModeConfig; sweepAttack?: SweepAttackConfig
   isFlying?: boolean; canTargetAir?: boolean
   targetingProfile?: TargetingProfile
   combatTags?: CombatTag[]
@@ -71,6 +70,6 @@ export interface UnitTypeConfig {
   formation?: 'line' | 'wedge' | 'grid'
 }
 
-export type { Team, StatusEffect, StatusType, HackControlMode, StanceMode, MobilityMode, UnitStanceConfig, UnitModeSwitchConfig, BurrowConfig, SupportAura, SupportAuraType, TargetMark, TargetMarkConfig, Obstacle, SimHazard, SimUnit } from './combat.sim.types'
+export type { Team, CombatTag, StatusEffect, StatusType, HackControlMode, StanceMode, MobilityMode, UnitStanceConfig, UnitModeSwitchConfig, BurrowConfig, SupportAura, SupportAuraType, TargetMark, TargetMarkConfig, PercentHpDamageBasis, PercentHpDamageConfig, PeriodicAbilityConfig, RuntimePeriodicAbility, TriggerEffectConfig, RuntimeTriggerEffect, ControlBeamConfig, FieldEffectConfig, RuntimeFieldEffect, TransformModeConfig, FormationModifiersConfig, AttackChargeConfig, ConditionalAttackModeConfig, DelayedReassemblyConfig, StatGrowthConfig, SweepAttackConfig, TargetPriorityProfile, Obstacle, SimHazard, SimUnit } from './combat.sim.types'
 export * from './combat.actions'
 

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { UNIT_TYPES } from '@/domains/combat/combat.config'
 import { applyCombatDamage } from '@/domains/combat/combat.damage'
 import { applyStatus } from '@/domains/combat/combat.status'
 import { actionSystem } from '@/domains/combat/combat.systems'
@@ -133,6 +134,24 @@ describe('combat.damage', () => {
     expect(result.damage).toBe(190)
     expect(target.hp).toBe(2810)
     expect(actions[0]).toEqual({ unitId: 'rail', type: 'percent_hp_damage', targetId: 'fortress', value: 90 })
+  })
+
+  it('can calculate percent HP weapon bonus from current HP instead of max HP', () => {
+    const original = UNIT_TYPES.railgun_walker.baseStats.percentHpDamage
+    UNIT_TYPES.railgun_walker.baseStats.percentHpDamage = { percent: 0.1, maxBonus: 999, basis: 'current' }
+    try {
+      const attacker = makeUnit({ id: 'rail', team: 'attacker', type: 'railgun_walker', attack: 100 })
+      const target = makeUnit({ id: 'wounded', team: 'defender', hp: 300, maxHp: 1000 })
+      const actions: BattleAction[] = []
+
+      const result = applyCombatDamage(attacker, target, attacker.attack, actions)
+
+      expect(result.damage).toBe(130)
+      expect(target.hp).toBe(170)
+      expect(actions[0]).toEqual({ unitId: 'rail', type: 'percent_hp_damage', targetId: 'wounded', value: 30 })
+    } finally {
+      UNIT_TYPES.railgun_walker.baseStats.percentHpDamage = original
+    }
   })
 
   it('does not emit percent HP action for units without percent HP config', () => {

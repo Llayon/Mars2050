@@ -1,9 +1,11 @@
 import { UNIT_TYPES, MAX_TICKS } from './combat.config'
 import { GLOBAL_UPGRADES, UPGRADES, GlobalUpgradeConfig } from './combat.upgrades'
-import { processGlobals } from './combat.globals'
 import { processHazards } from './combat.hazards'
 import { processSpawnerLogic } from './combat.spawner'
-import { getUnitSupportAuras, processSupportAuras } from './combat.auras'
+import { getUnitSupportAuras } from './combat.auras'
+import { getFormationSpacing, prepareRuntimePrimitives } from './combat.runtime-primitives'
+import { processPostHazardPrimitives, processPreActionPrimitives } from './combat.tick-primitives'
+import { getRuntimePrimitiveStats } from './combat.upgrade-primitives'
 import type { UnitRow, BattleAction, BattleTick, BattleResult, UnitTypeKey } from './combat.types'
 import type { Team, SimUnit, Obstacle, SimHazard } from './combat.sim.types'
 import { actionSystem, tickModifiersSystem } from './combat.systems'
@@ -11,20 +13,16 @@ import { targetingSystem } from './combat.targeting'
 import { movementSystem } from './combat.movement'
 import { createMeleeEngagementState, reserveMeleeEngagementSlot } from './combat.melee-engagement'
 import { createCombatMetrics, finalizeCombatMetrics, recordCombatActions, recordCombatTick, type BattleSimulationOptions } from './combat.metrics'
+import { hasPendingReassembly } from './combat.reassembly'
 import { FIELD_WIDTH, FIELD_HEIGHT, PRNG, generateObstacles } from './combat.utils'
 import { createPathfindingMap } from './combat.pathfinding'
 import { SpatialHash } from './spatial-hash'
 import { canAttackControlledTarget } from './combat.control'
 export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[], providedSeed?: number, providedObstacles?: Obstacle[], attackerGlobals: string[] = [], defenderGlobals: string[] = [], options: BattleSimulationOptions = {}): BattleResult {
-  const seed = providedSeed ?? Date.now()
-  const rng = new PRNG(seed)
-  const dt = 0.1
-  const units: SimUnit[] = []
-  const hazards: SimHazard[] = []
-  const activeGlobals: { team: Team, upg: GlobalUpgradeConfig }[] = []
+  const seed = providedSeed ?? Date.now(), rng = new PRNG(seed), dt = 0.1
+  const units: SimUnit[] = [], hazards: SimHazard[] = [], activeGlobals: { team: Team, upg: GlobalUpgradeConfig }[] = []
   attackerGlobals.forEach(id => { if (GLOBAL_UPGRADES[id]) activeGlobals.push({ team: 'attacker', upg: GLOBAL_UPGRADES[id] }) })
   defenderGlobals.forEach(id => { if (GLOBAL_UPGRADES[id]) activeGlobals.push({ team: 'defender', upg: GLOBAL_UPGRADES[id] }) })
-
   const obstacles: Obstacle[] = providedObstacles || generateObstacles(seed);
   const flowFieldMap = createPathfindingMap(obstacles), spatialHash = new SpatialHash();
 
@@ -32,7 +30,7 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
     const config = UNIT_TYPES[u.unit_type as keyof typeof UNIT_TYPES]
     if (!config) return
     const squadSize = config.squadSize || 1
-    const spacing = config.squadSpacing || 20
+    const spacing = getFormationSpacing(config.squadSpacing || 20, config.baseStats)
     const rowSize = Math.ceil(Math.sqrt(squadSize))
 
     if (u.grid_x == null) u.grid_x = String(Math.floor(rng.next() * FIELD_WIDTH))
@@ -58,6 +56,7 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
     let modMultishot = 1, modAntiAirDamageMult = 1.0, modReplicateOnKill = false;
     let modResurrectOnce = false, modStealthUntilAttack = false, modExecuteThreshold = 0;
     let modLifestealMult = 0, modGroundDamageMult = 1.0, modShieldDamageMult = config.baseStats.shieldDamageMult ?? 1.0, modArmorPierceRatio = config.baseStats.armorPierceRatio ?? 0, modSummonCounterDamageMult = config.baseStats.summonCounterDamageMult ?? 1.0, modAccuracyPenaltyResist = config.baseStats.accuracyPenaltyResist ?? 0;
+    const runtimePrimitiveStats = getRuntimePrimitiveStats(config.baseStats, u.upgrade_path);
 
     if (u.upgrade_path && Array.isArray(u.upgrade_path)) {
       for (const upgradeId of u.upgrade_path) {
@@ -165,11 +164,11 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
         velocity: { x: 0, y: 0 },
         isDead: false
       })
+      prepareRuntimePrimitives(units[units.length - 1], runtimePrimitiveStats)
     }
   }
 
-  attackerUnits.forEach(u => createSquad(u, 'attacker'))
-  defenderUnits.forEach(u => createSquad(u, 'defender'))
+  attackerUnits.forEach(u => createSquad(u, 'attacker')); defenderUnits.forEach(u => createSquad(u, 'defender'))
 
   const initialState = JSON.parse(JSON.stringify(units))
   const metrics = options.trackMetrics ? createCombatMetrics(units) : undefined
@@ -179,15 +178,16 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
 
   while (tick < MAX_TICKS) {
     const actions: BattleAction[] = []
-    processGlobals(tick, activeGlobals, units, hazards, actions, rng);
-    processSupportAuras(tick, units, actions);
+    const triggerContext = processPreActionPrimitives(tick, activeGlobals, units, hazards, actions, rng);
     
     const aliveAttackers = units.filter(u => !u.isDead && u.team === 'attacker')
     const aliveDefenders = units.filter(u => !u.isDead && u.team === 'defender')
     
-    if (aliveAttackers.length === 0 && aliveDefenders.length === 0) break // Draw
-    if (aliveAttackers.length === 0) break // Defender wins
-    if (aliveDefenders.length === 0) break // Attacker wins
+    const pendingAttackers = units.some(u => u.team === 'attacker' && hasPendingReassembly(u))
+    const pendingDefenders = units.some(u => u.team === 'defender' && hasPendingReassembly(u))
+    if (aliveAttackers.length === 0 && !pendingAttackers && aliveDefenders.length === 0 && !pendingDefenders) break // Draw
+    if (aliveAttackers.length === 0 && !pendingAttackers) break // Defender wins
+    if (aliveDefenders.length === 0 && !pendingDefenders) break // Attacker wins
 
     spatialHash.clear();
     for (const unit of units) {
@@ -199,7 +199,6 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
 
     for (const unit of turnOrder) {
       if (unit.isDead) continue;
-      
       tickModifiersSystem(unit, dt, actions); if (unit.isDead) continue;
 
       const target = targetingSystem(unit, units, meleeEngagement, spatialHash);
@@ -211,7 +210,7 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
       const canActOnTarget = target.team !== unit.team || unit.attackType === 'heal' || canAttackControlledTarget(unit, target);
       const hasEngagement = canActOnTarget ? reserveMeleeEngagementSlot(unit, target, meleeEngagement) : true;
 
-      const acted = canActOnTarget && hasEngagement && actionSystem(unit, target, units, hazards, actions, rng);
+      const acted = canActOnTarget && hasEngagement && actionSystem(unit, target, units, hazards, actions, rng, tick);
 
       for (let i = unitCountBeforeActions; i < units.length; i++) {
         if (!units[i].isDead) spatialHash.insert(units[i]);
@@ -224,6 +223,7 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
     }
 
     processHazards(hazards, units, actions);
+    processPostHazardPrimitives(units, triggerContext);
     if (metrics) { recordCombatActions(metrics, tick, actions, units); recordCombatTick(metrics, units) }
     
     if (actions.length > 0) logs.push({ tick, actions })

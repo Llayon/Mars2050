@@ -1,6 +1,7 @@
 import type { BattleAction } from './combat.actions'
 import { applyCombatDamage } from './combat.damage'
 import { applyConfiguredTargetMark } from './combat.mark'
+import { getConfiguredPercentHpDamage } from './combat.percent-damage'
 import { spawnCombatUnits } from './combat.spawn'
 import { applyStatus, cleanseStatuses } from './combat.status'
 import type { PeriodicAbilityPayload, RuntimePeriodicAbility, SimHazard, SimUnit } from './combat.sim.types'
@@ -39,12 +40,12 @@ function canUseAbility(tick: number, ability: RuntimePeriodicAbility): boolean {
 function selectAbilityTarget(source: SimUnit, ability: RuntimePeriodicAbility, units: SimUnit[]): SimUnit | null {
   const policy = ability.targetPolicy ?? 'current_target'
   if (policy === 'self') return source
-  if (policy === 'ally_lowest_hp') return selectLowestHpAlly(source, units)
+  if (policy === 'ally_lowest_hp') return selectLowestHpAlly(source, ability, units)
 
   const current = units.find(unit => unit.id === source.attackTargetId)
-  if (policy === 'current_target' && current && isAbilityEnemy(source, current, ability)) return current
+  if (policy === 'current_target' && current && isAbilityEnemy(source, current, ability) && isWithinAbilityRange(source, current, ability)) return current
 
-  const candidates = units.filter(unit => isAbilityEnemy(source, unit, ability) && matchesPolicy(unit, policy))
+  const candidates = units.filter(unit => isAbilityEnemy(source, unit, ability) && matchesPolicy(unit, policy) && isWithinAbilityRange(source, unit, ability))
   return selectNearest(source, candidates)
 }
 
@@ -59,11 +60,18 @@ function matchesPolicy(target: SimUnit, policy: RuntimePeriodicAbility['targetPo
   return true
 }
 
-function selectLowestHpAlly(source: SimUnit, units: SimUnit[]): SimUnit | null {
+function selectLowestHpAlly(source: SimUnit, ability: RuntimePeriodicAbility, units: SimUnit[]): SimUnit | null {
   const allies = units
-    .filter(unit => !unit.isDead && unit.team === source.team && unit.id !== source.id && unit.hp < unit.maxHp)
+    .filter(unit => !unit.isDead && unit.team === source.team && unit.id !== source.id && unit.hp < unit.maxHp && isWithinAbilityRange(source, unit, ability))
     .sort((a, b) => (a.hp / a.maxHp) - (b.hp / b.maxHp) || a.id.localeCompare(b.id))
   return allies[0] ?? null
+}
+
+function isWithinAbilityRange(source: SimUnit, target: SimUnit, ability: RuntimePeriodicAbility): boolean {
+  const distance = getDistance(source.x, source.y, target.x, target.y)
+  if (ability.minRange !== undefined && distance < ability.minRange) return false
+  if (ability.maxRange !== undefined && distance > ability.maxRange) return false
+  return true
 }
 
 function selectNearest(source: SimUnit, candidates: SimUnit[]): SimUnit | null {
@@ -113,9 +121,13 @@ function applyAbilityPayload(source: SimUnit, target: SimUnit, payload: Periodic
   const targets = getPayloadTargets(source, target, payload, context.units)
   for (const payloadTarget of targets) {
     if (payload.kind === 'damage') {
-      const result = applyCombatDamage(source, payloadTarget, payload.amount, context.actions, {
+      const percentDamage = getConfiguredPercentHpDamage(payloadTarget, payload.percentHp)
+      const damage = Math.max(0, Math.floor(payload.amount ?? 0)) + percentDamage
+      if (percentDamage > 0) context.actions.push({ unitId: source.id, type: 'percent_hp_damage', targetId: payloadTarget.id, value: percentDamage })
+      const result = applyCombatDamage(source, payloadTarget, damage, context.actions, {
         units: context.units,
         hazards: context.hazards,
+        allowPercentHpDamage: false,
         onUnitDeath: unit => context.onUnitDeath?.(unit, source),
       })
       if (result.intercepted) continue

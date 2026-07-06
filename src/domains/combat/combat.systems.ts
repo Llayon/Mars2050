@@ -15,43 +15,39 @@ import { getSideWeaponDamage, getSideWeaponTargets } from './combat.side-weapon'
 import { getRampDamage } from './combat.ramp';
 import { isProjectileInterceptableAttack } from './combat.projectile-defense';
 import { getChargeDamage } from './combat.charge';
+import { consumeAttackCharge } from './combat.growth-charge';
+import { processConditionalAttack, processSweepAttack } from './combat.conditional-weapons';
 import { getSplitFireDamageMultiplier, getSplitFireTargets } from './combat.split-fire';
 import { canReceiveHealAction } from './combat.support';
 import { canAttackControlledTarget } from './combat.control';
 import { getStanceActionCooldown, getStanceSetupActionRange, prepareStanceForAction } from './combat.stance';
 import { syncBurrowState } from './combat.burrow';
 import { syncModeForAction } from './combat.mode';
+import { recordAttackTrigger, recordDamageTakenTrigger, tickTriggerCooldowns } from './combat.triggers';
 
 export function tickModifiersSystem(unit: SimUnit, dt: number, actions: BattleAction[]) {
   if (unit.actionCooldown > 0) unit.actionCooldown = Math.max(0, unit.actionCooldown - 1);
   if ((unit.projectileInterceptCooldown ?? 0) > 0) unit.projectileInterceptCooldown = Math.max(0, (unit.projectileInterceptCooldown ?? 0) - 1);
-  tickTemporaryUnit(unit, actions); tickStatuses(unit, actions); tickTargetMark(unit, actions);
+  tickTemporaryUnit(unit, actions); tickStatuses(unit, actions); tickTargetMark(unit, actions); tickTriggerCooldowns(unit);
 }
-
-export function actionSystem(unit: SimUnit, target: SimUnit, units: SimUnit[], hazards: SimHazard[], actions: BattleAction[], rng: PRNG): boolean {
+export function actionSystem(unit: SimUnit, target: SimUnit, units: SimUnit[], hazards: SimHazard[], actions: BattleAction[], rng: PRNG, tick = 0): boolean {
   const dist = getDistance(unit.x, unit.y, target.x, target.y);
   const targetRadius = getSizeRadius(target.size);
   const myRadius = getSizeRadius(unit.size);
   const distEdge = dist - targetRadius - myRadius;
-  
   const effectiveRange = getEffectiveActionRange(unit);
   const minimumRange = getMinimumActionRange(unit);
   const setupRange = getStanceSetupActionRange(unit, effectiveRange);
   const inRange = unit.attackType === 'spawn' || (unit.attackType !== 'heal' && (minimumRange <= 0 || distEdge >= minimumRange) && distEdge <= setupRange) ||
                  (unit.attackType === 'heal' && canReceiveHealAction(unit, target) && target.hp < target.maxHp && distEdge <= effectiveRange);
-
   if (!inRange) return false;
   if (!isMeleeEngagementReady(unit, target)) return false;
 
-  // Check if facing target
   const targetAngle = Math.atan2(target.y - unit.y, target.x - unit.x);
   let angleDiff = targetAngle - unit.currentAngle;
   while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
   while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
-  
-  // If angle difference is greater than 15 degrees (~0.26 radians), need to rotate first
   if (Math.abs(angleDiff) > 0.26) return false;
-
   if (unit.actionCooldown > 0) return false;
   if (isActionBlockedByStatus(unit)) return false;
   if (unit.attackType !== 'heal' && target.team === unit.team && !canAttackControlledTarget(unit, target)) return false;
@@ -59,13 +55,8 @@ export function actionSystem(unit: SimUnit, target: SimUnit, units: SimUnit[], h
 
   syncModeForAction(unit, actions); syncBurrowState(unit, false, actions); unit.actionCooldown = getStanceActionCooldown(unit); // Reset cooldown
   if (tryDeployMine(unit, target, hazards, actions, rng) || tryDeploySmoke(unit, target, hazards, actions, rng)) return true;
-
-  if (unit.attackType === 'spawn') {
-      return processSpawnAction(unit, target, units, actions, rng);
-  }
-
+  if (unit.attackType === 'spawn') return processSpawnAction(unit, target, units, actions, rng);
   if (unit.attackType === 'heal') {
-
      const healAmount = unit.attack;
      target.hp = Math.min(target.maxHp, target.hp + healAmount);
      actions.push({ unitId: unit.id, type: 'heal', targetId: target.id, damage: healAmount });
@@ -75,7 +66,12 @@ export function actionSystem(unit: SimUnit, target: SimUnit, units: SimUnit[], h
          if (target.isDead) break;
 
          emitAttackIntent(unit, target, actions);
-         const primaryDamage = getChargeDamage(unit, target, getRampDamage(unit, target, unit.attack, actions), actions);
+         const emergeStrike = unit.emergeStrikePending;
+         unit.emergeStrikePending = undefined;
+         let attackDamage = getChargeDamage(unit, target, getRampDamage(unit, target, unit.attack, actions), actions);
+         if (emergeStrike?.attackMult) attackDamage = Math.floor(attackDamage * emergeStrike.attackMult);
+         const primaryDamage = consumeAttackCharge(unit, attackDamage, actions, tick);
+         const triggerContext = createTriggerContext(unit, units, actions, hazards, rng);
          const damageResult = applyCombatDamage(
            unit,
            target,
@@ -86,10 +82,11 @@ export function actionSystem(unit: SimUnit, target: SimUnit, units: SimUnit[], h
 
          unit.hasAttacked = true;
          if (damageResult.intercepted) continue;
+         recordAttackTrigger(unit, target, triggerContext);
+         recordDamageTakenTrigger(unit, target, damageResult.damage + damageResult.sharedDamage, triggerContext);
 
          applyOnHitStatuses(unit, target, actions);
          applyTargetMark(unit, target, actions);
-
          if (unit.leavesPuddle) {
              hazards.push({
                  id: 'hazard_' + Math.floor(rng.next() * 1000000),
@@ -102,11 +99,9 @@ export function actionSystem(unit: SimUnit, target: SimUnit, units: SimUnit[], h
                  duration: 50 // 5 seconds
              });
          }
-
          if (target.hp <= 0 && !target.isDead) {
              handleDeath(target, unit, units, actions, hazards, rng);
          }
-
          processLinePierce(unit, target, units, actions, hazards, rng);
          processConeAttack(unit, target, units, actions, hazards, rng);
          processBeamAttack(unit, target, units, actions, hazards, rng);
@@ -114,9 +109,10 @@ export function actionSystem(unit: SimUnit, target: SimUnit, units: SimUnit[], h
          processChainAttack(unit, target, units, actions, hazards, rng);
          processSplitFireAttack(unit, target, units, actions, hazards, rng);
          processSideWeaponAttack(unit, target, units, actions, hazards, rng);
-
-         if (unit.attackType === 'aoe' && unit.aoeRadius) {
-             const radius = unit.aoeRadius;
+         processConditionalAttack(unit, target, units, actions, hazards, rng);
+         processSweepAttack(unit, target, units, actions, hazards, rng);
+         if (unit.attackType === 'aoe' && (unit.aoeRadius || emergeStrike?.aoeRadiusAdd)) {
+             const radius = (unit.aoeRadius ?? 0) + (emergeStrike?.aoeRadiusAdd ?? 0);
              const splashEnemies = units.filter(e => !e.isDead && e.team !== unit.team && e.id !== target.id);
              for (const e of splashEnemies) {
                  if (getDistance(target.x, target.y, e.x, e.y) <= radius) {
@@ -132,21 +128,18 @@ export function actionSystem(unit: SimUnit, target: SimUnit, units: SimUnit[], h
                  }
              }
          }
-
          applyPullOnHit(unit, target, units, actions);
          applyKnockbackOnHit(unit, target, units, actions);
      }
   }
   return true;
 }
-
 function applyOnHitStatuses(unit: SimUnit, target: SimUnit, actions: BattleAction[]): void {
   if (unit.appliesEmp) applyStatus(target, { type: 'emp', duration: 30, sourceUnitId: unit.id }, actions);
   for (const status of unit.statusOnHit ?? []) {
     applyStatus(target, { ...status, sourceUnitId: unit.id }, actions);
   }
 }
-
 function emitAttackIntent(unit: SimUnit, target: SimUnit, actions: BattleAction[]): void {
   actions.push({ unitId: unit.id, type: 'attack', targetId: target.id });
 }
@@ -236,7 +229,11 @@ function applySecondaryWeaponTargets(unit: SimUnit, targets: SimUnit[], multipli
 }
 
 function createDamageContext(unit: SimUnit, units: SimUnit[], actions: BattleAction[], hazards: SimHazard[], rng: PRNG, allowPercentHpDamage = true, interceptable = false) {
-  return { units, allowPercentHpDamage, interceptable, onUnitDeath: (target: SimUnit) => handleDeath(target, unit, units, actions, hazards, rng) };
+  return { units, hazards, allowPercentHpDamage, interceptable, onUnitDeath: (target: SimUnit) => handleDeath(target, unit, units, actions, hazards, rng) };
+}
+
+function createTriggerContext(unit: SimUnit, units: SimUnit[], actions: BattleAction[], hazards: SimHazard[], rng: PRNG) {
+  return { units, hazards, actions, rng, onUnitDeath: (target: SimUnit, source: SimUnit) => handleDeath(target, source ?? unit, units, actions, hazards, rng) };
 }
 
 function tickTemporaryUnit(unit: SimUnit, actions: BattleAction[]): void {

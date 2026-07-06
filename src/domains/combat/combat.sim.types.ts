@@ -1,32 +1,9 @@
-import type { CombatTag } from './combat.types'
-
-export type Team = 'attacker' | 'defender'
-export type StatusType =
-  | 'emp' | 'slow' | 'burn' | 'acid' | 'vulnerable' | 'range_suppressed' | 'revealed'
-  | 'hacked' | 'damage_reduction' | 'regen' | 'output_suppressed' | 'accuracy_reduced' | 'armor_broken' | 'degeneration' | 'haste' | 'range_boost' | 'status_immunity'
-export type HackControlMode = 'disable' | 'redirect' | 'confuse'
-export type StanceMode = 'mobile' | 'deployed'
-export type MobilityMode = 'ground' | 'air'
-export interface UnitStanceConfig { mode: 'siege' | 'entrenched'; deployTicks: number; rangeMultiplier?: number; cooldownMultiplier?: number; speedMultiplier?: number }
-export interface BurrowConfig { damageReduction: number }
-export interface UnitModeSwitchConfig { trigger: 'while_moving'; startMode?: MobilityMode; groundForAction?: boolean; airSpeedMultiplier?: number; groundSpeedMultiplier?: number }
-
-export interface StatusEffect { type: StatusType; duration: number; value?: number; sourceUnitId?: string; stackKey?: string; controlMode?: HackControlMode }
-
-export interface TargetMark { sourceUnitId: string; duration: number; damageMultiplier?: number; executeThreshold?: number }
-export type TargetMarkConfig = Omit<TargetMark, 'sourceUnitId'>
-
-export type SupportAuraType = 'shield' | 'shield_repair' | 'regen' | 'reveal' | 'damage_reduction' | 'haste' | 'range_boost' | 'cleanse' | 'status_immunity'
-export type SupportAuraTarget = 'allies' | 'enemies'
-
-export interface SupportAura {
-  type: SupportAuraType; radius: number; value: number; duration?: number; interval?: number
-  target: SupportAuraTarget; targetTags?: CombatTag[]
-}
+import type { BurrowConfig, ConditionalAttackModeConfig, ControlBeamConfig, ControlProgressState, DelayedReassemblyConfig, FieldEffectConfig, FormationModifiersConfig, HazardKind, MobilityMode, ReassemblyState, RuntimeAttackCharge, RuntimeFieldEffect, RuntimePeriodicAbility, RuntimeStatGrowth, RuntimeTriggerEffect, StanceMode, StatusEffect, SupportAura, SweepAttackConfig, TargetMark, TargetMarkConfig, TargetPriorityProfile, Team, TransformModeConfig, TransformModeState, UnitModeSwitchConfig, UnitStanceConfig } from './combat.primitives'
+export type { AttackChargeConfig, BurrowConfig, CombatTag, ConditionalAttackModeConfig, ControlBeamConfig, ControlProgressState, DelayedReassemblyConfig, FieldEffectConfig, FieldEffectKind, FormationModifiersConfig, HackControlMode, HazardKind, MobilityMode, PercentHpDamageBasis, PercentHpDamageConfig, PeriodicAbilityConfig, PeriodicAbilityPayload, PeriodicTargetPolicy, ReassemblyState, RuntimeAttackCharge, RuntimeFieldEffect, RuntimePeriodicAbility, RuntimeStatGrowth, RuntimeTriggerEffect, StatGrowthConfig, StatusEffect, StatusType, StanceMode, SupportAura, SupportAuraTarget, SupportAuraType, SweepAttackConfig, TargetMark, TargetMarkConfig, TargetPriorityProfile, Team, TransformModeConfig, TransformModeKind, TransformModeState, TriggerEffectConfig, TriggerEvent, TriggerPayload, TriggerTarget, UnitModeSwitchConfig, UnitStanceConfig } from './combat.primitives'
 
 export interface Obstacle { x: number; y: number; radius: number }
 
-export interface SimHazard { id: string; team: Team; type: 'napalm' | 'radiation' | 'emp_field' | 'acid' | 'emp' | 'mine' | 'smoke'; x: number; y: number; radius: number; damagePerTick: number; duration: number; statusEffects?: StatusEffect[] }
+export interface SimHazard { id: string; team: Team; type: HazardKind; x: number; y: number; radius: number; damagePerTick: number; duration: number; statusEffects?: StatusEffect[]; damageReduction?: number; capacity?: number; maxCapacity?: number; sourceUnitId?: string }
 
 export interface SimUnit {
   id: string
@@ -50,6 +27,7 @@ export interface SimUnit {
   isDead: boolean
   squadId?: string
   summonOwnerId?: string
+  summonSourceId?: string
   attackTargetId?: string
   rampTargetId?: string; rampMultiplier?: number; chargeDistance?: number
   aggroLockTicks: number
@@ -67,6 +45,9 @@ export interface SimUnit {
   statusEffects: StatusEffect[]
   statusOnHit?: StatusEffect[]; markOnHit?: TargetMarkConfig; targetMark?: TargetMark
   supportAuras?: SupportAura[]
+  periodicAbilities?: RuntimePeriodicAbility[]; triggerEffects?: RuntimeTriggerEffect[]; controlBeam?: ControlBeamConfig; controlProgress?: ControlProgressState; transformMode?: TransformModeConfig[]; transformState?: TransformModeState; fieldEffect?: RuntimeFieldEffect[]; formationModifiers?: FormationModifiersConfig
+  statGrowth?: RuntimeStatGrowth; attackCharge?: RuntimeAttackCharge; reassemblyConfig?: DelayedReassemblyConfig; reassemblyState?: ReassemblyState; reassemblyTriggersUsed?: number
+  targetPriorityProfile?: TargetPriorityProfile; conditionalAttackMode?: ConditionalAttackModeConfig; sweepAttack?: SweepAttackConfig; emergeStrikePending?: { attackMult?: number; aoeRadiusAdd?: number }
   appliesEmp?: boolean
   leavesPuddle?: boolean
   spawnerConfig?: { unitType: string, interval: number, timer: number }

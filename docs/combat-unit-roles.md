@@ -474,17 +474,22 @@ Missing upgrade categories:
 31. Temporary battlefield-object upgrades: barriers, mines, wreckage, decoys.
 32. Attack-geometry upgrades: beam, cone, line pierce, and barrage shapes.
 
-## Next Implementation Slices
+## Primitive Backlog
 
-1. Add regression tests for no-op utility support and control-role units.
-2. Normalize anti-air capability in config and tests.
-3. Split utility support healing/repair/buff behavior.
-4. Tune defensive primitives: flat damage block, damage sharing, status
-   immunity, reactive armor charges, cleanse-on-action, and projectile
-   interception.
-5. Add transform/control primitive variants: richer underground counters beyond
-   reveal and richer mode-switch behavior.
-6. Add weapon/death primitive variants: split-fire upgrades, periodic side
-   weapons, richer on-death effects, and on-kill recycling.
-7. Add remaining attack shapes: beams, cones, barrage, and richer temporary
-   battlefield objects.
+The primitive coverage contract now lives in
+`docs/combat-primitive-coverage.md`. Balance work should not start from broad
+stat tuning until that contract stays green.
+
+Current backlog:
+
+1. Keep `stealthWhileMoving` and upgrade-level `onDeathSpawn` deferred until
+   they receive runtime handling and tests.
+2. Add visual replay affordances for `control_convert`, `trigger_effect`,
+   `periodic_ability`, `transform_mode`, `barrier_absorb`, and
+   `hazard_cleanse`.
+3. Tune conversion thresholds, cleanse counters, and multi-control penalties
+   after simulator QA confirms readability.
+4. Tune periodic ability payloads only after charges, intervals, target policy,
+   and replay timing are stable.
+5. Decide which unit configs should receive the new primitives; this document
+   describes roles, while `combat.config.ts` remains the balance surface.

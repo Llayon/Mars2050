@@ -1,6 +1,8 @@
 import type { BattleAction } from './combat.actions'
 import type { SimHazard, SimUnit } from './combat.sim.types'
 import { applyAccuracyPenalty } from './combat.accuracy'
+import { applyFiniteBarriers } from './combat.barrier'
+import { applyDamageSharing } from './combat.damage-sharing'
 import { getMovementDefenseReduction } from './combat.burrow'
 import { getFieldDamageReduction } from './combat.field-effects'
 import { getMarkedDamageMultiplier, getMarkedExecuteThreshold } from './combat.mark'
@@ -8,7 +10,6 @@ import { getPercentHpDamage } from './combat.percent-damage'
 import { tryInterceptProjectile } from './combat.projectile-defense'
 import { getStatusValue } from './combat.status'
 import { applySummonCounterDamage } from './combat.summon-counter'
-import { getDistance } from './combat.utils'
 export interface CombatDamageResult {
   damage: number
   sharedDamage: number
@@ -20,6 +21,7 @@ export interface CombatDamageResult {
   barrierBlockedDamage: number
   lifesteal: number
   intercepted: boolean
+  barrierBreakEvents: { hazardId: string; sourceUnitId: string }[]
 }
 export interface CombatDamageContext {
   units?: SimUnit[]
@@ -71,6 +73,8 @@ export function applyCombatDamage(
   const movementDefenseReduction = getMovementDefenseReduction(target)
   if (movementDefenseReduction > 0) damage = Math.floor(damage * (1 - movementDefenseReduction))
   const beforeFieldReduction = damage
+  const finiteBarrier = applyFiniteBarriers(target, damage, context.hazards)
+  damage = finiteBarrier.damage
   const fieldReduction = getFieldDamageReduction(target, context.hazards)
   if (fieldReduction > 0) damage = Math.floor(damage * (1 - fieldReduction))
   const barrierBlockedDamage = beforeFieldReduction - damage
@@ -107,6 +111,7 @@ export function applyCombatDamage(
     sharedDamageEvents: shareResult.events,
     blockedDamage: blockedDamage + reactiveArmorBlock,
     barrierBlockedDamage,
+    barrierBreakEvents: finiteBarrier.breaks,
     lifesteal,
   }
   emitDamageActions(attacker, target, result, actions)
@@ -157,45 +162,6 @@ function applyShield(target: SimUnit, damage: number, shieldDamageMult = 1): Com
   })
 }
 
-function applyDamageSharing(target: SimUnit, damage: number, context: CombatDamageContext): { damage: number; sharedDamage: number; events: { targetId: string; damage: number }[] } {
-  const ratio = Math.max(0, Math.min(0.9, target.damageShareRatio ?? 0))
-  if (damage <= 0 || ratio <= 0 || !target.damageShareRadius || !context.units) return { damage, sharedDamage: 0, events: [] }
-
-  const recipients = context.units
-    .filter(unit => !unit.isDead && unit.team === target.team && unit.id !== target.id && getDistance(unit.x, unit.y, target.x, target.y) <= target.damageShareRadius!)
-    .sort((a, b) => a.id.localeCompare(b.id))
-    .slice(0, Math.max(1, target.damageShareMaxTargets ?? Number.MAX_SAFE_INTEGER))
-  if (recipients.length === 0) return { damage, sharedDamage: 0, events: [] }
-
-  const shareBudget = Math.floor(damage * ratio)
-  const events = distributeSharedDamage(shareBudget, recipients, context)
-  const sharedDamage = events.reduce((sum, event) => sum + event.damage, 0)
-  return { damage: damage - sharedDamage, sharedDamage, events }
-}
-
-function distributeSharedDamage(shareBudget: number, recipients: SimUnit[], context: CombatDamageContext): { targetId: string; damage: number }[] {
-  if (shareBudget <= 0) return []
-  const baseDamage = Math.floor(shareBudget / recipients.length)
-  let remainder = shareBudget % recipients.length
-  const events: { targetId: string; damage: number }[] = []
-
-  for (const recipient of recipients) {
-    const damage = baseDamage + (remainder > 0 ? 1 : 0)
-    remainder = Math.max(0, remainder - 1)
-    if (damage <= 0) continue
-
-    recipient.hp -= damage
-    events.push({ targetId: recipient.id, damage })
-    if (recipient.hp <= 0 && !recipient.isDead) {
-      if (context.onUnitDeath) context.onUnitDeath(recipient)
-      else recipient.isDead = true
-    }
-  }
-
-  return events
-}
-
-
 function createDamageResult(overrides: Partial<CombatDamageResult> = {}): CombatDamageResult {
   return {
     damage: 0,
@@ -208,6 +174,7 @@ function createDamageResult(overrides: Partial<CombatDamageResult> = {}): Combat
     barrierBlockedDamage: 0,
     lifesteal: 0,
     intercepted: false,
+    barrierBreakEvents: [],
     ...overrides,
   }
 }
@@ -225,6 +192,9 @@ function emitDamageActions(
   }
   if (result.barrierBlockedDamage > 0) {
     actions.push({ unitId: target.id, type: 'barrier_absorb', targetId: attacker.id, damage: result.barrierBlockedDamage })
+  }
+  for (const event of result.barrierBreakEvents) {
+    actions.push({ unitId: event.sourceUnitId, type: 'barrier_break', hazardId: event.hazardId })
   }
   if (result.shieldDamage > 0) {
     actions.push({ unitId: attacker.id, type: 'shield_damage', targetId: target.id, damage: result.shieldDamage, isShieldHit: true })

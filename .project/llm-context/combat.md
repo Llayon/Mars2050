@@ -21,6 +21,8 @@
 - `src/domains/combat/combat.attack-geometry.ts` — line pierce and reusable attack geometry helpers.
 - `src/domains/combat/combat.displacement.ts` — deterministic pull and knockback displacement.
 - `src/domains/combat/combat.stance.ts` — deterministic deploy/undeploy stance transforms.
+- `src/domains/combat/combat.mode.ts` — deterministic ground/air mobility mode swaps.
+- `src/domains/combat/combat.burrow.ts` — deterministic movement-state burrow toggles and burrow damage reduction.
 - `src/domains/combat/combat.split-fire.ts` — deterministic split-fire target selection.
 - `src/domains/combat/combat.side-weapon.ts` — deterministic side weapon target selection.
 - `src/domains/combat/combat.ramp.ts` — same-target focused-fire damage scaling.
@@ -63,6 +65,8 @@
 - `combat.engine.ts` rebuilds `SpatialHash` at the start of each tick.
 - Moving units call `spatialHash.update(unit)` after movement, so later units in the same tick query current positions.
 - `combat.movement.ts` keeps flow-field navigation, turn speed, formation cohesion, obstacle push, and velocity smoothing.
+- Movement-state burrow is toggled by `combat.burrow.ts`; it emits `burrow_change`, applies only while the unit is moving, and is broken by `revealed`.
+- Ground/air mobility mode is toggled by `combat.mode.ts`; movement-triggered units emit `mode_change`, become flying while advancing, and can ground before active actions.
 - `combat.steering.ts` adds separation/alignment over nearby units.
 - Fully overlapped unit pairs use deterministic opposite separation directions; do not make zero-distance push one-sided.
 - `SpatialHash.update()` preserves initial insertion order; do not reinsert moved units in a way that changes replay ordering.
@@ -74,6 +78,7 @@
 - `emp` and `hacked` block active actions. `slow` and `haste` affect movement. `range_boost` and `range_suppressed` affect acquisition, positioning, and action range. `burn`, `acid`, `degeneration`, and `regen` tick every 10 simulation ticks.
 - Damage must go through `applyCombatDamage()` in `combat.damage.ts`. Do not subtract HP directly in attack code except for explicitly modeled hazards/status ticks with tests.
 - `accuracy_reduced` turns smoke/suppression into deterministic glancing damage; `accuracyPenaltyResist` from optics upgrades reduces that penalty without adding random miss rolls.
+- `burrowConfig` is explicit movement-state defense. It toggles `isBurrowed` while moving, is suppressed by `revealed`, and feeds into `applyCombatDamage()` through `getMovementDefenseReduction()`.
 - `armorPierceRatio` reduces the target's effective defense for one attack after `armor_broken` is applied. It does not add a persistent status.
 - `summonCounterDamageMult` increases damage against `summoner` units, units with `summonOwnerId`, and temporary decoys. It does not affect normal units.
 - `sensor_suite` grants a tag-limited enemy reveal aura. This reveal runs in the support aura pass before targeting, so hidden units can become valid targets without special-case acquisition.
@@ -92,11 +97,13 @@
 - Battlefield objects: barriers/temporary spawns, mines, smoke fields, decoys, hazards, and deterministic pull/knockback displacement.
 - Smoke fields are `smoke` hazards that apply `range_suppressed`, `output_suppressed`, and/or `accuracy_reduced` through the status kernel. Accuracy suppression is deterministic glancing damage, not random miss chance.
 - Stance transforms: `stanceConfig` units deploy through `combat.stance.ts`, can change effective range/cooldown/movement, and emit `stance_change` replay actions. `artillery_crawler` uses siege stance.
+- Mobility mode transforms: `modeSwitchConfig` units switch runtime `mobilityMode` and `isFlying` through `combat.mode.ts`, and emit `mode_change` replay actions. `jetpack_trooper` uses ground/air swap while moving.
+- Burrow transforms: `burrowConfig` units enter underground movement while advancing, leave it before acting or when revealed, and emit `burrow_change` replay actions. `subterranean_blitz` uses this primitive.
 - Support targeting: `healTargetTags` restricts heal actions and `SupportAura.targetTags` restricts aura targets by combat tags. Engineer uses both for mechanical repair and mechanical shield restoration.
 - Minimum range is handled by `combat.weapon-rules.ts` and `combat.positioning.ts`; artillery can back away instead of firing point blank.
 
 ## Current Known Gaps
-- Stance/mode transforms have a first reusable siege/entrenched primitive; aerial/ground mode swaps and burrow remain future work.
+- Stance/mode transforms have reusable siege/entrenched, movement-state burrow, and ground/air mobility mode primitives; richer mode-switch variants and richer underground counter variants remain future work.
 - Hack control supports disable, redirect, and confuse modes; permanent conversion/ownership swap behavior is future work.
 - Richer line-of-sight and concealment are still future work. Projectile accuracy now has a first deterministic penalty/resist primitive, but no line-of-sight occlusion yet.
 
@@ -123,6 +130,8 @@
 - `src/__tests__/combat.damage.test.ts` — includes capped percent-HP damage regression coverage.
 - `src/__tests__/combat.on-kill.test.ts` — on-kill cooldown/heal behavior.
 - `src/__tests__/combat.stance.test.ts` — deploy/undeploy stance transforms and config mapping.
+- `src/__tests__/combat.mode.test.ts` — ground/air mode transforms, dynamic aircraft targeting tags, and config mapping.
+- `src/__tests__/combat.burrow.test.ts` — burrow movement state, reveal counter, damage reduction, and upgrade mapping.
 - `src/__tests__/combat.smoke.test.ts` — smoke deployment and deterministic suppression fields.
 - `docs/simulator-qa.md` — Visual simulator QA matrix and metrics guide.
 

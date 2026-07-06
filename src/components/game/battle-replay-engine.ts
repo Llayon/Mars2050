@@ -12,6 +12,7 @@ import { addVisualAnimationAssets, getVisualAnimationTexture } from './battle-re
 import { applyProceduralMotion, updateParticles, initMotionVfx } from './battle-replay-motion-vfx'
 import { buildReplayRenderUnits } from './battle-replay-state'
 import { hasDetailedDamageEvents } from './battle-replay-damage-events'
+import { handlePrimitiveReplayEvent } from './battle-replay-primitive-events'
 
 export interface ReplayControls {
   play: () => void;
@@ -164,6 +165,11 @@ export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
           if (blocker) spawnTxt(`БЛОК ${a.damage}`, blocker.c.x, blocker.c.y, 0x94a3b8)
           return
         }
+        if (a.type === 'barrier_absorb') {
+          const blocker = s ?? sprites[a.targetId ?? '']
+          if (blocker) spawnTxt(`БАРЬЕР ${a.damage}`, blocker.c.x, blocker.c.y, 0x22d3ee)
+          return
+        }
         if (!s) return
         if (a.type === 'move' || a.type === 'knockback') {
           s.sX = a.fromX!; s.sY = a.fromY!
@@ -224,11 +230,11 @@ export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
           const newS = sprites[a.targetId!]
           if (newS) { newS.sX = a.toX!; newS.sY = a.toY!; newS.tX = a.toX!; newS.tY = a.toY!; }
         } else if (a.type === 'hazard_spawn') {
-          const hGfx = new Graphics().circle(0, 0, a.radius || 60).fill({ color: a.statusType === 'smoke' ? 0x94a3b8 : 0xff4400, alpha: a.statusType === 'smoke' ? 0.24 : 0.3 })
+          const hGfx = new Graphics().circle(0, 0, a.radius || 60).fill({ color: a.statusType === 'smoke' ? 0x94a3b8 : a.statusType === 'barrier_dome' ? 0x22d3ee : 0xff4400, alpha: a.statusType === 'smoke' ? 0.24 : 0.3 })
           hGfx.position.set(a.toX!, a.toY!)
           gridContainer.addChild(hGfx)
           hazardFxs.push({ g: hGfx, life: 1.0 })
-        } else if (a.type === 'status_apply') {
+        } else if (!handlePrimitiveReplayEvent(a, s, sprites, spawnTxt, spawnProj) && a.type === 'status_apply') {
           if (a.statusType === 'emp') {
             if (!s.empGfx) {
                s.empGfx = new Graphics().circle(0, -10, 20).stroke({ width: 2, color: 0x00ffff, alpha: 0.8 })

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { applyCombatDamage } from '@/domains/combat/combat.damage'
+import { processBurrowRegeneration } from '@/domains/combat/combat.burrow'
 import { simulateBattle } from '@/domains/combat/combat.engine'
 import { movementSystem } from '@/domains/combat/combat.movement'
 import { createPathfindingMap } from '@/domains/combat/combat.pathfinding'
@@ -69,6 +70,22 @@ describe('combat burrow movement state', () => {
 
     expect(result.damage).toBe(55)
     expect(target.hp).toBe(45)
+  })
+
+  it('regenerates underground and prepares one-shot emerge strike', () => {
+    const unit = makeUnit({ id: 'worm', team: 'attacker', hp: 50, isBurrowed: true, burrowConfig: { damageReduction: 0.45, regenPercentPerTick: 0.1, emergeAttackMult: 1.3, emergeAoeRadiusAdd: 20 } })
+    const target = makeUnit({ id: 'target', team: 'defender', x: 60, hp: 100 })
+    const actions: BattleAction[] = []
+
+    processBurrowRegeneration([unit], actions)
+    expect(unit.hp).toBe(60)
+
+    expect(actionSystem(unit, target, [unit, target], [], actions, new PRNG(2))).toBe(true)
+
+    expect(unit.emergeStrikePending).toBeUndefined()
+    expect(target.hp).toBe(87)
+    expect(actions).toContainEqual({ unitId: 'worm', type: 'burrow_regen', targetId: 'worm', damage: 10 })
+    expect(actions).toContainEqual({ unitId: 'worm', type: 'emerge_strike', value: 1.3 })
   })
 
   it('reveal forces burrowed units to surface and removes burrow mitigation', () => {

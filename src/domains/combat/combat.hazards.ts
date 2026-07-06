@@ -8,6 +8,7 @@ export function processHazards(hazards: SimHazard[], units: SimUnit[], actions: 
      const h = hazards[i];
      h.duration--;
      if (h.duration <= 0) {
+        if (h.type === 'barrier_dome' && h.capacity !== undefined && h.capacity > 0) actions.push({ unitId: h.sourceUnitId ?? h.id, type: 'barrier_expire', hazardId: h.id });
         hazards.splice(i, 1);
         continue;
      }
@@ -22,7 +23,7 @@ export function processHazards(hazards: SimHazard[], units: SimUnit[], actions: 
      }
      
      // Every 10 ticks (approx 1 sec), apply damage
-     if (h.duration % 10 === 0) {
+     if (h.damagePerTick > 0 && h.duration % 10 === 0) {
         const targets = units.filter(u => !u.isDead && !u.isFlying && getDistance(u.x, u.y, h.x, h.y) <= h.radius);
         for (const t of targets) {
            t.hp -= h.damagePerTick;

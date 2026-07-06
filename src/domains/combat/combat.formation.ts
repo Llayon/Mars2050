@@ -1,10 +1,36 @@
+import type { BattleAction } from './combat.actions'
 import type { SimUnit } from './combat.sim.types'
+import { applyStatus } from './combat.status'
 import { getEffectiveActionRange } from './combat.status'
 import { getDistance, getSizeRadius } from './combat.utils'
 
 export interface FormationCohesionForce {
   x: number
   y: number
+}
+
+export function processFormationBonuses(tick: number, units: SimUnit[], actions: BattleAction[]): void {
+  if (tick % 10 !== 0) return
+  const sources = units
+    .filter(unit => !unit.isDead && unit.formationModifiers?.adjacencyBonus)
+    .sort((a, b) => a.id.localeCompare(b.id))
+
+  for (const source of sources) {
+    const config = source.formationModifiers?.adjacencyBonus
+    if (!config) continue
+    const stacks = Math.min(config.maxStacks, countAdjacentSameTypeAllies(source, units, config.radius))
+    if (stacks <= 0) continue
+    actions.push({ unitId: source.id, type: 'adjacency_bonus', value: stacks })
+    if (config.damageReductionPerAlly) {
+      applyStatus(source, { type: 'damage_reduction', duration: 11, value: config.damageReductionPerAlly * stacks, sourceUnitId: 'formation', stackKey: source.id }, actions)
+    }
+    if (config.rangeBoostPerAlly) {
+      applyStatus(source, { type: 'range_boost', duration: 11, value: config.rangeBoostPerAlly * stacks, sourceUnitId: 'formation', stackKey: source.id }, actions)
+    }
+    if (config.attackBoostPerAlly) {
+      applyStatus(source, { type: 'attack_boost', duration: 11, value: config.attackBoostPerAlly * stacks, sourceUnitId: 'formation', stackKey: source.id }, actions)
+    }
+  }
 }
 
 export function getFormationCohesionForce(
@@ -62,4 +88,8 @@ function getFormationPullMultiplier(isBug: boolean, nearEngagement: boolean, isN
 
 function getEngagementCohesionBuffer(unit: SimUnit): number {
   return Math.max(70, getSizeRadius(unit.size) * 2)
+}
+
+function countAdjacentSameTypeAllies(source: SimUnit, units: SimUnit[], radius: number): number {
+  return units.filter(unit => !unit.isDead && unit.id !== source.id && unit.team === source.team && unit.type === source.type && getDistance(source.x, source.y, unit.x, unit.y) <= radius).length
 }

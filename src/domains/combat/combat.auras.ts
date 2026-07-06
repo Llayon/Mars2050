@@ -136,6 +136,16 @@ function applyAura(source: SimUnit, target: SimUnit, aura: SupportAura, actions:
     return
   }
 
+  if (aura.type === 'attack_boost') {
+    applyStatus(target, {
+      type: 'attack_boost',
+      duration: aura.duration ?? (aura.interval ?? DEFAULT_AURA_INTERVAL) + 1,
+      value: aura.value,
+      sourceUnitId: source.id
+    }, actions)
+    return
+  }
+
   if (aura.type === 'damage_reduction') {
     applyStatus(target, {
       type: 'damage_reduction',

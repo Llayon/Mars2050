@@ -18,6 +18,8 @@ export interface TargetScoreBreakdown {
   avoidedTagPenalty: number
   tagDistancePenalty: number
   tagScore: number
+  markPriorityScore: number
+  runtimePriorityScore: number
   total: number
   tags: CombatTag[]
 }
@@ -43,7 +45,9 @@ export function getTargetScore(
   const hpRatio = enemy.maxHp > 0 ? Math.max(0, enemy.hp / enemy.maxHp) : 1
   const lowHpScore = (1 - hpRatio) * profile.lowHpWeight
   const tagParts = getCombatTagScore(enemy, profile, distance, clampedNearestDistance)
-  const total = distanceScore + currentTargetScore + lowHpScore + tagParts.tagScore
+  const markPriorityScore = getMarkPriorityScore(enemy)
+  const runtimePriorityScore = getRuntimePriorityScore(unit, enemy)
+  const total = distanceScore + currentTargetScore + lowHpScore + tagParts.tagScore + markPriorityScore + runtimePriorityScore
 
   return {
     targetId: enemy.id,
@@ -54,6 +58,8 @@ export function getTargetScore(
     currentTargetScore,
     lowHpScore,
     ...tagParts,
+    markPriorityScore,
+    runtimePriorityScore,
     total,
     tags: getEffectiveCombatTags(enemy),
   }
@@ -87,4 +93,18 @@ function getCombatTagScore(
   const tagDistancePenalty = distance > nearestDistance * TAG_DISTANCE_RATIO_CAP && rawTagScore > 0 ? rawTagScore : 0
   const tagScore = rawTagScore - tagDistancePenalty
   return { preferredTagScore, avoidedTagPenalty, tagDistancePenalty, tagScore }
+}
+
+function getMarkPriorityScore(enemy: SimUnit): number {
+  const mark = enemy.targetMark
+  if (!mark || mark.duration <= 0) return 0
+  return Math.max(0, mark.focusPriority ?? 0)
+}
+
+function getRuntimePriorityScore(unit: SimUnit, enemy: SimUnit): number {
+  if (unit.targetPriorityProfile === 'highest_max_hp') return Math.max(0, enemy.maxHp)
+  if (unit.targetPriorityProfile === 'air_first') return enemy.isFlying ? 5000 : 0
+  if (unit.targetPriorityProfile === 'heavy_first') return getEffectiveCombatTags(enemy).some(tag => tag === 'heavy' || tag === 'armored') ? 3000 : 0
+  if (unit.targetPriorityProfile === 'marked_focus') return enemy.targetMark && enemy.targetMark.duration > 0 ? 5000 : 0
+  return 0
 }

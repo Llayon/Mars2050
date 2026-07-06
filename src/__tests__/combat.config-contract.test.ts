@@ -104,6 +104,10 @@ describe('combat unit config contract', () => {
         expect(stats.percentHpDamage.percent, `${unitType} has percent HP damage without positive percent`).toBeGreaterThan(0)
         expect(stats.percentHpDamage.percent, `${unitType} has percent HP damage above 100%`).toBeLessThanOrEqual(1)
         expect(stats.percentHpDamage.maxBonus, `${unitType} has percent HP damage without positive cap`).toBeGreaterThan(0)
+        expect(['max', 'current', undefined], `${unitType} has invalid percent HP damage basis`).toContain(stats.percentHpDamage.basis)
+        if (stats.percentHpDamage.minBonus !== undefined) {
+          expect(stats.percentHpDamage.minBonus, `${unitType} has percent HP damage with negative minimum`).toBeGreaterThanOrEqual(0)
+        }
       }
       if (stats.shieldDamageMult !== undefined) {
         expect(stats.shieldDamageMult, `${unitType} has shield damage multiplier below baseline`).toBeGreaterThanOrEqual(1)

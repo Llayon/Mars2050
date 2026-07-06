@@ -1,6 +1,7 @@
 import type { MeleeEngagementState } from './combat.melee-engagement'
 import { clearMeleeEngagementSlot, hasMeleeEngagementSlot } from './combat.melee-engagement'
-import type { HackControlMode, SimUnit } from './combat.sim.types'
+import type { BattleAction } from './combat.actions'
+import type { ControlBeamConfig, HackControlMode, SimUnit } from './combat.sim.types'
 import { canTargetUnit } from './combat.targeting-rules'
 import { getDistance } from './combat.utils'
 
@@ -46,6 +47,35 @@ export function canAttackControlledTarget(unit: SimUnit, target: SimUnit): boole
   return unit.team === target.team && canUseHackControlTargeting(unit) && isAggressiveHackMode(getHackControlMode(unit))
 }
 
+export function processControlBeams(units: SimUnit[], actions: BattleAction[]): void {
+  const sources = units
+    .filter(unit => !unit.isDead && unit.controlBeam)
+    .sort((a, b) => a.id.localeCompare(b.id))
+
+  for (const source of sources) {
+    const config = source.controlBeam
+    if (!config) continue
+    const targets = selectControlBeamTargets(source, config, units)
+    breakStaleControlLinks(source, config, targets, units, actions)
+    for (const target of targets) applyControlProgress(source, target, config, targets.length, actions)
+  }
+
+  for (const unit of units) {
+    const progress = unit.controlProgress
+    if (!progress) continue
+    const source = units.find(candidate => candidate.id === progress.sourceUnitId)
+    if (!source || source.isDead || unit.isDead) breakControlProgress(unit, actions)
+  }
+}
+
+export function breakControlProgress(unit: SimUnit, actions?: BattleAction[]): boolean {
+  const progress = unit.controlProgress
+  if (!progress) return false
+  unit.controlProgress = undefined
+  actions?.push({ unitId: progress.sourceUnitId, type: 'control_break', targetId: unit.id, value: progress.progress })
+  return true
+}
+
 export function selectHackControlTarget(
   unit: SimUnit,
   candidates: SimUnit[],
@@ -75,6 +105,55 @@ function clearControlTarget(unit: SimUnit): HackControlTargetResult {
 
 function canUseHackControlTargeting(unit: SimUnit): boolean {
   return unit.attack > 0 && unit.attackType !== 'heal' && unit.attackType !== 'spawn'
+}
+
+function selectControlBeamTargets(source: SimUnit, config: ControlBeamConfig, units: SimUnit[]): SimUnit[] {
+  const maxTargets = Math.max(1, config.maxTargets ?? 1)
+  const range = Math.max(0, config.range ?? source.range)
+  return units
+    .filter(target => target.team !== source.team && isControlBeamTarget(source, target, range))
+    .sort((a, b) => {
+      const distance = getDistance(source.x, source.y, a.x, a.y) - getDistance(source.x, source.y, b.x, b.y)
+      return distance !== 0 ? distance : a.id.localeCompare(b.id)
+    })
+    .slice(0, maxTargets)
+}
+
+function isControlBeamTarget(source: SimUnit, target: SimUnit, range: number): boolean {
+  return !target.isDead && target.id !== source.id && canTargetUnit(source, target) &&
+    getDistance(source.x, source.y, target.x, target.y) <= range
+}
+
+function breakStaleControlLinks(source: SimUnit, config: ControlBeamConfig, targets: SimUnit[], units: SimUnit[], actions: BattleAction[]): void {
+  if (config.breakOnRange === false) return
+  const activeTargetIds = new Set(targets.map(target => target.id))
+  for (const unit of units) {
+    if (unit.controlProgress?.sourceUnitId === source.id && !activeTargetIds.has(unit.id)) breakControlProgress(unit, actions)
+  }
+}
+
+function applyControlProgress(source: SimUnit, target: SimUnit, config: ControlBeamConfig, targetCount: number, actions: BattleAction[]): void {
+  if (target.controlProgress?.sourceUnitId !== source.id) {
+    target.controlProgress = { sourceUnitId: source.id, sourceTeam: source.team, progress: 0, threshold: config.conversionThreshold, breakOnCleanse: config.breakOnCleanse !== false }
+    actions.push({ unitId: source.id, type: 'control_link', targetId: target.id, value: 0 })
+  }
+
+  const multiplier = targetCount > 1 ? config.multiTargetProgressMultiplier ?? 1 : 1
+  target.controlProgress.progress += Math.max(0, config.progressPerTick * multiplier)
+  actions.push({ unitId: source.id, type: 'control_progress', targetId: target.id, value: Math.round(target.controlProgress.progress * 100) / 100 })
+  if (target.controlProgress.progress < target.controlProgress.threshold) return
+
+  target.team = source.team
+  target.controlProgress = undefined
+  target.attackTargetId = undefined
+  target.aggroLockTicks = 0
+  clearMeleeEngagementSlot(target)
+  actions.push({ unitId: source.id, type: 'control_convert', targetId: target.id })
+  if (config.healConvertedToMax && target.hp < target.maxHp) {
+    const heal = target.maxHp - target.hp
+    target.hp = target.maxHp
+    actions.push({ unitId: source.id, type: 'heal', targetId: target.id, damage: heal })
+  }
 }
 
 function isAggressiveHackMode(mode: HackControlMode | null): boolean {

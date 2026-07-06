@@ -1,7 +1,7 @@
 import type { BattleAction } from './combat.actions'
 import type { SimUnit, StatusEffect, StatusType } from './combat.sim.types'
 import { breakBurrowOnReveal } from './combat.burrow'
-import { chooseHackControlMode, isHackActionBlocked, normalizeHackControlMode } from './combat.control'
+import { breakControlProgress, chooseHackControlMode, isHackActionBlocked, normalizeHackControlMode } from './combat.control'
 import { getStanceRangeMultiplier } from './combat.stance'
 
 const ACTION_BLOCKING_STATUSES = new Set<StatusType>(['emp'])
@@ -93,6 +93,7 @@ export function cleanseStatuses(unit: SimUnit, types?: StatusType[], actions?: B
     actions?.push({ unitId: unit.id, type: 'status_cleanse', statusType: effect.type })
   }
 
+  if (unit.controlProgress?.breakOnCleanse) breakControlProgress(unit, actions)
   return removed
 }
 
