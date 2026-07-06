@@ -1,14 +1,14 @@
 import type { BattleAction } from './combat.actions'
-import type { SimUnit } from './combat.sim.types'
+import type { SimHazard, SimUnit } from './combat.sim.types'
 import { applyAccuracyPenalty } from './combat.accuracy'
 import { getMovementDefenseReduction } from './combat.burrow'
+import { getFieldDamageReduction } from './combat.field-effects'
 import { getMarkedDamageMultiplier, getMarkedExecuteThreshold } from './combat.mark'
 import { getPercentHpDamage } from './combat.percent-damage'
 import { tryInterceptProjectile } from './combat.projectile-defense'
 import { getStatusValue } from './combat.status'
 import { applySummonCounterDamage } from './combat.summon-counter'
 import { getDistance } from './combat.utils'
-
 export interface CombatDamageResult {
   damage: number
   sharedDamage: number
@@ -17,17 +17,17 @@ export interface CombatDamageResult {
   shieldDamage: number
   shieldBroken: boolean
   blockedDamage: number
+  barrierBlockedDamage: number
   lifesteal: number
   intercepted: boolean
 }
-
 export interface CombatDamageContext {
   units?: SimUnit[]
+  hazards?: SimHazard[]
   onUnitDeath?: (unit: SimUnit) => void
   allowPercentHpDamage?: boolean
   interceptable?: boolean
 }
-
 /**
  * Applies attack damage through defense, status modifiers, shields, execute, and lifesteal.
  * @param attacker Unit dealing damage
@@ -44,7 +44,10 @@ export function applyCombatDamage(
   actions?: BattleAction[],
   context: CombatDamageContext = {}
 ): CombatDamageResult {
-  const baseRaw = Math.floor(rawDamage)
+  const boost = getStatusValue(attacker, 'attack_boost') ?? 0
+  const boostMult = boost >= 1 ? boost : 1 + boost
+  const baseRaw = boost > 0 ? Math.max(0, Math.floor(Math.floor(rawDamage) * Math.min(5, boostMult))) : Math.floor(rawDamage)
+
   if (baseRaw <= 0) return createDamageResult()
   const percentHpDamage = context.allowPercentHpDamage === false ? 0 : getPercentHpDamage(attacker, target)
   const raw = baseRaw + percentHpDamage
@@ -54,10 +57,12 @@ export function applyCombatDamage(
   if (context.interceptable && context.units && tryInterceptProjectile(attacker, target, raw, context.units, actions)) {
     return createDamageResult({ blockedDamage: raw, intercepted: true })
   }
-
   const defense = getEffectiveDefense(attacker, target)
   let damage = Math.max(1, raw - defense)
-  damage = applyOutputSuppression(attacker, damage)
+
+  const suppression = getStatusValue(attacker, 'output_suppressed') ?? 0
+  if (suppression > 0) damage = Math.max(0, Math.floor(damage * Math.max(0, 1 - suppression)))
+
   damage = applyAccuracyPenalty(attacker, damage)
 
   if (target.isFlying && attacker.antiAirDamageMult) damage = Math.floor(damage * attacker.antiAirDamageMult)
@@ -65,13 +70,23 @@ export function applyCombatDamage(
   damage = applySummonCounterDamage(attacker, target, damage)
   const movementDefenseReduction = getMovementDefenseReduction(target)
   if (movementDefenseReduction > 0) damage = Math.floor(damage * (1 - movementDefenseReduction))
-
+  const beforeFieldReduction = damage
+  const fieldReduction = getFieldDamageReduction(target, context.hazards)
+  if (fieldReduction > 0) damage = Math.floor(damage * (1 - fieldReduction))
+  const barrierBlockedDamage = beforeFieldReduction - damage
   damage = applyStatusDamageModifiers(target, damage)
-  damage = applyMarkDamageModifier(attacker, target, damage)
+
+  const markMult = getMarkedDamageMultiplier(attacker, target)
+  if (markMult > 0) damage = Math.max(0, Math.floor(damage * (1 + markMult)))
+
   const blockedDamage = Math.max(0, raw - damage)
   const shieldResult = applyShield(target, damage, attacker.shieldDamageMult)
   damage = shieldResult.damage
-  const reactiveArmorBlock = applyReactiveArmor(target, damage)
+  let reactiveArmorBlock = 0
+  if (damage > 0 && target.reactiveArmorCharges && target.reactiveArmorBlock) {
+    target.reactiveArmorCharges--
+    reactiveArmorBlock = Math.min(damage, Math.max(0, Math.floor(target.reactiveArmorBlock)))
+  }
   damage -= reactiveArmorBlock
   const shareResult = applyDamageSharing(target, damage, context)
   damage = shareResult.damage
@@ -91,16 +106,11 @@ export function applyCombatDamage(
     sharedDamage: shareResult.sharedDamage,
     sharedDamageEvents: shareResult.events,
     blockedDamage: blockedDamage + reactiveArmorBlock,
+    barrierBlockedDamage,
     lifesteal,
   }
   emitDamageActions(attacker, target, result, actions)
   return result
-}
-
-function applyMarkDamageModifier(attacker: SimUnit, target: SimUnit, damage: number): number {
-  const multiplier = getMarkedDamageMultiplier(attacker, target)
-  if (multiplier <= 0) return damage
-  return Math.max(0, Math.floor(damage * (1 + multiplier)))
 }
 
 function getEffectiveDefense(attacker: SimUnit, target: SimUnit): number {
@@ -120,12 +130,6 @@ function applyStatusDamageModifiers(target: SimUnit, damage: number): number {
   if (reduction > 0) result = Math.floor(result * Math.max(0, 1 - reduction))
 
   return Math.max(0, result)
-}
-
-function applyOutputSuppression(attacker: SimUnit, damage: number): number {
-  const suppression = getStatusValue(attacker, 'output_suppressed') ?? 0
-  if (suppression <= 0) return damage
-  return Math.max(0, Math.floor(damage * Math.max(0, 1 - suppression)))
 }
 
 function applyShield(target: SimUnit, damage: number, shieldDamageMult = 1): CombatDamageResult {
@@ -191,12 +195,6 @@ function distributeSharedDamage(shareBudget: number, recipients: SimUnit[], cont
   return events
 }
 
-function applyReactiveArmor(target: SimUnit, damage: number): number {
-  if (damage <= 0 || !target.reactiveArmorCharges || !target.reactiveArmorBlock) return 0
-
-  target.reactiveArmorCharges--
-  return Math.min(damage, Math.max(0, Math.floor(target.reactiveArmorBlock)))
-}
 
 function createDamageResult(overrides: Partial<CombatDamageResult> = {}): CombatDamageResult {
   return {
@@ -207,6 +205,7 @@ function createDamageResult(overrides: Partial<CombatDamageResult> = {}): Combat
     sharedDamage: 0,
     sharedDamageEvents: [],
     blockedDamage: 0,
+    barrierBlockedDamage: 0,
     lifesteal: 0,
     intercepted: false,
     ...overrides,
@@ -223,6 +222,9 @@ function emitDamageActions(
 
   if (result.blockedDamage > 0) {
     actions.push({ unitId: target.id, type: 'unit_blocked_damage', targetId: attacker.id, damage: result.blockedDamage })
+  }
+  if (result.barrierBlockedDamage > 0) {
+    actions.push({ unitId: target.id, type: 'barrier_absorb', targetId: attacker.id, damage: result.barrierBlockedDamage })
   }
   if (result.shieldDamage > 0) {
     actions.push({ unitId: attacker.id, type: 'shield_damage', targetId: target.id, damage: result.shieldDamage, isShieldHit: true })

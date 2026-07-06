@@ -48,10 +48,15 @@ export function GameShell({ user, colonyId, isTWA, tgUser, onLogout }: GameShell
   const [activeTab, setActiveTab] = useState<TabId>('colony')
   const [viewMode, setViewMode] = useState<'colony' | 'map'>('colony')
   const [placementMode, setPlacementMode] = useState<BuildingTypeKey | null>(null)
+  const [isMobile, setIsMobile] = useState(false)
   const syncing = bootstrap.freshLoading || bootstrap.isStale
 
   useEffect(() => {
     markLoadMilestone('game-shell-mounted')
+    const handleResize = () => setIsMobile(window.innerWidth < 768)
+    handleResize()
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
   }, [])
 
   const handleBuild = useCallback(async (type: BuildingTypeKey, x?: number, y?: number) => {
@@ -68,8 +73,8 @@ export function GameShell({ user, colonyId, isTWA, tgUser, onLogout }: GameShell
     }
 
     setPlacementMode(type)
-    if (isTWA) setActiveTab('colony')
-  }, [buildStructure, isTWA, toast])
+    if (isTWA || isMobile) setActiveTab('colony')
+  }, [buildStructure, isTWA, isMobile, toast])
 
   const handleDemolish = useCallback((id: string) => demolishBuilding(id), [demolishBuilding])
 
@@ -82,7 +87,7 @@ export function GameShell({ user, colonyId, isTWA, tgUser, onLogout }: GameShell
     }
   }, [updateBuildingSettings, toast])
 
-  if (isTWA) {
+  if (isTWA || isMobile) {
     return (
       <TwaHud
         colonyId={colonyId}
