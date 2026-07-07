@@ -8,6 +8,7 @@ import { getFieldDamageReduction } from './combat.field-effects'
 import { getMarkedDamageMultiplier, getMarkedExecuteThreshold } from './combat.mark'
 import { getPercentHpDamage } from './combat.percent-damage'
 import { tryInterceptProjectile } from './combat.projectile-defense'
+import { getRankDamageMultiplier } from './combat.rank-scaling'
 import { getStatusValue } from './combat.status'
 import { applySummonCounterDamage } from './combat.summon-counter'
 export interface CombatDamageResult {
@@ -17,6 +18,8 @@ export interface CombatDamageResult {
   isShieldHit: boolean
   shieldDamage: number
   shieldBroken: boolean
+  shieldHitBlock: boolean
+  shieldHitBlockedDamage: number
   blockedDamage: number
   barrierBlockedDamage: number
   lifesteal: number
@@ -69,6 +72,7 @@ export function applyCombatDamage(
 
   if (target.isFlying && attacker.antiAirDamageMult) damage = Math.floor(damage * attacker.antiAirDamageMult)
   if (!target.isFlying && attacker.groundDamageMult) damage = Math.floor(damage * attacker.groundDamageMult)
+  damage = Math.floor(damage * getRankDamageMultiplier(attacker, target))
   damage = applySummonCounterDamage(attacker, target, damage)
   const movementDefenseReduction = getMovementDefenseReduction(target)
   if (movementDefenseReduction > 0) damage = Math.floor(damage * (1 - movementDefenseReduction))
@@ -83,6 +87,7 @@ export function applyCombatDamage(
   const markMult = getMarkedDamageMultiplier(attacker, target)
   if (markMult > 0) damage = Math.max(0, Math.floor(damage * (1 + markMult)))
 
+  damage = applyFlatDamageBlock(target, damage)
   const blockedDamage = Math.max(0, raw - damage)
   const shieldResult = applyShield(target, damage, attacker.shieldDamageMult)
   damage = shieldResult.damage
@@ -109,7 +114,7 @@ export function applyCombatDamage(
     damage,
     sharedDamage: shareResult.sharedDamage,
     sharedDamageEvents: shareResult.events,
-    blockedDamage: blockedDamage + reactiveArmorBlock,
+    blockedDamage: blockedDamage + shieldResult.shieldHitBlockedDamage + reactiveArmorBlock,
     barrierBlockedDamage,
     barrierBreakEvents: finiteBarrier.breaks,
     lifesteal,
@@ -154,8 +159,21 @@ function applyShield(target: SimUnit, damage: number, shieldDamageMult = 1): Com
   }
 
   target.shield = 0
+  const overflowDamage = Math.max(0, damage - Math.ceil(currentShield / multiplier))
+  if (overflowDamage > 0 && (target.shieldHitBlockCharges ?? 0) > 0) {
+    target.shieldHitBlockCharges = Math.max(0, (target.shieldHitBlockCharges ?? 0) - 1)
+    return createDamageResult({
+      damage: 0,
+      isShieldHit: true,
+      shieldDamage: currentShield,
+      shieldBroken: true,
+      shieldHitBlock: true,
+      shieldHitBlockedDamage: overflowDamage,
+    })
+  }
+
   return createDamageResult({
-    damage: Math.max(0, damage - Math.ceil(currentShield / multiplier)),
+    damage: overflowDamage,
     isShieldHit: true,
     shieldDamage: currentShield,
     shieldBroken: true,
@@ -175,8 +193,20 @@ function createDamageResult(overrides: Partial<CombatDamageResult> = {}): Combat
     lifesteal: 0,
     intercepted: false,
     barrierBreakEvents: [],
+    shieldHitBlock: false,
+    shieldHitBlockedDamage: 0,
     ...overrides,
   }
+}
+
+function applyFlatDamageBlock(target: SimUnit, damage: number): number {
+  const config = target.flatDamageBlock
+  if (!config || damage <= 0) return damage
+
+  const rank = Math.max(1, target.rank ?? 1)
+  const block = Math.max(0, Math.floor(config.amount + (config.perRank ?? 0) * Math.max(0, rank - 1)))
+  const minimumDamage = Math.max(0, Math.floor(config.minimumDamage ?? 0))
+  return Math.max(minimumDamage, damage - block)
 }
 
 function emitDamageActions(
@@ -189,6 +219,9 @@ function emitDamageActions(
 
   if (result.blockedDamage > 0) {
     actions.push({ unitId: target.id, type: 'unit_blocked_damage', targetId: attacker.id, damage: result.blockedDamage })
+  }
+  if (result.shieldHitBlock) {
+    actions.push({ unitId: target.id, type: 'shield_hit_block', targetId: attacker.id, damage: result.shieldHitBlockedDamage })
   }
   if (result.barrierBlockedDamage > 0) {
     actions.push({ unitId: target.id, type: 'barrier_absorb', targetId: attacker.id, damage: result.barrierBlockedDamage })

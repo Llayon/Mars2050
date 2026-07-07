@@ -14,7 +14,7 @@ const GRID_TO_PIXELS = 40
  * @returns secondary targets sorted by distance, then id
  */
 export function getSplitFireTargets(attacker: SimUnit, primary: SimUnit, units: SimUnit[]): SimUnit[] {
-  const config = UNIT_TYPES[attacker.type as UnitTypeKey]?.baseStats.splitFire
+  const config = attacker.splitFire ?? UNIT_TYPES[attacker.type as UnitTypeKey]?.baseStats.splitFire
   if (!config) return []
 
   const range = (config.range ?? attacker.range / GRID_TO_PIXELS) * GRID_TO_PIXELS
@@ -34,5 +34,5 @@ export function getSplitFireTargets(attacker: SimUnit, primary: SimUnit, units: 
  * @returns multiplier, or undefined when the unit has no split-fire config
  */
 export function getSplitFireDamageMultiplier(attacker: SimUnit): number | undefined {
-  return UNIT_TYPES[attacker.type as UnitTypeKey]?.baseStats.splitFire?.damageMultiplier
+  return attacker.splitFire?.damageMultiplier ?? UNIT_TYPES[attacker.type as UnitTypeKey]?.baseStats.splitFire?.damageMultiplier
 }

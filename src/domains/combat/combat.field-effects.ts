@@ -1,6 +1,6 @@
 import type { BattleAction } from './combat.actions'
 import { HARMFUL_STATUS_TYPES, cleanseStatuses } from './combat.status'
-import type { HazardKind, RuntimeFieldEffect, SimHazard, SimUnit } from './combat.sim.types'
+import type { FieldEffectConfig, HazardKind, RuntimeFieldEffect, SimHazard, SimUnit } from './combat.sim.types'
 import { getDistance } from './combat.utils'
 
 const CLEANSE_HAZARDS: HazardKind[] = ['napalm', 'acid', 'emp', 'emp_field', 'radiation', 'smoke']
@@ -14,7 +14,7 @@ export function processFieldEffects(tick: number, units: SimUnit[], hazards: Sim
     for (const effect of source.fieldEffect ?? []) {
       if (tick < effect.nextTick) continue
       effect.nextTick = tick + Math.max(1, effect.intervalTicks)
-      applyFieldEffect(source, effect, units, hazards, actions, tick)
+      applyFieldEffectAt(source, source, effect, units, hazards, actions, String(tick))
     }
   }
 }
@@ -30,23 +30,25 @@ export function getFieldDamageReduction(target: SimUnit, hazards: SimHazard[] | 
   return reduction
 }
 
-function applyFieldEffect(
+export function applyFieldEffectAt(
   source: SimUnit,
-  effect: RuntimeFieldEffect,
+  anchor: SimUnit,
+  effect: FieldEffectConfig,
   units: SimUnit[],
   hazards: SimHazard[],
   actions: BattleAction[],
-  tick: number
+  idSuffix: string
 ): void {
   actions.push({ unitId: source.id, type: 'field_effect', statusType: effect.kind, radius: effect.radius })
   if (effect.kind === 'barrier_dome') {
     const capacity = effect.capacity === undefined ? undefined : Math.max(1, Math.floor(effect.capacity))
+    const hazardId = `barrier_${source.id}_${effect.id}_${idSuffix}`
     hazards.push({
-      id: `barrier_${source.id}_${effect.id}_${tick}`,
+      id: hazardId,
       team: source.team,
       type: 'barrier_dome',
-      x: source.x,
-      y: source.y,
+      x: anchor.x,
+      y: anchor.y,
       radius: effect.radius,
       damagePerTick: 0,
       duration: effect.duration ?? effect.intervalTicks,
@@ -55,7 +57,7 @@ function applyFieldEffect(
       maxCapacity: capacity,
       sourceUnitId: source.id,
     })
-    if (capacity !== undefined) actions.push({ unitId: source.id, type: 'barrier_spawn', hazardId: `barrier_${source.id}_${effect.id}_${tick}`, radius: effect.radius, damage: capacity })
+    if (capacity !== undefined) actions.push({ unitId: source.id, type: 'barrier_spawn', hazardId, radius: effect.radius, damage: capacity })
     return
   }
 
@@ -66,11 +68,11 @@ function applyFieldEffect(
   }
 
   hazards.push({
-    id: `field_${source.id}_${effect.id}_${tick}`,
+    id: `field_${source.id}_${effect.id}_${idSuffix}`,
     team: source.team,
     type: effect.hazardType ?? 'smoke',
-    x: source.x,
-    y: source.y,
+    x: anchor.x,
+    y: anchor.y,
     radius: effect.radius,
     damagePerTick: effect.damagePerTick ?? 0,
     duration: effect.duration ?? effect.intervalTicks,
@@ -78,7 +80,7 @@ function applyFieldEffect(
   })
 }
 
-function cleanseHazardsInRadius(source: SimUnit, effect: RuntimeFieldEffect, hazards: SimHazard[], actions: BattleAction[]): void {
+function cleanseHazardsInRadius(source: SimUnit, effect: FieldEffectConfig, hazards: SimHazard[], actions: BattleAction[]): void {
   const removable = new Set(effect.hazardTypes ?? CLEANSE_HAZARDS)
   for (let i = hazards.length - 1; i >= 0; i--) {
     const hazard = hazards[i]

@@ -6,6 +6,7 @@ import { getUnitSupportAuras } from './combat.auras'
 import { getFormationSpacing, prepareRuntimePrimitives } from './combat.runtime-primitives'
 import { processPostHazardPrimitives, processPreActionPrimitives } from './combat.tick-primitives'
 import { getRuntimePrimitiveStats } from './combat.upgrade-primitives'
+import { applyRankScaling, getUnitRank } from './combat.rank-scaling'
 import type { UnitRow, BattleAction, BattleTick, BattleResult, UnitTypeKey } from './combat.types'
 import type { Team, SimUnit, Obstacle, SimHazard } from './combat.sim.types'
 import { actionSystem, tickModifiersSystem } from './combat.systems'
@@ -25,22 +26,18 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
   defenderGlobals.forEach(id => { if (GLOBAL_UPGRADES[id]) activeGlobals.push({ team: 'defender', upg: GLOBAL_UPGRADES[id] }) })
   const obstacles: Obstacle[] = providedObstacles || generateObstacles(seed);
   const flowFieldMap = createPathfindingMap(obstacles), spatialHash = new SpatialHash();
-
   const createSquad = (u: UnitRow, t: Team) => {
     const config = UNIT_TYPES[u.unit_type as keyof typeof UNIT_TYPES]
     if (!config) return
     const squadSize = config.squadSize || 1
     const spacing = getFormationSpacing(config.squadSpacing || 20, config.baseStats)
     const rowSize = Math.ceil(Math.sqrt(squadSize))
-
     if (u.grid_x == null) u.grid_x = String(Math.floor(rng.next() * FIELD_WIDTH))
     if (u.grid_y == null) u.grid_y = String(Math.floor(rng.next() * 320) + (t === 'attacker' ? (FIELD_HEIGHT - 320) : 0))
-
     const cx = Number(u.grid_x)
     const cy = Number(u.grid_y)
     const squadId = squadSize > 1 ? `${u.id}_squad` : undefined
     const formation = config.formation || 'grid'
-
     let modHp = config.baseStats.hp;
     let modAttack = config.baseStats.attack;
     let modDefense = config.baseStats.defense;
@@ -57,7 +54,7 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
     let modResurrectOnce = false, modStealthUntilAttack = false, modExecuteThreshold = 0;
     let modLifestealMult = 0, modGroundDamageMult = 1.0, modShieldDamageMult = config.baseStats.shieldDamageMult ?? 1.0, modArmorPierceRatio = config.baseStats.armorPierceRatio ?? 0, modSummonCounterDamageMult = config.baseStats.summonCounterDamageMult ?? 1.0, modAccuracyPenaltyResist = config.baseStats.accuracyPenaltyResist ?? 0;
     const runtimePrimitiveStats = getRuntimePrimitiveStats(config.baseStats, u.upgrade_path);
-
+    const unitRank = getUnitRank(u);
     if (u.upgrade_path && Array.isArray(u.upgrade_path)) {
       for (const upgradeId of u.upgrade_path) {
         const upgrade = UPGRADES[upgradeId]
@@ -85,7 +82,8 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
         }
       }
     }
-
+    const rankedStats = applyRankScaling({ hp: modHp, attack: modAttack, defense: modDefense, range: modRange, cooldown: modCooldown }, runtimePrimitiveStats.rankScaling, unitRank);
+    modHp = rankedStats.hp; modAttack = rankedStats.attack; modDefense = rankedStats.defense; modRange = rankedStats.range; modCooldown = rankedStats.cooldown;
     for (let i = 0; i < squadSize; i++) {
       let ox = 0, oy = 0
       
@@ -118,6 +116,7 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
         squadId,
         team: t,
         type: u.unit_type as UnitTypeKey,
+        rank: unitRank,
         hp: u.hp_current !== undefined ? Math.min(u.hp_current, modHp) : modHp,
         maxHp: Math.round(modHp),
         attack: Math.round(modAttack),

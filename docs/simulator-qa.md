@@ -25,12 +25,20 @@
 | `damage` | HP уменьшается только на финальный урон после защиты/щита/статусов. |
 | `shield_damage` | Щит теряет ровно поглощенную часть удара. |
 | `shield_break` | Срабатывает при уходе shield HP в 0. |
+| `shield_hit_block` | Персональный щит гарантированно блокирует overflow-hit и показывает отдельный блок. |
 | `unit_blocked_damage` | Показывает урон, снятый защитой, armor/status reduction или reactive armor; при armor pierce должен быть ниже baseline. |
 | `lifesteal` | Лечение считается от фактически нанесенного HP/shared урона. |
 | `ramp_charge` | Focus-fire юнит наращивает множитель только по той же primary цели. |
 | `charge_damage` | Movement-distance бонус применяется только к primary hit и сбрасывается после атаки. |
 | `percent_hp_damage` | Anti-giant бонус добавляется к primary hit до mitigation и не появляется у обычных/secondary ударов. |
 | `projectile_intercept` | Projectile-defense юнит сбил interceptable hit до shield/HP damage. |
+| `control_convert` | Цель визуально переходит под контроль другой команды. |
+| `trigger_effect` | HP/attack/death/kill trigger заметен отдельно от обычного урона. |
+| `periodic_ability` | Периодический залп/спавн виден как отдельное событие, не только как damage/spawn. |
+| `transform_mode` | Role-swap transform виден как отдельное событие. |
+| `stealth_change` | Movement stealth включился/сбросился, reveal и атака читаются в replay. |
+| `barrier_absorb` | Barrier dome поглощает урон отдельным текстом, не смешиваясь с shield HP. |
+| `hazard_cleanse` | Cleanse field удалил hazard/status и оставил отдельный replay marker. |
 | `on_kill` | On-kill эффекты появляются только после подтвержденной смерти, не после resurrection. |
 | `stance_change` | Siege/entrenchment режим развернулся или сбросился перед движением. |
 | `mode_change` | Ground/air режим переключился: `air` при перемещении, `ground` перед атакой. |
@@ -75,3 +83,9 @@
 | **18B. Mobility Mode Swap** | Jetpack Trooper против дальней наземной цели; повторить против dedicated AA | Юнит взлетает во время сближения, приземляется перед melee атакой, anti-air видит его только в airborne window. | Есть `mode_change` `air`/`ground`; replay показывает ВЗЛЕТ/ПОСАДКА; ground weapons могут атаковать после посадки. |
 | **18C. Burrow Movement** | Shock Trooper или Alien Bug с `subterranean_blitz` против дальней цели; повторить рядом с Radar Zepplin reveal | Юнит уходит под землю при движении, получает меньше входящего урона, выходит перед атакой или при reveal. | Есть `burrow_change` со значениями 1/0; `damage` по burrowed цели ниже baseline, после `revealed` reduction пропадает. |
 | **19. Smoke Fields** | Тестовый smokeOnAction юнит или будущий smoke upgrade | Smoke hazard режет range/output/accuracy у наземных юнитов внутри радиуса, не дамажит напрямую. | Есть `hazard_spawn` smoke и `status_apply`; flyers не получают smoke suppression. |
+| **20. Movement Stealth** | Пресет "Стелс / Радар" | Stealth unit скрыт при движении, reveal возвращает его в targeting. | Есть `stealth_change`, затем `status_apply` `revealed`; после атаки stealth сбрасывается. |
+| **21. Projectile Barrier** | Пресет "Ракеты / Щит" | Shield Emitter перехватывает первый дальний explosive/barrage hit. | Есть `projectile_intercept`; защищенная цель не получает `damage` от сбитого удара. |
+| **22. Summon Caps** | Пресет "Призывы / Лимиты" | Factory/carrier/hologram создают units и не уходят в бесконечный snowball. | Есть `spawn`; число active summons ограничено, бой завершается без runaway chain. |
+| **23. Control / EMP** | Пресет "Контроль / EMP" | Hack/EMP units выполняют полезные действия без прямого урона. | Есть `status_apply` `hacked`/`emp`; controlled/disabled цели временно теряют нормальное поведение. |
+| **24. Transform Modes** | Пресет "Режимы движения" | Jetpack меняет air/ground window, artillery разворачивается перед стрельбой. | Есть `mode_change`, `stance_change`; дальность и targetability соответствуют режиму. |
+| **25. Cleanse Status** | Пресет "Очищение статусов" | Engineer очищает harmful statuses с союзников в радиусе. | Есть `status_cleanse`; burn/acid/slow не держатся бесконечно рядом с support. |

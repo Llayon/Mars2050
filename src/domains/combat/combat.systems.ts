@@ -3,14 +3,14 @@ import type { SimHazard, SimUnit } from './combat.sim.types';
 import { handleDeath, processSpawnAction } from './combat.systems.utils';
 import { getDistance, PRNG, getSizeRadius } from './combat.utils';
 import { isMeleeEngagementReady } from './combat.melee-engagement';
-import { applyStatus, getEffectiveActionRange, isActionBlockedByStatus, tickStatuses } from './combat.status';
+import { applyStatus, isActionBlockedByStatus, tickStatuses } from './combat.status';
 import { applyCombatDamage } from './combat.damage';
 import { tryDeployMine } from './combat.minefield';
 import { tryDeploySmoke } from './combat.smoke';
 import { getBarrageDamageMultiplier, getBarrageImpacts, getBarrageTargets, getBeamDamageMultiplier, getBeamTargets, getChainTargets, getConeDamageMultiplier, getConeTargets, getLinePierceDamageMultiplier, getLinePierceTargets } from './combat.attack-geometry';
 import { applyKnockbackOnHit, applyPullOnHit } from './combat.displacement';
 import { applyTargetMark, tickTargetMark } from './combat.mark';
-import { getMinimumActionRange } from './combat.weapon-rules';
+import { getEffectiveActionRangeAgainst, getMinimumActionRange } from './combat.weapon-rules';
 import { getSideWeaponDamage, getSideWeaponTargets } from './combat.side-weapon';
 import { getRampDamage } from './combat.ramp';
 import { isProjectileInterceptableAttack } from './combat.projectile-defense';
@@ -24,6 +24,7 @@ import { getStanceActionCooldown, getStanceSetupActionRange, prepareStanceForAct
 import { syncBurrowState } from './combat.burrow';
 import { syncModeForAction } from './combat.mode';
 import { recordAttackTrigger, recordDamageTakenTrigger, tickTriggerCooldowns } from './combat.triggers';
+import { breakMovementStealthOnAttack } from './combat.stealth';
 
 export function tickModifiersSystem(unit: SimUnit, dt: number, actions: BattleAction[]) {
   if (unit.actionCooldown > 0) unit.actionCooldown = Math.max(0, unit.actionCooldown - 1);
@@ -35,7 +36,7 @@ export function actionSystem(unit: SimUnit, target: SimUnit, units: SimUnit[], h
   const targetRadius = getSizeRadius(target.size);
   const myRadius = getSizeRadius(unit.size);
   const distEdge = dist - targetRadius - myRadius;
-  const effectiveRange = getEffectiveActionRange(unit);
+  const effectiveRange = getEffectiveActionRangeAgainst(unit, target);
   const minimumRange = getMinimumActionRange(unit);
   const setupRange = getStanceSetupActionRange(unit, effectiveRange);
   const inRange = unit.attackType === 'spawn' || (unit.attackType !== 'heal' && (minimumRange <= 0 || distEdge >= minimumRange) && distEdge <= setupRange) ||
@@ -71,7 +72,7 @@ export function actionSystem(unit: SimUnit, target: SimUnit, units: SimUnit[], h
          let attackDamage = getChargeDamage(unit, target, getRampDamage(unit, target, unit.attack, actions), actions);
          if (emergeStrike?.attackMult) attackDamage = Math.floor(attackDamage * emergeStrike.attackMult);
          const primaryDamage = consumeAttackCharge(unit, attackDamage, actions, tick);
-         const triggerContext = createTriggerContext(unit, units, actions, hazards, rng);
+         const triggerContext = createTriggerContext(unit, units, actions, hazards, rng, tick);
          const damageResult = applyCombatDamage(
            unit,
            target,
@@ -80,7 +81,7 @@ export function actionSystem(unit: SimUnit, target: SimUnit, units: SimUnit[], h
            createDamageContext(unit, units, actions, hazards, rng, true, isProjectileInterceptableAttack(unit))
          );
 
-         unit.hasAttacked = true;
+         unit.hasAttacked = true; breakMovementStealthOnAttack(unit, actions);
          if (damageResult.intercepted) continue;
          recordAttackTrigger(unit, target, triggerContext);
          recordDamageTakenTrigger(unit, target, damageResult.damage + damageResult.sharedDamage, triggerContext);
@@ -232,8 +233,8 @@ function createDamageContext(unit: SimUnit, units: SimUnit[], actions: BattleAct
   return { units, hazards, allowPercentHpDamage, interceptable, onUnitDeath: (target: SimUnit) => handleDeath(target, unit, units, actions, hazards, rng) };
 }
 
-function createTriggerContext(unit: SimUnit, units: SimUnit[], actions: BattleAction[], hazards: SimHazard[], rng: PRNG) {
-  return { units, hazards, actions, rng, onUnitDeath: (target: SimUnit, source: SimUnit) => handleDeath(target, source ?? unit, units, actions, hazards, rng) };
+function createTriggerContext(unit: SimUnit, units: SimUnit[], actions: BattleAction[], hazards: SimHazard[], rng: PRNG, tick: number) {
+  return { units, hazards, actions, rng, tick, onUnitDeath: (target: SimUnit, source: SimUnit) => handleDeath(target, source ?? unit, units, actions, hazards, rng) };
 }
 
 function tickTemporaryUnit(unit: SimUnit, actions: BattleAction[]): void {

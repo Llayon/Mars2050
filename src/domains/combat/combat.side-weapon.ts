@@ -7,7 +7,7 @@ import { getDistance, getSizeRadius } from './combat.utils'
 const GRID_TO_PIXELS = 40
 
 export function getSideWeaponTargets(attacker: SimUnit, primary: SimUnit, units: SimUnit[]): SimUnit[] {
-  const config = UNIT_TYPES[attacker.type as UnitTypeKey]?.baseStats.sideWeapon
+  const config = attacker.sideWeapon ?? UNIT_TYPES[attacker.type as UnitTypeKey]?.baseStats.sideWeapon
   if (!config) return []
 
   const range = config.range * GRID_TO_PIXELS
@@ -22,5 +22,5 @@ export function getSideWeaponTargets(attacker: SimUnit, primary: SimUnit, units:
 }
 
 export function getSideWeaponDamage(attacker: SimUnit): number {
-  return UNIT_TYPES[attacker.type as UnitTypeKey]?.baseStats.sideWeapon?.damage ?? 0
+  return attacker.sideWeapon?.damage ?? UNIT_TYPES[attacker.type as UnitTypeKey]?.baseStats.sideWeapon?.damage ?? 0
 }

@@ -24,6 +24,7 @@ describe('battle replay damage events', () => {
     expect(isDetailedDamageAction('damage_share')).toBe(true)
     expect(isDetailedDamageAction('shield_damage')).toBe(true)
     expect(isDetailedDamageAction('shield_break')).toBe(true)
+    expect(isDetailedDamageAction('shield_hit_block')).toBe(true)
     expect(isDetailedDamageAction('lifesteal')).toBe(true)
     expect(isDetailedDamageAction('unit_blocked_damage')).toBe(true)
     expect(isDetailedDamageAction('barrier_absorb')).toBe(true)

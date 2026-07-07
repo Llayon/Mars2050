@@ -91,6 +91,22 @@ describe('combat unit config contract', () => {
         expect(stats.sideWeapon.range, `${unitType} has side weapon without positive range`).toBeGreaterThan(0)
         expect(stats.sideWeapon.maxTargets, `${unitType} has side weapon without positive maxTargets`).toBeGreaterThan(0)
       }
+      if (stats.conditionalRange) {
+        for (const range of stats.conditionalRange) {
+          expect(['air', 'ground', 'tag', 'same_rank', 'higher_rank', 'lower_rank'], `${unitType} has invalid conditional range target`).toContain(range.target)
+          expect((range.rangeAdd ?? 0) + (range.rangeMult ?? 0), `${unitType} has conditional range without effect`).toBeGreaterThan(0)
+          if (range.target === 'tag') expect(range.tag, `${unitType} has tag conditional range without tag`).toBeTruthy()
+        }
+      }
+      if (stats.rankScaling) {
+        expect((stats.rankScaling.hpMultPerRank ?? 0) + (stats.rankScaling.attackMultPerRank ?? 0) + (stats.rankScaling.defenseAddPerRank ?? 0) + (stats.rankScaling.rangeAddPerRank ?? 0) + (stats.rankScaling.cooldownReductionPerRank ?? 0) + (stats.rankScaling.damageModifiers?.length ?? 0), `${unitType} has rank scaling without effect`).toBeGreaterThan(0)
+        for (const modifier of stats.rankScaling.damageModifiers ?? []) {
+          expect(['same_rank', 'higher_rank', 'lower_rank'], `${unitType} has invalid rank damage relation`).toContain(modifier.relation)
+          expect(modifier.multiplier, `${unitType} has rank damage modifier without positive multiplier`).toBeGreaterThan(0)
+        }
+      }
+      if (stats.flatDamageBlock) expect([stats.flatDamageBlock.amount > 0, (stats.flatDamageBlock.perRank ?? 0) >= 0, (stats.flatDamageBlock.minimumDamage ?? 0) >= 0], `${unitType} has invalid flat block`).toEqual([true, true, true])
+      if (stats.shieldHitBlock) expect(stats.shieldHitBlock.charges, `${unitType} has shield hit block without positive charges`).toBeGreaterThan(0)
       if (stats.rampDamage) {
         expect(stats.rampDamage.step, `${unitType} has ramp damage without positive step`).toBeGreaterThan(0)
         expect(stats.rampDamage.maxMultiplier, `${unitType} has ramp damage without useful max multiplier`).toBeGreaterThan(1)

@@ -7,6 +7,7 @@ import { generateObstacles } from '@/domains/combat/combat.utils'
 import { UnitSelector, GlobalUpgradesSelector, UnitUpgradesPanel, SimulatorGrid } from './simulator.components'
 import { LazyBattleReplayModal } from './simulator.lazy'
 import type { SimulatorReplayData } from './simulator.lazy'
+import { SIMULATOR_PRESET_OPTIONS } from './simulator.presets'
 import Link from 'next/link'
 
 const getRandomInt = (max: number) => Math.floor(Math.random() * max)
@@ -136,9 +137,7 @@ export default function SimulatorPage() {
           <div className="flex gap-4">
              <select onChange={(e) => loadPreset(e.target.value)} className="text-sm bg-purple-900 hover:bg-purple-800 px-4 py-2 rounded font-bold transition-colors text-purple-200 outline-none">
                <option value="">Загрузить пресет...</option>
-               <option value="zerg_rush">Зерг Раш</option>
-               <option value="ranged_duel">Дуэль стрелков</option>
-               <option value="massive_clash">Стенка на стенку (100+)</option>
+               {SIMULATOR_PRESET_OPTIONS.map(preset => <option key={preset.id} value={preset.id}>{preset.name}</option>)}
              </select>
              <Link href="/" className="text-gray-400 hover:text-white px-4 py-2 bg-gray-800 rounded-lg">← В игру</Link>
           </div>

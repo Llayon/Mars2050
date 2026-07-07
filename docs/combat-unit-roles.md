@@ -482,11 +482,11 @@ stat tuning until that contract stays green.
 
 Current backlog:
 
-1. Keep `stealthWhileMoving` and upgrade-level `onDeathSpawn` deferred until
-   they receive runtime handling and tests.
+1. Prefer explicit `triggerEffects` for new on-death spawn content; legacy
+   `onDeathSpawn` is kept only as an adapter into that primitive.
 2. Add visual replay affordances for `control_convert`, `trigger_effect`,
-   `periodic_ability`, `transform_mode`, `barrier_absorb`, and
-   `hazard_cleanse`.
+   `periodic_ability`, `transform_mode`, `stealth_change`,
+   `barrier_absorb`, and `hazard_cleanse`.
 3. Tune conversion thresholds, cleanse counters, and multi-control penalties
    after simulator QA confirms readability.
 4. Tune periodic ability payloads only after charges, intervals, target policy,

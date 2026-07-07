@@ -44,9 +44,20 @@ export const UPGRADE_MODIFIER_KEYS = [
   'statGrowth',
   'attackCharge',
   'reassembly',
+  'rankScaling',
+  'conditionalRange',
+  'flatDamageBlock',
+  'shieldHitBlock',
   'targetPriorityProfile',
   'conditionalAttackMode',
   'sweepAttack',
+  'linePierce',
+  'coneAttack',
+  'beamAttack',
+  'barrageAttack',
+  'chainAttack',
+  'splitFire',
+  'sideWeapon',
 ] as const satisfies readonly UpgradeModifierKey[]
 
 export const RUNTIME_HANDLED_UPGRADE_MODIFIERS = [
@@ -59,6 +70,7 @@ export const RUNTIME_HANDLED_UPGRADE_MODIFIERS = [
   'addAoE',
   'defenseAdd',
   'grantShield',
+  'onDeathSpawn',
   'periodicSpawn',
   'disableEnemyTech',
   'leaveAoePuddle',
@@ -71,6 +83,7 @@ export const RUNTIME_HANDLED_UPGRADE_MODIFIERS = [
   'grantShieldFlat',
   'replicateOnKill',
   'resurrectOnce',
+  'stealthWhileMoving',
   'stealthUntilAttack',
   'executeThreshold',
   'lifestealMult',
@@ -89,15 +102,23 @@ export const RUNTIME_HANDLED_UPGRADE_MODIFIERS = [
   'statGrowth',
   'attackCharge',
   'reassembly',
+  'rankScaling',
+  'conditionalRange',
+  'flatDamageBlock',
+  'shieldHitBlock',
   'targetPriorityProfile',
   'conditionalAttackMode',
   'sweepAttack',
+  'linePierce',
+  'coneAttack',
+  'beamAttack',
+  'barrageAttack',
+  'chainAttack',
+  'splitFire',
+  'sideWeapon',
 ] as const satisfies readonly UpgradeModifierKey[]
 
-export const DEFERRED_UPGRADE_MODIFIERS = [
-  'stealthWhileMoving',
-  'onDeathSpawn',
-] as const satisfies readonly UpgradeModifierKey[]
+export const DEFERRED_UPGRADE_MODIFIERS = [] as const satisfies readonly UpgradeModifierKey[]
 
 type ListedModifierKey = typeof UPGRADE_MODIFIER_KEYS[number]
 type MissingModifierKey = Exclude<UpgradeModifierKey, ListedModifierKey>

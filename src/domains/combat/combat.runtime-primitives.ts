@@ -9,12 +9,25 @@ export function prepareRuntimePrimitives(unit: SimUnit, stats: UnitBaseStats): v
   unit.transformState = unit.transformMode ? { appliedIds: [] } : undefined
   unit.fieldEffect = createFieldEffectState(stats)
   unit.formationModifiers = stats.formationModifiers ? { ...stats.formationModifiers } : undefined
+  unit.rankScaling = stats.rankScaling ? { ...stats.rankScaling, damageModifiers: stats.rankScaling.damageModifiers?.map(modifier => ({ ...modifier })) } : undefined
+  unit.conditionalRange = stats.conditionalRange?.map(range => ({ ...range }))
+  unit.flatDamageBlock = stats.flatDamageBlock ? { ...stats.flatDamageBlock } : undefined
+  unit.shieldHitBlock = stats.shieldHitBlock ? { ...stats.shieldHitBlock } : undefined
+  unit.shieldHitBlockCharges = stats.shieldHitBlock?.charges
   unit.statGrowth = createStatGrowthState(stats)
   unit.attackCharge = createAttackChargeState(stats)
   unit.reassemblyConfig = stats.reassembly ? { ...stats.reassembly } : undefined
   unit.targetPriorityProfile = stats.targetPriorityProfile
   unit.conditionalAttackMode = stats.conditionalAttackMode ? { ...stats.conditionalAttackMode } : undefined
   unit.sweepAttack = stats.sweepAttack ? { ...stats.sweepAttack } : undefined
+  unit.linePierce = stats.linePierce ? { ...stats.linePierce } : undefined
+  unit.coneAttack = stats.coneAttack ? { ...stats.coneAttack } : undefined
+  unit.beamAttack = stats.beamAttack ? { ...stats.beamAttack } : undefined
+  unit.barrageAttack = stats.barrageAttack ? { ...stats.barrageAttack } : undefined
+  unit.chainAttack = stats.chainAttack ? { ...stats.chainAttack } : undefined
+  unit.splitFire = stats.splitFire ? { ...stats.splitFire } : undefined
+  unit.sideWeapon = stats.sideWeapon ? { ...stats.sideWeapon } : undefined
+  unit.stealthWhileMoving = stats.stealthWhileMoving === true ? true : unit.stealthWhileMoving
 }
 
 export function getFormationSpacing(baseSpacing: number, stats: UnitBaseStats): number {

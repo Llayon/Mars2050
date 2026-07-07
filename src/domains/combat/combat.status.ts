@@ -3,6 +3,7 @@ import type { SimUnit, StatusEffect, StatusType } from './combat.sim.types'
 import { breakBurrowOnReveal } from './combat.burrow'
 import { breakControlProgress, chooseHackControlMode, isHackActionBlocked, normalizeHackControlMode } from './combat.control'
 import { getStanceRangeMultiplier } from './combat.stance'
+import { breakMovementStealthOnReveal } from './combat.stealth'
 
 const ACTION_BLOCKING_STATUSES = new Set<StatusType>(['emp'])
 export const HARMFUL_STATUS_TYPES: StatusType[] = [
@@ -41,13 +42,13 @@ export function applyStatus(target: SimUnit, effect: StatusEffect, actions?: Bat
     existing.value = chooseStatusValue(existing.type, existing.value, normalized.value)
     existing.controlMode = chooseHackControlMode(existing.controlMode, normalized.controlMode)
     actions?.push(createStatusApplyAction(target.id, existing))
-    if (existing.type === 'revealed') breakBurrowOnReveal(target, actions)
+    if (existing.type === 'revealed') { breakBurrowOnReveal(target, actions); breakMovementStealthOnReveal(target, actions) }
     return false
   }
 
   target.statusEffects.push(normalized)
   actions?.push(createStatusApplyAction(target.id, normalized))
-  if (normalized.type === 'revealed') breakBurrowOnReveal(target, actions)
+  if (normalized.type === 'revealed') { breakBurrowOnReveal(target, actions); breakMovementStealthOnReveal(target, actions) }
   return true
 }
 

@@ -23,6 +23,20 @@ export interface TargetMark { sourceUnitId: string; duration: number; damageMult
 export type TargetMarkConfig = Omit<TargetMark, 'sourceUnitId'>
 export type PercentHpDamageBasis = 'max' | 'current'
 export interface PercentHpDamageConfig { percent: number; basis?: PercentHpDamageBasis; maxBonus?: number; minBonus?: number }
+export type ConditionalRangeTarget = 'air' | 'ground' | 'tag' | 'same_rank' | 'higher_rank' | 'lower_rank'
+export type RankRelation = 'same_rank' | 'higher_rank' | 'lower_rank'
+export interface ConditionalRangeConfig { target: ConditionalRangeTarget; tag?: CombatTag; rangeAdd?: number; rangeMult?: number }
+export interface RankDamageModifierConfig { relation: RankRelation; multiplier: number }
+export interface RankScalingConfig { hpMultPerRank?: number; attackMultPerRank?: number; defenseAddPerRank?: number; rangeAddPerRank?: number; cooldownReductionPerRank?: number; damageModifiers?: RankDamageModifierConfig[] }
+export interface FlatDamageBlockConfig { amount: number; perRank?: number; minimumDamage?: number }
+export interface ShieldHitBlockConfig { charges: number }
+export interface LinePierceConfig { width: number; damageMultiplier: number; maxTargets?: number }
+export interface ConeAttackConfig { angleDeg: number; damageMultiplier: number; maxTargets?: number }
+export interface BeamAttackConfig { width: number; damageMultiplier: number; maxTargets?: number }
+export interface BarrageAttackConfig { impacts: number; radius: number; spreadRadius: number; damageMultiplier: number; maxTargetsPerImpact?: number }
+export interface ChainAttackConfig { jumps: number; radius: number; damageMultiplier: number; falloff?: number }
+export interface SplitFireConfig { maxTargets: number; damageMultiplier: number; range?: number; canTargetAir?: boolean }
+export interface SideWeaponConfig { damage: number; range: number; maxTargets: number; canTargetAir?: boolean }
 
 export type SupportAuraType = 'shield' | 'shield_repair' | 'regen' | 'reveal' | 'damage_reduction' | 'haste' | 'range_boost' | 'attack_boost' | 'cleanse' | 'status_immunity'
 export type SupportAuraTarget = 'allies' | 'enemies'
@@ -54,6 +68,7 @@ export type TriggerPayload =
   | { kind: 'heal'; target: TriggerTarget; amount?: number; percentMaxHp?: number; victimMaxHpPercent?: number }
   | { kind: 'damage'; target: TriggerTarget; amount?: number; percentHp?: PercentHpDamageConfig; radius?: number }
   | { kind: 'spawn'; target: TriggerTarget; unitType: string; count?: number; cap?: number; hpPercent?: number }
+  | { kind: 'field'; target: TriggerTarget; field: FieldEffectConfig }
   | { kind: 'delayed_reassembly'; target: TriggerTarget; delayTicks: number; hpPercent?: number }
   | { kind: 'cooldown_reset'; target: TriggerTarget }
 export interface TriggerEffectConfig {

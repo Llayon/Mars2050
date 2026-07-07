@@ -7,7 +7,7 @@ describe('Mechabellum detailed primitive coverage contract', () => {
   })
 
   it('keeps every tracked technology explicitly classified', () => {
-    const allowed = new Set(['implemented', 'implemented-by-existing-primitive', 'partial-fixed-by-this-slice', 'deferred'])
+    const allowed = new Set(['implemented', 'implemented-by-existing-primitive', 'primitive-covered', 'deferred'])
     for (const [name, status] of Object.entries(MECHABELLUM_TECH_COVERAGE)) {
       expect(allowed.has(status), name).toBe(true)
     }

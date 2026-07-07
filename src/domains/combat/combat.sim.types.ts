@@ -1,5 +1,5 @@
-import type { BurrowConfig, ConditionalAttackModeConfig, ControlBeamConfig, ControlProgressState, DelayedReassemblyConfig, FieldEffectConfig, FormationModifiersConfig, HazardKind, MobilityMode, ReassemblyState, RuntimeAttackCharge, RuntimeFieldEffect, RuntimePeriodicAbility, RuntimeStatGrowth, RuntimeTriggerEffect, StanceMode, StatusEffect, SupportAura, SweepAttackConfig, TargetMark, TargetMarkConfig, TargetPriorityProfile, Team, TransformModeConfig, TransformModeState, UnitModeSwitchConfig, UnitStanceConfig } from './combat.primitives'
-export type { AttackChargeConfig, BurrowConfig, CombatTag, ConditionalAttackModeConfig, ControlBeamConfig, ControlProgressState, DelayedReassemblyConfig, FieldEffectConfig, FieldEffectKind, FormationModifiersConfig, HackControlMode, HazardKind, MobilityMode, PercentHpDamageBasis, PercentHpDamageConfig, PeriodicAbilityConfig, PeriodicAbilityPayload, PeriodicTargetPolicy, ReassemblyState, RuntimeAttackCharge, RuntimeFieldEffect, RuntimePeriodicAbility, RuntimeStatGrowth, RuntimeTriggerEffect, StatGrowthConfig, StatusEffect, StatusType, StanceMode, SupportAura, SupportAuraTarget, SupportAuraType, SweepAttackConfig, TargetMark, TargetMarkConfig, TargetPriorityProfile, Team, TransformModeConfig, TransformModeKind, TransformModeState, TriggerEffectConfig, TriggerEvent, TriggerPayload, TriggerTarget, UnitModeSwitchConfig, UnitStanceConfig } from './combat.primitives'
+import type { BarrageAttackConfig, BeamAttackConfig, BurrowConfig, ChainAttackConfig, ConditionalAttackModeConfig, ConditionalRangeConfig, ConeAttackConfig, ControlBeamConfig, ControlProgressState, DelayedReassemblyConfig, FieldEffectConfig, FlatDamageBlockConfig, FormationModifiersConfig, HazardKind, LinePierceConfig, MobilityMode, RankScalingConfig, ReassemblyState, RuntimeAttackCharge, RuntimeFieldEffect, RuntimePeriodicAbility, RuntimeStatGrowth, RuntimeTriggerEffect, ShieldHitBlockConfig, SideWeaponConfig, SplitFireConfig, StanceMode, StatusEffect, SupportAura, SweepAttackConfig, TargetMark, TargetMarkConfig, TargetPriorityProfile, Team, TransformModeConfig, TransformModeState, UnitModeSwitchConfig, UnitStanceConfig } from './combat.primitives'
+export type { AttackChargeConfig, BarrageAttackConfig, BeamAttackConfig, BurrowConfig, ChainAttackConfig, CombatTag, ConditionalAttackModeConfig, ConditionalRangeConfig, ConditionalRangeTarget, ControlBeamConfig, ControlProgressState, ConeAttackConfig, DelayedReassemblyConfig, FieldEffectConfig, FieldEffectKind, FlatDamageBlockConfig, FormationModifiersConfig, HackControlMode, HazardKind, LinePierceConfig, MobilityMode, PercentHpDamageBasis, PercentHpDamageConfig, PeriodicAbilityConfig, PeriodicAbilityPayload, PeriodicTargetPolicy, RankDamageModifierConfig, RankRelation, RankScalingConfig, ReassemblyState, RuntimeAttackCharge, RuntimeFieldEffect, RuntimePeriodicAbility, RuntimeStatGrowth, RuntimeTriggerEffect, ShieldHitBlockConfig, SideWeaponConfig, SplitFireConfig, StatGrowthConfig, StatusEffect, StatusType, StanceMode, SupportAura, SupportAuraTarget, SupportAuraType, SweepAttackConfig, TargetMark, TargetMarkConfig, TargetPriorityProfile, Team, TransformModeConfig, TransformModeKind, TransformModeState, TriggerEffectConfig, TriggerEvent, TriggerPayload, TriggerTarget, UnitModeSwitchConfig, UnitStanceConfig } from './combat.primitives'
 
 export interface Obstacle { x: number; y: number; radius: number }
 
@@ -9,6 +9,7 @@ export interface SimUnit {
   id: string
   team: Team
   type: string
+  rank?: number
   hp: number
   maxHp: number
   attack: number
@@ -45,6 +46,8 @@ export interface SimUnit {
   statusEffects: StatusEffect[]
   statusOnHit?: StatusEffect[]; markOnHit?: TargetMarkConfig; targetMark?: TargetMark
   supportAuras?: SupportAura[]
+  conditionalRange?: ConditionalRangeConfig[]; rankScaling?: RankScalingConfig; flatDamageBlock?: FlatDamageBlockConfig; shieldHitBlock?: ShieldHitBlockConfig; shieldHitBlockCharges?: number
+  linePierce?: LinePierceConfig; coneAttack?: ConeAttackConfig; beamAttack?: BeamAttackConfig; barrageAttack?: BarrageAttackConfig; chainAttack?: ChainAttackConfig; splitFire?: SplitFireConfig; sideWeapon?: SideWeaponConfig
   periodicAbilities?: RuntimePeriodicAbility[]; triggerEffects?: RuntimeTriggerEffect[]; controlBeam?: ControlBeamConfig; controlProgress?: ControlProgressState; transformMode?: TransformModeConfig[]; transformState?: TransformModeState; fieldEffect?: RuntimeFieldEffect[]; formationModifiers?: FormationModifiersConfig
   statGrowth?: RuntimeStatGrowth; attackCharge?: RuntimeAttackCharge; reassemblyConfig?: DelayedReassemblyConfig; reassemblyState?: ReassemblyState; reassemblyTriggersUsed?: number
   targetPriorityProfile?: TargetPriorityProfile; conditionalAttackMode?: ConditionalAttackModeConfig; sweepAttack?: SweepAttackConfig; emergeStrikePending?: { attackMult?: number; aoeRadiusAdd?: number }
@@ -62,6 +65,7 @@ export interface SimUnit {
   avoidanceSide?: -1 | 1
   avoidanceTicks?: number
   replicateOnKill?: boolean
+  stealthWhileMoving?: boolean; movementStealthActive?: boolean
   stealthUntilAttack?: boolean
   hasAttacked?: boolean
   resurrectOnce?: boolean

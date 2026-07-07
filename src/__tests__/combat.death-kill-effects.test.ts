@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import type { BattleAction } from '@/domains/combat/combat.actions'
+import { UNIT_TYPES } from '@/domains/combat/combat.config'
+import { prepareRuntimePrimitives } from '@/domains/combat/combat.runtime-primitives'
 import { handleDeath } from '@/domains/combat/combat.systems.utils'
+import type { UpgradeConfig } from '@/domains/combat/combat.upgrades'
+import { UPGRADES } from '@/domains/combat/combat.upgrades'
+import { getRuntimePrimitiveStats } from '@/domains/combat/combat.upgrade-primitives'
 import type { SimHazard, SimUnit, Team } from '@/domains/combat/combat.types'
 import { PRNG } from '@/domains/combat/combat.utils'
 
@@ -30,6 +35,15 @@ function makeUnit(overrides: Partial<SimUnit> & { id: string; team: Team }): Sim
     aggroLockTicks: 0,
     velocity: { x: 0, y: 0 },
     ...overrides,
+  }
+}
+
+function withUpgrade(id: string, upgrade: UpgradeConfig, run: () => void): void {
+  UPGRADES[id] = upgrade
+  try {
+    run()
+  } finally {
+    delete UPGRADES[id]
   }
 }
 
@@ -71,6 +85,25 @@ describe('death and kill effect primitives', () => {
     expect(spawned).toHaveLength(1)
     expect(spawned[0]).toMatchObject({ team: 'defender', type: 'alien_bug', hp: 10 })
     expect(actions).toContainEqual(expect.objectContaining({ unitId: 'carrier-wreck', type: 'spawn', spawnType: 'alien_bug' }))
+  })
+
+  it('maps legacy upgrade onDeathSpawn into a capped death trigger spawn', () => {
+    withUpgrade('test_death_spawn', { id: 'test_death_spawn', name: 'Death Spawn', description: 'test', cost: 0, allowedUnits: ['marine'], modifiers: { onDeathSpawn: 'alien_bug' } }, () => {
+      const victim = makeUnit({ id: 'legacy-wreck', team: 'defender', hp: 0 })
+      const killer = makeUnit({ id: 'killer', team: 'attacker' })
+      const stats = getRuntimePrimitiveStats(UNIT_TYPES.marine.baseStats, ['test_death_spawn'])
+      prepareRuntimePrimitives(victim, stats)
+      const actions: BattleAction[] = []
+      const units = [victim, killer]
+
+      handleDeath(victim, killer, units, actions, [], new PRNG(4))
+
+      const spawned = units.filter(unit => unit.summonOwnerId === 'legacy-wreck')
+      expect(victim.triggerEffects?.[0]).toMatchObject({ id: 'test_death_spawn-on-death-spawn', event: 'death' })
+      expect(spawned).toHaveLength(1)
+      expect(spawned[0]).toMatchObject({ team: 'defender', type: 'alien_bug' })
+      expect(actions).toContainEqual(expect.objectContaining({ unitId: 'legacy-wreck', type: 'spawn', spawnType: 'alien_bug' }))
+    })
   })
 
   it('supports on-kill recycling heals and existing on-death puddle replay actions', () => {

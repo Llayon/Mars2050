@@ -4,29 +4,33 @@ export function getZergRushPreset(): { attackers: UnitRow[], defenders: UnitRow[
   const attackers: UnitRow[] = [];
   // 3 Exosuits in front
   for (let i = 0; i < 3; i++) {
-     attackers.push({ id: crypto.randomUUID(), colony_id: 'attacker', unit_type: 'exosuit', hp_current: 120, tier: 1, upgrade_path: [], grid_x: String(250 + i * 50), grid_y: '700' });
+     attackers.push(makePresetUnit(`zerg-a-exo-${i}`, 'attacker', 'exosuit', 250 + i * 50, 700, 120));
   }
   // 10 Marines
   for (let i = 0; i < 10; i++) {
-     attackers.push({ id: crypto.randomUUID(), colony_id: 'attacker', unit_type: 'marine', hp_current: 40, tier: 1, upgrade_path: [], grid_x: String(200 + (i % 5) * 50), grid_y: String(750 + Math.floor(i / 5) * 40) });
+     attackers.push(makePresetUnit(`zerg-a-marine-${i}`, 'attacker', 'marine', 200 + (i % 5) * 50, 750 + Math.floor(i / 5) * 40, 40));
   }
   // 2 Snipers
-  attackers.push({ id: crypto.randomUUID(), colony_id: 'attacker', unit_type: 'sniper', hp_current: 30, tier: 1, upgrade_path: [], grid_x: '280', grid_y: '850' });
-  attackers.push({ id: crypto.randomUUID(), colony_id: 'attacker', unit_type: 'sniper', hp_current: 30, tier: 1, upgrade_path: [], grid_x: '320', grid_y: '850' });
+  attackers.push(makePresetUnit('zerg-a-sniper-0', 'attacker', 'sniper', 280, 850, 30));
+  attackers.push(makePresetUnit('zerg-a-sniper-1', 'attacker', 'sniper', 320, 850, 30));
 
   const defenders: UnitRow[] = [];
   // 50 Bugs!
   for (let i = 0; i < 50; i++) {
-     const jitterX = Math.random() * 400 + 100;
-     const jitterY = Math.random() * 200 + 100;
-     defenders.push({ id: crypto.randomUUID(), colony_id: 'defender', unit_type: 'alien_bug', hp_current: 50, tier: 1, upgrade_path: [], grid_x: String(jitterX), grid_y: String(jitterY) });
+     const jitterX = 100 + ((i * 73) % 400);
+     const jitterY = 100 + ((i * 41) % 200);
+     defenders.push(makePresetUnit(`zerg-d-bug-${i}`, 'defender', 'alien_bug', jitterX, jitterY, 50));
   }
   // 3 Spitters
-  defenders.push({ id: crypto.randomUUID(), colony_id: 'defender', unit_type: 'alien_spitter', hp_current: 40, tier: 1, upgrade_path: [], grid_x: '200', grid_y: '50' });
-  defenders.push({ id: crypto.randomUUID(), colony_id: 'defender', unit_type: 'alien_spitter', hp_current: 40, tier: 1, upgrade_path: [], grid_x: '300', grid_y: '50' });
-  defenders.push({ id: crypto.randomUUID(), colony_id: 'defender', unit_type: 'alien_spitter', hp_current: 40, tier: 1, upgrade_path: [], grid_x: '400', grid_y: '50' });
+  defenders.push(makePresetUnit('zerg-d-spitter-0', 'defender', 'alien_spitter', 200, 50, 40));
+  defenders.push(makePresetUnit('zerg-d-spitter-1', 'defender', 'alien_spitter', 300, 50, 40));
+  defenders.push(makePresetUnit('zerg-d-spitter-2', 'defender', 'alien_spitter', 400, 50, 40));
 
   return { attackers, defenders };
+}
+
+function makePresetUnit(id: string, colonyId: string, unitType: UnitTypeKey, x: number, y: number, hp: number): UnitRow {
+  return { id, colony_id: colonyId, unit_type: unitType, hp_current: hp, tier: 1, upgrade_path: [], grid_x: String(x), grid_y: String(y) }
 }
 
 export const UNIT_CATEGORIES = [

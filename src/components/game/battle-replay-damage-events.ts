@@ -5,6 +5,7 @@ const DETAILED_DAMAGE_TYPES = new Set<BattleAction['type']>([
   'damage_share',
   'shield_damage',
   'shield_break',
+  'shield_hit_block',
   'lifesteal',
   'unit_blocked_damage',
   'barrier_absorb',

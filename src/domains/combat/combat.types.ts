@@ -1,5 +1,5 @@
 import { Database, UnitsType } from '@/types/database'
-import type { AttackChargeConfig, BurrowConfig, CombatTag, ConditionalAttackModeConfig, ControlBeamConfig, DelayedReassemblyConfig, FieldEffectConfig, FormationModifiersConfig, PercentHpDamageConfig, PeriodicAbilityConfig, StatGrowthConfig, StatusEffect, SupportAura, SweepAttackConfig, TargetMarkConfig, TargetPriorityProfile, TransformModeConfig, TriggerEffectConfig, UnitModeSwitchConfig, UnitStanceConfig } from './combat.sim.types'
+import type { AttackChargeConfig, BarrageAttackConfig, BeamAttackConfig, BurrowConfig, ChainAttackConfig, CombatTag, ConditionalAttackModeConfig, ConditionalRangeConfig, ConeAttackConfig, ControlBeamConfig, DelayedReassemblyConfig, FieldEffectConfig, FlatDamageBlockConfig, FormationModifiersConfig, LinePierceConfig, PercentHpDamageConfig, PeriodicAbilityConfig, RankScalingConfig, ShieldHitBlockConfig, SideWeaponConfig, SplitFireConfig, StatGrowthConfig, StatusEffect, SupportAura, SweepAttackConfig, TargetMarkConfig, TargetPriorityProfile, TransformModeConfig, TriggerEffectConfig, UnitModeSwitchConfig, UnitStanceConfig } from './combat.sim.types'
 
 export type UnitRow = Database['public']['Tables']['units']['Row']
 export type BattleRow = Database['public']['Tables']['battles']['Row']
@@ -26,18 +26,18 @@ export interface UnitBaseStats {
   attackType: 'single' | 'aoe' | 'heal' | 'spawn'
   aoeRadius?: number; spawnType?: string; spawnCap?: number; actionCooldownMax?: number
   spawnOverrides?: { hp?: number; attack?: number; isTemporary?: boolean; duration?: number }
-  coneAttack?: { angleDeg: number; damageMultiplier: number; maxTargets?: number }
-  beamAttack?: { width: number; damageMultiplier: number; maxTargets?: number }
-  barrageAttack?: { impacts: number; radius: number; spreadRadius: number; damageMultiplier: number; maxTargetsPerImpact?: number }
-  chainAttack?: { jumps: number; radius: number; damageMultiplier: number; falloff?: number }
-  splitFire?: { maxTargets: number; damageMultiplier: number; range?: number; canTargetAir?: boolean }
-  sideWeapon?: { damage: number; range: number; maxTargets: number; canTargetAir?: boolean }
+  coneAttack?: ConeAttackConfig
+  beamAttack?: BeamAttackConfig
+  barrageAttack?: BarrageAttackConfig
+  chainAttack?: ChainAttackConfig
+  splitFire?: SplitFireConfig
+  sideWeapon?: SideWeaponConfig
   rampDamage?: { step: number; maxMultiplier: number }
   chargeDamage?: { minDistance: number; maxDistance: number; maxMultiplier: number }
   percentHpDamage?: PercentHpDamageConfig & { maxBonus: number }
   shieldDamageMult?: number; armorPierceRatio?: number; summonCounterDamageMult?: number; accuracyPenaltyResist?: number
   onKill?: { cooldownReset?: boolean; healPercent?: number; status?: StatusEffect }
-  linePierce?: { width: number; damageMultiplier: number; maxTargets?: number }
+  linePierce?: LinePierceConfig
   pullOnHit?: { radius: number; strength: number; maxTargets?: number }
   knockbackOnHit?: { radius: number; strength: number; maxTargets?: number }
   stance?: UnitStanceConfig
@@ -53,8 +53,10 @@ export interface UnitBaseStats {
   smokeOnAction?: { radius: number; duration: number; rangeSuppression?: number; outputSuppression?: number; accuracySuppression?: number }
   periodicAbilities?: PeriodicAbilityConfig[]; triggerEffects?: TriggerEffectConfig[]; transformMode?: TransformModeConfig[]; controlBeam?: ControlBeamConfig; fieldEffect?: FieldEffectConfig[]; formationModifiers?: FormationModifiersConfig
   statGrowth?: StatGrowthConfig; attackCharge?: AttackChargeConfig; reassembly?: DelayedReassemblyConfig
+  rankScaling?: RankScalingConfig; conditionalRange?: ConditionalRangeConfig[]; flatDamageBlock?: FlatDamageBlockConfig; shieldHitBlock?: ShieldHitBlockConfig
   targetPriorityProfile?: TargetPriorityProfile; conditionalAttackMode?: ConditionalAttackModeConfig; sweepAttack?: SweepAttackConfig
   isFlying?: boolean; canTargetAir?: boolean
+  stealthWhileMoving?: boolean
   targetingProfile?: TargetingProfile
   combatTags?: CombatTag[]
   turnSpeed?: number // Radians per tick
@@ -70,6 +72,6 @@ export interface UnitTypeConfig {
   formation?: 'line' | 'wedge' | 'grid'
 }
 
-export type { Team, CombatTag, StatusEffect, StatusType, HackControlMode, StanceMode, MobilityMode, UnitStanceConfig, UnitModeSwitchConfig, BurrowConfig, SupportAura, SupportAuraType, TargetMark, TargetMarkConfig, PercentHpDamageBasis, PercentHpDamageConfig, PeriodicAbilityConfig, RuntimePeriodicAbility, TriggerEffectConfig, RuntimeTriggerEffect, ControlBeamConfig, FieldEffectConfig, RuntimeFieldEffect, TransformModeConfig, FormationModifiersConfig, AttackChargeConfig, ConditionalAttackModeConfig, DelayedReassemblyConfig, StatGrowthConfig, SweepAttackConfig, TargetPriorityProfile, Obstacle, SimHazard, SimUnit } from './combat.sim.types'
+export type { Team, CombatTag, StatusEffect, StatusType, HackControlMode, StanceMode, MobilityMode, UnitStanceConfig, UnitModeSwitchConfig, BurrowConfig, SupportAura, SupportAuraType, TargetMark, TargetMarkConfig, PercentHpDamageBasis, PercentHpDamageConfig, PeriodicAbilityConfig, RuntimePeriodicAbility, TriggerEffectConfig, RuntimeTriggerEffect, ControlBeamConfig, FieldEffectConfig, RuntimeFieldEffect, TransformModeConfig, FormationModifiersConfig, AttackChargeConfig, ConditionalAttackModeConfig, DelayedReassemblyConfig, StatGrowthConfig, SweepAttackConfig, TargetPriorityProfile, RankScalingConfig, ConditionalRangeConfig, FlatDamageBlockConfig, ShieldHitBlockConfig, LinePierceConfig, ConeAttackConfig, BeamAttackConfig, BarrageAttackConfig, ChainAttackConfig, SplitFireConfig, SideWeaponConfig, Obstacle, SimHazard, SimUnit } from './combat.sim.types'
 export * from './combat.actions'
 

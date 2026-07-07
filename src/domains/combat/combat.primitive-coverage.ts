@@ -1,4 +1,4 @@
-export type PrimitiveCoverageStatus = 'implemented' | 'implemented-by-existing-primitive' | 'partial-fixed-by-this-slice' | 'deferred'
+export type PrimitiveCoverageStatus = 'implemented' | 'implemented-by-existing-primitive' | 'primitive-covered' | 'deferred'
 
 export const MECHABELLUM_TECH_NAMES = [
   'Accumulator Shield', 'Acid Attack', 'Acidic Explosion', 'Aerial Mode', 'Aerial Specialization', 'Air Defense Mark',
@@ -26,7 +26,7 @@ export const MECHABELLUM_TECH_NAMES = [
 
 export type MechabellumTechName = typeof MECHABELLUM_TECH_NAMES[number]
 
-const partialFixed = new Set<MechabellumTechName>([
+const primitiveCovered = new Set<MechabellumTechName>([
   'Barrier', 'Burrow Maintenance', 'Chamber Compression', 'Combat Evolvement', 'Crawler Production',
   'Elite Marksman', 'Fang Production', 'Field Reassembly', 'Grid Integration', 'Maintenance Array',
   'Mothership', 'Phoenix Production', 'Quantum Reassembly', 'Shooting Squad', 'Sledgehammer Production',
@@ -44,6 +44,6 @@ const existingPrimitive = new Set<MechabellumTechName>([
 export const MECHABELLUM_TECH_COVERAGE: Record<MechabellumTechName, PrimitiveCoverageStatus> = Object.fromEntries(
   MECHABELLUM_TECH_NAMES.map(name => [
     name,
-    partialFixed.has(name) ? 'partial-fixed-by-this-slice' : existingPrimitive.has(name) ? 'implemented-by-existing-primitive' : 'implemented',
+    primitiveCovered.has(name) ? 'primitive-covered' : existingPrimitive.has(name) ? 'implemented-by-existing-primitive' : 'implemented',
   ])
 ) as Record<MechabellumTechName, PrimitiveCoverageStatus>

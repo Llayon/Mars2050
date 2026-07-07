@@ -1,5 +1,6 @@
 import type { BattleAction } from './combat.actions'
 import { applyCombatDamage } from './combat.damage'
+import { applyFieldEffectAt } from './combat.field-effects'
 import { getConfiguredPercentHpDamage } from './combat.percent-damage'
 import { startReassembly } from './combat.reassembly'
 import { spawnCombatUnits } from './combat.spawn'
@@ -12,6 +13,7 @@ export interface TriggerContext {
   hazards: SimHazard[]
   actions: BattleAction[]
   rng: PRNG
+  tick?: number
   onUnitDeath?: (target: SimUnit, source: SimUnit) => void
 }
 
@@ -113,6 +115,10 @@ function applyTriggerPayload(owner: SimUnit, target: SimUnit | null, eventTarget
   }
   if (payload.kind === 'damage' && target) {
     applyTriggerDamage(owner, target, payload, context)
+    return
+  }
+  if (payload.kind === 'field' && target) {
+    applyFieldEffectAt(owner, target, payload.field, context.units, context.hazards, context.actions, `trigger_${context.tick ?? 0}_${context.actions.length}`)
     return
   }
   if (payload.kind === 'cooldown_reset' && target) {

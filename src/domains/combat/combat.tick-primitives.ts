@@ -23,7 +23,7 @@ export function processPreActionPrimitives(
   actions: BattleAction[],
   rng: PRNG
 ): TriggerContext {
-  const triggerContext = { units, hazards, actions, rng, onUnitDeath: (target: SimUnit, source: SimUnit) => handleDeath(target, source, units, actions, hazards, rng) }
+  const triggerContext = { units, hazards, actions, rng, tick, onUnitDeath: (target: SimUnit, source: SimUnit) => handleDeath(target, source, units, actions, hazards, rng) }
   processReassemblies(units, actions)
   processGlobals(tick, activeGlobals, units, hazards, actions, rng)
   processSupportAuras(tick, units, actions)

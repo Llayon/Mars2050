@@ -3,11 +3,12 @@ import type { MeleeEngagementState } from './combat.melee-engagement';
 import { clearMeleeEngagementSlot, hasMeleeEngagementSlot, setMeleeWaitingTarget } from './combat.melee-engagement';
 import { getTargetingProfile, getTargetScore } from './combat.targeting-score';
 import { getDistance } from './combat.utils';
-import { getEffectiveActionRange, hasStatus } from './combat.status';
+import { isEnemyVisible } from './combat.stealth';
 import type { SpatialHash } from './spatial-hash';
 import { canReceiveHealAction } from './combat.support';
 import { canTargetUnit } from './combat.targeting-rules';
 import { selectHackControlTarget } from './combat.control';
+import { getMaxEffectiveActionRange } from './combat.weapon-rules';
 
 const AGGRO_LOCK_TICKS = 10;
 const AGGRO_LEASH_MULTIPLIER = 1.5;
@@ -44,7 +45,7 @@ export function targetingSystem(unit: SimUnit, units: SimUnit[], meleeEngagement
   // Filter out enemies that are already fully surrounded (if this is a melee unit)
   let validEnemies = enemies;
   const profile = getTargetingProfile(unit);
-  if (unit.range <= 60) {
+  if (getMaxEffectiveActionRange(unit) <= 60) {
      validEnemies = enemies.filter(e => hasMeleeEngagementSlot(unit, e, meleeEngagement));
      if (validEnemies.length === 0) {
        unit.attackTargetId = undefined;
@@ -163,7 +164,7 @@ function selectMovementFallback(unit: SimUnit, units: SimUnit[], meleeEngagement
   if (enemies.length === 0) return null;
 
   let validEnemies = enemies;
-  if (unit.range <= 60) {
+  if (getMaxEffectiveActionRange(unit) <= 60) {
     validEnemies = enemies.filter(e => hasMeleeEngagementSlot(unit, e, meleeEngagement));
     if (validEnemies.length === 0) {
       const waitingTarget = selectNearestTarget(unit, enemies);
@@ -179,12 +180,12 @@ function isReachableEnemy(unit: SimUnit, enemy: SimUnit): boolean {
   return !enemy.isDead &&
     enemy.team !== unit.team &&
     canTargetUnit(unit, enemy) &&
-    !(enemy.stealthUntilAttack && !enemy.hasAttacked && !hasStatus(enemy, 'revealed'));
+    isEnemyVisible(enemy);
 }
 
 function getAcquisitionRadius(unit: SimUnit): number {
-  if (unit.range <= 60) return MELEE_ACQUISITION_RADIUS;
-  return Math.max(MELEE_ACQUISITION_RADIUS, getEffectiveActionRange(unit) + RANGED_ACQUISITION_BUFFER);
+  if (getMaxEffectiveActionRange(unit) <= 60) return MELEE_ACQUISITION_RADIUS;
+  return Math.max(MELEE_ACQUISITION_RADIUS, getMaxEffectiveActionRange(unit) + RANGED_ACQUISITION_BUFFER);
 }
 
 function isFullMapAcquisitionUnit(unit: SimUnit): boolean {

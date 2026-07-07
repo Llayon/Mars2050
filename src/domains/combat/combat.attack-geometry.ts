@@ -15,7 +15,7 @@ export interface ChainHit { target: SimUnit; jump: number; multiplier: number }
  * @returns secondary targets sorted by line progress, then id
  */
 export function getLinePierceTargets(attacker: SimUnit, primary: SimUnit, units: SimUnit[]): SimUnit[] {
-  const config = UNIT_TYPES[attacker.type as UnitTypeKey]?.baseStats.linePierce
+  const config = attacker.linePierce ?? UNIT_TYPES[attacker.type as UnitTypeKey]?.baseStats.linePierce
   if (!config) return []
 
   const dx = primary.x - attacker.x
@@ -41,7 +41,7 @@ export function getLinePierceTargets(attacker: SimUnit, primary: SimUnit, units:
  * @returns multiplier, or undefined when the unit has no line-pierce config
  */
 export function getLinePierceDamageMultiplier(attacker: SimUnit): number | undefined {
-  return UNIT_TYPES[attacker.type as UnitTypeKey]?.baseStats.linePierce?.damageMultiplier
+  return attacker.linePierce?.damageMultiplier ?? UNIT_TYPES[attacker.type as UnitTypeKey]?.baseStats.linePierce?.damageMultiplier
 }
 
 /**
@@ -52,7 +52,7 @@ export function getLinePierceDamageMultiplier(attacker: SimUnit): number | undef
  * @returns secondary targets sorted by distance, then id
  */
 export function getConeTargets(attacker: SimUnit, primary: SimUnit, units: SimUnit[]): SimUnit[] {
-  const config = UNIT_TYPES[attacker.type as UnitTypeKey]?.baseStats.coneAttack
+  const config = attacker.coneAttack ?? UNIT_TYPES[attacker.type as UnitTypeKey]?.baseStats.coneAttack
   if (!config) return []
 
   const centerAngle = Math.atan2(primary.y - attacker.y, primary.x - attacker.x)
@@ -75,7 +75,7 @@ export function getConeTargets(attacker: SimUnit, primary: SimUnit, units: SimUn
  * @returns secondary targets sorted by line progress, then id
  */
 export function getBeamTargets(attacker: SimUnit, primary: SimUnit, units: SimUnit[]): SimUnit[] {
-  const config = UNIT_TYPES[attacker.type as UnitTypeKey]?.baseStats.beamAttack
+  const config = attacker.beamAttack ?? UNIT_TYPES[attacker.type as UnitTypeKey]?.baseStats.beamAttack
   if (!config) return []
 
   const dx = primary.x - attacker.x
@@ -96,15 +96,15 @@ export function getBeamTargets(attacker: SimUnit, primary: SimUnit, units: SimUn
 }
 
 export function getConeDamageMultiplier(attacker: SimUnit): number | undefined {
-  return UNIT_TYPES[attacker.type as UnitTypeKey]?.baseStats.coneAttack?.damageMultiplier
+  return attacker.coneAttack?.damageMultiplier ?? UNIT_TYPES[attacker.type as UnitTypeKey]?.baseStats.coneAttack?.damageMultiplier
 }
 
 export function getBeamDamageMultiplier(attacker: SimUnit): number | undefined {
-  return UNIT_TYPES[attacker.type as UnitTypeKey]?.baseStats.beamAttack?.damageMultiplier
+  return attacker.beamAttack?.damageMultiplier ?? UNIT_TYPES[attacker.type as UnitTypeKey]?.baseStats.beamAttack?.damageMultiplier
 }
 
 export function getBarrageImpacts(attacker: SimUnit, primary: SimUnit): BarrageImpact[] {
-  const config = UNIT_TYPES[attacker.type as UnitTypeKey]?.baseStats.barrageAttack
+  const config = attacker.barrageAttack ?? UNIT_TYPES[attacker.type as UnitTypeKey]?.baseStats.barrageAttack
   if (!config) return []
 
   const impacts: BarrageImpact[] = []
@@ -116,7 +116,7 @@ export function getBarrageImpacts(attacker: SimUnit, primary: SimUnit): BarrageI
 }
 
 export function getBarrageTargets(attacker: SimUnit, impact: BarrageImpact, units: SimUnit[]): SimUnit[] {
-  const config = UNIT_TYPES[attacker.type as UnitTypeKey]?.baseStats.barrageAttack
+  const config = attacker.barrageAttack ?? UNIT_TYPES[attacker.type as UnitTypeKey]?.baseStats.barrageAttack
   if (!config) return []
 
   return units
@@ -129,11 +129,11 @@ export function getBarrageTargets(attacker: SimUnit, impact: BarrageImpact, unit
 }
 
 export function getBarrageDamageMultiplier(attacker: SimUnit): number | undefined {
-  return UNIT_TYPES[attacker.type as UnitTypeKey]?.baseStats.barrageAttack?.damageMultiplier
+  return attacker.barrageAttack?.damageMultiplier ?? UNIT_TYPES[attacker.type as UnitTypeKey]?.baseStats.barrageAttack?.damageMultiplier
 }
 
 export function getChainTargets(attacker: SimUnit, primary: SimUnit, units: SimUnit[]): ChainHit[] {
-  const config = UNIT_TYPES[attacker.type as UnitTypeKey]?.baseStats.chainAttack
+  const config = attacker.chainAttack ?? UNIT_TYPES[attacker.type as UnitTypeKey]?.baseStats.chainAttack
   if (!config) return []
 
   const hits: ChainHit[] = []

@@ -16,11 +16,11 @@ export function handlePrimitiveReplayEvent(
     return true
   }
   if (action.type === 'periodic_ability') {
-    spawnTxt('ЗАЛП', source.c.x, source.c.y, 0xf97316)
+    spawnTxt(action.statusType === 'spawn' ? 'ВОЛНА' : 'ЗАЛП', source.c.x, source.c.y, 0xf97316)
     return true
   }
   if (action.type === 'trigger_effect') {
-    spawnTxt('ТРИГГЕР', source.c.x, source.c.y, 0xfacc15)
+    spawnTxt(action.statusType?.includes('death') ? 'ПОСМЕРТНО' : 'ТРИГГЕР', source.c.x, source.c.y, 0xfacc15)
     return true
   }
   if (action.type === 'control_link' || action.type === 'control_progress') {
@@ -40,6 +40,21 @@ export function handlePrimitiveReplayEvent(
     }
     return true
   }
+  if (action.type === 'projectile_intercept') {
+    if (action.fromX !== undefined && action.fromY !== undefined && action.toX !== undefined && action.toY !== undefined) {
+      spawnProj(action.fromX, action.fromY, action.toX, action.toY, 0x22d3ee)
+    }
+    spawnTxt('ПЕРЕХВАТ', source.c.x, source.c.y, 0x22d3ee)
+    return true
+  }
+  if (action.type === 'stealth_change') {
+    spawnTxt(action.modeState === 'movement_active' ? 'СКРЫТ' : 'ОБНАРУЖЕН', source.c.x, source.c.y, action.modeState === 'movement_active' ? 0xa3e635 : 0xfacc15)
+    return true
+  }
+  if (action.type === 'transform_mode') {
+    spawnTxt('ТРАНСФОРМ', source.c.x, source.c.y, 0x38bdf8)
+    return true
+  }
   if (action.type === 'field_effect') {
     spawnTxt(action.statusType === 'cleanse_field' ? 'ПОЛЕ ОЧИСТКИ' : 'ПОЛЕ', source.c.x, source.c.y, 0x38bdf8)
     return true
@@ -51,6 +66,10 @@ export function handlePrimitiveReplayEvent(
   if (action.type === 'barrier_spawn' || action.type === 'barrier_break' || action.type === 'barrier_expire') {
     const label = action.type === 'barrier_spawn' ? 'БАРЬЕР' : action.type === 'barrier_break' ? 'БАРЬЕР СЛОМАН' : 'БАРЬЕР ИСЧЕЗ'
     spawnTxt(label, source.c.x, source.c.y, 0x22d3ee)
+    return true
+  }
+  if (action.type === 'shield_hit_block') {
+    spawnTxt('ЩИТ БЛОК', source.c.x, source.c.y, 0x60a5fa)
     return true
   }
   if (action.type === 'stat_growth') {
