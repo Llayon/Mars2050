@@ -3,7 +3,6 @@ import { useEffect, useRef, memo, useState, useMemo } from 'react'
 import type { BattleTick, UnitRow, SimUnit, Obstacle } from '@/domains/combat/combat.types'
 import { startBattleReplayEngine } from './battle-replay-engine'
 import type { ReplayControls } from './battle-replay-engine'
-import type { Application } from 'pixi.js'
 import { getSizeRadius } from '@/domains/combat/combat.utils'
 
 export const BattleReplayModal = memo(function BattleReplayModal({ attackerUnits, defenderUnits, initialState, logs, obstacles, onClose }: { attackerUnits: UnitRow[], defenderUnits: UnitRow[], initialState?: SimUnit[], logs: BattleTick[], obstacles?: Obstacle[], onClose: () => void }) {
@@ -60,10 +59,10 @@ export const BattleReplayModal = memo(function BattleReplayModal({ attackerUnits
   }, [logs, initialState])
 
   useEffect(() => {
-    let app: Application, isDestroyed = false
+    let isDestroyed = false
     let cleanupEvents: (() => void) | null = null
 
-    async function initPixi() {
+    async function initReplay() {
       if (!containerRef.current) return
 
       const result = await startBattleReplayEngine({
@@ -80,7 +79,6 @@ export const BattleReplayModal = memo(function BattleReplayModal({ attackerUnits
         return
       }
 
-      app = result.app
       cleanupEvents = result.cleanupEvents
       controlsRef.current = result.controls
 
@@ -91,12 +89,10 @@ export const BattleReplayModal = memo(function BattleReplayModal({ attackerUnits
       }
     }
 
-    initPixi()
+    initReplay()
     return () => {
       isDestroyed = true
-      if (app) {
-        if (cleanupEvents) cleanupEvents()
-      }
+      if (cleanupEvents) cleanupEvents()
     }
   }, [attackerUnits, defenderUnits, initialState, logs, obstacles])
 
@@ -118,15 +114,15 @@ export const BattleReplayModal = memo(function BattleReplayModal({ attackerUnits
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-black/95 backdrop-blur-md">
-      <div className="absolute top-4 left-4 z-[60] flex flex-col gap-2">
-        <div className="bg-gray-800/80 border border-gray-600 rounded-lg p-3 text-sm flex flex-col gap-2 shadow-lg w-64 backdrop-blur-md">
+      <div className="absolute top-2 left-2 z-[60] flex flex-col gap-2 sm:top-4 sm:left-4">
+        <div className="bg-gray-800/80 border border-gray-600 rounded-lg p-2 text-xs flex flex-col gap-2 shadow-lg w-56 backdrop-blur-md sm:w-64 sm:p-3 sm:text-sm">
           <div className="font-bold text-gray-200 border-b border-gray-700 pb-1 mb-1">Метрики (Tick {metrics.totalTicks})</div>
           <div className="flex justify-between text-gray-300"><span>Первая атака:</span> <span>{metrics.firstAttack >= 0 ? `Tick ${metrics.firstAttack}` : 'Нет'}</span></div>
           <div className="flex justify-between text-gray-300"><span>Avg Overlap (t=20):</span> <span>{metrics.avgOverlap}px</span></div>
           <div className="flex justify-between text-gray-300"><span>Max Overlap (t=20):</span> <span>{metrics.maxOverlap}px</span></div>
         </div>
 
-        <div className="bg-gray-800/80 border border-gray-600 rounded-lg p-3 text-sm flex flex-col gap-3 shadow-lg w-64 backdrop-blur-md">
+        <div className="bg-gray-800/80 border border-gray-600 rounded-lg p-2 text-xs flex flex-col gap-2 shadow-lg w-56 backdrop-blur-md sm:w-64 sm:p-3 sm:text-sm sm:gap-3">
           <div className="font-bold text-gray-200 border-b border-gray-700 pb-1">Управление</div>
 
           <div className="flex items-center gap-2">
@@ -159,12 +155,12 @@ export const BattleReplayModal = memo(function BattleReplayModal({ attackerUnits
 
       <button
         onClick={onClose}
-        className="absolute top-4 right-4 z-[60] w-10 h-10 flex items-center justify-center bg-gray-800/80 hover:bg-red-600 rounded-full text-white font-bold text-xl shadow-lg transition-colors border border-gray-600"
+        className="absolute top-2 right-2 z-[60] w-9 h-9 flex items-center justify-center bg-gray-800/80 hover:bg-red-600 rounded-full text-white font-bold text-xl shadow-lg transition-colors border border-gray-600 sm:top-4 sm:right-4 sm:w-10 sm:h-10"
       >
         ✕
       </button>
-      <div className="flex-1 min-h-0 flex flex-col items-center justify-center p-2 sm:p-4">
-        <div ref={containerRef} className="rounded-lg overflow-hidden border border-gray-700 shadow-[0_0_30px_rgba(0,0,0,0.8)]" style={{ height: '100%', maxHeight: '100%', aspectRatio: '1/2' }} />
+      <div className="flex-1 min-h-0 flex flex-col items-center justify-center p-0 sm:p-4">
+        <div ref={containerRef} className="rounded-lg overflow-hidden border border-gray-700 shadow-[0_0_30px_rgba(0,0,0,0.8)]" style={{ height: 'min(100%, 200vw)', maxHeight: '100%', maxWidth: '100%', aspectRatio: '1/2' }} />
       </div>
     </div>
   )
