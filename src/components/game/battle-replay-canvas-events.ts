@@ -1,6 +1,7 @@
 import { UNIT_TYPES } from '@/domains/combat/combat.config'
 import { FIELD_HEIGHT, FIELD_WIDTH } from '@/domains/combat/combat.utils'
 import type { BattleAction, SimUnit, UnitRow, UnitTypeKey } from '@/domains/combat/combat.types'
+import { getReplayActionColor, getReplayActionLabel } from './battle-replay-labels'
 import type { ReplayTeam, ReplayUnit } from './battle-replay-canvas-types'
 
 type SpawnText = (text: string, x: number, y: number, color: string) => void
@@ -69,14 +70,10 @@ export function handleStatusAction(
   spawnProjectile: SpawnProjectile
 ) {
   const subject = target ?? source
-  if (isShieldLikeAction(action) && subject) {
-    const label = shieldLabel(action)
-    spawnText(action.damage !== undefined ? `${label} ${action.damage}` : label, subject.tX, subject.tY, '#60a5fa')
-    return
-  }
   if (action.type === 'status_apply' && subject) {
     subject.emp = action.statusType === 'emp' ? true : subject.emp
-    spawnText(formatStatus(action.statusType), subject.tX, subject.tY, '#38bdf8')
+    const label = getReplayActionLabel(action)
+    if (label) spawnText(label, subject.tX, subject.tY, getReplayActionColor(action))
     return
   }
   if (action.type === 'status_expire' && subject) {
@@ -89,10 +86,10 @@ export function handleStatusAction(
   }
   if (action.type === 'stealth_change' && source) source.stealth = action.modeState === 'movement_active'
   if ((action.type === 'mode_change' || action.type === 'transform_mode') && source) source.mobilityMode = action.modeState
-  const label = primitiveLabel(action)
+  const label = getReplayActionLabel(action)
   if (label && (source || target)) {
     const unit = source ?? target!
-    spawnText(label, unit.tX, unit.tY, primitiveColor(action))
+    spawnText(label, unit.tX, unit.tY, getReplayActionColor(action))
   }
 }
 
@@ -120,56 +117,4 @@ export function hazardLabel(statusType?: string): string {
   if (statusType === 'smoke') return 'ДЫМ'
   if (statusType === 'acid') return 'КИСЛОТА'
   return 'ОГОНЬ'
-}
-
-function isShieldLikeAction(action: BattleAction): boolean {
-  return action.type === 'shield_damage' || action.type === 'shield_break' || action.type === 'unit_blocked_damage' || action.type === 'barrier_absorb'
-}
-
-function shieldLabel(action: BattleAction): string {
-  if (action.type === 'shield_break') return 'ЩИТ СЛОМАН'
-  if (action.type === 'barrier_absorb') return 'БАРЬЕР'
-  if (action.type === 'unit_blocked_damage') return 'БЛОК'
-  return 'ЩИТ'
-}
-
-function primitiveLabel(action: BattleAction): string | null {
-  switch (action.type) {
-    case 'projectile_intercept': return 'ПЕРЕХВАТ'
-    case 'control_break': return 'СВЯЗЬ'
-    case 'control_convert': return 'КОНТРОЛЬ'
-    case 'stealth_change': return action.modeState === 'movement_active' ? 'СКРЫТ' : 'ОБНАРУЖЕН'
-    case 'periodic_ability': return action.statusType === 'spawn' ? 'ВОЛНА' : 'ЗАЛП'
-    case 'trigger_effect': return 'ТРИГГЕР'
-    case 'field_effect': return action.statusType === 'cleanse_field' ? 'ПОЛЕ ОЧИСТКИ' : 'ПОЛЕ'
-    case 'hazard_cleanse': return 'ОЧИСТКА'
-    case 'barrier_spawn': return 'БАРЬЕР'
-    case 'barrier_break': return 'БАРЬЕР СЛОМАН'
-    case 'barrier_expire': return 'БАРЬЕР ИСЧЕЗ'
-    case 'adjacency_bonus': return 'СТРОЙ'
-    case 'stance_change': return action.stanceMode === 'deployed' ? 'РАЗВЕРНУТ' : 'МОБИЛЕН'
-    case 'mode_change': return action.modeState === 'air' ? 'ВЗЛЕТ' : 'ПОСАДКА'
-    case 'attack_charge': return 'ЗАРЯД'
-    case 'attack_charge_release': return 'РАЗРЯД'
-    case 'reassembly_start': return 'СБОРКА'
-    case 'reassembly_complete': return 'ВОССТАНОВЛЕН'
-    case 'burrow_regen': return 'РЕГЕН'
-    case 'emerge_strike': return 'УДАР'
-    case 'conditional_attack_mode': return 'РЕЖИМ'
-    case 'sweep_hit': return 'СВИП'
-    case 'stat_growth': return 'РОСТ'
-    default: return null
-  }
-}
-
-function primitiveColor(action: BattleAction): string {
-  if (action.type.startsWith('control')) return '#a78bfa'
-  if (action.type.startsWith('barrier')) return '#22d3ee'
-  if (action.type === 'stealth_change') return '#a3e635'
-  if (action.type === 'hazard_cleanse' || action.type === 'field_effect') return '#38bdf8'
-  return '#facc15'
-}
-
-function formatStatus(statusType?: string): string {
-  return (statusType ?? 'status').replace(/_/g, ' ').toUpperCase()
 }

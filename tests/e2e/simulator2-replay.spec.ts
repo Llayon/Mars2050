@@ -59,6 +59,31 @@ test('simulator2 replay fits and renders on a mobile viewport', async ({ page })
   network.assertClean()
 })
 
+test('simulator2 replay debug overlays render hitboxes, velocity, and target lines', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1100 })
+  const network = collectNetwork(page)
+  const consoleWarnings = collectConsoleWarnings(page)
+
+  await page.goto('/simulator2')
+  await expect(page.getByRole('heading', { name: /Симулятор Боя/ })).toBeVisible()
+  await page.locator('select').first().selectOption('projectile_barrier')
+  await page.getByRole('button', { name: /НАЧАТЬ СИМУЛЯЦИЮ/ }).click()
+
+  const canvas = page.locator('canvas').last()
+  await expect(canvas).toBeVisible()
+  await page.getByLabel(/Хитбоксы/).check()
+  await page.getByLabel(/Векторы движения/).check()
+  await page.getByLabel(/Линии атак/).check()
+
+  await expect.poll(async () => (await countOverlayPixels(canvas)).hitboxCyan, { timeout: 5000 }).toBeGreaterThan(10)
+  await expect.poll(async () => (await countOverlayPixels(canvas)).velocityYellow, { timeout: 8000 }).toBeGreaterThan(5)
+  await expect.poll(async () => (await countOverlayPixels(canvas)).targetRed, { timeout: 12000 }).toBeGreaterThan(5)
+
+  expect(network.hasChunk('pixi'), 'simulator2 replay overlays should stay on the canvas renderer').toBe(false)
+  expect(consoleWarnings, 'console warnings').toEqual([])
+  network.assertClean()
+})
+
 async function runReplayPreset(page: Page, preset: string): Promise<void> {
   await page.locator('select').first().selectOption(preset)
   await page.getByRole('button', { name: /НАЧАТЬ СИМУЛЯЦИЮ/ }).click()
@@ -101,4 +126,26 @@ async function expectBattleReplayCanvasPainted(canvas: Locator): Promise<void> {
 
   expect(redTeamPixels, 'replay canvas should contain red team unit pixels').toBeGreaterThan(20)
   expect(blueTeamPixels, 'replay canvas should contain blue team unit pixels').toBeGreaterThan(20)
+}
+
+async function countOverlayPixels(canvas: Locator): Promise<{ hitboxCyan: number; velocityYellow: number; targetRed: number }> {
+  const buffer = await canvas.screenshot()
+  const { data, info } = await sharp(buffer).ensureAlpha().raw().toBuffer({ resolveWithObject: true })
+  let hitboxCyan = 0
+  let velocityYellow = 0
+  let targetRed = 0
+
+  for (let pixel = 0; pixel < info.width * info.height; pixel++) {
+    const index = pixel * 4
+    const red = data[index]
+    const green = data[index + 1]
+    const blue = data[index + 2]
+    const alpha = data[index + 3]
+    if (alpha < 180) continue
+    if (red < 90 && green > 170 && blue > 180) hitboxCyan++
+    if (red > 230 && green > 210 && blue > 100 && blue < 180) velocityYellow++
+    if (red > 230 && green < 70 && blue < 70) targetRed++
+  }
+
+  return { hitboxCyan, velocityYellow, targetRed }
 }

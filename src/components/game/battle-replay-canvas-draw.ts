@@ -3,6 +3,11 @@ import type { Obstacle } from '@/domains/combat/combat.types'
 import type { FloatingText, HazardFx, OverlayState, Projectile, ReplayUnit } from './battle-replay-canvas-types'
 import { FLOAT_MS, HAZARD_MS, PROJECTILE_MS } from './battle-replay-canvas-types'
 
+const OVERLAY_HITBOX_ATTACKER = '#22d3ee'
+const OVERLAY_HITBOX_DEFENDER = '#fb7185'
+const OVERLAY_VELOCITY = '#fef08a'
+const OVERLAY_TARGET_LINE = '#ff1f1f'
+
 export function drawReplay(
   ctx: CanvasRenderingContext2D,
   dpr: number,
@@ -64,12 +69,12 @@ function drawUnit(ctx: CanvasRenderingContext2D, unit: ReplayUnit, progress: num
   ctx.globalAlpha = 1
   drawHpBar(ctx, x, y - radius - 8, unit.hp, unit.maxHp)
   if (overlays.radius) {
-    ctx.strokeStyle = unit.team === 'attacker' ? 'rgba(59,130,246,0.45)' : 'rgba(239,68,68,0.45)'
+    ctx.strokeStyle = unit.team === 'attacker' ? OVERLAY_HITBOX_ATTACKER : OVERLAY_HITBOX_DEFENDER
     ctx.lineWidth = 1
     drawCircle(ctx, x, y, radius, false, true)
   }
   if (overlays.velocity && (unit.tX !== unit.sX || unit.tY !== unit.sY)) {
-    ctx.strokeStyle = '#fde047'
+    ctx.strokeStyle = OVERLAY_VELOCITY
     ctx.lineWidth = 2
     drawLine(ctx, x, y, x + (unit.tX - unit.sX) * 0.4, y + (unit.tY - unit.sY) * 0.4)
   }
@@ -95,8 +100,8 @@ function drawProjectile(ctx: CanvasRenderingContext2D, projectile: Projectile) {
 }
 
 function drawTargetLine(ctx: CanvasRenderingContext2D, projectile: Projectile) {
-  ctx.strokeStyle = 'rgba(248,113,113,0.35)'
-  ctx.lineWidth = 1
+  ctx.strokeStyle = OVERLAY_TARGET_LINE
+  ctx.lineWidth = 2
   drawLine(ctx, projectile.x1, projectile.y1, projectile.x2, projectile.y2)
 }
 
