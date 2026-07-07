@@ -42,6 +42,9 @@
 
 ## UI / Renderer Layer
 - `src/components/game/battle-replay-visuals.ts` — purely visual configuration (scale, anchor, hover, VFX scale, muzzle offsets). Kept strictly separated from `combat.config.ts` to preserve simulation determinism.
+- `src/components/game/battle-replay-engine.ts` — public replay entry point; currently re-exports the canvas replay renderer.
+- `src/components/game/battle-replay-canvas-*.ts` — active `/simulator2` replay renderer, event handling, draw helpers, and canvas state types.
+- `src/components/game/battle-replay-labels.ts` — replay label/color contract for action readability.
 
 ## Core Rules
 - Seeded replay must be deterministic. Do not introduce unseeded randomness in the simulation path.
@@ -85,12 +88,13 @@
 - Shield overflow is intentional: shields absorb only remaining shield HP; leftover damage reaches HP. `shieldDamageMult` spends damage more efficiently against shield HP without multiplying damage against unshielded HP.
 - `applyCombatDamage()` may emit detailed replay events: `unit_blocked_damage`, `shield_damage`, `shield_break`, `damage`, and `lifesteal`.
 - `combat.systems.ts` still emits legacy `attack` events for projectile, recoil, and old replay compatibility.
-- `battle-replay-engine.ts` detects detailed damage logs. New logs mutate HP/text from detailed damage events; old attack-only logs keep legacy attack HP handling.
+- The canvas replay renderer exported through `battle-replay-engine.ts` applies detailed `damage`, `damage_share`, and `lifesteal` events for HP/text while still supporting old attack-only logs.
 
 ## Current Weapon / Utility Primitives
 - Attack geometry: single target, AoE, line pierce, cone, beam, barrage, chain, split fire, and side weapons.
 - Scaling: `rampDamage` increases primary damage while a unit keeps focusing the same target; `percentHpDamage` adds capped anti-giant bonus damage to primary hits before mitigation.
-- Death/kill: temporary spawns expire deterministically, on-death puddles create hazards, and `onKill` can reset cooldown/heal/apply a status.
+- Control: `controlBeam` accumulates deterministic conversion progress, supports multi-target progress scaling, breaks on range/source or target death/cleanse, can swap team ownership, and can heal converted units to max HP.
+- Death/kill: temporary spawns expire deterministically, on-death puddles create hazards, death triggers can explode or spawn units, reassembly schedules delayed revive, and `onKill` can reset cooldown/heal/apply a status.
 - Movement scaling: `chargeDamage` converts actual movement distance into a capped primary-hit burst and then resets.
 - Summons: `spawnCap` prevents infinite mobile factory/drone carrier/decoy loops; spawned and temporary units get the runtime `summoned` tag for targeting and anti-summoner counters.
 - Defensive and support primitives: shield aura, tag-limited shield repair, regen aura, command haste aura, range relay aura, anti-stealth reveal aura, cleanse, status immunity, damage sharing, reactive armor charges, projectile interception, shield-breaker damage, armor-pierce damage, and anti-summoner damage.
@@ -104,7 +108,7 @@
 
 ## Current Known Gaps
 - Stance/mode transforms have reusable siege/entrenched, movement-state burrow, and ground/air mobility mode primitives; richer mode-switch variants and richer underground counter variants remain future work.
-- Hack control supports disable, redirect, and confuse modes; permanent conversion/ownership swap behavior is future work.
+- Hack control supports disable, redirect, confuse, and permanent conversion/ownership swap behavior. Remaining work is PvP content selection and tuning for thresholds, counters, and break conditions.
 - Richer line-of-sight and concealment are still future work. Projectile accuracy now has a first deterministic penalty/resist primitive, but no line-of-sight occlusion yet.
 
 ## Tests & QA
@@ -133,6 +137,9 @@
 - `src/__tests__/combat.mode.test.ts` — ground/air mode transforms, dynamic aircraft targeting tags, and config mapping.
 - `src/__tests__/combat.burrow.test.ts` — burrow movement state, reveal counter, damage reduction, and upgrade mapping.
 - `src/__tests__/combat.smoke.test.ts` — smoke deployment and deterministic suppression fields.
+- `src/__tests__/battle-replay-labels.test.ts` — every `BATTLE_ACTION_TYPES` entry has a readable label/color or explicit exemption.
+- `tests/e2e/simulator2-replay.spec.ts` — canvas replay smoke, mobile rendering, and debug overlays for hitboxes, velocity vectors, and target lines.
+- `tests/e2e/simulator2-load.spec.ts` — simulator first screen defers replay chunks, Pixi chunks, and API calls until simulation starts.
 - `docs/simulator-qa.md` — Visual simulator QA matrix and metrics guide.
 
 ## Commands

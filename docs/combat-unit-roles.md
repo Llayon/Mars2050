@@ -179,8 +179,9 @@ The following mechanics are now implemented as reusable runtime primitives:
 | Percent-HP damage | `combat.percent-damage.ts`, `combat.damage.ts` | `railgun_walker` |
 | On-kill effects | `combat.on-kill.ts` | `stealth_operative` |
 
-Remaining major gaps are richer mode-switch variants, richer underground counter
-variants, permanent conversion style hack behavior, and richer line-of-sight/concealment mechanics.
+Remaining design/balance gaps are richer mode-switch variants, richer
+underground counter variants, PvP tuning for permanent conversion control, and
+richer line-of-sight/concealment mechanics.
 
 ### Damage / shield pipeline
 
@@ -216,9 +217,12 @@ The detailed replay stream can emit:
 | `mode_change` | Unit changed runtime ground/air mobility state. |
 
 The legacy `attack` replay action is still emitted for projectile, recoil, and
-old replay compatibility. `battle-replay-engine.ts` detects whether a log
-contains detailed damage events. New logs use detailed events for HP/text, while
-old attack-only logs keep legacy HP handling.
+old replay compatibility. The active `/simulator2` replay entry point exports
+the canvas renderer through `battle-replay-engine.ts`; it applies detailed
+`damage`, `damage_share`, and `lifesteal` events for HP/text while still
+supporting old attack-only logs. Replay labels/colors live in
+`battle-replay-labels.ts`, with coverage enforced against `BATTLE_ACTION_TYPES`
+by `battle-replay-labels.test.ts`.
 
 ## Advanced Mechanics / Upgrade Primitives
 
@@ -252,10 +256,10 @@ upgrades, auras, or hazards without hardcoding one-off behavior.
 
 1. Defensive primitives: flat damage block, damage sharing, status immunity,
    reactive armor charges, and projectile interception are implemented.
-2. Role-transform primitives: target marks, initial siege/entrenched stance transforms, movement-state burrow with reveal counterplay, and first-pass ground/air mobility mode swaps are implemented; richer mode-switch variants and richer underground counter variants remain future work.
+2. Role-transform primitives: target marks, initial siege/entrenched stance transforms, movement-state burrow with reveal counterplay, and first-pass ground/air mobility mode swaps are implemented; richer mode-switch variants and richer underground counter variants remain content/design work.
 3. Scaling primitives: ramp damage, charge scaling, and percent HP damage are implemented.
 4. Weapon primitives: chain attacks, split fire, and side weapons are implemented; richer role-specific upgrade variants remain future work.
-5. Death/kill primitives: on-death puddles and on-kill effects are implemented; richer spawn-on-death variants remain future work.
+5. Death/kill primitives: on-death puddles, on-death explosion/spawn triggers, reassembly, on-kill effects, and capped replicate/spawn flows are implemented; remaining work is unit content selection and tuning.
 6. Attack-shape primitives: beam, cone, line pierce, and barrage are implemented; temporary battlefield objects exist as mines/smoke/barriers/decoys.
 
 ## Global Findings
@@ -321,7 +325,7 @@ upgrades, auras, or hazards without hardcoding one-off behavior.
 | `cryo_tank` | Movement control/screen clear | AoE plus `slow` status on hit | Tune | Freeze/root can remain an upgrade; baseline slow is implemented. |
 | `shield_emitter` | Guard/projectile defense | Shield aura, temporary barrier spawn, projectile interception | Tune | Now has a real projectile-defense hook. Tune cooldown, max damage, and visual clarity. |
 | `interceptor` | Air superiority specialist | Flying, can AA, `anti_air` | Ready | Clear anti-air flyer. Should be mediocre vs ground. |
-| `hacker_rover` | Hack control/specialist counter | Attack 0, support hunter, applies `hacked` redirect control | Tune | Redirect/confuse exists; permanent conversion and break conditions remain future work. |
+| `hacker_rover` | Hack control/specialist counter | Attack 0, support hunter, applies `hacked` redirect control | Tune | Redirect/confuse and conversion beam primitives exist; tune whether/which PvP configs use permanent control, break conditions, and cleanse counters. |
 | `artillery_crawler` | Extreme range pressure | Minimum range, siege stance setup, deterministic barrage impacts | Ready | Clear late-game artillery. Watch overkill, setup timing, and minimum-range retreat behavior. |
 | `titan_mech` | XL damage tank/carry | 800 HP, AoE, anti-armor, no native AA | Tune | Still has many strengths. Needs explicit weakness: EMP, screen pressure, slow turn. |
 | `behemoth_tank` | XL damage tank | 1200 HP, single target, default profile | Ready | Good pure tank. Needs threat low enough to be ignorable or body-blocking value. |
@@ -344,7 +348,7 @@ These units now have at least one runtime hook, but still need design/balance
 completion before their role is considered finished:
 
 1. `emp_drone` - applies EMP, but needs tuning around zero-damage utility cadence and counters.
-2. `hacker_rover` - redirect/confuse hack exists, but permanent conversion and break-condition tuning remain.
+2. `hacker_rover` - redirect/confuse plus conversion beam primitives exist; needs PvP tuning for thresholds, break conditions, and cleanse counters.
 3. `radar_zepplin` - reveal and range relay exist; needs balance and possible targeting-priority relay variants.
 4. `officer` - command haste aura exists; needs balance and possible targeting/formation aura variants.
 5. `shield_emitter` - shield aura, temporary barrier, and projectile interception exist; cooldown/max-damage tuning remains.
@@ -357,7 +361,7 @@ The status kernel is implemented. Remaining work is mostly balance and UX:
 1. Tune durations/values for EMP, hacked, slow, burn, acid, vulnerable, and suppression.
 2. Make status VFX readable in the replay without hiding unit silhouettes.
 3. Add dedicated manual QA scenarios for cleanse/status immunity and control-heavy armies.
-4. Tune hack redirect/confuse durations and decide whether permanent conversion belongs in PvP combat.
+4. Tune hack redirect/confuse durations, conversion thresholds, and which PvP unit configs are allowed to use permanent control.
 
 ### P1: Anti-air cleanup
 
@@ -484,12 +488,14 @@ Current backlog:
 
 1. Prefer explicit `triggerEffects` for new on-death spawn content; legacy
    `onDeathSpawn` is kept only as an adapter into that primitive.
-2. Add visual replay affordances for `control_convert`, `trigger_effect`,
-   `periodic_ability`, `transform_mode`, `stealth_change`,
-   `barrier_absorb`, and `hazard_cleanse`.
+2. Keep replay QA contracts green: new `BATTLE_ACTION_TYPES` entries need
+   label/color coverage or explicit exemption, and `/simulator2` overlay smoke
+   must keep hitboxes, velocity vectors, and target lines visible on canvas.
 3. Tune conversion thresholds, cleanse counters, and multi-control penalties
    after simulator QA confirms readability.
 4. Tune periodic ability payloads only after charges, intervals, target policy,
    and replay timing are stable.
 5. Decide which unit configs should receive the new primitives; this document
    describes roles, while `combat.config.ts` remains the balance surface.
+6. Add timeline scrubber/seek QA before screenshot baselines; balance QA
+   remains separate from primitive coverage.

@@ -8,6 +8,24 @@ The detailed technology-name contract is machine-readable in
 `src/domains/combat/combat.primitive-coverage.ts` and enforced by
 `combat.mechabellum-coverage-contract.test.ts`.
 
+## Replay QA Contract
+
+Primitive coverage includes visible replay semantics, not only simulation state.
+`/simulator2` uses the canvas replay renderer exported through
+`src/components/game/battle-replay-engine.ts`; old Pixi replay helper modules
+are legacy compatibility helpers, not the active simulator replay path.
+
+Replay action labels are centralized in
+`src/components/game/battle-replay-labels.ts`. Every action in
+`BATTLE_ACTION_TYPES` must either have a readable label/color or be explicitly
+listed in `REPLAY_ACTION_LABEL_EXEMPTIONS`; `battle-replay-labels.test.ts`
+enforces that contract.
+
+Visual replay smoke coverage lives in `tests/e2e/simulator2-replay.spec.ts`.
+It covers preset replay startup, mobile rendering, debug overlays for hitboxes,
+velocity vectors and target lines, and guards that the `/simulator2` replay path
+does not load a Pixi chunk.
+
 | Mechabellum effect family | Mars2050 primitive | Runtime status/state | Regression tests | Status |
 | --- | --- | --- | --- | --- |
 | EMP / upgrade shutdown | Status pipeline | `emp` | `combat.status.test.ts`, `combat.trigger-effects.test.ts` | Implemented |
