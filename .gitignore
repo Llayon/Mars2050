@@ -12,6 +12,7 @@
 
 # testing
 /coverage
+/test-results/
 
 # next.js
 /.next/
@@ -48,3 +49,9 @@ next-env.d.ts
 *.pdf
 *.zip
 temp_*.txt
+
+# local agent / QA scratch
+/.tmp/
+/check-db.ts
+/pixellab-*.png
+/Sci-fi_*.png
