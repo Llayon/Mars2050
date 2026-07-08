@@ -18,6 +18,15 @@
 - **Векторы движения**: Показ желаемого направления движения. Полезно для отладки Steering.
 - **Линии атак**: Отрисовка постоянных красных линий при атаке.
 
+## Replay QA Command Split
+
+| Command | Scope |
+| --- | --- |
+| `npm run test:e2e:replay` | Fast replay smoke: presets, mobile fit, debug overlays, timeline seek, primitive event labels. |
+| `npm run test:e2e:replay-baseline` | Canvas screenshot baselines for stable visual states. |
+| `npm run test:e2e:replay-baseline:update` | Updates committed baseline screenshots after intentional replay rendering changes. |
+| `npm run test:e2e:qa` | Simulator load smoke plus replay smoke, without screenshot baseline comparison. |
+
 ## Visual Baseline QA
 
 Canvas-only screenshot baselines live in
@@ -36,14 +45,17 @@ Covered baseline states:
 Use this command to verify committed baselines:
 
 ```bash
-.\node_modules\.bin\playwright.cmd test tests/e2e/simulator2-replay-baseline.spec.ts --project=chromium --reporter=list
+npm run test:e2e:replay-baseline
 ```
 
 Only update snapshots after an intentional replay rendering change:
 
 ```bash
-.\node_modules\.bin\playwright.cmd test tests/e2e/simulator2-replay-baseline.spec.ts --project=chromium --reporter=list --update-snapshots
+npm run test:e2e:replay-baseline:update
 ```
+
+CI runs this baseline suite on Windows/Chromium because the committed Playwright
+snapshots are platform-specific `*-chromium-win32.png` files.
 
 Transient projectile target lines remain covered by
 `tests/e2e/simulator2-replay.spec.ts` pixel smoke checks instead of baseline
@@ -55,6 +67,12 @@ snapshots, because their age depends on frame timing.
 labels against the `qa_primitive_events` preset. This is not a screenshot
 baseline: the test seeks to deterministic ticks, plays the event tick, and
 asserts that the expected label color appears on the canvas.
+
+Use this command for the primitive event and replay overlay smoke suite:
+
+```bash
+npm run test:e2e:replay
+```
 
 Covered visual event groups:
 

@@ -36,6 +36,9 @@ jobs:
 
       - run: npm ci
 
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
       - name: Architecture enforcer
         run: npx tsx scripts/check-limits.ts
 
@@ -48,12 +51,50 @@ jobs:
       - name: Tests
         run: npm t
 
+      - name: Replay E2E smoke
+        run: npm run test:e2e:replay
+
       - name: Build
         run: npm run build
 
+  replay-visual-baseline:
+    name: Replay Visual Baselines
+    runs-on: windows-latest
+
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co' }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon-key' }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || 'placeholder-service-role-key' }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Install Playwright Chromium
+        run: npx playwright install chromium
+
+      - name: Replay visual baseline
+        run: npm run test:e2e:replay-baseline
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-replay-baseline
+          path: playwright-report/
+          if-no-files-found: ignore
+
   deploy:
     name: Deploy to Vercel
-    needs: check
+    needs: [check, replay-visual-baseline]
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
 

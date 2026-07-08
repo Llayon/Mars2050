@@ -497,5 +497,5 @@ Current backlog:
    and replay timing are stable.
 5. Decide which unit configs should receive the new primitives; this document
    describes roles, while `combat.config.ts` remains the balance surface.
-6. Add timeline scrubber/seek QA before screenshot baselines; balance QA
-   remains separate from primitive coverage.
+6. Keep split replay QA in CI: fast replay smoke covers timeline, overlays,
+   and primitive labels; Windows visual baseline covers stable screenshots.

@@ -185,7 +185,11 @@ async function runReplayPreset(page: Page, preset: string): Promise<void> {
 }
 
 async function playEventTick(page: Page, timeline: Locator, tick: number): Promise<void> {
+  const pauseButton = page.getByRole('button', { name: /Пауза/ })
+  if (await pauseButton.isVisible()) await pauseButton.click()
+  await expect(page.getByRole('button', { name: /Играть/ })).toBeVisible()
   await setTimelineTick(timeline, tick)
+  await expect(timeline).toHaveValue(String(tick))
   await expect(page.getByRole('button', { name: /Играть/ })).toBeVisible()
   await page.getByRole('button', { name: /Играть/ }).click()
 }
