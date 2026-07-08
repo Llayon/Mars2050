@@ -131,6 +131,44 @@ test('simulator2 replay timeline can seek, rewind, and resume playback', async (
   network.assertClean()
 })
 
+test('simulator2 replay shows high-signal primitive event labels', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1100 })
+  const network = collectNetwork(page)
+  const consoleWarnings = collectConsoleWarnings(page)
+
+  await page.goto('/simulator2')
+  await expect(page.getByRole('heading', { name: /Симулятор Боя/ })).toBeVisible()
+  await page.locator('select').first().selectOption('qa_primitive_events')
+  await page.getByRole('button', { name: /НАЧАТЬ СИМУЛЯЦИЮ/ }).click()
+
+  const canvas = page.locator('canvas').last()
+  const timeline = page.getByTestId('replay-timeline')
+  await expect(canvas).toBeVisible()
+  await expect(timeline).toBeVisible()
+
+  await page.getByRole('button', { name: /Пауза/ }).click()
+  await expect(page.getByRole('button', { name: /Играть/ })).toBeVisible()
+
+  await playEventTick(page, timeline, 0)
+  await expect.poll(async () => {
+    const pixels = await countPrimitiveLabelPixels(canvas)
+    return pixels.controlPurple > 8 && pixels.eventCyan > 12
+  }, { timeout: 5000 }).toBe(true)
+
+  await playEventTick(page, timeline, 2)
+  await expect.poll(async () => (await countPrimitiveLabelPixels(canvas)).eventCyan, { timeout: 5000 }).toBeGreaterThan(12)
+
+  await playEventTick(page, timeline, 4)
+  await expect.poll(async () => (await countPrimitiveLabelPixels(canvas)).yellowLabel, { timeout: 5000 }).toBeGreaterThan(8)
+
+  await playEventTick(page, timeline, 8)
+  await expect.poll(async () => (await countPrimitiveLabelPixels(canvas)).yellowLabel, { timeout: 5000 }).toBeGreaterThan(8)
+
+  expect(network.hasChunk('pixi'), 'primitive event replay labels should stay on the canvas renderer').toBe(false)
+  expect(consoleWarnings, 'console warnings').toEqual([])
+  network.assertClean()
+})
+
 async function runReplayPreset(page: Page, preset: string): Promise<void> {
   await page.locator('select').first().selectOption(preset)
   await page.getByRole('button', { name: /НАЧАТЬ СИМУЛЯЦИЮ/ }).click()
@@ -144,6 +182,12 @@ async function runReplayPreset(page: Page, preset: string): Promise<void> {
 
   await page.getByRole('button', { name: /✕/ }).click()
   await expect(canvas).toBeHidden()
+}
+
+async function playEventTick(page: Page, timeline: Locator, tick: number): Promise<void> {
+  await setTimelineTick(timeline, tick)
+  await expect(page.getByRole('button', { name: /Играть/ })).toBeVisible()
+  await page.getByRole('button', { name: /Играть/ }).click()
 }
 
 async function setTimelineTick(timeline: Locator, tick: number): Promise<void> {
@@ -205,6 +249,28 @@ async function countOverlayPixels(canvas: Locator): Promise<{ hitboxCyan: number
   }
 
   return { hitboxCyan, velocityYellow, targetRed }
+}
+
+async function countPrimitiveLabelPixels(canvas: Locator): Promise<{ controlPurple: number; eventCyan: number; yellowLabel: number }> {
+  const buffer = await canvas.screenshot()
+  const { data, info } = await sharp(buffer).ensureAlpha().raw().toBuffer({ resolveWithObject: true })
+  let controlPurple = 0
+  let eventCyan = 0
+  let yellowLabel = 0
+
+  for (let pixel = 0; pixel < info.width * info.height; pixel++) {
+    const index = pixel * 4
+    const red = data[index]
+    const green = data[index + 1]
+    const blue = data[index + 2]
+    const alpha = data[index + 3]
+    if (alpha < 180) continue
+    if (red > 125 && red < 220 && green > 80 && green < 185 && blue > 185) controlPurple++
+    if (red < 95 && green > 160 && blue > 180) eventCyan++
+    if (red > 210 && green > 165 && blue < 95) yellowLabel++
+  }
+
+  return { controlPurple, eventCyan, yellowLabel }
 }
 
 async function countChangedPixels(before: Buffer, after: Buffer): Promise<number> {

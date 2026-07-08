@@ -6,6 +6,7 @@ export interface UpgradeConfig {
   description: string
   cost: number
   allowedUnits: string[] // 'all' or specific unit keys
+  hiddenFromSimulator?: boolean
   modifiers: {
     hpMult?: number
     attackMult?: number
@@ -150,6 +151,26 @@ export const UPGRADES: Record<string, UpgradeConfig> = {
   },
   clone_hive: {
     id: 'clone_hive', name: 'Био-клонирование', description: 'Убив врага, юнит создает свою копию (с 50% HP).', cost: 150, allowedUnits: ['alien_bug', 'alien_spitter'], modifiers: { replicateOnKill: true }
+  },
+  qa_conversion_beam: {
+    id: 'qa_conversion_beam', name: 'QA: Луч контроля', description: 'QA-only conversion beam for replay primitive coverage.', cost: 0, allowedUnits: ['hacker_rover'], hiddenFromSimulator: true,
+    modifiers: { controlBeam: { range: 120, progressPerTick: 60, conversionThreshold: 60, healConvertedToMax: true } }
+  },
+  qa_barrier_dome: {
+    id: 'qa_barrier_dome', name: 'QA: Барьерное поле', description: 'QA-only barrier dome for replay primitive coverage.', cost: 0, allowedUnits: ['shield_emitter'], hiddenFromSimulator: true,
+    modifiers: { fieldEffect: [{ id: 'qa-barrier', kind: 'barrier_dome', radius: 170, intervalTicks: 40, initialDelayTicks: 0, duration: 50, capacity: 260 }] }
+  },
+  qa_fast_spawn_cap: {
+    id: 'qa_fast_spawn_cap', name: 'QA: Быстрый лимит спавна', description: 'QA-only fast spawn cap for replay primitive coverage.', cost: 0, allowedUnits: ['hologram_projector'], hiddenFromSimulator: true,
+    modifiers: { cooldownMult: 0.04 }
+  },
+  qa_cleanse_field: {
+    id: 'qa_cleanse_field', name: 'QA: Поле очистки', description: 'QA-only cleanse field for replay primitive coverage.', cost: 0, allowedUnits: ['engineer'], hiddenFromSimulator: true,
+    modifiers: { fieldEffect: [{ id: 'qa-cleanse', kind: 'cleanse_field', radius: 160, intervalTicks: 6, initialDelayTicks: 0, hazardTypes: ['smoke', 'acid', 'napalm'] }] }
+  },
+  qa_smoke_field: {
+    id: 'qa_smoke_field', name: 'QA: Дымовое поле', description: 'QA-only smoke field for replay primitive coverage.', cost: 0, allowedUnits: ['alien_spitter'], hiddenFromSimulator: true,
+    modifiers: { fieldEffect: [{ id: 'qa-smoke', kind: 'hazard_field', radius: 95, intervalTicks: 20, initialDelayTicks: 0, duration: 30, hazardType: 'smoke', statusEffects: [{ type: 'accuracy_reduced', duration: 12, value: 0.35 }] }] }
   }
 }
 

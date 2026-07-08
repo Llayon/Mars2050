@@ -44,6 +44,19 @@ describe('combat QA simulator presets', () => {
     expect(spawnActions.length).toBeLessThanOrEqual(12)
     expect(result.logs.at(-1)?.tick ?? MAX_TICKS).toBeLessThan(MAX_TICKS)
   }, 15000)
+
+  it('keeps primitive event replay QA preset action coverage stable', () => {
+    const result = simulatePreset('qa_primitive_events')
+    const actions = result.logs.flatMap(log => log.actions.map(action => action.type))
+
+    expect(actions).toContain('control_convert')
+    expect(actions).toContain('barrier_absorb')
+    expect(actions).toContain('spawn_blocked')
+    expect(actions).toContain('field_effect')
+    expect(actions).toContain('hazard_cleanse')
+    expect(actions).toContain('status_cleanse')
+    expect(actions).toContain('projectile_intercept')
+  }, 15000)
 })
 
 function simulatePreset(presetId: string, trackMetrics = false): BattleResult {

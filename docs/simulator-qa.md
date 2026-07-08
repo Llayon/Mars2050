@@ -49,6 +49,27 @@ Transient projectile target lines remain covered by
 `tests/e2e/simulator2-replay.spec.ts` pixel smoke checks instead of baseline
 snapshots, because their age depends on frame timing.
 
+## Primitive Event Visual Smoke
+
+`tests/e2e/simulator2-replay.spec.ts` also checks high-signal primitive event
+labels against the `qa_primitive_events` preset. This is not a screenshot
+baseline: the test seeks to deterministic ticks, plays the event tick, and
+asserts that the expected label color appears on the canvas.
+
+Covered visual event groups:
+
+| Event group | Replay actions |
+| --- | --- |
+| Control conversion | `control_convert` |
+| Field and cleanse labels | `field_effect`, `hazard_cleanse`, `status_cleanse` |
+| Barrier interaction | `barrier_spawn`, `barrier_absorb` |
+| Spawn cap pressure | `spawn`, `spawn_blocked` |
+| Projectile defense smoke | `projectile_intercept` |
+
+The `qa_primitive_events` preset uses hidden QA-only upgrade modifiers. They
+exercise the normal runtime upgrade pipeline but are not shown in the manual
+unit upgrade panel.
+
 ## Damage / Replay Diagnostics
 Новые replay-логи могут содержать подробные damage events. Визуальный replay должен использовать их для HP/text, а legacy `attack` оставлять для projectile/recoil/VFX и старых логов.
 

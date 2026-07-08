@@ -58,7 +58,7 @@ export const GlobalUpgradesSelector = ({ globals, onToggle }: { globals: string[
 export const UnitUpgradesPanel = ({ unit, onToggle }: { unit?: UnitRow, onToggle: (id: string) => void }) => {
   if (!unit) return null;
 
-  const availableUpgrades = Object.values(UPGRADES).filter(upg => upg.allowedUnits.includes('all') || upg.allowedUnits.includes(unit.unit_type));
+  const availableUpgrades = Object.values(UPGRADES).filter(upg => !upg.hiddenFromSimulator && (upg.allowedUnits.includes('all') || upg.allowedUnits.includes(unit.unit_type)));
 
   return (
     <div className="bg-gray-900 border border-gray-700 p-4 rounded-xl w-full mt-4">

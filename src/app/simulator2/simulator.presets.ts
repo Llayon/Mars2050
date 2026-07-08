@@ -11,6 +11,7 @@ export const SIMULATOR_PRESET_OPTIONS = [
   { id: 'control_status', name: 'Контроль / EMP' },
   { id: 'transform_modes', name: 'Режимы движения' },
   { id: 'cleanse_status', name: 'Очищение статусов' },
+  { id: 'qa_primitive_events', name: 'QA: события примитивов' },
 ] as const
 
 export function getSimulatorPreset(presetName: string): { attackers: UnitRow[], defenders: UnitRow[] } | null {
@@ -38,6 +39,21 @@ export function getSimulatorPreset(presetName: string): { attackers: UnitRow[], 
     return { attackers: [row('tm-a-jetpack', 'attacker', 'jetpack_trooper', 220, 840, 45), row('tm-a-artillery', 'attacker', 'artillery_crawler', 360, 880, 250)], defenders: [row('tm-d-turret', 'defender', 'turret', 260, 360, 200), row('tm-d-bugs', 'defender', 'alien_bug', 360, 380, 20)] }
   } else if (presetName === 'cleanse_status') {
     return { attackers: [row('cl-a-flame', 'attacker', 'flamethrower', 220, 760, 60), row('cl-a-spitter', 'attacker', 'alien_spitter', 340, 760, 40)], defenders: [row('cl-d-engineer', 'defender', 'engineer', 280, 470, 100), row('cl-d-exosuit', 'defender', 'exosuit', 280, 430, 150)] }
+  } else if (presetName === 'qa_primitive_events') {
+    return {
+      attackers: [
+        row('qa-a-hacker', 'attacker', 'hacker_rover', 245, 650, 120, ['qa_conversion_beam']),
+        row('qa-a-railgun', 'attacker', 'railgun_walker', 290, 720, 250),
+        row('qa-a-holo', 'attacker', 'hologram_projector', 390, 700, 80, ['qa_fast_spawn_cap']),
+        row('qa-a-smoke', 'attacker', 'alien_spitter', 315, 500, 40, ['qa_smoke_field']),
+      ],
+      defenders: [
+        row('qa-d-control', 'defender', 'exosuit', 245, 570, 150),
+        row('qa-d-cleanse', 'defender', 'engineer', 320, 470, 100, ['qa_cleanse_field']),
+        row('qa-d-shield', 'defender', 'shield_emitter', 280, 455, 200, ['qa_barrier_dome']),
+        row('qa-d-target', 'defender', 'behemoth_tank', 300, 430, 1200),
+      ],
+    }
   }
   return null;
 }
