@@ -13,9 +13,41 @@
 
 ## Управление и Debug Overlays
 - **Play/Pause / Speed**: Управление скоростью от 0.5x до 4.0x.
+- **Таймлайн**: Seek по tick должен ставить replay на паузу и пересобирать canvas state детерминированно из initial state + replay log.
 - **Хитбоксы (Радиус)**: Отрисовка точных коллайдеров юнитов.
 - **Векторы движения**: Показ желаемого направления движения. Полезно для отладки Steering.
 - **Линии атак**: Отрисовка постоянных красных линий при атаке.
+
+## Visual Baseline QA
+
+Canvas-only screenshot baselines live in
+`tests/e2e/simulator2-replay-baseline.spec.ts`. They use the deterministic
+`transform_modes` preset and fixed simulator seed, then capture only the replay
+canvas so surrounding modal UI and viewport chrome do not create noise.
+
+Covered baseline states:
+
+| Snapshot | State |
+| --- | --- |
+| `simulator2-replay-start` | Replay paused and seeked to tick 0. |
+| `simulator2-replay-mid-seek` | Replay paused and seeked to a stable mid-fight tick. |
+| `simulator2-replay-overlays` | Same mid-fight tick with debug overlays enabled. |
+
+Use this command to verify committed baselines:
+
+```bash
+.\node_modules\.bin\playwright.cmd test tests/e2e/simulator2-replay-baseline.spec.ts --project=chromium --reporter=list
+```
+
+Only update snapshots after an intentional replay rendering change:
+
+```bash
+.\node_modules\.bin\playwright.cmd test tests/e2e/simulator2-replay-baseline.spec.ts --project=chromium --reporter=list --update-snapshots
+```
+
+Transient projectile target lines remain covered by
+`tests/e2e/simulator2-replay.spec.ts` pixel smoke checks instead of baseline
+snapshots, because their age depends on frame timing.
 
 ## Damage / Replay Diagnostics
 Новые replay-логи могут содержать подробные damage events. Визуальный replay должен использовать их для HP/text, а legacy `attack` оставлять для projectile/recoil/VFX и старых логов.

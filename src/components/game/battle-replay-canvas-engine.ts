@@ -48,6 +48,7 @@ export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
   let units = createInitialUnits()
   let tick = 0
   let tickTime = 0
+  let renderProgressOverride: number | null = null
   let lastNotifiedTick = -1
   let lastFrame = performance.now()
   let animationFrame = 0
@@ -56,7 +57,13 @@ export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
   const hazards: HazardFx[] = []
 
   const controls: ReplayControls = {
-    play: () => { isPlaying = true },
+    play: () => {
+      if (renderProgressOverride !== null) {
+        settleUnits()
+        renderProgressOverride = null
+      }
+      isPlaying = true
+    },
     pause: () => { isPlaying = false },
     seekToTick: (nextTick: number) => { seekToTick(nextTick) },
     getCurrentTick: () => tick,
@@ -93,6 +100,9 @@ export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
       unit.sY = unit.tY
       unit.flash = 0
     })
+  }
+  const clearUnitFlashes = () => {
+    Object.values(units).forEach(unit => { unit.flash = 0 })
   }
   const notifyTickChange = () => {
     if (tick === lastNotifiedTick) return
@@ -159,12 +169,17 @@ export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
       processTick(logs[tick], false)
       tick++
     }
-    settleUnits()
+    clearUnitFlashes()
+    renderProgressOverride = targetTick > 0 ? 1 : 0
     lastFrame = performance.now()
     notifyTickChange()
   }
 
   const step = (dt: number) => {
+    if (renderProgressOverride !== null) {
+      settleUnits()
+      renderProgressOverride = null
+    }
     tickTime += dt
     while (tickTime >= TICK_MS && tick < logs.length) {
       tickTime -= TICK_MS
@@ -182,7 +197,8 @@ export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
     const rawDt = Math.min(80, now - lastFrame)
     lastFrame = now
     if (isPlaying) step(rawDt * playbackSpeed)
-    drawReplay(ctx, dpr, units, obstacles ?? [], hazards, projectiles, floatingTexts, overlays, Math.min(1, tickTime / TICK_MS))
+    const progress = renderProgressOverride ?? Math.min(1, tickTime / TICK_MS)
+    drawReplay(ctx, dpr, units, obstacles ?? [], hazards, projectiles, floatingTexts, overlays, progress)
     animationFrame = requestAnimationFrame(renderLoop)
   }
 
