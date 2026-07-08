@@ -11,6 +11,7 @@ export const BattleReplayModal = memo(function BattleReplayModal({ attackerUnits
 
   const [isPlaying, setIsPlaying] = useState(true)
   const [speed, setSpeed] = useState(1)
+  const [currentTick, setCurrentTick] = useState(0)
   const [overlays, setOverlays] = useState({ radius: false, velocity: false, targets: false })
 
   const metrics = useMemo(() => {
@@ -71,7 +72,8 @@ export const BattleReplayModal = memo(function BattleReplayModal({ attackerUnits
         defenderUnits,
         initialState,
         logs,
-        obstacles
+        obstacles,
+        onTickChange: setCurrentTick
       })
 
       if (isDestroyed) {
@@ -85,6 +87,7 @@ export const BattleReplayModal = memo(function BattleReplayModal({ attackerUnits
       if (controlsRef.current) {
          controlsRef.current.setSpeed(speed)
          controlsRef.current.setOverlays(overlays)
+         setCurrentTick(controlsRef.current.getCurrentTick())
          if (!isPlaying) controlsRef.current.pause()
       }
     }
@@ -112,6 +115,14 @@ export const BattleReplayModal = memo(function BattleReplayModal({ attackerUnits
     controlsRef.current.setOverlays(overlays)
   }, [overlays])
 
+  const handleTimelineChange = (nextTick: number) => {
+    const clampedTick = Math.max(0, Math.min(metrics.totalTicks, Math.round(nextTick)))
+    controlsRef.current?.pause()
+    controlsRef.current?.seekToTick(clampedTick)
+    setCurrentTick(clampedTick)
+    setIsPlaying(false)
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-black/95 backdrop-blur-md">
       <div className="absolute top-2 left-2 z-[60] flex flex-col gap-2 sm:top-4 sm:left-4">
@@ -135,6 +146,24 @@ export const BattleReplayModal = memo(function BattleReplayModal({ attackerUnits
               <option value={2}>2.0x</option>
               <option value={4}>4.0x</option>
             </select>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center justify-between text-gray-300">
+              <span className="font-bold text-gray-200">Таймлайн</span>
+              <span data-testid="replay-current-tick" className="tabular-nums">Tick {currentTick} / {metrics.totalTicks}</span>
+            </div>
+            <input
+              data-testid="replay-timeline"
+              aria-label="Таймлайн реплея"
+              type="range"
+              min={0}
+              max={Math.max(0, metrics.totalTicks)}
+              step={1}
+              value={Math.min(currentTick, metrics.totalTicks)}
+              onChange={e => handleTimelineChange(Number(e.target.value))}
+              className="w-full accent-cyan-400"
+            />
           </div>
 
           <div className="font-bold text-gray-200 border-b border-gray-700 pb-1 mt-1">Оверлеи (Debug)</div>

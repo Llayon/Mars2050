@@ -17,7 +17,7 @@ import { FLOAT_MS, HAZARD_MS, PROJECTILE_MS, TICK_MS } from './battle-replay-can
 export type { BattleReplayEngineProps, ReplayAppHandle, ReplayControls } from './battle-replay-canvas-types'
 
 export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
-  const { container, attackerUnits, defenderUnits, initialState, logs, obstacles } = props
+  const { container, attackerUnits, defenderUnits, initialState, logs, obstacles, onTickChange } = props
   const canvas = document.createElement('canvas')
   const ctx = canvas.getContext('2d')
   if (!ctx) throw new Error('2D canvas context is unavailable')
@@ -32,17 +32,23 @@ export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
   canvas.style.background = '#1a1a2e'
   container.appendChild(canvas)
 
-  const units: Record<string, ReplayUnit> = {}
-  buildReplayRenderUnits(attackerUnits, defenderUnits, logs, initialState).forEach(({ unit, team, isSimUnit }) => {
-    const replayUnit = createReplayUnit(unit, team, isSimUnit)
-    if (replayUnit) units[replayUnit.id] = replayUnit
-  })
+  const renderUnits = buildReplayRenderUnits(attackerUnits, defenderUnits, logs, initialState)
+  const createInitialUnits = (): Record<string, ReplayUnit> => {
+    const nextUnits: Record<string, ReplayUnit> = {}
+    renderUnits.forEach(({ unit, team, isSimUnit }) => {
+      const replayUnit = createReplayUnit(unit, team, isSimUnit)
+      if (replayUnit) nextUnits[replayUnit.id] = replayUnit
+    })
+    return nextUnits
+  }
 
   let isPlaying = true
   let playbackSpeed = 1
   let overlays = { radius: false, velocity: false, targets: false }
+  let units = createInitialUnits()
   let tick = 0
   let tickTime = 0
+  let lastNotifiedTick = -1
   let lastFrame = performance.now()
   let animationFrame = 0
   const floatingTexts: FloatingText[] = []
@@ -52,6 +58,9 @@ export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
   const controls: ReplayControls = {
     play: () => { isPlaying = true },
     pause: () => { isPlaying = false },
+    seekToTick: (nextTick: number) => { seekToTick(nextTick) },
+    getCurrentTick: () => tick,
+    getTotalTicks: () => logs.length,
     setSpeed: (speed: number) => { playbackSpeed = speed },
     setOverlays: (next) => { overlays = next },
   }
@@ -73,7 +82,27 @@ export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
     })
   }
 
-  const processTick = (battleTick: BattleTick) => {
+  const clearTransientVisuals = () => {
+    floatingTexts.length = 0
+    projectiles.length = 0
+    hazards.length = 0
+  }
+  const settleUnits = () => {
+    Object.values(units).forEach(unit => {
+      unit.sX = unit.tX
+      unit.sY = unit.tY
+      unit.flash = 0
+    })
+  }
+  const notifyTickChange = () => {
+    if (tick === lastNotifiedTick) return
+    lastNotifiedTick = tick
+    onTickChange?.(tick)
+  }
+
+  const processTick = (battleTick: BattleTick, emitVisuals = true) => {
+    const emitText = emitVisuals ? spawnText : () => {}
+    const emitProjectile = emitVisuals ? spawnProjectile : () => {}
     Object.values(units).forEach(unit => {
       unit.sX = unit.tX
       unit.sY = unit.tY
@@ -90,34 +119,49 @@ export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
         return
       }
       if (action.type === 'attack' || action.type === 'heal') {
-        handleAttackAction(action, source, target, spawnText, spawnProjectile)
+        handleAttackAction(action, source, target, emitText, emitProjectile)
         return
       }
       if (action.type === 'damage' || action.type === 'damage_share') {
-        handleDamageAction(action, target, spawnText)
+        handleDamageAction(action, target, emitText)
         return
       }
       if (action.type === 'lifesteal') {
-        handleLifestealAction(action, target ?? source, spawnText)
+        handleLifestealAction(action, target ?? source, emitText)
         return
       }
       if (action.type === 'die' && source) {
         source.isDead = true
         source.hp = 0
-        spawnText('ВЫВЕДЕН', source.tX, source.tY, '#cbd5e1')
+        emitText('ВЫВЕДЕН', source.tX, source.tY, '#cbd5e1')
         return
       }
       if (action.type === 'spawn' && action.targetId) {
         units[action.targetId] = createSpawnedUnit(action)
-        spawnText('СПАВН', action.toX ?? FIELD_WIDTH / 2, action.toY ?? FIELD_HEIGHT / 2, '#86efac')
+        emitText('СПАВН', action.toX ?? FIELD_WIDTH / 2, action.toY ?? FIELD_HEIGHT / 2, '#86efac')
         return
       }
       if (action.type === 'hazard_spawn') {
-        spawnHazard(action)
+        if (emitVisuals) spawnHazard(action)
         return
       }
-      handleStatusAction(action, source, target, spawnText, spawnProjectile)
+      handleStatusAction(action, source, target, emitText, emitProjectile)
     })
+  }
+
+  const seekToTick = (nextTick: number) => {
+    const targetTick = Math.max(0, Math.min(logs.length, Math.round(nextTick)))
+    units = createInitialUnits()
+    clearTransientVisuals()
+    tick = 0
+    tickTime = 0
+    while (tick < targetTick) {
+      processTick(logs[tick], false)
+      tick++
+    }
+    settleUnits()
+    lastFrame = performance.now()
+    notifyTickChange()
   }
 
   const step = (dt: number) => {
@@ -127,6 +171,7 @@ export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
       processTick(logs[tick])
       tick++
     }
+    notifyTickChange()
     updateAged(floatingTexts, dt, FLOAT_MS)
     updateAged(projectiles, dt, PROJECTILE_MS)
     updateAged(hazards, dt, HAZARD_MS)
@@ -142,6 +187,7 @@ export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
   }
 
   animationFrame = requestAnimationFrame(renderLoop)
+  notifyTickChange()
 
   const cleanupEvents = () => {
     cancelAnimationFrame(animationFrame)

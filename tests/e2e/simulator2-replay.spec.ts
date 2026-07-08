@@ -84,6 +84,53 @@ test('simulator2 replay debug overlays render hitboxes, velocity, and target lin
   network.assertClean()
 })
 
+test('simulator2 replay timeline can seek, rewind, and resume playback', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1100 })
+  const network = collectNetwork(page)
+  const consoleWarnings = collectConsoleWarnings(page)
+
+  await page.goto('/simulator2')
+  await expect(page.getByRole('heading', { name: /Симулятор Боя/ })).toBeVisible()
+  await page.locator('select').first().selectOption('transform_modes')
+  await page.getByRole('button', { name: /НАЧАТЬ СИМУЛЯЦИЮ/ }).click()
+
+  const canvas = page.locator('canvas').last()
+  const timeline = page.getByTestId('replay-timeline')
+  const tickReadout = page.getByTestId('replay-current-tick')
+  await expect(canvas).toBeVisible()
+  await expect(timeline).toBeVisible()
+
+  const maxTick = Number(await timeline.getAttribute('max'))
+  expect(maxTick, 'timeline should cover the replay log').toBeGreaterThan(20)
+
+  await page.getByRole('button', { name: /Пауза/ }).click()
+  await expect(page.getByRole('button', { name: /Играть/ })).toBeVisible()
+  await setTimelineTick(timeline, 0)
+  await expect(tickReadout).toContainText(`Tick 0 / ${maxTick}`)
+  await page.waitForTimeout(100)
+  const startFrame = await canvas.screenshot()
+
+  const targetTick = Math.min(maxTick - 5, Math.max(12, Math.floor(maxTick * 0.35)))
+  await setTimelineTick(timeline, targetTick)
+  await expect(tickReadout).toContainText(`Tick ${targetTick} / ${maxTick}`)
+  await page.waitForTimeout(100)
+  const seekFrame = await canvas.screenshot()
+  expect(await countChangedPixels(startFrame, seekFrame), 'seek should repaint a different battle state').toBeGreaterThan(80)
+
+  await setTimelineTick(timeline, 0)
+  await expect(tickReadout).toContainText(`Tick 0 / ${maxTick}`)
+  await page.waitForTimeout(100)
+  const rewoundFrame = await canvas.screenshot()
+  expect(await countChangedPixels(startFrame, rewoundFrame), 'rewind to tick 0 should rebuild the initial state').toBeLessThan(20)
+
+  await page.getByRole('button', { name: /Играть/ }).click()
+  await expect.poll(async () => Number(await timeline.inputValue()), { timeout: 5000 }).toBeGreaterThan(0)
+
+  expect(network.hasChunk('pixi'), 'simulator2 replay timeline should stay on the canvas renderer').toBe(false)
+  expect(consoleWarnings, 'console warnings').toEqual([])
+  network.assertClean()
+})
+
 async function runReplayPreset(page: Page, preset: string): Promise<void> {
   await page.locator('select').first().selectOption(preset)
   await page.getByRole('button', { name: /НАЧАТЬ СИМУЛЯЦИЮ/ }).click()
@@ -97,6 +144,16 @@ async function runReplayPreset(page: Page, preset: string): Promise<void> {
 
   await page.getByRole('button', { name: /✕/ }).click()
   await expect(canvas).toBeHidden()
+}
+
+async function setTimelineTick(timeline: Locator, tick: number): Promise<void> {
+  await timeline.evaluate((element, value) => {
+    const input = element as HTMLInputElement
+    const valueSetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set
+    valueSetter?.call(input, String(value))
+    input.dispatchEvent(new Event('input', { bubbles: true }))
+    input.dispatchEvent(new Event('change', { bubbles: true }))
+  }, tick)
 }
 
 function collectConsoleWarnings(page: Page): string[] {
@@ -148,4 +205,21 @@ async function countOverlayPixels(canvas: Locator): Promise<{ hitboxCyan: number
   }
 
   return { hitboxCyan, velocityYellow, targetRed }
+}
+
+async function countChangedPixels(before: Buffer, after: Buffer): Promise<number> {
+  const first = await sharp(before).ensureAlpha().raw().toBuffer({ resolveWithObject: true })
+  const second = await sharp(after).ensureAlpha().raw().toBuffer({ resolveWithObject: true })
+  expect(second.info.width).toBe(first.info.width)
+  expect(second.info.height).toBe(first.info.height)
+
+  let changed = 0
+  for (let pixel = 0; pixel < first.info.width * first.info.height; pixel++) {
+    const index = pixel * 4
+    const delta = Math.abs(first.data[index] - second.data[index]) +
+      Math.abs(first.data[index + 1] - second.data[index + 1]) +
+      Math.abs(first.data[index + 2] - second.data[index + 2])
+    if (delta > 40) changed++
+  }
+  return changed
 }

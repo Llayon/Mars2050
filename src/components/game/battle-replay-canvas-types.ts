@@ -3,6 +3,9 @@ import type { BattleTick, Obstacle, SimUnit, UnitRow } from '@/domains/combat/co
 export interface ReplayControls {
   play: () => void
   pause: () => void
+  seekToTick: (tick: number) => void
+  getCurrentTick: () => number
+  getTotalTicks: () => number
   setSpeed: (s: number) => void
   setOverlays: (o: OverlayState) => void
 }
@@ -14,6 +17,7 @@ export type BattleReplayEngineProps = {
   initialState?: SimUnit[]
   logs: BattleTick[]
   obstacles?: Obstacle[]
+  onTickChange?: (tick: number) => void
 }
 
 export type ReplayAppHandle = {
