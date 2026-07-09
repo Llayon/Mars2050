@@ -51,6 +51,9 @@ jobs:
       - name: Tests
         run: npm t
 
+      - name: Combat scenario metrics
+        run: npm run test:combat:scenarios
+
       - name: Replay E2E smoke
         run: npm run test:e2e:replay
 

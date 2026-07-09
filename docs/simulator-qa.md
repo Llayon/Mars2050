@@ -22,10 +22,15 @@
 
 | Command | Scope |
 | --- | --- |
+| `npm run test:combat:scenarios` | Runtime scenario metrics gate: simulator presets, replay actions, termination, spawn caps, and soft combat metrics. |
 | `npm run test:e2e:replay` | Fast replay smoke: presets, mobile fit, debug overlays, timeline seek, primitive event labels. |
 | `npm run test:e2e:replay-baseline` | Canvas screenshot baselines for stable visual states. |
 | `npm run test:e2e:replay-baseline:update` | Updates committed baseline screenshots after intentional replay rendering changes. |
 | `npm run test:e2e:qa` | Simulator load smoke plus replay smoke, without screenshot baseline comparison. |
+
+Run `test:combat:scenarios` before balance work. It is a runtime contract,
+not a visual test: failures mean a mechanic stopped producing the expected
+replay actions, battle completion, spawn bounds, or movement metrics.
 
 ## Visual Baseline QA
 

@@ -12,7 +12,7 @@ export function getRuntimePrimitiveStats(baseStats: UnitBaseStats, upgradePath: 
   let attackCharge = baseStats.attackCharge ? { ...baseStats.attackCharge } : undefined
   let reassembly = baseStats.reassembly ? { ...baseStats.reassembly } : undefined
   let rankScaling = baseStats.rankScaling ? { ...baseStats.rankScaling, damageModifiers: baseStats.rankScaling.damageModifiers?.map(modifier => ({ ...modifier })) } : undefined
-  let conditionalRange = baseStats.conditionalRange?.map(range => ({ ...range })) ?? []
+  const conditionalRange = baseStats.conditionalRange?.map(range => ({ ...range })) ?? []
   let flatDamageBlock = baseStats.flatDamageBlock ? { ...baseStats.flatDamageBlock } : undefined
   let shieldHitBlock = baseStats.shieldHitBlock ? { ...baseStats.shieldHitBlock } : undefined
   let targetPriorityProfile = baseStats.targetPriorityProfile

@@ -499,3 +499,6 @@ Current backlog:
    describes roles, while `combat.config.ts` remains the balance surface.
 6. Keep split replay QA in CI: fast replay smoke covers timeline, overlays,
    and primitive labels; Windows visual baseline covers stable screenshots.
+7. Keep `npm run test:combat:scenarios` green before balance tuning; it is the
+   runtime gate for scenario termination, replay-visible mechanics, spawn caps,
+   and soft movement metrics.

@@ -1,10 +1,25 @@
 import { describe, expect, it } from 'vitest'
 import { MAX_TICKS } from '@/domains/combat/combat.config'
-import { simulateBattle } from '@/domains/combat/combat.engine'
-import type { BattleResult, UnitRow } from '@/domains/combat/combat.types'
+import type { BattleActionType, BattleResult } from '@/domains/combat/combat.types'
 import { getSimulatorPreset, SIMULATOR_PRESET_OPTIONS } from '@/app/simulator2/simulator.presets'
+import {
+  countActions,
+  expectBattleTerminates,
+  expectDeterministicScenario,
+  expectMetricBounds,
+  expectReplayHas,
+  expectSpawnBounded,
+  flattenActions,
+  simulateScenario,
+} from './support/combat-scenario-gate'
 
 const REPLAY_GATE_PRESETS = ['ranged_duel', 'stealth_reveal', 'projectile_barrier', 'summon_caps', 'control_status', 'transform_modes'] as const
+const SCENARIO_ACTION_GATES: { presetId: string; requiredActions: BattleActionType[] }[] = [
+  { presetId: 'projectile_barrier', requiredActions: ['projectile_intercept'] },
+  { presetId: 'summon_caps', requiredActions: ['spawn'] },
+  { presetId: 'transform_modes', requiredActions: ['mode_change', 'stance_change'] },
+  { presetId: 'cleanse_status', requiredActions: ['status_cleanse'] },
+]
 
 describe('combat QA simulator presets', () => {
   it('generates deterministic unit rows for every simulator preset', () => {
@@ -15,57 +30,79 @@ describe('combat QA simulator presets', () => {
 
   it('produces deterministic replays for compact QA presets', () => {
     for (const presetId of REPLAY_GATE_PRESETS) {
-      const first = simulatePreset(presetId)
-      const second = simulatePreset(presetId)
-
-      expect(second.initialState, presetId).toEqual(first.initialState)
-      expect(second.logs, presetId).toEqual(first.logs)
-      expect(second.survivors, presetId).toEqual(first.survivors)
-      expect(first.logs.length, presetId).toBeGreaterThan(0)
-      expect(first.logs.at(-1)?.tick ?? 0, presetId).toBeLessThan(MAX_TICKS)
+      expectDeterministicScenario(presetId)
     }
   }, 20000)
 
+  it('keeps QA scenario mechanics replay-visible', () => {
+    for (const gate of SCENARIO_ACTION_GATES) {
+      const result = simulateScenario(gate.presetId)
+      expectBattleTerminates(result, gate.presetId)
+      expectReplayHas(result, gate.requiredActions, gate.presetId)
+    }
+  }, 20000)
+
+  it('keeps stealth reveal observable through status replay actions', () => {
+    const result = simulateScenario('stealth_reveal')
+    expectBattleTerminates(result, 'stealth_reveal')
+    expectStatusApplied(result, 'revealed', 'stealth_reveal')
+  }, 15000)
+
+  it('keeps zero-damage control support observable through status replay actions', () => {
+    const result = simulateScenario('control_status')
+    expectBattleTerminates(result, 'control_status')
+    expectAppliedAnyStatus(result, ['emp', 'hacked'], 'control_status')
+  }, 15000)
+
   it('keeps the 100+ runtime-unit stress preset inside QA metric bounds', () => {
-    const result = simulatePreset('massive_clash', true)
+    const result = simulateScenario('massive_clash', { trackMetrics: true })
 
     expect(result.initialState.length).toBeGreaterThanOrEqual(100)
-    expect(result.metrics?.firstAttackTick).not.toBeNull()
-    expect(result.metrics?.firstAttackTick ?? MAX_TICKS).toBeLessThanOrEqual(25)
-    expect(result.metrics?.maxOverlap ?? 0).toBeLessThan(30)
-    expect(result.metrics?.targetSwitches ?? 0).toBeLessThan(500)
+    expectBattleTerminates(result, 'massive_clash')
+    expectMetricBounds(result, {
+      firstAttackTickMax: 25,
+      maxOverlapLessThan: 30,
+      targetSwitchesLessThan: 500,
+      battleDurationLessThan: MAX_TICKS,
+      averageTimeToEngageMax: 40,
+    }, 'massive_clash')
   }, 15000)
 
   it('keeps summon-heavy QA presets bounded', () => {
-    const result = simulatePreset('summon_caps')
-    const spawnActions = result.logs.flatMap(log => log.actions).filter(action => action.type === 'spawn')
+    const summonCaps = simulateScenario('summon_caps')
+    const primitiveEvents = simulateScenario('qa_primitive_events')
 
-    expect(spawnActions.length).toBeGreaterThan(0)
-    expect(spawnActions.length).toBeLessThanOrEqual(12)
-    expect(result.logs.at(-1)?.tick ?? MAX_TICKS).toBeLessThan(MAX_TICKS)
+    expectBattleTerminates(summonCaps, 'summon_caps')
+    expectSpawnBounded(summonCaps, 12, 'summon_caps')
+    expectBattleTerminates(primitiveEvents, 'qa_primitive_events')
+    expectSpawnBounded(primitiveEvents, 8, 'qa_primitive_events')
+    expect(countActions(primitiveEvents, 'spawn_blocked'), 'qa_primitive_events').toBeGreaterThan(0)
   }, 15000)
 
   it('keeps primitive event replay QA preset action coverage stable', () => {
-    const result = simulatePreset('qa_primitive_events')
-    const actions = result.logs.flatMap(log => log.actions.map(action => action.type))
+    const result = simulateScenario('qa_primitive_events')
 
-    expect(actions).toContain('control_convert')
-    expect(actions).toContain('barrier_absorb')
-    expect(actions).toContain('spawn_blocked')
-    expect(actions).toContain('field_effect')
-    expect(actions).toContain('hazard_cleanse')
-    expect(actions).toContain('status_cleanse')
-    expect(actions).toContain('projectile_intercept')
+    expectBattleTerminates(result, 'qa_primitive_events')
+    expectReplayHas(result, [
+      'control_convert',
+      'barrier_absorb',
+      'spawn_blocked',
+      'field_effect',
+      'hazard_cleanse',
+      'status_cleanse',
+      'projectile_intercept',
+    ], 'qa_primitive_events')
   }, 15000)
 })
 
-function simulatePreset(presetId: string, trackMetrics = false): BattleResult {
-  const preset = getSimulatorPreset(presetId)
-  if (!preset) throw new Error(`Missing preset: ${presetId}`)
-
-  return simulateBattle(cloneRows(preset.attackers), cloneRows(preset.defenders), 24680, [], [], [], { trackMetrics })
+function expectStatusApplied(result: BattleResult, statusType: string, label: string): void {
+  expect(flattenActions(result), label).toContainEqual(expect.objectContaining({ type: 'status_apply', statusType }))
 }
 
-function cloneRows(rows: UnitRow[]): UnitRow[] {
-  return rows.map(row => ({ ...row, upgrade_path: [...(row.upgrade_path ?? [])] }))
+function expectAppliedAnyStatus(result: BattleResult, statusTypes: string[], label: string): void {
+  const appliedStatuses = flattenActions(result)
+    .filter(action => action.type === 'status_apply')
+    .map(action => action.statusType)
+
+  expect(appliedStatuses.some(statusType => statusType !== undefined && statusTypes.includes(statusType)), label).toBe(true)
 }
