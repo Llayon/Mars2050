@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "lint:limits": "tsx scripts/check-limits.ts",
+    "combat:snapshot": "tsx scripts/combat-snapshot.ts",
     "prebuild": "tsx scripts/check-limits.ts",
     "generate:types": "tsx scripts/generate-types.ts",
     "scaffold": "tsx scripts/scaffold.ts",

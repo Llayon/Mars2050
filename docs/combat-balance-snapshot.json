@@ -1,0 +1,683 @@
+{
+  "schemaVersion": 1,
+  "generatedBy": "npm run combat:snapshot",
+  "seed": 24680,
+  "presets": [
+    {
+      "id": "zerg_rush",
+      "name": "Зерг Раш"
+    },
+    {
+      "id": "ranged_duel",
+      "name": "Дуэль стрелков"
+    },
+    {
+      "id": "massive_clash",
+      "name": "Стенка 100+"
+    },
+    {
+      "id": "stealth_reveal",
+      "name": "Стелс / Радар"
+    },
+    {
+      "id": "projectile_barrier",
+      "name": "Ракеты / Щит"
+    },
+    {
+      "id": "summon_caps",
+      "name": "Призывы / Лимиты"
+    },
+    {
+      "id": "control_status",
+      "name": "Контроль / EMP"
+    },
+    {
+      "id": "transform_modes",
+      "name": "Режимы движения"
+    },
+    {
+      "id": "cleanse_status",
+      "name": "Очищение статусов"
+    },
+    {
+      "id": "qa_primitive_events",
+      "name": "QA: события примитивов"
+    }
+  ],
+  "scenarios": [
+    {
+      "presetId": "zerg_rush",
+      "name": "Зерг Раш",
+      "seed": 24680,
+      "winner": "defender",
+      "lastActionTick": 126,
+      "battleDurationTicks": 127,
+      "initialUnits": {
+        "attacker": {
+          "exosuit": 12,
+          "marine": 80,
+          "sniper": 4
+        },
+        "defender": {
+          "alien_bug": 500,
+          "alien_spitter": 9
+        }
+      },
+      "survivors": {
+        "attacker": {},
+        "defender": {
+          "alien_bug": 290,
+          "alien_spitter": 9
+        }
+      },
+      "metrics": {
+        "firstAttackTick": 9,
+        "averageTimeToEngage": 32.29,
+        "averageEngagementDistance": 79.5,
+        "maxOverlap": 33.61,
+        "averageOverlap": 6.59,
+        "targetSwitches": 4563,
+        "meleeSlotWaitTicks": 19888,
+        "overkillDamage": 920
+      },
+      "damageByUnitType": {
+        "alien_bug": 1695,
+        "alien_spitter": 2561,
+        "exosuit": 720,
+        "marine": 4030,
+        "sniper": 780
+      },
+      "damageTakenByUnitType": {
+        "alien_bug": 5530,
+        "exosuit": 1105,
+        "marine": 3006,
+        "sniper": 145
+      },
+      "healingDoneByUnitType": {},
+      "actionCounts": {
+        "damage": 1501,
+        "heal": 0,
+        "die": 306,
+        "spawn": 0,
+        "spawn_blocked": 0,
+        "projectile_intercept": 0,
+        "status_apply": 387,
+        "status_cleanse": 0,
+        "mode_change": 0,
+        "stance_change": 0,
+        "control_convert": 0,
+        "barrier_absorb": 0,
+        "hazard_cleanse": 0,
+        "field_effect": 0
+      }
+    },
+    {
+      "presetId": "ranged_duel",
+      "name": "Дуэль стрелков",
+      "seed": 24680,
+      "winner": "attacker",
+      "lastActionTick": 101,
+      "battleDurationTicks": 102,
+      "initialUnits": {
+        "attacker": {
+          "marine": 64
+        },
+        "defender": {
+          "marine": 64
+        }
+      },
+      "survivors": {
+        "attacker": {
+          "marine": 17
+        },
+        "defender": {}
+      },
+      "metrics": {
+        "firstAttackTick": 15,
+        "averageTimeToEngage": 24.2,
+        "averageEngagementDistance": 135.47,
+        "maxOverlap": 18.8,
+        "averageOverlap": 7.26,
+        "targetSwitches": 1680,
+        "meleeSlotWaitTicks": 0,
+        "overkillDamage": 555
+      },
+      "damageByUnitType": {
+        "marine": 4504
+      },
+      "damageTakenByUnitType": {
+        "marine": 4504
+      },
+      "healingDoneByUnitType": {},
+      "actionCounts": {
+        "damage": 563,
+        "heal": 0,
+        "die": 111,
+        "spawn": 0,
+        "spawn_blocked": 0,
+        "projectile_intercept": 0,
+        "status_apply": 0,
+        "status_cleanse": 0,
+        "mode_change": 0,
+        "stance_change": 0,
+        "control_convert": 0,
+        "barrier_absorb": 0,
+        "hazard_cleanse": 0,
+        "field_effect": 0
+      }
+    },
+    {
+      "presetId": "massive_clash",
+      "name": "Стенка 100+",
+      "seed": 24680,
+      "winner": "attacker",
+      "lastActionTick": 64,
+      "battleDurationTicks": 65,
+      "initialUnits": {
+        "attacker": {
+          "shock_trooper": 48
+        },
+        "defender": {
+          "alien_bug": 60
+        }
+      },
+      "survivors": {
+        "attacker": {
+          "shock_trooper": 48
+        },
+        "defender": {}
+      },
+      "metrics": {
+        "firstAttackTick": 12,
+        "averageTimeToEngage": 25.19,
+        "averageEngagementDistance": 25.95,
+        "maxOverlap": 18.95,
+        "averageOverlap": 6.12,
+        "targetSwitches": 401,
+        "meleeSlotWaitTicks": 2709,
+        "overkillDamage": 480
+      },
+      "damageByUnitType": {
+        "alien_bug": 114,
+        "shock_trooper": 1680
+      },
+      "damageTakenByUnitType": {
+        "alien_bug": 1680,
+        "shock_trooper": 114
+      },
+      "healingDoneByUnitType": {},
+      "actionCounts": {
+        "damage": 177,
+        "heal": 0,
+        "die": 60,
+        "spawn": 0,
+        "spawn_blocked": 0,
+        "projectile_intercept": 0,
+        "status_apply": 0,
+        "status_cleanse": 0,
+        "mode_change": 0,
+        "stance_change": 0,
+        "control_convert": 0,
+        "barrier_absorb": 0,
+        "hazard_cleanse": 0,
+        "field_effect": 0
+      }
+    },
+    {
+      "presetId": "stealth_reveal",
+      "name": "Стелс / Радар",
+      "seed": 24680,
+      "winner": "defender",
+      "lastActionTick": 395,
+      "battleDurationTicks": 400,
+      "initialUnits": {
+        "attacker": {
+          "sniper": 2,
+          "stealth_operative": 1
+        },
+        "defender": {
+          "bounty_hunter": 1,
+          "radar_zepplin": 1
+        }
+      },
+      "survivors": {
+        "attacker": {
+          "sniper": 2,
+          "stealth_operative": 1
+        },
+        "defender": {
+          "radar_zepplin": 1
+        }
+      },
+      "metrics": {
+        "firstAttackTick": 2,
+        "averageTimeToEngage": 3.5,
+        "averageEngagementDistance": 228.02,
+        "maxOverlap": 0,
+        "averageOverlap": 0,
+        "targetSwitches": 0,
+        "meleeSlotWaitTicks": 0,
+        "overkillDamage": 22
+      },
+      "damageByUnitType": {
+        "bounty_hunter": 75,
+        "stealth_operative": 142
+      },
+      "damageTakenByUnitType": {
+        "bounty_hunter": 142,
+        "stealth_operative": 75
+      },
+      "healingDoneByUnitType": {
+        "stealth_operative": 25
+      },
+      "actionCounts": {
+        "damage": 2,
+        "heal": 1,
+        "die": 1,
+        "spawn": 0,
+        "spawn_blocked": 0,
+        "projectile_intercept": 0,
+        "status_apply": 160,
+        "status_cleanse": 0,
+        "mode_change": 0,
+        "stance_change": 0,
+        "control_convert": 0,
+        "barrier_absorb": 0,
+        "hazard_cleanse": 0,
+        "field_effect": 0
+      }
+    },
+    {
+      "presetId": "projectile_barrier",
+      "name": "Ракеты / Щит",
+      "seed": 24680,
+      "winner": "defender",
+      "lastActionTick": 204,
+      "battleDurationTicks": 205,
+      "initialUnits": {
+        "attacker": {
+          "artillery_crawler": 1,
+          "missile_buggy": 3
+        },
+        "defender": {
+          "marine": 8,
+          "shield_emitter": 1
+        }
+      },
+      "survivors": {
+        "attacker": {},
+        "defender": {
+          "marine": 8
+        }
+      },
+      "metrics": {
+        "firstAttackTick": 7,
+        "averageTimeToEngage": 12.75,
+        "averageEngagementDistance": 155.2,
+        "maxOverlap": 32.59,
+        "averageOverlap": 8.74,
+        "targetSwitches": 20,
+        "meleeSlotWaitTicks": 15,
+        "overkillDamage": 55
+      },
+      "damageByUnitType": {
+        "artillery_crawler": 244,
+        "marine": 556,
+        "missile_buggy": 5
+      },
+      "damageTakenByUnitType": {
+        "artillery_crawler": 250,
+        "missile_buggy": 306,
+        "shield_emitter": 249
+      },
+      "healingDoneByUnitType": {},
+      "actionCounts": {
+        "damage": 180,
+        "heal": 0,
+        "die": 5,
+        "spawn": 0,
+        "spawn_blocked": 0,
+        "projectile_intercept": 1,
+        "status_apply": 0,
+        "status_cleanse": 0,
+        "mode_change": 0,
+        "stance_change": 2,
+        "control_convert": 0,
+        "barrier_absorb": 0,
+        "hazard_cleanse": 0,
+        "field_effect": 0
+      }
+    },
+    {
+      "presetId": "summon_caps",
+      "name": "Призывы / Лимиты",
+      "seed": 24680,
+      "winner": "defender",
+      "lastActionTick": 398,
+      "battleDurationTicks": 400,
+      "initialUnits": {
+        "attacker": {
+          "drone_carrier": 1,
+          "hologram_projector": 1,
+          "mobile_factory": 1
+        },
+        "defender": {
+          "gatling_rover": 2,
+          "railgun_walker": 1
+        }
+      },
+      "survivors": {
+        "attacker": {
+          "drone_carrier": 1
+        },
+        "defender": {
+          "gatling_rover": 2,
+          "railgun_walker": 1
+        }
+      },
+      "metrics": {
+        "firstAttackTick": 15,
+        "averageTimeToEngage": 15.67,
+        "averageEngagementDistance": 201.48,
+        "maxOverlap": 26.44,
+        "averageOverlap": 4.83,
+        "targetSwitches": 30,
+        "meleeSlotWaitTicks": 387,
+        "overkillDamage": 430
+      },
+      "damageByUnitType": {
+        "gatling_rover": 770,
+        "railgun_walker": 1456
+      },
+      "damageTakenByUnitType": {
+        "drone_carrier": 347,
+        "exosuit": 715,
+        "hologram_projector": 80,
+        "mobile_factory": 924,
+        "scout_drone": 160
+      },
+      "healingDoneByUnitType": {},
+      "actionCounts": {
+        "damage": 592,
+        "heal": 0,
+        "die": 14,
+        "spawn": 12,
+        "spawn_blocked": 0,
+        "projectile_intercept": 0,
+        "status_apply": 0,
+        "status_cleanse": 0,
+        "mode_change": 0,
+        "stance_change": 0,
+        "control_convert": 0,
+        "barrier_absorb": 0,
+        "hazard_cleanse": 0,
+        "field_effect": 0
+      }
+    },
+    {
+      "presetId": "control_status",
+      "name": "Контроль / EMP",
+      "seed": 24680,
+      "winner": "defender",
+      "lastActionTick": 399,
+      "battleDurationTicks": 400,
+      "initialUnits": {
+        "attacker": {
+          "emp_drone": 4,
+          "hacker_rover": 1
+        },
+        "defender": {
+          "behemoth_tank": 1,
+          "exosuit": 4
+        }
+      },
+      "survivors": {
+        "attacker": {
+          "emp_drone": 4
+        },
+        "defender": {
+          "behemoth_tank": 1,
+          "exosuit": 4
+        }
+      },
+      "metrics": {
+        "firstAttackTick": 11,
+        "averageTimeToEngage": 20.63,
+        "averageEngagementDistance": 70.44,
+        "maxOverlap": 32.74,
+        "averageOverlap": 11.46,
+        "targetSwitches": 14,
+        "meleeSlotWaitTicks": 569,
+        "overkillDamage": 8
+      },
+      "damageByUnitType": {
+        "behemoth_tank": 112,
+        "exosuit": 28
+      },
+      "damageTakenByUnitType": {
+        "behemoth_tank": 2,
+        "exosuit": 10,
+        "hacker_rover": 128
+      },
+      "healingDoneByUnitType": {},
+      "actionCounts": {
+        "damage": 4,
+        "heal": 0,
+        "die": 1,
+        "spawn": 0,
+        "spawn_blocked": 0,
+        "projectile_intercept": 0,
+        "status_apply": 15,
+        "status_cleanse": 0,
+        "mode_change": 0,
+        "stance_change": 0,
+        "control_convert": 0,
+        "barrier_absorb": 0,
+        "hazard_cleanse": 0,
+        "field_effect": 0
+      }
+    },
+    {
+      "presetId": "transform_modes",
+      "name": "Режимы движения",
+      "seed": 24680,
+      "winner": "attacker",
+      "lastActionTick": 46,
+      "battleDurationTicks": 47,
+      "initialUnits": {
+        "attacker": {
+          "artillery_crawler": 1,
+          "jetpack_trooper": 5
+        },
+        "defender": {
+          "alien_bug": 10,
+          "turret": 1
+        }
+      },
+      "survivors": {
+        "attacker": {
+          "artillery_crawler": 1,
+          "jetpack_trooper": 5
+        },
+        "defender": {}
+      },
+      "metrics": {
+        "firstAttackTick": 12,
+        "averageTimeToEngage": 16.64,
+        "averageEngagementDistance": 52.2,
+        "maxOverlap": 16.17,
+        "averageOverlap": 5.52,
+        "targetSwitches": 34,
+        "meleeSlotWaitTicks": 191,
+        "overkillDamage": 182
+      },
+      "damageByUnitType": {
+        "alien_bug": 24,
+        "artillery_crawler": 222,
+        "jetpack_trooper": 360,
+        "turret": 34
+      },
+      "damageTakenByUnitType": {
+        "alien_bug": 360,
+        "jetpack_trooper": 58,
+        "turret": 222
+      },
+      "healingDoneByUnitType": {},
+      "actionCounts": {
+        "damage": 36,
+        "heal": 0,
+        "die": 11,
+        "spawn": 0,
+        "spawn_blocked": 0,
+        "projectile_intercept": 0,
+        "status_apply": 0,
+        "status_cleanse": 0,
+        "mode_change": 42,
+        "stance_change": 1,
+        "control_convert": 0,
+        "barrier_absorb": 0,
+        "hazard_cleanse": 0,
+        "field_effect": 0
+      }
+    },
+    {
+      "presetId": "cleanse_status",
+      "name": "Очищение статусов",
+      "seed": 24680,
+      "winner": "defender",
+      "lastActionTick": 186,
+      "battleDurationTicks": 187,
+      "initialUnits": {
+        "attacker": {
+          "alien_spitter": 3,
+          "flamethrower": 4
+        },
+        "defender": {
+          "engineer": 1,
+          "exosuit": 4
+        }
+      },
+      "survivors": {
+        "attacker": {},
+        "defender": {
+          "exosuit": 1
+        }
+      },
+      "metrics": {
+        "firstAttackTick": 11,
+        "averageTimeToEngage": 16.91,
+        "averageEngagementDistance": 71.84,
+        "maxOverlap": 30.41,
+        "averageOverlap": 12.24,
+        "targetSwitches": 31,
+        "meleeSlotWaitTicks": 93,
+        "overkillDamage": 95
+      },
+      "damageByUnitType": {
+        "alien_spitter": 559,
+        "exosuit": 450,
+        "flamethrower": 69
+      },
+      "damageTakenByUnitType": {
+        "alien_spitter": 162,
+        "engineer": 89,
+        "exosuit": 539,
+        "flamethrower": 288
+      },
+      "healingDoneByUnitType": {
+        "engineer": 70
+      },
+      "actionCounts": {
+        "damage": 174,
+        "heal": 7,
+        "die": 11,
+        "spawn": 0,
+        "spawn_blocked": 0,
+        "projectile_intercept": 0,
+        "status_apply": 143,
+        "status_cleanse": 45,
+        "mode_change": 0,
+        "stance_change": 0,
+        "control_convert": 0,
+        "barrier_absorb": 0,
+        "hazard_cleanse": 0,
+        "field_effect": 0
+      }
+    },
+    {
+      "presetId": "qa_primitive_events",
+      "name": "QA: события примитивов",
+      "seed": 24680,
+      "winner": "defender",
+      "lastActionTick": 399,
+      "battleDurationTicks": 400,
+      "initialUnits": {
+        "attacker": {
+          "alien_spitter": 3,
+          "hacker_rover": 1,
+          "hologram_projector": 1,
+          "railgun_walker": 1
+        },
+        "defender": {
+          "behemoth_tank": 1,
+          "engineer": 1,
+          "exosuit": 4,
+          "shield_emitter": 1
+        }
+      },
+      "survivors": {
+        "attacker": {
+          "railgun_walker": 1
+        },
+        "defender": {
+          "behemoth_tank": 1,
+          "engineer": 1,
+          "shield_emitter": 1
+        }
+      },
+      "metrics": {
+        "firstAttackTick": 0,
+        "averageTimeToEngage": 26.5,
+        "averageEngagementDistance": 144.21,
+        "maxOverlap": 37.33,
+        "averageOverlap": 16.53,
+        "targetSwitches": 24,
+        "meleeSlotWaitTicks": 1041,
+        "overkillDamage": 182
+      },
+      "damageByUnitType": {
+        "alien_spitter": 1,
+        "behemoth_tank": 1103,
+        "exosuit": 43,
+        "railgun_walker": 194
+      },
+      "damageTakenByUnitType": {
+        "alien_spitter": 192,
+        "exosuit": 697,
+        "hacker_rover": 124,
+        "hologram_projector": 81,
+        "railgun_walker": 27,
+        "shield_emitter": 220
+      },
+      "healingDoneByUnitType": {
+        "engineer": 270
+      },
+      "actionCounts": {
+        "damage": 60,
+        "heal": 27,
+        "die": 17,
+        "spawn": 8,
+        "spawn_blocked": 145,
+        "projectile_intercept": 3,
+        "status_apply": 68,
+        "status_cleanse": 25,
+        "mode_change": 0,
+        "stance_change": 0,
+        "control_convert": 4,
+        "barrier_absorb": 44,
+        "hazard_cleanse": 5,
+        "field_effect": 82
+      }
+    }
+  ]
+}
