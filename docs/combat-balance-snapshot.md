@@ -519,7 +519,7 @@ Cost/value metrics use a simple equal-weight resource value model over `hireCost
 - Role signals: -
 - Engagement: averageTimeToEngage=17.61, averageEngagementDistance=29, averageOverlap=6.52, meleeSlotWaitTicks=500, overkillDamage=388
 
-### tier1_jetpack_vs_aa_screen - Tier 1 diagnostic: jetpack versus anti-air screen
+### tier1_jetpack_vs_aa_screen - Tier 1: jetpack versus anti-air screen
 
 - Initial units: attacker.jetpack_trooper=10; defender.aa_turret=1; defender.marine=16
 - Survivors: defender.aa_turret=1; defender.marine=16

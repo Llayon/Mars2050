@@ -467,6 +467,7 @@ contracts should stay true unless the role document is updated first:
 | AoE anti-clump | `tier1_grenadier_vs_clump` / `tier1_grenadier_vs_spread` | Grenadier should punish clumps more quickly than spread formations. |
 | Melee counterplay | `tier1_shock_trooper_vs_grenadier_screen` | Grenadier should punish dense shock pressure. |
 | Charge flank | `tier1_buggy_open_flank` | Buggy should need open approach/charge value to win cleanly. |
+| Flanker counterplay | `tier1_jetpack_vs_aa_screen` | Prepared AA screen should survive jetpack dive while mode-switch risk remains visible. |
 
 Tier 1 cost/value pass v3 keeps runtime outcomes stable while correcting early
 economy signals: `aa_turret` is priced closer to a hard counter, `scout_drone`
@@ -476,11 +477,7 @@ The follow-up suppression pass makes `output_suppressed` stack by source with a
 cap, extends action cooldown under suppression, and lets heavy gunner spread
 status through split fire without forced secondary HP chip damage.
 
-Tier 1 matchup diagnostics extend the snapshot matrix without locking winners:
-
-| Diagnostic | Scenario | Question answered |
-| --- | --- | --- |
-| Flanker vs AA screen | `tier1_jetpack_vs_aa_screen` | Does air-mode approach create visible risk against prepared anti-air? |
+No open Tier 1 matchup diagnostics remain.
 
 Tier 1 sapper reliability pass narrows the sapper blast and reduces universal
 burst: static demolition remains intact, while the mobile-screen diagnostic now

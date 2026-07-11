@@ -32,10 +32,6 @@ const DAMAGE_GATES: { scenarioId: string; unitType: string }[] = [
   { scenarioId: 'tier1_buggy_open_flank', unitType: 'scavenger_buggy' },
 ]
 
-const DIAGNOSTIC_MATCHUP_SCENARIOS = [
-  'tier1_jetpack_vs_aa_screen',
-]
-
 describe('Tier 1 combat role scenarios', () => {
   it('defines a dedicated balance scenario for every Tier 1 role', () => {
     expect(TIER1_BALANCE_SCENARIOS.map(scenario => scenario.id)).toEqual([
@@ -151,19 +147,14 @@ describe('Tier 1 combat role scenarios', () => {
     expect(shockGrenadier.metrics?.damageByUnitType.grenadier ?? 0, 'tier1_shock_trooper_vs_grenadier_screen')
       .toBeGreaterThan(shockGrenadier.metrics?.damageByUnitType.shock_trooper ?? 0)
     expect(shockGrenadier.metrics?.damageByUnitType.shock_trooper ?? 0, 'tier1_shock_trooper_vs_grenadier_screen').toBeGreaterThan(0)
-  }, 30000)
 
-  it('keeps Tier 1 cross-matchup diagnostics visible in replay metrics', () => {
-    for (const scenarioId of DIAGNOSTIC_MATCHUP_SCENARIOS) {
-      const result = simulateScenario(findScenario(scenarioId))
-      expect(result.logs.length, scenarioId).toBeGreaterThan(0)
-      expect(result.logs.at(-1)?.tick ?? MAX_TICKS, scenarioId).toBeLessThan(MAX_TICKS)
-      expect(result.metrics?.battleDurationTicks ?? 0, scenarioId).toBeGreaterThan(0)
-    }
-
-    const jetpack = simulateScenario(findScenario('tier1_jetpack_vs_aa_screen'))
-    expect(countActions(jetpack, 'mode_change'), 'tier1_jetpack_vs_aa_screen').toBeGreaterThan(0)
-    expect(jetpack.metrics?.damageByUnitType.aa_turret ?? 0, 'tier1_jetpack_vs_aa_screen').toBeGreaterThan(0)
+    const jetpackAa = simulateScenario(findScenario('tier1_jetpack_vs_aa_screen'))
+    expect(jetpackAa.winner, 'tier1_jetpack_vs_aa_screen').toBe('defender')
+    expect(jetpackAa.survivors.some(unit => unit.team === 'defender' && unit.type === 'aa_turret'), 'tier1_jetpack_vs_aa_screen').toBe(true)
+    expect(jetpackAa.survivors.some(unit => unit.team === 'attacker' && unit.type === 'jetpack_trooper'), 'tier1_jetpack_vs_aa_screen').toBe(false)
+    expect(countActions(jetpackAa, 'mode_change'), 'tier1_jetpack_vs_aa_screen').toBeGreaterThan(0)
+    expect(jetpackAa.metrics?.damageByUnitType.aa_turret ?? 0, 'tier1_jetpack_vs_aa_screen').toBeGreaterThan(0)
+    expect(jetpackAa.metrics?.damageByUnitType.jetpack_trooper ?? 0, 'tier1_jetpack_vs_aa_screen').toBeGreaterThan(0)
   }, 30000)
 })
 

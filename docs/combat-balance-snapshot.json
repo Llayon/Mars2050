@@ -119,7 +119,7 @@
     },
     {
       "id": "tier1_jetpack_vs_aa_screen",
-      "name": "Tier 1 diagnostic: jetpack versus anti-air screen"
+      "name": "Tier 1: jetpack versus anti-air screen"
     }
   ],
   "scenarios": [
@@ -3858,7 +3858,7 @@
     {
       "presetId": "tier1_jetpack_vs_aa_screen",
       "group": "tier1",
-      "name": "Tier 1 diagnostic: jetpack versus anti-air screen",
+      "name": "Tier 1: jetpack versus anti-air screen",
       "seed": 24680,
       "winner": "defender",
       "lastActionTick": 32,
