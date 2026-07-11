@@ -1095,7 +1095,7 @@
       "initialValue": {
         "attacker": {
           "artillery_crawler": 1000,
-          "jetpack_trooper": 250
+          "jetpack_trooper": 300
         },
         "defender": {
           "alien_bug": 0,
@@ -1105,17 +1105,17 @@
       "survivorValue": {
         "attacker": {
           "artillery_crawler": 1000,
-          "jetpack_trooper": 250
+          "jetpack_trooper": 300
         },
         "defender": {}
       },
       "teamValue": {
         "initial": {
-          "attacker": 1250,
+          "attacker": 1300,
           "defender": 200
         },
         "survivors": {
-          "attacker": 1250,
+          "attacker": 1300,
           "defender": 0
         }
       },
@@ -1157,11 +1157,11 @@
       },
       "costEfficiency": {
         "damageDealtPerCost": {
-          "attacker": 0.43,
+          "attacker": 0.42,
           "defender": 0.29
         },
         "damageTakenPerCost": {
-          "attacker": 0.05,
+          "attacker": 0.04,
           "defender": 2.71
         },
         "healingDonePerCost": {
@@ -1169,7 +1169,7 @@
           "defender": 0
         },
         "netDamagePerCost": {
-          "attacker": 0.39,
+          "attacker": 0.37,
           "defender": -2.42
         },
         "survivorValueRatio": {
@@ -2560,7 +2560,7 @@
       },
       "initialValue": {
         "attacker": {
-          "jetpack_trooper": 500
+          "jetpack_trooper": 600
         },
         "defender": {
           "sniper": 150,
@@ -2569,17 +2569,17 @@
       },
       "survivorValue": {
         "attacker": {
-          "jetpack_trooper": 400
+          "jetpack_trooper": 480
         },
         "defender": {}
       },
       "teamValue": {
         "initial": {
-          "attacker": 500,
+          "attacker": 600,
           "defender": 350
         },
         "survivors": {
-          "attacker": 400,
+          "attacker": 480,
           "defender": 0
         }
       },
@@ -2620,11 +2620,11 @@
       },
       "costEfficiency": {
         "damageDealtPerCost": {
-          "attacker": 0.54,
+          "attacker": 0.45,
           "defender": 0.36
         },
         "damageTakenPerCost": {
-          "attacker": 0.25,
+          "attacker": 0.21,
           "defender": 0.77
         },
         "healingDonePerCost": {
@@ -2632,7 +2632,7 @@
           "defender": 0
         },
         "netDamagePerCost": {
-          "attacker": 0.29,
+          "attacker": 0.24,
           "defender": -0.41
         },
         "survivorValueRatio": {
@@ -2820,26 +2820,26 @@
       },
       "initialValue": {
         "attacker": {
-          "scout_drone": 450
+          "scout_drone": 360
         },
         "defender": {
-          "aa_turret": 160
+          "aa_turret": 200
         }
       },
       "survivorValue": {
         "attacker": {},
         "defender": {
-          "aa_turret": 160
+          "aa_turret": 200
         }
       },
       "teamValue": {
         "initial": {
-          "attacker": 450,
-          "defender": 160
+          "attacker": 360,
+          "defender": 200
         },
         "survivors": {
           "attacker": 0,
-          "defender": 160
+          "defender": 200
         }
       },
       "metrics": {
@@ -2877,20 +2877,20 @@
       },
       "costEfficiency": {
         "damageDealtPerCost": {
-          "attacker": 0.37,
-          "defender": 3.3
+          "attacker": 0.47,
+          "defender": 2.64
         },
         "damageTakenPerCost": {
-          "attacker": 1.17,
-          "defender": 1.05
+          "attacker": 1.47,
+          "defender": 0.84
         },
         "healingDonePerCost": {
           "attacker": 0,
           "defender": 0
         },
         "netDamagePerCost": {
-          "attacker": -0.8,
-          "defender": 2.25
+          "attacker": -1,
+          "defender": 1.8
         },
         "survivorValueRatio": {
           "attacker": 0,

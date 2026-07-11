@@ -101,9 +101,9 @@ Cost/value metrics use a simple equal-weight resource value model over `hireCost
 | `tier1_flamethrower_vs_armored_screen` | attacker=450; defender=600 | attacker=0.68; defender=1.44 | attacker=0; defender=0 | attacker=1.92; defender=0.51 | attacker=0; defender=0.88 | cone_attack=160; status_apply=307; status:burn=307 |
 | `tier1_sapper_vs_static_guard` | attacker=260; defender=100 | attacker=2.08; defender=0 | attacker=0; defender=0 | attacker=0; defender=5.4 | attacker=1; defender=0 | - |
 | `tier1_shock_trooper_vs_rifle_line` | attacker=300; defender=400 | attacker=0.87; defender=2.4 | attacker=0; defender=0 | attacker=3.2; defender=0.65 | attacker=0; defender=0.84 | - |
-| `tier1_jetpack_backline_access` | attacker=500; defender=350 | attacker=0.54; defender=0.36 | attacker=0; defender=0 | attacker=0.25; defender=0.77 | attacker=0.8; defender=0 | mode_change=37 |
+| `tier1_jetpack_backline_access` | attacker=600; defender=350 | attacker=0.45; defender=0.36 | attacker=0; defender=0 | attacker=0.21; defender=0.77 | attacker=0.8; defender=0 | mode_change=37 |
 | `tier1_sniper_priority_target` | attacker=300; defender=300 | attacker=0.77; defender=0.48 | attacker=0; defender=0 | attacker=0.48; defender=0.77 | attacker=0; defender=0.63 | - |
-| `tier1_scout_drone_aa_check` | attacker=450; defender=160 | attacker=0.37; defender=3.3 | attacker=0; defender=0 | attacker=1.17; defender=1.05 | attacker=0; defender=1 | split_fire=12 |
+| `tier1_scout_drone_aa_check` | attacker=360; defender=200 | attacker=0.47; defender=2.64 | attacker=0; defender=0 | attacker=1.47; defender=0.84 | attacker=0; defender=1 | split_fire=12 |
 | `tier1_medic_sustain_check` | attacker=200; defender=0 | attacker=2; defender=0 | attacker=0.9; defender=0 | attacker=0.42; defender=0 | attacker=0.75; defender=0 | heal=18 |
 | `tier1_officer_aura_check` | attacker=500; defender=0 | attacker=1.2; defender=0 | attacker=0; defender=0 | attacker=0.12; defender=0 | attacker=1; defender=0 | status_apply=94; status:haste=94 |
 | `tier1_buggy_charge_flank` | attacker=400; defender=300 | attacker=0.52; defender=1.68 | attacker=0; defender=0 | attacker=1.26; defender=0.69 | attacker=0; defender=0.88 | charge_damage=5 |
@@ -213,13 +213,13 @@ Cost/value metrics use a simple equal-weight resource value model over `hireCost
 
 - Initial units: attacker.artillery_crawler=1; attacker.jetpack_trooper=5; defender.alien_bug=10; defender.turret=1
 - Survivors: attacker.artillery_crawler=1; attacker.jetpack_trooper=5
-- Initial value: attacker.artillery_crawler=1000; attacker.jetpack_trooper=250; defender.alien_bug=0; defender.turret=200 (attacker=1250; defender=200)
-- Survivor value: attacker.artillery_crawler=1000; attacker.jetpack_trooper=250 (attacker=1250; defender=0)
+- Initial value: attacker.artillery_crawler=1000; attacker.jetpack_trooper=300; defender.alien_bug=0; defender.turret=200 (attacker=1300; defender=200)
+- Survivor value: attacker.artillery_crawler=1000; attacker.jetpack_trooper=300 (attacker=1300; defender=0)
 - Damage dealt: alien_bug=24; artillery_crawler=222; jetpack_trooper=320; turret=34
 - Damage taken: alien_bug=320; jetpack_trooper=58; turret=222
 - Healing done: -
 - Team performance: damageDealt=attacker=542; defender=58, damageTaken=attacker=58; defender=542, healingDone=attacker=0; defender=0
-- Cost efficiency: damageDealtPerCost=attacker=0.43; defender=0.29, damageTakenPerCost=attacker=0.05; defender=2.71, healingDonePerCost=attacker=0; defender=0, netDamagePerCost=attacker=0.39; defender=-2.42, survivorValueRatio=attacker=1; defender=0
+- Cost efficiency: damageDealtPerCost=attacker=0.42; defender=0.29, damageTakenPerCost=attacker=0.04; defender=2.71, healingDonePerCost=attacker=0; defender=0, netDamagePerCost=attacker=0.37; defender=-2.42, survivorValueRatio=attacker=1; defender=0
 - Role signals: barrage_impact=4; mode_change=42; stance_change=1
 - Engagement: averageTimeToEngage=16.64, averageEngagementDistance=52.2, averageOverlap=5.52, meleeSlotWaitTicks=191, overkillDamage=142
 
@@ -367,13 +367,13 @@ Cost/value metrics use a simple equal-weight resource value model over `hireCost
 
 - Initial units: attacker.jetpack_trooper=10; defender.sniper=2; defender.turret=1
 - Survivors: attacker.jetpack_trooper=8
-- Initial value: attacker.jetpack_trooper=500; defender.sniper=150; defender.turret=200 (attacker=500; defender=350)
-- Survivor value: attacker.jetpack_trooper=400 (attacker=400; defender=0)
+- Initial value: attacker.jetpack_trooper=600; defender.sniper=150; defender.turret=200 (attacker=600; defender=350)
+- Survivor value: attacker.jetpack_trooper=480 (attacker=480; defender=0)
 - Damage dealt: jetpack_trooper=269; sniper=57; turret=68
 - Damage taken: jetpack_trooper=125; sniper=60; turret=209
 - Healing done: -
 - Team performance: damageDealt=attacker=269; defender=125, damageTaken=attacker=125; defender=269, healingDone=attacker=0; defender=0
-- Cost efficiency: damageDealtPerCost=attacker=0.54; defender=0.36, damageTakenPerCost=attacker=0.25; defender=0.77, healingDonePerCost=attacker=0; defender=0, netDamagePerCost=attacker=0.29; defender=-0.41, survivorValueRatio=attacker=0.8; defender=0
+- Cost efficiency: damageDealtPerCost=attacker=0.45; defender=0.36, damageTakenPerCost=attacker=0.21; defender=0.77, healingDonePerCost=attacker=0; defender=0, netDamagePerCost=attacker=0.24; defender=-0.41, survivorValueRatio=attacker=0.8; defender=0
 - Role signals: mode_change=37
 - Engagement: averageTimeToEngage=23.5, averageEngagementDistance=49.77, averageOverlap=6.73, meleeSlotWaitTicks=216, overkillDamage=37
 
@@ -395,13 +395,13 @@ Cost/value metrics use a simple equal-weight resource value model over `hireCost
 
 - Initial units: attacker.scout_drone=15; defender.aa_turret=1
 - Survivors: defender.aa_turret=1
-- Initial value: attacker.scout_drone=450; defender.aa_turret=160 (attacker=450; defender=160)
-- Survivor value: defender.aa_turret=160 (attacker=0; defender=160)
+- Initial value: attacker.scout_drone=360; defender.aa_turret=200 (attacker=360; defender=200)
+- Survivor value: defender.aa_turret=200 (attacker=0; defender=200)
 - Damage dealt: aa_turret=528; scout_drone=168
 - Damage taken: aa_turret=168; scout_drone=528
 - Healing done: -
 - Team performance: damageDealt=attacker=168; defender=528, damageTaken=attacker=528; defender=168, healingDone=attacker=0; defender=0
-- Cost efficiency: damageDealtPerCost=attacker=0.37; defender=3.3, damageTakenPerCost=attacker=1.17; defender=1.05, healingDonePerCost=attacker=0; defender=0, netDamagePerCost=attacker=-0.8; defender=2.25, survivorValueRatio=attacker=0; defender=1
+- Cost efficiency: damageDealtPerCost=attacker=0.47; defender=2.64, damageTakenPerCost=attacker=1.47; defender=0.84, healingDonePerCost=attacker=0; defender=0, netDamagePerCost=attacker=-1; defender=1.8, survivorValueRatio=attacker=0; defender=1
 - Role signals: split_fire=12
 - Engagement: averageTimeToEngage=17.19, averageEngagementDistance=108.93, averageOverlap=6.93, meleeSlotWaitTicks=0, overkillDamage=258
 

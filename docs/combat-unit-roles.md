@@ -296,7 +296,7 @@ are the contract for the dedicated Tier 1 balance scenarios included in
 | Unit | Primary job | Strength | Weakness / counter | Role signal |
 | --- | --- | --- | --- | --- |
 | `marine` | Baseline line carry | Flexible ground DPS and clean reference point for balance comparisons. | Should lose specialist races against AoE, burst demolition, suppression, and flank access. | Sustained `damage` without special replay primitives. |
-| `heavy_gunner` | Sustained fire / suppression candidate | Wins when protected long enough to keep firing. | Slow, angle-dependent, vulnerable to burst, flankers, and long-range priority fire. | High `attack`/`damage` cadence; future suppression can attach here. |
+| `heavy_gunner` | Sustained fire / suppression candidate | Wins when protected long enough to keep firing. | Slow, angle-dependent, vulnerable to burst, flankers, and long-range priority fire. | High `attack`/`damage` cadence plus `output_suppressed` applications. |
 | `grenadier` | Mid-range anti-clump | Punishes dense light formations and melee blobs. | Inefficient into scattered, fast, or high-HP single targets. | Multi-target `damage` from AoE splash. |
 | `flamethrower` | Short-range burn screen clear | Cone pressure plus `burn` makes it anti-swarm and anti-armor-over-time. | Must enter danger range; should not replace sapper demolition or ranged carry DPS. | `cone_attack` plus `status_apply: burn`. |
 | `sapper` | Burst demolition assassin | Deletes static guards, walls, or clumped high-value targets if it reaches them. | Low HP, low uptime, poor sustained fight value after burst window. | Large short-range `damage`, not burn or suppression. |
@@ -314,7 +314,7 @@ are the contract for the dedicated Tier 1 balance scenarios included in
 | --- | --- | --- | --- | --- |
 | `wall` | Static fortress anchor/structure | 500 HP, 0 speed, armored heavy structure | Ready | Good defensive obstacle. Needs economy/building context more than combat changes. |
 | `turret` | Static local defense | 200 HP, 240 range, ground-only | Tune | General defense no longer overlaps AA turret by default. Tune DPS versus ground pushes. |
-| `aa_turret` | Static anti-air specialist | 150 HP, 280 range, `anti_air` profile | Ready | Keep as dedicated air counter. |
+| `aa_turret` | Static anti-air specialist | 180 HP, 280 range, `anti_air` profile | Ready | Keep as dedicated air counter; price should reflect hard-counter value. |
 | `drone` | Legacy light air screen | Deprecated name, 3-unit flying squad, short range | Legacy | Do not balance around this if `scout_drone` replaces it. |
 | `rocketeer` | Legacy screen clear | Deprecated, AoE, can target air | Legacy | Avoid using as modern roster baseline. |
 | `alien_bug` | PvE screen | 10-unit melee squad, fast, low HP | Ready | Good swarm test target. |
@@ -464,6 +464,11 @@ contracts should stay true unless the role document is updated first:
 | Precision support removal | `tier1_sniper_priority_target` | Sniper should remove support, not replace frontline DPS. |
 | AoE anti-clump | `tier1_grenadier_vs_clump` / `tier1_grenadier_vs_spread` | Grenadier should punish clumps more quickly than spread formations. |
 | Charge flank | `tier1_buggy_open_flank` | Buggy should need open approach/charge value to win cleanly. |
+
+Tier 1 cost/value pass v3 keeps runtime outcomes stable while correcting early
+economy signals: `aa_turret` is priced closer to a hard counter, `scout_drone`
+is cheaper as an expendable air scout, `jetpack_trooper` pays more for clean
+backline access, and `heavy_gunner` suppression is slightly softer per hit.
 
 ## Upgrade Implications
 

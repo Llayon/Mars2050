@@ -41,9 +41,9 @@ describe('combat snapshot helpers', () => {
 
     expect(values).toEqual({
       attacker: { marine: 100 },
-      defender: { aa_turret: 160 },
+      defender: { aa_turret: 200 },
     })
-    expect(totalTeamValues(values)).toEqual({ attacker: 100, defender: 160 })
+    expect(totalTeamValues(values)).toEqual({ attacker: 100, defender: 200 })
   })
 
   it('summarizes role signals without noisy zero entries', () => {
