@@ -13,12 +13,14 @@ const ROLE_SIGNAL_GATES: { scenarioId: string; actions: BattleActionType[]; stat
   { scenarioId: 'tier1_medic_sustain_check', actions: ['heal'] },
   { scenarioId: 'tier1_officer_aura_check', actions: ['status_apply'], statusType: 'haste' },
   { scenarioId: 'tier1_buggy_charge_flank', actions: ['charge_damage'] },
+  { scenarioId: 'tier1_buggy_open_flank', actions: ['charge_damage'] },
 ]
 
 const DAMAGE_GATES: { scenarioId: string; unitType: string }[] = [
   { scenarioId: 'tier1_marine_baseline_duel', unitType: 'marine' },
   { scenarioId: 'tier1_heavy_gunner_sustained_line', unitType: 'heavy_gunner' },
   { scenarioId: 'tier1_grenadier_vs_clump', unitType: 'grenadier' },
+  { scenarioId: 'tier1_grenadier_vs_spread', unitType: 'grenadier' },
   { scenarioId: 'tier1_flamethrower_vs_swarm', unitType: 'flamethrower' },
   { scenarioId: 'tier1_sapper_vs_static_guard', unitType: 'sapper' },
   { scenarioId: 'tier1_shock_trooper_vs_rifle_line', unitType: 'shock_trooper' },
@@ -26,6 +28,7 @@ const DAMAGE_GATES: { scenarioId: string; unitType: string }[] = [
   { scenarioId: 'tier1_sniper_priority_target', unitType: 'sniper' },
   { scenarioId: 'tier1_scout_drone_aa_check', unitType: 'scout_drone' },
   { scenarioId: 'tier1_buggy_charge_flank', unitType: 'scavenger_buggy' },
+  { scenarioId: 'tier1_buggy_open_flank', unitType: 'scavenger_buggy' },
 ]
 
 describe('Tier 1 combat role scenarios', () => {
@@ -34,6 +37,7 @@ describe('Tier 1 combat role scenarios', () => {
       'tier1_marine_baseline_duel',
       'tier1_heavy_gunner_sustained_line',
       'tier1_grenadier_vs_clump',
+      'tier1_grenadier_vs_spread',
       'tier1_flamethrower_vs_swarm',
       'tier1_flamethrower_vs_armored_screen',
       'tier1_sapper_vs_static_guard',
@@ -44,6 +48,7 @@ describe('Tier 1 combat role scenarios', () => {
       'tier1_medic_sustain_check',
       'tier1_officer_aura_check',
       'tier1_buggy_charge_flank',
+      'tier1_buggy_open_flank',
     ])
   })
 
@@ -83,6 +88,21 @@ describe('Tier 1 combat role scenarios', () => {
     const medic = simulateScenario(findScenario('tier1_medic_sustain_check'))
     expect(medic.metrics?.healingDoneByUnitType.medic ?? 0, 'tier1_medic_sustain_check').toBeGreaterThan(0)
   }, 30000)
+
+  it('keeps sniper, grenadier, and buggy role contracts distinct', () => {
+    const sniper = simulateScenario(findScenario('tier1_sniper_priority_target'))
+    expect(sniper.metrics?.damageTakenByUnitType.medic ?? 0, 'tier1_sniper_priority_target').toBeGreaterThanOrEqual(150)
+    expect(sniper.survivors.some(unit => unit.team === 'defender' && unit.type === 'medic'), 'tier1_sniper_priority_target').toBe(false)
+
+    const clump = simulateScenario(findScenario('tier1_grenadier_vs_clump'))
+    const spread = simulateScenario(findScenario('tier1_grenadier_vs_spread'))
+    expect(countDeathsByTick(clump, 20), 'tier1_grenadier_vs_clump').toBeGreaterThan(countDeathsByTick(spread, 20) + 10)
+
+    const buggy = simulateScenario(findScenario('tier1_buggy_open_flank'))
+    expect(countActions(buggy, 'charge_damage'), 'tier1_buggy_open_flank').toBeGreaterThanOrEqual(4)
+    expect(buggy.metrics?.damageByUnitType.scavenger_buggy ?? 0, 'tier1_buggy_open_flank')
+      .toBeGreaterThan(buggy.metrics?.damageTakenByUnitType.scavenger_buggy ?? 0)
+  }, 30000)
 })
 
 function simulateScenario(scenario: CombatBalanceScenario): BattleResult {
@@ -105,6 +125,18 @@ function findScenario(scenarioId: string): CombatBalanceScenario {
 
 function flattenActions(result: BattleResult): BattleAction[] {
   return result.logs.flatMap(log => log.actions)
+}
+
+function countActions(result: BattleResult, type: BattleActionType): number {
+  return flattenActions(result).filter(action => action.type === type).length
+}
+
+function countDeathsByTick(result: BattleResult, maxTick: number): number {
+  return result.logs
+    .filter(log => log.tick <= maxTick)
+    .flatMap(log => log.actions)
+    .filter(action => action.type === 'die')
+    .length
 }
 
 function cloneRows(rows: UnitRow[]): UnitRow[] {

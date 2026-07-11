@@ -54,9 +54,9 @@ describe('combat charge damage', () => {
 
     const damage = getChargeDamage(buggy, target, 15, actions)
 
-    expect(damage).toBe(27)
+    expect(damage).toBe(33)
     expect(buggy.chargeDistance).toBe(0)
-    expect(actions).toEqual([{ unitId: 'buggy', type: 'charge_damage', targetId: 'target', value: 1.8 }])
+    expect(actions).toEqual([{ unitId: 'buggy', type: 'charge_damage', targetId: 'target', value: 2.2 }])
   })
 
   it('resets low charge without emitting a replay action', () => {
@@ -88,11 +88,11 @@ describe('combat charge damage', () => {
     const acted = actionSystem(buggy, target, [buggy, target], hazards, actions, new PRNG(1))
 
     expect(acted).toBe(true)
-    expect(target.hp).toBe(73)
+    expect(target.hp).toBe(67)
     expect(actions).toEqual([
       { unitId: 'buggy', type: 'attack', targetId: 'target' },
-      { unitId: 'buggy', type: 'charge_damage', targetId: 'target', value: 1.8 },
-      { unitId: 'buggy', type: 'damage', targetId: 'target', damage: 27 },
+      { unitId: 'buggy', type: 'charge_damage', targetId: 'target', value: 2.2 },
+      { unitId: 'buggy', type: 'damage', targetId: 'target', damage: 33 },
     ])
   })
 })

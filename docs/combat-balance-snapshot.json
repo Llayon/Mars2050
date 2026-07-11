@@ -58,6 +58,10 @@
       "name": "Tier 1: grenadier versus clump"
     },
     {
+      "id": "tier1_grenadier_vs_spread",
+      "name": "Tier 1: grenadier versus spread"
+    },
+    {
       "id": "tier1_flamethrower_vs_swarm",
       "name": "Tier 1: flamethrower versus swarm"
     },
@@ -96,6 +100,10 @@
     {
       "id": "tier1_buggy_charge_flank",
       "name": "Tier 1: scavenger buggy charge flank"
+    },
+    {
+      "id": "tier1_buggy_open_flank",
+      "name": "Tier 1: scavenger buggy open flank"
     }
   ],
   "scenarios": [
@@ -911,8 +919,8 @@
       "name": "Tier 1: grenadier versus clump",
       "seed": 24680,
       "winner": "attacker",
-      "lastActionTick": 16,
-      "battleDurationTicks": 17,
+      "lastActionTick": 17,
+      "battleDurationTicks": 18,
       "initialUnits": {
         "attacker": {
           "grenadier": 12
@@ -929,24 +937,86 @@
       },
       "metrics": {
         "firstAttackTick": 10,
-        "averageTimeToEngage": 13,
-        "averageEngagementDistance": 193.37,
+        "averageTimeToEngage": 13.3,
+        "averageEngagementDistance": 187.82,
         "maxOverlap": 18.5,
-        "averageOverlap": 6.52,
-        "targetSwitches": 70,
-        "meleeSlotWaitTicks": 616,
-        "overkillDamage": 293
+        "averageOverlap": 6.58,
+        "targetSwitches": 71,
+        "meleeSlotWaitTicks": 630,
+        "overkillDamage": 199
       },
       "damageByUnitType": {
-        "grenadier": 1293
+        "grenadier": 1199
       },
       "damageTakenByUnitType": {
-        "alien_bug": 1293
+        "alien_bug": 1199
       },
       "healingDoneByUnitType": {},
       "actionCounts": {
-        "attack": 98,
-        "damage": 98,
+        "attack": 99,
+        "damage": 99,
+        "heal": 0,
+        "die": 50,
+        "spawn": 0,
+        "spawn_blocked": 0,
+        "projectile_intercept": 0,
+        "status_apply": 0,
+        "status_cleanse": 0,
+        "shield_apply": 0,
+        "mode_change": 0,
+        "stance_change": 0,
+        "cone_attack": 0,
+        "charge_damage": 0,
+        "control_convert": 0,
+        "barrier_absorb": 0,
+        "hazard_cleanse": 0,
+        "field_effect": 0
+      }
+    },
+    {
+      "presetId": "tier1_grenadier_vs_spread",
+      "group": "tier1",
+      "name": "Tier 1: grenadier versus spread",
+      "seed": 24680,
+      "winner": "attacker",
+      "lastActionTick": 33,
+      "battleDurationTicks": 34,
+      "initialUnits": {
+        "attacker": {
+          "grenadier": 12
+        },
+        "defender": {
+          "alien_bug": 50
+        }
+      },
+      "survivors": {
+        "attacker": {
+          "grenadier": 12
+        },
+        "defender": {}
+      },
+      "metrics": {
+        "firstAttackTick": 8,
+        "averageTimeToEngage": 19.5,
+        "averageEngagementDistance": 127.65,
+        "maxOverlap": 18.06,
+        "averageOverlap": 6.11,
+        "targetSwitches": 121,
+        "meleeSlotWaitTicks": 812,
+        "overkillDamage": 243
+      },
+      "damageByUnitType": {
+        "alien_bug": 24,
+        "grenadier": 1243
+      },
+      "damageTakenByUnitType": {
+        "alien_bug": 1243,
+        "grenadier": 24
+      },
+      "healingDoneByUnitType": {},
+      "actionCounts": {
+        "attack": 108,
+        "damage": 108,
         "heal": 0,
         "die": 50,
         "spawn": 0,
@@ -1563,14 +1633,14 @@
         "averageOverlap": 6.66,
         "targetSwitches": 112,
         "meleeSlotWaitTicks": 0,
-        "overkillDamage": 57
+        "overkillDamage": 87
       },
       "damageByUnitType": {
         "marine": 504,
-        "scavenger_buggy": 177
+        "scavenger_buggy": 207
       },
       "damageTakenByUnitType": {
-        "marine": 177,
+        "marine": 207,
         "scavenger_buggy": 504
       },
       "healingDoneByUnitType": {},
@@ -1589,6 +1659,72 @@
         "stance_change": 0,
         "cone_attack": 0,
         "charge_damage": 5,
+        "control_convert": 0,
+        "barrier_absorb": 0,
+        "hazard_cleanse": 0,
+        "field_effect": 0
+      }
+    },
+    {
+      "presetId": "tier1_buggy_open_flank",
+      "group": "tier1",
+      "name": "Tier 1: scavenger buggy open flank",
+      "seed": 24680,
+      "winner": "attacker",
+      "lastActionTick": 39,
+      "battleDurationTicks": 40,
+      "initialUnits": {
+        "attacker": {
+          "scavenger_buggy": 6
+        },
+        "defender": {
+          "medic": 3,
+          "sniper": 2
+        }
+      },
+      "survivors": {
+        "attacker": {
+          "scavenger_buggy": 5
+        },
+        "defender": {}
+      },
+      "metrics": {
+        "firstAttackTick": 10,
+        "averageTimeToEngage": 16.14,
+        "averageEngagementDistance": 120.92,
+        "maxOverlap": 30.7,
+        "averageOverlap": 17.36,
+        "targetSwitches": 20,
+        "meleeSlotWaitTicks": 0,
+        "overkillDamage": 64
+      },
+      "damageByUnitType": {
+        "scavenger_buggy": 262,
+        "sniper": 112
+      },
+      "damageTakenByUnitType": {
+        "medic": 198,
+        "scavenger_buggy": 112,
+        "sniper": 64
+      },
+      "healingDoneByUnitType": {
+        "medic": 20
+      },
+      "actionCounts": {
+        "attack": 15,
+        "damage": 15,
+        "heal": 2,
+        "die": 6,
+        "spawn": 0,
+        "spawn_blocked": 0,
+        "projectile_intercept": 0,
+        "status_apply": 0,
+        "status_cleanse": 0,
+        "shield_apply": 0,
+        "mode_change": 0,
+        "stance_change": 0,
+        "cone_attack": 0,
+        "charge_damage": 8,
         "control_convert": 0,
         "barrier_absorb": 0,
         "hazard_cleanse": 0,

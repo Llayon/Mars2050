@@ -18,6 +18,15 @@ export const TIER1_BALANCE_SCENARIOS: CombatBalanceScenario[] = [
   scenario('tier1_grenadier_vs_clump', 'Tier 1: grenadier versus clump',
     squads('t1-gren-a', 'attacker', 'grenadier', 3, 220, 820, 48),
     squads('t1-bug-d', 'defender', 'alien_bug', 5, 200, 360, 24)),
+  scenario('tier1_grenadier_vs_spread', 'Tier 1: grenadier versus spread',
+    squads('t1-gren-spread-a', 'attacker', 'grenadier', 3, 220, 820, 48),
+    [
+      row('t1-bug-spread-d-0', 'defender', 'alien_bug', 40, 320),
+      row('t1-bug-spread-d-1', 'defender', 'alien_bug', 170, 390),
+      row('t1-bug-spread-d-2', 'defender', 'alien_bug', 300, 460),
+      row('t1-bug-spread-d-3', 'defender', 'alien_bug', 430, 340),
+      row('t1-bug-spread-d-4', 'defender', 'alien_bug', 560, 410),
+    ]),
   scenario('tier1_flamethrower_vs_swarm', 'Tier 1: flamethrower versus swarm',
     squads('t1-flame-a', 'attacker', 'flamethrower', 2, 230, 820, 54),
     squads('t1-swarm-d', 'defender', 'alien_bug', 4, 215, 370, 28)),
@@ -48,6 +57,9 @@ export const TIER1_BALANCE_SCENARIOS: CombatBalanceScenario[] = [
   scenario('tier1_buggy_charge_flank', 'Tier 1: scavenger buggy charge flank',
     squads('t1-buggy-a', 'attacker', 'scavenger_buggy', 2, 160, 840, 80),
     squads('t1-buggy-marine-d', 'defender', 'marine', 3, 260, 350, 52)),
+  scenario('tier1_buggy_open_flank', 'Tier 1: scavenger buggy open flank',
+    squads('t1-buggy-open-a', 'attacker', 'scavenger_buggy', 2, 160, 840, 110),
+    [row('t1-buggy-open-sniper-d-0', 'defender', 'sniper', 245, 350), row('t1-buggy-open-medic-d-0', 'defender', 'medic', 315, 360)]),
 ]
 
 function scenario(id: string, name: string, attackers: UnitRow[], defenders: UnitRow[]): CombatBalanceScenario {
