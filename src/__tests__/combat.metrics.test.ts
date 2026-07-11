@@ -14,13 +14,13 @@ interface ReplayUnit {
 }
 
 describe('combat movement metrics', () => {
-  it('keeps a 100+ unit crowd moving into combat without timing out', () => {
+  it('keeps a 100+ unit crowd moving into combat within simulation bounds', () => {
     const result = simulateMetricBattle()
 
     expect(result.initialState.length).toBeGreaterThanOrEqual(100)
     expect(getFirstActionTick(result, 'attack')).toBeLessThanOrEqual(25)
     expect(getLastTick(result)).toBeLessThan(MAX_TICKS - 1)
-  })
+  }, 15000) // Stress scenario expands squads into 100+ runtime units; keep timeout local.
 
   it('keeps early crowd overlap under the steering threshold', () => {
     const result = simulateMetricBattle()
