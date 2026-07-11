@@ -32,6 +32,13 @@ const DAMAGE_GATES: { scenarioId: string; unitType: string }[] = [
   { scenarioId: 'tier1_buggy_open_flank', unitType: 'scavenger_buggy' },
 ]
 
+const DIAGNOSTIC_MATCHUP_SCENARIOS = [
+  'tier1_heavy_gunner_vs_marine_line',
+  'tier1_shock_trooper_vs_grenadier_screen',
+  'tier1_sapper_vs_mobile_screen',
+  'tier1_jetpack_vs_aa_screen',
+]
+
 describe('Tier 1 combat role scenarios', () => {
   it('defines a dedicated balance scenario for every Tier 1 role', () => {
     expect(TIER1_BALANCE_SCENARIOS.map(scenario => scenario.id)).toEqual([
@@ -50,6 +57,10 @@ describe('Tier 1 combat role scenarios', () => {
       'tier1_officer_aura_check',
       'tier1_buggy_charge_flank',
       'tier1_buggy_open_flank',
+      'tier1_heavy_gunner_vs_marine_line',
+      'tier1_shock_trooper_vs_grenadier_screen',
+      'tier1_sapper_vs_mobile_screen',
+      'tier1_jetpack_vs_aa_screen',
     ])
   })
 
@@ -126,6 +137,30 @@ describe('Tier 1 combat role scenarios', () => {
 
     const shock = simulateScenario(findScenario('tier1_shock_trooper_vs_rifle_line'))
     expect(shock.winner, 'tier1_shock_trooper_vs_rifle_line').toBe('defender')
+  }, 30000)
+
+  it('keeps Tier 1 cross-matchup diagnostics visible without hard winner gates', () => {
+    for (const scenarioId of DIAGNOSTIC_MATCHUP_SCENARIOS) {
+      const result = simulateScenario(findScenario(scenarioId))
+      expect(result.logs.length, scenarioId).toBeGreaterThan(0)
+      expect(result.logs.at(-1)?.tick ?? MAX_TICKS, scenarioId).toBeLessThan(MAX_TICKS)
+      expect(result.metrics?.battleDurationTicks ?? 0, scenarioId).toBeGreaterThan(0)
+    }
+
+    const heavy = simulateScenario(findScenario('tier1_heavy_gunner_vs_marine_line'))
+    expect(heavy.metrics?.damageByUnitType.heavy_gunner ?? 0, 'tier1_heavy_gunner_vs_marine_line').toBeGreaterThan(0)
+    expect(countStatusApplications(heavy, 'output_suppressed'), 'tier1_heavy_gunner_vs_marine_line').toBeGreaterThan(0)
+
+    const shock = simulateScenario(findScenario('tier1_shock_trooper_vs_grenadier_screen'))
+    expect(shock.metrics?.damageByUnitType.shock_trooper ?? 0, 'tier1_shock_trooper_vs_grenadier_screen').toBeGreaterThan(0)
+    expect(shock.metrics?.damageByUnitType.grenadier ?? 0, 'tier1_shock_trooper_vs_grenadier_screen').toBeGreaterThan(0)
+
+    const sapper = simulateScenario(findScenario('tier1_sapper_vs_mobile_screen'))
+    expect(sapper.metrics?.damageByUnitType.sapper ?? 0, 'tier1_sapper_vs_mobile_screen').toBeGreaterThan(0)
+
+    const jetpack = simulateScenario(findScenario('tier1_jetpack_vs_aa_screen'))
+    expect(countActions(jetpack, 'mode_change'), 'tier1_jetpack_vs_aa_screen').toBeGreaterThan(0)
+    expect(jetpack.metrics?.damageByUnitType.aa_turret ?? 0, 'tier1_jetpack_vs_aa_screen').toBeGreaterThan(0)
   }, 30000)
 })
 

@@ -60,6 +60,18 @@ export const TIER1_BALANCE_SCENARIOS: CombatBalanceScenario[] = [
   scenario('tier1_buggy_open_flank', 'Tier 1: scavenger buggy open flank',
     squads('t1-buggy-open-a', 'attacker', 'scavenger_buggy', 2, 160, 840, 110),
     [row('t1-buggy-open-sniper-d-0', 'defender', 'sniper', 245, 350), row('t1-buggy-open-medic-d-0', 'defender', 'medic', 315, 360)]),
+  scenario('tier1_heavy_gunner_vs_marine_line', 'Tier 1 diagnostic: heavy gunner versus marine line',
+    squads('t1-heavy-marine-a', 'attacker', 'heavy_gunner', 3, 220, 820, 56),
+    squads('t1-heavy-marine-d', 'defender', 'marine', 4, 210, 360, 48)),
+  scenario('tier1_shock_trooper_vs_grenadier_screen', 'Tier 1 diagnostic: shock trooper versus grenadier screen',
+    squads('t1-shock-gren-a', 'attacker', 'shock_trooper', 3, 220, 820, 48),
+    squads('t1-shock-gren-d', 'defender', 'grenadier', 2, 210, 360, 58)),
+  scenario('tier1_sapper_vs_mobile_screen', 'Tier 1 diagnostic: sapper versus mobile screen',
+    squads('t1-sapper-mobile-a', 'attacker', 'sapper', 2, 230, 820, 44),
+    squads('t1-sapper-mobile-d', 'defender', 'shock_trooper', 3, 205, 360, 48)),
+  scenario('tier1_jetpack_vs_aa_screen', 'Tier 1 diagnostic: jetpack versus anti-air screen',
+    squads('t1-jet-aa-a', 'attacker', 'jetpack_trooper', 2, 220, 840, 48),
+    [row('t1-jet-aa-d-0', 'defender', 'aa_turret', 240, 350), ...squads('t1-jet-aa-screen-d', 'defender', 'marine', 2, 185, 380, 70)]),
 ]
 
 function scenario(id: string, name: string, attackers: UnitRow[], defenders: UnitRow[]): CombatBalanceScenario {

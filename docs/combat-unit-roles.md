@@ -470,6 +470,15 @@ economy signals: `aa_turret` is priced closer to a hard counter, `scout_drone`
 is cheaper as an expendable air scout, `jetpack_trooper` pays more for clean
 backline access, and `heavy_gunner` suppression is slightly softer per hit.
 
+Tier 1 matchup diagnostics extend the snapshot matrix without locking winners:
+
+| Diagnostic | Scenario | Question answered |
+| --- | --- | --- |
+| Suppression vs baseline | `tier1_heavy_gunner_vs_marine_line` | Does heavy gunner value come from sustained suppression, not just marine-like DPS? |
+| Melee pressure vs AoE | `tier1_shock_trooper_vs_grenadier_screen` | Does shock pressure expose a readable weakness to explosive anti-clump fire? |
+| Demolition vs mobile screen | `tier1_sapper_vs_mobile_screen` | Does sapper remain over-reliable when the target is mobile instead of static? |
+| Flanker vs AA screen | `tier1_jetpack_vs_aa_screen` | Does air-mode approach create visible risk against prepared anti-air? |
+
 ## Upgrade Implications
 
 Upgrades should transform role instead of only increasing stats. Good examples to
