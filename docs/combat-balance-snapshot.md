@@ -491,7 +491,7 @@ Cost/value metrics use a simple equal-weight resource value model over `hireCost
 - Role signals: split_fire=1107; status_apply=1683; status:output_suppressed=1683
 - Engagement: averageTimeToEngage=17.56, averageEngagementDistance=143.72, averageOverlap=7.33, meleeSlotWaitTicks=0, overkillDamage=57
 
-### tier1_shock_trooper_vs_grenadier_screen - Tier 1 diagnostic: shock trooper versus grenadier screen
+### tier1_shock_trooper_vs_grenadier_screen - Tier 1: shock trooper versus grenadier screen
 
 - Initial units: attacker.shock_trooper=24; defender.grenadier=8
 - Survivors: defender.grenadier=7

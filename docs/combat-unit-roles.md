@@ -465,6 +465,7 @@ contracts should stay true unless the role document is updated first:
 | Dedicated anti-air | `tier1_scout_drone_aa_check` | Scout drones should lose to a prepared AA turret. |
 | Precision support removal | `tier1_sniper_priority_target` | Sniper should remove support, not replace frontline DPS. |
 | AoE anti-clump | `tier1_grenadier_vs_clump` / `tier1_grenadier_vs_spread` | Grenadier should punish clumps more quickly than spread formations. |
+| Melee counterplay | `tier1_shock_trooper_vs_grenadier_screen` | Grenadier should punish dense shock pressure. |
 | Charge flank | `tier1_buggy_open_flank` | Buggy should need open approach/charge value to win cleanly. |
 
 Tier 1 cost/value pass v3 keeps runtime outcomes stable while correcting early
@@ -479,7 +480,6 @@ Tier 1 matchup diagnostics extend the snapshot matrix without locking winners:
 
 | Diagnostic | Scenario | Question answered |
 | --- | --- | --- |
-| Melee pressure vs AoE | `tier1_shock_trooper_vs_grenadier_screen` | Does shock pressure expose a readable weakness to explosive anti-clump fire? |
 | Demolition vs mobile screen | `tier1_sapper_vs_mobile_screen` | Does sapper remain over-reliable when the target is mobile instead of static? |
 | Flanker vs AA screen | `tier1_jetpack_vs_aa_screen` | Does air-mode approach create visible risk against prepared anti-air? |
 

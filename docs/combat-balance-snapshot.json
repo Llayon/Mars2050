@@ -111,7 +111,7 @@
     },
     {
       "id": "tier1_shock_trooper_vs_grenadier_screen",
-      "name": "Tier 1 diagnostic: shock trooper versus grenadier screen"
+      "name": "Tier 1: shock trooper versus grenadier screen"
     },
     {
       "id": "tier1_sapper_vs_mobile_screen",
@@ -3606,7 +3606,7 @@
     {
       "presetId": "tier1_shock_trooper_vs_grenadier_screen",
       "group": "tier1",
-      "name": "Tier 1 diagnostic: shock trooper versus grenadier screen",
+      "name": "Tier 1: shock trooper versus grenadier screen",
       "seed": 24680,
       "winner": "defender",
       "lastActionTick": 34,

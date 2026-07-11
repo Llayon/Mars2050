@@ -33,7 +33,6 @@ const DAMAGE_GATES: { scenarioId: string; unitType: string }[] = [
 ]
 
 const DIAGNOSTIC_MATCHUP_SCENARIOS = [
-  'tier1_shock_trooper_vs_grenadier_screen',
   'tier1_sapper_vs_mobile_screen',
   'tier1_jetpack_vs_aa_screen',
 ]
@@ -145,6 +144,13 @@ describe('Tier 1 combat role scenarios', () => {
 
     const shock = simulateScenario(findScenario('tier1_shock_trooper_vs_rifle_line'))
     expect(shock.winner, 'tier1_shock_trooper_vs_rifle_line').toBe('defender')
+
+    const shockGrenadier = simulateScenario(findScenario('tier1_shock_trooper_vs_grenadier_screen'))
+    expect(shockGrenadier.winner, 'tier1_shock_trooper_vs_grenadier_screen').toBe('defender')
+    expect(shockGrenadier.survivors.some(unit => unit.team === 'defender' && unit.type === 'grenadier'), 'tier1_shock_trooper_vs_grenadier_screen').toBe(true)
+    expect(shockGrenadier.metrics?.damageByUnitType.grenadier ?? 0, 'tier1_shock_trooper_vs_grenadier_screen')
+      .toBeGreaterThan(shockGrenadier.metrics?.damageByUnitType.shock_trooper ?? 0)
+    expect(shockGrenadier.metrics?.damageByUnitType.shock_trooper ?? 0, 'tier1_shock_trooper_vs_grenadier_screen').toBeGreaterThan(0)
   }, 30000)
 
   it('keeps Tier 1 cross-matchup diagnostics visible in replay metrics', () => {
@@ -154,10 +160,6 @@ describe('Tier 1 combat role scenarios', () => {
       expect(result.logs.at(-1)?.tick ?? MAX_TICKS, scenarioId).toBeLessThan(MAX_TICKS)
       expect(result.metrics?.battleDurationTicks ?? 0, scenarioId).toBeGreaterThan(0)
     }
-
-    const shock = simulateScenario(findScenario('tier1_shock_trooper_vs_grenadier_screen'))
-    expect(shock.metrics?.damageByUnitType.shock_trooper ?? 0, 'tier1_shock_trooper_vs_grenadier_screen').toBeGreaterThan(0)
-    expect(shock.metrics?.damageByUnitType.grenadier ?? 0, 'tier1_shock_trooper_vs_grenadier_screen').toBeGreaterThan(0)
 
     const sapper = simulateScenario(findScenario('tier1_sapper_vs_mobile_screen'))
     expect(sapper.metrics?.damageByUnitType.sapper ?? 0, 'tier1_sapper_vs_mobile_screen').toBeGreaterThan(0)
