@@ -33,7 +33,6 @@ const DAMAGE_GATES: { scenarioId: string; unitType: string }[] = [
 ]
 
 const DIAGNOSTIC_MATCHUP_SCENARIOS = [
-  'tier1_sapper_vs_mobile_screen',
   'tier1_jetpack_vs_aa_screen',
 ]
 
@@ -136,6 +135,7 @@ describe('Tier 1 combat role scenarios', () => {
     const sapperMobile = simulateScenario(findScenario('tier1_sapper_vs_mobile_screen'))
     expect(sapperMobile.winner, 'tier1_sapper_vs_mobile_screen').toBe('defender')
     expect(sapperMobile.survivors.some(unit => unit.team === 'defender' && unit.type === 'shock_trooper'), 'tier1_sapper_vs_mobile_screen').toBe(true)
+    expect(sapperMobile.metrics?.damageByUnitType.sapper ?? 0, 'tier1_sapper_vs_mobile_screen').toBeGreaterThan(0)
 
     const aa = simulateScenario(findScenario('tier1_scout_drone_aa_check'))
     expect(aa.winner, 'tier1_scout_drone_aa_check').toBe('defender')
@@ -160,9 +160,6 @@ describe('Tier 1 combat role scenarios', () => {
       expect(result.logs.at(-1)?.tick ?? MAX_TICKS, scenarioId).toBeLessThan(MAX_TICKS)
       expect(result.metrics?.battleDurationTicks ?? 0, scenarioId).toBeGreaterThan(0)
     }
-
-    const sapper = simulateScenario(findScenario('tier1_sapper_vs_mobile_screen'))
-    expect(sapper.metrics?.damageByUnitType.sapper ?? 0, 'tier1_sapper_vs_mobile_screen').toBeGreaterThan(0)
 
     const jetpack = simulateScenario(findScenario('tier1_jetpack_vs_aa_screen'))
     expect(countActions(jetpack, 'mode_change'), 'tier1_jetpack_vs_aa_screen').toBeGreaterThan(0)

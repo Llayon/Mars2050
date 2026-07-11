@@ -115,7 +115,7 @@
     },
     {
       "id": "tier1_sapper_vs_mobile_screen",
-      "name": "Tier 1 diagnostic: sapper versus mobile screen"
+      "name": "Tier 1: sapper versus mobile screen"
     },
     {
       "id": "tier1_jetpack_vs_aa_screen",
@@ -3732,7 +3732,7 @@
     {
       "presetId": "tier1_sapper_vs_mobile_screen",
       "group": "tier1",
-      "name": "Tier 1 diagnostic: sapper versus mobile screen",
+      "name": "Tier 1: sapper versus mobile screen",
       "seed": 24680,
       "winner": "defender",
       "lastActionTick": 38,

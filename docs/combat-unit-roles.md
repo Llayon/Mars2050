@@ -480,7 +480,6 @@ Tier 1 matchup diagnostics extend the snapshot matrix without locking winners:
 
 | Diagnostic | Scenario | Question answered |
 | --- | --- | --- |
-| Demolition vs mobile screen | `tier1_sapper_vs_mobile_screen` | Does sapper remain over-reliable when the target is mobile instead of static? |
 | Flanker vs AA screen | `tier1_jetpack_vs_aa_screen` | Does air-mode approach create visible risk against prepared anti-air? |
 
 Tier 1 sapper reliability pass narrows the sapper blast and reduces universal

@@ -505,7 +505,7 @@ Cost/value metrics use a simple equal-weight resource value model over `hireCost
 - Role signals: -
 - Engagement: averageTimeToEngage=18.4, averageEngagementDistance=153.03, averageOverlap=6.24, meleeSlotWaitTicks=375, overkillDamage=180
 
-### tier1_sapper_vs_mobile_screen - Tier 1 diagnostic: sapper versus mobile screen
+### tier1_sapper_vs_mobile_screen - Tier 1: sapper versus mobile screen
 
 - Initial units: attacker.sapper=6; defender.shock_trooper=24
 - Survivors: defender.shock_trooper=9

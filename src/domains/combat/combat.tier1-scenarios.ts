@@ -66,7 +66,7 @@ export const TIER1_BALANCE_SCENARIOS: CombatBalanceScenario[] = [
   scenario('tier1_shock_trooper_vs_grenadier_screen', 'Tier 1: shock trooper versus grenadier screen',
     squads('t1-shock-gren-a', 'attacker', 'shock_trooper', 3, 220, 820, 48),
     squads('t1-shock-gren-d', 'defender', 'grenadier', 2, 210, 360, 58)),
-  scenario('tier1_sapper_vs_mobile_screen', 'Tier 1 diagnostic: sapper versus mobile screen',
+  scenario('tier1_sapper_vs_mobile_screen', 'Tier 1: sapper versus mobile screen',
     squads('t1-sapper-mobile-a', 'attacker', 'sapper', 2, 230, 820, 44),
     squads('t1-sapper-mobile-d', 'defender', 'shock_trooper', 3, 205, 360, 48)),
   scenario('tier1_jetpack_vs_aa_screen', 'Tier 1 diagnostic: jetpack versus anti-air screen',
