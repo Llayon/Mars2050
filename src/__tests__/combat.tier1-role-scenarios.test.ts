@@ -7,6 +7,7 @@ import type { BattleAction, BattleActionType, BattleResult, UnitRow } from '@/do
 const SEED = 24680
 
 const ROLE_SIGNAL_GATES: { scenarioId: string; actions: BattleActionType[]; statusType?: string }[] = [
+  { scenarioId: 'tier1_heavy_gunner_sustained_line', actions: ['status_apply'], statusType: 'output_suppressed' },
   { scenarioId: 'tier1_flamethrower_vs_swarm', actions: ['cone_attack'], statusType: 'burn' },
   { scenarioId: 'tier1_flamethrower_vs_armored_screen', actions: ['cone_attack'], statusType: 'burn' },
   { scenarioId: 'tier1_jetpack_backline_access', actions: ['mode_change'] },
@@ -103,6 +104,29 @@ describe('Tier 1 combat role scenarios', () => {
     expect(buggy.metrics?.damageByUnitType.scavenger_buggy ?? 0, 'tier1_buggy_open_flank')
       .toBeGreaterThan(buggy.metrics?.damageTakenByUnitType.scavenger_buggy ?? 0)
   }, 30000)
+
+  it('keeps the Tier 1 acceptance matrix from collapsing into generalists', () => {
+    const heavy = simulateScenario(findScenario('tier1_heavy_gunner_sustained_line'))
+    expect(countStatusApplications(heavy, 'output_suppressed'), 'tier1_heavy_gunner_sustained_line').toBeGreaterThanOrEqual(50)
+
+    const flameSwarm = simulateScenario(findScenario('tier1_flamethrower_vs_swarm'))
+    const flameArmor = simulateScenario(findScenario('tier1_flamethrower_vs_armored_screen'))
+    expect(flameSwarm.winner, 'tier1_flamethrower_vs_swarm').toBe('attacker')
+    expect(flameArmor.winner, 'tier1_flamethrower_vs_armored_screen').toBe('defender')
+
+    const sapper = simulateScenario(findScenario('tier1_sapper_vs_static_guard'))
+    expect(sapper.winner, 'tier1_sapper_vs_static_guard').toBe('attacker')
+    expect(sapper.survivors.some(unit => unit.team === 'defender' && unit.type === 'wall'), 'tier1_sapper_vs_static_guard').toBe(false)
+    expect(sapper.metrics?.damageTakenByUnitType.wall ?? 0, 'tier1_sapper_vs_static_guard').toBeGreaterThanOrEqual(400)
+
+    const aa = simulateScenario(findScenario('tier1_scout_drone_aa_check'))
+    expect(aa.winner, 'tier1_scout_drone_aa_check').toBe('defender')
+    expect(aa.survivors.some(unit => unit.team === 'defender' && unit.type === 'aa_turret'), 'tier1_scout_drone_aa_check').toBe(true)
+    expect(aa.survivors.some(unit => unit.team === 'attacker' && unit.type === 'scout_drone'), 'tier1_scout_drone_aa_check').toBe(false)
+
+    const shock = simulateScenario(findScenario('tier1_shock_trooper_vs_rifle_line'))
+    expect(shock.winner, 'tier1_shock_trooper_vs_rifle_line').toBe('defender')
+  }, 30000)
 })
 
 function simulateScenario(scenario: CombatBalanceScenario): BattleResult {
@@ -137,6 +161,10 @@ function countDeathsByTick(result: BattleResult, maxTick: number): number {
     .flatMap(log => log.actions)
     .filter(action => action.type === 'die')
     .length
+}
+
+function countStatusApplications(result: BattleResult, statusType: string): number {
+  return flattenActions(result).filter(action => action.type === 'status_apply' && action.statusType === statusType).length
 }
 
 function cloneRows(rows: UnitRow[]): UnitRow[] {

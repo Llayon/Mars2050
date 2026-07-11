@@ -4,35 +4,37 @@ import { pathToFileURL } from 'node:url'
 import { getSimulatorPreset, SIMULATOR_PRESET_OPTIONS } from '../src/app/simulator2/simulator.presets'
 import { TIER1_BALANCE_SCENARIOS, type CombatBalanceScenario } from '../src/domains/combat/combat.tier1-scenarios'
 import { simulateBattle } from '../src/domains/combat/combat.engine'
-import type { BattleAction, BattleActionType, BattleResult, Team, UnitRow } from '../src/domains/combat/combat.types'
+import type { BattleResult, UnitRow } from '../src/domains/combat/combat.types'
+import {
+  ACTION_TYPES,
+  buildCostEfficiency,
+  countActionsByType,
+  countUnitsByTeamType,
+  countValueByTeamType,
+  formatNullable,
+  formatNumericMap,
+  formatRoleSignals,
+  formatTeamMap,
+  formatTeamTotals,
+  nonZeroNumericMap,
+  roundNullable,
+  roundNumber,
+  sortNumericMap,
+  summarizeRoleSignals,
+  summarizeTeamPerformance,
+  totalTeamValues,
+  type CostEfficiencySummary,
+  type NumericMap,
+  type RoleSignalSummary,
+  type TeamPerformanceSummary,
+  type TeamTotals,
+  type TeamTypeCounts,
+} from './combat-snapshot-analysis'
 
 const SNAPSHOT_SEED = 24680
 const JSON_OUTPUT = join(process.cwd(), 'docs', 'combat-balance-snapshot.json')
 const MARKDOWN_OUTPUT = join(process.cwd(), 'docs', 'combat-balance-snapshot.md')
-const ACTION_TYPES: BattleActionType[] = [
-  'attack',
-  'damage',
-  'heal',
-  'die',
-  'spawn',
-  'spawn_blocked',
-  'projectile_intercept',
-  'status_apply',
-  'status_cleanse',
-  'shield_apply',
-  'mode_change',
-  'stance_change',
-  'cone_attack',
-  'charge_damage',
-  'control_convert',
-  'barrier_absorb',
-  'hazard_cleanse',
-  'field_effect',
-]
 type ScenarioGroup = 'simulator' | 'tier1'
-
-type NumericMap = Record<string, number>
-type TeamTypeCounts = Record<Team, NumericMap>
 
 interface ScenarioSummary {
   presetId: string
@@ -44,6 +46,12 @@ interface ScenarioSummary {
   battleDurationTicks: number
   initialUnits: TeamTypeCounts
   survivors: TeamTypeCounts
+  initialValue: TeamTypeCounts
+  survivorValue: TeamTypeCounts
+  teamValue: {
+    initial: TeamTotals
+    survivors: TeamTotals
+  }
   metrics: {
     firstAttackTick: number | null
     averageTimeToEngage: number | null
@@ -57,11 +65,14 @@ interface ScenarioSummary {
   damageByUnitType: NumericMap
   damageTakenByUnitType: NumericMap
   healingDoneByUnitType: NumericMap
+  teamPerformance: TeamPerformanceSummary
+  costEfficiency: CostEfficiencySummary
   actionCounts: NumericMap
+  roleSignals: RoleSignalSummary
 }
 
 interface CombatBalanceSnapshot {
-  schemaVersion: 2
+  schemaVersion: 3
   generatedBy: 'npm run combat:snapshot'
   seed: number
   presets: { id: string; name: string }[]
@@ -80,7 +91,7 @@ export function buildCombatBalanceSnapshot(): CombatBalanceSnapshot {
   )
 
   return {
-    schemaVersion: 2,
+    schemaVersion: 3,
     generatedBy: 'npm run combat:snapshot',
     seed: SNAPSHOT_SEED,
     presets: SIMULATOR_PRESET_OPTIONS.map(option => ({ id: option.id, name: option.name })),
@@ -92,6 +103,13 @@ export function buildCombatBalanceSnapshot(): CombatBalanceSnapshot {
 export function summarizeScenario(presetId: string, group: ScenarioGroup, name: string, seed: number, result: BattleResult): ScenarioSummary {
   if (!result.metrics) throw new Error(`Scenario ${presetId} was simulated without combat metrics`)
   const actions = result.logs.flatMap(log => log.actions)
+  const initialValue = countValueByTeamType(result.initialState)
+  const survivorValue = countValueByTeamType(result.survivors)
+  const teamValue = {
+    initial: totalTeamValues(initialValue),
+    survivors: totalTeamValues(survivorValue),
+  }
+  const teamPerformance = summarizeTeamPerformance(actions, result.initialState)
 
   return {
     presetId,
@@ -103,6 +121,9 @@ export function summarizeScenario(presetId: string, group: ScenarioGroup, name: 
     battleDurationTicks: result.metrics.battleDurationTicks,
     initialUnits: countUnitsByTeamType(result.initialState),
     survivors: countUnitsByTeamType(result.survivors),
+    initialValue,
+    survivorValue,
+    teamValue,
     metrics: {
       firstAttackTick: result.metrics.firstAttackTick,
       averageTimeToEngage: roundNullable(result.metrics.averageTimeToEngage),
@@ -116,7 +137,10 @@ export function summarizeScenario(presetId: string, group: ScenarioGroup, name: 
     damageByUnitType: sortNumericMap(result.metrics.damageByUnitType),
     damageTakenByUnitType: sortNumericMap(result.metrics.damageTakenByUnitType),
     healingDoneByUnitType: sortNumericMap(result.metrics.healingDoneByUnitType),
+    teamPerformance,
+    costEfficiency: buildCostEfficiency(teamPerformance, teamValue),
     actionCounts: countActionsByType(actions, ACTION_TYPES),
+    roleSignals: summarizeRoleSignals(actions),
   }
 }
 
@@ -138,23 +162,6 @@ function simulateSnapshotScenario(
   return summarizeScenario(presetId, group, name, SNAPSHOT_SEED, result)
 }
 
-export function countActionsByType(actions: BattleAction[], actionTypes: BattleActionType[]): NumericMap {
-  const counts: NumericMap = {}
-  for (const actionType of actionTypes) counts[actionType] = 0
-  for (const action of actions) {
-    if (action.type in counts) counts[action.type] += 1
-  }
-  return counts
-}
-
-export function countUnitsByTeamType(units: ReadonlyArray<{ team: Team; type: string }>): TeamTypeCounts {
-  const counts: TeamTypeCounts = { attacker: {}, defender: {} }
-  for (const unit of units) {
-    counts[unit.team][unit.type] = (counts[unit.team][unit.type] ?? 0) + 1
-  }
-  return { attacker: sortNumericMap(counts.attacker), defender: sortNumericMap(counts.defender) }
-}
-
 export function renderSnapshotJson(snapshot: CombatBalanceSnapshot): string {
   return `${JSON.stringify(snapshot, null, 2)}\n`
 }
@@ -171,6 +178,8 @@ export function renderSnapshotMarkdown(snapshot: CombatBalanceSnapshot): string 
     `Seed: ${snapshot.seed}`,
     `Presets: ${snapshot.presets.map(preset => `\`${preset.id}\``).join(', ')}`,
     `Tier 1 scenarios: ${snapshot.tier1Scenarios.map(scenario => `\`${scenario.id}\``).join(', ')}`,
+    '',
+    'Cost/value metrics use a simple equal-weight resource value model over `hireCost`. Treat them as balance diagnostics, not final economy pricing.',
     '',
     '## Scenario Summary',
     '',
@@ -192,6 +201,12 @@ export function renderSnapshotMarkdown(snapshot: CombatBalanceSnapshot): string 
     '| --- | --- | --- | --- |',
     ...tier1Scenarios.map(scenario => `| \`${scenario.presetId}\` | ${formatNumericMap(scenario.damageByUnitType)} | ${formatNumericMap(scenario.healingDoneByUnitType)} | ${formatNumericMap(nonZeroNumericMap(scenario.actionCounts))} |`),
     '',
+    '## Tier 1 Cost Efficiency',
+    '',
+    '| Scenario | Initial value | Damage / cost | Healing / cost | Damage taken / cost | Survivor value | Role signals |',
+    '| --- | --- | --- | --- | --- | --- | --- |',
+    ...tier1Scenarios.map(scenario => `| \`${scenario.presetId}\` | ${formatTeamTotals(scenario.teamValue.initial)} | ${formatTeamTotals(scenario.costEfficiency.damageDealtPerCost)} | ${formatTeamTotals(scenario.costEfficiency.healingDonePerCost)} | ${formatTeamTotals(scenario.costEfficiency.damageTakenPerCost)} | ${formatTeamTotals(scenario.costEfficiency.survivorValueRatio)} | ${formatRoleSignals(scenario.roleSignals)} |`),
+    '',
     '## Unit Outcomes',
     '',
     ...snapshot.scenarios.flatMap(scenario => [
@@ -199,9 +214,14 @@ export function renderSnapshotMarkdown(snapshot: CombatBalanceSnapshot): string 
       '',
       `- Initial units: ${formatTeamMap(scenario.initialUnits)}`,
       `- Survivors: ${formatTeamMap(scenario.survivors)}`,
+      `- Initial value: ${formatTeamMap(scenario.initialValue)} (${formatTeamTotals(scenario.teamValue.initial)})`,
+      `- Survivor value: ${formatTeamMap(scenario.survivorValue)} (${formatTeamTotals(scenario.teamValue.survivors)})`,
       `- Damage dealt: ${formatNumericMap(scenario.damageByUnitType)}`,
       `- Damage taken: ${formatNumericMap(scenario.damageTakenByUnitType)}`,
       `- Healing done: ${formatNumericMap(scenario.healingDoneByUnitType)}`,
+      `- Team performance: damageDealt=${formatTeamTotals(scenario.teamPerformance.damageDealt)}, damageTaken=${formatTeamTotals(scenario.teamPerformance.damageTaken)}, healingDone=${formatTeamTotals(scenario.teamPerformance.healingDone)}`,
+      `- Cost efficiency: damageDealtPerCost=${formatTeamTotals(scenario.costEfficiency.damageDealtPerCost)}, damageTakenPerCost=${formatTeamTotals(scenario.costEfficiency.damageTakenPerCost)}, healingDonePerCost=${formatTeamTotals(scenario.costEfficiency.healingDonePerCost)}, netDamagePerCost=${formatTeamTotals(scenario.costEfficiency.netDamagePerCost)}, survivorValueRatio=${formatTeamTotals(scenario.costEfficiency.survivorValueRatio)}`,
+      `- Role signals: ${formatRoleSignals(scenario.roleSignals)}`,
       `- Engagement: averageTimeToEngage=${formatNullable(scenario.metrics.averageTimeToEngage)}, averageEngagementDistance=${formatNullable(scenario.metrics.averageEngagementDistance)}, averageOverlap=${scenario.metrics.averageOverlap}, meleeSlotWaitTicks=${scenario.metrics.meleeSlotWaitTicks}, overkillDamage=${scenario.metrics.overkillDamage}`,
       '',
     ]),
@@ -213,38 +233,6 @@ function writeSnapshotFiles(snapshot: CombatBalanceSnapshot): void {
   writeFileSync(MARKDOWN_OUTPUT, renderSnapshotMarkdown(snapshot), 'utf8')
   console.log(`Wrote ${JSON_OUTPUT}`)
   console.log(`Wrote ${MARKDOWN_OUTPUT}`)
-}
-
-function sortNumericMap(map: NumericMap): NumericMap {
-  return Object.fromEntries(Object.entries(map).sort(([a], [b]) => a.localeCompare(b)).map(([key, value]) => [key, roundNumber(value)]))
-}
-
-function roundNullable(value: number | null): number | null {
-  return value === null ? null : roundNumber(value)
-}
-
-function roundNumber(value: number): number {
-  return Math.round(value * 100) / 100
-}
-
-function formatTeamMap(map: TeamTypeCounts): string {
-  const parts = (['attacker', 'defender'] as const).flatMap(team =>
-    Object.entries(map[team]).map(([type, count]) => `${team}.${type}=${count}`)
-  )
-  return parts.length > 0 ? parts.join('; ') : '-'
-}
-
-function formatNumericMap(map: NumericMap): string {
-  const parts = Object.entries(map).map(([key, value]) => `${key}=${value}`)
-  return parts.length > 0 ? parts.join('; ') : '-'
-}
-
-function nonZeroNumericMap(map: NumericMap): NumericMap {
-  return Object.fromEntries(Object.entries(map).filter(([, value]) => value !== 0))
-}
-
-function formatNullable(value: number | null): string {
-  return value === null ? '-' : String(value)
 }
 
 function cloneRows(rows: UnitRow[]): UnitRow[] {

@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "generatedBy": "npm run combat:snapshot",
   "seed": 24680,
   "presets": [
@@ -133,6 +133,34 @@
           "alien_spitter": 9
         }
       },
+      "initialValue": {
+        "attacker": {
+          "exosuit": 900,
+          "marine": 1000,
+          "sniper": 300
+        },
+        "defender": {
+          "alien_bug": 0,
+          "alien_spitter": 0
+        }
+      },
+      "survivorValue": {
+        "attacker": {},
+        "defender": {
+          "alien_bug": 0,
+          "alien_spitter": 0
+        }
+      },
+      "teamValue": {
+        "initial": {
+          "attacker": 2200,
+          "defender": 0
+        },
+        "survivors": {
+          "attacker": 0,
+          "defender": 0
+        }
+      },
       "metrics": {
         "firstAttackTick": 9,
         "averageTimeToEngage": 32.29,
@@ -157,6 +185,42 @@
         "sniper": 145
       },
       "healingDoneByUnitType": {},
+      "teamPerformance": {
+        "damageDealt": {
+          "attacker": 5530,
+          "defender": 4256
+        },
+        "damageTaken": {
+          "attacker": 4256,
+          "defender": 5530
+        },
+        "healingDone": {
+          "attacker": 0,
+          "defender": 0
+        }
+      },
+      "costEfficiency": {
+        "damageDealtPerCost": {
+          "attacker": 2.51,
+          "defender": 0
+        },
+        "damageTakenPerCost": {
+          "attacker": 1.93,
+          "defender": 0
+        },
+        "healingDonePerCost": {
+          "attacker": 0,
+          "defender": 0
+        },
+        "netDamagePerCost": {
+          "attacker": 0.58,
+          "defender": 0
+        },
+        "survivorValueRatio": {
+          "attacker": 0,
+          "defender": 0
+        }
+      },
       "actionCounts": {
         "attack": 1501,
         "damage": 1501,
@@ -176,6 +240,14 @@
         "barrier_absorb": 0,
         "hazard_cleanse": 0,
         "field_effect": 0
+      },
+      "roleSignals": {
+        "actions": {
+          "status_apply": 387
+        },
+        "statusApplications": {
+          "acid": 387
+        }
       }
     },
     {
@@ -200,6 +272,30 @@
         },
         "defender": {}
       },
+      "initialValue": {
+        "attacker": {
+          "marine": 800
+        },
+        "defender": {
+          "marine": 800
+        }
+      },
+      "survivorValue": {
+        "attacker": {
+          "marine": 212.5
+        },
+        "defender": {}
+      },
+      "teamValue": {
+        "initial": {
+          "attacker": 800,
+          "defender": 800
+        },
+        "survivors": {
+          "attacker": 212.5,
+          "defender": 0
+        }
+      },
       "metrics": {
         "firstAttackTick": 15,
         "averageTimeToEngage": 24.2,
@@ -217,6 +313,42 @@
         "marine": 4504
       },
       "healingDoneByUnitType": {},
+      "teamPerformance": {
+        "damageDealt": {
+          "attacker": 2560,
+          "defender": 1944
+        },
+        "damageTaken": {
+          "attacker": 1944,
+          "defender": 2560
+        },
+        "healingDone": {
+          "attacker": 0,
+          "defender": 0
+        }
+      },
+      "costEfficiency": {
+        "damageDealtPerCost": {
+          "attacker": 3.2,
+          "defender": 2.43
+        },
+        "damageTakenPerCost": {
+          "attacker": 2.43,
+          "defender": 3.2
+        },
+        "healingDonePerCost": {
+          "attacker": 0,
+          "defender": 0
+        },
+        "netDamagePerCost": {
+          "attacker": 0.77,
+          "defender": -0.77
+        },
+        "survivorValueRatio": {
+          "attacker": 0.27,
+          "defender": 0
+        }
+      },
       "actionCounts": {
         "attack": 563,
         "damage": 563,
@@ -236,6 +368,10 @@
         "barrier_absorb": 0,
         "hazard_cleanse": 0,
         "field_effect": 0
+      },
+      "roleSignals": {
+        "actions": {},
+        "statusApplications": {}
       }
     },
     {
@@ -260,6 +396,30 @@
         },
         "defender": {}
       },
+      "initialValue": {
+        "attacker": {
+          "shock_trooper": 600
+        },
+        "defender": {
+          "alien_bug": 0
+        }
+      },
+      "survivorValue": {
+        "attacker": {
+          "shock_trooper": 600
+        },
+        "defender": {}
+      },
+      "teamValue": {
+        "initial": {
+          "attacker": 600,
+          "defender": 0
+        },
+        "survivors": {
+          "attacker": 600,
+          "defender": 0
+        }
+      },
       "metrics": {
         "firstAttackTick": 12,
         "averageTimeToEngage": 25.57,
@@ -279,6 +439,42 @@
         "shock_trooper": 195
       },
       "healingDoneByUnitType": {},
+      "teamPerformance": {
+        "damageDealt": {
+          "attacker": 1440,
+          "defender": 195
+        },
+        "damageTaken": {
+          "attacker": 195,
+          "defender": 1440
+        },
+        "healingDone": {
+          "attacker": 0,
+          "defender": 0
+        }
+      },
+      "costEfficiency": {
+        "damageDealtPerCost": {
+          "attacker": 2.4,
+          "defender": 0
+        },
+        "damageTakenPerCost": {
+          "attacker": 0.33,
+          "defender": 0
+        },
+        "healingDonePerCost": {
+          "attacker": 0,
+          "defender": 0
+        },
+        "netDamagePerCost": {
+          "attacker": 2.08,
+          "defender": 0
+        },
+        "survivorValueRatio": {
+          "attacker": 1,
+          "defender": 0
+        }
+      },
       "actionCounts": {
         "attack": 185,
         "damage": 185,
@@ -298,6 +494,10 @@
         "barrier_absorb": 0,
         "hazard_cleanse": 0,
         "field_effect": 0
+      },
+      "roleSignals": {
+        "actions": {},
+        "statusApplications": {}
       }
     },
     {
@@ -327,6 +527,35 @@
           "radar_zepplin": 1
         }
       },
+      "initialValue": {
+        "attacker": {
+          "sniper": 150,
+          "stealth_operative": 1000
+        },
+        "defender": {
+          "bounty_hunter": 800,
+          "radar_zepplin": 1300
+        }
+      },
+      "survivorValue": {
+        "attacker": {
+          "sniper": 150,
+          "stealth_operative": 1000
+        },
+        "defender": {
+          "radar_zepplin": 1300
+        }
+      },
+      "teamValue": {
+        "initial": {
+          "attacker": 1150,
+          "defender": 2100
+        },
+        "survivors": {
+          "attacker": 1150,
+          "defender": 1300
+        }
+      },
       "metrics": {
         "firstAttackTick": 2,
         "averageTimeToEngage": 3.5,
@@ -348,6 +577,42 @@
       "healingDoneByUnitType": {
         "stealth_operative": 25
       },
+      "teamPerformance": {
+        "damageDealt": {
+          "attacker": 142,
+          "defender": 75
+        },
+        "damageTaken": {
+          "attacker": 75,
+          "defender": 142
+        },
+        "healingDone": {
+          "attacker": 25,
+          "defender": 0
+        }
+      },
+      "costEfficiency": {
+        "damageDealtPerCost": {
+          "attacker": 0.12,
+          "defender": 0.04
+        },
+        "damageTakenPerCost": {
+          "attacker": 0.07,
+          "defender": 0.07
+        },
+        "healingDonePerCost": {
+          "attacker": 0.02,
+          "defender": 0
+        },
+        "netDamagePerCost": {
+          "attacker": 0.06,
+          "defender": -0.03
+        },
+        "survivorValueRatio": {
+          "attacker": 1,
+          "defender": 0.62
+        }
+      },
       "actionCounts": {
         "attack": 2,
         "damage": 2,
@@ -367,6 +632,17 @@
         "barrier_absorb": 0,
         "hazard_cleanse": 0,
         "field_effect": 0
+      },
+      "roleSignals": {
+        "actions": {
+          "heal": 1,
+          "on_kill": 1,
+          "status_apply": 160
+        },
+        "statusApplications": {
+          "range_boost": 1,
+          "revealed": 159
+        }
       }
     },
     {
@@ -393,6 +669,32 @@
           "marine": 8
         }
       },
+      "initialValue": {
+        "attacker": {
+          "artillery_crawler": 1000,
+          "missile_buggy": 400
+        },
+        "defender": {
+          "marine": 100,
+          "shield_emitter": 800
+        }
+      },
+      "survivorValue": {
+        "attacker": {},
+        "defender": {
+          "marine": 100
+        }
+      },
+      "teamValue": {
+        "initial": {
+          "attacker": 1400,
+          "defender": 900
+        },
+        "survivors": {
+          "attacker": 0,
+          "defender": 100
+        }
+      },
       "metrics": {
         "firstAttackTick": 7,
         "averageTimeToEngage": 12.75,
@@ -414,6 +716,42 @@
         "shield_emitter": 249
       },
       "healingDoneByUnitType": {},
+      "teamPerformance": {
+        "damageDealt": {
+          "attacker": 249,
+          "defender": 556
+        },
+        "damageTaken": {
+          "attacker": 556,
+          "defender": 249
+        },
+        "healingDone": {
+          "attacker": 0,
+          "defender": 0
+        }
+      },
+      "costEfficiency": {
+        "damageDealtPerCost": {
+          "attacker": 0.18,
+          "defender": 0.62
+        },
+        "damageTakenPerCost": {
+          "attacker": 0.4,
+          "defender": 0.28
+        },
+        "healingDonePerCost": {
+          "attacker": 0,
+          "defender": 0
+        },
+        "netDamagePerCost": {
+          "attacker": -0.22,
+          "defender": 0.34
+        },
+        "survivorValueRatio": {
+          "attacker": 0,
+          "defender": 0.11
+        }
+      },
       "actionCounts": {
         "attack": 186,
         "damage": 180,
@@ -433,6 +771,14 @@
         "barrier_absorb": 0,
         "hazard_cleanse": 0,
         "field_effect": 0
+      },
+      "roleSignals": {
+        "actions": {
+          "barrage_impact": 4,
+          "shield_apply": 9,
+          "stance_change": 2
+        },
+        "statusApplications": {}
       }
     },
     {
@@ -463,6 +809,36 @@
           "railgun_walker": 1
         }
       },
+      "initialValue": {
+        "attacker": {
+          "drone_carrier": 1000,
+          "hologram_projector": 900,
+          "mobile_factory": 2000
+        },
+        "defender": {
+          "gatling_rover": 300,
+          "railgun_walker": 850
+        }
+      },
+      "survivorValue": {
+        "attacker": {
+          "drone_carrier": 1000
+        },
+        "defender": {
+          "gatling_rover": 300,
+          "railgun_walker": 850
+        }
+      },
+      "teamValue": {
+        "initial": {
+          "attacker": 3900,
+          "defender": 1150
+        },
+        "survivors": {
+          "attacker": 1000,
+          "defender": 1150
+        }
+      },
       "metrics": {
         "firstAttackTick": 15,
         "averageTimeToEngage": 15.67,
@@ -485,6 +861,42 @@
         "scout_drone": 160
       },
       "healingDoneByUnitType": {},
+      "teamPerformance": {
+        "damageDealt": {
+          "attacker": 0,
+          "defender": 2226
+        },
+        "damageTaken": {
+          "attacker": 1351,
+          "defender": 0
+        },
+        "healingDone": {
+          "attacker": 0,
+          "defender": 0
+        }
+      },
+      "costEfficiency": {
+        "damageDealtPerCost": {
+          "attacker": 0,
+          "defender": 1.94
+        },
+        "damageTakenPerCost": {
+          "attacker": 0.35,
+          "defender": 0
+        },
+        "healingDonePerCost": {
+          "attacker": 0,
+          "defender": 0
+        },
+        "netDamagePerCost": {
+          "attacker": -0.35,
+          "defender": 1.94
+        },
+        "survivorValueRatio": {
+          "attacker": 0.26,
+          "defender": 1
+        }
+      },
       "actionCounts": {
         "attack": 390,
         "damage": 592,
@@ -504,6 +916,13 @@
         "barrier_absorb": 0,
         "hazard_cleanse": 0,
         "field_effect": 0
+      },
+      "roleSignals": {
+        "actions": {
+          "percent_hp_damage": 8,
+          "split_fire": 202
+        },
+        "statusApplications": {}
       }
     },
     {
@@ -533,6 +952,35 @@
           "exosuit": 4
         }
       },
+      "initialValue": {
+        "attacker": {
+          "emp_drone": 300,
+          "hacker_rover": 800
+        },
+        "defender": {
+          "behemoth_tank": 1500,
+          "exosuit": 300
+        }
+      },
+      "survivorValue": {
+        "attacker": {
+          "emp_drone": 300
+        },
+        "defender": {
+          "behemoth_tank": 1500,
+          "exosuit": 300
+        }
+      },
+      "teamValue": {
+        "initial": {
+          "attacker": 1100,
+          "defender": 1800
+        },
+        "survivors": {
+          "attacker": 300,
+          "defender": 1800
+        }
+      },
       "metrics": {
         "firstAttackTick": 11,
         "averageTimeToEngage": 20.63,
@@ -553,6 +1001,42 @@
         "hacker_rover": 128
       },
       "healingDoneByUnitType": {},
+      "teamPerformance": {
+        "damageDealt": {
+          "attacker": 0,
+          "defender": 140
+        },
+        "damageTaken": {
+          "attacker": 128,
+          "defender": 12
+        },
+        "healingDone": {
+          "attacker": 0,
+          "defender": 0
+        }
+      },
+      "costEfficiency": {
+        "damageDealtPerCost": {
+          "attacker": 0,
+          "defender": 0.08
+        },
+        "damageTakenPerCost": {
+          "attacker": 0.12,
+          "defender": 0.01
+        },
+        "healingDonePerCost": {
+          "attacker": 0,
+          "defender": 0
+        },
+        "netDamagePerCost": {
+          "attacker": -0.12,
+          "defender": 0.07
+        },
+        "survivorValueRatio": {
+          "attacker": 0.27,
+          "defender": 1
+        }
+      },
       "actionCounts": {
         "attack": 19,
         "damage": 4,
@@ -572,6 +1056,15 @@
         "barrier_absorb": 0,
         "hazard_cleanse": 0,
         "field_effect": 0
+      },
+      "roleSignals": {
+        "actions": {
+          "status_apply": 15
+        },
+        "statusApplications": {
+          "emp": 13,
+          "hacked": 2
+        }
       }
     },
     {
@@ -599,6 +1092,33 @@
         },
         "defender": {}
       },
+      "initialValue": {
+        "attacker": {
+          "artillery_crawler": 1000,
+          "jetpack_trooper": 250
+        },
+        "defender": {
+          "alien_bug": 0,
+          "turret": 200
+        }
+      },
+      "survivorValue": {
+        "attacker": {
+          "artillery_crawler": 1000,
+          "jetpack_trooper": 250
+        },
+        "defender": {}
+      },
+      "teamValue": {
+        "initial": {
+          "attacker": 1250,
+          "defender": 200
+        },
+        "survivors": {
+          "attacker": 1250,
+          "defender": 0
+        }
+      },
       "metrics": {
         "firstAttackTick": 12,
         "averageTimeToEngage": 16.64,
@@ -621,6 +1141,42 @@
         "turret": 222
       },
       "healingDoneByUnitType": {},
+      "teamPerformance": {
+        "damageDealt": {
+          "attacker": 542,
+          "defender": 58
+        },
+        "damageTaken": {
+          "attacker": 58,
+          "defender": 542
+        },
+        "healingDone": {
+          "attacker": 0,
+          "defender": 0
+        }
+      },
+      "costEfficiency": {
+        "damageDealtPerCost": {
+          "attacker": 0.43,
+          "defender": 0.29
+        },
+        "damageTakenPerCost": {
+          "attacker": 0.05,
+          "defender": 2.71
+        },
+        "healingDonePerCost": {
+          "attacker": 0,
+          "defender": 0
+        },
+        "netDamagePerCost": {
+          "attacker": 0.39,
+          "defender": -2.42
+        },
+        "survivorValueRatio": {
+          "attacker": 1,
+          "defender": 0
+        }
+      },
       "actionCounts": {
         "attack": 35,
         "damage": 36,
@@ -640,6 +1196,14 @@
         "barrier_absorb": 0,
         "hazard_cleanse": 0,
         "field_effect": 0
+      },
+      "roleSignals": {
+        "actions": {
+          "barrage_impact": 4,
+          "mode_change": 42,
+          "stance_change": 1
+        },
+        "statusApplications": {}
       }
     },
     {
@@ -666,6 +1230,32 @@
           "exosuit": 1
         }
       },
+      "initialValue": {
+        "attacker": {
+          "alien_spitter": 0,
+          "flamethrower": 150
+        },
+        "defender": {
+          "engineer": 300,
+          "exosuit": 300
+        }
+      },
+      "survivorValue": {
+        "attacker": {},
+        "defender": {
+          "exosuit": 75
+        }
+      },
+      "teamValue": {
+        "initial": {
+          "attacker": 150,
+          "defender": 600
+        },
+        "survivors": {
+          "attacker": 0,
+          "defender": 75
+        }
+      },
       "metrics": {
         "firstAttackTick": 11,
         "averageTimeToEngage": 16.91,
@@ -690,6 +1280,42 @@
       "healingDoneByUnitType": {
         "engineer": 70
       },
+      "teamPerformance": {
+        "damageDealt": {
+          "attacker": 628,
+          "defender": 450
+        },
+        "damageTaken": {
+          "attacker": 450,
+          "defender": 628
+        },
+        "healingDone": {
+          "attacker": 0,
+          "defender": 70
+        }
+      },
+      "costEfficiency": {
+        "damageDealtPerCost": {
+          "attacker": 4.19,
+          "defender": 0.75
+        },
+        "damageTakenPerCost": {
+          "attacker": 3,
+          "defender": 1.05
+        },
+        "healingDonePerCost": {
+          "attacker": 0,
+          "defender": 0.12
+        },
+        "netDamagePerCost": {
+          "attacker": 1.19,
+          "defender": -0.3
+        },
+        "survivorValueRatio": {
+          "attacker": 0,
+          "defender": 0.13
+        }
+      },
       "actionCounts": {
         "attack": 160,
         "damage": 174,
@@ -709,6 +1335,19 @@
         "barrier_absorb": 0,
         "hazard_cleanse": 0,
         "field_effect": 0
+      },
+      "roleSignals": {
+        "actions": {
+          "cone_attack": 55,
+          "heal": 7,
+          "status_apply": 143,
+          "status_cleanse": 45
+        },
+        "statusApplications": {
+          "acid": 70,
+          "burn": 55,
+          "status_immunity": 18
+        }
       }
     },
     {
@@ -743,6 +1382,40 @@
           "shield_emitter": 1
         }
       },
+      "initialValue": {
+        "attacker": {
+          "alien_spitter": 0,
+          "hacker_rover": 800,
+          "hologram_projector": 900,
+          "railgun_walker": 850
+        },
+        "defender": {
+          "behemoth_tank": 1500,
+          "engineer": 300,
+          "exosuit": 300,
+          "shield_emitter": 800
+        }
+      },
+      "survivorValue": {
+        "attacker": {
+          "railgun_walker": 850
+        },
+        "defender": {
+          "behemoth_tank": 1500,
+          "engineer": 300,
+          "shield_emitter": 800
+        }
+      },
+      "teamValue": {
+        "initial": {
+          "attacker": 2550,
+          "defender": 2900
+        },
+        "survivors": {
+          "attacker": 850,
+          "defender": 2600
+        }
+      },
       "metrics": {
         "firstAttackTick": 0,
         "averageTimeToEngage": 26.5,
@@ -770,6 +1443,42 @@
       "healingDoneByUnitType": {
         "engineer": 270
       },
+      "teamPerformance": {
+        "damageDealt": {
+          "attacker": 195,
+          "defender": 1146
+        },
+        "damageTaken": {
+          "attacker": 424,
+          "defender": 917
+        },
+        "healingDone": {
+          "attacker": 0,
+          "defender": 270
+        }
+      },
+      "costEfficiency": {
+        "damageDealtPerCost": {
+          "attacker": 0.08,
+          "defender": 0.4
+        },
+        "damageTakenPerCost": {
+          "attacker": 0.17,
+          "defender": 0.32
+        },
+        "healingDonePerCost": {
+          "attacker": 0,
+          "defender": 0.09
+        },
+        "netDamagePerCost": {
+          "attacker": -0.09,
+          "defender": 0.08
+        },
+        "survivorValueRatio": {
+          "attacker": 0.33,
+          "defender": 0.9
+        }
+      },
       "actionCounts": {
         "attack": 131,
         "damage": 60,
@@ -789,6 +1498,25 @@
         "barrier_absorb": 44,
         "hazard_cleanse": 5,
         "field_effect": 82
+      },
+      "roleSignals": {
+        "actions": {
+          "barrier_absorb": 44,
+          "barrier_spawn": 10,
+          "control_convert": 4,
+          "field_effect": 82,
+          "hazard_cleanse": 5,
+          "heal": 27,
+          "percent_hp_damage": 10,
+          "shield_apply": 33,
+          "status_apply": 68,
+          "status_cleanse": 25
+        },
+        "statusApplications": {
+          "acid": 5,
+          "hacked": 20,
+          "status_immunity": 43
+        }
       }
     },
     {
@@ -813,6 +1541,30 @@
           "marine": 3
         }
       },
+      "initialValue": {
+        "attacker": {
+          "marine": 300
+        },
+        "defender": {
+          "marine": 300
+        }
+      },
+      "survivorValue": {
+        "attacker": {},
+        "defender": {
+          "marine": 37.5
+        }
+      },
+      "teamValue": {
+        "initial": {
+          "attacker": 300,
+          "defender": 300
+        },
+        "survivors": {
+          "attacker": 0,
+          "defender": 37.5
+        }
+      },
       "metrics": {
         "firstAttackTick": 16,
         "averageTimeToEngage": 20.11,
@@ -830,6 +1582,42 @@
         "marine": 1848
       },
       "healingDoneByUnitType": {},
+      "teamPerformance": {
+        "damageDealt": {
+          "attacker": 888,
+          "defender": 960
+        },
+        "damageTaken": {
+          "attacker": 960,
+          "defender": 888
+        },
+        "healingDone": {
+          "attacker": 0,
+          "defender": 0
+        }
+      },
+      "costEfficiency": {
+        "damageDealtPerCost": {
+          "attacker": 2.96,
+          "defender": 3.2
+        },
+        "damageTakenPerCost": {
+          "attacker": 3.2,
+          "defender": 2.96
+        },
+        "healingDonePerCost": {
+          "attacker": 0,
+          "defender": 0
+        },
+        "netDamagePerCost": {
+          "attacker": -0.24,
+          "defender": 0.24
+        },
+        "survivorValueRatio": {
+          "attacker": 0,
+          "defender": 0.13
+        }
+      },
       "actionCounts": {
         "attack": 231,
         "damage": 231,
@@ -849,6 +1637,10 @@
         "barrier_absorb": 0,
         "hazard_cleanse": 0,
         "field_effect": 0
+      },
+      "roleSignals": {
+        "actions": {},
+        "statusApplications": {}
       }
     },
     {
@@ -873,6 +1665,30 @@
         },
         "defender": {}
       },
+      "initialValue": {
+        "attacker": {
+          "heavy_gunner": 450
+        },
+        "defender": {
+          "shock_trooper": 300
+        }
+      },
+      "survivorValue": {
+        "attacker": {
+          "heavy_gunner": 275
+        },
+        "defender": {}
+      },
+      "teamValue": {
+        "initial": {
+          "attacker": 450,
+          "defender": 300
+        },
+        "survivors": {
+          "attacker": 275,
+          "defender": 0
+        }
+      },
       "metrics": {
         "firstAttackTick": 9,
         "averageTimeToEngage": 17.51,
@@ -892,6 +1708,42 @@
         "shock_trooper": 960
       },
       "healingDoneByUnitType": {},
+      "teamPerformance": {
+        "damageDealt": {
+          "attacker": 960,
+          "defender": 585
+        },
+        "damageTaken": {
+          "attacker": 585,
+          "defender": 960
+        },
+        "healingDone": {
+          "attacker": 0,
+          "defender": 0
+        }
+      },
+      "costEfficiency": {
+        "damageDealtPerCost": {
+          "attacker": 2.13,
+          "defender": 1.95
+        },
+        "damageTakenPerCost": {
+          "attacker": 1.3,
+          "defender": 3.2
+        },
+        "healingDonePerCost": {
+          "attacker": 0,
+          "defender": 0
+        },
+        "netDamagePerCost": {
+          "attacker": 0.83,
+          "defender": -1.25
+        },
+        "survivorValueRatio": {
+          "attacker": 0.61,
+          "defender": 0
+        }
+      },
       "actionCounts": {
         "attack": 557,
         "damage": 557,
@@ -911,6 +1763,14 @@
         "barrier_absorb": 0,
         "hazard_cleanse": 0,
         "field_effect": 0
+      },
+      "roleSignals": {
+        "actions": {
+          "status_apply": 480
+        },
+        "statusApplications": {
+          "output_suppressed": 480
+        }
       }
     },
     {
@@ -935,6 +1795,30 @@
         },
         "defender": {}
       },
+      "initialValue": {
+        "attacker": {
+          "grenadier": 450
+        },
+        "defender": {
+          "alien_bug": 0
+        }
+      },
+      "survivorValue": {
+        "attacker": {
+          "grenadier": 450
+        },
+        "defender": {}
+      },
+      "teamValue": {
+        "initial": {
+          "attacker": 450,
+          "defender": 0
+        },
+        "survivors": {
+          "attacker": 450,
+          "defender": 0
+        }
+      },
       "metrics": {
         "firstAttackTick": 10,
         "averageTimeToEngage": 13.3,
@@ -952,6 +1836,42 @@
         "alien_bug": 1199
       },
       "healingDoneByUnitType": {},
+      "teamPerformance": {
+        "damageDealt": {
+          "attacker": 1199,
+          "defender": 0
+        },
+        "damageTaken": {
+          "attacker": 0,
+          "defender": 1199
+        },
+        "healingDone": {
+          "attacker": 0,
+          "defender": 0
+        }
+      },
+      "costEfficiency": {
+        "damageDealtPerCost": {
+          "attacker": 2.66,
+          "defender": 0
+        },
+        "damageTakenPerCost": {
+          "attacker": 0,
+          "defender": 0
+        },
+        "healingDonePerCost": {
+          "attacker": 0,
+          "defender": 0
+        },
+        "netDamagePerCost": {
+          "attacker": 2.66,
+          "defender": 0
+        },
+        "survivorValueRatio": {
+          "attacker": 1,
+          "defender": 0
+        }
+      },
       "actionCounts": {
         "attack": 99,
         "damage": 99,
@@ -971,6 +1891,10 @@
         "barrier_absorb": 0,
         "hazard_cleanse": 0,
         "field_effect": 0
+      },
+      "roleSignals": {
+        "actions": {},
+        "statusApplications": {}
       }
     },
     {
@@ -995,6 +1919,30 @@
         },
         "defender": {}
       },
+      "initialValue": {
+        "attacker": {
+          "grenadier": 450
+        },
+        "defender": {
+          "alien_bug": 0
+        }
+      },
+      "survivorValue": {
+        "attacker": {
+          "grenadier": 450
+        },
+        "defender": {}
+      },
+      "teamValue": {
+        "initial": {
+          "attacker": 450,
+          "defender": 0
+        },
+        "survivors": {
+          "attacker": 450,
+          "defender": 0
+        }
+      },
       "metrics": {
         "firstAttackTick": 8,
         "averageTimeToEngage": 19.5,
@@ -1014,6 +1962,42 @@
         "grenadier": 24
       },
       "healingDoneByUnitType": {},
+      "teamPerformance": {
+        "damageDealt": {
+          "attacker": 1243,
+          "defender": 24
+        },
+        "damageTaken": {
+          "attacker": 24,
+          "defender": 1243
+        },
+        "healingDone": {
+          "attacker": 0,
+          "defender": 0
+        }
+      },
+      "costEfficiency": {
+        "damageDealtPerCost": {
+          "attacker": 2.76,
+          "defender": 0
+        },
+        "damageTakenPerCost": {
+          "attacker": 0.05,
+          "defender": 0
+        },
+        "healingDonePerCost": {
+          "attacker": 0,
+          "defender": 0
+        },
+        "netDamagePerCost": {
+          "attacker": 2.71,
+          "defender": 0
+        },
+        "survivorValueRatio": {
+          "attacker": 1,
+          "defender": 0
+        }
+      },
       "actionCounts": {
         "attack": 108,
         "damage": 108,
@@ -1033,6 +2017,10 @@
         "barrier_absorb": 0,
         "hazard_cleanse": 0,
         "field_effect": 0
+      },
+      "roleSignals": {
+        "actions": {},
+        "statusApplications": {}
       }
     },
     {
@@ -1057,6 +2045,30 @@
         },
         "defender": {}
       },
+      "initialValue": {
+        "attacker": {
+          "flamethrower": 300
+        },
+        "defender": {
+          "alien_bug": 0
+        }
+      },
+      "survivorValue": {
+        "attacker": {
+          "flamethrower": 300
+        },
+        "defender": {}
+      },
+      "teamValue": {
+        "initial": {
+          "attacker": 300,
+          "defender": 0
+        },
+        "survivors": {
+          "attacker": 300,
+          "defender": 0
+        }
+      },
       "metrics": {
         "firstAttackTick": 13,
         "averageTimeToEngage": 22.55,
@@ -1076,6 +2088,42 @@
         "flamethrower": 75
       },
       "healingDoneByUnitType": {},
+      "teamPerformance": {
+        "damageDealt": {
+          "attacker": 798,
+          "defender": 75
+        },
+        "damageTaken": {
+          "attacker": 75,
+          "defender": 798
+        },
+        "healingDone": {
+          "attacker": 0,
+          "defender": 0
+        }
+      },
+      "costEfficiency": {
+        "damageDealtPerCost": {
+          "attacker": 2.66,
+          "defender": 0
+        },
+        "damageTakenPerCost": {
+          "attacker": 0.25,
+          "defender": 0
+        },
+        "healingDonePerCost": {
+          "attacker": 0,
+          "defender": 0
+        },
+        "netDamagePerCost": {
+          "attacker": 2.41,
+          "defender": 0
+        },
+        "survivorValueRatio": {
+          "attacker": 1,
+          "defender": 0
+        }
+      },
       "actionCounts": {
         "attack": 64,
         "damage": 205,
@@ -1095,6 +2143,15 @@
         "barrier_absorb": 0,
         "hazard_cleanse": 0,
         "field_effect": 0
+      },
+      "roleSignals": {
+        "actions": {
+          "cone_attack": 39,
+          "status_apply": 180
+        },
+        "statusApplications": {
+          "burn": 180
+        }
       }
     },
     {
@@ -1119,6 +2176,30 @@
           "exosuit": 7
         }
       },
+      "initialValue": {
+        "attacker": {
+          "flamethrower": 450
+        },
+        "defender": {
+          "exosuit": 600
+        }
+      },
+      "survivorValue": {
+        "attacker": {},
+        "defender": {
+          "exosuit": 525
+        }
+      },
+      "teamValue": {
+        "initial": {
+          "attacker": 450,
+          "defender": 600
+        },
+        "survivors": {
+          "attacker": 0,
+          "defender": 525
+        }
+      },
       "metrics": {
         "firstAttackTick": 19,
         "averageTimeToEngage": 23.65,
@@ -1138,6 +2219,42 @@
         "flamethrower": 864
       },
       "healingDoneByUnitType": {},
+      "teamPerformance": {
+        "damageDealt": {
+          "attacker": 307,
+          "defender": 864
+        },
+        "damageTaken": {
+          "attacker": 864,
+          "defender": 307
+        },
+        "healingDone": {
+          "attacker": 0,
+          "defender": 0
+        }
+      },
+      "costEfficiency": {
+        "damageDealtPerCost": {
+          "attacker": 0.68,
+          "defender": 1.44
+        },
+        "damageTakenPerCost": {
+          "attacker": 1.92,
+          "defender": 0.51
+        },
+        "healingDonePerCost": {
+          "attacker": 0,
+          "defender": 0
+        },
+        "netDamagePerCost": {
+          "attacker": -1.24,
+          "defender": 0.93
+        },
+        "survivorValueRatio": {
+          "attacker": 0,
+          "defender": 0.88
+        }
+      },
       "actionCounts": {
         "attack": 208,
         "damage": 355,
@@ -1157,6 +2274,15 @@
         "barrier_absorb": 0,
         "hazard_cleanse": 0,
         "field_effect": 0
+      },
+      "roleSignals": {
+        "actions": {
+          "cone_attack": 160,
+          "status_apply": 307
+        },
+        "statusApplications": {
+          "burn": 307
+        }
       }
     },
     {
@@ -1181,6 +2307,30 @@
         },
         "defender": {}
       },
+      "initialValue": {
+        "attacker": {
+          "sapper": 260
+        },
+        "defender": {
+          "wall": 100
+        }
+      },
+      "survivorValue": {
+        "attacker": {
+          "sapper": 260
+        },
+        "defender": {}
+      },
+      "teamValue": {
+        "initial": {
+          "attacker": 260,
+          "defender": 100
+        },
+        "survivors": {
+          "attacker": 260,
+          "defender": 0
+        }
+      },
       "metrics": {
         "firstAttackTick": 26,
         "averageTimeToEngage": 28,
@@ -1198,6 +2348,42 @@
         "wall": 540
       },
       "healingDoneByUnitType": {},
+      "teamPerformance": {
+        "damageDealt": {
+          "attacker": 540,
+          "defender": 0
+        },
+        "damageTaken": {
+          "attacker": 0,
+          "defender": 540
+        },
+        "healingDone": {
+          "attacker": 0,
+          "defender": 0
+        }
+      },
+      "costEfficiency": {
+        "damageDealtPerCost": {
+          "attacker": 2.08,
+          "defender": 0
+        },
+        "damageTakenPerCost": {
+          "attacker": 0,
+          "defender": 5.4
+        },
+        "healingDonePerCost": {
+          "attacker": 0,
+          "defender": 0
+        },
+        "netDamagePerCost": {
+          "attacker": 2.08,
+          "defender": -5.4
+        },
+        "survivorValueRatio": {
+          "attacker": 1,
+          "defender": 0
+        }
+      },
       "actionCounts": {
         "attack": 4,
         "damage": 4,
@@ -1217,6 +2403,10 @@
         "barrier_absorb": 0,
         "hazard_cleanse": 0,
         "field_effect": 0
+      },
+      "roleSignals": {
+        "actions": {},
+        "statusApplications": {}
       }
     },
     {
@@ -1241,6 +2431,30 @@
           "marine": 27
         }
       },
+      "initialValue": {
+        "attacker": {
+          "shock_trooper": 300
+        },
+        "defender": {
+          "marine": 400
+        }
+      },
+      "survivorValue": {
+        "attacker": {},
+        "defender": {
+          "marine": 337.5
+        }
+      },
+      "teamValue": {
+        "initial": {
+          "attacker": 300,
+          "defender": 400
+        },
+        "survivors": {
+          "attacker": 0,
+          "defender": 337.5
+        }
+      },
       "metrics": {
         "firstAttackTick": 10,
         "averageTimeToEngage": 15.11,
@@ -1260,6 +2474,42 @@
         "shock_trooper": 960
       },
       "healingDoneByUnitType": {},
+      "teamPerformance": {
+        "damageDealt": {
+          "attacker": 260,
+          "defender": 960
+        },
+        "damageTaken": {
+          "attacker": 960,
+          "defender": 260
+        },
+        "healingDone": {
+          "attacker": 0,
+          "defender": 0
+        }
+      },
+      "costEfficiency": {
+        "damageDealtPerCost": {
+          "attacker": 0.87,
+          "defender": 2.4
+        },
+        "damageTakenPerCost": {
+          "attacker": 3.2,
+          "defender": 0.65
+        },
+        "healingDonePerCost": {
+          "attacker": 0,
+          "defender": 0
+        },
+        "netDamagePerCost": {
+          "attacker": -2.33,
+          "defender": 1.75
+        },
+        "survivorValueRatio": {
+          "attacker": 0,
+          "defender": 0.84
+        }
+      },
       "actionCounts": {
         "attack": 146,
         "damage": 146,
@@ -1279,6 +2529,10 @@
         "barrier_absorb": 0,
         "hazard_cleanse": 0,
         "field_effect": 0
+      },
+      "roleSignals": {
+        "actions": {},
+        "statusApplications": {}
       }
     },
     {
@@ -1304,6 +2558,31 @@
         },
         "defender": {}
       },
+      "initialValue": {
+        "attacker": {
+          "jetpack_trooper": 500
+        },
+        "defender": {
+          "sniper": 150,
+          "turret": 200
+        }
+      },
+      "survivorValue": {
+        "attacker": {
+          "jetpack_trooper": 400
+        },
+        "defender": {}
+      },
+      "teamValue": {
+        "initial": {
+          "attacker": 500,
+          "defender": 350
+        },
+        "survivors": {
+          "attacker": 400,
+          "defender": 0
+        }
+      },
       "metrics": {
         "firstAttackTick": 17,
         "averageTimeToEngage": 23.5,
@@ -1325,6 +2604,42 @@
         "turret": 209
       },
       "healingDoneByUnitType": {},
+      "teamPerformance": {
+        "damageDealt": {
+          "attacker": 269,
+          "defender": 125
+        },
+        "damageTaken": {
+          "attacker": 125,
+          "defender": 269
+        },
+        "healingDone": {
+          "attacker": 0,
+          "defender": 0
+        }
+      },
+      "costEfficiency": {
+        "damageDealtPerCost": {
+          "attacker": 0.54,
+          "defender": 0.36
+        },
+        "damageTakenPerCost": {
+          "attacker": 0.25,
+          "defender": 0.77
+        },
+        "healingDonePerCost": {
+          "attacker": 0,
+          "defender": 0
+        },
+        "netDamagePerCost": {
+          "attacker": 0.29,
+          "defender": -0.41
+        },
+        "survivorValueRatio": {
+          "attacker": 0.8,
+          "defender": 0
+        }
+      },
       "actionCounts": {
         "attack": 28,
         "damage": 28,
@@ -1344,6 +2659,12 @@
         "barrier_absorb": 0,
         "hazard_cleanse": 0,
         "field_effect": 0
+      },
+      "roleSignals": {
+        "actions": {
+          "mode_change": 37
+        },
+        "statusApplications": {}
       }
     },
     {
@@ -1369,6 +2690,31 @@
           "marine": 15
         }
       },
+      "initialValue": {
+        "attacker": {
+          "sniper": 300
+        },
+        "defender": {
+          "marine": 200,
+          "medic": 100
+        }
+      },
+      "survivorValue": {
+        "attacker": {},
+        "defender": {
+          "marine": 187.5
+        }
+      },
+      "teamValue": {
+        "initial": {
+          "attacker": 300,
+          "defender": 300
+        },
+        "survivors": {
+          "attacker": 0,
+          "defender": 187.5
+        }
+      },
       "metrics": {
         "firstAttackTick": 14,
         "averageTimeToEngage": 21.37,
@@ -1389,6 +2735,42 @@
         "sniper": 144
       },
       "healingDoneByUnitType": {},
+      "teamPerformance": {
+        "damageDealt": {
+          "attacker": 232,
+          "defender": 144
+        },
+        "damageTaken": {
+          "attacker": 144,
+          "defender": 232
+        },
+        "healingDone": {
+          "attacker": 0,
+          "defender": 0
+        }
+      },
+      "costEfficiency": {
+        "damageDealtPerCost": {
+          "attacker": 0.77,
+          "defender": 0.48
+        },
+        "damageTakenPerCost": {
+          "attacker": 0.48,
+          "defender": 0.77
+        },
+        "healingDonePerCost": {
+          "attacker": 0,
+          "defender": 0
+        },
+        "netDamagePerCost": {
+          "attacker": 0.29,
+          "defender": -0.29
+        },
+        "survivorValueRatio": {
+          "attacker": 0,
+          "defender": 0.63
+        }
+      },
       "actionCounts": {
         "attack": 20,
         "damage": 20,
@@ -1408,6 +2790,10 @@
         "barrier_absorb": 0,
         "hazard_cleanse": 0,
         "field_effect": 0
+      },
+      "roleSignals": {
+        "actions": {},
+        "statusApplications": {}
       }
     },
     {
@@ -1432,6 +2818,30 @@
           "aa_turret": 1
         }
       },
+      "initialValue": {
+        "attacker": {
+          "scout_drone": 450
+        },
+        "defender": {
+          "aa_turret": 160
+        }
+      },
+      "survivorValue": {
+        "attacker": {},
+        "defender": {
+          "aa_turret": 160
+        }
+      },
+      "teamValue": {
+        "initial": {
+          "attacker": 450,
+          "defender": 160
+        },
+        "survivors": {
+          "attacker": 0,
+          "defender": 160
+        }
+      },
       "metrics": {
         "firstAttackTick": 15,
         "averageTimeToEngage": 17.19,
@@ -1451,6 +2861,42 @@
         "scout_drone": 528
       },
       "healingDoneByUnitType": {},
+      "teamPerformance": {
+        "damageDealt": {
+          "attacker": 168,
+          "defender": 528
+        },
+        "damageTaken": {
+          "attacker": 528,
+          "defender": 168
+        },
+        "healingDone": {
+          "attacker": 0,
+          "defender": 0
+        }
+      },
+      "costEfficiency": {
+        "damageDealtPerCost": {
+          "attacker": 0.37,
+          "defender": 3.3
+        },
+        "damageTakenPerCost": {
+          "attacker": 1.17,
+          "defender": 1.05
+        },
+        "healingDonePerCost": {
+          "attacker": 0,
+          "defender": 0
+        },
+        "netDamagePerCost": {
+          "attacker": -0.8,
+          "defender": 2.25
+        },
+        "survivorValueRatio": {
+          "attacker": 0,
+          "defender": 1
+        }
+      },
       "actionCounts": {
         "attack": 45,
         "damage": 57,
@@ -1470,6 +2916,12 @@
         "barrier_absorb": 0,
         "hazard_cleanse": 0,
         "field_effect": 0
+      },
+      "roleSignals": {
+        "actions": {
+          "split_fire": 12
+        },
+        "statusApplications": {}
       }
     },
     {
@@ -1496,6 +2948,32 @@
         },
         "defender": {}
       },
+      "initialValue": {
+        "attacker": {
+          "marine": 100,
+          "medic": 100
+        },
+        "defender": {
+          "alien_bug": 0
+        }
+      },
+      "survivorValue": {
+        "attacker": {
+          "marine": 50,
+          "medic": 100
+        },
+        "defender": {}
+      },
+      "teamValue": {
+        "initial": {
+          "attacker": 200,
+          "defender": 0
+        },
+        "survivors": {
+          "attacker": 150,
+          "defender": 0
+        }
+      },
       "metrics": {
         "firstAttackTick": 11,
         "averageTimeToEngage": 21.43,
@@ -1517,6 +2995,42 @@
       "healingDoneByUnitType": {
         "medic": 180
       },
+      "teamPerformance": {
+        "damageDealt": {
+          "attacker": 400,
+          "defender": 84
+        },
+        "damageTaken": {
+          "attacker": 84,
+          "defender": 400
+        },
+        "healingDone": {
+          "attacker": 180,
+          "defender": 0
+        }
+      },
+      "costEfficiency": {
+        "damageDealtPerCost": {
+          "attacker": 2,
+          "defender": 0
+        },
+        "damageTakenPerCost": {
+          "attacker": 0.42,
+          "defender": 0
+        },
+        "healingDonePerCost": {
+          "attacker": 0.9,
+          "defender": 0
+        },
+        "netDamagePerCost": {
+          "attacker": 1.58,
+          "defender": 0
+        },
+        "survivorValueRatio": {
+          "attacker": 0.75,
+          "defender": 0
+        }
+      },
       "actionCounts": {
         "attack": 68,
         "damage": 68,
@@ -1536,6 +3050,12 @@
         "barrier_absorb": 0,
         "hazard_cleanse": 0,
         "field_effect": 0
+      },
+      "roleSignals": {
+        "actions": {
+          "heal": 18
+        },
+        "statusApplications": {}
       }
     },
     {
@@ -1562,6 +3082,32 @@
         },
         "defender": {}
       },
+      "initialValue": {
+        "attacker": {
+          "marine": 200,
+          "officer": 300
+        },
+        "defender": {
+          "alien_bug": 0
+        }
+      },
+      "survivorValue": {
+        "attacker": {
+          "marine": 200,
+          "officer": 300
+        },
+        "defender": {}
+      },
+      "teamValue": {
+        "initial": {
+          "attacker": 500,
+          "defender": 0
+        },
+        "survivors": {
+          "attacker": 500,
+          "defender": 0
+        }
+      },
       "metrics": {
         "firstAttackTick": 10,
         "averageTimeToEngage": 17.5,
@@ -1582,6 +3128,42 @@
         "officer": 1
       },
       "healingDoneByUnitType": {},
+      "teamPerformance": {
+        "damageDealt": {
+          "attacker": 600,
+          "defender": 58
+        },
+        "damageTaken": {
+          "attacker": 58,
+          "defender": 600
+        },
+        "healingDone": {
+          "attacker": 0,
+          "defender": 0
+        }
+      },
+      "costEfficiency": {
+        "damageDealtPerCost": {
+          "attacker": 1.2,
+          "defender": 0
+        },
+        "damageTakenPerCost": {
+          "attacker": 0.12,
+          "defender": 0
+        },
+        "healingDonePerCost": {
+          "attacker": 0,
+          "defender": 0
+        },
+        "netDamagePerCost": {
+          "attacker": 1.08,
+          "defender": 0
+        },
+        "survivorValueRatio": {
+          "attacker": 1,
+          "defender": 0
+        }
+      },
       "actionCounts": {
         "attack": 80,
         "damage": 80,
@@ -1601,6 +3183,14 @@
         "barrier_absorb": 0,
         "hazard_cleanse": 0,
         "field_effect": 0
+      },
+      "roleSignals": {
+        "actions": {
+          "status_apply": 94
+        },
+        "statusApplications": {
+          "haste": 94
+        }
       }
     },
     {
@@ -1625,6 +3215,30 @@
           "marine": 21
         }
       },
+      "initialValue": {
+        "attacker": {
+          "scavenger_buggy": 400
+        },
+        "defender": {
+          "marine": 300
+        }
+      },
+      "survivorValue": {
+        "attacker": {},
+        "defender": {
+          "marine": 262.5
+        }
+      },
+      "teamValue": {
+        "initial": {
+          "attacker": 400,
+          "defender": 300
+        },
+        "survivors": {
+          "attacker": 0,
+          "defender": 262.5
+        }
+      },
       "metrics": {
         "firstAttackTick": 10,
         "averageTimeToEngage": 12.24,
@@ -1644,6 +3258,42 @@
         "scavenger_buggy": 504
       },
       "healingDoneByUnitType": {},
+      "teamPerformance": {
+        "damageDealt": {
+          "attacker": 207,
+          "defender": 504
+        },
+        "damageTaken": {
+          "attacker": 504,
+          "defender": 207
+        },
+        "healingDone": {
+          "attacker": 0,
+          "defender": 0
+        }
+      },
+      "costEfficiency": {
+        "damageDealtPerCost": {
+          "attacker": 0.52,
+          "defender": 1.68
+        },
+        "damageTakenPerCost": {
+          "attacker": 1.26,
+          "defender": 0.69
+        },
+        "healingDonePerCost": {
+          "attacker": 0,
+          "defender": 0
+        },
+        "netDamagePerCost": {
+          "attacker": -0.74,
+          "defender": 0.99
+        },
+        "survivorValueRatio": {
+          "attacker": 0,
+          "defender": 0.88
+        }
+      },
       "actionCounts": {
         "attack": 93,
         "damage": 93,
@@ -1663,6 +3313,12 @@
         "barrier_absorb": 0,
         "hazard_cleanse": 0,
         "field_effect": 0
+      },
+      "roleSignals": {
+        "actions": {
+          "charge_damage": 5
+        },
+        "statusApplications": {}
       }
     },
     {
@@ -1688,6 +3344,31 @@
         },
         "defender": {}
       },
+      "initialValue": {
+        "attacker": {
+          "scavenger_buggy": 400
+        },
+        "defender": {
+          "medic": 100,
+          "sniper": 150
+        }
+      },
+      "survivorValue": {
+        "attacker": {
+          "scavenger_buggy": 333.33
+        },
+        "defender": {}
+      },
+      "teamValue": {
+        "initial": {
+          "attacker": 400,
+          "defender": 250
+        },
+        "survivors": {
+          "attacker": 333.33,
+          "defender": 0
+        }
+      },
       "metrics": {
         "firstAttackTick": 10,
         "averageTimeToEngage": 16.14,
@@ -1710,6 +3391,42 @@
       "healingDoneByUnitType": {
         "medic": 20
       },
+      "teamPerformance": {
+        "damageDealt": {
+          "attacker": 262,
+          "defender": 112
+        },
+        "damageTaken": {
+          "attacker": 112,
+          "defender": 262
+        },
+        "healingDone": {
+          "attacker": 0,
+          "defender": 20
+        }
+      },
+      "costEfficiency": {
+        "damageDealtPerCost": {
+          "attacker": 0.66,
+          "defender": 0.45
+        },
+        "damageTakenPerCost": {
+          "attacker": 0.28,
+          "defender": 1.05
+        },
+        "healingDonePerCost": {
+          "attacker": 0,
+          "defender": 0.08
+        },
+        "netDamagePerCost": {
+          "attacker": 0.38,
+          "defender": -0.6
+        },
+        "survivorValueRatio": {
+          "attacker": 0.83,
+          "defender": 0
+        }
+      },
       "actionCounts": {
         "attack": 15,
         "damage": 15,
@@ -1729,6 +3446,13 @@
         "barrier_absorb": 0,
         "hazard_cleanse": 0,
         "field_effect": 0
+      },
+      "roleSignals": {
+        "actions": {
+          "charge_damage": 8,
+          "heal": 2
+        },
+        "statusApplications": {}
       }
     }
   ]

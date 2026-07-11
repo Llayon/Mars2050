@@ -450,6 +450,21 @@ The early roster should teach clean counters:
 | `officer` | Command aura support | Mandatory aura stacking |
 | `jetpack_trooper` | Backline/flank access | Direct melee superiority over shock troopers |
 
+Tier 1 acceptance gates now separate hard role contracts from diagnostic
+numbers. Balance passes may change exact survivors or duration, but these
+contracts should stay true unless the role document is updated first:
+
+| Gate | Scenario | Contract protected |
+| --- | --- | --- |
+| Suppression carry | `tier1_heavy_gunner_sustained_line` | Heavy gunner must emit visible `output_suppressed`, not only raw damage. |
+| Fire screen clear | `tier1_flamethrower_vs_swarm` | Flamethrower should beat light swarm through cone/burn pressure. |
+| Fire counterplay | `tier1_flamethrower_vs_armored_screen` | Flamethrower should not become a reliable armored-screen killer. |
+| Demolition burst | `tier1_sapper_vs_static_guard` | Sapper should delete static fortifications through risky burst. |
+| Dedicated anti-air | `tier1_scout_drone_aa_check` | Scout drones should lose to a prepared AA turret. |
+| Precision support removal | `tier1_sniper_priority_target` | Sniper should remove support, not replace frontline DPS. |
+| AoE anti-clump | `tier1_grenadier_vs_clump` / `tier1_grenadier_vs_spread` | Grenadier should punish clumps more quickly than spread formations. |
+| Charge flank | `tier1_buggy_open_flank` | Buggy should need open approach/charge value to win cleanly. |
+
 ## Upgrade Implications
 
 Upgrades should transform role instead of only increasing stats. Good examples to
