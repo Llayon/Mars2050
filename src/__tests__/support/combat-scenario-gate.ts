@@ -12,6 +12,8 @@ interface ScenarioOptions {
 interface MetricBounds {
   firstAttackTickMax?: number
   maxOverlapLessThan?: number
+  maxOverlapRatioLessThan?: number
+  severeOverlapSamplesLessThan?: number
   targetSwitchesLessThan?: number
   battleDurationLessThan?: number
   averageTimeToEngageMax?: number
@@ -63,6 +65,8 @@ export function expectMetricBounds(result: BattleResult, bounds: MetricBounds, l
     expect(metrics.firstAttackTick ?? MAX_TICKS, label).toBeLessThanOrEqual(bounds.firstAttackTickMax)
   }
   if (bounds.maxOverlapLessThan !== undefined) expect(metrics.maxOverlap, label).toBeLessThan(bounds.maxOverlapLessThan)
+  if (bounds.maxOverlapRatioLessThan !== undefined) expect(metrics.maxOverlapRatio, label).toBeLessThan(bounds.maxOverlapRatioLessThan)
+  if (bounds.severeOverlapSamplesLessThan !== undefined) expect(metrics.severeOverlapSamples, label).toBeLessThan(bounds.severeOverlapSamplesLessThan)
   if (bounds.targetSwitchesLessThan !== undefined) expect(metrics.targetSwitches, label).toBeLessThan(bounds.targetSwitchesLessThan)
   if (bounds.battleDurationLessThan !== undefined) expect(metrics.battleDurationTicks, label).toBeLessThan(bounds.battleDurationLessThan)
   if (bounds.averageTimeToEngageMax !== undefined && metrics.averageTimeToEngage !== null) {

@@ -11,8 +11,12 @@ export interface CombatMetrics {
   firstAttackTick: number | null
   battleDurationTicks: number
   targetSwitches: number
+  overlapSamples: number
   averageOverlap: number
   maxOverlap: number
+  averageOverlapRatio: number
+  maxOverlapRatio: number
+  severeOverlapSamples: number
   averageTimeToEngage: number | null
   averageEngagementDistance: number | null
   meleeSlotWaitTicks: number
@@ -28,8 +32,11 @@ export interface CombatMetricsCollector {
   firstAttackTick: number | null
   targetSwitches: number
   totalOverlap: number
+  totalOverlapRatio: number
   overlapSamples: number
   maxOverlap: number
+  maxOverlapRatio: number
+  severeOverlapSamples: number
   damageByUnitType: Record<string, number>
   damageTakenByUnitType: Record<string, number>
   healingDoneByUnitType: Record<string, number>
@@ -49,8 +56,11 @@ export function createCombatMetrics(units: SimUnit[]): CombatMetricsCollector {
     firstAttackTick: null,
     targetSwitches: 0,
     totalOverlap: 0,
+    totalOverlapRatio: 0,
     overlapSamples: 0,
     maxOverlap: 0,
+    maxOverlapRatio: 0,
+    severeOverlapSamples: 0,
     damageByUnitType: {},
     damageTakenByUnitType: {},
     healingDoneByUnitType: {},
@@ -96,8 +106,12 @@ export function finalizeCombatMetrics(
     firstAttackTick: metrics.firstAttackTick,
     battleDurationTicks,
     targetSwitches: metrics.targetSwitches,
+    overlapSamples: metrics.overlapSamples,
     averageOverlap: metrics.overlapSamples > 0 ? metrics.totalOverlap / metrics.overlapSamples : 0,
     maxOverlap: metrics.maxOverlap,
+    averageOverlapRatio: metrics.overlapSamples > 0 ? metrics.totalOverlapRatio / metrics.overlapSamples : 0,
+    maxOverlapRatio: metrics.maxOverlapRatio,
+    severeOverlapSamples: metrics.severeOverlapSamples,
     averageTimeToEngage: getAverageTimeToEngage(metrics),
     averageEngagementDistance: metrics.engagementDistanceSamples > 0 ? metrics.engagementDistanceTotal / metrics.engagementDistanceSamples : null,
     meleeSlotWaitTicks: metrics.meleeSlotWaitTicks,
@@ -202,6 +216,10 @@ function recordOverlap(metrics: CombatMetricsCollector, units: SimUnit[]): void 
 
       metrics.totalOverlap += overlap
       metrics.maxOverlap = Math.max(metrics.maxOverlap, overlap)
+      const overlapRatio = minDistance > 0 ? overlap / minDistance : 0
+      metrics.totalOverlapRatio += overlapRatio
+      metrics.maxOverlapRatio = Math.max(metrics.maxOverlapRatio, overlapRatio)
+      if (overlapRatio >= 0.5) metrics.severeOverlapSamples++
       metrics.overlapSamples++
     }
   }

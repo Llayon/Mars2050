@@ -561,5 +561,8 @@ Current backlog:
 7. Keep `npm run test:combat:scenarios` green before balance tuning; it is the
    runtime gate for scenario termination, replay-visible mechanics, spawn caps,
    and soft movement metrics.
-8. Regenerate `npm run combat:snapshot` before and after balance changes so
+8. Track unit overlap with both raw pixels and normalized severity ratio;
+   `severeOverlapSamples` means 50%+ normalized pair overlap and should be
+   treated as a movement QA signal before changing unit balance.
+9. Regenerate `npm run combat:snapshot` before and after balance changes so
    unit outcomes, damage maps, and replay action counts stay comparable.

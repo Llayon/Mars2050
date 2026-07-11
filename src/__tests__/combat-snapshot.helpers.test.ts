@@ -62,7 +62,7 @@ describe('combat snapshot helpers', () => {
 
   it('renders JSON with a trailing newline for stable file output', () => {
     const rendered = renderSnapshotJson({
-      schemaVersion: 3,
+      schemaVersion: 4,
       generatedBy: 'npm run combat:snapshot',
       seed: 24680,
       presets: [],
@@ -72,7 +72,7 @@ describe('combat snapshot helpers', () => {
 
     expect(rendered.endsWith('\n')).toBe(true)
     expect(JSON.parse(rendered)).toEqual({
-      schemaVersion: 3,
+      schemaVersion: 4,
       generatedBy: 'npm run combat:snapshot',
       seed: 24680,
       presets: [],

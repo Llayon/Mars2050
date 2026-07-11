@@ -62,6 +62,8 @@ describe('combat QA simulator presets', () => {
     expectMetricBounds(result, {
       firstAttackTickMax: 25,
       maxOverlapLessThan: 30,
+      maxOverlapRatioLessThan: 1,
+      severeOverlapSamplesLessThan: 2500,
       targetSwitchesLessThan: 500,
       battleDurationLessThan: MAX_TICKS,
       averageTimeToEngageMax: 40,

@@ -56,8 +56,12 @@ interface ScenarioSummary {
     firstAttackTick: number | null
     averageTimeToEngage: number | null
     averageEngagementDistance: number | null
+    overlapSamples: number
     maxOverlap: number
     averageOverlap: number
+    maxOverlapRatio: number
+    averageOverlapRatio: number
+    severeOverlapSamples: number
     targetSwitches: number
     meleeSlotWaitTicks: number
     overkillDamage: number
@@ -72,7 +76,7 @@ interface ScenarioSummary {
 }
 
 interface CombatBalanceSnapshot {
-  schemaVersion: 3
+  schemaVersion: 4
   generatedBy: 'npm run combat:snapshot'
   seed: number
   presets: { id: string; name: string }[]
@@ -91,7 +95,7 @@ export function buildCombatBalanceSnapshot(): CombatBalanceSnapshot {
   )
 
   return {
-    schemaVersion: 3,
+    schemaVersion: 4,
     generatedBy: 'npm run combat:snapshot',
     seed: SNAPSHOT_SEED,
     presets: SIMULATOR_PRESET_OPTIONS.map(option => ({ id: option.id, name: option.name })),
@@ -128,8 +132,12 @@ export function summarizeScenario(presetId: string, group: ScenarioGroup, name: 
       firstAttackTick: result.metrics.firstAttackTick,
       averageTimeToEngage: roundNullable(result.metrics.averageTimeToEngage),
       averageEngagementDistance: roundNullable(result.metrics.averageEngagementDistance),
+      overlapSamples: result.metrics.overlapSamples,
       maxOverlap: roundNumber(result.metrics.maxOverlap),
       averageOverlap: roundNumber(result.metrics.averageOverlap),
+      maxOverlapRatio: roundNumber(result.metrics.maxOverlapRatio),
+      averageOverlapRatio: roundNumber(result.metrics.averageOverlapRatio),
+      severeOverlapSamples: result.metrics.severeOverlapSamples,
       targetSwitches: result.metrics.targetSwitches,
       meleeSlotWaitTicks: result.metrics.meleeSlotWaitTicks,
       overkillDamage: roundNumber(result.metrics.overkillDamage),
@@ -180,6 +188,7 @@ export function renderSnapshotMarkdown(snapshot: CombatBalanceSnapshot): string 
     `Tier 1 scenarios: ${snapshot.tier1Scenarios.map(scenario => `\`${scenario.id}\``).join(', ')}`,
     '',
     'Cost/value metrics use a simple equal-weight resource value model over `hireCost`. Treat them as balance diagnostics, not final economy pricing.',
+    'Overlap metrics report both raw pixels and normalized ratio; `severeOverlapSamples` counts pair samples at 50%+ normalized overlap.',
     '',
     '## Scenario Summary',
     '',
@@ -222,7 +231,7 @@ export function renderSnapshotMarkdown(snapshot: CombatBalanceSnapshot): string 
       `- Team performance: damageDealt=${formatTeamTotals(scenario.teamPerformance.damageDealt)}, damageTaken=${formatTeamTotals(scenario.teamPerformance.damageTaken)}, healingDone=${formatTeamTotals(scenario.teamPerformance.healingDone)}`,
       `- Cost efficiency: damageDealtPerCost=${formatTeamTotals(scenario.costEfficiency.damageDealtPerCost)}, damageTakenPerCost=${formatTeamTotals(scenario.costEfficiency.damageTakenPerCost)}, healingDonePerCost=${formatTeamTotals(scenario.costEfficiency.healingDonePerCost)}, netDamagePerCost=${formatTeamTotals(scenario.costEfficiency.netDamagePerCost)}, survivorValueRatio=${formatTeamTotals(scenario.costEfficiency.survivorValueRatio)}`,
       `- Role signals: ${formatRoleSignals(scenario.roleSignals)}`,
-      `- Engagement: averageTimeToEngage=${formatNullable(scenario.metrics.averageTimeToEngage)}, averageEngagementDistance=${formatNullable(scenario.metrics.averageEngagementDistance)}, averageOverlap=${scenario.metrics.averageOverlap}, meleeSlotWaitTicks=${scenario.metrics.meleeSlotWaitTicks}, overkillDamage=${scenario.metrics.overkillDamage}`,
+      `- Engagement: averageTimeToEngage=${formatNullable(scenario.metrics.averageTimeToEngage)}, averageEngagementDistance=${formatNullable(scenario.metrics.averageEngagementDistance)}, averageOverlap=${scenario.metrics.averageOverlap}, maxOverlapRatio=${scenario.metrics.maxOverlapRatio}, averageOverlapRatio=${scenario.metrics.averageOverlapRatio}, severeOverlapSamples=${scenario.metrics.severeOverlapSamples}/${scenario.metrics.overlapSamples}, meleeSlotWaitTicks=${scenario.metrics.meleeSlotWaitTicks}, overkillDamage=${scenario.metrics.overkillDamage}`,
       '',
     ]),
   ].join('\n')
