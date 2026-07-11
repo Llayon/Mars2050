@@ -15,6 +15,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:combat:scenarios": "vitest run src/__tests__/combat.qa-presets.test.ts",
+    "test:combat:tier1": "vitest run src/__tests__/combat.tier1-role-scenarios.test.ts",
     "test:e2e": "playwright test",
     "test:e2e:qa": "playwright test tests/e2e/simulator2-load.spec.ts tests/e2e/simulator2-replay.spec.ts --project=chromium",
     "test:e2e:replay": "playwright test tests/e2e/simulator2-replay.spec.ts --project=chromium",

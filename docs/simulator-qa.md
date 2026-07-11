@@ -23,6 +23,7 @@
 | Command | Scope |
 | --- | --- |
 | `npm run test:combat:scenarios` | Runtime scenario metrics gate: simulator presets, replay actions, termination, spawn caps, and soft combat metrics. |
+| `npm run test:combat:tier1` | Tier 1 role gate: deterministic role scenarios, replay-visible role signals, and non-zero carrier output. |
 | `npm run combat:snapshot` | Generates committed balance-readiness reports in `docs/combat-balance-snapshot.md` and `.json`. |
 | `npm run test:e2e:replay` | Fast replay smoke: presets, mobile fit, debug overlays, timeline seek, primitive event labels. |
 | `npm run test:e2e:replay-baseline` | Canvas screenshot baselines for stable visual states. |

@@ -287,6 +287,27 @@ upgrades, auras, or hazards without hardcoding one-off behavior.
 | Needs mechanic | Name/role promises behavior that is not implemented yet. |
 | Legacy | Old/static/PvE-only unit that should not drive PvP balance. |
 
+## Tier 1 Role Matrix
+
+Tier 1 should teach readable counters before exact numeric balance. These roles
+are the contract for the dedicated Tier 1 balance scenarios included in
+`npm run combat:snapshot`.
+
+| Unit | Primary job | Strength | Weakness / counter | Role signal |
+| --- | --- | --- | --- | --- |
+| `marine` | Baseline line carry | Flexible ground DPS and clean reference point for balance comparisons. | Should lose specialist races against AoE, burst demolition, suppression, and flank access. | Sustained `damage` without special replay primitives. |
+| `heavy_gunner` | Sustained fire / suppression candidate | Wins when protected long enough to keep firing. | Slow, angle-dependent, vulnerable to burst, flankers, and long-range priority fire. | High `attack`/`damage` cadence; future suppression can attach here. |
+| `grenadier` | Mid-range anti-clump | Punishes dense light formations and melee blobs. | Inefficient into scattered, fast, or high-HP single targets. | Multi-target `damage` from AoE splash. |
+| `flamethrower` | Short-range burn screen clear | Cone pressure plus `burn` makes it anti-swarm and anti-armor-over-time. | Must enter danger range; should not replace sapper demolition or ranged carry DPS. | `cone_attack` plus `status_apply: burn`. |
+| `sapper` | Burst demolition assassin | Deletes static guards, walls, or clumped high-value targets if it reaches them. | Low HP, low uptime, poor sustained fight value after burst window. | Large short-range `damage`, not burn or suppression. |
+| `shock_trooper` | Melee tempo pressure | Forces immediate response and breaks weak rifle lines. | Should be answered by AoE, kiting, burn zones, and protected sustained fire. | Fast engage, melee `damage`, high casualty exposure. |
+| `jetpack_trooper` | Flanker / backline access | Crosses space quickly and pressures fragile support or ranged units. | Exposed to AA while moving and weaker in a direct brawl than pure melee. | `mode_change` before committing to attack. |
+| `sniper` | Precision range pressure | Deletes low-HP or support targets from long range. | Low body count, overkill risk, vulnerable if screened or flanked. | Long-range `damage` from assassin profile. |
+| `scout_drone` | Fast air scout / harassment | Tests whether the opponent brought dedicated AA. | Fragile and should lose to real anti-air. | Flying harassment damage in the AA check scenario. |
+| `medic` | Organic sustain support | Extends frontline uptime through direct healing. | Does not solve burst, armor, shields, structures, or mechanical repair. | `heal` actions and `healingDoneByUnitType.medic`. |
+| `officer` | Command aura support | Improves nearby formation tempo without being a healer. | No direct damage, depends on allied units and aura positioning. | `status_apply: haste`. |
+| `scavenger_buggy` | Fast charge flanker | Converts travel distance and angle into burst pressure. | Needs room to accelerate; weak into hard stops and sustained focus. | `charge_damage`. |
+
 ## Current Roster Review
 
 | Unit | Intended role | Current facts | Status | Notes |
@@ -301,7 +322,7 @@ upgrades, auras, or hazards without hardcoding one-off behavior.
 | `alien_worm` | PvE damage tank/disruptor | Heavy AoE melee, low DPS | Tune | Needs either more durability or a formation disruption identity. |
 | `marine` | Baseline carry | 8 units, 280 total HP, high DPS, no native AA | Tune | Less universal after AA cleanup. Can become emergency AA through upgrades. |
 | `shock_trooper` | Tempo pressure/screen | 8 units, 360 total HP, very high DPS | Tune | Too efficient for baseline melee. Needs clearer weakness to AoE/ranged. |
-| `flamethrower` | Short-range screen clear | 4 units, low range AoE | Ready | Good identity. Later add burn/status version. |
+| `flamethrower` | Short-range screen clear | 4 units, low range cone plus burn | Ready | Good identity. Keep it distinct from sapper burst: burn/DoT and cone pressure, not demolition. |
 | `scout_drone` | Fast air screen/scout | 5 units, high speed, air-to-ground only | Tune | Fragile flyer/scout baseline. Can take `sensor_suite` for anti-stealth reveal. |
 | `medic` | Organic utility support | 3 units, heal attack, short support range | Ready | Good early support. Should not be a damage unit. |
 | `sniper` | Precision range pressure/assassin | 2 units, 280 range, `assassin`, no native AA | Tune | Good ground precision role. AA should remain upgrade-based if needed. |
@@ -423,6 +444,11 @@ The early roster should teach clean counters:
 | `grenadier` | Mid-range AoE | Single-target efficiency |
 | `heavy_gunner` | Sustained carry/suppression | Overlap with marine and dedicated screen clear |
 | `sapper` | Burst demolition | Reliability and survivability |
+| `scout_drone` | Fast air scout/harassment | Generalist DPS and durability |
+| `sniper` | Precision range pressure | Screen clear and AA relevance |
+| `scavenger_buggy` | Charge flank tempo | Straight-line brawler reliability |
+| `officer` | Command aura support | Mandatory aura stacking |
+| `jetpack_trooper` | Backline/flank access | Direct melee superiority over shock troopers |
 
 ## Upgrade Implications
 
