@@ -6,6 +6,7 @@ import { applyDamageSharing } from './combat.damage-sharing'
 import { getMovementDefenseReduction } from './combat.burrow'
 import { getFieldDamageReduction } from './combat.field-effects'
 import { getMarkedDamageMultiplier, getMarkedExecuteThreshold } from './combat.mark'
+import { applyOutputSuppressionDamage } from './combat.output-suppression'
 import { getPercentHpDamage } from './combat.percent-damage'
 import { tryInterceptProjectile } from './combat.projectile-defense'
 import { getRankDamageMultiplier } from './combat.rank-scaling'
@@ -31,6 +32,7 @@ export interface CombatDamageContext {
   hazards?: SimHazard[]
   onUnitDeath?: (unit: SimUnit) => void
   allowPercentHpDamage?: boolean
+  allowMinimumDamage?: boolean
   interceptable?: boolean
 }
 /**
@@ -63,10 +65,9 @@ export function applyCombatDamage(
     return createDamageResult({ blockedDamage: raw, intercepted: true })
   }
   const defense = getEffectiveDefense(attacker, target)
-  let damage = Math.max(1, raw - defense)
+  let damage = context.allowMinimumDamage === false ? Math.max(0, raw - defense) : Math.max(1, raw - defense)
 
-  const suppression = getStatusValue(attacker, 'output_suppressed') ?? 0
-  if (suppression > 0) damage = Math.max(0, Math.floor(damage * Math.max(0, 1 - suppression)))
+  damage = applyOutputSuppressionDamage(attacker, damage)
 
   damage = applyAccuracyPenalty(attacker, damage)
 

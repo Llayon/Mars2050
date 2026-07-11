@@ -296,7 +296,7 @@ are the contract for the dedicated Tier 1 balance scenarios included in
 | Unit | Primary job | Strength | Weakness / counter | Role signal |
 | --- | --- | --- | --- | --- |
 | `marine` | Baseline line carry | Flexible ground DPS and clean reference point for balance comparisons. | Should lose specialist races against AoE, burst demolition, suppression, and flank access. | Sustained `damage` without special replay primitives. |
-| `heavy_gunner` | Sustained fire / suppression candidate | Wins when protected long enough to keep firing. | Slow, angle-dependent, vulnerable to burst, flankers, and long-range priority fire. | High `attack`/`damage` cadence plus `output_suppressed` applications. |
+| `heavy_gunner` | Sustained fire / suppression candidate | Wins when protected long enough to keep firing. | Slow, angle-dependent, vulnerable to burst, flankers, and long-range priority fire. | High cadence plus `split_fire` spray and stacked `output_suppressed` applications. |
 | `grenadier` | Mid-range anti-clump | Punishes dense light formations and melee blobs. | Inefficient into scattered, fast, or high-HP single targets. | Multi-target `damage` from AoE splash. |
 | `flamethrower` | Short-range burn screen clear | Cone pressure plus `burn` makes it anti-swarm and anti-armor-over-time. | Must enter danger range; should not replace sapper demolition or ranged carry DPS. | `cone_attack` plus `status_apply: burn`. |
 | `sapper` | Burst demolition assassin | Deletes static guards and walls if it reaches them. | Low HP, low uptime, narrow blast, poor sustained fight value against mobile screens. | Large short-range `damage`, not burn or suppression. |
@@ -328,7 +328,7 @@ are the contract for the dedicated Tier 1 balance scenarios included in
 | `sniper` | Precision range pressure/assassin | 2 units, 280 range, `assassin`, no native AA | Tune | Good ground precision role. AA should remain upgrade-based if needed. |
 | `scavenger_buggy` | Tempo pressure/flanker | 3 vehicles, very fast, short range, movement-distance charge damage | Tune | Now has raider burst identity. Tune charge cap, cooldown, and counterplay. |
 | `grenadier` | Mid-range screen clear | 4 units, AoE, explosive tag | Ready | Solid anti-clump role. Can gain AA through upgrade only. |
-| `heavy_gunner` | Sustained carry/suppression | 6 units, 200 range, high DPS, no native AA | Tune | Overlaps marine/gatling less after AA cleanup. Should become suppression or screen clear specialist. |
+| `heavy_gunner` | Sustained carry/suppression | 6 units, 200 range, low raw hit damage, suppression split fire, no native AA | Tune | Now beats baseline rifle lines through suppression spray rather than marine-like DPS. Keep watching overlap with gatling screen clear. |
 | `sapper` | Demolition assassin | 3 units, high primary burst, narrow AoE, low HP | Ready | Good high-risk unit. Mobile screens now counter it more reliably than static targets. |
 | `officer` | Command utility support | Passive haste aura for nearby allies; can add sensor-suite reveal | Tune | No longer a generic healer. Tune radius/value so it supports formations without becoming mandatory. |
 | `jetpack_trooper` | Jump flanker/backline killer | 5 infantry, fast melee, enters air mode while moving and lands before attacking | Tune | Now has a ground/air mode identity: exposed to AA while advancing, targetable by ground weapons when committed. Tune timing and counters versus scout drones. |
@@ -457,6 +457,7 @@ contracts should stay true unless the role document is updated first:
 | Gate | Scenario | Contract protected |
 | --- | --- | --- |
 | Suppression carry | `tier1_heavy_gunner_sustained_line` | Heavy gunner must emit visible `output_suppressed`, not only raw damage. |
+| Suppression vs baseline | `tier1_heavy_gunner_vs_marine_line` | Heavy gunner should beat baseline rifle lines through suppression spray, not raw marine-like DPS. |
 | Fire screen clear | `tier1_flamethrower_vs_swarm` | Flamethrower should beat light swarm through cone/burn pressure. |
 | Fire counterplay | `tier1_flamethrower_vs_armored_screen` | Flamethrower should not become a reliable armored-screen killer. |
 | Demolition burst | `tier1_sapper_vs_static_guard` | Sapper should delete static fortifications through risky burst. |
@@ -470,12 +471,14 @@ Tier 1 cost/value pass v3 keeps runtime outcomes stable while correcting early
 economy signals: `aa_turret` is priced closer to a hard counter, `scout_drone`
 is cheaper as an expendable air scout, `jetpack_trooper` pays more for clean
 backline access, and `heavy_gunner` suppression is slightly softer per hit.
+The follow-up suppression pass makes `output_suppressed` stack by source with a
+cap, extends action cooldown under suppression, and lets heavy gunner spread
+status through split fire without forced secondary HP chip damage.
 
 Tier 1 matchup diagnostics extend the snapshot matrix without locking winners:
 
 | Diagnostic | Scenario | Question answered |
 | --- | --- | --- |
-| Suppression vs baseline | `tier1_heavy_gunner_vs_marine_line` | Does heavy gunner value come from sustained suppression, not just marine-like DPS? |
 | Melee pressure vs AoE | `tier1_shock_trooper_vs_grenadier_screen` | Does shock pressure expose a readable weakness to explosive anti-clump fire? |
 | Demolition vs mobile screen | `tier1_sapper_vs_mobile_screen` | Does sapper remain over-reliable when the target is mobile instead of static? |
 | Flanker vs AA screen | `tier1_jetpack_vs_aa_screen` | Does air-mode approach create visible risk against prepared anti-air? |

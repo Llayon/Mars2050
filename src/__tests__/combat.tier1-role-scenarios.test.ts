@@ -33,7 +33,6 @@ const DAMAGE_GATES: { scenarioId: string; unitType: string }[] = [
 ]
 
 const DIAGNOSTIC_MATCHUP_SCENARIOS = [
-  'tier1_heavy_gunner_vs_marine_line',
   'tier1_shock_trooper_vs_grenadier_screen',
   'tier1_sapper_vs_mobile_screen',
   'tier1_jetpack_vs_aa_screen',
@@ -120,6 +119,11 @@ describe('Tier 1 combat role scenarios', () => {
     const heavy = simulateScenario(findScenario('tier1_heavy_gunner_sustained_line'))
     expect(countStatusApplications(heavy, 'output_suppressed'), 'tier1_heavy_gunner_sustained_line').toBeGreaterThanOrEqual(50)
 
+    const heavyBaseline = simulateScenario(findScenario('tier1_heavy_gunner_vs_marine_line'))
+    expect(heavyBaseline.winner, 'tier1_heavy_gunner_vs_marine_line').toBe('attacker')
+    expect(heavyBaseline.survivors.some(unit => unit.team === 'attacker' && unit.type === 'heavy_gunner'), 'tier1_heavy_gunner_vs_marine_line').toBe(true)
+    expect(countActions(heavyBaseline, 'split_fire'), 'tier1_heavy_gunner_vs_marine_line').toBeGreaterThan(0)
+
     const flameSwarm = simulateScenario(findScenario('tier1_flamethrower_vs_swarm'))
     const flameArmor = simulateScenario(findScenario('tier1_flamethrower_vs_armored_screen'))
     expect(flameSwarm.winner, 'tier1_flamethrower_vs_swarm').toBe('attacker')
@@ -150,10 +154,6 @@ describe('Tier 1 combat role scenarios', () => {
       expect(result.logs.at(-1)?.tick ?? MAX_TICKS, scenarioId).toBeLessThan(MAX_TICKS)
       expect(result.metrics?.battleDurationTicks ?? 0, scenarioId).toBeGreaterThan(0)
     }
-
-    const heavy = simulateScenario(findScenario('tier1_heavy_gunner_vs_marine_line'))
-    expect(heavy.metrics?.damageByUnitType.heavy_gunner ?? 0, 'tier1_heavy_gunner_vs_marine_line').toBeGreaterThan(0)
-    expect(countStatusApplications(heavy, 'output_suppressed'), 'tier1_heavy_gunner_vs_marine_line').toBeGreaterThan(0)
 
     const shock = simulateScenario(findScenario('tier1_shock_trooper_vs_grenadier_screen'))
     expect(shock.metrics?.damageByUnitType.shock_trooper ?? 0, 'tier1_shock_trooper_vs_grenadier_screen').toBeGreaterThan(0)

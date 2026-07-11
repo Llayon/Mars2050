@@ -13,11 +13,12 @@ import { applyTargetMark, tickTargetMark } from './combat.mark';
 import { getEffectiveActionRangeAgainst, getMinimumActionRange } from './combat.weapon-rules';
 import { getSideWeaponDamage, getSideWeaponTargets } from './combat.side-weapon';
 import { getRampDamage } from './combat.ramp';
+import { getOutputSuppressedActionCooldown } from './combat.output-suppression';
 import { isProjectileInterceptableAttack } from './combat.projectile-defense';
 import { getChargeDamage } from './combat.charge';
 import { consumeAttackCharge } from './combat.growth-charge';
 import { processConditionalAttack, processSweepAttack } from './combat.conditional-weapons';
-import { getSplitFireDamageMultiplier, getSplitFireTargets } from './combat.split-fire';
+import { allowsSplitFireMinimumDamage, getSplitFireDamageMultiplier, getSplitFireTargets } from './combat.split-fire';
 import { canReceiveHealAction } from './combat.support';
 import { canAttackControlledTarget } from './combat.control';
 import { getStanceActionCooldown, getStanceSetupActionRange, prepareStanceForAction } from './combat.stance';
@@ -54,7 +55,7 @@ export function actionSystem(unit: SimUnit, target: SimUnit, units: SimUnit[], h
   if (unit.attackType !== 'heal' && target.team === unit.team && !canAttackControlledTarget(unit, target)) return false;
   if (!prepareStanceForAction(unit, actions)) return true;
 
-  syncModeForAction(unit, actions); syncBurrowState(unit, false, actions); unit.actionCooldown = getStanceActionCooldown(unit); // Reset cooldown
+  syncModeForAction(unit, actions); syncBurrowState(unit, false, actions); unit.actionCooldown = getOutputSuppressedActionCooldown(unit, getStanceActionCooldown(unit)); // Reset cooldown
   if (tryDeployMine(unit, target, hazards, actions, rng) || tryDeploySmoke(unit, target, hazards, actions, rng)) return true;
   if (unit.attackType === 'spawn') return processSpawnAction(unit, target, units, actions, rng);
   if (unit.attackType === 'heal') {
@@ -201,7 +202,7 @@ function processSplitFireAttack(unit: SimUnit, target: SimUnit, units: SimUnit[]
 
   for (const secondary of getSplitFireTargets(unit, target, units)) {
     actions.push({ unitId: unit.id, type: 'split_fire', targetId: secondary.id });
-    applyCombatDamage(unit, secondary, Math.floor(unit.attack * multiplier), actions, createDamageContext(unit, units, actions, hazards, rng, false, false));
+    applyCombatDamage(unit, secondary, Math.floor(unit.attack * multiplier), actions, createDamageContext(unit, units, actions, hazards, rng, false, false, allowsSplitFireMinimumDamage(unit)));
     applyOnHitStatuses(unit, secondary, actions);
     applyTargetMark(unit, secondary, actions);
     if (secondary.hp <= 0 && !secondary.isDead) handleDeath(secondary, unit, units, actions, hazards, rng);
@@ -229,8 +230,8 @@ function applySecondaryWeaponTargets(unit: SimUnit, targets: SimUnit[], multipli
   }
 }
 
-function createDamageContext(unit: SimUnit, units: SimUnit[], actions: BattleAction[], hazards: SimHazard[], rng: PRNG, allowPercentHpDamage = true, interceptable = false) {
-  return { units, hazards, allowPercentHpDamage, interceptable, onUnitDeath: (target: SimUnit) => handleDeath(target, unit, units, actions, hazards, rng) };
+function createDamageContext(unit: SimUnit, units: SimUnit[], actions: BattleAction[], hazards: SimHazard[], rng: PRNG, allowPercentHpDamage = true, interceptable = false, allowMinimumDamage = true) {
+  return { units, hazards, allowPercentHpDamage, interceptable, allowMinimumDamage, onUnitDeath: (target: SimUnit) => handleDeath(target, unit, units, actions, hazards, rng) };
 }
 
 function createTriggerContext(unit: SimUnit, units: SimUnit[], actions: BattleAction[], hazards: SimHazard[], rng: PRNG, tick: number) {

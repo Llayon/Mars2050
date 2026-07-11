@@ -36,3 +36,13 @@ export function getSplitFireTargets(attacker: SimUnit, primary: SimUnit, units: 
 export function getSplitFireDamageMultiplier(attacker: SimUnit): number | undefined {
   return attacker.splitFire?.damageMultiplier ?? UNIT_TYPES[attacker.type as UnitTypeKey]?.baseStats.splitFire?.damageMultiplier
 }
+
+/**
+ * Returns whether split-fire secondary hits should keep minimum 1 HP damage.
+ * @param attacker Unit firing the split weapon
+ * @returns true unless the split-fire profile opts out
+ */
+export function allowsSplitFireMinimumDamage(attacker: SimUnit): boolean {
+  const config = attacker.splitFire ?? UNIT_TYPES[attacker.type as UnitTypeKey]?.baseStats.splitFire
+  return config?.allowMinimumDamage ?? true
+}

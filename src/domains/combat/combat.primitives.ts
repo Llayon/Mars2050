@@ -35,7 +35,7 @@ export interface ConeAttackConfig { angleDeg: number; damageMultiplier: number; 
 export interface BeamAttackConfig { width: number; damageMultiplier: number; maxTargets?: number }
 export interface BarrageAttackConfig { impacts: number; radius: number; spreadRadius: number; damageMultiplier: number; maxTargetsPerImpact?: number }
 export interface ChainAttackConfig { jumps: number; radius: number; damageMultiplier: number; falloff?: number }
-export interface SplitFireConfig { maxTargets: number; damageMultiplier: number; range?: number; canTargetAir?: boolean }
+export interface SplitFireConfig { maxTargets: number; damageMultiplier: number; range?: number; canTargetAir?: boolean; allowMinimumDamage?: boolean }
 export interface SideWeaponConfig { damage: number; range: number; maxTargets: number; canTargetAir?: boolean }
 
 export type SupportAuraType = 'shield' | 'shield_repair' | 'regen' | 'reveal' | 'damage_reduction' | 'haste' | 'range_boost' | 'attack_boost' | 'cleanse' | 'status_immunity'

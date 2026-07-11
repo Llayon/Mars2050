@@ -72,4 +72,24 @@ describe('combat split fire', () => {
       { unitId: 'gatling', type: 'split_fire', targetId: 'side-b' },
     ])
   })
+
+  it('does not force minimum HP damage for secondary hits when the profile opts out', () => {
+    const attacker = makeUnit({
+      id: 'suppression',
+      team: 'attacker',
+      attack: 4,
+      splitFire: { maxTargets: 1, damageMultiplier: 0.25, allowMinimumDamage: false },
+      statusOnHit: [{ type: 'output_suppressed', duration: 6, value: 0.2 }],
+    })
+    const primary = makeUnit({ id: 'primary', team: 'defender', x: 120, y: 0, defense: 0 })
+    const side = makeUnit({ id: 'side', team: 'defender', x: 80, y: 0, defense: 5 })
+    const actions: BattleAction[] = []
+    const hazards: SimHazard[] = []
+
+    expect(actionSystem(attacker, primary, [attacker, primary, side], hazards, actions, new PRNG(1))).toBe(true)
+
+    expect(primary.hp).toBe(96)
+    expect(side.hp).toBe(100)
+    expect(actions).toContainEqual({ unitId: 'side', type: 'status_apply', statusType: 'output_suppressed', value: 0.2 })
+  })
 })
