@@ -299,7 +299,7 @@ are the contract for the dedicated Tier 1 balance scenarios included in
 | `heavy_gunner` | Sustained fire / suppression candidate | Wins when protected long enough to keep firing. | Slow, angle-dependent, vulnerable to burst, flankers, and long-range priority fire. | High `attack`/`damage` cadence plus `output_suppressed` applications. |
 | `grenadier` | Mid-range anti-clump | Punishes dense light formations and melee blobs. | Inefficient into scattered, fast, or high-HP single targets. | Multi-target `damage` from AoE splash. |
 | `flamethrower` | Short-range burn screen clear | Cone pressure plus `burn` makes it anti-swarm and anti-armor-over-time. | Must enter danger range; should not replace sapper demolition or ranged carry DPS. | `cone_attack` plus `status_apply: burn`. |
-| `sapper` | Burst demolition assassin | Deletes static guards, walls, or clumped high-value targets if it reaches them. | Low HP, low uptime, poor sustained fight value after burst window. | Large short-range `damage`, not burn or suppression. |
+| `sapper` | Burst demolition assassin | Deletes static guards and walls if it reaches them. | Low HP, low uptime, narrow blast, poor sustained fight value against mobile screens. | Large short-range `damage`, not burn or suppression. |
 | `shock_trooper` | Melee tempo pressure | Forces immediate response and breaks weak rifle lines. | Should be answered by AoE, kiting, burn zones, and protected sustained fire. | Fast engage, melee `damage`, high casualty exposure. |
 | `jetpack_trooper` | Flanker / backline access | Crosses space quickly and pressures fragile support or ranged units. | Exposed to AA while moving and weaker in a direct brawl than pure melee. | `mode_change` before committing to attack. |
 | `sniper` | Precision range pressure | Deletes low-HP or support targets from long range. | Low body count, overkill risk, vulnerable if screened or flanked; success is support removal, not winning a frontline duel. | Long-range `damage` from assassin profile. |
@@ -329,7 +329,7 @@ are the contract for the dedicated Tier 1 balance scenarios included in
 | `scavenger_buggy` | Tempo pressure/flanker | 3 vehicles, very fast, short range, movement-distance charge damage | Tune | Now has raider burst identity. Tune charge cap, cooldown, and counterplay. |
 | `grenadier` | Mid-range screen clear | 4 units, AoE, explosive tag | Ready | Solid anti-clump role. Can gain AA through upgrade only. |
 | `heavy_gunner` | Sustained carry/suppression | 6 units, 200 range, high DPS, no native AA | Tune | Overlaps marine/gatling less after AA cleanup. Should become suppression or screen clear specialist. |
-| `sapper` | Demolition assassin | 3 units, high AoE burst, low HP | Ready | Good high-risk unit. Ensure it does not overperform with melee slots. |
+| `sapper` | Demolition assassin | 3 units, high primary burst, narrow AoE, low HP | Ready | Good high-risk unit. Mobile screens now counter it more reliably than static targets. |
 | `officer` | Command utility support | Passive haste aura for nearby allies; can add sensor-suite reveal | Tune | No longer a generic healer. Tune radius/value so it supports formations without becoming mandatory. |
 | `jetpack_trooper` | Jump flanker/backline killer | 5 infantry, fast melee, enters air mode while moving and lands before attacking | Tune | Now has a ground/air mode identity: exposed to AA while advancing, targetable by ground weapons when committed. Tune timing and counters versus scout drones. |
 | `exosuit` | Medium damage tank/bruiser | 4 units, armored heavy, low range | Ready | Good bridge between infantry and vehicles. |
@@ -460,6 +460,7 @@ contracts should stay true unless the role document is updated first:
 | Fire screen clear | `tier1_flamethrower_vs_swarm` | Flamethrower should beat light swarm through cone/burn pressure. |
 | Fire counterplay | `tier1_flamethrower_vs_armored_screen` | Flamethrower should not become a reliable armored-screen killer. |
 | Demolition burst | `tier1_sapper_vs_static_guard` | Sapper should delete static fortifications through risky burst. |
+| Demolition counterplay | `tier1_sapper_vs_mobile_screen` | Mobile shock screens should punish sapper overcommitment. |
 | Dedicated anti-air | `tier1_scout_drone_aa_check` | Scout drones should lose to a prepared AA turret. |
 | Precision support removal | `tier1_sniper_priority_target` | Sniper should remove support, not replace frontline DPS. |
 | AoE anti-clump | `tier1_grenadier_vs_clump` / `tier1_grenadier_vs_spread` | Grenadier should punish clumps more quickly than spread formations. |
@@ -478,6 +479,10 @@ Tier 1 matchup diagnostics extend the snapshot matrix without locking winners:
 | Melee pressure vs AoE | `tier1_shock_trooper_vs_grenadier_screen` | Does shock pressure expose a readable weakness to explosive anti-clump fire? |
 | Demolition vs mobile screen | `tier1_sapper_vs_mobile_screen` | Does sapper remain over-reliable when the target is mobile instead of static? |
 | Flanker vs AA screen | `tier1_jetpack_vs_aa_screen` | Does air-mode approach create visible risk against prepared anti-air? |
+
+Tier 1 sapper reliability pass narrows the sapper blast and reduces universal
+burst: static demolition remains intact, while the mobile-screen diagnostic now
+checks that shock troopers can punish sapper overcommitment.
 
 ## Upgrade Implications
 

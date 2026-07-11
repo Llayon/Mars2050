@@ -29,7 +29,7 @@ Cost/value metrics use a simple equal-weight resource value model over `hireCost
 | tier1 | `tier1_grenadier_vs_spread` | attacker | 33 | 34 | 8 | 18.06 | 121 | attacker.grenadier=12 |
 | tier1 | `tier1_flamethrower_vs_swarm` | attacker | 39 | 40 | 13 | 18.36 | 97 | attacker.flamethrower=8 |
 | tier1 | `tier1_flamethrower_vs_armored_screen` | defender | 129 | 130 | 19 | 32.66 | 69 | defender.exosuit=7 |
-| tier1 | `tier1_sapper_vs_static_guard` | attacker | 29 | 30 | 26 | 14.74 | 1 | attacker.sapper=6 |
+| tier1 | `tier1_sapper_vs_static_guard` | attacker | 69 | 70 | 26 | 14.74 | 1 | attacker.sapper=6 |
 | tier1 | `tier1_shock_trooper_vs_rifle_line` | defender | 41 | 42 | 10 | 17.95 | 273 | defender.marine=27 |
 | tier1 | `tier1_jetpack_backline_access` | attacker | 60 | 61 | 17 | 18.53 | 21 | attacker.jetpack_trooper=8 |
 | tier1 | `tier1_sniper_priority_target` | defender | 29 | 30 | 14 | 18.27 | 48 | defender.marine=15 |
@@ -40,7 +40,7 @@ Cost/value metrics use a simple equal-weight resource value model over `hireCost
 | tier1 | `tier1_buggy_open_flank` | attacker | 39 | 40 | 10 | 30.7 | 20 | attacker.scavenger_buggy=5 |
 | tier1 | `tier1_heavy_gunner_vs_marine_line` | defender | 80 | 81 | 10 | 18.68 | 275 | defender.marine=17 |
 | tier1 | `tier1_shock_trooper_vs_grenadier_screen` | defender | 34 | 35 | 10 | 18.66 | 54 | defender.grenadier=7 |
-| tier1 | `tier1_sapper_vs_mobile_screen` | attacker | 15 | 16 | 14 | 18.24 | 0 | attacker.sapper=6 |
+| tier1 | `tier1_sapper_vs_mobile_screen` | defender | 38 | 39 | 14 | 18.24 | 27 | defender.shock_trooper=9 |
 | tier1 | `tier1_jetpack_vs_aa_screen` | defender | 32 | 33 | 15 | 18.57 | 61 | defender.aa_turret=1; defender.marine=16 |
 
 ## Replay Action Counts
@@ -63,7 +63,7 @@ Cost/value metrics use a simple equal-weight resource value model over `hireCost
 | `tier1_grenadier_vs_spread` | attack=108; damage=108; heal=0; die=50; spawn=0; spawn_blocked=0; projectile_intercept=0; status_apply=0; status_cleanse=0; shield_apply=0; mode_change=0; stance_change=0; cone_attack=0; charge_damage=0; control_convert=0; barrier_absorb=0; hazard_cleanse=0; field_effect=0 |
 | `tier1_flamethrower_vs_swarm` | attack=64; damage=205; heal=0; die=40; spawn=0; spawn_blocked=0; projectile_intercept=0; status_apply=180; status_cleanse=0; shield_apply=0; mode_change=0; stance_change=0; cone_attack=39; charge_damage=0; control_convert=0; barrier_absorb=0; hazard_cleanse=0; field_effect=0 |
 | `tier1_flamethrower_vs_armored_screen` | attack=208; damage=355; heal=0; die=13; spawn=0; spawn_blocked=0; projectile_intercept=0; status_apply=307; status_cleanse=0; shield_apply=0; mode_change=0; stance_change=0; cone_attack=160; charge_damage=0; control_convert=0; barrier_absorb=0; hazard_cleanse=0; field_effect=0 |
-| `tier1_sapper_vs_static_guard` | attack=4; damage=4; heal=0; die=1; spawn=0; spawn_blocked=0; projectile_intercept=0; status_apply=0; status_cleanse=0; shield_apply=0; mode_change=0; stance_change=0; cone_attack=0; charge_damage=0; control_convert=0; barrier_absorb=0; hazard_cleanse=0; field_effect=0 |
+| `tier1_sapper_vs_static_guard` | attack=6; damage=6; heal=0; die=1; spawn=0; spawn_blocked=0; projectile_intercept=0; status_apply=0; status_cleanse=0; shield_apply=0; mode_change=0; stance_change=0; cone_attack=0; charge_damage=0; control_convert=0; barrier_absorb=0; hazard_cleanse=0; field_effect=0 |
 | `tier1_shock_trooper_vs_rifle_line` | attack=146; damage=146; heal=0; die=29; spawn=0; spawn_blocked=0; projectile_intercept=0; status_apply=0; status_cleanse=0; shield_apply=0; mode_change=0; stance_change=0; cone_attack=0; charge_damage=0; control_convert=0; barrier_absorb=0; hazard_cleanse=0; field_effect=0 |
 | `tier1_jetpack_backline_access` | attack=28; damage=28; heal=0; die=5; spawn=0; spawn_blocked=0; projectile_intercept=0; status_apply=0; status_cleanse=0; shield_apply=0; mode_change=37; stance_change=0; cone_attack=0; charge_damage=0; control_convert=0; barrier_absorb=0; hazard_cleanse=0; field_effect=0 |
 | `tier1_sniper_priority_target` | attack=20; damage=20; heal=0; die=8; spawn=0; spawn_blocked=0; projectile_intercept=0; status_apply=0; status_cleanse=0; shield_apply=0; mode_change=0; stance_change=0; cone_attack=0; charge_damage=0; control_convert=0; barrier_absorb=0; hazard_cleanse=0; field_effect=0 |
@@ -74,7 +74,7 @@ Cost/value metrics use a simple equal-weight resource value model over `hireCost
 | `tier1_buggy_open_flank` | attack=15; damage=15; heal=2; die=6; spawn=0; spawn_blocked=0; projectile_intercept=0; status_apply=0; status_cleanse=0; shield_apply=0; mode_change=0; stance_change=0; cone_attack=0; charge_damage=8; control_convert=0; barrier_absorb=0; hazard_cleanse=0; field_effect=0 |
 | `tier1_heavy_gunner_vs_marine_line` | attack=480; damage=480; heal=0; die=33; spawn=0; spawn_blocked=0; projectile_intercept=0; status_apply=318; status_cleanse=0; shield_apply=0; mode_change=0; stance_change=0; cone_attack=0; charge_damage=0; control_convert=0; barrier_absorb=0; hazard_cleanse=0; field_effect=0 |
 | `tier1_shock_trooper_vs_grenadier_screen` | attack=118; damage=118; heal=0; die=25; spawn=0; spawn_blocked=0; projectile_intercept=0; status_apply=0; status_cleanse=0; shield_apply=0; mode_change=0; stance_change=0; cone_attack=0; charge_damage=0; control_convert=0; barrier_absorb=0; hazard_cleanse=0; field_effect=0 |
-| `tier1_sapper_vs_mobile_screen` | attack=26; damage=26; heal=0; die=24; spawn=0; spawn_blocked=0; projectile_intercept=0; status_apply=0; status_cleanse=0; shield_apply=0; mode_change=0; stance_change=0; cone_attack=0; charge_damage=0; control_convert=0; barrier_absorb=0; hazard_cleanse=0; field_effect=0 |
+| `tier1_sapper_vs_mobile_screen` | attack=33; damage=33; heal=0; die=21; spawn=0; spawn_blocked=0; projectile_intercept=0; status_apply=0; status_cleanse=0; shield_apply=0; mode_change=0; stance_change=0; cone_attack=0; charge_damage=0; control_convert=0; barrier_absorb=0; hazard_cleanse=0; field_effect=0 |
 | `tier1_jetpack_vs_aa_screen` | attack=46; damage=52; heal=0; die=10; spawn=0; spawn_blocked=0; projectile_intercept=0; status_apply=0; status_cleanse=0; shield_apply=0; mode_change=25; stance_change=0; cone_attack=0; charge_damage=0; control_convert=0; barrier_absorb=0; hazard_cleanse=0; field_effect=0 |
 
 ## Tier 1 Role Scenarios
@@ -87,7 +87,7 @@ Cost/value metrics use a simple equal-weight resource value model over `hireCost
 | `tier1_grenadier_vs_spread` | alien_bug=24; grenadier=1243 | - | attack=108; damage=108; die=50 |
 | `tier1_flamethrower_vs_swarm` | alien_bug=75; flamethrower=798 | - | attack=64; damage=205; die=40; status_apply=180; cone_attack=39 |
 | `tier1_flamethrower_vs_armored_screen` | exosuit=864; flamethrower=307 | - | attack=208; damage=355; die=13; status_apply=307; cone_attack=160 |
-| `tier1_sapper_vs_static_guard` | sapper=540 | - | attack=4; damage=4; die=1 |
+| `tier1_sapper_vs_static_guard` | sapper=510 | - | attack=6; damage=6; die=1 |
 | `tier1_shock_trooper_vs_rifle_line` | marine=960; shock_trooper=260 | - | attack=146; damage=146; die=29 |
 | `tier1_jetpack_backline_access` | jetpack_trooper=269; sniper=57; turret=68 | - | attack=28; damage=28; die=5; mode_change=37 |
 | `tier1_sniper_priority_target` | marine=144; sniper=232 | - | attack=20; damage=20; die=8 |
@@ -98,7 +98,7 @@ Cost/value metrics use a simple equal-weight resource value model over `hireCost
 | `tier1_buggy_open_flank` | scavenger_buggy=262; sniper=112 | medic=20 | attack=15; damage=15; heal=2; die=6; charge_damage=8 |
 | `tier1_heavy_gunner_vs_marine_line` | heavy_gunner=636; marine=947 | - | attack=480; damage=480; die=33; status_apply=318 |
 | `tier1_shock_trooper_vs_grenadier_screen` | grenadier=1135; shock_trooper=81 | - | attack=118; damage=118; die=25 |
-| `tier1_sapper_vs_mobile_screen` | sapper=1827; shock_trooper=22 | - | attack=26; damage=26; die=24 |
+| `tier1_sapper_vs_mobile_screen` | sapper=970; shock_trooper=198 | - | attack=33; damage=33; die=21 |
 | `tier1_jetpack_vs_aa_screen` | aa_turret=260; jetpack_trooper=154; marine=231 | - | attack=46; damage=52; die=10; mode_change=25 |
 
 ## Tier 1 Cost Efficiency
@@ -111,7 +111,7 @@ Cost/value metrics use a simple equal-weight resource value model over `hireCost
 | `tier1_grenadier_vs_spread` | attacker=450; defender=0 | attacker=2.76; defender=0 | attacker=0; defender=0 | attacker=0.05; defender=0 | attacker=1; defender=0 | - |
 | `tier1_flamethrower_vs_swarm` | attacker=300; defender=0 | attacker=2.66; defender=0 | attacker=0; defender=0 | attacker=0.25; defender=0 | attacker=1; defender=0 | cone_attack=39; status_apply=180; status:burn=180 |
 | `tier1_flamethrower_vs_armored_screen` | attacker=450; defender=600 | attacker=0.68; defender=1.44 | attacker=0; defender=0 | attacker=1.92; defender=0.51 | attacker=0; defender=0.88 | cone_attack=160; status_apply=307; status:burn=307 |
-| `tier1_sapper_vs_static_guard` | attacker=260; defender=100 | attacker=2.08; defender=0 | attacker=0; defender=0 | attacker=0; defender=5.4 | attacker=1; defender=0 | - |
+| `tier1_sapper_vs_static_guard` | attacker=260; defender=100 | attacker=1.96; defender=0 | attacker=0; defender=0 | attacker=0; defender=5.1 | attacker=1; defender=0 | - |
 | `tier1_shock_trooper_vs_rifle_line` | attacker=300; defender=400 | attacker=0.87; defender=2.4 | attacker=0; defender=0 | attacker=3.2; defender=0.65 | attacker=0; defender=0.84 | - |
 | `tier1_jetpack_backline_access` | attacker=600; defender=350 | attacker=0.45; defender=0.36 | attacker=0; defender=0 | attacker=0.21; defender=0.77 | attacker=0.8; defender=0 | mode_change=37 |
 | `tier1_sniper_priority_target` | attacker=300; defender=300 | attacker=0.77; defender=0.48 | attacker=0; defender=0 | attacker=0.48; defender=0.77 | attacker=0; defender=0.63 | - |
@@ -122,7 +122,7 @@ Cost/value metrics use a simple equal-weight resource value model over `hireCost
 | `tier1_buggy_open_flank` | attacker=400; defender=250 | attacker=0.66; defender=0.45 | attacker=0; defender=0.08 | attacker=0.28; defender=1.05 | attacker=0.83; defender=0 | charge_damage=8; heal=2 |
 | `tier1_heavy_gunner_vs_marine_line` | attacker=450; defender=400 | attacker=1.41; defender=2.37 | attacker=0; defender=0 | attacker=2.1; defender=1.59 | attacker=0; defender=0.53 | status_apply=318; status:output_suppressed=318 |
 | `tier1_shock_trooper_vs_grenadier_screen` | attacker=300; defender=300 | attacker=0.27; defender=3.78 | attacker=0; defender=0 | attacker=3.78; defender=0.27 | attacker=0; defender=0.88 | - |
-| `tier1_sapper_vs_mobile_screen` | attacker=260; defender=300 | attacker=7.03; defender=0.07 | attacker=0; defender=0 | attacker=0.08; defender=6.09 | attacker=1; defender=0 | - |
+| `tier1_sapper_vs_mobile_screen` | attacker=260; defender=300 | attacker=3.73; defender=0.66 | attacker=0; defender=0 | attacker=0.76; defender=3.23 | attacker=0; defender=0.38 | - |
 | `tier1_jetpack_vs_aa_screen` | attacker=600; defender=400 | attacker=0.26; defender=1.23 | attacker=0; defender=0 | attacker=0.82; defender=0.39 | attacker=0; defender=1 | mode_change=25; split_fire=6 |
 
 ## Unit Outcomes
@@ -357,13 +357,13 @@ Cost/value metrics use a simple equal-weight resource value model over `hireCost
 - Survivors: attacker.sapper=6
 - Initial value: attacker.sapper=260; defender.wall=100 (attacker=260; defender=100)
 - Survivor value: attacker.sapper=260 (attacker=260; defender=0)
-- Damage dealt: sapper=540
-- Damage taken: wall=540
+- Damage dealt: sapper=510
+- Damage taken: wall=510
 - Healing done: -
-- Team performance: damageDealt=attacker=540; defender=0, damageTaken=attacker=0; defender=540, healingDone=attacker=0; defender=0
-- Cost efficiency: damageDealtPerCost=attacker=2.08; defender=0, damageTakenPerCost=attacker=0; defender=5.4, healingDonePerCost=attacker=0; defender=0, netDamagePerCost=attacker=2.08; defender=-5.4, survivorValueRatio=attacker=1; defender=0
+- Team performance: damageDealt=attacker=510; defender=0, damageTaken=attacker=0; defender=510, healingDone=attacker=0; defender=0
+- Cost efficiency: damageDealtPerCost=attacker=1.96; defender=0, damageTakenPerCost=attacker=0; defender=5.1, healingDonePerCost=attacker=0; defender=0, netDamagePerCost=attacker=1.96; defender=-5.1, survivorValueRatio=attacker=1; defender=0
 - Role signals: -
-- Engagement: averageTimeToEngage=28, averageEngagementDistance=63.04, averageOverlap=6.31, meleeSlotWaitTicks=186, overkillDamage=40
+- Engagement: averageTimeToEngage=28, averageEngagementDistance=62.84, averageOverlap=5.32, meleeSlotWaitTicks=226, overkillDamage=10
 
 ### tier1_shock_trooper_vs_rifle_line - Tier 1: shock trooper versus rifle line
 
@@ -508,16 +508,16 @@ Cost/value metrics use a simple equal-weight resource value model over `hireCost
 ### tier1_sapper_vs_mobile_screen - Tier 1 diagnostic: sapper versus mobile screen
 
 - Initial units: attacker.sapper=6; defender.shock_trooper=24
-- Survivors: attacker.sapper=6
+- Survivors: defender.shock_trooper=9
 - Initial value: attacker.sapper=260; defender.shock_trooper=300 (attacker=260; defender=300)
-- Survivor value: attacker.sapper=260 (attacker=260; defender=0)
-- Damage dealt: sapper=1827; shock_trooper=22
-- Damage taken: sapper=22; shock_trooper=1827
+- Survivor value: defender.shock_trooper=112.5 (attacker=0; defender=112.5)
+- Damage dealt: sapper=970; shock_trooper=198
+- Damage taken: sapper=198; shock_trooper=970
 - Healing done: -
-- Team performance: damageDealt=attacker=1827; defender=22, damageTaken=attacker=22; defender=1827, healingDone=attacker=0; defender=0
-- Cost efficiency: damageDealtPerCost=attacker=7.03; defender=0.07, damageTakenPerCost=attacker=0.08; defender=6.09, healingDonePerCost=attacker=0; defender=0, netDamagePerCost=attacker=6.94; defender=-6.02, survivorValueRatio=attacker=1; defender=0
+- Team performance: damageDealt=attacker=970; defender=198, damageTaken=attacker=198; defender=970, healingDone=attacker=0; defender=0
+- Cost efficiency: damageDealtPerCost=attacker=3.73; defender=0.66, damageTakenPerCost=attacker=0.76; defender=3.23, healingDonePerCost=attacker=0; defender=0, netDamagePerCost=attacker=2.97; defender=-2.57, survivorValueRatio=attacker=0; defender=0.38
 - Role signals: -
-- Engagement: averageTimeToEngage=14.67, averageEngagementDistance=51.39, averageOverlap=6.44, meleeSlotWaitTicks=405, overkillDamage=867
+- Engagement: averageTimeToEngage=17.61, averageEngagementDistance=29, averageOverlap=6.52, meleeSlotWaitTicks=500, overkillDamage=388
 
 ### tier1_jetpack_vs_aa_screen - Tier 1 diagnostic: jetpack versus anti-air screen
 

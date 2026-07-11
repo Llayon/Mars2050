@@ -130,6 +130,10 @@ describe('Tier 1 combat role scenarios', () => {
     expect(sapper.survivors.some(unit => unit.team === 'defender' && unit.type === 'wall'), 'tier1_sapper_vs_static_guard').toBe(false)
     expect(sapper.metrics?.damageTakenByUnitType.wall ?? 0, 'tier1_sapper_vs_static_guard').toBeGreaterThanOrEqual(400)
 
+    const sapperMobile = simulateScenario(findScenario('tier1_sapper_vs_mobile_screen'))
+    expect(sapperMobile.winner, 'tier1_sapper_vs_mobile_screen').toBe('defender')
+    expect(sapperMobile.survivors.some(unit => unit.team === 'defender' && unit.type === 'shock_trooper'), 'tier1_sapper_vs_mobile_screen').toBe(true)
+
     const aa = simulateScenario(findScenario('tier1_scout_drone_aa_check'))
     expect(aa.winner, 'tier1_scout_drone_aa_check').toBe('defender')
     expect(aa.survivors.some(unit => unit.team === 'defender' && unit.type === 'aa_turret'), 'tier1_scout_drone_aa_check').toBe(true)
@@ -139,7 +143,7 @@ describe('Tier 1 combat role scenarios', () => {
     expect(shock.winner, 'tier1_shock_trooper_vs_rifle_line').toBe('defender')
   }, 30000)
 
-  it('keeps Tier 1 cross-matchup diagnostics visible without hard winner gates', () => {
+  it('keeps Tier 1 cross-matchup diagnostics visible in replay metrics', () => {
     for (const scenarioId of DIAGNOSTIC_MATCHUP_SCENARIOS) {
       const result = simulateScenario(findScenario(scenarioId))
       expect(result.logs.length, scenarioId).toBeGreaterThan(0)

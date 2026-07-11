@@ -2307,8 +2307,8 @@
       "name": "Tier 1: sapper versus static guard",
       "seed": 24680,
       "winner": "attacker",
-      "lastActionTick": 29,
-      "battleDurationTicks": 30,
+      "lastActionTick": 69,
+      "battleDurationTicks": 70,
       "initialUnits": {
         "attacker": {
           "sapper": 6
@@ -2350,28 +2350,28 @@
       "metrics": {
         "firstAttackTick": 26,
         "averageTimeToEngage": 28,
-        "averageEngagementDistance": 63.04,
+        "averageEngagementDistance": 62.84,
         "maxOverlap": 14.74,
-        "averageOverlap": 6.31,
+        "averageOverlap": 5.32,
         "targetSwitches": 1,
-        "meleeSlotWaitTicks": 186,
-        "overkillDamage": 40
+        "meleeSlotWaitTicks": 226,
+        "overkillDamage": 10
       },
       "damageByUnitType": {
-        "sapper": 540
+        "sapper": 510
       },
       "damageTakenByUnitType": {
-        "wall": 540
+        "wall": 510
       },
       "healingDoneByUnitType": {},
       "teamPerformance": {
         "damageDealt": {
-          "attacker": 540,
+          "attacker": 510,
           "defender": 0
         },
         "damageTaken": {
           "attacker": 0,
-          "defender": 540
+          "defender": 510
         },
         "healingDone": {
           "attacker": 0,
@@ -2380,20 +2380,20 @@
       },
       "costEfficiency": {
         "damageDealtPerCost": {
-          "attacker": 2.08,
+          "attacker": 1.96,
           "defender": 0
         },
         "damageTakenPerCost": {
           "attacker": 0,
-          "defender": 5.4
+          "defender": 5.1
         },
         "healingDonePerCost": {
           "attacker": 0,
           "defender": 0
         },
         "netDamagePerCost": {
-          "attacker": 2.08,
-          "defender": -5.4
+          "attacker": 1.96,
+          "defender": -5.1
         },
         "survivorValueRatio": {
           "attacker": 1,
@@ -2401,8 +2401,8 @@
         }
       },
       "actionCounts": {
-        "attack": 4,
-        "damage": 4,
+        "attack": 6,
+        "damage": 6,
         "heal": 0,
         "die": 1,
         "spawn": 0,
@@ -3732,9 +3732,9 @@
       "group": "tier1",
       "name": "Tier 1 diagnostic: sapper versus mobile screen",
       "seed": 24680,
-      "winner": "attacker",
-      "lastActionTick": 15,
-      "battleDurationTicks": 16,
+      "winner": "defender",
+      "lastActionTick": 38,
+      "battleDurationTicks": 39,
       "initialUnits": {
         "attacker": {
           "sapper": 6
@@ -3744,10 +3744,10 @@
         }
       },
       "survivors": {
-        "attacker": {
-          "sapper": 6
-        },
-        "defender": {}
+        "attacker": {},
+        "defender": {
+          "shock_trooper": 9
+        }
       },
       "initialValue": {
         "attacker": {
@@ -3758,10 +3758,10 @@
         }
       },
       "survivorValue": {
-        "attacker": {
-          "sapper": 260
-        },
-        "defender": {}
+        "attacker": {},
+        "defender": {
+          "shock_trooper": 112.5
+        }
       },
       "teamValue": {
         "initial": {
@@ -3769,37 +3769,37 @@
           "defender": 300
         },
         "survivors": {
-          "attacker": 260,
-          "defender": 0
+          "attacker": 0,
+          "defender": 112.5
         }
       },
       "metrics": {
         "firstAttackTick": 14,
-        "averageTimeToEngage": 14.67,
-        "averageEngagementDistance": 51.39,
+        "averageTimeToEngage": 17.61,
+        "averageEngagementDistance": 29,
         "maxOverlap": 18.24,
-        "averageOverlap": 6.44,
-        "targetSwitches": 0,
-        "meleeSlotWaitTicks": 405,
-        "overkillDamage": 867
+        "averageOverlap": 6.52,
+        "targetSwitches": 27,
+        "meleeSlotWaitTicks": 500,
+        "overkillDamage": 388
       },
       "damageByUnitType": {
-        "sapper": 1827,
-        "shock_trooper": 22
+        "sapper": 970,
+        "shock_trooper": 198
       },
       "damageTakenByUnitType": {
-        "sapper": 22,
-        "shock_trooper": 1827
+        "sapper": 198,
+        "shock_trooper": 970
       },
       "healingDoneByUnitType": {},
       "teamPerformance": {
         "damageDealt": {
-          "attacker": 1827,
-          "defender": 22
+          "attacker": 970,
+          "defender": 198
         },
         "damageTaken": {
-          "attacker": 22,
-          "defender": 1827
+          "attacker": 198,
+          "defender": 970
         },
         "healingDone": {
           "attacker": 0,
@@ -3808,31 +3808,31 @@
       },
       "costEfficiency": {
         "damageDealtPerCost": {
-          "attacker": 7.03,
-          "defender": 0.07
+          "attacker": 3.73,
+          "defender": 0.66
         },
         "damageTakenPerCost": {
-          "attacker": 0.08,
-          "defender": 6.09
+          "attacker": 0.76,
+          "defender": 3.23
         },
         "healingDonePerCost": {
           "attacker": 0,
           "defender": 0
         },
         "netDamagePerCost": {
-          "attacker": 6.94,
-          "defender": -6.02
+          "attacker": 2.97,
+          "defender": -2.57
         },
         "survivorValueRatio": {
-          "attacker": 1,
-          "defender": 0
+          "attacker": 0,
+          "defender": 0.38
         }
       },
       "actionCounts": {
-        "attack": 26,
-        "damage": 26,
+        "attack": 33,
+        "damage": 33,
         "heal": 0,
-        "die": 24,
+        "die": 21,
         "spawn": 0,
         "spawn_blocked": 0,
         "projectile_intercept": 0,
