@@ -3,7 +3,7 @@ import { useEffect, useRef, memo, useState, useMemo } from 'react'
 import type { BattleTick, UnitRow, SimUnit, Obstacle } from '@/domains/combat/combat.types'
 import { startBattleReplayEngine } from './battle-replay-engine'
 import type { ReplayControls } from './battle-replay-engine'
-import { getSizeRadius } from '@/domains/combat/combat.utils'
+import { buildBattleReplayMetrics } from './battle-replay-metrics'
 
 export const BattleReplayModal = memo(function BattleReplayModal({ attackerUnits, defenderUnits, initialState, logs, obstacles, onClose }: { attackerUnits: UnitRow[], defenderUnits: UnitRow[], initialState?: SimUnit[], logs: BattleTick[], obstacles?: Obstacle[], onClose: () => void }) {
   const containerRef = useRef<HTMLDivElement>(null)
@@ -14,50 +14,8 @@ export const BattleReplayModal = memo(function BattleReplayModal({ attackerUnits
   const [currentTick, setCurrentTick] = useState(0)
   const [overlays, setOverlays] = useState({ radius: false, velocity: false, targets: false })
 
-  const metrics = useMemo(() => {
-    const totalTicks = logs.length
-    let firstAttack = -1
-    for(const log of logs) {
-      if(log.actions.some(a => a.type === 'attack')) {
-        firstAttack = log.tick; break;
-      }
-    }
-
-    let totalOverlap = 0
-    let overlapPairs = 0
-    let maxOverlap = 0
-
-    if (initialState) {
-      const units = new Map<string, {x: number, y: number, isDead: boolean, size: SimUnit['size'], isFlying: boolean}>()
-      initialState.forEach(u => units.set(u.id, { x: u.x, y: u.y, isDead: u.isDead, size: u.size, isFlying: u.isFlying }))
-
-      const limit = Math.min(20, logs.length)
-      for (let i = 0; i < limit; i++) {
-         const log = logs[i]
-         log.actions.forEach(a => {
-           const u = units.get(a.unitId)
-           if (!u) return
-           if (a.type === 'move' && a.toX !== undefined && a.toY !== undefined) { u.x = a.toX; u.y = a.toY }
-           if (a.type === 'die') u.isDead = true
-         })
-      }
-
-      const alive = Array.from(units.values()).filter(u => !u.isDead)
-      for(let i=0; i<alive.length; i++) {
-        for(let j=i+1; j<alive.length; j++) {
-          const u1 = alive[i], u2 = alive[j]
-          if (u1.isFlying !== u2.isFlying) continue
-          const dist = Math.hypot(u1.x - u2.x, u1.y - u2.y)
-          const minDist = (getSizeRadius(u1.size) + getSizeRadius(u2.size)) * 0.95
-          const overlap = Math.max(0, minDist - dist)
-          if (overlap > 0) {
-            totalOverlap += overlap; maxOverlap = Math.max(maxOverlap, overlap); overlapPairs++
-          }
-        }
-      }
-    }
-    return { totalTicks, firstAttack, avgOverlap: overlapPairs > 0 ? (totalOverlap/overlapPairs).toFixed(1) : 0, maxOverlap: maxOverlap.toFixed(1) }
-  }, [logs, initialState])
+  const metrics = useMemo(() => buildBattleReplayMetrics(logs, initialState), [logs, initialState])
+  const formatMetric = (value: number, digits: number) => value.toFixed(digits)
 
   useEffect(() => {
     let isDestroyed = false
@@ -129,8 +87,11 @@ export const BattleReplayModal = memo(function BattleReplayModal({ attackerUnits
         <div className="bg-gray-800/80 border border-gray-600 rounded-lg p-2 text-xs flex flex-col gap-2 shadow-lg w-56 backdrop-blur-md sm:w-64 sm:p-3 sm:text-sm">
           <div className="font-bold text-gray-200 border-b border-gray-700 pb-1 mb-1">Метрики (Tick {metrics.totalTicks})</div>
           <div className="flex justify-between text-gray-300"><span>Первая атака:</span> <span>{metrics.firstAttack >= 0 ? `Tick ${metrics.firstAttack}` : 'Нет'}</span></div>
-          <div className="flex justify-between text-gray-300"><span>Avg Overlap (t=20):</span> <span>{metrics.avgOverlap}px</span></div>
-          <div className="flex justify-between text-gray-300"><span>Max Overlap (t=20):</span> <span>{metrics.maxOverlap}px</span></div>
+          <div className="flex justify-between text-gray-300"><span>Avg Overlap:</span> <span>{formatMetric(metrics.averageOverlap, 1)}px</span></div>
+          <div className="flex justify-between text-gray-300"><span>Max Overlap:</span> <span>{formatMetric(metrics.maxOverlap, 1)}px</span></div>
+          <div className="flex justify-between text-gray-300"><span>Avg Ratio:</span> <span>{formatMetric(metrics.averageOverlapRatio, 2)}</span></div>
+          <div className="flex justify-between text-gray-300"><span>Max Ratio:</span> <span>{formatMetric(metrics.maxOverlapRatio, 2)}</span></div>
+          <div className="flex justify-between text-gray-300"><span>Severe Samples:</span> <span>{metrics.severeOverlapSamples}/{metrics.overlapSamples}</span></div>
         </div>
 
         <div className="bg-gray-800/80 border border-gray-600 rounded-lg p-2 text-xs flex flex-col gap-2 shadow-lg w-56 backdrop-blur-md sm:w-64 sm:p-3 sm:text-sm sm:gap-3">

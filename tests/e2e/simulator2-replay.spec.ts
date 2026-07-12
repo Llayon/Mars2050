@@ -36,7 +36,7 @@ test('simulator2 replay fits and renders on a mobile viewport', async ({ page })
 
   await page.goto('/simulator2')
   await expect(page.getByRole('heading', { name: /Симулятор Боя/ })).toBeVisible()
-  await loadReplayPreset(page, 'stealth_reveal')
+  await loadReplayPreset(page, 'ranged_duel')
   await startSelectedSimulation(page)
 
   const canvas = page.locator('canvas').last()
