@@ -108,16 +108,16 @@ function getEmergencyPush(unit: SimUnit, other: SimUnit, myRadius: number, other
   const myMass = getSizeMass(unit.size)
   const otherMass = getSizeMass(other.size)
   const pushRatio = otherMass / (myMass + otherMass)
-  const stanceMultiplier = isInRange ? 0.25 : 0.65
+  const stanceMultiplier = isInRange ? 0.45 : 0.65
   return Math.min(overlap * 1.2, unit.speed * 0.9) * pushRatio * stanceMultiplier
 }
 
 function getSoftSeparationMultiplier(isInRange: boolean): number {
-  return isInRange ? 0.05 : 1
+  return isInRange ? 0.15 : 1
 }
 
 function getEmergencySeparationMultiplier(isInRange: boolean): number {
-  return isInRange ? 0.1 : 0.55
+  return isInRange ? 0.3 : 0.55
 }
 
 function getSeparationMassMultiplier(unit: SimUnit, other: SimUnit): number {

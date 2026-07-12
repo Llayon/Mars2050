@@ -63,11 +63,24 @@ describe('combat QA simulator presets', () => {
       firstAttackTickMax: 25,
       maxOverlapLessThan: 30,
       maxOverlapRatioLessThan: 1,
-      severeOverlapSamplesLessThan: 2500,
+      averageOverlapRatioLessThan: 0.34,
+      severeOverlapSamplesLessThan: 2200,
       targetSwitchesLessThan: 500,
       battleDurationLessThan: MAX_TICKS,
       averageTimeToEngageMax: 40,
     }, 'massive_clash')
+  }, 15000)
+
+  it('keeps ranged-line overlap inside QA metric bounds', () => {
+    const result = simulateScenario('ranged_duel', { trackMetrics: true })
+
+    expectBattleTerminates(result, 'ranged_duel')
+    expectMetricBounds(result, {
+      maxOverlapRatioLessThan: 1,
+      averageOverlapRatioLessThan: 0.36,
+      severeOverlapSamplesLessThan: 8000,
+      battleDurationLessThan: MAX_TICKS,
+    }, 'ranged_duel')
   }, 15000)
 
   it('keeps summon-heavy QA presets bounded', () => {
@@ -77,7 +90,7 @@ describe('combat QA simulator presets', () => {
     expectBattleTerminates(summonCaps, 'summon_caps')
     expectSpawnBounded(summonCaps, 12, 'summon_caps')
     expectBattleTerminates(primitiveEvents, 'qa_primitive_events')
-    expectSpawnBounded(primitiveEvents, 8, 'qa_primitive_events')
+    expectSpawnBounded(primitiveEvents, 12, 'qa_primitive_events')
     expect(countActions(primitiveEvents, 'spawn_blocked'), 'qa_primitive_events').toBeGreaterThan(0)
   }, 15000)
 

@@ -13,6 +13,7 @@ import { getStanceMovementSpeedMultiplier, undeployStanceForMovement } from './c
 import { syncBurrowState } from './combat.burrow';
 import { getModeMovementSpeedMultiplier, syncModeForMovement } from './combat.mode';
 import { syncMovementStealth } from './combat.stealth';
+import { emitMove, emitStationaryMoveIfTurning, getObstacleCorrection } from './combat.movement-helpers';
 
 export function movementSystem(unit: SimUnit, target: SimUnit, units: SimUnit[], actions: BattleAction[], dt: number, rng: PRNG, flowFieldMap: FlowFieldMap, obstacles: Obstacle[], spatialHash?: SpatialHash) {
   let vx = 0;
@@ -112,26 +113,47 @@ export function movementSystem(unit: SimUnit, target: SimUnit, units: SimUnit[],
   }
 
   if (steeringInRange) {
-    unit.velocity.x = 0;
-    unit.velocity.y = 0;
     unit.isMoving = false;
     syncBurrowState(unit, false, actions);
     syncMovementStealth(unit, false, actions);
-    if (Math.abs(angleDiff) > 0.2) {
-      const r = (v: number) => Math.round(v * 100) / 100;
-      actions.push({
-        unitId: unit.id,
-        type: 'move',
-        targetId: target.id,
-        fromX: r(unit.x),
-        fromY: r(unit.y),
-        toX: r(unit.x),
-        toY: r(unit.y),
-        facingAngle: r(unit.currentAngle),
-        isWalking: false
-      });
+
+    vx = steering.separationX;
+    vy = steering.separationY;
+    if (!unit.isFlying) {
+      const obstacleCorrection = getObstacleCorrection(unit, obstacles, myRadius, effectiveSpeed);
+      vx += obstacleCorrection.x;
+      vy += obstacleCorrection.y;
     }
-    return;
+
+    const correctionMag = Math.hypot(vx, vy);
+    if (correctionMag <= 0.5) {
+      unit.velocity.x = 0;
+      unit.velocity.y = 0;
+      emitStationaryMoveIfTurning(unit, target, actions, angleDiff);
+      return;
+    }
+
+    const maxCorrectionSpeed = Math.max(effectiveSpeed * 1.2, 12);
+    if (correctionMag > maxCorrectionSpeed) {
+      vx = (vx / correctionMag) * maxCorrectionSpeed;
+      vy = (vy / correctionMag) * maxCorrectionSpeed;
+    }
+
+    const velocityBlend = Math.min(1, dt * 8);
+    unit.velocity.x += (vx - unit.velocity.x) * velocityBlend;
+    unit.velocity.y += (vy - unit.velocity.y) * velocityBlend;
+
+    const finalMag = Math.hypot(unit.velocity.x, unit.velocity.y);
+    if (finalMag > maxCorrectionSpeed) {
+      unit.velocity.x = (unit.velocity.x / finalMag) * maxCorrectionSpeed;
+      unit.velocity.y = (unit.velocity.y / finalMag) * maxCorrectionSpeed;
+    }
+
+    const fromX = unit.x, fromY = unit.y;
+    unit.x = Math.max(0, Math.min(FIELD_WIDTH, unit.x + unit.velocity.x * dt));
+    unit.y = Math.max(0, Math.min(FIELD_HEIGHT, unit.y + unit.velocity.y * dt));
+    emitMove(unit, target, actions, fromX, fromY, angleDiff, false);
+    return
   }
 
   if (positioning.shouldMove) {
@@ -148,17 +170,9 @@ export function movementSystem(unit: SimUnit, target: SimUnit, units: SimUnit[],
 
   // Soft collision with obstacles
   if (!unit.isFlying) {
-     for (const obs of obstacles) {
-        const dist = getDistance(unit.x, unit.y, obs.x, obs.y);
-        const minDist = myRadius + obs.radius;
-        if (dist > 0 && dist < minDist) {
-           const overlap = minDist - dist;
-           const pushAngle = Math.atan2(unit.y - obs.y, unit.x - obs.x);
-           const pushForce = Math.min(overlap * 2.5, Math.max(10, effectiveSpeed * 0.6));
-           vx += Math.cos(pushAngle) * pushForce;
-           vy += Math.sin(pushAngle) * pushForce;
-        }
-     }
+     const obstacleCorrection = getObstacleCorrection(unit, obstacles, myRadius, effectiveSpeed);
+     vx += obstacleCorrection.x;
+     vy += obstacleCorrection.y;
   }
 
   const cohesion = getFormationCohesionForce(unit, positioning.point, squadCx, squadCy, squadCount, distEdge, isNavigatingObstacle);
@@ -214,18 +228,6 @@ export function movementSystem(unit: SimUnit, target: SimUnit, units: SimUnit[],
     const fromX = unit.x, fromY = unit.y;
     unit.x = nx; unit.y = ny;
     recordChargeMovement(unit, Math.hypot(nx - fromX, ny - fromY));
-    // Round to 2 decimal places to save JSON size but keep movement smooth
-    const r = (v: number) => Math.round(v * 100) / 100;
-    actions.push({ 
-       unitId: unit.id, 
-       type: 'move', 
-       targetId: target.id, 
-       fromX: r(fromX), 
-       fromY: r(fromY), 
-       toX: r(nx), 
-       toY: r(ny),
-       facingAngle: r(unit.currentAngle),
-       isWalking: unit.isMoving
-    });
+    emitMove(unit, target, actions, fromX, fromY, angleDiff, unit.isMoving);
   }
 }

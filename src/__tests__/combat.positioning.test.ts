@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest'
+import type { BattleAction } from '@/domains/combat/combat.actions'
 import { reserveMeleeEngagementSlot, createMeleeEngagementState } from '@/domains/combat/combat.melee-engagement'
+import { movementSystem } from '@/domains/combat/combat.movement'
+import { createPathfindingMap } from '@/domains/combat/combat.pathfinding'
 import { getPositioningDecision } from '@/domains/combat/combat.positioning'
-import { getSizeRadius } from '@/domains/combat/combat.utils'
+import { getSizeRadius, PRNG } from '@/domains/combat/combat.utils'
 import type { SimUnit, Team } from '@/domains/combat/combat.types'
 
 function makeUnit(overrides: Partial<SimUnit> & { id: string; team: Team; x: number; y: number }): SimUnit {
@@ -68,5 +71,19 @@ describe('combat positioning', () => {
 
     expect(decision.combatInRange).toBe(false)
     expect(decision.shouldMove).toBe(false)
+  })
+
+  it('depenetrates in-range ranged allies without starting normal movement', () => {
+    const target = makeUnit({ id: 'target', team: 'defender', x: 100, y: 100 })
+    const unit = makeUnit({ id: 'marine-a', team: 'attacker', x: 118, y: 100, range: 120, stealthWhileMoving: true })
+    const ally = makeUnit({ id: 'marine-b', team: 'attacker', x: 118, y: 100, range: 120 })
+    const actions: BattleAction[] = []
+
+    movementSystem(unit, target, [unit, ally, target], actions, 0.1, new PRNG(1), createPathfindingMap([]), [])
+
+    expect(Math.hypot(unit.x - ally.x, unit.y - ally.y)).toBeGreaterThan(0)
+    expect(unit.isMoving).toBe(false)
+    expect(actions).toContainEqual(expect.objectContaining({ type: 'move', unitId: unit.id, isWalking: false }))
+    expect(actions.some(action => action.type === 'stealth_change' && action.modeState === 'movement_active')).toBe(false)
   })
 })

@@ -79,4 +79,18 @@ describe('combat steering', () => {
       Math.hypot(heavyContext.separationX, heavyContext.separationY) * 4
     )
   })
+
+  it('keeps in-range allied separation weaker than moving separation', () => {
+    const first = makeUnit({ id: 'first', team: 'attacker', x: 100, y: 100 })
+    const second = makeUnit({ id: 'second', team: 'attacker', x: 105, y: 100 })
+    const radius = getSizeRadius(first.size)
+
+    const movingContext = getSteeringContext(first, [first, second], radius, false)
+    const combatContext = getSteeringContext(first, [first, second], radius, true)
+    const movingForce = Math.hypot(movingContext.separationX, movingContext.separationY)
+    const combatForce = Math.hypot(combatContext.separationX, combatContext.separationY)
+
+    expect(combatForce).toBeGreaterThan(0)
+    expect(combatForce).toBeLessThan(movingForce)
+  })
 })

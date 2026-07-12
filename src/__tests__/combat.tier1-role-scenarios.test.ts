@@ -94,6 +94,16 @@ describe('Tier 1 combat role scenarios', () => {
     expect(medic.metrics?.healingDoneByUnitType.medic ?? 0, 'tier1_medic_sustain_check').toBeGreaterThan(0)
   }, 30000)
 
+  it('keeps line-infantry overlap inside movement QA bounds', () => {
+    const marineBaseline = simulateScenario(findScenario('tier1_marine_baseline_duel'))
+    const heavyBaseline = simulateScenario(findScenario('tier1_heavy_gunner_vs_marine_line'))
+
+    expect(marineBaseline.metrics?.averageOverlapRatio ?? 1, 'tier1_marine_baseline_duel').toBeLessThan(0.39)
+    expect(marineBaseline.metrics?.severeOverlapSamples ?? Number.MAX_SAFE_INTEGER, 'tier1_marine_baseline_duel').toBeLessThan(1700)
+    expect(heavyBaseline.metrics?.averageOverlapRatio ?? 1, 'tier1_heavy_gunner_vs_marine_line').toBeLessThan(0.38)
+    expect(heavyBaseline.metrics?.severeOverlapSamples ?? Number.MAX_SAFE_INTEGER, 'tier1_heavy_gunner_vs_marine_line').toBeLessThan(1500)
+  }, 30000)
+
   it('keeps sniper, grenadier, and buggy role contracts distinct', () => {
     const sniper = simulateScenario(findScenario('tier1_sniper_priority_target'))
     expect(sniper.metrics?.damageTakenByUnitType.medic ?? 0, 'tier1_sniper_priority_target').toBeGreaterThanOrEqual(150)
