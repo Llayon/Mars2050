@@ -1,0 +1,47 @@
+[
+  {
+    "preset": "ranged_duel",
+    "units": 128,
+    "ticks": 138,
+    "firstAttack": 15,
+    "averageOverlapRatio": 0.3252979678283745,
+    "maxOverlapRatio": 0.98845545076166,
+    "severeOverlapSamples": 4962,
+    "targetSwitches": 1729,
+    "stuckTicks": 24,
+    "meleeSlotWaitTicks": 0,
+    "replayAverageRatioDelta": 0.000022471075131813567,
+    "replayMaxRatioDelta": 0.0000821465692238954,
+    "replaySevereSamplesDelta": 0
+  },
+  {
+    "preset": "massive_clash",
+    "units": 108,
+    "ticks": 89,
+    "firstAttack": 12,
+    "averageOverlapRatio": 0.323405407037793,
+    "maxOverlapRatio": 0.9892297231194105,
+    "severeOverlapSamples": 1956,
+    "targetSwitches": 496,
+    "stuckTicks": 1407,
+    "meleeSlotWaitTicks": 3529,
+    "replayAverageRatioDelta": 0.00007874648098105119,
+    "replayMaxRatioDelta": 0.0002195194445780979,
+    "replaySevereSamplesDelta": 1
+  },
+  {
+    "preset": "zerg_rush",
+    "units": 605,
+    "ticks": 140,
+    "firstAttack": 9,
+    "averageOverlapRatio": 0.3259687453952712,
+    "maxOverlapRatio": 0.9993385211933918,
+    "severeOverlapSamples": 58539,
+    "targetSwitches": 5470,
+    "stuckTicks": 8098,
+    "meleeSlotWaitTicks": 22245,
+    "replayAverageRatioDelta": 0.000017582255004588987,
+    "replayMaxRatioDelta": 0.00013516301713500933,
+    "replaySevereSamplesDelta": 10
+  }
+]

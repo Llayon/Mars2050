@@ -21,6 +21,8 @@ Replay metrics проверяются как diagnostic mirror с tolerance, ч�
 - `npm run combat:metrics` — таблица по базовым movement QA presets.
 - `npx tsx scripts/combat-metrics-report.ts --preset=ranged_duel --json` — JSON для выбранных presets.
 - `npx tsx scripts/combat-metrics-report.ts --all` — полный report по всем simulator presets.
+- `npx tsx scripts/combat-metrics-report.ts --compare=docs/combat-metrics-baseline.json` — delta к сохраненному baseline.
+- `npx tsx scripts/combat-metrics-report.ts --update-baseline` — обновить baseline после намеренного изменения movement/targeting.
 
 ## Управление и Debug Overlays
 - **Play/Pause / Speed**: Управление скоростью от 0.5x до 4.0x.
