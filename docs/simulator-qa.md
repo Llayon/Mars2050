@@ -13,6 +13,11 @@
 - **Avg Ratio / Max Ratio**: Нормализованная тяжесть перекрытия относительно суммы радиусов пары. Удобнее сравнивать между мелкими и крупными юнитами.
 - **Severe Samples**: Количество replay-сэмплов с перекрытием 50%+ от нормализованной дистанции. Это diagnostic UI; runtime/snapshot метрики остаются главным источником QA-gate.
 
+## Automated Movement Gates
+`combat.qa-presets.test.ts` закрепляет movement regression gates для `ranged_duel`, `massive_clash` и `zerg_rush`.
+Runtime metrics являются главным источником gate-порогов: first attack, battle duration, overlap ratio, severe overlap samples, target switches, stuck ticks и melee slot wait ticks.
+Replay metrics проверяются как diagnostic mirror с tolerance, чтобы UI-панель не расходилась с runtime telemetry при допустимых отличиях sampling order.
+
 ## Управление и Debug Overlays
 - **Play/Pause / Speed**: Управление скоростью от 0.5x до 4.0x.
 - **Таймлайн**: Seek по tick должен ставить replay на паузу и пересобирать canvas state детерминированно из initial state + replay log.

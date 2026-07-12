@@ -1,5 +1,5 @@
 import type { BattleTick, SimUnit } from '@/domains/combat/combat.types'
-import { getSizeRadius } from '@/domains/combat/combat.utils'
+import { collectOverlapMetrics } from '@/domains/combat/combat.metrics-overlap'
 
 export interface BattleReplayMetrics {
   totalTicks: number
@@ -65,27 +65,13 @@ export function buildBattleReplayMetrics(logs: BattleTick[], initialState?: SimU
       if (action.type === 'die') unit.isDead = true
     }
 
-    const alive = Array.from(units.values()).filter(unit => !unit.isDead)
-    for (let i = 0; i < alive.length; i++) {
-      for (let j = i + 1; j < alive.length; j++) {
-        const first = alive[i]
-        const second = alive[j]
-        if (first.isFlying !== second.isFlying) continue
-
-        const minDistance = (getSizeRadius(first.size) + getSizeRadius(second.size)) * 0.95
-        const distance = Math.hypot(first.x - second.x, first.y - second.y)
-        const overlap = Math.max(0, minDistance - distance)
-        if (overlap <= 0) continue
-
-        const overlapRatio = overlap / minDistance
-        totalOverlap += overlap
-        totalOverlapRatio += overlapRatio
-        metrics.overlapSamples++
-        metrics.maxOverlap = Math.max(metrics.maxOverlap, overlap)
-        metrics.maxOverlapRatio = Math.max(metrics.maxOverlapRatio, overlapRatio)
-        if (overlapRatio >= 0.5) metrics.severeOverlapSamples++
-      }
-    }
+    const overlap = collectOverlapMetrics([...units.values()])
+    totalOverlap += overlap.totalOverlap
+    totalOverlapRatio += overlap.totalOverlapRatio
+    metrics.overlapSamples += overlap.overlapSamples
+    metrics.maxOverlap = Math.max(metrics.maxOverlap, overlap.maxOverlap)
+    metrics.maxOverlapRatio = Math.max(metrics.maxOverlapRatio, overlap.maxOverlapRatio)
+    metrics.severeOverlapSamples += overlap.severeOverlapSamples
   }
 
   metrics.averageOverlap = metrics.overlapSamples > 0 ? totalOverlap / metrics.overlapSamples : 0

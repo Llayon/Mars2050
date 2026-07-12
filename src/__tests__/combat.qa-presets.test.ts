@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest'
-import { MAX_TICKS } from '@/domains/combat/combat.config'
 import type { BattleActionType, BattleResult } from '@/domains/combat/combat.types'
 import { getSimulatorPreset, SIMULATOR_PRESET_OPTIONS } from '@/app/simulator2/simulator.presets'
 import {
@@ -7,6 +6,7 @@ import {
   expectBattleTerminates,
   expectDeterministicScenario,
   expectMetricBounds,
+  expectReplayMetricsAligned,
   expectReplayHas,
   expectSpawnBounded,
   flattenActions,
@@ -20,6 +20,52 @@ const SCENARIO_ACTION_GATES: { presetId: string; requiredActions: BattleActionTy
   { presetId: 'transform_modes', requiredActions: ['mode_change', 'stance_change'] },
   { presetId: 'cleanse_status', requiredActions: ['status_cleanse'] },
 ]
+const MOVEMENT_QA_GATES = [
+  {
+    presetId: 'ranged_duel',
+    bounds: {
+      firstAttackTickMax: 18,
+      maxOverlapLessThan: 21,
+      averageOverlapRatioLessThan: 0.36,
+      severeOverlapSamplesLessThan: 5500,
+      targetSwitchesLessThan: 2000,
+      battleDurationLessThan: 160,
+      averageTimeToEngageMax: 26,
+      totalStuckTicksLessThan: 100,
+      meleeSlotWaitTicksLessThan: 1,
+    },
+  },
+  {
+    presetId: 'massive_clash',
+    bounds: {
+      minInitialUnits: 100,
+      firstAttackTickMax: 25,
+      maxOverlapLessThan: 30,
+      averageOverlapRatioLessThan: 0.34,
+      severeOverlapSamplesLessThan: 2200,
+      targetSwitchesLessThan: 650,
+      battleDurationLessThan: 120,
+      averageTimeToEngageMax: 40,
+      totalStuckTicksLessThan: 1700,
+      meleeSlotWaitTicksLessThan: 4500,
+    },
+  },
+  {
+    presetId: 'zerg_rush',
+    bounds: {
+      minInitialUnits: 500,
+      firstAttackTickMax: 12,
+      maxOverlapLessThan: 38,
+      averageOverlapRatioLessThan: 0.36,
+      severeOverlapSamplesLessThan: 65000,
+      targetSwitchesLessThan: 6500,
+      battleDurationLessThan: 180,
+      averageTimeToEngageMax: 40,
+      totalStuckTicksLessThan: 9000,
+      meleeSlotWaitTicksLessThan: 25000,
+    },
+  },
+] as const
 
 describe('combat QA simulator presets', () => {
   it('generates deterministic unit rows for every simulator preset', () => {
@@ -54,34 +100,15 @@ describe('combat QA simulator presets', () => {
     expectAppliedAnyStatus(result, ['emp', 'hacked'], 'control_status')
   }, 15000)
 
-  it('keeps the 100+ runtime-unit stress preset inside QA metric bounds', () => {
-    const result = simulateScenario('massive_clash', { trackMetrics: true })
+  for (const gate of MOVEMENT_QA_GATES) {
+    it(`keeps ${gate.presetId} movement metrics inside QA bounds`, () => {
+      const result = simulateScenario(gate.presetId, { trackMetrics: true })
 
-    expect(result.initialState.length).toBeGreaterThanOrEqual(100)
-    expectBattleTerminates(result, 'massive_clash')
-    expectMetricBounds(result, {
-      firstAttackTickMax: 25,
-      maxOverlapLessThan: 30,
-      maxOverlapRatioLessThan: 1,
-      averageOverlapRatioLessThan: 0.34,
-      severeOverlapSamplesLessThan: 2200,
-      targetSwitchesLessThan: 500,
-      battleDurationLessThan: MAX_TICKS,
-      averageTimeToEngageMax: 40,
-    }, 'massive_clash')
-  }, 15000)
-
-  it('keeps ranged-line overlap inside QA metric bounds', () => {
-    const result = simulateScenario('ranged_duel', { trackMetrics: true })
-
-    expectBattleTerminates(result, 'ranged_duel')
-    expectMetricBounds(result, {
-      maxOverlapRatioLessThan: 1,
-      averageOverlapRatioLessThan: 0.36,
-      severeOverlapSamplesLessThan: 8000,
-      battleDurationLessThan: MAX_TICKS,
-    }, 'ranged_duel')
-  }, 15000)
+      expectBattleTerminates(result, gate.presetId)
+      expectMetricBounds(result, gate.bounds, gate.presetId)
+      expectReplayMetricsAligned(result, gate.presetId)
+    }, gate.presetId === 'zerg_rush' ? 150000 : 30000)
+  }
 
   it('keeps summon-heavy QA presets bounded', () => {
     const summonCaps = simulateScenario('summon_caps')

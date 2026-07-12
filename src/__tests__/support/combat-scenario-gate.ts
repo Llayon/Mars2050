@@ -4,12 +4,14 @@ import { simulateBattle } from '@/domains/combat/combat.engine'
 import type { BattleAction, BattleActionType, BattleResult, UnitRow } from '@/domains/combat/combat.types'
 import type { CombatMetrics } from '@/domains/combat/combat.metrics'
 import { getSimulatorPreset } from '@/app/simulator2/simulator.presets'
+import { buildBattleReplayMetrics } from '@/components/game/battle-replay-metrics'
 
 interface ScenarioOptions {
   trackMetrics?: boolean
 }
 
 interface MetricBounds {
+  minInitialUnits?: number
   firstAttackTickMax?: number
   maxOverlapLessThan?: number
   maxOverlapRatioLessThan?: number
@@ -18,6 +20,8 @@ interface MetricBounds {
   targetSwitchesLessThan?: number
   battleDurationLessThan?: number
   averageTimeToEngageMax?: number
+  totalStuckTicksLessThan?: number
+  meleeSlotWaitTicksLessThan?: number
 }
 
 export function simulateScenario(presetId: string, options: ScenarioOptions = {}): BattleResult {
@@ -61,19 +65,33 @@ export function expectSpawnBounded(result: BattleResult, max: number, label = 's
 
 export function expectMetricBounds(result: BattleResult, bounds: MetricBounds, label = 'scenario'): void {
   const metrics = expectMetrics(result, label)
+  if (bounds.minInitialUnits !== undefined) expect(result.initialState.length, `${label}: initial units`).toBeGreaterThanOrEqual(bounds.minInitialUnits)
   if (bounds.firstAttackTickMax !== undefined) {
-    expect(metrics.firstAttackTick, label).not.toBeNull()
-    expect(metrics.firstAttackTick ?? MAX_TICKS, label).toBeLessThanOrEqual(bounds.firstAttackTickMax)
+    expect(metrics.firstAttackTick, `${label}: first attack tick`).not.toBeNull()
+    expect(metrics.firstAttackTick ?? MAX_TICKS, `${label}: first attack tick`).toBeLessThanOrEqual(bounds.firstAttackTickMax)
   }
-  if (bounds.maxOverlapLessThan !== undefined) expect(metrics.maxOverlap, label).toBeLessThan(bounds.maxOverlapLessThan)
-  if (bounds.maxOverlapRatioLessThan !== undefined) expect(metrics.maxOverlapRatio, label).toBeLessThan(bounds.maxOverlapRatioLessThan)
-  if (bounds.averageOverlapRatioLessThan !== undefined) expect(metrics.averageOverlapRatio, label).toBeLessThan(bounds.averageOverlapRatioLessThan)
-  if (bounds.severeOverlapSamplesLessThan !== undefined) expect(metrics.severeOverlapSamples, label).toBeLessThan(bounds.severeOverlapSamplesLessThan)
-  if (bounds.targetSwitchesLessThan !== undefined) expect(metrics.targetSwitches, label).toBeLessThan(bounds.targetSwitchesLessThan)
-  if (bounds.battleDurationLessThan !== undefined) expect(metrics.battleDurationTicks, label).toBeLessThan(bounds.battleDurationLessThan)
+  if (bounds.maxOverlapLessThan !== undefined) expect(metrics.maxOverlap, `${label}: max overlap`).toBeLessThan(bounds.maxOverlapLessThan)
+  if (bounds.maxOverlapRatioLessThan !== undefined) expect(metrics.maxOverlapRatio, `${label}: max overlap ratio`).toBeLessThan(bounds.maxOverlapRatioLessThan)
+  if (bounds.averageOverlapRatioLessThan !== undefined) expect(metrics.averageOverlapRatio, `${label}: average overlap ratio`).toBeLessThan(bounds.averageOverlapRatioLessThan)
+  if (bounds.severeOverlapSamplesLessThan !== undefined) expect(metrics.severeOverlapSamples, `${label}: severe overlap samples`).toBeLessThan(bounds.severeOverlapSamplesLessThan)
+  if (bounds.targetSwitchesLessThan !== undefined) expect(metrics.targetSwitches, `${label}: target switches`).toBeLessThan(bounds.targetSwitchesLessThan)
+  if (bounds.battleDurationLessThan !== undefined) expect(metrics.battleDurationTicks, `${label}: battle duration`).toBeLessThan(bounds.battleDurationLessThan)
   if (bounds.averageTimeToEngageMax !== undefined && metrics.averageTimeToEngage !== null) {
-    expect(metrics.averageTimeToEngage, label).toBeLessThanOrEqual(bounds.averageTimeToEngageMax)
+    expect(metrics.averageTimeToEngage, `${label}: average time to engage`).toBeLessThanOrEqual(bounds.averageTimeToEngageMax)
   }
+  if (bounds.totalStuckTicksLessThan !== undefined) expect(sumValues(metrics.stuckTicksByUnitType), `${label}: total stuck ticks`).toBeLessThan(bounds.totalStuckTicksLessThan)
+  if (bounds.meleeSlotWaitTicksLessThan !== undefined) expect(metrics.meleeSlotWaitTicks, `${label}: melee slot wait ticks`).toBeLessThan(bounds.meleeSlotWaitTicksLessThan)
+}
+
+export function expectReplayMetricsAligned(result: BattleResult, label = 'scenario'): void {
+  const metrics = expectMetrics(result, label)
+  const replayMetrics = buildBattleReplayMetrics(result.logs, result.initialState)
+  const severeDeltaLimit = Math.max(5, metrics.severeOverlapSamples * 0.001)
+
+  expect(replayMetrics.firstAttack, `${label}: replay first attack`).toBe(metrics.firstAttackTick)
+  expect(Math.abs(replayMetrics.averageOverlapRatio - metrics.averageOverlapRatio), `${label}: replay average overlap ratio`).toBeLessThanOrEqual(0.005)
+  expect(Math.abs(replayMetrics.maxOverlapRatio - metrics.maxOverlapRatio), `${label}: replay max overlap ratio`).toBeLessThanOrEqual(0.005)
+  expect(Math.abs(replayMetrics.severeOverlapSamples - metrics.severeOverlapSamples), `${label}: replay severe overlap samples`).toBeLessThanOrEqual(severeDeltaLimit)
 }
 
 export function expectDeterministicScenario(presetId: string): void {
@@ -93,4 +111,8 @@ function expectMetrics(result: BattleResult, label: string): CombatMetrics {
 
 function cloneRows(rows: UnitRow[]): UnitRow[] {
   return rows.map(row => ({ ...row, upgrade_path: [...(row.upgrade_path ?? [])] }))
+}
+
+function sumValues(values: Record<string, number>): number {
+  return Object.values(values).reduce((total, value) => total + value, 0)
 }
