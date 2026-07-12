@@ -25,7 +25,7 @@
 | `npm run test:combat:scenarios` | Runtime scenario metrics gate: simulator presets, replay actions, termination, spawn caps, and soft combat metrics. |
 | `npm run test:combat:tier1` | Tier 1 role gate: deterministic role scenarios, replay-visible role signals, and non-zero carrier output. |
 | `npm run combat:snapshot` | Generates committed balance-readiness reports in `docs/combat-balance-snapshot.md` and `.json`. |
-| `npm run test:e2e:replay` | Fast replay smoke: presets, mobile fit, debug overlays, timeline seek, primitive event labels. |
+| `npm run test:e2e:replay` | Fast replay smoke: presets, mobile fit, debug overlays, dense movement readability, timeline seek, primitive event labels. |
 | `npm run test:e2e:replay-baseline` | Canvas screenshot baselines for stable visual states. |
 | `npm run test:e2e:replay-baseline:update` | Updates committed baseline screenshots after intentional replay rendering changes. |
 | `npm run test:e2e:qa` | Simulator load smoke plus replay smoke, without screenshot baseline comparison. |
@@ -67,6 +67,19 @@ snapshots are platform-specific `*-chromium-win32.png` files.
 Transient projectile target lines remain covered by
 `tests/e2e/simulator2-replay.spec.ts` pixel smoke checks instead of baseline
 snapshots, because their age depends on frame timing.
+
+## Movement Visual Smoke
+
+Dense movement readability is covered by
+`tests/e2e/simulator2-replay.spec.ts` against the `ranged_duel` and
+`massive_clash` presets. The test pauses the replay, seeks to a deterministic
+early combat tick, enables hitbox and velocity overlays, checks that both
+overlay colors are present, and compares two paused canvas screenshots to catch
+visible jitter.
+
+This is intentionally not a screenshot baseline. It protects replay readability
+after movement/depenetration tuning without making normal combat timing changes
+require baseline image updates.
 
 ## Primitive Event Visual Smoke
 

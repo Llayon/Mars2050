@@ -36,8 +36,8 @@ test('simulator2 replay fits and renders on a mobile viewport', async ({ page })
 
   await page.goto('/simulator2')
   await expect(page.getByRole('heading', { name: /Симулятор Боя/ })).toBeVisible()
-  await page.locator('select').first().selectOption('stealth_reveal')
-  await page.getByRole('button', { name: /НАЧАТЬ СИМУЛЯЦИЮ/ }).click()
+  await loadReplayPreset(page, 'stealth_reveal')
+  await startSelectedSimulation(page)
 
   const canvas = page.locator('canvas').last()
   await expect(canvas).toBeVisible()
@@ -66,8 +66,8 @@ test('simulator2 replay debug overlays render hitboxes, velocity, and target lin
 
   await page.goto('/simulator2')
   await expect(page.getByRole('heading', { name: /Симулятор Боя/ })).toBeVisible()
-  await page.locator('select').first().selectOption('projectile_barrier')
-  await page.getByRole('button', { name: /НАЧАТЬ СИМУЛЯЦИЮ/ }).click()
+  await loadReplayPreset(page, 'projectile_barrier')
+  await startSelectedSimulation(page)
 
   const canvas = page.locator('canvas').last()
   await expect(canvas).toBeVisible()
@@ -84,6 +84,24 @@ test('simulator2 replay debug overlays render hitboxes, velocity, and target lin
   network.assertClean()
 })
 
+test('simulator2 replay keeps dense movement states visually stable', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1100 })
+  const network = collectNetwork(page)
+  const consoleWarnings = collectConsoleWarnings(page)
+
+  await page.goto('/simulator2')
+  await expect(page.getByRole('heading', { name: /Симулятор Боя/ })).toBeVisible()
+
+  for (const preset of ['ranged_duel', 'massive_clash']) {
+    await runDenseMovementVisualSmoke(page, preset)
+  }
+
+  expect(network.hasChunk('pixi'), 'dense movement replay should stay on the canvas renderer').toBe(false)
+  expect(network.countPathPrefix('/api/')).toBe(0)
+  expect(consoleWarnings, 'console warnings').toEqual([])
+  network.assertClean()
+})
+
 test('simulator2 replay timeline can seek, rewind, and resume playback', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1100 })
   const network = collectNetwork(page)
@@ -91,8 +109,8 @@ test('simulator2 replay timeline can seek, rewind, and resume playback', async (
 
   await page.goto('/simulator2')
   await expect(page.getByRole('heading', { name: /Симулятор Боя/ })).toBeVisible()
-  await page.locator('select').first().selectOption('transform_modes')
-  await page.getByRole('button', { name: /НАЧАТЬ СИМУЛЯЦИЮ/ }).click()
+  await loadReplayPreset(page, 'transform_modes')
+  await startSelectedSimulation(page)
 
   const canvas = page.locator('canvas').last()
   const timeline = page.getByTestId('replay-timeline')
@@ -138,8 +156,8 @@ test('simulator2 replay shows high-signal primitive event labels', async ({ page
 
   await page.goto('/simulator2')
   await expect(page.getByRole('heading', { name: /Симулятор Боя/ })).toBeVisible()
-  await page.locator('select').first().selectOption('qa_primitive_events')
-  await page.getByRole('button', { name: /НАЧАТЬ СИМУЛЯЦИЮ/ }).click()
+  await loadReplayPreset(page, 'qa_primitive_events')
+  await startSelectedSimulation(page)
 
   const canvas = page.locator('canvas').last()
   const timeline = page.getByTestId('replay-timeline')
@@ -170,8 +188,8 @@ test('simulator2 replay shows high-signal primitive event labels', async ({ page
 })
 
 async function runReplayPreset(page: Page, preset: string): Promise<void> {
-  await page.locator('select').first().selectOption(preset)
-  await page.getByRole('button', { name: /НАЧАТЬ СИМУЛЯЦИЮ/ }).click()
+  await loadReplayPreset(page, preset)
+  await startSelectedSimulation(page)
 
   const canvas = page.locator('canvas').last()
   await expect(canvas).toBeVisible()
@@ -182,6 +200,63 @@ async function runReplayPreset(page: Page, preset: string): Promise<void> {
 
   await page.getByRole('button', { name: /✕/ }).click()
   await expect(canvas).toBeHidden()
+}
+
+async function runDenseMovementVisualSmoke(page: Page, preset: string): Promise<void> {
+  await loadReplayPreset(page, preset)
+  await startSelectedSimulation(page)
+
+  const canvas = page.locator('canvas').last()
+  const timeline = page.getByTestId('replay-timeline')
+  const tickReadout = page.getByTestId('replay-current-tick')
+  await expect(canvas).toBeVisible()
+  await expect(timeline).toBeVisible()
+
+  const maxTick = Number(await timeline.getAttribute('max'))
+  expect(maxTick, `${preset} timeline should expose dense replay ticks`).toBeGreaterThan(25)
+
+  await page.getByRole('button', { name: /Пауза/ }).click()
+  await expect(page.getByRole('button', { name: /Играть/ })).toBeVisible()
+  const targetTick = Math.min(maxTick - 5, 20)
+  await setTimelineTick(timeline, targetTick)
+  await expect(tickReadout).toContainText(`Tick ${targetTick} / ${maxTick}`)
+
+  await page.getByLabel(/Хитбоксы/).check()
+  await page.getByLabel(/Векторы движения/).check()
+  await page.waitForTimeout(120)
+  await expectBattleReplayCanvasPainted(canvas)
+  const overlayPixels = await countOverlayPixels(canvas)
+  expect(overlayPixels.hitboxCyan, `${preset} should show hitbox overlays`).toBeGreaterThan(10)
+  expect(overlayPixels.velocityYellow, `${preset} should show movement vectors`).toBeGreaterThan(5)
+
+  const firstFrame = await canvas.screenshot()
+  await page.waitForTimeout(180)
+  const secondFrame = await canvas.screenshot()
+  expect(await countChangedPixels(firstFrame, secondFrame), `${preset} paused replay frame should not jitter`).toBeLessThan(20)
+
+  await page.getByRole('button', { name: /✕/ }).click()
+  await expect(canvas).toBeHidden()
+}
+
+async function loadReplayPreset(page: Page, preset: string): Promise<void> {
+  const presetSelect = page.locator('select').first()
+  await presetSelect.evaluate((element, value) => {
+    const input = element as HTMLSelectElement
+    const valueSetter = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value')?.set
+    valueSetter?.call(input, '')
+    input.dispatchEvent(new Event('input', { bubbles: true }))
+    input.dispatchEvent(new Event('change', { bubbles: true }))
+    valueSetter?.call(input, value)
+    input.dispatchEvent(new Event('input', { bubbles: true }))
+    input.dispatchEvent(new Event('change', { bubbles: true }))
+  }, preset)
+  await expect(presetSelect).toHaveValue(preset)
+}
+
+async function startSelectedSimulation(page: Page): Promise<void> {
+  const startButton = page.getByRole('button', { name: /НАЧАТЬ СИМУЛЯЦИЮ/ })
+  await expect(startButton).toBeEnabled()
+  await startButton.click()
 }
 
 async function playEventTick(page: Page, timeline: Locator, tick: number): Promise<void> {
