@@ -420,6 +420,35 @@ export interface Database {
           created_at?: string
         }
       }
+      battle_snapshots: {
+        Row: {
+          id?: string
+          battle_id: string
+          seed: number
+          initial_state: Record<string, unknown>
+          log: Record<string, unknown>
+          metrics?: Record<string, unknown> | null
+          version?: number
+          created_at?: string
+        }
+        Insert: {
+          battle_id: string
+          seed: number
+          initial_state: Record<string, unknown>
+          log: Record<string, unknown>
+          metrics?: Record<string, unknown> | null
+          version?: number
+        }
+        Update: {
+          battle_id?: string
+          seed?: number
+          initial_state?: Record<string, unknown>
+          log?: Record<string, unknown>
+          metrics?: Record<string, unknown> | null
+          version?: number
+          created_at?: string
+        }
+      }
     }
   }
 }

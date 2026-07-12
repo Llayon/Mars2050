@@ -356,6 +356,17 @@ create table public.battles (
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
+create table if not exists public.battle_snapshots (
+  id uuid default uuid_generate_v4() primary key,
+  battle_id uuid references public.battles(id) on delete cascade not null unique,
+  seed integer not null,
+  initial_state jsonb not null,
+  log jsonb not null,
+  metrics jsonb,
+  version integer not null default 1,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
 -- RLS for units and battles
 alter table public.units enable row level security;
 alter table public.battles enable row level security;

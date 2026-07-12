@@ -1,8 +1,9 @@
 import { getServerClient } from '@/domains/resource/resource.server'
 import { simulateBattle } from '@/domains/combat/combat.engine'
-import type { UnitRow, BattleTick, Obstacle, SimUnit } from '@/domains/combat/combat.types'
+import type { UnitRow } from '@/domains/combat/combat.types'
 import type { DeploymentPoint } from '@/domains/combat/combat.deployment'
 import type { SupabaseClient } from '@supabase/supabase-js'
+import type { AttackResult } from './pvp.types'
 import { loadOwnedColony } from './pvp.ownership'
 import {
   computeBattlePersistence,
@@ -81,21 +82,7 @@ export async function executeAttack(
   defenderColonyId: string,
   clientSeed?: number,
   attackerUnitsPlacement?: DeploymentPoint[]
-): Promise<{
-  success: boolean
-  error?: string
-  message?: string
-  stolen?: Record<string, number>
-  logs?: BattleTick[]
-  obstacles?: Obstacle[]
-  initialState?: SimUnit[]
-  attackerUnits?: UnitRow[]
-  defenderUnits?: UnitRow[]
-  battleId?: string
-  seed?: number
-  simulationVersion?: number
-  cooldownRemaining?: number
-}> {
+): Promise<AttackResult> {
   const owned = await loadOwnedColony(authClient, attackerColonyId, userId)
   if (!owned) {
     return { success: false, error: 'You do not own the attacker colony' }
@@ -152,7 +139,11 @@ export async function executeAttack(
   const battleResult = simulateBattle(
     attackerUnits as UnitRow[],
     (defenderUnits || []) as UnitRow[],
-    clientSeed
+    clientSeed,
+    [],
+    [],
+    [],
+    { trackMetrics: true }
   )
 
   let stolen: Record<string, number> = {}
@@ -190,6 +181,7 @@ export async function executeAttack(
         seed: battleResult.seed ?? clientSeed ?? 0,
         initial_state: battleResult.initialState as unknown as Record<string, unknown>,
         log: battleResult.logs as unknown as Record<string, unknown>,
+        metrics: (battleResult.metrics ?? {}) as unknown as Record<string, unknown>,
         simulationVersion: SNAPSHOT_VERSION,
       }
     )
@@ -218,6 +210,7 @@ export async function executeAttack(
     defenderUnits: defenderUnits || [],
     battleId: battleId ?? undefined,
     seed: battleResult.seed,
+    metrics: battleResult.metrics,
     simulationVersion: SNAPSHOT_VERSION,
   }
 }

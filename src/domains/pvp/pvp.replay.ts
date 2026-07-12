@@ -25,6 +25,7 @@ export interface BattleSnapshotRow {
   seed: number
   initial_state: Record<string, unknown>
   log: Record<string, unknown>
+  metrics: Record<string, unknown> | null
   version: number
   created_at: string | null
 }
@@ -54,7 +55,7 @@ export async function loadBattleWithSnapshot(
 
   const { data: snapshot, error: snapError } = await supabase
     .from('battle_snapshots')
-    .select('battle_id, seed, initial_state, log, version, created_at')
+    .select('battle_id, seed, initial_state, log, metrics, version, created_at')
     .eq('battle_id', battleId)
     .single()
   if (snapError || !snapshot) return null
@@ -132,6 +133,7 @@ export async function persistBattleWithSnapshot(
     seed: number
     initial_state: Record<string, unknown>
     log: Record<string, unknown>
+    metrics?: Record<string, unknown>
     simulationVersion?: number
   }
 ): Promise<string | null> {
@@ -157,6 +159,7 @@ export async function persistBattleWithSnapshot(
     seed: snapshot.seed,
     initial_state: snapshot.initial_state,
     log: snapshot.log,
+    metrics: snapshot.metrics ?? null,
     version,
   })
   if (snapError) {

@@ -3,6 +3,39 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 // Mock the persistence layer to capture what gets persisted.
 const mockPersist = vi.fn()
 const mockGetCooldown = vi.fn()
+const { mockSimulateBattle } = vi.hoisted(() => ({
+  mockSimulateBattle: vi.fn(() => ({
+    winner: 'attacker',
+    logs: [],
+    initialState: [],
+    obstacles: [],
+    metrics: {
+      firstAttackTick: 1,
+      battleDurationTicks: 2,
+      targetSwitches: 0,
+      overlapSamples: 0,
+      averageOverlap: 0,
+      maxOverlap: 0,
+      averageOverlapRatio: 0,
+      maxOverlapRatio: 0,
+      severeOverlapSamples: 0,
+      averageTimeToEngage: 1,
+      averageEngagementDistance: 100,
+      meleeSlotWaitTicks: 0,
+      stuckTicksByUnitType: {},
+      targetSwitchesByUnitType: {},
+      damageByUnitType: { marine: 10 },
+      damageTakenByUnitType: { marine: 10 },
+      healingDoneByUnitType: {},
+      overkillDamage: 0,
+    },
+    survivors: [
+      { id: 'u1_0', hp: 80, maxHp: 100, type: 'marine', team: 'attacker' as const },
+      { id: 'u2', hp: 0, maxHp: 50, type: 'marine', team: 'defender' as const },
+    ],
+    seed: 12345,
+  })),
+}))
 vi.mock('@/domains/pvp/pvp.replay', async () => {
   const actual = await vi.importActual<typeof import('@/domains/pvp/pvp.replay')>('@/domains/pvp/pvp.replay')
   return {
@@ -13,17 +46,7 @@ vi.mock('@/domains/pvp/pvp.replay', async () => {
 })
 
 vi.mock('@/domains/combat/combat.engine', () => ({
-  simulateBattle: () => ({
-    winner: 'attacker',
-    logs: [],
-    initialState: [],
-    obstacles: [],
-    survivors: [
-      { id: 'u1_0', hp: 80, maxHp: 100, type: 'marine', team: 'attacker' as const },
-      { id: 'u2', hp: 0, maxHp: 50, type: 'marine', team: 'defender' as const },
-    ],
-    seed: 12345,
-  }),
+  simulateBattle: mockSimulateBattle,
 }))
 
 vi.mock('@/domains/resource/resource.server', () => ({
@@ -110,6 +133,35 @@ describe('executeAttack — contract: simulationVersion in snapshot', () => {
     )
     expect(result.simulationVersion).toBeDefined()
     expect(result.simulationVersion).toBeGreaterThanOrEqual(1)
+  })
+
+  it('persists and returns combat metrics with the battle snapshot', async () => {
+    mockPersist.mockResolvedValue('battle-1')
+    const result = await executeAttack(
+      makeAuthClient('user-1'), 'user-1', UUID, '550e8400-e29b-41d4-a716-446655440001', 42
+    )
+
+    const snapshotArg = mockPersist.mock.calls[0]![1] as { metrics: Record<string, unknown> }
+    expect(snapshotArg.metrics.firstAttackTick).toBe(1)
+    expect(snapshotArg.metrics.damageByUnitType).toEqual({ marine: 10 })
+    expect(result.metrics?.firstAttackTick).toBe(1)
+  })
+
+  it('runs PvP simulation with metrics tracking enabled', async () => {
+    mockPersist.mockResolvedValue('battle-1')
+    await executeAttack(
+      makeAuthClient('user-1'), 'user-1', UUID, '550e8400-e29b-41d4-a716-446655440001', 42
+    )
+
+    expect(mockSimulateBattle).toHaveBeenCalledWith(
+      expect.any(Array),
+      expect.any(Array),
+      42,
+      [],
+      [],
+      [],
+      { trackMetrics: true }
+    )
   })
 })
 
