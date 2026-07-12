@@ -17,6 +17,10 @@
 `combat.qa-presets.test.ts` закрепляет movement regression gates для `ranged_duel`, `massive_clash` и `zerg_rush`.
 Runtime metrics являются главным источником gate-порогов: first attack, battle duration, overlap ratio, severe overlap samples, target switches, stuck ticks и melee slot wait ticks.
 Replay metrics проверяются как diagnostic mirror с tolerance, чтобы UI-панель не расходилась с runtime telemetry при допустимых отличиях sampling order.
+Для ручной диагностики есть report:
+- `npm run combat:metrics` — таблица по базовым movement QA presets.
+- `npx tsx scripts/combat-metrics-report.ts --preset=ranged_duel --json` — JSON для выбранных presets.
+- `npx tsx scripts/combat-metrics-report.ts --all` — полный report по всем simulator presets.
 
 ## Управление и Debug Overlays
 - **Play/Pause / Speed**: Управление скоростью от 0.5x до 4.0x.

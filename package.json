@@ -9,6 +9,7 @@
     "lint": "eslint",
     "lint:limits": "tsx scripts/check-limits.ts",
     "combat:snapshot": "tsx scripts/combat-snapshot.ts",
+    "combat:metrics": "tsx scripts/combat-metrics-report.ts",
     "prebuild": "tsx scripts/check-limits.ts",
     "generate:types": "tsx scripts/generate-types.ts",
     "scaffold": "tsx scripts/scaffold.ts",
