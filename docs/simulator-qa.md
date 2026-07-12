@@ -23,6 +23,7 @@ Replay metrics проверяются как diagnostic mirror с tolerance, ч�
 - `npx tsx scripts/combat-metrics-report.ts --all` — полный report по всем simulator presets.
 - `npx tsx scripts/combat-metrics-report.ts --compare=docs/combat-metrics-baseline.json` — delta к сохраненному baseline.
 - `npx tsx scripts/combat-metrics-report.ts --update-baseline` — обновить baseline после намеренного изменения movement/targeting.
+Если `npm run test:combat:scenarios` падает или delta подозрительная, запустите `npm run combat:qa:artifacts`: он сохранит `metrics.json`, `metrics-compare.json`, `summary.md` и sample replay actions в `artifacts/combat-qa/`.
 
 ## Управление и Debug Overlays
 - **Play/Pause / Speed**: Управление скоростью от 0.5x до 4.0x.
