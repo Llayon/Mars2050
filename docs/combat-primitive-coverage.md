@@ -26,7 +26,11 @@ Visual replay smoke coverage lives in `tests/e2e/simulator2-replay.spec.ts`.
 It covers preset replay startup, mobile rendering, debug overlays for hitboxes,
 velocity vectors and target lines, and guards that the default `/simulator2`
 replay path does not load a Pixi chunk. Pixi opt-in coverage lives in
-`tests/e2e/simulator2-replay-pixi.spec.ts`.
+`tests/e2e/simulator2-replay-pixi.spec.ts`; it covers lazy Pixi loading, mobile
+fit, overlay parity, seek/rewind stability, dense movement readability, and
+zerg Crowd LOD. Pixi uses persistent scene layers with reusable unit/effect
+objects, but canvas remains the default renderer until future default-switch
+work explicitly updates this contract.
 
 | Mechabellum effect family | Mars2050 primitive | Runtime status/state | Regression tests | Status |
 | --- | --- | --- | --- | --- |

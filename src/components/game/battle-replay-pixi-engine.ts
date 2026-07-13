@@ -3,6 +3,7 @@ import { FIELD_HEIGHT, FIELD_WIDTH, SPRITE_DIRS } from '@/domains/combat/combat.
 import type { BattleReplayEngineProps, ReplayAppHandle } from './battle-replay-canvas-types'
 import { createBattleReplayRuntime } from './battle-replay-runtime'
 import { drawPixiReplay } from './battle-replay-pixi-draw'
+import { createPixiReplayScene } from './battle-replay-pixi-scene'
 import { resolveReplaySprite } from './battle-replay-sprites'
 
 export type { BattleReplayEngineProps, ReplayAppHandle, ReplayControls } from './battle-replay-canvas-types'
@@ -31,10 +32,11 @@ export async function startPixiBattleReplayEngine(props: BattleReplayEngineProps
   const root = new Container()
   root.sortableChildren = true
   app.stage.addChild(root)
+  const scene = createPixiReplayScene(root, obstacles ?? [])
 
   const renderLoop = () => {
     const frame = runtime.frame(performance.now())
-    drawPixiReplay(root, frame, obstacles ?? [])
+    drawPixiReplay(scene, frame)
   }
   app.ticker.add(renderLoop)
   renderLoop()

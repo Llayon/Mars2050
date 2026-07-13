@@ -41,7 +41,7 @@ Replay metrics проверяются как diagnostic mirror с tolerance, ч�
 | `npm run test:combat:tier1` | Tier 1 role gate: deterministic role scenarios, replay-visible role signals, and non-zero carrier output. |
 | `npm run combat:snapshot` | Generates committed balance-readiness reports in `docs/combat-balance-snapshot.md` and `.json`. |
 | `npm run test:e2e:replay` | Fast replay smoke: presets, mobile fit, debug overlays, dense movement readability, timeline seek, primitive event labels. |
-| `npm run test:e2e:replay-pixi` | Opt-in Pixi replay smoke: lazy Pixi chunk, painted canvas, overlays. |
+| `npm run test:e2e:replay-pixi` | Opt-in Pixi replay parity smoke: lazy Pixi chunk, mobile fit, overlays, seek/rewind, dense movement, and zerg Crowd LOD. |
 | `npm run test:e2e:replay-baseline` | Canvas screenshot baselines for stable visual states. |
 | `npm run test:e2e:replay-baseline:update` | Updates committed baseline screenshots after intentional replay rendering changes. |
 | `npm run test:e2e:qa` | Simulator load smoke plus replay smoke, without screenshot baseline comparison. |
@@ -110,6 +110,15 @@ fallbacks only when a unit has no resolved visual asset or the image is still
 loading. Debug hitboxes and velocity vectors still use exact unit positions, so
 overlays remain suitable for movement diagnostics.
 
+Pixi uses the same Crowd LOD plan, but the renderer keeps a persistent scene:
+static battlefield layers are created once, unit displays are keyed by `unit.id`,
+and transient hazards/projectiles/texts use reusable pools. This prevents the
+opt-in renderer from destroying and recreating the whole display tree every
+frame. `test:e2e:replay-pixi` covers mobile fit, pause/seek/rewind stability,
+debug overlays, the `marine_crowd_qa` repro, and the `zerg_rush` stress state.
+Canvas remains the default renderer until this suite and the canvas baseline
+suite are both green after future visual changes.
+
 This is intentionally not a screenshot baseline. It protects replay readability
 after movement/depenetration tuning without making normal combat timing changes
 require baseline image updates.
@@ -129,7 +138,8 @@ npm run test:e2e:replay
 
 Pixi replay rendering is available as an opt-in simulator renderer. The first
 `/simulator2` screen must still avoid Pixi chunks; `npm run test:e2e:replay-pixi`
-checks that Pixi loads only after the replay opens.
+checks that Pixi loads only after the replay opens and remains readable across
+mobile, seek/rewind, overlays, dense movement, and zerg stress states.
 
 Covered visual event groups:
 

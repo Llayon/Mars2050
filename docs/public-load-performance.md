@@ -181,7 +181,8 @@ Verification for this slice:
 - The deterministic combat engine imports only when the player starts a simulation.
 - Preset data imports only after a preset is selected.
 - Hidden unit tooltip DOM was removed from the prerendered shell; compact button `title` text keeps unit stats available without duplicating large hidden markup.
-- `tests/e2e/simulator2-load.spec.ts` guards that replay chunks, Pixi chunks, and API requests are absent from the initial simulator screen. `test:e2e:replay-pixi` verifies that Pixi loads only after the opt-in replay opens.
+- `tests/e2e/simulator2-load.spec.ts` guards that replay chunks, Pixi chunks, and API requests are absent from the initial simulator screen. `test:e2e:replay-pixi` verifies that Pixi loads only after the opt-in replay opens and covers mobile fit, overlays, seek/rewind stability, dense movement, and zerg Crowd LOD.
+- Pixi replay rendering uses a persistent scene with reusable unit/effect objects. Canvas remains the default renderer until the Pixi parity suite and the canvas baseline suite stay green after future visual changes.
 
 `/simulator` remains tracked as dev/QA performance debt. If it becomes player-facing, apply the same lazy replay/combat split.
 

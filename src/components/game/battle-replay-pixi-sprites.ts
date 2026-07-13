@@ -4,35 +4,62 @@ import type { ReplayCrowdRenderMode, ReplayCrowdUnitView } from './battle-replay
 import { getReplaySpriteDirection, resolveReplaySprite, type ReplaySpriteFrame } from './battle-replay-sprites'
 import { UNIT_VISUALS } from './battle-replay-visuals'
 
+export interface PixiReplaySpriteDraw {
+  texture: Texture
+  x: number
+  y: number
+  size: number
+}
+
 export function drawPixiUnitSprite(layer: Container, unit: ReplayUnit, view: ReplayCrowdUnitView): boolean {
-  const frame = resolveReplaySprite(unit.type, getReplaySpriteDirection(unit))
-  if (!frame) return false
-  const texture = getReplayTexture(frame)
-  if (!texture) return false
-  const size = getSpriteDrawSize(unit.type, frame.assetType, view.radius, view.mode)
-  const offsetY = getSpriteOffsetY(frame.assetType, view.mode)
+  const spriteDraw = getPixiReplaySpriteDraw(unit, view)
+  if (!spriteDraw) return false
 
   layer.addChild(drawTeamBase(unit, view))
   if (unit.flash > 0) layer.addChild(drawFlashRing(view.x, view.y, view.radius, unit.flash))
-  const sprite = new Sprite(texture)
+  const sprite = new Sprite(spriteDraw.texture)
   sprite.anchor.set(0.5)
-  sprite.x = view.x
-  sprite.y = view.y + offsetY
-  sprite.width = size
-  sprite.height = size
+  sprite.x = spriteDraw.x
+  sprite.y = spriteDraw.y
+  sprite.width = spriteDraw.size
+  sprite.height = spriteDraw.size
   layer.addChild(sprite)
   layer.addChild(drawTeamRing(unit, view))
   return true
 }
 
+export function getPixiReplaySpriteDraw(unit: ReplayUnit, view: ReplayCrowdUnitView): PixiReplaySpriteDraw | null {
+  const frame = resolveReplaySprite(unit.type, getReplaySpriteDirection(unit))
+  if (!frame) return null
+  const texture = getReplayTexture(frame)
+  if (!texture) return null
+  const size = getSpriteDrawSize(unit.type, frame.assetType, view.radius, view.mode)
+  return {
+    texture,
+    x: view.x,
+    y: view.y + getSpriteOffsetY(frame.assetType, view.mode),
+    size,
+  }
+}
+
+const textureCache = new Map<string, Texture | null>()
+
 function getReplayTexture(frame: ReplaySpriteFrame): Texture | null {
+  const key = `${frame.src}:${frame.kind}:${frame.frameIndex}:${frame.frameCount}`
+  if (textureCache.has(key)) return textureCache.get(key) ?? null
   const base = Texture.from(frame.src)
-  if (frame.kind === 'png') return base
+  if (frame.kind === 'png') {
+    textureCache.set(key, base)
+    return base
+  }
   const source = base.source
   const frameWidth = frame.kind === 'svg-strip' ? Math.max(1, source.width / frame.frameCount) : frame.sourceWidth
   const frameHeight = frame.kind === 'svg-strip' ? source.height : frame.sourceHeight
-  if (source.width < frameWidth * (frame.frameIndex + 1) || source.height < frameHeight) return base
-  return new Texture({ source, frame: new Rectangle(frame.frameIndex * frameWidth, 0, frameWidth, frameHeight) })
+  const texture = source.width < frameWidth * (frame.frameIndex + 1) || source.height < frameHeight
+    ? base
+    : new Texture({ source, frame: new Rectangle(frame.frameIndex * frameWidth, 0, frameWidth, frameHeight) })
+  textureCache.set(key, texture)
+  return texture
 }
 
 function drawTeamBase(unit: ReplayUnit, view: ReplayCrowdUnitView): Graphics {
