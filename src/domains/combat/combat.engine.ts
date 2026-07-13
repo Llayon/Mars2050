@@ -14,6 +14,7 @@ import { targetingSystem } from './combat.targeting'
 import { movementSystem } from './combat.movement'
 import { createMeleeEngagementState, reserveMeleeEngagementSlot } from './combat.melee-engagement'
 import { createCombatMetrics, finalizeCombatMetrics, recordCombatActions, recordCombatTick, type BattleSimulationOptions } from './combat.metrics'
+import { applyDepenetration } from './combat.depenetration'
 import { hasPendingReassembly } from './combat.reassembly'
 import { FIELD_WIDTH, FIELD_HEIGHT, PRNG, generateObstacles } from './combat.utils'
 import { createPathfindingMap } from './combat.pathfinding'
@@ -214,7 +215,6 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
       for (let i = unitCountBeforeActions; i < units.length; i++) {
         if (!units[i].isDead) spatialHash.insert(units[i]);
       }
-      
       if (!acted) {
         movementSystem(unit, target, units, actions, dt, rng, flowFieldMap, obstacles, spatialHash);
         spatialHash.update(unit);
@@ -223,6 +223,7 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
 
     processHazards(hazards, units, actions);
     processPostHazardPrimitives(units, triggerContext);
+    applyDepenetration(units, actions);
     if (metrics) { recordCombatActions(metrics, tick, actions, units); recordCombatTick(metrics, units) }
     
     if (actions.length > 0) logs.push({ tick, actions })
