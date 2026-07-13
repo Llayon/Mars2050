@@ -115,13 +115,14 @@ function buildClusterViews(buckets: Map<string, CrowdBucket>, clusterBuckets: Se
 
     const queue: CrowdBucket[] = [seed]
     visited.add(seed.key)
+    const componentBuckets: CrowdBucket[] = []
     let count = 0
     let sumX = 0
     let sumY = 0
 
     for (let index = 0; index < queue.length; index++) {
       const bucket = queue[index]
-      bucket.units.forEach(unit => { unit.mode = 'cluster' })
+      componentBuckets.push(bucket)
       count += bucket.units.length
       sumX += bucket.sumX
       sumY += bucket.sumY
@@ -135,6 +136,10 @@ function buildClusterViews(buckets: Map<string, CrowdBucket>, clusterBuckets: Se
       }
     }
 
+    if (count < REPLAY_CROWD_CLUSTER_THRESHOLD) continue
+    componentBuckets.forEach(bucket => {
+      bucket.units.forEach(unit => { unit.mode = 'cluster' })
+    })
     clusters.push({
       key: seed.key,
       team: seed.team,

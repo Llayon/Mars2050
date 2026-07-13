@@ -76,6 +76,17 @@ describe('battle replay crowd density plan', () => {
     expect(plan.units.every(view => view.mode === 'cluster')).toBe(true)
   })
 
+  it('does not draw standalone cluster badges for small bridge buckets', () => {
+    const plan = buildReplayCrowdRenderPlan([
+      ...squad(4, 'attacker', { sX: 60, sY: 60, tX: 60, tY: 60 }),
+      ...squad(6, 'attacker', { sX: 12, sY: 60, tX: 12, tY: 60 }),
+      ...squad(6, 'attacker', { sX: 108, sY: 60, tX: 108, tY: 60 }),
+    ], 1)
+
+    expect(plan.clusters).toHaveLength(0)
+    expect(plan.units.every(view => view.mode !== 'cluster')).toBe(true)
+  })
+
   it('uses interpolated frame positions and preserves unit view order', () => {
     const units = [
       unit('a', 'attacker', { sX: 0, sY: 0, tX: 96, tY: 96 }),
