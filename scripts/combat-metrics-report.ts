@@ -30,7 +30,7 @@ interface BaselineCompareRow extends MetricsReportRow {
   deltaMeleeSlotWaitTicks: number | null
 }
 
-const DEFAULT_PRESETS = ['ranged_duel', 'massive_clash', 'zerg_rush'] as const
+const DEFAULT_PRESETS = ['ranged_duel', 'marine_crowd_qa', 'massive_clash', 'zerg_rush'] as const
 
 function main(): void {
   const rawArgs = process.argv.slice(2)

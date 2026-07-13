@@ -13,6 +13,7 @@ import {
 } from './battle-replay-canvas-events'
 import type { BattleReplayEngineProps, FloatingText, HazardFx, Projectile, ReplayAppHandle, ReplayControls, ReplayUnit } from './battle-replay-canvas-types'
 import { FLOAT_MS, HAZARD_MS, PROJECTILE_MS, TICK_MS } from './battle-replay-canvas-types'
+import { applyReplayMovement } from './battle-replay-movement'
 
 export type { BattleReplayEngineProps, ReplayAppHandle, ReplayControls } from './battle-replay-canvas-types'
 
@@ -117,15 +118,13 @@ export async function startBattleReplayEngine(props: BattleReplayEngineProps) {
       unit.sX = unit.tX
       unit.sY = unit.tY
     })
+    const movedUnitIds = new Set<string>()
     battleTick.actions.forEach(action => {
       const source = units[action.unitId]
       const target = action.targetId ? units[action.targetId] : undefined
       if (action.type === 'move' || action.type === 'knockback') {
         if (!source) return
-        source.sX = action.fromX ?? source.tX
-        source.sY = action.fromY ?? source.tY
-        source.tX = action.toX ?? source.tX
-        source.tY = action.toY ?? source.tY
+        applyReplayMovement(source, action, movedUnitIds)
         return
       }
       if (action.type === 'attack' || action.type === 'heal') {

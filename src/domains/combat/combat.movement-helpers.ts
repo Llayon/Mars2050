@@ -45,7 +45,8 @@ export function emitMove(
   angleDiff: number,
   isWalking: boolean
 ): void {
-  if (Math.hypot(unit.x - fromX, unit.y - fromY) <= 0.1 && Math.abs(angleDiff) <= 0.2) return
+  const displacement = Math.hypot(unit.x - fromX, unit.y - fromY)
+  if (displacement <= 0.1 && Math.abs(angleDiff) <= 0.2) return
 
   const r = (v: number) => Math.round(v * 100) / 100
   actions.push({
@@ -58,5 +59,6 @@ export function emitMove(
     toY: r(unit.y),
     facingAngle: r(unit.currentAngle),
     isWalking,
+    motionKind: displacement <= 0.1 ? 'turn' : isWalking ? 'locomotion' : 'steering',
   })
 }

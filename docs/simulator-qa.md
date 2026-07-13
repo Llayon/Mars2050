@@ -15,6 +15,7 @@
 
 ## Automated Movement Gates
 `combat.qa-presets.test.ts` закрепляет movement regression gates для `ranged_duel`, `massive_clash` и `zerg_rush`.
+Отдельный `marine_crowd_qa` сценарий закрепляет ручной repro "две группы морпехов против двух групп морпехов": он должен оставаться читаемым без blob-схлопывания и видимой дрожи.
 Runtime metrics являются главным источником gate-порогов: first attack, battle duration, overlap ratio, severe overlap samples, target switches, stuck ticks и melee slot wait ticks.
 Replay metrics проверяются как diagnostic mirror с tolerance, чтобы UI-панель не расходилась с runtime telemetry при допустимых отличиях sampling order.
 Для ручной диагностики есть report:
@@ -85,11 +86,15 @@ snapshots, because their age depends on frame timing.
 ## Movement Visual Smoke
 
 Dense movement readability is covered by
-`tests/e2e/simulator2-replay.spec.ts` against the `ranged_duel` and
-`massive_clash` presets. The test pauses the replay, seeks to a deterministic
-early combat tick, enables hitbox and velocity overlays, checks that both
-overlay colors are present, and compares two paused canvas screenshots to catch
-visible jitter.
+`tests/e2e/simulator2-replay.spec.ts` against the `ranged_duel`,
+`marine_crowd_qa`, and `massive_clash` presets. The test pauses the replay,
+seeks to deterministic combat ticks, enables hitbox and velocity overlays,
+checks that both overlay colors are present, and compares two paused canvas
+screenshots to catch visible jitter.
+
+`marine_crowd_qa` is the canonical crowd repro: two marine squads attack two
+marine squads. Use it when checking whether ranged infantry collapses into a
+single shaking cluster after movement or depenetration changes.
 
 This is intentionally not a screenshot baseline. It protects replay readability
 after movement/depenetration tuning without making normal combat timing changes

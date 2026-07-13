@@ -43,6 +43,7 @@ describe('combat depenetration', () => {
     expect(Math.hypot(units[0].x - units[1].x, units[0].y - units[1].y)).toBeGreaterThan(6)
     expect(actions.filter(action => action.type === 'move')).toHaveLength(2)
     expect(actions.every(action => action.isWalking === false)).toBe(true)
+    expect(actions.every(action => action.motionKind === 'depenetration')).toBe(true)
   })
 
   it('uses deterministic pair vectors for identical positions', () => {

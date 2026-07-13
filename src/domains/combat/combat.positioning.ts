@@ -5,6 +5,7 @@ import { getDistance } from './combat.utils'
 import { getMinimumActionRange } from './combat.weapon-rules'
 
 const MELEE_RANGE = 60
+const RANGED_APPROACH_RANGE_RATIO = 0.72
 export interface PositioningDecision {
   point: { x: number; y: number }
   shouldMove: boolean
@@ -46,7 +47,13 @@ export function getPositioningDecision(
     return { point: getPreferredRangePoint(unit, target, targetRadius, myRadius, effectiveRange, 0.75), shouldMove: true, combatInRange: false }
   }
 
-  if (distEdge > effectiveRange) return { point: targetPoint, shouldMove: true, combatInRange: false }
+  if (distEdge > effectiveRange) {
+    return {
+      point: getPreferredRangePoint(unit, target, targetRadius, myRadius, effectiveRange, RANGED_APPROACH_RANGE_RATIO),
+      shouldMove: true,
+      combatInRange: false,
+    }
+  }
 
   return {
     point: targetPoint,

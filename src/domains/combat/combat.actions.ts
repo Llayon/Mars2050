@@ -35,6 +35,7 @@ export interface BattleAction {
   toY?: number
   facingAngle?: number
   isWalking?: boolean
+  motionKind?: 'locomotion' | 'steering' | 'depenetration' | 'turn'
   spawnType?: string
   spawnTeam?: Team
   spawnMaxHp?: number

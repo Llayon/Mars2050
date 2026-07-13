@@ -18,6 +18,7 @@ const SAME_TEAM_CORRECTION = 0.64
 const ENEMY_CORRECTION = 0.28
 const MAX_CORRECTION_PER_TICK = 4.8
 const MIN_EMIT_DISTANCE = 0.1
+const INWARD_VELOCITY_DAMPING = 0.85
 
 export function applyDepenetration(units: SimUnit[], actions: BattleAction[]): void {
   const pairs = getCollisionPairs(units)
@@ -47,6 +48,7 @@ export function applyDepenetration(units: SimUnit[], actions: BattleAction[]): v
       MAX_CORRECTION_PER_TICK
     )
     applyPairCorrection(first, second, direction, correction, corrections)
+    dampPairInwardVelocity(first, second, direction)
   }
 
   for (const [unit, correction] of corrections) {
@@ -67,6 +69,7 @@ export function applyDepenetration(units: SimUnit[], actions: BattleAction[]): v
       toY: round(unit.y),
       facingAngle: round(unit.currentAngle),
       isWalking: false,
+      motionKind: 'depenetration',
     })
   }
 }
@@ -89,6 +92,22 @@ function applyPairCorrection(
 
   addCorrection(corrections, first, -direction.x * correction * firstShare, -direction.y * correction * firstShare)
   addCorrection(corrections, second, direction.x * correction * secondShare, direction.y * correction * secondShare)
+}
+
+function dampPairInwardVelocity(first: SimUnit, second: SimUnit, direction: { x: number; y: number }): void {
+  if (canDampDepenetrationVelocity(first)) dampInwardVelocity(first, direction.x, direction.y)
+  if (canDampDepenetrationVelocity(second)) dampInwardVelocity(second, -direction.x, -direction.y)
+}
+
+function dampInwardVelocity(unit: SimUnit, inwardX: number, inwardY: number): void {
+  const inwardSpeed = unit.velocity.x * inwardX + unit.velocity.y * inwardY
+  if (inwardSpeed <= 0) return
+  unit.velocity.x -= inwardX * inwardSpeed * INWARD_VELOCITY_DAMPING
+  unit.velocity.y -= inwardY * inwardSpeed * INWARD_VELOCITY_DAMPING
+}
+
+function canDampDepenetrationVelocity(unit: SimUnit): boolean {
+  return canDepenetrate(unit) && (unit.range > 60 || unit.type.startsWith('alien_'))
 }
 
 function canDepenetrate(unit: SimUnit): boolean {

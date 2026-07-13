@@ -92,7 +92,7 @@ test('simulator2 replay keeps dense movement states visually stable', async ({ p
   await page.goto('/simulator2')
   await expect(page.getByRole('heading', { name: /Симулятор Боя/ })).toBeVisible()
 
-  for (const preset of ['ranged_duel', 'massive_clash']) {
+  for (const preset of ['ranged_duel', 'marine_crowd_qa', 'massive_clash']) {
     await runDenseMovementVisualSmoke(page, preset)
   }
 
@@ -217,25 +217,41 @@ async function runDenseMovementVisualSmoke(page: Page, preset: string): Promise<
 
   await page.getByRole('button', { name: /Пауза/ }).click()
   await expect(page.getByRole('button', { name: /Играть/ })).toBeVisible()
-  const targetTick = Math.min(maxTick - 5, 20)
-  await setTimelineTick(timeline, targetTick)
-  await expect(tickReadout).toContainText(`Tick ${targetTick} / ${maxTick}`)
-
   await page.getByLabel(/Хитбоксы/).check()
   await page.getByLabel(/Векторы движения/).check()
-  await page.waitForTimeout(120)
-  await expectBattleReplayCanvasPainted(canvas)
-  const overlayPixels = await countOverlayPixels(canvas)
-  expect(overlayPixels.hitboxCyan, `${preset} should show hitbox overlays`).toBeGreaterThan(10)
-  expect(overlayPixels.velocityYellow, `${preset} should show movement vectors`).toBeGreaterThan(5)
+  for (const check of getDenseMovementChecks(preset, maxTick)) {
+    await setTimelineTick(timeline, check.tick)
+    await expect(tickReadout).toContainText(`Tick ${check.tick} / ${maxTick}`)
+    await page.waitForTimeout(120)
+    await expectBattleReplayCanvasPainted(canvas)
+    const overlayPixels = await countOverlayPixels(canvas)
+    expect(overlayPixels.hitboxCyan, `${preset} tick ${check.tick} should show hitbox overlays`).toBeGreaterThan(10)
+    if (check.requireVelocity) {
+      expect(overlayPixels.velocityYellow, `${preset} tick ${check.tick} should show movement vectors`).toBeGreaterThan(5)
+    }
 
-  const firstFrame = await canvas.screenshot()
-  await page.waitForTimeout(180)
-  const secondFrame = await canvas.screenshot()
-  expect(await countChangedPixels(firstFrame, secondFrame), `${preset} paused replay frame should not jitter`).toBeLessThan(20)
+    const firstFrame = await canvas.screenshot()
+    await page.waitForTimeout(180)
+    const secondFrame = await canvas.screenshot()
+    expect(await countChangedPixels(firstFrame, secondFrame), `${preset} tick ${check.tick} paused replay frame should not jitter`).toBeLessThan(20)
+  }
 
   await page.getByRole('button', { name: /✕/ }).click()
   await expect(canvas).toBeHidden()
+}
+
+function getDenseMovementChecks(preset: string, maxTick: number): { tick: number; requireVelocity: boolean }[] {
+  const checks = preset === 'marine_crowd_qa'
+    ? [{ tick: 12, requireVelocity: true }, { tick: 45, requireVelocity: false }]
+    : [{ tick: 20, requireVelocity: true }]
+  const seen = new Set<number>()
+  return checks
+    .map(check => ({ ...check, tick: Math.min(maxTick - 5, check.tick) }))
+    .filter(check => {
+      if (check.tick <= 0 || seen.has(check.tick)) return false
+      seen.add(check.tick)
+      return true
+    })
 }
 
 async function loadReplayPreset(page: Page, preset: string): Promise<void> {

@@ -35,7 +35,7 @@ interface ArtifactScenario {
   result: BattleResult
 }
 
-const DEFAULT_PRESETS = ['ranged_duel', 'massive_clash', 'zerg_rush'] as const
+const DEFAULT_PRESETS = ['ranged_duel', 'marine_crowd_qa', 'massive_clash', 'zerg_rush'] as const
 const DEFAULT_BASELINE = 'docs/combat-metrics-baseline.json'
 const DEFAULT_OUTPUT_DIR = 'artifacts/combat-qa'
 const ACTION_SAMPLE_LIMIT = 120

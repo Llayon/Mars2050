@@ -4,6 +4,7 @@ import type { UnitRow, UnitTypeKey } from '@/domains/combat/combat.types'
 export const SIMULATOR_PRESET_OPTIONS = [
   { id: 'zerg_rush', name: 'Зерг Раш' },
   { id: 'ranged_duel', name: 'Дуэль стрелков' },
+  { id: 'marine_crowd_qa', name: 'QA: толпа морпехов' },
   { id: 'massive_clash', name: 'Стенка 100+' },
   { id: 'stealth_reveal', name: 'Стелс / Радар' },
   { id: 'projectile_barrier', name: 'Ракеты / Щит' },
@@ -21,6 +22,17 @@ export function getSimulatorPreset(presetName: string): { attackers: UnitRow[], 
     return {
       attackers: line('rd-a', 'attacker', 'marine', 8, 120, 820, 40, 0, 100),
       defenders: line('rd-d', 'defender', 'marine', 8, 120, 220, 40, 0, 100),
+    }
+  } else if (presetName === 'marine_crowd_qa') {
+    return {
+      attackers: [
+        row('mcq-a-left', 'attacker', 'marine', 130, 820, 100),
+        row('mcq-a-right', 'attacker', 'marine', 350, 820, 100),
+      ],
+      defenders: [
+        row('mcq-d-left', 'defender', 'marine', 130, 250, 100),
+        row('mcq-d-right', 'defender', 'marine', 350, 250, 100),
+      ],
     }
   } else if (presetName === 'massive_clash') {
     return {
