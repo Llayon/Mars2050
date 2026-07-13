@@ -98,14 +98,16 @@ single shaking cluster after movement or depenetration changes.
 
 `zerg_rush` is the canonical visual stress repro for renderer-side Crowd LOD.
 It intentionally keeps the underlying replay positions unchanged, but the canvas
-renderer suppresses per-unit labels/HP bars in dense buckets and shows team
-cluster badges so 100+ unit fights stay readable.
+renderer suppresses per-unit labels/HP bars in dense buckets and draws compact
+unit sprites with team underlays so 100+ unit fights stay readable without
+field counter badges.
 
 Crowd LOD rules are renderer-only: `48px` density buckets render as full units
-up to 6 live units, compact units from 7 to 15 live units, and cluster badges at
-16+ live units or connected dense neighbor buckets. Debug hitboxes and velocity
-vectors still use exact unit positions, so overlays remain suitable for movement
-diagnostics.
+up to 6 live units, compact sprites from 7 to 15 live units, and sprite miniatures
+inside connected cluster regions at 16+ live units. Circles and text labels are
+fallbacks only when a unit has no resolved visual asset or the image is still
+loading. Debug hitboxes and velocity vectors still use exact unit positions, so
+overlays remain suitable for movement diagnostics.
 
 This is intentionally not a screenshot baseline. It protects replay readability
 after movement/depenetration tuning without making normal combat timing changes

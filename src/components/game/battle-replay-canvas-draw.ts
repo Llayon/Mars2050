@@ -3,12 +3,12 @@ import type { Obstacle } from '@/domains/combat/combat.types'
 import type { FloatingText, HazardFx, OverlayState, Projectile, ReplayUnit } from './battle-replay-canvas-types'
 import { FLOAT_MS, HAZARD_MS, PROJECTILE_MS } from './battle-replay-canvas-types'
 import { buildReplayCrowdRenderPlan, type ReplayCrowdClusterView, type ReplayCrowdUnitView } from './battle-replay-density'
+import { drawReplayUnitSprite } from './battle-replay-sprites'
 
 const OVERLAY_HITBOX_ATTACKER = '#22d3ee'
 const OVERLAY_HITBOX_DEFENDER = '#fb7185'
 const OVERLAY_VELOCITY = '#fef08a'
 const OVERLAY_TARGET_LINE = '#ff1f1f'
-const CLUSTER_BADGE = '#a855f7'
 
 export function drawReplay(
   ctx: CanvasRenderingContext2D,
@@ -34,7 +34,6 @@ export function drawReplay(
     const view = unitViews.get(unit.id)
     if (view) drawUnit(ctx, unit, view, overlays)
   })
-  crowdPlan.clusters.forEach(cluster => drawCrowdClusterBadge(ctx, cluster))
   if (overlays.targets) projectiles.forEach(projectile => drawTargetLine(ctx, projectile))
   texts.forEach(text => drawFloatingText(ctx, text))
 }
@@ -72,11 +71,16 @@ function drawUnit(ctx: CanvasRenderingContext2D, unit: ReplayUnit, view: ReplayC
   ctx.fillStyle = unit.flash > 0 ? '#facc15' : color
   ctx.strokeStyle = unit.isFlying || unit.mobilityMode === 'air' ? '#e0f2fe' : '#0f172a'
   ctx.lineWidth = unit.isFlying || unit.mobilityMode === 'air' ? 3 : 2
-  if (mode === 'cluster') {
-    drawCircle(ctx, x, y, Math.max(3, radius * 0.34), true, false)
-  } else {
-    drawCircle(ctx, x, y, radius, true, true)
-    if (mode === 'full') drawText(ctx, unitLabel(unit.type), x, y + 4, '#ffffff', 12, true)
+  const spriteDrawn = drawReplayUnitSprite(ctx, unit, view)
+  if (!spriteDrawn) {
+    if (mode === 'cluster') {
+      drawCircle(ctx, x, y, Math.max(3, radius * 0.34), true, false)
+    } else {
+      drawCircle(ctx, x, y, radius, true, true)
+      if (mode === 'full') drawText(ctx, unitLabel(unit.type), x, y + 4, '#ffffff', 12, true)
+    }
+  }
+  if (mode !== 'cluster') {
     if (unit.emp) drawText(ctx, 'EMP', x, y - radius - 12, '#67e8f9', 10, true)
     if (unit.mobilityMode === 'air') drawText(ctx, 'AIR', x, y + radius + 12, '#bae6fd', 10, true)
   }
@@ -109,25 +113,6 @@ function drawCrowdCluster(ctx: CanvasRenderingContext2D, cluster: ReplayCrowdClu
   ctx.strokeStyle = cluster.team === 'attacker' ? '#93c5fd' : '#fca5a5'
   ctx.lineWidth = 2
   drawCircle(ctx, cluster.x, cluster.y, cluster.radius, false, true)
-  ctx.restore()
-}
-
-function drawCrowdClusterBadge(ctx: CanvasRenderingContext2D, cluster: ReplayCrowdClusterView) {
-  const label = `${cluster.team === 'attacker' ? 'A' : 'D'}:${cluster.count}`
-  const width = Math.max(34, label.length * 7 + 12)
-  const x = cluster.x - width / 2
-  const y = cluster.y - cluster.radius - 20
-  ctx.save()
-  ctx.fillStyle = CLUSTER_BADGE
-  ctx.strokeStyle = '#f5d0fe'
-  ctx.lineWidth = 1
-  ctx.fillRect(x, y, width, 16)
-  ctx.strokeRect(x, y, width, 16)
-  ctx.fillStyle = '#111827'
-  ctx.font = '700 11px sans-serif'
-  ctx.textAlign = 'center'
-  ctx.textBaseline = 'middle'
-  ctx.fillText(label, cluster.x, y + 8)
   ctx.restore()
 }
 

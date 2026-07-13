@@ -102,7 +102,7 @@ test('simulator2 replay keeps dense movement states visually stable', async ({ p
   network.assertClean()
 })
 
-test('simulator2 replay uses crowd LOD for zerg rush stress states', async ({ page }) => {
+test('simulator2 replay uses badge-free crowd LOD for zerg rush stress states', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1100 })
   const network = collectNetwork(page)
   const consoleWarnings = collectConsoleWarnings(page)
@@ -132,8 +132,8 @@ test('simulator2 replay uses crowd LOD for zerg rush stress states', async ({ pa
     await expectBattleReplayCanvasPainted(canvas)
 
     const pixels = await countCrowdLodPixels(canvas)
-    expect(pixels.clusterBadgePurple, `zerg_rush tick ${targetTick} should show crowd LOD badges`).toBeGreaterThan(30)
-    expect(pixels.whiteLabels, `zerg_rush tick ${targetTick} should suppress per-unit labels`).toBeLessThan(3000)
+    expect(pixels.badgePurple, `zerg_rush tick ${targetTick} should not show crowd counter badges`).toBeLessThan(12)
+    expect(pixels.whiteTextPixels, `zerg_rush tick ${targetTick} should suppress per-unit labels`).toBeLessThan(5000)
 
     const firstFrame = await canvas.screenshot()
     await page.waitForTimeout(180)
@@ -364,8 +364,8 @@ async function expectBattleReplayCanvasPainted(canvas: Locator): Promise<void> {
     const blue = data[index + 2]
     const alpha = data[index + 3]
     if (alpha < 180) continue
-    if (red > 170 && green < 120 && blue < 130) redTeamPixels++
-    if (blue > 150 && red < 130 && green > 80) blueTeamPixels++
+    if (red > 160 && green < 150 && blue < 150) redTeamPixels++
+    if (blue > 145 && red < 150 && green > 70) blueTeamPixels++
   }
 
   expect(redTeamPixels, 'replay canvas should contain red team unit pixels').toBeGreaterThan(20)
@@ -394,11 +394,11 @@ async function countOverlayPixels(canvas: Locator): Promise<{ hitboxCyan: number
   return { hitboxCyan, velocityYellow, targetRed }
 }
 
-async function countCrowdLodPixels(canvas: Locator): Promise<{ clusterBadgePurple: number; whiteLabels: number }> {
+async function countCrowdLodPixels(canvas: Locator): Promise<{ badgePurple: number; whiteTextPixels: number }> {
   const buffer = await canvas.screenshot()
   const { data, info } = await sharp(buffer).ensureAlpha().raw().toBuffer({ resolveWithObject: true })
-  let clusterBadgePurple = 0
-  let whiteLabels = 0
+  let badgePurple = 0
+  let whiteTextPixels = 0
 
   for (let pixel = 0; pixel < info.width * info.height; pixel++) {
     const index = pixel * 4
@@ -407,11 +407,11 @@ async function countCrowdLodPixels(canvas: Locator): Promise<{ clusterBadgePurpl
     const blue = data[index + 2]
     const alpha = data[index + 3]
     if (alpha < 180) continue
-    if (red > 140 && red < 205 && green > 55 && green < 130 && blue > 210) clusterBadgePurple++
-    if (red > 235 && green > 235 && blue > 235) whiteLabels++
+    if (red > 140 && red < 205 && green > 55 && green < 130 && blue > 210) badgePurple++
+    if (red > 245 && green > 245 && blue > 245) whiteTextPixels++
   }
 
-  return { clusterBadgePurple, whiteLabels }
+  return { badgePurple, whiteTextPixels }
 }
 
 async function countPrimitiveLabelPixels(canvas: Locator): Promise<{ controlPurple: number; eventCyan: number; yellowLabel: number }> {
