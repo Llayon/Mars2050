@@ -21,6 +21,7 @@
     "test:e2e": "playwright test",
     "test:e2e:qa": "playwright test tests/e2e/simulator2-load.spec.ts tests/e2e/simulator2-replay.spec.ts --project=chromium",
     "test:e2e:replay": "playwright test tests/e2e/simulator2-replay.spec.ts --project=chromium",
+    "test:e2e:replay-pixi": "playwright test tests/e2e/simulator2-replay-pixi.spec.ts --project=chromium",
     "test:e2e:replay-baseline": "playwright test tests/e2e/simulator2-replay-baseline.spec.ts --project=chromium",
     "test:e2e:replay-baseline:update": "playwright test tests/e2e/simulator2-replay-baseline.spec.ts --project=chromium --update-snapshots",
     "test:e2e:headed": "playwright test --headed",

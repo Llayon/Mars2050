@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { UNIT_TYPES } from '@/domains/combat/combat.config'
 import type { UnitRow, UnitTypeKey } from '@/domains/combat/combat.types'
 import { generateObstacles } from '@/domains/combat/combat.utils'
-import { UnitSelector, GlobalUpgradesSelector, UnitUpgradesPanel, SimulatorGrid } from './simulator.components'
+import { UnitSelector, GlobalUpgradesSelector, UnitUpgradesPanel, SimulatorGrid, ReplayRendererSelector } from './simulator.components'
 import { LazyBattleReplayModal } from './simulator.lazy'
 import type { SimulatorReplayData } from './simulator.lazy'
 import { SIMULATOR_PRESET_OPTIONS } from './simulator.presets'
@@ -28,8 +28,7 @@ export default function SimulatorPage() {
   const [attackerGlobals, setAttackerGlobals] = useState<string[]>([])
   const [defenderGlobals, setDefenderGlobals] = useState<string[]>([])
   const [isSimulating, setIsSimulating] = useState(false)
-  const [simulatorError, setSimulatorError] = useState<string | null>(null)
-
+  const [simulatorError, setSimulatorError] = useState<string | null>(null), [replayRendererMode, setReplayRendererMode] = useState<'canvas' | 'pixi'>('canvas')
   const [selectedUnit, setSelectedUnit] = useState<{team: 'attacker'|'defender', index: number} | null>(null)
 
   function addUnit(team: 'attacker' | 'defender', type: UnitTypeKey) {
@@ -154,6 +153,7 @@ export default function SimulatorPage() {
               Пересоздать кратеры
             </button>
           </div>
+          <ReplayRendererSelector value={replayRendererMode} onChange={setReplayRendererMode} />
         </div>
 
         <div className="flex flex-col lg:flex-row gap-8">
@@ -240,6 +240,7 @@ export default function SimulatorPage() {
           initialState={replayData.initialState}
           obstacles={replayData.obstacles}
           logs={replayData.logs}
+          rendererMode={replayRendererMode}
           onClose={() => setReplayData(null)}
         />
       )}

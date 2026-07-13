@@ -41,6 +41,7 @@ Replay metrics проверяются как diagnostic mirror с tolerance, ч�
 | `npm run test:combat:tier1` | Tier 1 role gate: deterministic role scenarios, replay-visible role signals, and non-zero carrier output. |
 | `npm run combat:snapshot` | Generates committed balance-readiness reports in `docs/combat-balance-snapshot.md` and `.json`. |
 | `npm run test:e2e:replay` | Fast replay smoke: presets, mobile fit, debug overlays, dense movement readability, timeline seek, primitive event labels. |
+| `npm run test:e2e:replay-pixi` | Opt-in Pixi replay smoke: lazy Pixi chunk, painted canvas, overlays. |
 | `npm run test:e2e:replay-baseline` | Canvas screenshot baselines for stable visual states. |
 | `npm run test:e2e:replay-baseline:update` | Updates committed baseline screenshots after intentional replay rendering changes. |
 | `npm run test:e2e:qa` | Simulator load smoke plus replay smoke, without screenshot baseline comparison. |
@@ -120,11 +121,15 @@ labels against the `qa_primitive_events` preset. This is not a screenshot
 baseline: the test seeks to deterministic ticks, plays the event tick, and
 asserts that the expected label color appears on the canvas.
 
-Use this command for the primitive event and replay overlay smoke suite:
+Use this command for the default canvas primitive event and replay overlay smoke suite:
 
 ```bash
 npm run test:e2e:replay
 ```
+
+Pixi replay rendering is available as an opt-in simulator renderer. The first
+`/simulator2` screen must still avoid Pixi chunks; `npm run test:e2e:replay-pixi`
+checks that Pixi loads only after the replay opens.
 
 Covered visual event groups:
 

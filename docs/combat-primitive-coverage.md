@@ -11,9 +11,10 @@ The detailed technology-name contract is machine-readable in
 ## Replay QA Contract
 
 Primitive coverage includes visible replay semantics, not only simulation state.
-`/simulator2` uses the canvas replay renderer exported through
-`src/components/game/battle-replay-engine.ts`; old Pixi replay helper modules
-are legacy compatibility helpers, not the active simulator replay path.
+`/simulator2` exports replay rendering through
+`src/components/game/battle-replay-engine.ts`. Canvas is the default renderer;
+Pixi is available only through the opt-in replay renderer selector and falls
+back to canvas if initialization fails.
 
 Replay action labels are centralized in
 `src/components/game/battle-replay-labels.ts`. Every action in
@@ -23,8 +24,9 @@ enforces that contract.
 
 Visual replay smoke coverage lives in `tests/e2e/simulator2-replay.spec.ts`.
 It covers preset replay startup, mobile rendering, debug overlays for hitboxes,
-velocity vectors and target lines, and guards that the `/simulator2` replay path
-does not load a Pixi chunk.
+velocity vectors and target lines, and guards that the default `/simulator2`
+replay path does not load a Pixi chunk. Pixi opt-in coverage lives in
+`tests/e2e/simulator2-replay-pixi.spec.ts`.
 
 | Mechabellum effect family | Mars2050 primitive | Runtime status/state | Regression tests | Status |
 | --- | --- | --- | --- | --- |

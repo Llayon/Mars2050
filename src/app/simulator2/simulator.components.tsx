@@ -2,6 +2,7 @@ import { UNIT_TYPES } from '@/domains/combat/combat.config'
 import { UPGRADES, GLOBAL_UPGRADES } from '@/domains/combat/combat.upgrades'
 import { UNIT_CATEGORIES } from '@/domains/combat/combat.presets'
 import type { UnitRow, UnitTypeKey, Obstacle } from '@/domains/combat/combat.types'
+import type { ReplayRendererMode } from '@/components/game/battle-replay-engine'
 
 export const UnitSelector = ({ onAddUnit }: { onAddUnit: (key: UnitTypeKey) => void }) => (
   <div className="flex flex-col gap-4 mb-4 max-h-[350px] overflow-y-auto pr-2 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-gray-900 [&::-webkit-scrollbar-track]:rounded-lg [&::-webkit-scrollbar-thumb]:bg-gray-700 [&::-webkit-scrollbar-thumb]:rounded-lg">
@@ -81,6 +82,21 @@ export const UnitUpgradesPanel = ({ unit, onToggle }: { unit?: UnitRow, onToggle
     </div>
   )
 }
+
+export const ReplayRendererSelector = ({ value, onChange }: { value: ReplayRendererMode, onChange: (value: ReplayRendererMode) => void }) => (
+  <div>
+    <label className="text-gray-400 text-sm block mb-1">Renderer</label>
+    <select
+      aria-label="Replay renderer"
+      value={value}
+      onChange={event => onChange(event.target.value === 'pixi' ? 'pixi' : 'canvas')}
+      className="bg-gray-800 text-white px-3 py-1 rounded border border-gray-700 outline-none focus:border-purple-500 w-32"
+    >
+      <option value="canvas">Canvas</option>
+      <option value="pixi">Pixi</option>
+    </select>
+  </div>
+)
 
 export const SimulatorGrid = ({
   obstacles, attackerUnits, defenderUnits, selectedUnit, onCellClick

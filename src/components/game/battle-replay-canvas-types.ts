@@ -10,6 +10,8 @@ export interface ReplayControls {
   setOverlays: (o: OverlayState) => void
 }
 
+export type ReplayRendererMode = 'canvas' | 'pixi'
+
 export type BattleReplayEngineProps = {
   container: HTMLDivElement
   attackerUnits: UnitRow[]
@@ -18,6 +20,7 @@ export type BattleReplayEngineProps = {
   logs: BattleTick[]
   obstacles?: Obstacle[]
   onTickChange?: (tick: number) => void
+  rendererMode?: ReplayRendererMode
 }
 
 export type ReplayAppHandle = {

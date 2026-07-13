@@ -177,11 +177,11 @@ Verification for this slice:
 `/simulator2` now follows the same intent-driven rule as gameplay overlays:
 
 - The first screen renders only the simulator shell, unit selectors, and grid.
-- Battle replay code loads through `LazyBattleReplayModal` only after simulation data exists; `/simulator2` currently renders replay through the canvas engine, not Pixi.
+- Battle replay code loads through `LazyBattleReplayModal` only after simulation data exists; `/simulator2` defaults to the canvas replay engine, with Pixi available only through an opt-in replay renderer selector.
 - The deterministic combat engine imports only when the player starts a simulation.
 - Preset data imports only after a preset is selected.
 - Hidden unit tooltip DOM was removed from the prerendered shell; compact button `title` text keeps unit stats available without duplicating large hidden markup.
-- `tests/e2e/simulator2-load.spec.ts` guards that replay chunks, Pixi chunks, and API requests are absent from the initial simulator screen.
+- `tests/e2e/simulator2-load.spec.ts` guards that replay chunks, Pixi chunks, and API requests are absent from the initial simulator screen. `test:e2e:replay-pixi` verifies that Pixi loads only after the opt-in replay opens.
 
 `/simulator` remains tracked as dev/QA performance debt. If it becomes player-facing, apply the same lazy replay/combat split.
 

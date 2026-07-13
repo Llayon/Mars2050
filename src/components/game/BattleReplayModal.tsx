@@ -2,10 +2,10 @@
 import { useEffect, useRef, memo, useState, useMemo } from 'react'
 import type { BattleTick, UnitRow, SimUnit, Obstacle } from '@/domains/combat/combat.types'
 import { startBattleReplayEngine } from './battle-replay-engine'
-import type { ReplayControls } from './battle-replay-engine'
+import type { ReplayControls, ReplayRendererMode } from './battle-replay-engine'
 import { buildBattleReplayMetrics } from './battle-replay-metrics'
 
-export const BattleReplayModal = memo(function BattleReplayModal({ attackerUnits, defenderUnits, initialState, logs, obstacles, onClose }: { attackerUnits: UnitRow[], defenderUnits: UnitRow[], initialState?: SimUnit[], logs: BattleTick[], obstacles?: Obstacle[], onClose: () => void }) {
+export const BattleReplayModal = memo(function BattleReplayModal({ attackerUnits, defenderUnits, initialState, logs, obstacles, rendererMode, onClose }: { attackerUnits: UnitRow[], defenderUnits: UnitRow[], initialState?: SimUnit[], logs: BattleTick[], obstacles?: Obstacle[], rendererMode?: ReplayRendererMode, onClose: () => void }) {
   const containerRef = useRef<HTMLDivElement>(null)
   const controlsRef = useRef<ReplayControls | null>(null)
 
@@ -31,6 +31,7 @@ export const BattleReplayModal = memo(function BattleReplayModal({ attackerUnits
         initialState,
         logs,
         obstacles,
+        rendererMode,
         onTickChange: setCurrentTick
       })
 
@@ -55,7 +56,7 @@ export const BattleReplayModal = memo(function BattleReplayModal({ attackerUnits
       isDestroyed = true
       if (cleanupEvents) cleanupEvents()
     }
-  }, [attackerUnits, defenderUnits, initialState, logs, obstacles])
+  }, [attackerUnits, defenderUnits, initialState, logs, obstacles, rendererMode])
 
   useEffect(() => {
     if (!controlsRef.current) return

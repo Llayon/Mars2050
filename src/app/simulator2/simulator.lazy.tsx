@@ -2,6 +2,7 @@
 
 import dynamic from 'next/dynamic'
 import type { BattleTick, Obstacle, SimUnit, UnitRow } from '@/domains/combat/combat.types'
+import type { ReplayRendererMode } from '@/components/game/battle-replay-engine'
 
 export interface SimulatorReplayData {
   attackerUnits: UnitRow[]
@@ -18,6 +19,7 @@ interface BattleReplayModalProps {
   initialState?: SimUnit[]
   obstacles?: Obstacle[]
   logs: BattleTick[]
+  rendererMode?: ReplayRendererMode
   onClose: () => void
 }
 
