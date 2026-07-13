@@ -102,6 +102,54 @@ test('simulator2 replay keeps dense movement states visually stable', async ({ p
   network.assertClean()
 })
 
+test('simulator2 replay uses crowd LOD for zerg rush stress states', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1100 })
+  const network = collectNetwork(page)
+  const consoleWarnings = collectConsoleWarnings(page)
+
+  await page.goto('/simulator2')
+  await expect(page.getByRole('heading', { name: /Симулятор Боя/ })).toBeVisible()
+  await loadReplayPreset(page, 'zerg_rush')
+  await startSelectedSimulation(page)
+
+  const canvas = page.locator('canvas').last()
+  const timeline = page.getByTestId('replay-timeline')
+  const tickReadout = page.getByTestId('replay-current-tick')
+  await expect(canvas).toBeVisible()
+  await expect(timeline).toBeVisible()
+
+  const maxTick = Number(await timeline.getAttribute('max'))
+  expect(maxTick, 'zerg_rush timeline should expose stress replay ticks').toBeGreaterThan(120)
+
+  await page.getByRole('button', { name: /Пауза/ }).click()
+  await expect(page.getByRole('button', { name: /Играть/ })).toBeVisible()
+
+  for (const tick of [80, 145]) {
+    const targetTick = Math.min(maxTick - 5, tick)
+    await setTimelineTick(timeline, targetTick)
+    await expect(tickReadout).toContainText(`Tick ${targetTick} / ${maxTick}`)
+    await page.waitForTimeout(120)
+    await expectBattleReplayCanvasPainted(canvas)
+
+    const pixels = await countCrowdLodPixels(canvas)
+    expect(pixels.clusterBadgePurple, `zerg_rush tick ${targetTick} should show crowd LOD badges`).toBeGreaterThan(30)
+    expect(pixels.whiteLabels, `zerg_rush tick ${targetTick} should suppress per-unit labels`).toBeLessThan(3000)
+
+    const firstFrame = await canvas.screenshot()
+    await page.waitForTimeout(180)
+    const secondFrame = await canvas.screenshot()
+    expect(await countChangedPixels(firstFrame, secondFrame), `zerg_rush tick ${targetTick} paused replay frame should not jitter`).toBeLessThan(20)
+  }
+
+  await page.getByRole('button', { name: /✕/ }).click()
+  await expect(canvas).toBeHidden()
+
+  expect(network.hasChunk('pixi'), 'zerg rush crowd LOD should stay on the canvas renderer').toBe(false)
+  expect(network.countPathPrefix('/api/')).toBe(0)
+  expect(consoleWarnings, 'console warnings').toEqual([])
+  network.assertClean()
+})
+
 test('simulator2 replay timeline can seek, rewind, and resume playback', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1100 })
   const network = collectNetwork(page)
@@ -344,6 +392,26 @@ async function countOverlayPixels(canvas: Locator): Promise<{ hitboxCyan: number
   }
 
   return { hitboxCyan, velocityYellow, targetRed }
+}
+
+async function countCrowdLodPixels(canvas: Locator): Promise<{ clusterBadgePurple: number; whiteLabels: number }> {
+  const buffer = await canvas.screenshot()
+  const { data, info } = await sharp(buffer).ensureAlpha().raw().toBuffer({ resolveWithObject: true })
+  let clusterBadgePurple = 0
+  let whiteLabels = 0
+
+  for (let pixel = 0; pixel < info.width * info.height; pixel++) {
+    const index = pixel * 4
+    const red = data[index]
+    const green = data[index + 1]
+    const blue = data[index + 2]
+    const alpha = data[index + 3]
+    if (alpha < 180) continue
+    if (red > 140 && red < 205 && green > 55 && green < 130 && blue > 210) clusterBadgePurple++
+    if (red > 235 && green > 235 && blue > 235) whiteLabels++
+  }
+
+  return { clusterBadgePurple, whiteLabels }
 }
 
 async function countPrimitiveLabelPixels(canvas: Locator): Promise<{ controlPurple: number; eventCyan: number; yellowLabel: number }> {
