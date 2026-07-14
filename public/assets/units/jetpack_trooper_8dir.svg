@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 100" width="800" height="100">
+  <defs>
+    <filter id="jet" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <linearGradient id="armor" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#60a5fa"/><stop offset="1" stop-color="#1e3a8a"/></linearGradient>
+    <linearGradient id="flame" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fde68a"/><stop offset="1" stop-color="#f97316"/></linearGradient>
+    <g id="shape">
+      <ellipse cx="50" cy="76" rx="25" ry="8" fill="#000" opacity="0.22"/>
+      <polygon points="39,38 23,61 42,56" fill="#1d4ed8" stroke="#0f172a" stroke-width="1.5"/>
+      <polygon points="61,38 77,61 58,56" fill="#1d4ed8" stroke="#0f172a" stroke-width="1.5"/>
+      <rect x="36" y="35" width="28" height="30" rx="7" fill="url(#armor)" stroke="#020617" stroke-width="2"/>
+      <circle cx="50" cy="25" r="9" fill="#cbd5e1" stroke="#020617" stroke-width="2"/>
+      <rect x="30" y="43" width="9" height="28" rx="3" fill="#334155" stroke="#020617" stroke-width="1"/>
+      <rect x="61" y="43" width="9" height="28" rx="3" fill="#334155" stroke="#020617" stroke-width="1"/>
+      <polygon points="33,71 38,88 43,71" fill="url(#flame)" filter="url(#jet)"/>
+      <polygon points="57,71 62,88 67,71" fill="url(#flame)" filter="url(#jet)"/>
+      <path d="M43 62 L38 78 M57 62 L62 78" stroke="#94a3b8" stroke-width="4" stroke-linecap="round"/>
+      <path d="M45 31 L55 31" stroke="#38bdf8" stroke-width="2" stroke-linecap="round"/>
+    </g>
+  </defs>
+  <rect width="100%" height="100%" fill="transparent"/>
+  <g transform="translate(0 0)"><g transform="translate(50 50) rotate(0) translate(-50 -50)"><use href="#shape"/></g></g>
+  <g transform="translate(100 0)"><g transform="translate(50 50) rotate(180) translate(-50 -50)"><use href="#shape"/></g></g>
+  <g transform="translate(200 0)"><g transform="translate(50 50) rotate(90) translate(-50 -50)"><use href="#shape"/></g></g>
+  <g transform="translate(300 0)"><g transform="translate(50 50) rotate(-90) translate(-50 -50)"><use href="#shape"/></g></g>
+  <g transform="translate(400 0)"><g transform="translate(50 50) rotate(45) translate(-50 -50)"><use href="#shape"/></g></g>
+  <g transform="translate(500 0)"><g transform="translate(50 50) rotate(-45) translate(-50 -50)"><use href="#shape"/></g></g>
+  <g transform="translate(600 0)"><g transform="translate(50 50) rotate(135) translate(-50 -50)"><use href="#shape"/></g></g>
+  <g transform="translate(700 0)"><g transform="translate(50 50) rotate(-135) translate(-50 -50)"><use href="#shape"/></g></g>
+</svg>

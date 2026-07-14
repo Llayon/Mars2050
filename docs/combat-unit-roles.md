@@ -226,10 +226,12 @@ still supporting old attack-only logs. Replay labels/colors live in
 by `battle-replay-labels.test.ts`.
 
 Replay unit visual coverage is also contractual. `battle-replay-sprites.test.ts`
-requires every combat unit to resolve to a real public asset or an explicit
-exemption, and Tier 1 infantry roles use direct sprite folders instead of
-temporary aliases so `marine`, `shock_trooper`, `flamethrower`, `grenadier`,
-`heavy_gunner`, `sapper`, and `officer` stay visually distinct in simulator QA.
+requires every current combat unit to resolve to its own real public asset or an
+explicit exemption. `wall` is the only current no-asset exemption; replay aliases
+are kept only as a future migration escape hatch and must not cover current
+`UNIT_TYPES`. Tier 1 infantry and former alias units both have dedicated
+visual QA presets so distinct combat roles stay visually distinct in simulator
+QA.
 
 ## Advanced Mechanics / Upgrade Primitives
 
@@ -574,5 +576,6 @@ Current backlog:
 9. Regenerate `npm run combat:snapshot` before and after balance changes so
    unit outcomes, damage maps, and replay action counts stay comparable.
 10. Keep replay visual coverage green: new combat unit types need a direct
-    public asset, an approved visual alias, or an explicit exemption before
-    they are allowed to rely on fallback canvas labels.
+    public asset or an explicit exemption before they are allowed to rely on
+    fallback canvas labels. Approved aliases are only for temporary migration
+    of non-current content and must not cover current `UNIT_TYPES`.

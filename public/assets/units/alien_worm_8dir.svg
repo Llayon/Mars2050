@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 100" width="800" height="100">
+  <defs>
+    <filter id="glow" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <linearGradient id="hide" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fb7185"/><stop offset="1" stop-color="#881337"/></linearGradient>
+    <linearGradient id="belly" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fda4af"/><stop offset="1" stop-color="#be123c"/></linearGradient>
+    <g id="shape">
+      <ellipse cx="50" cy="77" rx="31" ry="10" fill="#000" opacity="0.25"/>
+      <ellipse cx="50" cy="66" rx="23" ry="16" fill="url(#hide)" stroke="#4c0519" stroke-width="2"/>
+      <ellipse cx="50" cy="52" rx="19" ry="15" fill="url(#hide)" stroke="#4c0519" stroke-width="2"/>
+      <ellipse cx="50" cy="38" rx="16" ry="14" fill="url(#hide)" stroke="#4c0519" stroke-width="2"/>
+      <ellipse cx="50" cy="25" rx="20" ry="14" fill="url(#belly)" stroke="#4c0519" stroke-width="2"/>
+      <path d="M34 25 Q50 12 66 25 Q50 35 34 25Z" fill="#fef2f2" stroke="#4c0519" stroke-width="1.5"/>
+      <circle cx="43" cy="23" r="3" fill="#22c55e" filter="url(#glow)"/>
+      <circle cx="57" cy="23" r="3" fill="#22c55e" filter="url(#glow)"/>
+      <path d="M32 43 H68 M29 57 H71 M27 70 H73" stroke="#fecdd3" stroke-width="3" stroke-linecap="round" opacity="0.8"/>
+      <path d="M38 15 L32 8 M62 15 L68 8" stroke="#be123c" stroke-width="3" stroke-linecap="round"/>
+    </g>
+  </defs>
+  <rect width="100%" height="100%" fill="transparent"/>
+  <g transform="translate(0 0)"><g transform="translate(50 50) rotate(0) translate(-50 -50)"><use href="#shape"/></g></g>
+  <g transform="translate(100 0)"><g transform="translate(50 50) rotate(180) translate(-50 -50)"><use href="#shape"/></g></g>
+  <g transform="translate(200 0)"><g transform="translate(50 50) rotate(90) translate(-50 -50)"><use href="#shape"/></g></g>
+  <g transform="translate(300 0)"><g transform="translate(50 50) rotate(-90) translate(-50 -50)"><use href="#shape"/></g></g>
+  <g transform="translate(400 0)"><g transform="translate(50 50) rotate(45) translate(-50 -50)"><use href="#shape"/></g></g>
+  <g transform="translate(500 0)"><g transform="translate(50 50) rotate(-45) translate(-50 -50)"><use href="#shape"/></g></g>
+  <g transform="translate(600 0)"><g transform="translate(50 50) rotate(135) translate(-50 -50)"><use href="#shape"/></g></g>
+  <g transform="translate(700 0)"><g transform="translate(50 50) rotate(-135) translate(-50 -50)"><use href="#shape"/></g></g>
+</svg>

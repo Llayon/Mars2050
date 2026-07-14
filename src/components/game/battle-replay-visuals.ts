@@ -26,6 +26,13 @@ export interface UnitVisualConfig {
 
 export const UNIT_VISUALS: Partial<Record<UnitTypeKey, UnitVisualConfig>> = {
   // SVG Units
+  aa_turret: { scale: 1.12, muzzleOffset: 32, fxType: 'fx_muzzle_cyan', vfxScale: 1.0 },
+  drone: { scale: 0.95, yOffset: -18, hoverAmplitude: 3, hoverSpeed: 0.08, muzzleOffset: 14, fxType: 'fx_muzzle_green', vfxScale: 0.5, locomotion: 'hover' },
+  alien_worm: { scale: 1.25, anchor: { x: 0.5, y: 0.68 }, muzzleOffset: 16, fxType: 'fx_impact_cyan', vfxScale: 0.9, locomotion: 'legs' },
+  scout_drone: { scale: 0.95, yOffset: -24, hoverAmplitude: 4, hoverSpeed: 0.09, muzzleOffset: 18, fxType: 'fx_muzzle_cyan', vfxScale: 0.5, locomotion: 'hover' },
+  scavenger_buggy: { scale: 1.05, muzzleOffset: 18, fxType: 'fx_impact_orange', vfxScale: 0.7, locomotion: 'wheels', recoilPx: 4, trailColor: 0xb45309 },
+  jetpack_trooper: { scale: 1.05, yOffset: -18, hoverAmplitude: 5, hoverSpeed: 0.08, muzzleOffset: 10, fxType: 'fx_impact_orange', vfxScale: 0.6, locomotion: 'hover' },
+  gatling_rover: { scale: 1.05, muzzleOffset: 28, fxType: 'fx_muzzle_orange', vfxScale: 0.8, locomotion: 'wheels', recoilPx: 3, trailColor: 0x7f1d1d },
   plasma_tank: { scale: 1.15, muzzleOffset: 45, fxType: 'fx_muzzle_cyan', vfxScale: 1.0 },
   missile_buggy: { scale: 1.0, muzzleOffset: 25, fxType: 'fx_impact_orange', vfxScale: 0.8, locomotion: 'wheels', recoilPx: 3, trailColor: 0x8b4513 },
   gunship: { scale: 1.1, yOffset: -30, hoverAmplitude: 4, hoverSpeed: 0.05, muzzleOffset: 40, fxType: 'fx_muzzle_orange', vfxScale: 1.2, locomotion: 'hover', recoilPx: 4, trailColor: 0x00ffff },

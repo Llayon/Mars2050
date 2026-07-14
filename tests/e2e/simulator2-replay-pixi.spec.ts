@@ -165,6 +165,35 @@ test('simulator2 Pixi replay keeps dense movement and crowd LOD readable', async
   network.assertClean()
 })
 
+test('simulator2 Pixi replay renders former alias units through direct visual assets', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1100 })
+  const network = collectNetwork(page)
+
+  await page.goto('/simulator2')
+  await expect(page.getByRole('heading', { name: /Симулятор Боя/ })).toBeVisible()
+  expect(network.hasChunk('pixi'), 'first simulator screen should not load Pixi').toBe(false)
+
+  await page.getByLabel('Replay renderer').selectOption('pixi')
+  await loadReplayPreset(page, 'visual_alias_qa')
+  await startSelectedSimulation(page)
+
+  const canvas = page.locator('canvas').last()
+  await expect(canvas).toBeVisible()
+  await page.waitForTimeout(900)
+  await expectCanvasPainted(canvas)
+
+  await expect.poll(async () => (await countDirectVisualPixels(canvas)).spriteColorPixels, { timeout: 5000 }).toBeGreaterThan(50)
+  const pixels = await countDirectVisualPixels(canvas)
+  expect(pixels.whiteTextPixels, 'Pixi former alias units should avoid fallback unit labels').toBeLessThan(5000)
+
+  await page.getByRole('button', { name: /✕/ }).click()
+  await expect(canvas).toBeHidden()
+
+  expect(network.hasChunk('pixi'), 'Pixi renderer should load for former alias visual QA').toBe(true)
+  expect(network.countPathPrefix('/api/')).toBe(0)
+  network.assertClean()
+})
+
 async function loadReplayPreset(page: Page, preset: string): Promise<void> {
   const presetSelect = page.locator('select').first()
   await presetSelect.evaluate((element, value) => {
@@ -267,6 +296,30 @@ async function countCrowdLodPixels(canvas: Locator): Promise<{ badgePurple: numb
   }
 
   return { badgePurple, whiteTextPixels }
+}
+
+async function countDirectVisualPixels(canvas: Locator): Promise<{ spriteColorPixels: number; whiteTextPixels: number }> {
+  const buffer = await canvas.screenshot()
+  const { data, info } = await sharp(buffer).ensureAlpha().raw().toBuffer({ resolveWithObject: true })
+  let spriteColorPixels = 0
+  let whiteTextPixels = 0
+
+  for (let pixel = 0; pixel < info.width * info.height; pixel++) {
+    const index = pixel * 4
+    const red = data[index]
+    const green = data[index + 1]
+    const blue = data[index + 2]
+    const alpha = data[index + 3]
+    if (alpha < 180) continue
+
+    const isTeamRed = red > 160 && green < 150 && blue < 150
+    const isTeamBlue = blue > 145 && red < 150 && green > 70
+    const isGrid = Math.abs(red - green) < 12 && Math.abs(green - blue) < 12 && red > 70 && red < 180
+    if (red > 245 && green > 245 && blue > 245) whiteTextPixels++
+    if (!isTeamRed && !isTeamBlue && !isGrid && red + green + blue > 110) spriteColorPixels++
+  }
+
+  return { spriteColorPixels, whiteTextPixels }
 }
 
 async function countChangedPixels(before: Buffer, after: Buffer): Promise<number> {

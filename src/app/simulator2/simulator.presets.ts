@@ -6,6 +6,7 @@ export const SIMULATOR_PRESET_OPTIONS = [
   { id: 'ranged_duel', name: 'Дуэль стрелков' },
   { id: 'marine_crowd_qa', name: 'QA: толпа морпехов' },
   { id: 'tier1_visual_qa', name: 'QA: визуалы T1' },
+  { id: 'visual_alias_qa', name: 'QA: бывшие алиасы' },
   { id: 'massive_clash', name: 'Стенка 100+' },
   { id: 'stealth_reveal', name: 'Стелс / Радар' },
   { id: 'projectile_barrier', name: 'Ракеты / Щит' },
@@ -52,6 +53,24 @@ export function getSimulatorPreset(presetName: string): { attackers: UnitRow[], 
         row('t1v-d-bug-2', 'defender', 'alien_bug', 300, 360, 20),
         row('t1v-d-bug-3', 'defender', 'alien_bug', 360, 360, 20),
         row('t1v-d-bug-4', 'defender', 'alien_bug', 420, 360, 20),
+      ],
+    }
+  } else if (presetName === 'visual_alias_qa') {
+    return {
+      attackers: [
+        row('vqa-a-drone', 'attacker', 'drone', 120, 830, 20),
+        row('vqa-a-scout', 'attacker', 'scout_drone', 185, 805, 18),
+        row('vqa-a-buggy', 'attacker', 'scavenger_buggy', 250, 845, 80),
+        row('vqa-a-jetpack', 'attacker', 'jetpack_trooper', 315, 815, 40),
+        row('vqa-a-gatling', 'attacker', 'gatling_rover', 380, 845, 120),
+        row('vqa-a-aa', 'attacker', 'aa_turret', 460, 845, 180),
+      ],
+      defenders: [
+        row('vqa-d-worm', 'defender', 'alien_worm', 300, 420, 250),
+        row('vqa-d-bug-0', 'defender', 'alien_bug', 210, 360, 20),
+        row('vqa-d-bug-1', 'defender', 'alien_bug', 260, 350, 20),
+        row('vqa-d-bug-2', 'defender', 'alien_bug', 350, 350, 20),
+        row('vqa-d-bug-3', 'defender', 'alien_bug', 405, 360, 20),
       ],
     }
   } else if (presetName === 'massive_clash') {

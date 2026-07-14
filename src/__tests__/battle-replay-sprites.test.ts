@@ -6,6 +6,7 @@ import { SPRITE_DIRS } from '@/domains/combat/combat.utils'
 import { getReplaySpriteDirection, resolveReplaySprite } from '@/components/game/battle-replay-sprites'
 import type { ReplayUnit } from '@/components/game/battle-replay-canvas-types'
 import {
+  FORMER_REPLAY_ALIAS_UNITS,
   REPLAY_SPRITE_ALIASES,
   TIER1_DIRECT_VISUAL_UNITS,
   isReplayVisualCoverageExempt,
@@ -54,12 +55,23 @@ describe('battle replay sprites', () => {
     })
   })
 
-  it('keeps explicit visual aliases only for approved non-direct units', () => {
-    Object.entries(REPLAY_SPRITE_ALIASES).forEach(([type, alias]) => {
-      expect(TIER1_DIRECT_VISUAL_UNITS, type).not.toContain(type)
-      expect(resolveReplaySprite(type, 'south')).toMatchObject({
-        assetType: alias,
+  it('does not alias any current combat unit visuals', () => {
+    const aliasedCurrentUnits = Object.keys(REPLAY_SPRITE_ALIASES)
+      .filter(type => Object.prototype.hasOwnProperty.call(UNIT_TYPES, type))
+    expect(aliasedCurrentUnits).toEqual([])
+  })
+
+  it('resolves former replay aliases through their own SVG strip assets', () => {
+    FORMER_REPLAY_ALIAS_UNITS.forEach(type => {
+      const sprite = resolveReplaySprite(type, 'south-east')
+      expect(sprite, type).toMatchObject({
+        src: `/assets/units/${type}_8dir.svg`,
+        assetType: type,
+        kind: 'svg-strip',
+        frameIndex: 6,
+        frameCount: 8,
       })
+      expect(assetExists(sprite!.src), type).toBe(true)
     })
   })
 

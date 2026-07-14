@@ -1,17 +1,19 @@
 import type { UnitTypeKey } from '@/domains/combat/combat.types'
 
-export const REPLAY_SPRITE_ALIASES = {
-  aa_turret: 'turret',
-  drone: 'emp_drone',
-  scout_drone: 'emp_drone',
-  scavenger_buggy: 'missile_buggy',
-  jetpack_trooper: 'interceptor',
-  gatling_rover: 'missile_buggy',
-  alien_worm: 'alien_spitter',
-} as const satisfies Partial<Record<UnitTypeKey, UnitTypeKey>>
+export const REPLAY_SPRITE_ALIASES = {} as const satisfies Partial<Record<UnitTypeKey, UnitTypeKey>>
 
 export const REPLAY_VISUAL_COVERAGE_EXEMPTIONS = [
   'wall',
+] as const satisfies readonly UnitTypeKey[]
+
+export const FORMER_REPLAY_ALIAS_UNITS = [
+  'aa_turret',
+  'drone',
+  'scout_drone',
+  'scavenger_buggy',
+  'jetpack_trooper',
+  'gatling_rover',
+  'alien_worm',
 ] as const satisfies readonly UnitTypeKey[]
 
 export const TIER1_DIRECT_VISUAL_UNITS = [

@@ -40,8 +40,8 @@ Replay metrics проверяются как diagnostic mirror с tolerance, ч�
 | `npm run test:combat:scenarios` | Runtime scenario metrics gate: simulator presets, replay actions, termination, spawn caps, and soft combat metrics. |
 | `npm run test:combat:tier1` | Tier 1 role gate: deterministic role scenarios, replay-visible role signals, and non-zero carrier output. |
 | `npm run combat:snapshot` | Generates committed balance-readiness reports in `docs/combat-balance-snapshot.md` and `.json`. |
-| `npm run test:e2e:replay` | Fast replay smoke: presets, mobile fit, debug overlays, dense movement readability, timeline seek, primitive event labels. |
-| `npm run test:e2e:replay-pixi` | Opt-in Pixi replay parity smoke: lazy Pixi chunk, mobile fit, overlays, seek/rewind, dense movement, and zerg Crowd LOD. |
+| `npm run test:e2e:replay` | Fast replay smoke: presets, mobile fit, debug overlays, dense movement readability, direct visual assets, timeline seek, primitive event labels. |
+| `npm run test:e2e:replay-pixi` | Opt-in Pixi replay parity smoke: lazy Pixi chunk, mobile fit, overlays, seek/rewind, direct visual assets, dense movement, and zerg Crowd LOD. |
 | `npm run test:e2e:replay-baseline` | Canvas screenshot baselines for stable visual states. |
 | `npm run test:e2e:replay-baseline:update` | Updates committed baseline screenshots after intentional replay rendering changes. |
 | `npm run test:e2e:qa` | Simulator load smoke plus replay smoke, without screenshot baseline comparison. |
@@ -107,8 +107,15 @@ field counter badges.
 places the main Tier 1 human roles in one deterministic replay and verifies that
 they render through their own sprite folders instead of temporary aliases or
 fallback text labels. The unit-level contract lives in
-`battle-replay-sprites.test.ts`: every combat unit must resolve to a real public
-visual asset or be explicitly listed as a visual coverage exemption.
+`battle-replay-sprites.test.ts`: every current combat unit must resolve to its
+own real public visual asset or be explicitly listed as a visual coverage
+exemption.
+
+`visual_alias_qa` is the canonical repro for units that previously borrowed
+another unit's replay visual. It keeps `aa_turret`, `drone`, `scout_drone`,
+`scavenger_buggy`, `jetpack_trooper`, `gatling_rover`, and `alien_worm` visible
+in one replay so canvas and Pixi smoke tests catch regressions back to fallback
+labels or wrong shared silhouettes.
 
 Crowd LOD rules are renderer-only: `48px` density buckets render as full units
 up to 6 live units, compact sprites from 7 to 15 live units, and sprite miniatures
@@ -235,3 +242,4 @@ unit upgrade panel.
 | **24. Transform Modes** | Пресет "Режимы движения" | Jetpack меняет air/ground window, artillery разворачивается перед стрельбой. | Есть `mode_change`, `stance_change`; дальность и targetability соответствуют режиму. |
 | **25. Cleanse Status** | Пресет "Очищение статусов" | Engineer очищает harmful statuses с союзников в радиусе. | Есть `status_cleanse`; burn/acid/slow не держатся бесконечно рядом с support. |
 | **26. Tier 1 Visual Coverage** | Пресет "QA: визуалы T1" | Marine, shock trooper, flamethrower, grenadier, heavy gunner, sapper, officer читаются как разные юниты. | Нет временных fallback-labels вместо спрайтов; каждый T1 infantry использует свой direct asset. |
+| **27. Former Alias Visual Coverage** | Пресет "QA: бывшие алиасы" | AA turret, drones, buggy, jetpack, gatling rover, alien worm читаются как разные юниты. | Нет replay-алиасов на чужие silhouette; каждый бывший alias использует свой direct SVG strip. |

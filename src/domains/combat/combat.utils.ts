@@ -18,7 +18,8 @@ export const SPRITE_PATHS: Record<string, string> = {
 export const SPRITE_ATLASES: Record<string, string> = {};
 
 export const SVG_UNITS = [
-  'plasma_tank', 'missile_buggy', 'gunship', 'engineer', 'emp_drone', 'minelayer_rover', 'siege_tank',
+  'aa_turret', 'drone', 'alien_worm', 'scout_drone', 'scavenger_buggy', 'jetpack_trooper',
+  'gatling_rover', 'plasma_tank', 'missile_buggy', 'gunship', 'engineer', 'emp_drone', 'minelayer_rover', 'siege_tank',
   'railgun_walker', 'drone_carrier', 'cryo_tank', 'shield_emitter', 'interceptor', 'hacker_rover',
   'artillery_crawler', 'titan_mech', 'behemoth_tank', 'ion_crawler', 'goliath_gunship', 'mobile_factory',
   'sonic_devastator', 'radar_zepplin', 'stealth_operative', 'hologram_projector', 'gravity_manipulator',

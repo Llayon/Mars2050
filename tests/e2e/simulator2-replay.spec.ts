@@ -165,14 +165,42 @@ test('simulator2 replay renders direct T1 unit sprites without fallback label no
   await page.waitForTimeout(900)
   await expectBattleReplayCanvasPainted(canvas)
 
-  const pixels = await countTier1VisualPixels(canvas)
-  expect(pixels.spriteColorPixels, 'direct T1 sprites should add non-team sprite detail').toBeGreaterThan(50)
+  await expect.poll(async () => (await countDirectVisualPixels(canvas)).spriteColorPixels, { timeout: 5000 }).toBeGreaterThan(50)
+  const pixels = await countDirectVisualPixels(canvas)
   expect(pixels.whiteTextPixels, 'direct T1 sprites should avoid fallback unit labels').toBeLessThan(5000)
 
   await page.getByRole('button', { name: /✕/ }).click()
   await expect(canvas).toBeHidden()
 
   expect(network.hasChunk('pixi'), 'T1 visual QA should stay on the canvas default renderer').toBe(false)
+  expect(network.countPathPrefix('/api/')).toBe(0)
+  expect(consoleWarnings, 'console warnings').toEqual([])
+  network.assertClean()
+})
+
+test('simulator2 replay renders former alias units through direct visual assets', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1100 })
+  const network = collectNetwork(page)
+  const consoleWarnings = collectConsoleWarnings(page)
+
+  await page.goto('/simulator2')
+  await expect(page.getByRole('heading', { name: /Симулятор Боя/ })).toBeVisible()
+  await loadReplayPreset(page, 'visual_alias_qa')
+  await startSelectedSimulation(page)
+
+  const canvas = page.locator('canvas').last()
+  await expect(canvas).toBeVisible()
+  await page.waitForTimeout(900)
+  await expectBattleReplayCanvasPainted(canvas)
+
+  await expect.poll(async () => (await countDirectVisualPixels(canvas)).spriteColorPixels, { timeout: 5000 }).toBeGreaterThan(50)
+  const pixels = await countDirectVisualPixels(canvas)
+  expect(pixels.whiteTextPixels, 'former alias units should avoid fallback unit labels').toBeLessThan(5000)
+
+  await page.getByRole('button', { name: /✕/ }).click()
+  await expect(canvas).toBeHidden()
+
+  expect(network.hasChunk('pixi'), 'former alias visual QA should stay on the canvas default renderer').toBe(false)
   expect(network.countPathPrefix('/api/')).toBe(0)
   expect(consoleWarnings, 'console warnings').toEqual([])
   network.assertClean()
@@ -442,7 +470,7 @@ async function countCrowdLodPixels(canvas: Locator): Promise<{ badgePurple: numb
   return { badgePurple, whiteTextPixels }
 }
 
-async function countTier1VisualPixels(canvas: Locator): Promise<{ spriteColorPixels: number; whiteTextPixels: number }> {
+async function countDirectVisualPixels(canvas: Locator): Promise<{ spriteColorPixels: number; whiteTextPixels: number }> {
   const buffer = await canvas.screenshot()
   const { data, info } = await sharp(buffer).ensureAlpha().raw().toBuffer({ resolveWithObject: true })
   let spriteColorPixels = 0
