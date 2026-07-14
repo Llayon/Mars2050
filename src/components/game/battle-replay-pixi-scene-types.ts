@@ -2,11 +2,9 @@ import type { Container, Graphics, Sprite, Text } from 'pixi.js'
 
 export interface PixiUnitDisplay {
   layer: Container
-  base: Graphics
   flash: Graphics
   fallback: Graphics
   sprite: Sprite
-  ring: Graphics
   label: Text
   emp: Text
   air: Text

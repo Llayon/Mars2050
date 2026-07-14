@@ -32,6 +32,13 @@ Source or reference art should live outside runtime-only public paths, for
 example under `assets/source/`, and the final exported runtime file must still
 be registered in `REPLAY_VISUAL_ASSETS`.
 
+## Team Readability
+
+Replay sprites should not rely on persistent team rings or colored base
+underlays in normal density. Team ownership is shown through HP bars:
+attacker HP bars are green, defender HP bars are red. Debug hitboxes keep their
+own overlay colors and remain separate from the normal combat read.
+
 ## Adding A Unit Visual
 
 1. Add or export the runtime asset files under `public/assets/units/`.

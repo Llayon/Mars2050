@@ -86,7 +86,7 @@ function drawUnit(ctx: CanvasRenderingContext2D, unit: ReplayUnit, view: ReplayC
   }
   ctx.restore()
   if (mode === 'full' || (mode === 'compact' && shouldShowPriorityHp(unit))) {
-    drawHpBar(ctx, x, y - radius - 8, unit.hp, unit.maxHp)
+    drawHpBar(ctx, x, Math.max(2, y - radius - 8), unit.hp, unit.maxHp, unit.team)
   }
   drawUnitOverlays(ctx, unit, x, y, radius, overlays)
 }
@@ -124,11 +124,11 @@ function shouldShowPriorityHp(unit: ReplayUnit): boolean {
     unit.mobilityMode === 'air'
 }
 
-function drawHpBar(ctx: CanvasRenderingContext2D, x: number, y: number, hp: number, maxHp: number) {
+function drawHpBar(ctx: CanvasRenderingContext2D, x: number, y: number, hp: number, maxHp: number, team: ReplayUnit['team']) {
   const ratio = Math.max(0, Math.min(1, hp / Math.max(1, maxHp)))
   ctx.fillStyle = '#334155'
   ctx.fillRect(x - 12, y, 24, 4)
-  ctx.fillStyle = ratio > 0.5 ? '#4ade80' : '#ef4444'
+  ctx.fillStyle = team === 'attacker' ? '#22c55e' : '#ef4444'
   ctx.fillRect(x - 12, y, 24 * ratio, 4)
 }
 

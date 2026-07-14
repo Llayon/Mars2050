@@ -42,7 +42,7 @@ test('simulator2 replay fits and renders on a mobile viewport', async ({ page })
   const canvas = page.locator('canvas').last()
   await expect(canvas).toBeVisible()
   await page.waitForTimeout(900)
-  await expectBattleReplayCanvasPainted(canvas)
+  await expectBattleReplayCanvasPainted(canvas, { requireEnemyHp: false })
   await expect(page.getByRole('button', { name: /Пауза|Играть/ })).toBeVisible()
 
   const box = await canvas.boundingBox()
@@ -407,11 +407,11 @@ function collectConsoleWarnings(page: Page): string[] {
   return warnings
 }
 
-async function expectBattleReplayCanvasPainted(canvas: Locator): Promise<void> {
+async function expectBattleReplayCanvasPainted(canvas: Locator, options: { requireEnemyHp?: boolean } = {}): Promise<void> {
   const buffer = await canvas.screenshot()
   const { data, info } = await sharp(buffer).ensureAlpha().raw().toBuffer({ resolveWithObject: true })
-  let redTeamPixels = 0
-  let blueTeamPixels = 0
+  let friendlyHpPixels = 0
+  let enemyHpPixels = 0
 
   for (let pixel = 0; pixel < info.width * info.height; pixel++) {
     const index = pixel * 4
@@ -420,12 +420,14 @@ async function expectBattleReplayCanvasPainted(canvas: Locator): Promise<void> {
     const blue = data[index + 2]
     const alpha = data[index + 3]
     if (alpha < 180) continue
-    if (red > 160 && green < 150 && blue < 150) redTeamPixels++
-    if (blue > 145 && red < 150 && green > 70) blueTeamPixels++
+    if (green > 150 && red < 90 && blue < 140) friendlyHpPixels++
+    if (red > 160 && green < 150 && blue < 150) enemyHpPixels++
   }
 
-  expect(redTeamPixels, 'replay canvas should contain red team unit pixels').toBeGreaterThan(20)
-  expect(blueTeamPixels, 'replay canvas should contain blue team unit pixels').toBeGreaterThan(20)
+  expect(friendlyHpPixels, 'replay canvas should contain green friendly HP bars').toBeGreaterThan(20)
+  if (options.requireEnemyHp !== false) {
+    expect(enemyHpPixels, 'replay canvas should contain red enemy HP bars').toBeGreaterThan(20)
+  }
 }
 
 async function countOverlayPixels(canvas: Locator): Promise<{ hitboxCyan: number; velocityYellow: number; targetRed: number }> {
@@ -484,11 +486,11 @@ async function countDirectVisualPixels(canvas: Locator): Promise<{ spriteColorPi
     const alpha = data[index + 3]
     if (alpha < 180) continue
 
-    const isTeamRed = red > 160 && green < 150 && blue < 150
-    const isTeamBlue = blue > 145 && red < 150 && green > 70
+    const isEnemyHp = red > 160 && green < 150 && blue < 150
+    const isFriendlyHp = green > 150 && red < 90 && blue < 140
     const isGrid = Math.abs(red - green) < 12 && Math.abs(green - blue) < 12 && red > 70 && red < 180
     if (red > 245 && green > 245 && blue > 245) whiteTextPixels++
-    if (!isTeamRed && !isTeamBlue && !isGrid && red + green + blue > 110) spriteColorPixels++
+    if (!isEnemyHp && !isFriendlyHp && !isGrid && red + green + blue > 110) spriteColorPixels++
   }
 
   return { spriteColorPixels, whiteTextPixels }

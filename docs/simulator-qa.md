@@ -101,8 +101,9 @@ single shaking cluster after movement or depenetration changes.
 `zerg_rush` is the canonical visual stress repro for renderer-side Crowd LOD.
 It intentionally keeps the underlying replay positions unchanged, but the canvas
 renderer suppresses per-unit labels/HP bars in dense buckets and draws compact
-unit sprites with team underlays so 100+ unit fights stay readable without
-field counter badges.
+unit sprites without persistent team rings so 100+ unit fights stay readable
+without field counter badges. In normal density, attacker HP bars are green and
+defender HP bars are red.
 
 `tier1_visual_qa` is the canonical direct-asset repro for early infantry. It
 places the main Tier 1 human roles in one deterministic replay and verifies that

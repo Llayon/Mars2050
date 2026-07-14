@@ -312,11 +312,11 @@ async function countDirectVisualPixels(canvas: Locator): Promise<{ spriteColorPi
     const alpha = data[index + 3]
     if (alpha < 180) continue
 
-    const isTeamRed = red > 160 && green < 150 && blue < 150
-    const isTeamBlue = blue > 145 && red < 150 && green > 70
+    const isEnemyHp = red > 160 && green < 150 && blue < 150
+    const isFriendlyHp = green > 150 && red < 90 && blue < 140
     const isGrid = Math.abs(red - green) < 12 && Math.abs(green - blue) < 12 && red > 70 && red < 180
     if (red > 245 && green > 245 && blue > 245) whiteTextPixels++
-    if (!isTeamRed && !isTeamBlue && !isGrid && red + green + blue > 110) spriteColorPixels++
+    if (!isEnemyHp && !isFriendlyHp && !isGrid && red + green + blue > 110) spriteColorPixels++
   }
 
   return { spriteColorPixels, whiteTextPixels }

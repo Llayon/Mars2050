@@ -15,7 +15,6 @@ export function drawPixiUnitSprite(layer: Container, unit: ReplayUnit, view: Rep
   const spriteDraw = getPixiReplaySpriteDraw(unit, view)
   if (!spriteDraw) return false
 
-  layer.addChild(drawTeamBase(unit, view))
   if (unit.flash > 0) layer.addChild(drawFlashRing(view.x, view.y, view.radius, unit.flash))
   const sprite = new Sprite(spriteDraw.texture)
   sprite.anchor.set(0.5)
@@ -24,7 +23,6 @@ export function drawPixiUnitSprite(layer: Container, unit: ReplayUnit, view: Rep
   sprite.width = spriteDraw.size
   sprite.height = spriteDraw.size
   layer.addChild(sprite)
-  layer.addChild(drawTeamRing(unit, view))
   return true
 }
 
@@ -60,24 +58,6 @@ function getReplayTexture(frame: ReplaySpriteFrame): Texture | null {
     : new Texture({ source, frame: new Rectangle(frame.frameIndex * frameWidth, 0, frameWidth, frameHeight) })
   textureCache.set(key, texture)
   return texture
-}
-
-function drawTeamBase(unit: ReplayUnit, view: ReplayCrowdUnitView): Graphics {
-  const radiusScale = view.mode === 'cluster' ? 0.42 : view.mode === 'compact' ? 0.62 : 0.86
-  const markerRadius = Math.max(4, view.radius * radiusScale)
-  const graphic = new Graphics()
-  graphic.ellipse(view.x, view.y + markerRadius * 0.42, markerRadius, Math.max(2, markerRadius * 0.38))
-    .fill({ color: unit.team === 'attacker' ? 0x3b82f6 : 0xef4444, alpha: view.mode === 'cluster' ? 0.62 : 0.78 })
-  return graphic
-}
-
-function drawTeamRing(unit: ReplayUnit, view: ReplayCrowdUnitView): Graphics {
-  const radiusScale = view.mode === 'cluster' ? 0.46 : view.mode === 'compact' ? 0.76 : 1.02
-  const markerRadius = Math.max(4, view.radius * radiusScale)
-  const graphic = new Graphics()
-  graphic.ellipse(view.x, view.y + markerRadius * 0.42, markerRadius, Math.max(2, markerRadius * 0.38))
-    .stroke({ width: view.mode === 'cluster' ? 1 : view.mode === 'compact' ? 2 : 3, color: unit.team === 'attacker' ? 0x60a5fa : 0xf87171, alpha: view.mode === 'cluster' ? 0.76 : 0.92 })
-  return graphic
 }
 
 function drawFlashRing(x: number, y: number, radius: number, flash: number): Graphics {

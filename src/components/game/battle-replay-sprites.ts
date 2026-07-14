@@ -95,12 +95,10 @@ export function drawReplayUnitSprite(
   const x = view.x - size / 2
   const y = view.y - size / 2 + offsetY
 
-  drawTeamBase(ctx, unit, view)
   if (unit.flash > 0) drawFlashRing(ctx, view.x, view.y, view.radius, unit.flash)
 
   if (sprite.kind === 'png') {
     ctx.drawImage(image, x, y, size, size)
-    drawTeamRing(ctx, unit, view)
     return true
   }
 
@@ -119,7 +117,6 @@ export function drawReplayUnitSprite(
     size,
     size
   )
-  drawTeamRing(ctx, unit, view)
   return true
 }
 
@@ -152,31 +149,6 @@ function getSpriteDrawSize(type: string, assetType: string, radius: number, mode
 function getSpriteOffsetY(assetType: string, mode: ReplayCrowdRenderMode): number {
   if (mode === 'cluster') return 0
   return (UNIT_VISUALS[assetType as keyof typeof UNIT_VISUALS]?.yOffset ?? 0) * 0.35
-}
-
-function drawTeamBase(ctx: CanvasRenderingContext2D, unit: ReplayUnit, view: ReplayCrowdUnitView) {
-  const radiusScale = view.mode === 'cluster' ? 0.42 : view.mode === 'compact' ? 0.62 : 0.86
-  const markerRadius = Math.max(4, view.radius * radiusScale)
-  ctx.save()
-  ctx.globalAlpha *= view.mode === 'cluster' ? 0.62 : 0.78
-  ctx.fillStyle = unit.team === 'attacker' ? '#3b82f6' : '#ef4444'
-  ctx.beginPath()
-  ctx.ellipse(view.x, view.y + markerRadius * 0.42, markerRadius, Math.max(2, markerRadius * 0.38), 0, 0, Math.PI * 2)
-  ctx.fill()
-  ctx.restore()
-}
-
-function drawTeamRing(ctx: CanvasRenderingContext2D, unit: ReplayUnit, view: ReplayCrowdUnitView) {
-  const radiusScale = view.mode === 'cluster' ? 0.46 : view.mode === 'compact' ? 0.76 : 1.02
-  const markerRadius = Math.max(4, view.radius * radiusScale)
-  ctx.save()
-  ctx.globalAlpha *= view.mode === 'cluster' ? 0.76 : 0.92
-  ctx.strokeStyle = unit.team === 'attacker' ? '#60a5fa' : '#f87171'
-  ctx.lineWidth = view.mode === 'cluster' ? 1 : view.mode === 'compact' ? 2 : 3
-  ctx.beginPath()
-  ctx.ellipse(view.x, view.y + markerRadius * 0.42, markerRadius, Math.max(2, markerRadius * 0.38), 0, 0, Math.PI * 2)
-  ctx.stroke()
-  ctx.restore()
 }
 
 function drawFlashRing(ctx: CanvasRenderingContext2D, x: number, y: number, radius: number, flash: number) {
