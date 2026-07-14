@@ -1,17 +1,21 @@
 export const SPRITE_PATHS: Record<string, string> = {
   'marine': '/sprites/marine/rotations',
+  'shock_trooper': '/assets/units/shock_trooper',
+  'flamethrower': '/assets/units/flamethrower',
   'rocketeer': '/sprites/rocketeer',
   'exosuit': '/sprites/exosuit',
   'sniper': '/sprites/sniper',
   'medic': '/assets/units/medic-v2',
+  'grenadier': '/assets/units/grenadier',
+  'heavy_gunner': '/assets/units/heavy_gunner',
+  'sapper': '/assets/units/sapper',
+  'officer': '/assets/units/officer',
   'turret': '/sprites/turret',
   'alien_bug': '/sprites/alien_bug',
   'alien_spitter': '/sprites/alien_spitter'
 };
 
-export const SPRITE_ATLASES: Record<string, string> = {
-  'flamethrower': '/sprites/units/flamethrower.json'
-};
+export const SPRITE_ATLASES: Record<string, string> = {};
 
 export const SVG_UNITS = [
   'plasma_tank', 'missile_buggy', 'gunship', 'engineer', 'emp_drone', 'minelayer_rover', 'siege_tank',

@@ -103,6 +103,13 @@ renderer suppresses per-unit labels/HP bars in dense buckets and draws compact
 unit sprites with team underlays so 100+ unit fights stay readable without
 field counter badges.
 
+`tier1_visual_qa` is the canonical direct-asset repro for early infantry. It
+places the main Tier 1 human roles in one deterministic replay and verifies that
+they render through their own sprite folders instead of temporary aliases or
+fallback text labels. The unit-level contract lives in
+`battle-replay-sprites.test.ts`: every combat unit must resolve to a real public
+visual asset or be explicitly listed as a visual coverage exemption.
+
 Crowd LOD rules are renderer-only: `48px` density buckets render as full units
 up to 6 live units, compact sprites from 7 to 15 live units, and sprite miniatures
 inside connected cluster regions at 16+ live units. Circles and text labels are
@@ -227,3 +234,4 @@ unit upgrade panel.
 | **23. Control / EMP** | Пресет "Контроль / EMP" | Hack/EMP units выполняют полезные действия без прямого урона. | Есть `status_apply` `hacked`/`emp`; controlled/disabled цели временно теряют нормальное поведение. |
 | **24. Transform Modes** | Пресет "Режимы движения" | Jetpack меняет air/ground window, artillery разворачивается перед стрельбой. | Есть `mode_change`, `stance_change`; дальность и targetability соответствуют режиму. |
 | **25. Cleanse Status** | Пресет "Очищение статусов" | Engineer очищает harmful statuses с союзников в радиусе. | Есть `status_cleanse`; burn/acid/slow не держатся бесконечно рядом с support. |
+| **26. Tier 1 Visual Coverage** | Пресет "QA: визуалы T1" | Marine, shock trooper, flamethrower, grenadier, heavy gunner, sapper, officer читаются как разные юниты. | Нет временных fallback-labels вместо спрайтов; каждый T1 infantry использует свой direct asset. |

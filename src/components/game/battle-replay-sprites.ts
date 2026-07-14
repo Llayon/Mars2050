@@ -2,6 +2,7 @@ import { getDir, SPRITE_ATLASES, SPRITE_DIRS, SPRITE_PATHS, SVG_UNITS } from '@/
 import { UNIT_VISUALS } from './battle-replay-visuals'
 import type { ReplayUnit } from './battle-replay-canvas-types'
 import type { ReplayCrowdRenderMode, ReplayCrowdUnitView } from './battle-replay-density'
+import { getReplaySpriteAssetType } from './battle-replay-visual-registry'
 
 type ReplaySpriteKind = 'png' | 'svg-strip' | 'atlas'
 
@@ -13,21 +14,6 @@ export interface ReplaySpriteFrame {
   frameCount: number
   sourceWidth: number
   sourceHeight: number
-}
-
-const SPRITE_ALIASES: Record<string, string> = {
-  aa_turret: 'turret',
-  drone: 'emp_drone',
-  scout_drone: 'emp_drone',
-  shock_trooper: 'marine',
-  scavenger_buggy: 'missile_buggy',
-  grenadier: 'rocketeer',
-  heavy_gunner: 'exosuit',
-  sapper: 'engineer',
-  officer: 'medic',
-  jetpack_trooper: 'interceptor',
-  gatling_rover: 'missile_buggy',
-  alien_worm: 'alien_spitter',
 }
 
 const ATLAS_IDLE_FRAME_ORDER = [
@@ -44,7 +30,7 @@ const ATLAS_IDLE_FRAME_ORDER = [
 const imageCache = new Map<string, HTMLImageElement | 'missing'>()
 
 export function resolveReplaySprite(type: string, direction: string): ReplaySpriteFrame | null {
-  const assetType = SPRITE_ALIASES[type] ?? type
+  const assetType = getReplaySpriteAssetType(type)
   const dir = normalizeDirection(direction)
   const spritePath = SPRITE_PATHS[assetType]
   if (spritePath) {

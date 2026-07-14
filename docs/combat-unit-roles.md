@@ -225,6 +225,12 @@ still supporting old attack-only logs. Replay labels/colors live in
 `battle-replay-labels.ts`, with coverage enforced against `BATTLE_ACTION_TYPES`
 by `battle-replay-labels.test.ts`.
 
+Replay unit visual coverage is also contractual. `battle-replay-sprites.test.ts`
+requires every combat unit to resolve to a real public asset or an explicit
+exemption, and Tier 1 infantry roles use direct sprite folders instead of
+temporary aliases so `marine`, `shock_trooper`, `flamethrower`, `grenadier`,
+`heavy_gunner`, `sapper`, and `officer` stay visually distinct in simulator QA.
+
 ## Advanced Mechanics / Upgrade Primitives
 
 Several Mechabellum effects are not ordinary statuses. Treat them as reusable
@@ -567,3 +573,6 @@ Current backlog:
    treated as a movement QA signal before changing unit balance.
 9. Regenerate `npm run combat:snapshot` before and after balance changes so
    unit outcomes, damage maps, and replay action counts stay comparable.
+10. Keep replay visual coverage green: new combat unit types need a direct
+    public asset, an approved visual alias, or an explicit exemption before
+    they are allowed to rely on fallback canvas labels.

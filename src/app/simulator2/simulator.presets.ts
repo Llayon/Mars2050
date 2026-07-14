@@ -5,6 +5,7 @@ export const SIMULATOR_PRESET_OPTIONS = [
   { id: 'zerg_rush', name: 'Зерг Раш' },
   { id: 'ranged_duel', name: 'Дуэль стрелков' },
   { id: 'marine_crowd_qa', name: 'QA: толпа морпехов' },
+  { id: 'tier1_visual_qa', name: 'QA: визуалы T1' },
   { id: 'massive_clash', name: 'Стенка 100+' },
   { id: 'stealth_reveal', name: 'Стелс / Радар' },
   { id: 'projectile_barrier', name: 'Ракеты / Щит' },
@@ -32,6 +33,25 @@ export function getSimulatorPreset(presetName: string): { attackers: UnitRow[], 
       defenders: [
         row('mcq-d-left', 'defender', 'marine', 130, 250, 100),
         row('mcq-d-right', 'defender', 'marine', 350, 250, 100),
+      ],
+    }
+  } else if (presetName === 'tier1_visual_qa') {
+    return {
+      attackers: [
+        row('t1v-a-marine', 'attacker', 'marine', 120, 840, 100),
+        row('t1v-a-shock', 'attacker', 'shock_trooper', 180, 820, 40),
+        row('t1v-a-flame', 'attacker', 'flamethrower', 240, 840, 60),
+        row('t1v-a-grenadier', 'attacker', 'grenadier', 300, 820, 40),
+        row('t1v-a-heavy', 'attacker', 'heavy_gunner', 360, 840, 50),
+        row('t1v-a-sapper', 'attacker', 'sapper', 420, 820, 30),
+        row('t1v-a-officer', 'attacker', 'officer', 480, 840, 80),
+      ],
+      defenders: [
+        row('t1v-d-bug-0', 'defender', 'alien_bug', 180, 360, 20),
+        row('t1v-d-bug-1', 'defender', 'alien_bug', 240, 360, 20),
+        row('t1v-d-bug-2', 'defender', 'alien_bug', 300, 360, 20),
+        row('t1v-d-bug-3', 'defender', 'alien_bug', 360, 360, 20),
+        row('t1v-d-bug-4', 'defender', 'alien_bug', 420, 360, 20),
       ],
     }
   } else if (presetName === 'massive_clash') {

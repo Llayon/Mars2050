@@ -1,6 +1,15 @@
 import { describe, expect, it } from 'vitest'
+import { existsSync } from 'fs'
+import { join } from 'path'
+import { UNIT_TYPES } from '@/domains/combat/combat.config'
+import { SPRITE_DIRS } from '@/domains/combat/combat.utils'
 import { getReplaySpriteDirection, resolveReplaySprite } from '@/components/game/battle-replay-sprites'
 import type { ReplayUnit } from '@/components/game/battle-replay-canvas-types'
+import {
+  REPLAY_SPRITE_ALIASES,
+  TIER1_DIRECT_VISUAL_UNITS,
+  isReplayVisualCoverageExempt,
+} from '@/components/game/battle-replay-visual-registry'
 
 function unit(overrides: Partial<ReplayUnit> = {}): ReplayUnit {
   return {
@@ -33,16 +42,37 @@ describe('battle replay sprites', () => {
     })
   })
 
-  it('resolves temporary tier-1 visual aliases to existing assets', () => {
+  it('resolves tier-1 infantry roles through direct visual assets', () => {
+    TIER1_DIRECT_VISUAL_UNITS.forEach(type => {
+      const sprite = resolveReplaySprite(type, 'south')
+      expect(sprite, type).toMatchObject({
+        assetType: type,
+        kind: 'png',
+      })
+      expect(sprite?.src, type).not.toContain('undefined')
+      expect(assetExists(sprite!.src), type).toBe(true)
+    })
+  })
+
+  it('keeps explicit visual aliases only for approved non-direct units', () => {
+    Object.entries(REPLAY_SPRITE_ALIASES).forEach(([type, alias]) => {
+      expect(TIER1_DIRECT_VISUAL_UNITS, type).not.toContain(type)
+      expect(resolveReplaySprite(type, 'south')).toMatchObject({
+        assetType: alias,
+      })
+    })
+  })
+
+  it('resolves newly promoted tier-1 assets without aliases', () => {
     expect(resolveReplaySprite('grenadier', 'south-west')).toMatchObject({
-      src: '/sprites/rocketeer/south-west.png',
-      assetType: 'rocketeer',
+      src: '/assets/units/grenadier/south-west.png',
+      assetType: 'grenadier',
       kind: 'png',
     })
     expect(resolveReplaySprite('sapper', 'east')).toMatchObject({
-      src: '/assets/units/engineer_8dir.svg',
-      assetType: 'engineer',
-      kind: 'svg-strip',
+      src: '/assets/units/sapper/east.png',
+      assetType: 'sapper',
+      kind: 'png',
     })
   })
 
@@ -56,18 +86,33 @@ describe('battle replay sprites', () => {
     })
   })
 
-  it('resolves atlas-backed idle frames without loading atlas JSON in replay', () => {
+  it('resolves flamethrower through direct 8-direction PNG frames', () => {
     expect(resolveReplaySprite('flamethrower', 'north')).toMatchObject({
-      src: '/sprites/units/flamethrower.png',
+      src: '/assets/units/flamethrower/north.png',
       assetType: 'flamethrower',
-      kind: 'atlas',
-      frameIndex: 3,
-      sourceWidth: 128,
+      kind: 'png',
+      frameIndex: 0,
     })
   })
 
-  it('returns null for unit types without a visual asset or alias', () => {
+  it('returns null for explicitly exempt unit types without a visual asset or alias', () => {
+    expect(isReplayVisualCoverageExempt('wall')).toBe(true)
     expect(resolveReplaySprite('wall', 'north')).toBeNull()
+  })
+
+  it('keeps every combat unit visual-covered or explicitly exempt', () => {
+    Object.keys(UNIT_TYPES).forEach(type => {
+      if (isReplayVisualCoverageExempt(type)) {
+        expect(resolveReplaySprite(type, 'south'), type).toBeNull()
+        return
+      }
+
+      SPRITE_DIRS.forEach(direction => {
+        const sprite = resolveReplaySprite(type, direction)
+        expect(sprite, `${type}:${direction}`).not.toBeNull()
+        expect(assetExists(sprite!.src), sprite!.src).toBe(true)
+      })
+    })
   })
 
   it('uses movement direction before stationary team defaults', () => {
@@ -76,3 +121,7 @@ describe('battle replay sprites', () => {
     expect(getReplaySpriteDirection(unit({ team: 'defender' }))).toBe('south')
   })
 })
+
+function assetExists(publicPath: string): boolean {
+  return existsSync(join(process.cwd(), 'public', publicPath.replace(/^\//, '')))
+}

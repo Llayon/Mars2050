@@ -58,12 +58,17 @@ export const UNIT_VISUALS: Partial<Record<UnitTypeKey, UnitVisualConfig>> = {
 
   // Old PNG units
   marine: { scale: 1.0, muzzleOffset: 15, fxType: 'fx_muzzle_orange', vfxScale: 0.5 },
+  shock_trooper: { scale: 0.95, muzzleOffset: 12, fxType: 'fx_impact_orange', vfxScale: 0.6 },
+  flamethrower: { scale: 1.2, muzzleOffset: 20, fxType: 'fx_muzzle_orange', vfxScale: 1.0 },
   alien_bug: { scale: 1.0, muzzleOffset: 12, fxType: 'fx_impact_cyan', vfxScale: 0.6 },
   alien_spitter: { scale: 1.1, muzzleOffset: 18, fxType: 'fx_muzzle_green', vfxScale: 0.7 },
   rocketeer: { scale: 1.0, muzzleOffset: 18, fxType: 'fx_impact_orange', vfxScale: 0.8 },
+  grenadier: { scale: 1.08, muzzleOffset: 20, fxType: 'fx_impact_orange', vfxScale: 0.9 },
+  heavy_gunner: { scale: 1.12, muzzleOffset: 22, fxType: 'fx_muzzle_orange', vfxScale: 0.8, recoilPx: 3 },
+  sapper: { scale: 1.0, muzzleOffset: 14, fxType: 'fx_impact_orange', vfxScale: 0.75 },
+  officer: { scale: 1.1, muzzleOffset: 10, fxType: 'fx_muzzle_green', vfxScale: 0.5 },
   exosuit: { scale: 1.1, muzzleOffset: 25, fxType: 'fx_muzzle_orange', vfxScale: 1.0 },
   sniper: { scale: 1.0, muzzleOffset: 22, fxType: 'fx_muzzle_cyan', vfxScale: 0.6 },
   medic: { scale: 1.0 },
-  turret: { scale: 1.1, muzzleOffset: 30, fxType: 'fx_muzzle_orange', vfxScale: 1.2 },
-  flamethrower: { scale: 1.0, muzzleOffset: 20, fxType: 'fx_muzzle_orange', vfxScale: 1.0 }
+  turret: { scale: 1.1, muzzleOffset: 30, fxType: 'fx_muzzle_orange', vfxScale: 1.2 }
 }

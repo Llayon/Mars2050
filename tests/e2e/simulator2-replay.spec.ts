@@ -150,6 +150,34 @@ test('simulator2 replay uses badge-free crowd LOD for zerg rush stress states', 
   network.assertClean()
 })
 
+test('simulator2 replay renders direct T1 unit sprites without fallback label noise', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1100 })
+  const network = collectNetwork(page)
+  const consoleWarnings = collectConsoleWarnings(page)
+
+  await page.goto('/simulator2')
+  await expect(page.getByRole('heading', { name: /Симулятор Боя/ })).toBeVisible()
+  await loadReplayPreset(page, 'tier1_visual_qa')
+  await startSelectedSimulation(page)
+
+  const canvas = page.locator('canvas').last()
+  await expect(canvas).toBeVisible()
+  await page.waitForTimeout(900)
+  await expectBattleReplayCanvasPainted(canvas)
+
+  const pixels = await countTier1VisualPixels(canvas)
+  expect(pixels.spriteColorPixels, 'direct T1 sprites should add non-team sprite detail').toBeGreaterThan(50)
+  expect(pixels.whiteTextPixels, 'direct T1 sprites should avoid fallback unit labels').toBeLessThan(5000)
+
+  await page.getByRole('button', { name: /✕/ }).click()
+  await expect(canvas).toBeHidden()
+
+  expect(network.hasChunk('pixi'), 'T1 visual QA should stay on the canvas default renderer').toBe(false)
+  expect(network.countPathPrefix('/api/')).toBe(0)
+  expect(consoleWarnings, 'console warnings').toEqual([])
+  network.assertClean()
+})
+
 test('simulator2 replay timeline can seek, rewind, and resume playback', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1100 })
   const network = collectNetwork(page)
@@ -412,6 +440,30 @@ async function countCrowdLodPixels(canvas: Locator): Promise<{ badgePurple: numb
   }
 
   return { badgePurple, whiteTextPixels }
+}
+
+async function countTier1VisualPixels(canvas: Locator): Promise<{ spriteColorPixels: number; whiteTextPixels: number }> {
+  const buffer = await canvas.screenshot()
+  const { data, info } = await sharp(buffer).ensureAlpha().raw().toBuffer({ resolveWithObject: true })
+  let spriteColorPixels = 0
+  let whiteTextPixels = 0
+
+  for (let pixel = 0; pixel < info.width * info.height; pixel++) {
+    const index = pixel * 4
+    const red = data[index]
+    const green = data[index + 1]
+    const blue = data[index + 2]
+    const alpha = data[index + 3]
+    if (alpha < 180) continue
+
+    const isTeamRed = red > 160 && green < 150 && blue < 150
+    const isTeamBlue = blue > 145 && red < 150 && green > 70
+    const isGrid = Math.abs(red - green) < 12 && Math.abs(green - blue) < 12 && red > 70 && red < 180
+    if (red > 245 && green > 245 && blue > 245) whiteTextPixels++
+    if (!isTeamRed && !isTeamBlue && !isGrid && red + green + blue > 110) spriteColorPixels++
+  }
+
+  return { spriteColorPixels, whiteTextPixels }
 }
 
 async function countPrimitiveLabelPixels(canvas: Locator): Promise<{ controlPurple: number; eventCyan: number; yellowLabel: number }> {
