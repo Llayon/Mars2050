@@ -1,34 +1,3 @@
-export const SPRITE_PATHS: Record<string, string> = {
-  'marine': '/sprites/marine/rotations',
-  'shock_trooper': '/assets/units/shock_trooper',
-  'flamethrower': '/assets/units/flamethrower',
-  'rocketeer': '/sprites/rocketeer',
-  'exosuit': '/sprites/exosuit',
-  'sniper': '/sprites/sniper',
-  'medic': '/assets/units/medic-v2',
-  'grenadier': '/assets/units/grenadier',
-  'heavy_gunner': '/assets/units/heavy_gunner',
-  'sapper': '/assets/units/sapper',
-  'officer': '/assets/units/officer',
-  'turret': '/sprites/turret',
-  'alien_bug': '/sprites/alien_bug',
-  'alien_spitter': '/sprites/alien_spitter'
-};
-
-export const SPRITE_ATLASES: Record<string, string> = {};
-
-export const SVG_UNITS = [
-  'aa_turret', 'drone', 'alien_worm', 'scout_drone', 'scavenger_buggy', 'jetpack_trooper',
-  'gatling_rover', 'plasma_tank', 'missile_buggy', 'gunship', 'engineer', 'emp_drone', 'minelayer_rover', 'siege_tank',
-  'railgun_walker', 'drone_carrier', 'cryo_tank', 'shield_emitter', 'interceptor', 'hacker_rover',
-  'artillery_crawler', 'titan_mech', 'behemoth_tank', 'ion_crawler', 'goliath_gunship', 'mobile_factory',
-  'sonic_devastator', 'radar_zepplin', 'stealth_operative', 'hologram_projector', 'gravity_manipulator',
-  'nanite_generator', 'bounty_hunter'
-];
-
-export const SPRITE_DIRS = ['north', 'south', 'east', 'west', 'north-east', 'north-west', 'south-east', 'south-west'];
-
-
 export const FIELD_WIDTH = 600;
 export const FIELD_HEIGHT = 1200;
 export const TILE_SIZE = 40; // 1 unit of old grid

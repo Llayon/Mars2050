@@ -40,6 +40,7 @@ Replay metrics проверяются как diagnostic mirror с tolerance, ч�
 | `npm run test:combat:scenarios` | Runtime scenario metrics gate: simulator presets, replay actions, termination, spawn caps, and soft combat metrics. |
 | `npm run test:combat:tier1` | Tier 1 role gate: deterministic role scenarios, replay-visible role signals, and non-zero carrier output. |
 | `npm run combat:snapshot` | Generates committed balance-readiness reports in `docs/combat-balance-snapshot.md` and `.json`. |
+| `npm run replay:visuals` | Standalone replay visual asset contract: every current combat unit has a direct manifest asset or explicit exemption. |
 | `npm run test:e2e:replay` | Fast replay smoke: presets, mobile fit, debug overlays, dense movement readability, direct visual assets, timeline seek, primitive event labels. |
 | `npm run test:e2e:replay-pixi` | Opt-in Pixi replay parity smoke: lazy Pixi chunk, mobile fit, overlays, seek/rewind, direct visual assets, dense movement, and zerg Crowd LOD. |
 | `npm run test:e2e:replay-baseline` | Canvas screenshot baselines for stable visual states. |
@@ -106,10 +107,10 @@ field counter badges.
 `tier1_visual_qa` is the canonical direct-asset repro for early infantry. It
 places the main Tier 1 human roles in one deterministic replay and verifies that
 they render through their own sprite folders instead of temporary aliases or
-fallback text labels. The unit-level contract lives in
-`battle-replay-sprites.test.ts`: every current combat unit must resolve to its
-own real public visual asset or be explicitly listed as a visual coverage
-exemption.
+fallback text labels. The unit-level contract is defined by
+`REPLAY_VISUAL_ASSETS` in `battle-replay-visual-registry.ts` and can be checked
+with `npm run replay:visuals`; `battle-replay-sprites.test.ts` keeps renderer
+resolution and direction mapping covered.
 
 `visual_alias_qa` is the canonical repro for units that previously borrowed
 another unit's replay visual. It keeps `aa_turret`, `drone`, `scout_drone`,

@@ -1,8 +1,8 @@
-import { getDir, SPRITE_ATLASES, SPRITE_DIRS, SPRITE_PATHS, SVG_UNITS } from '@/domains/combat/combat.utils'
+import { getDir } from '@/domains/combat/combat.utils'
 import { UNIT_VISUALS } from './battle-replay-visuals'
 import type { ReplayUnit } from './battle-replay-canvas-types'
 import type { ReplayCrowdRenderMode, ReplayCrowdUnitView } from './battle-replay-density'
-import { getReplaySpriteAssetType } from './battle-replay-visual-registry'
+import { REPLAY_SPRITE_DIRECTIONS, SPRITE_DIRS, getReplayVisualAsset } from './battle-replay-visual-registry'
 
 type ReplaySpriteKind = 'png' | 'svg-strip' | 'atlas'
 
@@ -30,12 +30,13 @@ const ATLAS_IDLE_FRAME_ORDER = [
 const imageCache = new Map<string, HTMLImageElement | 'missing'>()
 
 export function resolveReplaySprite(type: string, direction: string): ReplaySpriteFrame | null {
-  const assetType = getReplaySpriteAssetType(type)
+  const resolved = getReplayVisualAsset(type)
+  if (!resolved) return null
+  const { assetType, asset } = resolved
   const dir = normalizeDirection(direction)
-  const spritePath = SPRITE_PATHS[assetType]
-  if (spritePath) {
+  if (asset.kind === 'png') {
     return {
-      src: `${spritePath}/${dir}.png`,
+      src: `${asset.path}/${dir}.png`,
       assetType,
       kind: 'png',
       frameIndex: 0,
@@ -45,28 +46,27 @@ export function resolveReplaySprite(type: string, direction: string): ReplaySpri
     }
   }
 
-  if (SVG_UNITS.includes(assetType)) {
+  if (asset.kind === 'svg-strip') {
     return {
-      src: `/assets/units/${assetType}_8dir.svg`,
+      src: asset.path,
       assetType,
       kind: 'svg-strip',
       frameIndex: Math.max(0, SPRITE_DIRS.indexOf(dir)),
-      frameCount: SPRITE_DIRS.length,
-      sourceWidth: 100,
-      sourceHeight: 100,
+      frameCount: asset.frameCount ?? REPLAY_SPRITE_DIRECTIONS.length,
+      sourceWidth: asset.sourceWidth ?? 100,
+      sourceHeight: asset.sourceHeight ?? 100,
     }
   }
 
-  const atlasPath = SPRITE_ATLASES[assetType]
-  if (atlasPath) {
+  if (asset.kind === 'atlas') {
     return {
-      src: atlasPath.replace(/\.json$/, '.png'),
+      src: asset.path.replace(/\.json$/, '.png'),
       assetType,
       kind: 'atlas',
       frameIndex: Math.max(0, ATLAS_IDLE_FRAME_ORDER.indexOf(dir)),
       frameCount: ATLAS_IDLE_FRAME_ORDER.length,
-      sourceWidth: 128,
-      sourceHeight: 128,
+      sourceWidth: asset.sourceWidth ?? 128,
+      sourceHeight: asset.sourceHeight ?? 128,
     }
   }
 

@@ -1,7 +1,8 @@
 import { Container, Graphics, Sprite, Texture, Text, Rectangle, Assets } from 'pixi.js'
 import { UNIT_TYPES } from '@/domains/combat/combat.config'
-import { getSizeRadius, SPRITE_ATLASES, SPRITE_PATHS, SVG_UNITS, SPRITE_DIRS } from '@/domains/combat/combat.utils'
+import { getSizeRadius } from '@/domains/combat/combat.utils'
 import { UNIT_VISUALS } from './battle-replay-visuals'
+import { SPRITE_ATLASES, SPRITE_DIRS, SPRITE_PATHS, SVG_UNITS, getReplayVisualAsset } from './battle-replay-visual-registry'
 import type { SimUnit, UnitRow, UnitTypeKey } from '@/domains/combat/combat.types'
 
 export type SpriteState = { 
@@ -19,16 +20,21 @@ export function getSvgFrameTexture(unitType: string, dir: string): Texture | nul
   const cached = svgFrameCache.get(cacheKey)
   if (cached) return cached
 
+  const resolved = getReplayVisualAsset(unitType)
+  if (!resolved || resolved.asset.kind !== 'svg-strip') return null
+  const asset = resolved.asset
   let baseTex: Texture
   try {
-    baseTex = Assets.get(`/assets/units/${unitType}_8dir.svg`) || Texture.from(`/assets/units/${unitType}_8dir.svg`)
-    if (baseTex.source.width < 800) return null
+    baseTex = Assets.get(asset.path) || Texture.from(asset.path)
+    if (baseTex.source.width < (asset.sourceWidth ?? 100) * (asset.frameCount ?? SPRITE_DIRS.length)) return null
   } catch {
     return null
   }
 
   const dirIdx = SPRITE_DIRS.indexOf(dir)
-  const texture = new Texture({ source: baseTex.source, frame: new Rectangle((dirIdx === -1 ? 0 : dirIdx) * 100, 0, 100, 100) })
+  const frameWidth = asset.sourceWidth ?? 100
+  const frameHeight = asset.sourceHeight ?? 100
+  const texture = new Texture({ source: baseTex.source, frame: new Rectangle((dirIdx === -1 ? 0 : dirIdx) * frameWidth, 0, frameWidth, frameHeight) })
   svgFrameCache.set(cacheKey, texture)
   return texture
 }

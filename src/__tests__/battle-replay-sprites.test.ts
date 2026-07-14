@@ -2,12 +2,15 @@ import { describe, expect, it } from 'vitest'
 import { existsSync } from 'fs'
 import { join } from 'path'
 import { UNIT_TYPES } from '@/domains/combat/combat.config'
-import { SPRITE_DIRS } from '@/domains/combat/combat.utils'
 import { getReplaySpriteDirection, resolveReplaySprite } from '@/components/game/battle-replay-sprites'
 import type { ReplayUnit } from '@/components/game/battle-replay-canvas-types'
 import {
+  getReplayVisualCoverageIssues,
+  getReplayVisualCoverageSummary,
+} from '@/components/game/battle-replay-visual-contract'
+import {
   FORMER_REPLAY_ALIAS_UNITS,
-  REPLAY_SPRITE_ALIASES,
+  SPRITE_DIRS,
   TIER1_DIRECT_VISUAL_UNITS,
   isReplayVisualCoverageExempt,
 } from '@/components/game/battle-replay-visual-registry'
@@ -55,10 +58,9 @@ describe('battle replay sprites', () => {
     })
   })
 
-  it('does not alias any current combat unit visuals', () => {
-    const aliasedCurrentUnits = Object.keys(REPLAY_SPRITE_ALIASES)
-      .filter(type => Object.prototype.hasOwnProperty.call(UNIT_TYPES, type))
-    expect(aliasedCurrentUnits).toEqual([])
+  it('keeps every combat unit visual-covered or explicitly exempt', () => {
+    const issues = getReplayVisualCoverageIssues(Object.keys(UNIT_TYPES), assetExists)
+    expect(issues).toEqual([])
   })
 
   it('resolves former replay aliases through their own SVG strip assets', () => {
@@ -112,7 +114,7 @@ describe('battle replay sprites', () => {
     expect(resolveReplaySprite('wall', 'north')).toBeNull()
   })
 
-  it('keeps every combat unit visual-covered or explicitly exempt', () => {
+  it('resolves every combat unit visual asset in all replay directions', () => {
     Object.keys(UNIT_TYPES).forEach(type => {
       if (isReplayVisualCoverageExempt(type)) {
         expect(resolveReplaySprite(type, 'south'), type).toBeNull()
@@ -124,6 +126,16 @@ describe('battle replay sprites', () => {
         expect(sprite, `${type}:${direction}`).not.toBeNull()
         expect(assetExists(sprite!.src), sprite!.src).toBe(true)
       })
+    })
+  })
+
+  it('reports the expected replay visual coverage summary', () => {
+    const summary = getReplayVisualCoverageSummary(Object.keys(UNIT_TYPES))
+    expect(summary).toMatchObject({
+      unitCount: Object.keys(UNIT_TYPES).length,
+      directAssetCount: Object.keys(UNIT_TYPES).length - 1,
+      exemptionCount: 1,
+      aliasCount: 0,
     })
   })
 

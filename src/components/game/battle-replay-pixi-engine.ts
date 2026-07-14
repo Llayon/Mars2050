@@ -1,10 +1,11 @@
 import { Application, Assets, Container } from 'pixi.js'
-import { FIELD_HEIGHT, FIELD_WIDTH, SPRITE_DIRS } from '@/domains/combat/combat.utils'
+import { FIELD_HEIGHT, FIELD_WIDTH } from '@/domains/combat/combat.utils'
 import type { BattleReplayEngineProps, ReplayAppHandle } from './battle-replay-canvas-types'
 import { createBattleReplayRuntime } from './battle-replay-runtime'
 import { drawPixiReplay } from './battle-replay-pixi-draw'
 import { createPixiReplayScene } from './battle-replay-pixi-scene'
 import { resolveReplaySprite } from './battle-replay-sprites'
+import { SPRITE_DIRS } from './battle-replay-visual-registry'
 
 export type { BattleReplayEngineProps, ReplayAppHandle, ReplayControls } from './battle-replay-canvas-types'
 

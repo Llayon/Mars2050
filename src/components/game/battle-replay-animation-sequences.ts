@@ -1,7 +1,7 @@
 import { Texture } from 'pixi.js'
-import { SPRITE_DIRS } from '@/domains/combat/combat.utils'
 import type { UnitTypeKey } from '@/domains/combat/combat.types'
 import { UNIT_VISUALS } from './battle-replay-visuals'
+import { SPRITE_DIRS } from './battle-replay-visual-registry'
 import type { SpriteState } from './battle-replay-units'
 
 export function addVisualAnimationAssets(toLoad: string[]): void {

@@ -225,13 +225,15 @@ still supporting old attack-only logs. Replay labels/colors live in
 `battle-replay-labels.ts`, with coverage enforced against `BATTLE_ACTION_TYPES`
 by `battle-replay-labels.test.ts`.
 
-Replay unit visual coverage is also contractual. `battle-replay-sprites.test.ts`
-requires every current combat unit to resolve to its own real public asset or an
-explicit exemption. `wall` is the only current no-asset exemption; replay aliases
-are kept only as a future migration escape hatch and must not cover current
-`UNIT_TYPES`. Tier 1 infantry and former alias units both have dedicated
-visual QA presets so distinct combat roles stay visually distinct in simulator
-QA.
+Replay unit visual coverage is also contractual. `REPLAY_VISUAL_ASSETS` in
+`battle-replay-visual-registry.ts` is the source of truth, and
+`npm run replay:visuals` checks that every current combat unit resolves to its
+own real public asset or an explicit exemption. `wall` is the only current
+no-asset exemption; replay aliases are kept only as a future migration escape
+hatch and must not cover current `UNIT_TYPES`. Tier 1 infantry and former alias
+units both have dedicated visual QA presets so distinct combat roles stay
+visually distinct in simulator QA. The workflow is documented in
+`docs/replay-visual-assets.md`.
 
 ## Advanced Mechanics / Upgrade Primitives
 
@@ -575,7 +577,9 @@ Current backlog:
    treated as a movement QA signal before changing unit balance.
 9. Regenerate `npm run combat:snapshot` before and after balance changes so
    unit outcomes, damage maps, and replay action counts stay comparable.
-10. Keep replay visual coverage green: new combat unit types need a direct
-    public asset or an explicit exemption before they are allowed to rely on
-    fallback canvas labels. Approved aliases are only for temporary migration
-    of non-current content and must not cover current `UNIT_TYPES`.
+10. Keep replay visual coverage green: new combat unit types need a
+    `REPLAY_VISUAL_ASSETS` entry with real public files or an explicit
+    exemption before they are allowed to rely on fallback canvas labels.
+    Approved aliases are only for temporary migration of non-current content
+    and must not cover current `UNIT_TYPES`. Run `npm run replay:visuals`
+    before renderer or roster changes are considered complete.
