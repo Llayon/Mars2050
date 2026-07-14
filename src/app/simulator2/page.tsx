@@ -28,7 +28,7 @@ export default function SimulatorPage() {
   const [attackerGlobals, setAttackerGlobals] = useState<string[]>([])
   const [defenderGlobals, setDefenderGlobals] = useState<string[]>([])
   const [isSimulating, setIsSimulating] = useState(false)
-  const [simulatorError, setSimulatorError] = useState<string | null>(null), [replayRendererMode, setReplayRendererMode] = useState<'canvas' | 'pixi'>('canvas')
+  const [simulatorError, setSimulatorError] = useState<string | null>(null), [replayRendererMode, setReplayRendererMode] = useState<'canvas' | 'pixi'>('pixi')
   const [selectedUnit, setSelectedUnit] = useState<{team: 'attacker'|'defender', index: number} | null>(null)
 
   function addUnit(team: 'attacker' | 'defender', type: UnitTypeKey) {

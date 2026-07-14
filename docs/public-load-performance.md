@@ -177,12 +177,12 @@ Verification for this slice:
 `/simulator2` now follows the same intent-driven rule as gameplay overlays:
 
 - The first screen renders only the simulator shell, unit selectors, and grid.
-- Battle replay code loads through `LazyBattleReplayModal` only after simulation data exists; `/simulator2` defaults to the canvas replay engine, with Pixi available only through an opt-in replay renderer selector.
+- Battle replay code loads through `LazyBattleReplayModal` only after simulation data exists; `/simulator2` defaults to the Pixi replay engine, with Canvas still selectable as fallback and baseline renderer.
 - The deterministic combat engine imports only when the player starts a simulation.
 - Preset data imports only after a preset is selected.
 - Hidden unit tooltip DOM was removed from the prerendered shell; compact button `title` text keeps unit stats available without duplicating large hidden markup.
-- `tests/e2e/simulator2-load.spec.ts` guards that replay chunks, Pixi chunks, and API requests are absent from the initial simulator screen. `test:e2e:replay-pixi` verifies that Pixi loads only after the opt-in replay opens and covers mobile fit, overlays, seek/rewind stability, dense movement, and zerg Crowd LOD.
-- Pixi replay rendering uses a persistent scene with reusable unit/effect objects. Canvas remains the default renderer until the Pixi parity suite and the canvas baseline suite stay green after future visual changes.
+- `tests/e2e/simulator2-load.spec.ts` guards that replay chunks, Pixi chunks, and API requests are absent from the initial simulator screen. `test:e2e:replay` verifies the default Pixi replay path, while `test:e2e:replay-pixi` keeps focused Pixi parity/stress coverage.
+- Pixi replay rendering uses a persistent scene with reusable unit/effect objects. Canvas remains available for fallback diagnostics and stable screenshot baselines.
 
 `/simulator` remains tracked as dev/QA performance debt. If it becomes player-facing, apply the same lazy replay/combat split.
 

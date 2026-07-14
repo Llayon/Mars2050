@@ -2,7 +2,7 @@ import { expect, test, type Locator, type Page } from '@playwright/test'
 import sharp from 'sharp'
 import { collectNetwork, expectCanvasPainted } from './support/smoke-helpers'
 
-test('simulator2 replay can render through the Pixi opt-in renderer', async ({ page }) => {
+test('simulator2 replay can render through the selected Pixi renderer', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1100 })
   const network = collectNetwork(page)
 
@@ -121,7 +121,7 @@ test('simulator2 Pixi replay can seek, rewind, and stay stable while paused', as
   await page.getByRole('button', { name: /Играть/ }).click()
   await expect.poll(async () => Number(await timeline.inputValue()), { timeout: 5000 }).toBeGreaterThan(0)
 
-  expect(network.hasChunk('pixi'), 'Pixi renderer should stay opt-in').toBe(true)
+  expect(network.hasChunk('pixi'), 'Pixi renderer should stay selected after replay opens').toBe(true)
   expect(network.countPathPrefix('/api/')).toBe(0)
   network.assertClean()
 })
@@ -160,7 +160,7 @@ test('simulator2 Pixi replay keeps dense movement and crowd LOD readable', async
   await page.getByRole('button', { name: /✕/ }).click()
   await expect(canvas).toBeHidden()
 
-  expect(network.hasChunk('pixi'), 'Pixi renderer should stay opt-in for dense QA').toBe(true)
+  expect(network.hasChunk('pixi'), 'Pixi renderer should stay selected for dense QA').toBe(true)
   expect(network.countPathPrefix('/api/')).toBe(0)
   network.assertClean()
 })

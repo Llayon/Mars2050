@@ -49,6 +49,7 @@ test('simulator2 replay canvas matches stable visual baselines', async ({ page }
 async function openReplayPreset(page: Page, preset: string): Promise<void> {
   await page.goto('/simulator2')
   await expect(page.getByRole('heading', { name: /Симулятор Боя/ })).toBeVisible()
+  await page.getByLabel('Replay renderer').selectOption('canvas')
   await page.locator('select').first().selectOption(preset)
   await page.getByRole('button', { name: /НАЧАТЬ СИМУЛЯЦИЮ/ }).click()
 }

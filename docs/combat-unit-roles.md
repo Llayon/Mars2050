@@ -218,8 +218,9 @@ The detailed replay stream can emit:
 
 The legacy `attack` replay action is still emitted for projectile, recoil, and
 old replay compatibility. The active `/simulator2` replay entry point exports
-the replay renderer router through `battle-replay-engine.ts`; canvas remains
-the default renderer, while Pixi is opt-in for replay QA. Both renderers use
+the replay renderer router through `battle-replay-engine.ts`; Pixi is the
+default renderer there, while Canvas remains the fallback and baseline renderer.
+Both renderers use
 detailed `damage`, `damage_share`, and `lifesteal` events for HP/text while
 still supporting old attack-only logs. Replay labels/colors live in
 `battle-replay-labels.ts`, with coverage enforced against `BATTLE_ACTION_TYPES`

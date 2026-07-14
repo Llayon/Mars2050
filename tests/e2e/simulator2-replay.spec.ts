@@ -23,7 +23,7 @@ test('simulator2 replay renders combat presets without browser errors', async ({
     await runReplayPreset(page, preset)
   }
 
-  expect(network.hasChunk('pixi'), 'simulator2 replay should stay on the canvas renderer').toBe(false)
+  expect(network.hasChunk('pixi'), 'simulator2 replay should use the Pixi default renderer').toBe(true)
   expect(network.countPathPrefix('/api/')).toBe(0)
   expect(consoleWarnings, 'console warnings').toEqual([])
   network.assertClean()
@@ -54,7 +54,7 @@ test('simulator2 replay fits and renders on a mobile viewport', async ({ page })
   expect(box!.width, 'mobile replay canvas width').toBeGreaterThan(300)
   expect(box!.height, 'mobile replay canvas height').toBeGreaterThan(600)
 
-  expect(network.hasChunk('pixi'), 'mobile simulator2 replay should stay on the canvas renderer').toBe(false)
+  expect(network.hasChunk('pixi'), 'mobile simulator2 replay should use the Pixi default renderer').toBe(true)
   expect(consoleWarnings, 'console warnings').toEqual([])
   network.assertClean()
 })
@@ -79,7 +79,7 @@ test('simulator2 replay debug overlays render hitboxes, velocity, and target lin
   await expect.poll(async () => (await countOverlayPixels(canvas)).velocityYellow, { timeout: 8000 }).toBeGreaterThan(5)
   await expect.poll(async () => (await countOverlayPixels(canvas)).targetRed, { timeout: 12000 }).toBeGreaterThan(5)
 
-  expect(network.hasChunk('pixi'), 'simulator2 replay overlays should stay on the canvas renderer').toBe(false)
+  expect(network.hasChunk('pixi'), 'simulator2 replay overlays should use the Pixi default renderer').toBe(true)
   expect(consoleWarnings, 'console warnings').toEqual([])
   network.assertClean()
 })
@@ -96,7 +96,7 @@ test('simulator2 replay keeps dense movement states visually stable', async ({ p
     await runDenseMovementVisualSmoke(page, preset)
   }
 
-  expect(network.hasChunk('pixi'), 'dense movement replay should stay on the canvas renderer').toBe(false)
+  expect(network.hasChunk('pixi'), 'dense movement replay should use the Pixi default renderer').toBe(true)
   expect(network.countPathPrefix('/api/')).toBe(0)
   expect(consoleWarnings, 'console warnings').toEqual([])
   network.assertClean()
@@ -144,7 +144,7 @@ test('simulator2 replay uses badge-free crowd LOD for zerg rush stress states', 
   await page.getByRole('button', { name: /✕/ }).click()
   await expect(canvas).toBeHidden()
 
-  expect(network.hasChunk('pixi'), 'zerg rush crowd LOD should stay on the canvas renderer').toBe(false)
+  expect(network.hasChunk('pixi'), 'zerg rush crowd LOD should use the Pixi default renderer').toBe(true)
   expect(network.countPathPrefix('/api/')).toBe(0)
   expect(consoleWarnings, 'console warnings').toEqual([])
   network.assertClean()
@@ -172,7 +172,7 @@ test('simulator2 replay renders direct T1 unit sprites without fallback label no
   await page.getByRole('button', { name: /✕/ }).click()
   await expect(canvas).toBeHidden()
 
-  expect(network.hasChunk('pixi'), 'T1 visual QA should stay on the canvas default renderer').toBe(false)
+  expect(network.hasChunk('pixi'), 'T1 visual QA should use the Pixi default renderer').toBe(true)
   expect(network.countPathPrefix('/api/')).toBe(0)
   expect(consoleWarnings, 'console warnings').toEqual([])
   network.assertClean()
@@ -200,7 +200,7 @@ test('simulator2 replay renders former alias units through direct visual assets'
   await page.getByRole('button', { name: /✕/ }).click()
   await expect(canvas).toBeHidden()
 
-  expect(network.hasChunk('pixi'), 'former alias visual QA should stay on the canvas default renderer').toBe(false)
+  expect(network.hasChunk('pixi'), 'former alias visual QA should use the Pixi default renderer').toBe(true)
   expect(network.countPathPrefix('/api/')).toBe(0)
   expect(consoleWarnings, 'console warnings').toEqual([])
   network.assertClean()
@@ -248,7 +248,7 @@ test('simulator2 replay timeline can seek, rewind, and resume playback', async (
   await page.getByRole('button', { name: /Играть/ }).click()
   await expect.poll(async () => Number(await timeline.inputValue()), { timeout: 5000 }).toBeGreaterThan(0)
 
-  expect(network.hasChunk('pixi'), 'simulator2 replay timeline should stay on the canvas renderer').toBe(false)
+  expect(network.hasChunk('pixi'), 'simulator2 replay timeline should use the Pixi default renderer').toBe(true)
   expect(consoleWarnings, 'console warnings').toEqual([])
   network.assertClean()
 })
@@ -286,7 +286,7 @@ test('simulator2 replay shows high-signal primitive event labels', async ({ page
   await playEventTick(page, timeline, 8)
   await expect.poll(async () => (await countPrimitiveLabelPixels(canvas)).yellowLabel, { timeout: 5000 }).toBeGreaterThan(8)
 
-  expect(network.hasChunk('pixi'), 'primitive event replay labels should stay on the canvas renderer').toBe(false)
+  expect(network.hasChunk('pixi'), 'primitive event replay labels should use the Pixi default renderer').toBe(true)
   expect(consoleWarnings, 'console warnings').toEqual([])
   network.assertClean()
 })
@@ -402,9 +402,14 @@ async function setTimelineTick(timeline: Locator, tick: number): Promise<void> {
 function collectConsoleWarnings(page: Page): string[] {
   const warnings: string[] = []
   page.on('console', message => {
-    if (message.type() === 'warning') warnings.push(message.text())
+    const text = message.text()
+    if (message.type() === 'warning' && !isBenignReplayBrowserWarning(text)) warnings.push(text)
   })
   return warnings
+}
+
+function isBenignReplayBrowserWarning(text: string): boolean {
+  return text.includes('GL Driver Message') && text.includes('GPU stall due to ReadPixels')
 }
 
 async function expectBattleReplayCanvasPainted(canvas: Locator, options: { requireEnemyHp?: boolean } = {}): Promise<void> {

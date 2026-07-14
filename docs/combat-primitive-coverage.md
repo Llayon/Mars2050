@@ -12,9 +12,9 @@ The detailed technology-name contract is machine-readable in
 
 Primitive coverage includes visible replay semantics, not only simulation state.
 `/simulator2` exports replay rendering through
-`src/components/game/battle-replay-engine.ts`. Canvas is the default renderer;
-Pixi is available only through the opt-in replay renderer selector and falls
-back to canvas if initialization fails.
+`src/components/game/battle-replay-engine.ts`. Pixi is the default renderer for
+`/simulator2`; Canvas remains selectable for diagnostics and is the fallback if
+Pixi initialization fails.
 
 Replay action labels are centralized in
 `src/components/game/battle-replay-labels.ts`. Every action in
@@ -25,12 +25,11 @@ enforces that contract.
 Visual replay smoke coverage lives in `tests/e2e/simulator2-replay.spec.ts`.
 It covers preset replay startup, mobile rendering, debug overlays for hitboxes,
 velocity vectors and target lines, and guards that the default `/simulator2`
-replay path does not load a Pixi chunk. Pixi opt-in coverage lives in
-`tests/e2e/simulator2-replay-pixi.spec.ts`; it covers lazy Pixi loading, mobile
-fit, overlay parity, seek/rewind stability, dense movement readability, and
-zerg Crowd LOD. Pixi uses persistent scene layers with reusable unit/effect
-objects, but canvas remains the default renderer until future default-switch
-work explicitly updates this contract.
+replay path loads Pixi only after replay opens. Pixi parity/stress coverage
+lives in `tests/e2e/simulator2-replay-pixi.spec.ts`; it covers lazy Pixi
+loading, mobile fit, overlay parity, seek/rewind stability, dense movement
+readability, and zerg Crowd LOD. Canvas remains covered by the screenshot
+baseline suite as the fallback renderer.
 
 | Mechabellum effect family | Mars2050 primitive | Runtime status/state | Regression tests | Status |
 | --- | --- | --- | --- | --- |
