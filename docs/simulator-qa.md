@@ -46,6 +46,7 @@ Replay metrics проверяются как diagnostic mirror с tolerance, ч�
 | `npm run test:e2e:replay-baseline` | Canvas screenshot baselines for stable visual states. |
 | `npm run test:e2e:replay-baseline:update` | Updates committed baseline screenshots after intentional replay rendering changes. |
 | `npm run test:e2e:qa` | Simulator load smoke plus replay smoke, without screenshot baseline comparison. |
+| `npm run test:e2e:prod:simulator2` | Production `/simulator2` smoke against Vercel: no initial replay/Pixi chunks, default Pixi replay paints, Canvas fallback paints without Pixi. |
 
 Run `test:combat:scenarios` before balance work. It is a runtime contract,
 not a visual test: failures mean a mechanic stopped producing the expected
@@ -134,6 +135,12 @@ frame. `test:e2e:replay-pixi` covers mobile fit, pause/seek/rewind stability,
 debug overlays, the `marine_crowd_qa` repro, and the `zerg_rush` stress state.
 Pixi is the default `/simulator2` replay renderer; Canvas remains selectable as
 fallback and is still used by the canvas screenshot baseline suite.
+
+Production smoke uses `playwright.production.config.ts` and does not start a
+local dev server. By default it targets `https://mars2050.vercel.app`; override
+with `PRODUCTION_BASE_URL=<url> npm run test:e2e:prod:simulator2` for preview
+deployments. Keep this smoke as a post-deploy/manual check until it is promoted
+to a required CI gate.
 
 This is intentionally not a screenshot baseline. It protects replay readability
 after movement/depenetration tuning without making normal combat timing changes

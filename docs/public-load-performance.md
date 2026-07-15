@@ -183,6 +183,10 @@ Verification for this slice:
 - Hidden unit tooltip DOM was removed from the prerendered shell; compact button `title` text keeps unit stats available without duplicating large hidden markup.
 - `tests/e2e/simulator2-load.spec.ts` guards that replay chunks, Pixi chunks, and API requests are absent from the initial simulator screen. `test:e2e:replay` verifies the default Pixi replay path, while `test:e2e:replay-pixi` keeps focused Pixi parity/stress coverage.
 - Pixi replay rendering uses a persistent scene with reusable unit/effect objects. Canvas remains available for fallback diagnostics and stable screenshot baselines.
+- `npm run test:e2e:prod:simulator2` runs the same production-facing contract
+  against Vercel without starting a local dev server. It verifies that the live
+  route keeps replay/Pixi deferred on first paint, the default Pixi replay
+  paints after simulation start, and Canvas fallback still paints without Pixi.
 
 `/simulator` remains tracked as dev/QA performance debt. If it becomes player-facing, apply the same lazy replay/combat split.
 

@@ -19,6 +19,7 @@ export async function startCanvasBattleReplayEngine(props: BattleReplayEnginePro
   canvas.style.display = 'block'
   canvas.style.objectFit = 'contain'
   canvas.style.background = '#1a1a2e'
+  canvas.dataset.replayRenderer = 'canvas'
   container.appendChild(canvas)
 
   const runtime = createBattleReplayRuntime(props)

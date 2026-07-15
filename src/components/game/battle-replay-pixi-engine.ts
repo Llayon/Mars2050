@@ -28,6 +28,7 @@ export async function startPixiBattleReplayEngine(props: BattleReplayEngineProps
   app.canvas.style.display = 'block'
   app.canvas.style.objectFit = 'contain'
   app.canvas.style.background = '#1a1a2e'
+  app.canvas.dataset.replayRenderer = 'pixi'
   container.appendChild(app.canvas)
 
   const root = new Container()

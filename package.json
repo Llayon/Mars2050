@@ -25,6 +25,7 @@
     "test:e2e:replay-pixi": "playwright test tests/e2e/simulator2-replay-pixi.spec.ts --project=chromium",
     "test:e2e:replay-baseline": "playwright test tests/e2e/simulator2-replay-baseline.spec.ts --project=chromium",
     "test:e2e:replay-baseline:update": "playwright test tests/e2e/simulator2-replay-baseline.spec.ts --project=chromium --update-snapshots",
+    "test:e2e:prod:simulator2": "playwright test tests/e2e/simulator2-production-smoke.spec.ts --config=playwright.production.config.ts --project=chromium",
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:debug": "playwright test --debug",
     "prepare": "husky"
