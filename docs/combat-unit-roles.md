@@ -342,7 +342,7 @@ are the contract for the dedicated Tier 1 balance scenarios included in
 | `grenadier` | Mid-range screen clear | 4 units, AoE, explosive tag | Ready | Solid anti-clump role. Can gain AA through upgrade only. |
 | `heavy_gunner` | Sustained carry/suppression | 6 units, 200 range, low raw hit damage, suppression split fire, no native AA | Tune | Now beats baseline rifle lines through suppression spray rather than marine-like DPS. Keep watching overlap with gatling screen clear. |
 | `sapper` | Demolition assassin | 3 units, high primary burst, narrow AoE, low HP | Ready | Good high-risk unit. Mobile screens now counter it more reliably than static targets. |
-| `officer` | Command utility support | Passive haste aura for nearby allies; can add sensor-suite reveal | Tune | No longer a generic healer. Tune radius/value so it supports formations without becoming mandatory. |
+| `officer` | Command utility support | Passive haste aura for nearby allies; can add sensor-suite reveal | Covered / Tune | P0 scenario covers zero-damage haste tempo value; tune radius/value so it supports formations without becoming mandatory. |
 | `jetpack_trooper` | Jump flanker/backline killer | 5 infantry, fast melee, enters air mode while moving and lands before attacking | Tune | Now has a ground/air mode identity: exposed to AA while advancing, targetable by ground weapons when committed. Tune timing and counters versus scout drones. |
 | `exosuit` | Medium damage tank/bruiser | 4 units, armored heavy, low range | Ready | Good bridge between infantry and vehicles. |
 | `gatling_rover` | Anti-air/screen clear specialist | 2 vehicles, rapid fire, `anti_air`, split fire | Ready | Good dedicated AA and light-screen clearer. Tune split-fire multiplier if it crowds out infantry clear. |
@@ -350,15 +350,15 @@ are the contract for the dedicated Tier 1 balance scenarios included in
 | `missile_buggy` | Mobile anti-air specialist | 3 vehicles, long range, `anti_air` | Ready | Clear, should be weaker into ground general targets. |
 | `gunship` | Air-to-ground carry | 2 flying armored units, ground-only | Ready | Good air pressure. Needs dedicated AA counters to matter. |
 | `engineer` | Mechanical utility support | Repairs mechanical allies only, restores existing mechanical shields, plus cleanse/status-immunity aura | Tune | No longer heals organic units equally and does not grant fresh shields to unshielded units. |
-| `emp_drone` | Flying disable control specialist | Attack 0, support hunter, applies `emp` on hit | Tune | Needs cadence/counter tuning so zero-damage utility is valuable but not oppressive. |
+| `emp_drone` | Flying disable control specialist | Attack 0, support hunter, applies `emp` on hit | Covered / Tune | P0 scenario covers zero-damage EMP utility and observable engagement impact; cadence/counter tuning remains. |
 | `minelayer_rover` | Area denial/movement control | Deploys deterministic mines through `mineOnAction` | Tune | Needs visual clarity and trigger/radius balance. |
 | `siege_tank` | Range pressure/screen clear | 320 range, AoE, `siege` profile | Ready | Strong identity. Watch target acquisition and overkill. |
 | `railgun_walker` | Range pressure/anti-heavy | 280 range, `long_range_priority`, line pierce, capped percent-HP bonus | Ready | Good heavy hunter. Disable-control rounds upgrade fits well. |
 | `drone_carrier` | Air summoner/screen producer | Flying, `spawn`, summons scout drones | Tune | Good concept. Validate spawn cadence and target behavior. |
 | `cryo_tank` | Movement control/screen clear | AoE plus `slow` status on hit | Tune | Freeze/root can remain an upgrade; baseline slow is implemented. |
-| `shield_emitter` | Guard/projectile defense | Shield aura, temporary barrier spawn, projectile interception | Tune | Now has a real projectile-defense hook. Tune cooldown, max damage, and visual clarity. |
+| `shield_emitter` | Guard/projectile defense | Shield aura, temporary barrier spawn, projectile interception | Covered / Tune | P0 scenario covers shield/intercept protection against projectile pressure; tune cooldown, max damage, and visual clarity. |
 | `interceptor` | Air superiority specialist | Flying, can AA, `anti_air` | Ready | Clear anti-air flyer. Should be mediocre vs ground. |
-| `hacker_rover` | Hack control/specialist counter | Attack 0, support hunter, applies `hacked` redirect control | Tune | Redirect/confuse and conversion beam primitives exist; tune whether/which PvP configs use permanent control, break conditions, and cleanse counters. |
+| `hacker_rover` | Hack control/specialist counter | Attack 0, support hunter, applies `hacked` redirect control | Covered / Tune | P0 scenario covers zero-damage hacked redirect utility; conversion beam primitives remain PvP tuning work. |
 | `artillery_crawler` | Extreme range pressure | Minimum range, siege stance setup, deterministic barrage impacts | Ready | Clear late-game artillery. Watch overkill, setup timing, and minimum-range retreat behavior. |
 | `titan_mech` | XL damage tank/carry | 800 HP, AoE, anti-armor, no native AA | Tune | Still has many strengths. Needs explicit weakness: EMP, screen pressure, slow turn. |
 | `behemoth_tank` | XL damage tank | 1200 HP, single target, default profile | Ready | Good pure tank. Needs threat low enough to be ignorable or body-blocking value. |
@@ -366,26 +366,28 @@ are the contract for the dedicated Tier 1 balance scenarios included in
 | `goliath_gunship` | XL air fortress anchor/AA carry | 1000 HP, can AA, anti-air profile | Tune | Very strong profile. Needs hard counters from AA/EMP. |
 | `mobile_factory` | Summoner/fortress anchor | 900 HP, spawns exosuits | Tune | Good boss unit. Validate snowball and spawn cap. |
 | `sonic_devastator` | XL formation disruptor/screen clear | Cone attack, output/range suppression, deterministic knockback | Tune | Now has true formation disruption. Tune knockback strength and suppression uptime. |
-| `radar_zepplin` | Utility support/reveal/range relay | Reveal aura plus ally range-boost aura, no damage | Tune | Has native anti-stealth and range relay identity. Tune aura radius/value. |
+| `radar_zepplin` | Utility support/reveal/range relay | Reveal aura plus ally range-boost aura, no damage | Covered / Tune | P0 scenario covers zero-damage reveal plus range relay signals. Tune aura radius/value. |
 | `stealth_operative` | Stealth assassin/backline killer | Stealth tag/profile, high single damage, on-kill reset/heal | Tune | Needs full stealth/reveal tuning with radar/hunter counters. |
-| `hologram_projector` | Decoy summoner | Spawns temporary low-HP exosuit decoys | Partial | Needs final target-priority and visual clarity tuning. |
+| `hologram_projector` | Decoy summoner | Spawns temporary low-HP exosuit decoys | Covered / Tune | P0 scenario covers bounded decoy spawn pressure and real-unit damage diversion. Target-priority and visual clarity tuning remain. |
 | `gravity_manipulator` | Formation disruptor/guard | AoE plus deterministic pull-on-hit | Tune | Watch anti-sumo limits and collision side effects. |
 | `nanite_generator` | AoE utility support | Heal action plus regen aura | Tune | Could specialize further into mechanical repair/cleanse. |
 | `bounty_hunter` | Assassin/anti-heavy | Long range, assassin profile, target mark execute setup, no native AA | Tune | Can become anti-summoner through `anti_summoner_protocol`; watch overlap with sniper/stealth operative. |
 
 ## Priority Fix List
 
-### P0: Remaining partial or misleading units
+### P0: Scenario-covered utility roles
 
-These units now have at least one runtime hook, but still need design/balance
-completion before their role is considered finished:
+The previous P0 partial units now have deterministic role scenarios in
+`combat.p0-role-scenarios.test.ts` and are included in the `p0` group of
+`npm run combat:snapshot`. These scenarios prove replay-visible role signals and
+bounded behavior, but they do not claim final numeric balance:
 
-1. `emp_drone` - applies EMP, but needs tuning around zero-damage utility cadence and counters.
-2. `hacker_rover` - redirect/confuse plus conversion beam primitives exist; needs PvP tuning for thresholds, break conditions, and cleanse counters.
-3. `radar_zepplin` - reveal and range relay exist; needs balance and possible targeting-priority relay variants.
-4. `officer` - command haste aura exists; needs balance and possible targeting/formation aura variants.
-5. `shield_emitter` - shield aura, temporary barrier, and projectile interception exist; cooldown/max-damage tuning remains.
-6. `hologram_projector` - temporary low-HP decoys exist; needs final target-priority and visual clarity tuning.
+1. `emp_drone` - zero-damage EMP utility is covered; cadence and counters remain tuning work.
+2. `hacker_rover` - zero-damage hacked redirect utility is covered; permanent conversion remains PvP tuning work.
+3. `radar_zepplin` - zero-damage reveal plus range relay is covered; aura radius/value remain tuning work.
+4. `officer` - haste tempo support is covered; aura stacking and formation variants remain tuning work.
+5. `shield_emitter` - shield/intercept protection is covered; cooldown, max damage, and visual clarity remain tuning work.
+6. `hologram_projector` - bounded decoy pressure is covered; target priority and visual clarity remain tuning work.
 
 ### P0.5: Status contract
 
@@ -489,7 +491,8 @@ The follow-up suppression pass makes `output_suppressed` stack by source with a
 cap, extends action cooldown under suppression, and lets heavy gunner spread
 status through split fire without forced secondary HP chip damage.
 
-No open Tier 1 matchup diagnostics remain.
+No open Tier 1 matchup diagnostics remain. P0 utility-role diagnostics are now
+scenario-covered separately from final balance tuning.
 
 Tier 1 sapper reliability pass narrows the sapper blast and reduces universal
 burst: static demolition remains intact, while the mobile-screen diagnostic now
@@ -577,7 +580,7 @@ Current backlog:
    `severeOverlapSamples` means 50%+ normalized pair overlap and should be
    treated as a movement QA signal before changing unit balance.
 9. Regenerate `npm run combat:snapshot` before and after balance changes so
-   unit outcomes, damage maps, and replay action counts stay comparable.
+   unit outcomes, damage maps, replay action counts, and P0 role signals stay comparable.
 10. Keep replay visual coverage green: new combat unit types need a
     `REPLAY_VISUAL_ASSETS` entry with real public files or an explicit
     exemption before they are allowed to rely on fallback canvas labels.
