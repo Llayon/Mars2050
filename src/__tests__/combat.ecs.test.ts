@@ -3,7 +3,7 @@ import { compareCombatEngines } from '@/domains/combat/combat.shadow'
 import { simulateBattle } from '@/domains/combat/combat.engine'
 import { cloneRuntimeUnit, createRuntimeUnitFromConfig } from '@/domains/combat/combat.unit-factory'
 import { CombatWorld } from '@/domains/combat/ecs/combat-world'
-import { runHazardSystem } from '@/domains/combat/ecs/systems'
+import { createEcsMeleeEngagementState, reserveEcsMeleeSlot, runHazardSystem, runTargetingSystem, syncEcsTargetRefs } from '@/domains/combat/ecs/systems'
 import { EntitySpatialIndex } from '@/domains/combat/ecs/entity-spatial-index'
 import { getSimulatorPreset } from '@/app/simulator2/simulator.presets'
 
@@ -82,6 +82,27 @@ describe('combat ECS shadow engine', () => {
     expect(world.stores.vitality.require(0).hp).toBe(target.hp - 12)
     expect(actions).toContainEqual(expect.objectContaining({ unitId: 'mine-1', type: 'damage', targetId: 'target', damage: 12 }))
     expect(world.query(['hazard'], true)).toEqual([])
+  })
+
+  it('stores targeting and melee references as EntityId values', () => {
+    const attacker = createRuntimeUnitFromConfig({ id: 'attacker', team: 'attacker', type: 'marine', x: 10, y: 20, currentAngle: 0 })!
+    const defender = createRuntimeUnitFromConfig({ id: 'defender', team: 'defender', type: 'marine', x: 40, y: 20, currentAngle: Math.PI })!
+    attacker.range = 40
+    const world = new CombatWorld([attacker, defender])
+    const spatial = new EntitySpatialIndex()
+    spatial.rebuild(world)
+    world.resources.set('entitySpatial', spatial)
+    syncEcsTargetRefs(world)
+    const melee = createEcsMeleeEngagementState()
+
+    expect(runTargetingSystem(world, 0, melee)).toBe(1)
+    expect(reserveEcsMeleeSlot(world, 0, 1, melee)).toBe(true)
+    expect(world.stores.entityTargets.require(0)).toMatchObject({ attackTarget: 1, meleeTarget: 1 })
+    expect(world.stores.targeting.require(0).attackTargetId).toBe('defender')
+
+    world.stores.targeting.require(0).attackTargetId = undefined
+    syncEcsTargetRefs(world)
+    expect(world.stores.entityTargets.require(0).attackTarget).toBeUndefined()
   })
 
   it('clones nested loadout state and resets transient statuses', () => {

@@ -26,6 +26,7 @@ export class CombatWorld {
   createUnitEntity(unit: SimUnit): EntityId {
     const entityId = this.nextEntityId++
     this.stores.entityMeta.set(entityId, { kind: 'unit', externalId: unit.id })
+    this.stores.entityTargets.set(entityId, {})
     for (const name of Object.keys(COMPONENT_FIELDS) as UnitComponentName[]) {
       this.setComponentFromUnit(name, entityId, unit)
     }

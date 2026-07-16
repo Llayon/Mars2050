@@ -1,12 +1,13 @@
 import type { SimHazard, SimUnit } from '../combat.sim.types'
 import { ComponentStore } from './component-store'
+import type { EntityId } from './entity'
 
 export type UnitComponentName =
   | 'identity' | 'transform' | 'vitality' | 'combat' | 'weapon'
   | 'targeting' | 'movement' | 'statusControl' | 'defense'
   | 'support' | 'lifecycle'
 
-export type ComponentName = 'entityMeta' | UnitComponentName | 'hazard'
+export type ComponentName = 'entityMeta' | UnitComponentName | 'entityTargets' | 'hazard'
 
 export const COMPONENT_FIELDS = {
   identity: ['id', 'team', 'type', 'rank', 'squadId', 'summonOwnerId', 'summonSourceId'],
@@ -29,6 +30,12 @@ export interface EntityMetaComponent {
   externalId: string
 }
 
+export interface EntityTargetRefsComponent {
+  attackTarget?: EntityId
+  meleeTarget?: EntityId
+  meleeWaitingTarget?: EntityId
+}
+
 export interface CombatComponentMap {
   entityMeta: EntityMetaComponent
   identity: ComponentFrom<'identity'>
@@ -42,6 +49,7 @@ export interface CombatComponentMap {
   defense: ComponentFrom<'defense'>
   support: ComponentFrom<'support'>
   lifecycle: ComponentFrom<'lifecycle'>
+  entityTargets: EntityTargetRefsComponent
   hazard: SimHazard
 }
 
@@ -69,6 +77,7 @@ export function createComponentStores(): CombatComponentStores {
     defense: new ComponentStore<CombatComponentMap['defense']>(),
     support: new ComponentStore<CombatComponentMap['support']>(),
     lifecycle: new ComponentStore<CombatComponentMap['lifecycle']>(),
+    entityTargets: new ComponentStore<CombatComponentMap['entityTargets']>(),
     hazard: new ComponentStore<CombatComponentMap['hazard']>(),
   }
 }

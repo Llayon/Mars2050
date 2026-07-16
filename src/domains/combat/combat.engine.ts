@@ -5,9 +5,7 @@ import { processPostHazardPrimitives, processPreActionPrimitives } from './comba
 import type { UnitRow, BattleAction, BattleTick, BattleResult } from './combat.types'
 import type { Team, SimUnit, Obstacle, SimHazard } from './combat.sim.types'
 import { actionSystem } from './combat.systems'
-import { targetingSystem } from './combat.targeting'
 import { movementSystem } from './combat.movement'
-import { createMeleeEngagementState, reserveMeleeEngagementSlot } from './combat.melee-engagement'
 import { createCombatMetrics, finalizeCombatMetrics, recordCombatActions, recordCombatTick, type BattleSimulationOptions } from './combat.metrics'
 import { applyDepenetration } from './combat.depenetration'
 import { hasPendingReassembly } from './combat.reassembly'
@@ -80,32 +78,35 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
     if (terminalOutcome) { resolvedOutcome = terminalOutcome; break }
 
     const turnOrder = runtime.getTurnOrder()
-    const meleeEngagement = createMeleeEngagementState();
+    runtime.beginTargetingPhase(spatialHash)
 
     for (const unit of turnOrder) {
       if (unit.isDead) continue;
       runtime.tickModifiers(unit, dt, actions, expired => resolveEnvironmentalDeath(expired, undefined, 'expiration')); if (unit.isDead) continue;
 
-      const target = targetingSystem(unit, units, meleeEngagement, spatialHash);
+      const target = runtime.selectTarget(unit);
       if (!target) continue;
 
       const unitCountBeforeActions = units.length;
+      const actionStart = actions.length;
       processSpawnerLogic(unit, target, units, hazards, actions, rng);
 
       const canActOnTarget = target.team !== unit.team || unit.attackType === 'heal' || canAttackControlledTarget(unit, target);
-      const hasEngagement = canActOnTarget ? reserveMeleeEngagementSlot(unit, target, meleeEngagement) : true;
+      const hasEngagement = canActOnTarget ? runtime.reserveMeleeSlot(unit, target) : true;
 
       const acted = canActOnTarget && hasEngagement && actionSystem(unit, target, units, hazards, actions, rng, tick, spatialHash);
 
       runtime.flushStructuralCommands()
 
       for (let i = unitCountBeforeActions; i < units.length; i++) {
-        if (!units[i].isDead) spatialHash.insert(units[i]);
+        if (!units[i].isDead) { spatialHash.insert(units[i]); runtime.insertSpatialUnit(units[i]) }
       }
       if (!acted) {
         movementSystem(unit, target, units, actions, dt, rng, flowFieldMap, obstacles, spatialHash);
         spatialHash.update(unit);
       }
+      runtime.completeActorTurn(unit, actions, actionStart)
+      if (!acted) runtime.updateSpatialUnit(unit)
     }
 
     runtime.runHazardPhase(actions, resolveEnvironmentalDeath, spatialHash);

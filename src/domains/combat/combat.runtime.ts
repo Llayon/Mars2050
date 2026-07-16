@@ -18,6 +18,12 @@ export interface CombatRuntime {
   readonly hazards: SimHazard[]
   addSquad(row: UnitRow, team: Team, rng: PRNG): void
   flushStructuralCommands(): void
+  beginTargetingPhase(spatialHash: SpatialHash): void
+  selectTarget(unit: SimUnit): SimUnit | null
+  reserveMeleeSlot(unit: SimUnit, target: SimUnit): boolean
+  completeActorTurn(unit: SimUnit, actions: readonly BattleAction[], actionStart: number): void
+  insertSpatialUnit(unit: SimUnit): void
+  updateSpatialUnit(unit: SimUnit): void
   snapshotUnits(): SimUnit[]
   getSurvivors(): SimUnit[]
   getTurnOrder(): SimUnit[]

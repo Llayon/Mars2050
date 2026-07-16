@@ -2,7 +2,7 @@ import type { BattleAction } from '../combat.actions'
 import type { SimHazard } from '../combat.sim.types'
 import type { CombatRuntime, RuntimeDeathHandler } from '../combat.runtime'
 import { CombatWorld } from './combat-world'
-import { getEcsTerminalOutcome, getEcsTurnOrder, runHazardSystem, runModifierSystem, runStatusSystem } from './systems'
+import { createEcsMeleeEngagementState, getEcsTerminalOutcome, getEcsTurnOrder, reserveEcsMeleeSlot, runHazardSystem, runModifierSystem, runStatusSystem, runTargetingSystem, syncEcsTargetRefs } from './systems'
 import { createSquadEntities } from './combat-entity-factory'
 import { EntitySpatialIndex } from './entity-spatial-index'
 
@@ -16,6 +16,7 @@ export interface EcsCombatRuntime extends CombatRuntime {
 
 export function createEcsCombatRuntime(): EcsCombatRuntime {
   const world = new CombatWorld()
+  let meleeEngagement = createEcsMeleeEngagementState()
   world.resources.set('entitySpatial', new EntitySpatialIndex())
   return {
     world,
@@ -23,6 +24,55 @@ export function createEcsCombatRuntime(): EcsCombatRuntime {
     hazards: world.hazards,
     addSquad: (row, team, rng) => { createSquadEntities(world, row, team, rng) },
     flushStructuralCommands: () => world.flushStructuralCommands(),
+    beginTargetingPhase: () => {
+      world.flushStructuralCommands()
+      world.syncAllToComponents()
+      syncEcsTargetRefs(world)
+      world.resources.require('entitySpatial').rebuild(world)
+      meleeEngagement = createEcsMeleeEngagementState()
+    },
+    selectTarget: unit => {
+      const entityId = world.getEntityId(unit.id)
+      if (entityId === undefined) return null
+      const targetId = runTargetingSystem(world, entityId, meleeEngagement)
+      world.syncComponentsFromStore(entityId, ['targeting'])
+      return targetId === null ? null : world.getEntity(targetId) ?? null
+    },
+    reserveMeleeSlot: (unit, target) => {
+      const unitId = world.getEntityId(unit.id)
+      const targetId = world.getEntityId(target.id)
+      if (unitId === undefined || targetId === undefined) return false
+      const reserved = reserveEcsMeleeSlot(world, unitId, targetId, meleeEngagement)
+      world.syncComponentsFromStore(unitId, ['targeting'])
+      return reserved
+    },
+    completeActorTurn: (unit, actions, actionStart) => {
+      const dirtyIds = new Set<number>()
+      const actorId = world.getEntityId(unit.id)
+      if (actorId !== undefined) dirtyIds.add(actorId)
+      let hasSquadMark = false
+      for (let index = actionStart; index < actions.length; index++) {
+        const action = actions[index]
+        for (const externalId of [action.unitId, action.targetId, action.sourceUnitId]) {
+          const entityId = externalId ? world.getEntityId(externalId) : undefined
+          if (entityId !== undefined) dirtyIds.add(entityId)
+        }
+        if (action.type === 'target_mark') hasSquadMark = true
+      }
+      for (const entityId of dirtyIds) world.syncEntityToComponents(entityId)
+      if (hasSquadMark) {
+        world.syncAllComponentsToStore(['targeting', 'statusControl'])
+        syncEcsTargetRefs(world)
+      } else syncEcsTargetRefs(world, [...dirtyIds])
+    },
+    insertSpatialUnit: unit => {
+      const entityId = world.getEntityId(unit.id)
+      if (entityId !== undefined) world.resources.require('entitySpatial').insert(world, entityId)
+    },
+    updateSpatialUnit: unit => {
+      const entityId = world.getEntityId(unit.id)
+      if (entityId !== undefined) world.resources.require('entitySpatial').update(world, entityId)
+    },
     snapshotUnits: () => { world.flushStructuralCommands(); world.syncAllToComponents(); return world.snapshot() },
     getSurvivors: () => {
       world.flushStructuralCommands()

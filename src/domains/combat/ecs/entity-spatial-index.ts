@@ -4,18 +4,39 @@ import type { EntityId } from './entity'
 
 export class EntitySpatialIndex {
   private readonly cells = new Map<string, EntityId[]>()
+  private readonly entityCells = new Map<EntityId, string>()
 
   constructor(private readonly cellSize = TILE_SIZE) {}
 
   rebuild(world: CombatWorld): void {
     this.cells.clear()
+    this.entityCells.clear()
     for (const entityId of world.query(['transform', 'vitality'])) {
-      const transform = world.stores.transform.require(entityId)
-      const key = this.getCellKey(transform.x, transform.y)
-      const bucket = this.cells.get(key)
-      if (bucket) bucket.push(entityId)
-      else this.cells.set(key, [entityId])
+      this.insert(world, entityId)
     }
+  }
+
+  insert(world: CombatWorld, entityId: EntityId): void {
+    const transform = world.stores.transform.require(entityId)
+    const key = this.getCellKey(transform.x, transform.y)
+    const bucket = this.cells.get(key)
+    if (bucket) bucket.push(entityId)
+    else this.cells.set(key, [entityId])
+    this.entityCells.set(entityId, key)
+  }
+
+  update(world: CombatWorld, entityId: EntityId): void {
+    const transform = world.stores.transform.require(entityId)
+    const oldKey = this.entityCells.get(entityId)
+    const nextKey = this.getCellKey(transform.x, transform.y)
+    if (oldKey === nextKey) return
+    if (oldKey) {
+      const bucket = this.cells.get(oldKey)
+      const index = bucket?.indexOf(entityId) ?? -1
+      if (bucket && index !== -1) bucket.splice(index, 1)
+      if (bucket?.length === 0) this.cells.delete(oldKey)
+    }
+    this.insert(world, entityId)
   }
 
   query(world: CombatWorld, x: number, y: number, radius: number): EntityId[] {
