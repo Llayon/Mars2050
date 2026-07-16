@@ -30,6 +30,7 @@ export interface CombatRuntime {
   tickModifiers(unit: SimUnit, dt: number, actions: BattleAction[], onExpire: (unit: SimUnit) => void): void
   runStatusPhase(actions: BattleAction[], onUnitDeath: RuntimeDeathHandler): void
   runHazardPhase(actions: BattleAction[], onUnitDeath: RuntimeDeathHandler, spatialHash: SpatialHash): void
+  runDepenetration(actions: BattleAction[]): void
   getTerminalOutcome(
     hazards: SimHazard[],
     pendingAttackers: boolean,

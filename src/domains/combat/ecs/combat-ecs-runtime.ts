@@ -2,7 +2,7 @@ import type { BattleAction } from '../combat.actions'
 import type { SimHazard } from '../combat.sim.types'
 import type { CombatRuntime, RuntimeDeathHandler } from '../combat.runtime'
 import { CombatWorld } from './combat-world'
-import { createEcsMeleeEngagementState, getEcsTerminalOutcome, getEcsTurnOrder, reserveEcsMeleeSlot, runHazardSystem, runModifierSystem, runStatusSystem, runTargetingSystem, syncEcsTargetRefs } from './systems'
+import { createEcsMeleeEngagementState, getEcsTerminalOutcome, getEcsTurnOrder, reserveEcsMeleeSlot, runDepenetrationSystem, runHazardSystem, runModifierSystem, runStatusSystem, runTargetingSystem, syncEcsTargetRefs } from './systems'
 import { createSquadEntities } from './combat-entity-factory'
 import { EntitySpatialIndex } from './entity-spatial-index'
 
@@ -136,6 +136,10 @@ export function createEcsCombatRuntime(): EcsCombatRuntime {
       })
       world.syncAllFromComponents()
       world.syncHazardsFromComponents()
+    },
+    runDepenetration: actions => {
+      runDepenetrationSystem(world, actions)
+      world.syncAllComponentsFromStore(['transform'])
     },
     getTerminalOutcome(hazards: SimHazard[], pendingAttackers: boolean, pendingDefenders: boolean) {
       return getEcsTerminalOutcome(world, hazards, pendingAttackers, pendingDefenders)

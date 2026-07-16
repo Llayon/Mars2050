@@ -7,7 +7,6 @@ import type { Team, SimUnit, Obstacle, SimHazard } from './combat.sim.types'
 import { actionSystem } from './combat.systems'
 import { movementSystem } from './combat.movement'
 import { createCombatMetrics, finalizeCombatMetrics, recordCombatActions, recordCombatTick, type BattleSimulationOptions } from './combat.metrics'
-import { applyDepenetration } from './combat.depenetration'
 import { hasPendingReassembly } from './combat.reassembly'
 import { PRNG, generateObstacles } from './combat.utils'
 import { createPathfindingMap } from './combat.pathfinding'
@@ -111,7 +110,7 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
 
     runtime.runHazardPhase(actions, resolveEnvironmentalDeath, spatialHash);
     processPostHazardPrimitives(units, triggerContext);
-    applyDepenetration(units, actions);
+    runtime.runDepenetration(actions);
     if (metrics) { recordCombatActions(metrics, tick, actions, units); recordCombatTick(metrics, units) }
     
     if (actions.length > 0) logs.push({ tick, actions })

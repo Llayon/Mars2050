@@ -10,6 +10,7 @@ import { createRuntimeSquad } from './combat.squad-factory'
 import { createMeleeEngagementState, reserveMeleeEngagementSlot } from './combat.melee-engagement'
 import { targetingSystem } from './combat.targeting'
 import { SpatialHash } from './spatial-hash'
+import { applyDepenetration } from './combat.depenetration'
 
 export function createLegacyCombatRuntime(): CombatRuntime {
   const units: SimUnit[] = []
@@ -39,6 +40,7 @@ export function createLegacyCombatRuntime(): CombatRuntime {
     runHazardPhase(actions, onUnitDeath, spatialHash): void {
       processHazards(hazards, units, actions, onUnitDeath, spatialHash)
     },
+    runDepenetration: actions => applyDepenetration(units, actions),
     getTerminalOutcome(hazards: SimHazard[], pendingAttackers: boolean, pendingDefenders: boolean) {
       return getTerminalBattleOutcome(units, hazards, pendingAttackers, pendingDefenders)
     },

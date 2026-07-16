@@ -23,9 +23,10 @@ a monotonic entity ID and components.
 ## Migration Status
 
 The ECS implementations currently own status scheduling, hazards, targeting,
-mixed-size melee reservation, terminal outcome, initiative, modifier/lifetime
-ticking, typed component/resource stores, deterministic entity queries, and
-snapshot/survivor serialization. Legacy hooks remain frozen for shadow tests.
+mixed-size melee reservation, depenetration, terminal outcome, initiative,
+modifier/lifetime ticking, typed component/resource stores, deterministic
+entity queries, and snapshot/survivor serialization. Legacy hooks remain frozen
+for shadow tests.
 
 Movement, actions, damage/death, triggers, and metrics still cross the temporary
 `SimUnit` facade. Initial squads, action spawns, trigger clones, and hazards
