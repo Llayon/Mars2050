@@ -75,13 +75,9 @@ function processSmoke(world: CombatWorld, hazardId: EntityId, actions: BattleAct
 
 function getTargetsInRadius(world: CombatWorld, hazardId: EntityId): EntityId[] {
   const hazard = world.stores.hazard.require(hazardId)
-  const radiusSq = hazard.radius * hazard.radius
-  return world.query(['identity', 'transform', 'vitality']).filter(entityId => {
+  return world.resources.require('entitySpatial').query(world, hazard.x, hazard.y, hazard.radius).filter(entityId => {
     const transform = world.stores.transform.require(entityId)
-    if (transform.isFlying) return false
-    const dx = transform.x - hazard.x
-    const dy = transform.y - hazard.y
-    return dx * dx + dy * dy <= radiusSq
+    return !transform.isFlying
   })
 }
 

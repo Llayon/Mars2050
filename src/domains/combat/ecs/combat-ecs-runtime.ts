@@ -4,6 +4,7 @@ import type { CombatRuntime, RuntimeDeathHandler } from '../combat.runtime'
 import { CombatWorld } from './combat-world'
 import { getEcsTerminalOutcome, getEcsTurnOrder, runHazardSystem, runModifierSystem, runStatusSystem } from './systems'
 import { createSquadEntities } from './combat-entity-factory'
+import { EntitySpatialIndex } from './entity-spatial-index'
 
 const MODIFIER_COMPONENTS = ['vitality', 'combat', 'defense', 'statusControl', 'lifecycle'] as const
 const TICK_READ_COMPONENTS = ['identity', 'transform', 'vitality', 'combat', 'weapon', 'targeting', 'statusControl', 'support', 'lifecycle'] as const
@@ -15,6 +16,7 @@ export interface EcsCombatRuntime extends CombatRuntime {
 
 export function createEcsCombatRuntime(): EcsCombatRuntime {
   const world = new CombatWorld()
+  world.resources.set('entitySpatial', new EntitySpatialIndex())
   return {
     world,
     units: world.roster,
@@ -65,6 +67,7 @@ export function createEcsCombatRuntime(): EcsCombatRuntime {
       world.syncAllToComponents()
       world.reconcileHazards()
       world.syncHazardsToComponents()
+      world.resources.require('entitySpatial').rebuild(world)
       runHazardSystem(world, actions, (entityId, sourceUnitId, cause) => {
         world.syncAllFromComponents()
         world.syncHazardsFromComponents()

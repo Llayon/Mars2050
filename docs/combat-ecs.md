@@ -22,14 +22,17 @@ a monotonic entity ID and components.
 
 ## Migration Status
 
-The ECS implementations currently own status scheduling, terminal outcome,
-initiative, modifier/lifetime ticking, deterministic entity queries, and
-snapshot/survivor serialization. Legacy hooks remain frozen for shadow tests.
+The ECS implementations currently own status scheduling, hazards, terminal
+outcome, initiative, modifier/lifetime ticking, typed component/resource
+stores, deterministic entity queries, and snapshot/survivor serialization.
+Legacy hooks remain frozen for shadow tests.
 
 Targeting, melee reservation, movement, actions, damage/death, triggers,
-spawning, hazards, and metrics still cross the temporary `SimUnit` facade. The
-migration is complete only when those hooks use `EntityId` and component stores
-directly and the facade can be removed.
+structural spawn commands, and metrics still cross the temporary `SimUnit`
+facade. Initial squads and spawned units receive monotonic entity IDs through
+the ECS factory/roster boundary. The migration is complete only when the
+remaining hooks use `EntityId` and component stores directly and the facade can
+be removed.
 
 ## Runtime Creation
 

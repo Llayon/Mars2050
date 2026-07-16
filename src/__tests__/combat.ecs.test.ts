@@ -4,6 +4,7 @@ import { simulateBattle } from '@/domains/combat/combat.engine'
 import { cloneRuntimeUnit, createRuntimeUnitFromConfig } from '@/domains/combat/combat.unit-factory'
 import { CombatWorld } from '@/domains/combat/ecs/combat-world'
 import { runHazardSystem } from '@/domains/combat/ecs/systems'
+import { EntitySpatialIndex } from '@/domains/combat/ecs/entity-spatial-index'
 import { getSimulatorPreset } from '@/app/simulator2/simulator.presets'
 
 const CORE_SHADOW_PRESETS = ['ranged_duel', 'summon_caps', 'control_status', 'qa_primitive_events'] as const
@@ -68,6 +69,9 @@ describe('combat ECS shadow engine', () => {
       id: 'mine-1', team: 'attacker', type: 'mine', x: 10, y: 20,
       radius: 30, damagePerTick: 12, duration: 5,
     })
+    const spatial = new EntitySpatialIndex()
+    spatial.rebuild(world)
+    world.resources.set('entitySpatial', spatial)
     const actions: Parameters<typeof runHazardSystem>[1] = []
 
     runHazardSystem(world, actions, () => undefined)

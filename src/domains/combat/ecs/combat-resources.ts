@@ -7,6 +7,7 @@ import type { Team } from '../combat.sim.types'
 import type { FlowFieldMap } from '../combat.pathfinding'
 import type { TimeoutPolicy } from '../combat.result'
 import type { SpatialHash } from '../spatial-hash'
+import type { EntitySpatialIndex } from './entity-spatial-index'
 
 export interface CombatClockResource {
   tick: number
@@ -22,6 +23,7 @@ export interface CombatResourceMap {
   obstacles: Obstacle[]
   flowField: FlowFieldMap
   spatial: SpatialHash
+  entitySpatial: EntitySpatialIndex
   globals: { team: Team; upg: GlobalUpgradeConfig }[]
   metrics: CombatMetricsCollector | undefined
 }
