@@ -3,7 +3,7 @@ import type { SimHazard, SimUnit } from './combat.sim.types';
 import { handleDeath, processSpawnAction } from './combat.systems.utils';
 import { getDistance, PRNG, getSizeRadius } from './combat.utils';
 import { isMeleeEngagementReady } from './combat.melee-engagement';
-import { applyStatus, isActionBlockedByStatus, tickStatuses } from './combat.status';
+import { applyStatus, getActionCooldownRecovery, isActionBlockedByStatus, tickStatuses } from './combat.status';
 import { applyCombatDamage } from './combat.damage';
 import { tryDeployMine } from './combat.minefield';
 import { tryDeploySmoke } from './combat.smoke';
@@ -28,7 +28,7 @@ import { recordAttackTrigger, recordDamageTakenTrigger, tickTriggerCooldowns } f
 import { breakMovementStealthOnAttack } from './combat.stealth';
 
 export function tickModifiersSystem(unit: SimUnit, dt: number, actions: BattleAction[]) {
-  if (unit.actionCooldown > 0) unit.actionCooldown = Math.max(0, unit.actionCooldown - 1);
+  if (unit.actionCooldown > 0) unit.actionCooldown = Math.max(0, unit.actionCooldown - getActionCooldownRecovery(unit));
   if ((unit.projectileInterceptCooldown ?? 0) > 0) unit.projectileInterceptCooldown = Math.max(0, (unit.projectileInterceptCooldown ?? 0) - 1);
   tickTemporaryUnit(unit, actions); tickStatuses(unit, actions); tickTargetMark(unit, actions); tickTriggerCooldowns(unit);
 }
@@ -88,7 +88,7 @@ export function actionSystem(unit: SimUnit, target: SimUnit, units: SimUnit[], h
          recordDamageTakenTrigger(unit, target, damageResult.damage + damageResult.sharedDamage, triggerContext);
 
          applyOnHitStatuses(unit, target, actions);
-         applyTargetMark(unit, target, actions);
+         applyTargetMark(unit, target, actions, units);
          if (unit.leavesPuddle) {
              hazards.push({
                  id: 'hazard_' + Math.floor(rng.next() * 1000000),

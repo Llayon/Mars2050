@@ -160,6 +160,17 @@ export function getMovementSpeedMultiplier(unit: SimUnit): number {
 }
 
 /**
+ * Computes cooldown recovery per tick from active command haste.
+ * @param unit Unit to inspect
+ * @returns cooldown points recovered during one simulation tick
+ */
+export function getActionCooldownRecovery(unit: SimUnit): number {
+  const haste = getStatusValue(unit, 'haste')
+  if (haste === undefined) return 1
+  return haste >= 1 ? haste : 1 + Math.max(0, haste)
+}
+
+/**
  * Computes attack and support range after active range-control statuses.
  * @param unit Unit to inspect
  * @returns effective action range in simulation units

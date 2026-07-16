@@ -14,6 +14,7 @@ import type { SimUnit, Team, UnitRow, UnitTypeConfig, UnitTypeKey } from '@/doma
 const BASELINE_ANTI_AIR_UNITS = new Set([
   'aa_turret',
   'rocketeer',
+  'heavy_gunner',
   'gatling_rover',
   'missile_buggy',
   'interceptor',
@@ -67,7 +68,7 @@ function makeUnitRow(id: string, unitType: UnitTypeKey, upgradePath: string[] = 
 }
 
 describe('combat anti-air contract', () => {
-  it('keeps baseline anti-air targeting limited to dedicated units', () => {
+  it('keeps baseline anti-air targeting limited to dedicated units and the Tier 1 soft counter', () => {
     for (const [unitType, config] of Object.entries(UNIT_TYPES) as [string, UnitTypeConfig][]) {
       const hasBaselineAntiAir = config.baseStats.canTargetAir === true
 
@@ -95,6 +96,8 @@ describe('combat anti-air contract', () => {
     for (const unitType of UPGRADES.anti_aircraft_ammo.allowedUnits) {
       expect(UNIT_TYPES[unitType as keyof typeof UNIT_TYPES]?.baseStats.canTargetAir, `${unitType} should use upgrade-based anti-air`).not.toBe(true)
     }
+
+    expect(UNIT_TYPES.heavy_gunner.baseStats.antiAirDamageMult).toBe(1.5)
   })
 
   it('prevents ordinary ground units from acquiring aircraft targets', () => {

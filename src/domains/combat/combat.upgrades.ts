@@ -104,7 +104,7 @@ export const UPGRADES: Record<string, UpgradeConfig> = {
   },
   anti_aircraft_ammo: { 
     id: 'anti_aircraft_ammo', name: 'Зенитные боеприпасы', description: 'Позволяет атаковать летающие цели.', 
-    cost: 300, allowedUnits: ['marine', 'heavy_gunner', 'grenadier'], modifiers: { grantAntiAir: true } 
+    cost: 300, allowedUnits: ['marine', 'grenadier'], modifiers: { grantAntiAir: true }
   },
   incendiary_ammo: {
     id: 'incendiary_ammo', name: 'Зажигательные снаряды', description: 'Оставляет огненную лужу (Напалм), но базовый урон снижен.', 

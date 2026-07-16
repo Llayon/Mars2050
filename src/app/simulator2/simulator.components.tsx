@@ -4,9 +4,22 @@ import { UNIT_CATEGORIES } from '@/domains/combat/combat.presets'
 import type { UnitRow, UnitTypeKey, Obstacle } from '@/domains/combat/combat.types'
 import type { ReplayRendererMode } from '@/components/game/battle-replay-engine'
 
-export const UnitSelector = ({ onAddUnit }: { onAddUnit: (key: UnitTypeKey) => void }) => (
+export const UnitSelector = ({
+  onAddUnit,
+  allowedUnitTypes,
+  disabled = false,
+}: {
+  onAddUnit: (key: UnitTypeKey) => void
+  allowedUnitTypes?: readonly UnitTypeKey[]
+  disabled?: boolean
+}) => {
+  const categories: { name: string; keys: readonly UnitTypeKey[] }[] = allowedUnitTypes
+    ? [{ name: 'Первый тир', keys: allowedUnitTypes }]
+    : UNIT_CATEGORIES
+
+  return (
   <div className="flex flex-col gap-4 mb-4 max-h-[350px] overflow-y-auto pr-2 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-gray-900 [&::-webkit-scrollbar-track]:rounded-lg [&::-webkit-scrollbar-thumb]:bg-gray-700 [&::-webkit-scrollbar-thumb]:rounded-lg">
-    {UNIT_CATEGORIES.map(cat => (
+    {categories.map(cat => (
       <div key={cat.name}>
         <h3 className="text-sm font-bold text-gray-500 mb-2 uppercase tracking-wider">{cat.name}</h3>
         <div className="flex flex-wrap gap-2">
@@ -21,8 +34,9 @@ HP: ${cfg.baseStats.hp} | Атака: ${cfg.baseStats.attack}
               <button 
                 key={key} 
                 onClick={() => onAddUnit(key)} 
+                disabled={disabled}
                 title={statsTitle}
-                className="bg-gray-800 hover:bg-gray-700 border border-gray-700 hover:border-gray-500 px-3 py-1.5 rounded-lg text-sm transition-all flex items-center gap-2"
+                className="bg-gray-800 hover:bg-gray-700 disabled:bg-gray-900 disabled:text-gray-600 disabled:border-gray-800 border border-gray-700 hover:border-gray-500 px-3 py-1.5 rounded-lg text-sm transition-all flex items-center gap-2"
               >
                 <span className="text-gray-300 font-medium">+ {cfg.name}</span>
               </button>
@@ -32,7 +46,8 @@ HP: ${cfg.baseStats.hp} | Атака: ${cfg.baseStats.attack}
       </div>
     ))}
   </div>
-)
+  )
+}
 
 export const GlobalUpgradesSelector = ({ globals, onToggle }: { globals: string[], onToggle: (id: string) => void }) => {
   return (

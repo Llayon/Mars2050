@@ -68,7 +68,7 @@ describe('combat.engine', () => {
     expect(hasDie).toBe(true)
   })
 
-  it('should result in defender winning if time runs out', () => {
+  it('should result in a draw if time runs out with both sides alive', () => {
     const attackerUnits: UnitRow[] = [
       {
         id: 'a1',
@@ -110,8 +110,8 @@ describe('combat.engine', () => {
     try {
       const result = simulateBattle(attackerUnits, defenderUnits)
 
-      // Reached MAX_TICKS without kills or they killed each other
-      expect(result.winner).toBe('defender')
+      // Reached MAX_TICKS with both teams still represented.
+      expect(result.winner).toBe('draw')
       expect(result.survivors.length).toBeGreaterThan(0)
     } finally {
       if (tempUpgrade === undefined) delete UPGRADES['god_mode'];

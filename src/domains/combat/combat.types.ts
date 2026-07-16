@@ -8,6 +8,7 @@ export type TargetingAcquisition = 'local' | 'global'
 export type TargetingProfileKey =
   | 'default_local' | 'long_range_priority' | 'anti_air'
   | 'anti_armor' | 'siege' | 'assassin' | 'support_hunter'
+  | 'flanker_local' | 'demolition_local'
 export type TargetingProfile = TargetingProfileKey
 
 export interface TargetingProfileConfig {
@@ -35,7 +36,7 @@ export interface UnitBaseStats {
   rampDamage?: { step: number; maxMultiplier: number }
   chargeDamage?: { minDistance: number; maxDistance: number; maxMultiplier: number }
   percentHpDamage?: PercentHpDamageConfig & { maxBonus: number }
-  shieldDamageMult?: number; armorPierceRatio?: number; summonCounterDamageMult?: number; accuracyPenaltyResist?: number
+  shieldDamageMult?: number; armorPierceRatio?: number; antiAirDamageMult?: number; summonCounterDamageMult?: number; accuracyPenaltyResist?: number
   onKill?: { cooldownReset?: boolean; healPercent?: number; status?: StatusEffect }
   linePierce?: LinePierceConfig
   pullOnHit?: { radius: number; strength: number; maxTargets?: number }

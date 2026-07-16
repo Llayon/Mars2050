@@ -1,25 +1,31 @@
 'use client'
 
 import { useState } from 'react'
-import { UNIT_TYPES } from '@/domains/combat/combat.config'
+import { TIER1_COMMAND_RULES, TIER1_UNIT_TYPES } from '@/domains/combat/combat.tier1.config'
 import type { UnitRow, UnitTypeKey } from '@/domains/combat/combat.types'
 import { generateObstacles } from '@/domains/combat/combat.utils'
-import { UnitSelector, GlobalUpgradesSelector, UnitUpgradesPanel, SimulatorGrid, ReplayRendererSelector } from './simulator.components'
+import { UnitUpgradesPanel, SimulatorGrid } from './simulator.components'
 import { LazyBattleReplayModal } from './simulator.lazy'
 import type { SimulatorReplayData } from './simulator.lazy'
-import { SIMULATOR_PRESET_OPTIONS } from './simulator.presets'
-import Link from 'next/link'
-
-const getRandomInt = (max: number) => Math.floor(Math.random() * max)
+import { SimulatorTeamPanel } from './simulator-team-panel'
+import { SimulatorToolbar } from './simulator-toolbar'
+import {
+  createSimulatorUnit,
+  getTier1CommandPoints,
+  getTier1SetupError,
+  isTier1DeploymentBlocked,
+  normalizeCommandLimit,
+  type SimulatorMode,
+} from './simulator-tier1'
 
 export default function SimulatorPage() {
   const [seedInput, setSeedInput] = useState<string>('12345')
-  const seed = parseInt(seedInput) || 0
+  const seed = Number(seedInput) || 0
   const [obstacles, setObstacles] = useState(() => generateObstacles(12345))
 
-  function handleSeedChange(e: React.ChangeEvent<HTMLInputElement>) {
-    setSeedInput(e.target.value)
-    setObstacles(generateObstacles(parseInt(e.target.value) || 0))
+  function handleSeedChange(value: string) {
+    setSeedInput(value)
+    setObstacles(generateObstacles(Number(value) || 0))
   }
 
   const [attackerUnits, setAttackerUnits] = useState<UnitRow[]>([])
@@ -27,22 +33,16 @@ export default function SimulatorPage() {
   const [replayData, setReplayData] = useState<SimulatorReplayData | null>(null)
   const [attackerGlobals, setAttackerGlobals] = useState<string[]>([])
   const [defenderGlobals, setDefenderGlobals] = useState<string[]>([])
+  const [mode, setMode] = useState<SimulatorMode>('tier1')
+  const [commandLimit, setCommandLimit] = useState<number>(TIER1_COMMAND_RULES.defaultLimit)
   const [isSimulating, setIsSimulating] = useState(false)
   const [simulatorError, setSimulatorError] = useState<string | null>(null), [replayRendererMode, setReplayRendererMode] = useState<'canvas' | 'pixi'>('pixi')
   const [selectedUnit, setSelectedUnit] = useState<{team: 'attacker'|'defender', index: number} | null>(null)
 
   function addUnit(team: 'attacker' | 'defender', type: UnitTypeKey) {
-    const config = UNIT_TYPES[type]
-    const unit: UnitRow = {
-      id: crypto.randomUUID(),
-      colony_id: team,
-      unit_type: type,
-      hp_current: config.baseStats.hp,
-      tier: 1,
-      upgrade_path: [],
-      grid_x: String(getRandomInt(600)),
-      grid_y: String(team === 'attacker' ? getRandomInt(400) + 800 : getRandomInt(400)),
-    }
+    const currentUnits = team === 'attacker' ? attackerUnits : defenderUnits
+    if (mode === 'tier1' && getTier1CommandPoints(currentUnits) >= commandLimit) return
+    const unit = createSimulatorUnit(team, type, currentUnits, mode, obstacles)
     if (team === 'attacker') {
       setAttackerUnits(prev => [...prev, unit])
       setSelectedUnit({ team: 'attacker', index: attackerUnits.length })
@@ -55,7 +55,24 @@ export default function SimulatorPage() {
   function removeUnit(team: 'attacker' | 'defender', index: number) {
     if (team === 'attacker') setAttackerUnits(prev => prev.filter((_, i) => i !== index))
     else setDefenderUnits(prev => prev.filter((_, i) => i !== index))
-    if (selectedUnit?.team === team && selectedUnit.index === index) setSelectedUnit(null)
+    if (selectedUnit?.team === team) setSelectedUnit(null)
+  }
+
+  function changeCoordinate(team: 'attacker' | 'defender', index: number, axis: 'grid_x' | 'grid_y', value: string) {
+    const setUnits = team === 'attacker' ? setAttackerUnits : setDefenderUnits
+    setUnits(current => current.map((unit, unitIndex) => unitIndex === index ? { ...unit, [axis]: value } : unit))
+    setSimulatorError(null)
+  }
+
+  function changeMode(nextMode: SimulatorMode) {
+    if (nextMode === mode) return
+    setMode(nextMode)
+    setAttackerUnits([])
+    setDefenderUnits([])
+    setAttackerGlobals([])
+    setDefenderGlobals([])
+    setSelectedUnit(null)
+    setSimulatorError(null)
   }
 
   function handleCellClick(x: number, y: number) {
@@ -64,17 +81,22 @@ export default function SimulatorPage() {
 
     if (selectedUnit) {
       if (aIdx !== -1 || dIdx !== -1) return
+      const selectedUnits = selectedUnit.team === 'attacker' ? attackerUnits : defenderUnits
+      const candidate = { ...selectedUnits[selectedUnit.index], grid_x: String(x * 60 + 30), grid_y: String(y * 60 + 30) }
+      if (mode === 'tier1' && isTier1DeploymentBlocked(candidate, obstacles)) {
+        setSimulatorError('Эта позиция пересекается с препятствием.')
+        return
+      }
       if (selectedUnit.team === 'attacker') {
         const newU = [...attackerUnits]
-        newU[selectedUnit.index].grid_x = String(x * 60 + 30)
-        newU[selectedUnit.index].grid_y = String(y * 60 + 30)
+        newU[selectedUnit.index] = candidate
         setAttackerUnits(newU)
       } else {
         const newU = [...defenderUnits]
-        newU[selectedUnit.index].grid_x = String(x * 60 + 30)
-        newU[selectedUnit.index].grid_y = String(y * 60 + 30)
+        newU[selectedUnit.index] = candidate
         setDefenderUnits(newU)
       }
+      setSimulatorError(null)
       setSelectedUnit(null)
     } else {
       if (aIdx !== -1) setSelectedUnit({ team: 'attacker', index: aIdx })
@@ -83,16 +105,19 @@ export default function SimulatorPage() {
   }
 
   async function handleSimulate() {
-    if (attackerUnits.length === 0 && defenderUnits.length === 0) {
-      setSimulatorError('Добавьте юнитов перед запуском симуляции.')
+    const setupError = mode === 'tier1'
+      ? getTier1SetupError(attackerUnits, defenderUnits, commandLimit, obstacles)
+      : attackerUnits.length === 0 && defenderUnits.length === 0 ? 'Добавьте юнитов перед запуском симуляции.' : null
+    if (setupError) {
+      setSimulatorError(setupError)
       return
     }
     setIsSimulating(true); setSimulatorError(null)
     try {
       const { simulateBattle } = await import('@/domains/combat/combat.engine')
-      const aClone = JSON.parse(JSON.stringify(attackerUnits)) as UnitRow[]
-      const dClone = JSON.parse(JSON.stringify(defenderUnits)) as UnitRow[]
-      const result = simulateBattle(aClone, dClone, seed, obstacles, attackerGlobals, defenderGlobals)
+      const aClone = structuredClone(attackerUnits) as UnitRow[]
+      const dClone = structuredClone(defenderUnits) as UnitRow[]
+      const result = simulateBattle(aClone, dClone, seed, obstacles, mode === 'qa' ? attackerGlobals : [], mode === 'qa' ? defenderGlobals : [])
       setReplayData({ attackerUnits: aClone, defenderUnits: dClone, logs: result.logs, winner: result.winner, initialState: result.initialState, obstacles: result.obstacles })
     } catch (err) {
       setSimulatorError(err instanceof Error ? err.message : 'Не удалось запустить симуляцию.')
@@ -106,8 +131,11 @@ export default function SimulatorPage() {
     const { getSimulatorPreset } = await import('./simulator.presets')
     const preset = getSimulatorPreset(presetName)
     if (preset) {
+       setMode('qa')
        setAttackerUnits(preset.attackers)
        setDefenderUnits(preset.defenders)
+       setSelectedUnit(null)
+       setSimulatorError(null)
     }
   }
 
@@ -128,92 +156,64 @@ export default function SimulatorPage() {
     setTeamArray(newArr);
   }
 
+  const tier1SetupError = mode === 'tier1' ? getTier1SetupError(attackerUnits, defenderUnits, commandLimit, obstacles) : null
+  const canSimulate = mode === 'tier1' ? tier1SetupError === null : attackerUnits.length > 0 || defenderUnits.length > 0
+
   return (
     <div className="min-h-screen bg-gray-950 text-white p-4 font-sans">
       <div className="max-w-7xl mx-auto">
-        <div className="flex items-center justify-between mb-6 border-b border-gray-800 pb-4">
-          <h1 className="text-2xl font-bold">🔬 Симулятор Боя (v2)</h1>
-          <div className="flex gap-4">
-             <select onChange={(e) => loadPreset(e.target.value)} className="text-sm bg-purple-900 hover:bg-purple-800 px-4 py-2 rounded font-bold transition-colors text-purple-200 outline-none">
-               <option value="">Загрузить пресет...</option>
-               {SIMULATOR_PRESET_OPTIONS.map(preset => <option key={preset.id} value={preset.id}>{preset.name}</option>)}
-             </select>
-             <Link href="/" className="text-gray-400 hover:text-white px-4 py-2 bg-gray-800 rounded-lg">← В игру</Link>
-          </div>
-        </div>
-
-        <div className="bg-gray-900/50 p-4 rounded-xl border border-gray-800 mb-6 flex gap-6 items-center">
-          <div>
-            <label className="text-gray-400 text-sm block mb-1">Seed (RNG)</label>
-            <input type="text" value={seedInput} onChange={handleSeedChange} className="bg-gray-800 text-white px-3 py-1 rounded border border-gray-700 outline-none focus:border-purple-500 w-32" />
-          </div>
-          <div>
-            <label className="text-gray-400 text-sm block mb-1">Obstacles</label>
-            <button onClick={() => setObstacles(generateObstacles(seed))} className="bg-gray-800 hover:bg-gray-700 text-white px-3 py-1 rounded border border-gray-700 transition-colors">
-              Пересоздать кратеры
-            </button>
-          </div>
-          <ReplayRendererSelector value={replayRendererMode} onChange={setReplayRendererMode} />
-        </div>
+        <SimulatorToolbar
+          mode={mode}
+          commandLimit={commandLimit}
+          seedInput={seedInput}
+          replayRendererMode={replayRendererMode}
+          onLoadPreset={loadPreset}
+          onModeChange={changeMode}
+          onCommandLimitChange={value => setCommandLimit(normalizeCommandLimit(value))}
+          onSeedChange={handleSeedChange}
+          onRegenerateObstacles={() => setObstacles(generateObstacles(seed))}
+          onReplayRendererChange={setReplayRendererMode}
+        />
 
         <div className="flex flex-col lg:flex-row gap-8">
-          {/* Списки */}
           <div className="flex-1 flex flex-col gap-8">
-            <div className="bg-gray-900/50 p-4 rounded-xl border border-blue-900/30">
-              <h2 className="text-xl font-bold text-blue-400 mb-4">Команда: Атака (Синие)</h2>
-              <UnitSelector onAddUnit={(type) => addUnit('attacker', type)} />
-              <GlobalUpgradesSelector globals={attackerGlobals} onToggle={toggleAttackerGlobal} />
-              <div className="space-y-1 mt-4">
-                {attackerUnits.map((u, i) => (
-                  <div key={u.id} onClick={() => setSelectedUnit({team: 'attacker', index: i})} className={`flex justify-between items-center p-2 rounded cursor-pointer ${selectedUnit?.team === 'attacker' && selectedUnit.index === i ? 'bg-blue-900/50 border border-blue-500' : 'bg-gray-800 hover:bg-gray-700'}`}>
-                    <span>{UNIT_TYPES[u.unit_type as UnitTypeKey]?.name} [{u.grid_x}, {u.grid_y}]</span>
-                    <div className="flex gap-2 items-center text-sm shrink-0" onClick={e => e.stopPropagation()}>
-                      <label className="text-gray-400">X:</label>
-                      <input type="number" min="0" max="600" className="w-16 bg-gray-700 rounded px-1 text-white border border-gray-600 focus:border-blue-500 outline-none" value={u.grid_x || ''} onChange={e => {
-                        const newU = [...attackerUnits]; newU[i].grid_x = e.target.value; setAttackerUnits(newU)
-                      }} />
-                      <label className="text-gray-400">Y:</label>
-                      <input type="number" min="0" max="1200" className="w-16 bg-gray-700 rounded px-1 text-white border border-gray-600 focus:border-blue-500 outline-none" value={u.grid_y || ''} onChange={e => {
-                        const newU = [...attackerUnits]; newU[i].grid_y = e.target.value; setAttackerUnits(newU)
-                      }} />
-                    </div>
-                    <button onClick={(e) => { e.stopPropagation(); removeUnit('attacker', i) }} className="text-red-400 hover:text-red-300 px-2 font-bold">×</button>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <SimulatorTeamPanel
+              team="attacker"
+              units={attackerUnits}
+              globals={attackerGlobals}
+              selectedIndex={selectedUnit?.team === 'attacker' ? selectedUnit.index : null}
+              allowedUnitTypes={mode === 'tier1' ? TIER1_UNIT_TYPES : undefined}
+              commandPoints={mode === 'tier1' ? getTier1CommandPoints(attackerUnits) : undefined}
+              commandLimit={mode === 'tier1' ? commandLimit : undefined}
+              onAddUnit={type => addUnit('attacker', type)}
+              onSelectUnit={index => setSelectedUnit({ team: 'attacker', index })}
+              onRemoveUnit={index => removeUnit('attacker', index)}
+              onCoordinateChange={(index, axis, value) => changeCoordinate('attacker', index, axis, value)}
+              onToggleGlobal={toggleAttackerGlobal}
+            />
 
-            <div className="bg-gray-900/50 p-4 rounded-xl border border-red-900/30">
-              <h2 className="text-xl font-bold text-red-400 mb-4">Команда: Защита (Красные)</h2>
-              <UnitSelector onAddUnit={(type) => addUnit('defender', type)} />
-              <GlobalUpgradesSelector globals={defenderGlobals} onToggle={toggleDefenderGlobal} />
-              <div className="space-y-1 mt-4">
-                {defenderUnits.map((u, i) => (
-                  <div key={u.id} onClick={() => setSelectedUnit({team: 'defender', index: i})} className={`flex justify-between items-center p-2 rounded cursor-pointer ${selectedUnit?.team === 'defender' && selectedUnit.index === i ? 'bg-red-900/50 border border-red-500' : 'bg-gray-800 hover:bg-gray-700'}`}>
-                    <span>{UNIT_TYPES[u.unit_type as UnitTypeKey]?.name} [{u.grid_x}, {u.grid_y}]</span>
-                    <div className="flex gap-2 items-center text-sm shrink-0" onClick={e => e.stopPropagation()}>
-                      <label className="text-gray-400">X:</label>
-                      <input type="number" min="0" max="600" className="w-16 bg-gray-700 rounded px-1 text-white border border-gray-600 focus:border-red-500 outline-none" value={u.grid_x || ''} onChange={e => {
-                        const newU = [...defenderUnits]; newU[i].grid_x = e.target.value; setDefenderUnits(newU)
-                      }} />
-                      <label className="text-gray-400">Y:</label>
-                      <input type="number" min="0" max="1200" className="w-16 bg-gray-700 rounded px-1 text-white border border-gray-600 focus:border-red-500 outline-none" value={u.grid_y || ''} onChange={e => {
-                        const newU = [...defenderUnits]; newU[i].grid_y = e.target.value; setDefenderUnits(newU)
-                      }} />
-                    </div>
-                    <button onClick={(e) => { e.stopPropagation(); removeUnit('defender', i) }} className="text-red-400 hover:text-red-300 px-2 font-bold">×</button>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <SimulatorTeamPanel
+              team="defender"
+              units={defenderUnits}
+              globals={defenderGlobals}
+              selectedIndex={selectedUnit?.team === 'defender' ? selectedUnit.index : null}
+              allowedUnitTypes={mode === 'tier1' ? TIER1_UNIT_TYPES : undefined}
+              commandPoints={mode === 'tier1' ? getTier1CommandPoints(defenderUnits) : undefined}
+              commandLimit={mode === 'tier1' ? commandLimit : undefined}
+              onAddUnit={type => addUnit('defender', type)}
+              onSelectUnit={index => setSelectedUnit({ team: 'defender', index })}
+              onRemoveUnit={index => removeUnit('defender', index)}
+              onCoordinateChange={(index, axis, value) => changeCoordinate('defender', index, axis, value)}
+              onToggleGlobal={toggleDefenderGlobal}
+            />
             
-            <button onClick={handleSimulate} disabled={isSimulating || (attackerUnits.length === 0 && defenderUnits.length === 0)} className="bg-green-600 hover:bg-green-500 disabled:bg-gray-700 text-white font-bold text-xl py-4 rounded-xl mt-4">
+            <button onClick={handleSimulate} disabled={isSimulating || !canSimulate} className="bg-green-600 hover:bg-green-500 disabled:bg-gray-700 text-white font-bold text-xl py-4 rounded-xl mt-4">
               {isSimulating ? 'СИМУЛЯЦИЯ...' : '⚔️ НАЧАТЬ СИМУЛЯЦИЮ'}
             </button>
+            {mode === 'tier1' && tier1SetupError && (attackerUnits.length > 0 || defenderUnits.length > 0) && <p className="text-sm text-amber-300">{tier1SetupError}</p>}
             {simulatorError && <p className="text-sm text-red-300">{simulatorError}</p>}
           </div>
 
-          {/* Визуальная сетка */}
           <div className="shrink-0 flex flex-col items-center">
             <p className="text-sm text-gray-400 mb-2">Нажмите на юнита, затем кликните на сетку для перемещения</p>
             <SimulatorGrid 
@@ -223,7 +223,7 @@ export default function SimulatorPage() {
               selectedUnit={selectedUnit} 
               onCellClick={handleCellClick} 
             />
-            {selectedUnit && (
+            {mode === 'qa' && selectedUnit && (
               <UnitUpgradesPanel 
                 unit={selectedUnit.team === 'attacker' ? attackerUnits[selectedUnit.index] : defenderUnits[selectedUnit.index]} 
                 onToggle={(upgId) => toggleUpgrade(selectedUnit.team, selectedUnit.index, upgId)} 

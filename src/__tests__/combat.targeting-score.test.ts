@@ -64,4 +64,17 @@ describe('target score breakdown', () => {
     expect(score.tagDistancePenalty).toBe(score.preferredTagScore - score.avoidedTagPenalty)
     expect(score.tagScore).toBe(0)
   })
+
+  it('keeps flanker and demolition priorities local and role-specific', () => {
+    const flanker = TARGETING_PROFILES.flanker_local
+    const demolition = TARGETING_PROFILES.demolition_local
+    const support = makeUnit({ id: 'support', team: 'defender', type: 'officer', x: 120, y: 0 })
+    const structure = makeUnit({ id: 'structure', team: 'defender', type: 'wall', x: 120, y: 0, size: 'L' })
+    const attacker = makeUnit({ id: 'attacker', team: 'attacker', x: 0, y: 0 })
+
+    expect(flanker.acquisition).toBe('local')
+    expect(demolition.acquisition).toBe('local')
+    expect(getTargetScore(attacker, support, flanker, 120).tagScore).toBeGreaterThan(0)
+    expect(getTargetScore(attacker, structure, demolition, 120).tagScore).toBeGreaterThan(0)
+  })
 })

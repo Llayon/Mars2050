@@ -5,7 +5,7 @@ export type Team = 'attacker' | 'defender'
 export type CombatTag =
   | 'infantry' | 'vehicle' | 'aircraft' | 'structure'
   | 'organic' | 'mechanical' | 'armored' | 'light' | 'heavy'
-  | 'shielded' | 'healer' | 'summoner' | 'summoned' | 'stealth' | 'explosive'
+  | 'shielded' | 'healer' | 'support' | 'summoner' | 'summoned' | 'stealth' | 'explosive'
 
 export type StatusType =
   | 'emp' | 'slow' | 'burn' | 'acid' | 'vulnerable' | 'range_suppressed' | 'revealed'
@@ -19,7 +19,7 @@ export interface UnitStanceConfig { mode: 'siege' | 'entrenched'; deployTicks: n
 export interface BurrowConfig { damageReduction: number; regenPercentPerTick?: number; emergeAttackMult?: number; emergeAoeRadiusAdd?: number }
 export interface UnitModeSwitchConfig { trigger: 'while_moving'; startMode?: MobilityMode; groundForAction?: boolean; airSpeedMultiplier?: number; groundSpeedMultiplier?: number }
 export interface StatusEffect { type: StatusType; duration: number; value?: number; sourceUnitId?: string; stackKey?: string; controlMode?: HackControlMode }
-export interface TargetMark { sourceUnitId: string; duration: number; damageMultiplier?: number; executeThreshold?: number; focusPriority?: number }
+export interface TargetMark { sourceUnitId: string; duration: number; damageMultiplier?: number; sharedDamage?: boolean; squadWide?: boolean; executeThreshold?: number; focusPriority?: number }
 export type TargetMarkConfig = Omit<TargetMark, 'sourceUnitId'>
 export type PercentHpDamageBasis = 'max' | 'current'
 export interface PercentHpDamageConfig { percent: number; basis?: PercentHpDamageBasis; maxBonus?: number; minBonus?: number }

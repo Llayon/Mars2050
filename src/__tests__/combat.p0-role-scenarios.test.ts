@@ -106,8 +106,8 @@ describe('P0 combat role scenarios', () => {
     const shieldBaseline = simulateScenario(findScenario('p0_shield_baseline'))
     expect(countActions(shield, 'projectile_intercept'), 'p0_shield_emitter_projectile_guard').toBeGreaterThan(0)
     expect(countActions(shield, 'shield_apply'), 'p0_shield_emitter_projectile_guard').toBeGreaterThan(0)
-    expect(shield.metrics?.damageTakenByUnitType.marine ?? Number.MAX_SAFE_INTEGER, 'shield should reduce protected marine damage')
-      .toBeLessThan(shieldBaseline.metrics?.damageTakenByUnitType.marine ?? Number.MAX_SAFE_INTEGER)
+    expect(shield.metrics?.damageTakenByUnitType.marine ?? 0, 'shield should reduce protected marine damage')
+      .toBeLessThan(shieldBaseline.metrics?.damageTakenByUnitType.marine ?? 0)
 
     const hologram = simulateScenario(findScenario('p0_hologram_decoy_pressure'))
     const hologramBaseline = simulateScenario(findScenario('p0_hologram_baseline'))

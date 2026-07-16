@@ -58,6 +58,38 @@ describe('combat.mark', () => {
     expect(applyCombatDamage(hunter, target, 40).damage).toBe(60)
   })
 
+  it('shares scout focus-fire damage with allied attackers when configured', () => {
+    const ally = makeUnit({ id: 'ally', team: 'attacker' })
+    const target = makeUnit({
+      id: 'target',
+      team: 'defender',
+      hp: 200,
+      targetMark: { sourceUnitId: 'scout', duration: 5, damageMultiplier: 0.2, sharedDamage: true },
+    })
+
+    expect(applyCombatDamage(ally, target, 50).damage).toBe(60)
+  })
+
+  it('spreads squad-wide marks across the selected enemy squad', () => {
+    const scout = makeUnit({
+      id: 'scout',
+      team: 'attacker',
+      markOnHit: { duration: 10, damageMultiplier: 0.25, sharedDamage: true, squadWide: true, focusPriority: 250 },
+    })
+    const target = makeUnit({ id: 'target', team: 'defender', squadId: 'enemy-squad' })
+    const squadmate = makeUnit({ id: 'squadmate', team: 'defender', squadId: 'enemy-squad' })
+    const other = makeUnit({ id: 'other', team: 'defender', squadId: 'other-squad' })
+    const ally = makeUnit({ id: 'ally', team: 'attacker', attackTargetId: 'other', aggroLockTicks: 10 })
+    const actions: BattleAction[] = []
+
+    expect(applyTargetMark(scout, target, actions, [scout, ally, target, squadmate, other])).toBe(true)
+    expect(squadmate.targetMark).toMatchObject({ sourceUnitId: 'scout', squadWide: true })
+    expect(other.targetMark).toBeUndefined()
+    expect(ally.attackTargetId).toBeUndefined()
+    expect(ally.aggroLockTicks).toBe(0)
+    expect(actions).toHaveLength(1)
+  })
+
   it('executes marked targets below the source threshold', () => {
     const hunter = makeUnit({ id: 'hunter', team: 'attacker' })
     const target = makeUnit({ id: 'target', team: 'defender', hp: 90, targetMark: { sourceUnitId: 'hunter', duration: 5, executeThreshold: 100 } })

@@ -20,6 +20,8 @@ import { FIELD_WIDTH, FIELD_HEIGHT, PRNG, generateObstacles } from './combat.uti
 import { createPathfindingMap } from './combat.pathfinding'
 import { SpatialHash } from './spatial-hash'
 import { canAttackControlledTarget } from './combat.control'
+import { getCombatTurnOrder } from './combat.turn-order'
+import { getSurvivorWinner, getTerminalBattleWinner, type BattleWinner } from './combat.outcome'
 export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[], providedSeed?: number, providedObstacles?: Obstacle[], attackerGlobals: string[] = [], defenderGlobals: string[] = [], options: BattleSimulationOptions = {}): BattleResult {
   const seed = providedSeed ?? Date.now(), rng = new PRNG(seed), dt = 0.1
   const units: SimUnit[] = [], hazards: SimHazard[] = [], activeGlobals: { team: Team, upg: GlobalUpgradeConfig }[] = []
@@ -51,7 +53,7 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
     let modShield = 0, modFlying = config.baseStats.isFlying || false; const modeSwitchConfig = config.baseStats.modeSwitch ? { ...config.baseStats.modeSwitch } : undefined;
     let appliesEmp = false, leavesPuddle = false, spawnerConfig: { unitType: string, interval: number, timer: number } | undefined = undefined;
     let modDamageReductionWhileMoving = 0, modOnDeathPuddle: 'napalm' | 'acid' | 'emp' | undefined = undefined, modBurrowConfig = config.baseStats.burrowWhileMoving ? { ...config.baseStats.burrowWhileMoving } : undefined;
-    let modMultishot = 1, modAntiAirDamageMult = 1.0, modReplicateOnKill = false;
+    let modMultishot = 1, modAntiAirDamageMult = config.baseStats.antiAirDamageMult ?? 1.0, modReplicateOnKill = false;
     let modResurrectOnce = false, modStealthUntilAttack = false, modExecuteThreshold = 0;
     let modLifestealMult = 0, modGroundDamageMult = 1.0, modShieldDamageMult = config.baseStats.shieldDamageMult ?? 1.0, modArmorPierceRatio = config.baseStats.armorPierceRatio ?? 0, modSummonCounterDamageMult = config.baseStats.summonCounterDamageMult ?? 1.0, modAccuracyPenaltyResist = config.baseStats.accuracyPenaltyResist ?? 0;
     const runtimePrimitiveStats = getRuntimePrimitiveStats(config.baseStats, u.upgrade_path);
@@ -174,27 +176,23 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
   const metrics = options.trackMetrics ? createCombatMetrics(units) : undefined
 
   const logs: BattleTick[] = []
-  let tick = 0
+  let tick = 0, resolvedWinner: BattleWinner | null = null
 
   while (tick < MAX_TICKS) {
     const actions: BattleAction[] = []
     const triggerContext = processPreActionPrimitives(tick, activeGlobals, units, hazards, actions, rng);
     
-    const aliveAttackers = units.filter(u => !u.isDead && u.team === 'attacker')
-    const aliveDefenders = units.filter(u => !u.isDead && u.team === 'defender')
-    
     const pendingAttackers = units.some(u => u.team === 'attacker' && hasPendingReassembly(u))
     const pendingDefenders = units.some(u => u.team === 'defender' && hasPendingReassembly(u))
-    if (aliveAttackers.length === 0 && !pendingAttackers && aliveDefenders.length === 0 && !pendingDefenders) break // Draw
-    if (aliveAttackers.length === 0 && !pendingAttackers) break // Defender wins
-    if (aliveDefenders.length === 0 && !pendingDefenders) break // Attacker wins
+    const terminalWinner = getTerminalBattleWinner(units, hazards, pendingAttackers, pendingDefenders)
+    if (terminalWinner) { resolvedWinner = terminalWinner; break }
 
     spatialHash.clear();
     for (const unit of units) {
       if (!unit.isDead) spatialHash.insert(unit);
     }
 
-    const turnOrder = units.filter(u => !u.isDead).sort((a, b) => b.speed - a.speed)
+    const turnOrder = getCombatTurnOrder(units)
     const meleeEngagement = createMeleeEngagementState();
 
     for (const unit of turnOrder) {
@@ -231,11 +229,7 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
     tick++
   }
 
-  const finalAttackers = units.filter(u => !u.isDead && u.team === 'attacker')
-  const finalDefenders = units.filter(u => !u.isDead && u.team === 'defender')
-  let winner: 'attacker' | 'defender' | 'draw' = 'draw'
-  if (finalAttackers.length > 0 && finalDefenders.length === 0) winner = 'attacker'
-  if (finalDefenders.length > 0) winner = 'defender'
+  const winner = resolvedWinner ?? getSurvivorWinner(units)
 
   return {
     winner,

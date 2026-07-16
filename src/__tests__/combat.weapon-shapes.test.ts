@@ -72,7 +72,7 @@ describe('combat weapon shapes', () => {
     expect(actionSystem(attacker, primary, [attacker, primary, side], hazards, actions, new PRNG(1))).toBe(true)
 
     expect(primary.hp).toBe(90)
-    expect(side.hp).toBe(92)
+    expect(side.hp).toBe(91)
     expect(hasStatus(primary, 'burn')).toBe(true)
     expect(hasStatus(side, 'burn')).toBe(true)
     expect(actions.some(action => action.type === 'cone_attack' && action.targetId === 'primary')).toBe(true)

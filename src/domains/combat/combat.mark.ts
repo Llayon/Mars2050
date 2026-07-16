@@ -2,16 +2,31 @@ import type { BattleAction } from './combat.actions'
 import type { SimUnit, TargetMarkConfig } from './combat.sim.types'
 
 /**
- * Applies a source-specific target mark from an attacker's config.
+ * Applies a configured target mark and optionally propagates it across a squad.
  * @param attacker Unit applying the mark
  * @param target Unit receiving the mark
  * @param actions Optional replay action sink
+ * @param units Optional battle roster used by squad-wide marks
  * @returns true when a mark was applied
  */
-export function applyTargetMark(attacker: SimUnit, target: SimUnit, actions?: BattleAction[]): boolean {
+export function applyTargetMark(attacker: SimUnit, target: SimUnit, actions?: BattleAction[], units?: SimUnit[]): boolean {
   if (!attacker.markOnHit || target.isDead) return false
 
-  return applyConfiguredTargetMark(attacker, target, attacker.markOnHit, actions)
+  const applied = applyConfiguredTargetMark(attacker, target, attacker.markOnHit, actions)
+  if (!attacker.markOnHit.squadWide || !target.squadId || !units) return applied
+
+  for (const squadmate of units) {
+    if (squadmate.id === target.id || squadmate.isDead || squadmate.team !== target.team || squadmate.squadId !== target.squadId) continue
+    squadmate.targetMark = { ...attacker.markOnHit, sourceUnitId: attacker.id }
+  }
+  if (attacker.markOnHit.sharedDamage && (attacker.markOnHit.focusPriority ?? 0) > 0) {
+    for (const ally of units) {
+      if (ally.isDead || ally.team !== attacker.team || ally.id === attacker.id) continue
+      ally.attackTargetId = undefined
+      ally.aggroLockTicks = 0
+    }
+  }
+  return applied
 }
 
 export function applyConfiguredTargetMark(attacker: SimUnit, target: SimUnit, mark: TargetMarkConfig, actions?: BattleAction[]): boolean {
@@ -43,14 +58,15 @@ export function tickTargetMark(unit: SimUnit, actions: BattleAction[]): void {
 }
 
 /**
- * Reads a mark damage multiplier that only benefits the mark source.
+ * Reads a mark damage multiplier for its source or the source's shared focus fire.
  * @param attacker Unit dealing damage
  * @param target Unit receiving damage
  * @returns damage multiplier bonus, or 0 when no matching mark is active
  */
 export function getMarkedDamageMultiplier(attacker: SimUnit, target: SimUnit): number {
   const mark = target.targetMark
-  if (!mark || mark.sourceUnitId !== attacker.id || mark.duration <= 0) return 0
+  if (!mark || mark.duration <= 0) return 0
+  if (!mark.sharedDamage && mark.sourceUnitId !== attacker.id) return 0
   return Math.max(0, mark.damageMultiplier ?? 0)
 }
 

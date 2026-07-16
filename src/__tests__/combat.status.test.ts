@@ -4,6 +4,7 @@ import { actionSystem } from '@/domains/combat/combat.systems'
 import {
   applyStatus,
   cleanseStatuses,
+  getActionCooldownRecovery,
   getEffectiveActionRange,
   getMovementSpeedMultiplier,
   getStatusValue,
@@ -80,6 +81,14 @@ describe('combat.status', () => {
     applyStatus(attacker, { type: 'range_suppressed', duration: 5, value: 0.25, sourceUnitId: 'sonic' })
 
     expect(getEffectiveActionRange(attacker)).toBe(225)
+  })
+
+  it('uses only the strongest haste value for action cooldown recovery', () => {
+    const attacker = makeUnit({ id: 'attacker', team: 'attacker' })
+    applyStatus(attacker, { type: 'haste', duration: 5, value: 0.12, sourceUnitId: 'officer-a' })
+    applyStatus(attacker, { type: 'haste', duration: 5, value: 0.18, sourceUnitId: 'officer-b' })
+
+    expect(getActionCooldownRecovery(attacker)).toBe(1.18)
   })
 
   it('ticks statuses and emits deterministic expire actions', () => {

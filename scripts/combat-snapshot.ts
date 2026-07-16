@@ -53,6 +53,7 @@ interface ScenarioSummary {
     initial: TeamTotals
     survivors: TeamTotals
   }
+  commandPoints?: TeamTotals
   metrics: {
     firstAttackTick: number | null
     averageTimeToEngage: number | null
@@ -77,7 +78,7 @@ interface ScenarioSummary {
 }
 
 interface CombatBalanceSnapshot {
-  schemaVersion: 5
+  schemaVersion: 6
   generatedBy: 'npm run combat:snapshot'
   seed: number
   presets: { id: string; name: string }[]
@@ -100,7 +101,7 @@ export function buildCombatBalanceSnapshot(): CombatBalanceSnapshot {
   )
 
   return {
-    schemaVersion: 5,
+    schemaVersion: 6,
     generatedBy: 'npm run combat:snapshot',
     seed: SNAPSHOT_SEED,
     presets: SIMULATOR_PRESET_OPTIONS.map(option => ({ id: option.id, name: option.name })),
@@ -173,7 +174,11 @@ function simulateSnapshotScenario(
     [],
     { trackMetrics: true }
   )
-  return summarizeScenario(presetId, group, name, SNAPSHOT_SEED, result)
+  const summary = summarizeScenario(presetId, group, name, SNAPSHOT_SEED, result)
+  if (group === 'tier1') {
+    summary.commandPoints = { attacker: scenario.attackers.length, defender: scenario.defenders.length }
+  }
+  return summary
 }
 
 export function renderSnapshotJson(snapshot: CombatBalanceSnapshot): string {
@@ -195,7 +200,7 @@ export function renderSnapshotMarkdown(snapshot: CombatBalanceSnapshot): string 
     `Tier 1 scenarios: ${snapshot.tier1Scenarios.map(scenario => `\`${scenario.id}\``).join(', ')}`,
     `P0 role scenarios: ${snapshot.p0Scenarios.map(scenario => `\`${scenario.id}\``).join(', ')}`,
     '',
-    'Cost/value metrics use a simple equal-weight resource value model over `hireCost`. Treat them as balance diagnostics, not final economy pricing.',
+    'Tier 1 scenarios use one command point per squad and always compare equal command totals. Resource-value metrics remain legacy diagnostics for simulator and P0 scenarios.',
     'Overlap metrics report both raw pixels and normalized ratio; `severeOverlapSamples` counts pair samples at 50%+ normalized overlap.',
     '',
     '## Scenario Summary',
@@ -218,11 +223,11 @@ export function renderSnapshotMarkdown(snapshot: CombatBalanceSnapshot): string 
     '| --- | --- | --- | --- |',
     ...tier1Scenarios.map(scenario => `| \`${scenario.presetId}\` | ${formatNumericMap(scenario.damageByUnitType)} | ${formatNumericMap(scenario.healingDoneByUnitType)} | ${formatNumericMap(nonZeroNumericMap(scenario.actionCounts))} |`),
     '',
-    '## Tier 1 Cost Efficiency',
+    '## Tier 1 Command Point Outcomes',
     '',
-    '| Scenario | Initial value | Damage / cost | Healing / cost | Damage taken / cost | Survivor value | Role signals |',
-    '| --- | --- | --- | --- | --- | --- | --- |',
-    ...tier1Scenarios.map(scenario => `| \`${scenario.presetId}\` | ${formatTeamTotals(scenario.teamValue.initial)} | ${formatTeamTotals(scenario.costEfficiency.damageDealtPerCost)} | ${formatTeamTotals(scenario.costEfficiency.healingDonePerCost)} | ${formatTeamTotals(scenario.costEfficiency.damageTakenPerCost)} | ${formatTeamTotals(scenario.costEfficiency.survivorValueRatio)} | ${formatRoleSignals(scenario.roleSignals)} |`),
+    '| Scenario | Command points | Damage dealt | Healing done | Survivor value | Role signals |',
+    '| --- | --- | --- | --- | --- | --- |',
+    ...tier1Scenarios.map(scenario => `| \`${scenario.presetId}\` | ${formatTeamTotals(scenario.commandPoints ?? { attacker: 0, defender: 0 })} | ${formatTeamTotals(scenario.teamPerformance.damageDealt)} | ${formatTeamTotals(scenario.teamPerformance.healingDone)} | ${formatTeamTotals(scenario.costEfficiency.survivorValueRatio)} | ${formatRoleSignals(scenario.roleSignals)} |`),
     '',
     '## P0 Role Scenarios',
     '',

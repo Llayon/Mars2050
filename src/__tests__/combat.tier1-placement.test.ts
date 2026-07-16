@@ -1,0 +1,138 @@
+import { describe, expect, it } from 'vitest'
+import { UNIT_TYPES } from '@/domains/combat/combat.config'
+import { simulateBattle } from '@/domains/combat/combat.engine'
+import { TIER1_BALANCE_SCENARIOS, type CombatBalanceScenario } from '@/domains/combat/combat.tier1-scenarios'
+import type { BattleResult, Team, UnitRow } from '@/domains/combat/combat.types'
+import { FIELD_HEIGHT, generateObstacles } from '@/domains/combat/combat.utils'
+
+const SEEDS = [101, 202, 303, 404, 505]
+
+describe('Tier 1 placement and support value', () => {
+  it('changes sapper and jetpack outcomes through deployment alone', () => {
+    const sapperClose = mirroredWins(findScenario('tier1_sapper_point_blank_stop'))
+    const sapperFar = mirroredWins(findScenario('tier1_sapper_long_approach'))
+    const jetpackFlank = mirroredWins(findScenario('tier1_jetpack_open_flank'))
+    const jetpackCenter = mirroredWins(findScenario('tier1_jetpack_center_lane'))
+
+    expect(sapperClose).toBeGreaterThanOrEqual(sapperFar + 6)
+    expect(jetpackFlank).toBeGreaterThanOrEqual(jetpackCenter + 2)
+  }, 30000)
+
+  it('makes medic and compact officer materially improve a five-squad line', () => {
+    for (const scenarioId of ['tier1_medic_sustain_check', 'tier1_officer_compact_aura']) {
+      const scenario = findScenario(scenarioId)
+      const supported = simulateScenario(scenario, 101, true)
+      const control = simulateBattle(
+        cloneRows(scenario.attackers.filter(unit => unit.unit_type !== 'medic' && unit.unit_type !== 'officer')),
+        cloneRows(scenario.defenders),
+        101,
+        [],
+        [],
+        [],
+        { trackMetrics: true },
+      )
+
+      expect(remainingPower(supported, 'defender'), scenarioId)
+        .toBeLessThan(remainingPower(control, 'defender') * 0.8)
+    }
+
+    const medic = simulateScenario(findScenario('tier1_medic_sustain_check'), 101, true)
+    expect(medic.metrics?.healingDoneByUnitType.medic ?? 0).toBeGreaterThan(500)
+  }, 30000)
+
+  it('keeps scout marking useful but answerable by the heavy gunner', () => {
+    const focusScenario = findScenario('tier1_scout_focus_fire')
+    const focus = simulateScenario(focusScenario, 101, true)
+    const defaultObstacles = generateObstacles(12345)
+    const defaultSetup = simulateBattle(cloneRows(focusScenario.attackers), cloneRows(focusScenario.defenders), 12345, defaultObstacles)
+    const mirroredSetup = simulateBattle(
+      mirrorRows(focusScenario.defenders, 'attacker'),
+      mirrorRows(focusScenario.attackers, 'defender'),
+      12345,
+      defaultObstacles,
+    )
+    const counter = simulateScenario(findScenario('tier1_scout_countered_by_heavy'), 101, true)
+    const focusActions = focus.logs.flatMap(log => log.actions)
+
+    expect(focusActions.filter(action => action.type === 'target_mark').length).toBeGreaterThan(5)
+    expect(focus.winner).toBe('attacker')
+    expect(defaultSetup.winner).toBe('attacker')
+    expect(mirroredSetup.winner).toBe('defender')
+    expect(counter.winner).toBe('defender')
+    expect(counter.metrics?.damageByUnitType.heavy_gunner ?? 0).toBeGreaterThan(0)
+    expect(counter.survivors.some(unit => unit.team === 'attacker' && unit.type === 'scout_drone')).toBe(false)
+  }, 30000)
+
+  it('lets five marines plus a scout beat six marines in the legal screenshot formation', () => {
+    const attackers = [150, 210, 330, 390, 450, 270]
+      .map((x, index) => positionedRow(`screenshot-a-${index}`, 'marine', 'attacker', x, 930))
+    const defenders = [150, 210, 330, 390, 270]
+      .map((x, index) => positionedRow(`screenshot-d-${index}`, 'marine', 'defender', x, 570))
+    defenders.push(positionedRow('screenshot-scout', 'scout_drone', 'defender', 270, 510))
+
+    const result = simulateBattle(attackers, defenders, 12345, [])
+
+    expect(result.winner).toBe('defender')
+    expect(result.survivors.some(unit => unit.team === 'defender' && unit.type === 'marine')).toBe(true)
+  })
+})
+
+function mirroredWins(scenario: CombatBalanceScenario): number {
+  let wins = 0
+  for (const seed of SEEDS) {
+    const normal = simulateScenario(scenario, seed)
+    if (normal.winner === 'attacker') wins++
+
+    const mirrored = simulateBattle(
+      mirrorRows(scenario.defenders, 'attacker'),
+      mirrorRows(scenario.attackers, 'defender'),
+      seed,
+      [],
+    )
+    if (mirrored.winner === 'defender') wins++
+  }
+  return wins
+}
+
+function simulateScenario(scenario: CombatBalanceScenario, seed: number, trackMetrics = false): BattleResult {
+  return simulateBattle(cloneRows(scenario.attackers), cloneRows(scenario.defenders), seed, [], [], [], { trackMetrics })
+}
+
+function findScenario(scenarioId: string): CombatBalanceScenario {
+  const scenario = TIER1_BALANCE_SCENARIOS.find(candidate => candidate.id === scenarioId)
+  if (!scenario) throw new Error(`Missing Tier 1 scenario: ${scenarioId}`)
+  return scenario
+}
+
+function mirrorRows(rows: UnitRow[], team: Team): UnitRow[] {
+  return rows.map(unit => ({
+    ...unit,
+    id: `mirror-${unit.id}`,
+    colony_id: team,
+    upgrade_path: [...(unit.upgrade_path ?? [])],
+    grid_y: String(FIELD_HEIGHT - Number(unit.grid_y)),
+  }))
+}
+
+function cloneRows(rows: UnitRow[]): UnitRow[] {
+  return rows.map(unit => ({ ...unit, upgrade_path: [...(unit.upgrade_path ?? [])] }))
+}
+
+function positionedRow(id: string, type: UnitRow['unit_type'], team: Team, x: number, y: number): UnitRow {
+  return {
+    id,
+    colony_id: team,
+    unit_type: type,
+    hp_current: UNIT_TYPES[type].baseStats.hp,
+    tier: 1,
+    upgrade_path: [],
+    grid_x: String(x),
+    grid_y: String(y),
+  }
+}
+
+function remainingPower(result: BattleResult, team: Team): number {
+  return result.survivors
+    .filter(unit => unit.team === team)
+    .reduce((total, unit) => total + unit.hp / unit.maxHp, 0)
+}

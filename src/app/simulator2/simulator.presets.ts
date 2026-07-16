@@ -75,8 +75,8 @@ export function getSimulatorPreset(presetName: string): { attackers: UnitRow[], 
     }
   } else if (presetName === 'massive_clash') {
     return {
-      attackers: line('mc-a', 'attacker', 'shock_trooper', 6, 180, 820, 60, 35, 250),
-      defenders: line('mc-d', 'defender', 'alien_bug', 6, 180, 380, 60, -35, 150),
+      attackers: line('mc-a', 'attacker', 'shock_trooper', 5, 180, 820, 60, 35, 250),
+      defenders: line('mc-d', 'defender', 'alien_bug', 5, 180, 380, 60, -35, 150),
     }
   } else if (presetName === 'stealth_reveal') {
     return { attackers: [row('sr-a-ghost', 'attacker', 'stealth_operative', 240, 760, 100, ['stealth_cloak']), row('sr-a-sniper', 'attacker', 'sniper', 320, 820, 30)], defenders: [row('sr-d-radar', 'defender', 'radar_zepplin', 250, 520, 500), row('sr-d-bounty', 'defender', 'bounty_hunter', 330, 500, 120)] }

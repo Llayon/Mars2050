@@ -4,6 +4,15 @@
 
 Это изолированная песочница для тестирования, отладки и балансировки боевой системы без влияния на состояние основной базы данных. Симулятор позволяет выставлять юнитов, применять глобальные улучшения, указывать фиксированный сид (RNG) и управлять воспроизведением.
 
+## Режимы симулятора
+
+- **Tier 1** — основной режим текущего баланс-прохода. Доступны только 12 отрядов первого тира, каждый стоит 1 очко командования. Обе стороны должны потратить одинаковое число очков; лимит регулируется от 3 до 12, значение по умолчанию — 6.
+- **QA** — полный ростер, глобальные улучшения и диагностические пресеты. Экономическая стоимость юнитов не используется как T1-балансный контракт.
+- Автоматическая T1-расстановка выбирает детерминированный свободный слот и пропускает позиции, где формация пересекается с кратером.
+- Ручная постановка внутри препятствия считается невалидной: кнопка запуска отключается до переноса отряда. Это предотвращает скрытую асимметрию движения и фокусировки из-за старта внутри коллайдера.
+- При равной скорости стороны действуют вперемешку; первая сторона чередуется внутри пар равной инициативы. Бесплатного залпа всей атакующей стороны нет.
+- Метка развед-дрона распространяется на выбранный вражеский отряд и сбрасывает старую sticky-фиксацию союзников, чтобы общий focus priority применялся немедленно.
+
 ## Как читать Combat Metrics
 В режиме просмотра реплея слева отображается панель метрик:
 - **Tick**: Текущий шаг симуляции (текущий `MAX_TICKS` в combat config — 400).
@@ -47,6 +56,7 @@ Replay metrics проверяются как diagnostic mirror с tolerance, ч�
 | `npm run test:e2e:replay-baseline:update` | Updates committed baseline screenshots after intentional replay rendering changes. |
 | `npm run test:e2e:qa` | Simulator load smoke plus replay smoke, without screenshot baseline comparison. |
 | `npm run test:e2e:prod:simulator2` | Production `/simulator2` smoke against Vercel: no initial replay/Pixi chunks, default Pixi replay paints, Canvas fallback paints without Pixi. |
+| `npx playwright test tests/e2e/simulator2-tier1.spec.ts --project=chromium` | Tier 1 command-point flow, mobile layout, obstacle-safe deployment, and five-marines-plus-scout baseline. |
 
 Run `test:combat:scenarios` before balance work. It is a runtime contract,
 not a visual test: failures mean a mechanic stopped producing the expected
