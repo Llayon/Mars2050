@@ -18,7 +18,6 @@ import { canAttackControlledTarget } from './combat.control'
 import { getTimeoutOutcome, type BattleOutcome } from './combat.outcome'
 import { CURRENT_SIMULATION_VERSION } from './combat.version'
 import { resolveUnitDeath, type DeathCause } from './combat.death'
-import { createRuntimeSquad } from './combat.squad-factory'
 import { createLegacyCombatRuntime } from './combat.legacy-runtime'
 import { createEcsCombatRuntime } from './ecs/combat-ecs-runtime'
 export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[], providedSeed?: number, providedObstacles?: Obstacle[], attackerGlobals: string[] = [], defenderGlobals: string[] = [], options: BattleSimulationOptions = {}): BattleResult {
@@ -32,8 +31,8 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
   defenderGlobals.forEach(id => { if (GLOBAL_UPGRADES[id]) activeGlobals.push({ team: 'defender', upg: GLOBAL_UPGRADES[id] }) })
   const obstacles: Obstacle[] = providedObstacles || generateObstacles(seed);
   const flowFieldMap = createPathfindingMap(obstacles), spatialHash = new SpatialHash();
-  attackerUnits.forEach(row => units.push(...createRuntimeSquad(row, 'attacker', rng)))
-  defenderUnits.forEach(row => units.push(...createRuntimeSquad(row, 'defender', rng)))
+  attackerUnits.forEach(row => runtime.addSquad(row, 'attacker', rng))
+  defenderUnits.forEach(row => runtime.addSquad(row, 'defender', rng))
 
   const initialState = runtime.snapshotUnits()
   const metrics = options.trackMetrics ? createCombatMetrics(units) : undefined

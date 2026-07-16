@@ -3,6 +3,9 @@ import type { DeathCause } from './combat.death'
 import type { BattleOutcome } from './combat.outcome'
 import type { SimHazard, SimUnit } from './combat.sim.types'
 import type { SpatialHash } from './spatial-hash'
+import type { Team } from './combat.sim.types'
+import type { UnitRow } from './combat.types'
+import type { PRNG } from './combat.utils'
 
 export type RuntimeDeathHandler = (
   unit: SimUnit,
@@ -13,6 +16,7 @@ export type RuntimeDeathHandler = (
 export interface CombatRuntime {
   readonly units: SimUnit[]
   readonly hazards: SimHazard[]
+  addSquad(row: UnitRow, team: Team, rng: PRNG): void
   snapshotUnits(): SimUnit[]
   getSurvivors(): SimUnit[]
   getTurnOrder(): SimUnit[]

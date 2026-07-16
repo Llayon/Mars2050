@@ -20,7 +20,7 @@ export class CombatWorld {
     this.roster.push(...initialUnits)
   }
 
-  createEntity(unit: SimUnit): SimUnit {
+  createUnitEntity(unit: SimUnit): EntityId {
     const entityId = this.nextEntityId++
     this.stores.entityMeta.set(entityId, { kind: 'unit', externalId: unit.id })
     for (const name of Object.keys(COMPONENT_FIELDS) as UnitComponentName[]) {
@@ -31,7 +31,7 @@ export class CombatWorld {
     this.views[entityId] = unit
     this.entityIds.push(entityId)
     this.externalIdToEntity.set(unit.id, entityId)
-    return unit
+    return entityId
   }
 
   createHazardEntity(hazard: SimHazard): EntityId {
@@ -55,6 +55,17 @@ export class CombatWorld {
 
   getHazard(entityId: EntityId): SimHazard | undefined {
     return this.stores.hazard.get(entityId)
+  }
+
+  removeHazardEntity(entityId: EntityId): void {
+    const view = this.hazardViews[entityId]
+    if (view) {
+      const index = this.hazards.indexOf(view)
+      if (index !== -1) this.hazards.splice(index, 1)
+      this.externalIdToEntity.delete(view.id)
+    }
+    this.hazardViews[entityId] = undefined
+    this.stores.hazard.delete(entityId)
   }
 
   getEntityId(externalId: string): EntityId | undefined {
@@ -147,10 +158,26 @@ export class CombatWorld {
       if (!activeIds.has(meta.externalId)) {
         this.stores.hazard.delete(entityId)
         this.hazardViews[entityId] = undefined
+        this.externalIdToEntity.delete(meta.externalId)
         continue
       }
       const view = this.hazardViews[entityId]
       if (view) this.stores.hazard.set(entityId, structuredClone(view))
+    }
+  }
+
+  syncHazardsToComponents(): void {
+    for (const entityId of this.entityIds) {
+      const view = this.hazardViews[entityId]
+      if (view && this.stores.hazard.has(entityId)) this.stores.hazard.set(entityId, structuredClone(view))
+    }
+  }
+
+  syncHazardsFromComponents(): void {
+    for (const entityId of this.entityIds) {
+      const view = this.hazardViews[entityId]
+      const hazard = this.stores.hazard.get(entityId)
+      if (view && hazard) Object.assign(view, structuredClone(hazard))
     }
   }
 
@@ -160,7 +187,10 @@ export class CombatWorld {
       get: (target, property, receiver) => {
         if (property === 'push') {
           return (...units: SimUnit[]) => {
-            for (const unit of units) target.push(this.isWorldView(unit) ? unit : this.createEntity(unit))
+            for (const unit of units) {
+              if (!this.isWorldView(unit)) this.createUnitEntity(unit)
+              target.push(unit)
+            }
             return target.length
           }
         }

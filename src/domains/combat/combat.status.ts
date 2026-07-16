@@ -31,17 +31,17 @@ export const HARMFUL_STATUS_TYPES: StatusType[] = [
  * @returns true when a new stack was created, false when an existing stack was refreshed
  */
 export function applyStatus(target: SimUnit, effect: StatusEffect, actions?: BattleAction[]): boolean {
-  const normalized = normalizeStatus(effect)
+  const normalized = normalizeStatusEffect(effect)
   if (normalized.duration <= 0) return false
   if (isStatusBlockedByImmunity(target, normalized.type)) {
     actions?.push({ unitId: target.id, type: 'status_immune', statusType: normalized.type })
     return false
   }
 
-  const existing = target.statusEffects.find(status => getStatusStackId(status) === getStatusStackId(normalized))
+  const existing = target.statusEffects.find(status => getStatusStackIdentity(status) === getStatusStackIdentity(normalized))
   if (existing) {
     existing.duration = Math.max(existing.duration, normalized.duration)
-    existing.value = chooseStatusValue(existing.type, existing.value, normalized.value)
+    existing.value = chooseStatusStrength(existing.type, existing.value, normalized.value)
     existing.controlMode = chooseHackControlMode(existing.controlMode, normalized.controlMode)
     actions?.push(createStatusApplyAction(target.id, existing))
     if (existing.type === 'revealed') { breakBurrowOnReveal(target, actions); breakMovementStealthOnReveal(target, actions) }
@@ -113,7 +113,7 @@ export function getStatusValue(unit: SimUnit, type: StatusType): number | undefi
   let value: number | undefined
   for (const effect of unit.statusEffects) {
     if (effect.type !== type || effect.duration <= 0) continue
-    value = chooseStatusValue(type, value, effect.value)
+    value = chooseStatusStrength(type, value, effect.value)
   }
   return value
 }
@@ -175,7 +175,7 @@ export function getEffectiveActionRange(unit: SimUnit): number {
   return Math.max(0, effectiveRange * Math.max(0.05, 1 - Math.min(0.95, reduction)))
 }
 
-function normalizeStatus(effect: StatusEffect): RuntimeStatusEffect {
+export function normalizeStatusEffect(effect: StatusEffect): RuntimeStatusEffect {
   const periodic = ['burn', 'acid', 'degeneration', 'regen'].includes(effect.type)
   const tickInterval = periodic ? Math.max(1, Math.floor(effect.tickInterval ?? 10)) : 0
   return {
@@ -194,11 +194,11 @@ function createStatusApplyAction(unitId: string, effect: StatusEffect): BattleAc
   return action
 }
 
-function getStatusStackId(effect: StatusEffect): string {
+export function getStatusStackIdentity(effect: StatusEffect): string {
   return `${effect.type}:${effect.stackKey ?? effect.sourceUnitId ?? 'global'}`
 }
 
-function chooseStatusValue(type: StatusType, current?: number, next?: number): number | undefined {
+export function chooseStatusStrength(type: StatusType, current?: number, next?: number): number | undefined {
   if (current === undefined) return next
   if (next === undefined) return current
   if (type === 'slow' && current <= 1 && next <= 1) return Math.min(current, next)

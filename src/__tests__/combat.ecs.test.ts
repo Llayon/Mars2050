@@ -3,6 +3,7 @@ import { compareCombatEngines } from '@/domains/combat/combat.shadow'
 import { simulateBattle } from '@/domains/combat/combat.engine'
 import { cloneRuntimeUnit, createRuntimeUnitFromConfig } from '@/domains/combat/combat.unit-factory'
 import { CombatWorld } from '@/domains/combat/ecs/combat-world'
+import { runHazardSystem } from '@/domains/combat/ecs/systems'
 import { getSimulatorPreset } from '@/app/simulator2/simulator.presets'
 
 const CORE_SHADOW_PRESETS = ['ranged_duel', 'summon_caps', 'control_status', 'qa_primitive_events'] as const
@@ -58,6 +59,22 @@ describe('combat ECS shadow engine', () => {
     world.hazards.splice(0, 1)
     world.reconcileHazards()
     expect(world.stores.hazard.has(entityId!)).toBe(false)
+  })
+
+  it('processes mine damage from ECS hazard components', () => {
+    const target = createRuntimeUnitFromConfig({ id: 'target', team: 'defender', type: 'marine', x: 10, y: 20, currentAngle: 0 })!
+    const world = new CombatWorld([target])
+    world.hazards.push({
+      id: 'mine-1', team: 'attacker', type: 'mine', x: 10, y: 20,
+      radius: 30, damagePerTick: 12, duration: 5,
+    })
+    const actions: Parameters<typeof runHazardSystem>[1] = []
+
+    runHazardSystem(world, actions, () => undefined)
+
+    expect(world.stores.vitality.require(0).hp).toBe(target.hp - 12)
+    expect(actions).toContainEqual(expect.objectContaining({ unitId: 'mine-1', type: 'damage', targetId: 'target', damage: 12 }))
+    expect(world.query(['hazard'], true)).toEqual([])
   })
 
   it('clones nested loadout state and resets transient statuses', () => {

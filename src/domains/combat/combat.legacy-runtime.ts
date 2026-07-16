@@ -6,6 +6,7 @@ import type { CombatRuntime, RuntimeDeathHandler } from './combat.runtime'
 import { getCombatTurnOrder } from './combat.turn-order'
 import { tickModifiersSystem } from './combat.systems'
 import { processHazards } from './combat.hazards'
+import { createRuntimeSquad } from './combat.squad-factory'
 
 export function createLegacyCombatRuntime(): CombatRuntime {
   const units: SimUnit[] = []
@@ -13,6 +14,7 @@ export function createLegacyCombatRuntime(): CombatRuntime {
   return {
     units,
     hazards,
+    addSquad: (row, team, rng) => { units.push(...createRuntimeSquad(row, team, rng)) },
     snapshotUnits: () => JSON.parse(JSON.stringify(units)) as SimUnit[],
     getSurvivors: () => units.filter(unit => !unit.isDead && !unit.isTemporary),
     getTurnOrder: () => getCombatTurnOrder(units),
