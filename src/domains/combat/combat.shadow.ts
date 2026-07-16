@@ -1,7 +1,7 @@
 import { simulateBattle } from './combat.engine'
 import type { BattleSimulationOptions } from './combat.metrics'
 import type { Obstacle } from './combat.sim.types'
-import type { BattleAction, BattleResult, UnitRow } from './combat.types'
+import type { BattleResult, UnitRow } from './combat.types'
 
 export interface ShadowComparison {
   legacy: BattleResult
@@ -27,26 +27,26 @@ function compareResults(legacy: BattleResult, ecs: BattleResult): string[] {
   const differences: string[] = []
   if (legacy.winner !== ecs.winner) differences.push(`winner:${legacy.winner}:${ecs.winner}`)
   if (legacy.terminationReason !== ecs.terminationReason) differences.push(`termination:${legacy.terminationReason}:${ecs.terminationReason}`)
-  if (legacy.logs.length !== ecs.logs.length) differences.push(`log-count:${legacy.logs.length}:${ecs.logs.length}`)
-  const actionDifference = compareActions(legacy.logs.flatMap(log => log.actions), ecs.logs.flatMap(log => log.actions))
-  if (actionDifference) differences.push(actionDifference)
-  const survivorDifference = compareSurvivors(legacy, ecs)
-  if (survivorDifference) differences.push(survivorDifference)
+  if (legacy.elapsedTicks !== ecs.elapsedTicks) differences.push(`elapsed-ticks:${legacy.elapsedTicks}:${ecs.elapsedTicks}`)
+  if (!equivalent(legacy.initialState, ecs.initialState)) differences.push('initial-state')
+  if (!equivalent(legacy.logs, ecs.logs)) differences.push(findFirstActionDifference(legacy, ecs))
+  if (!equivalent(sortUnits(legacy.survivors), sortUnits(ecs.survivors))) differences.push('survivors')
+  if (!equivalent(legacy.metrics, ecs.metrics)) differences.push('metrics')
   return differences
 }
 
-function compareActions(legacy: BattleAction[], ecs: BattleAction[]): string | null {
+function findFirstActionDifference(legacyResult: BattleResult, ecsResult: BattleResult): string {
+  const legacy = legacyResult.logs.flatMap(log => log.actions)
+  const ecs = ecsResult.logs.flatMap(log => log.actions)
   if (legacy.length !== ecs.length) return `action-count:${legacy.length}:${ecs.length}`
   for (let index = 0; index < legacy.length; index++) {
     if (!equivalent(legacy[index], ecs[index])) return `action:${index}`
   }
-  return null
+  return `logs:${legacyResult.logs.length}:${ecsResult.logs.length}`
 }
 
-function compareSurvivors(legacy: BattleResult, ecs: BattleResult): string | null {
-  const left = legacy.survivors.map(unit => ({ id: unit.id, hp: unit.hp, x: unit.x, y: unit.y })).sort((a, b) => a.id.localeCompare(b.id))
-  const right = ecs.survivors.map(unit => ({ id: unit.id, hp: unit.hp, x: unit.x, y: unit.y })).sort((a, b) => a.id.localeCompare(b.id))
-  return equivalent(left, right) ? null : 'survivors'
+function sortUnits(units: BattleResult['survivors']): BattleResult['survivors'] {
+  return [...units].sort((left, right) => left.id.localeCompare(right.id))
 }
 
 function equivalent(left: unknown, right: unknown): boolean {
@@ -69,4 +69,3 @@ function cloneRows(rows: UnitRow[]): UnitRow[] {
 function cloneObstacles(obstacles: Obstacle[]): Obstacle[] {
   return obstacles.map(obstacle => ({ ...obstacle }))
 }
-

@@ -14,10 +14,22 @@ reused during a battle. Runtime data is exposed through grouped component stores
 - movement and status/control;
 - support, lifecycle, and mechanics.
 
-The current migration adapter keeps a plain `SimUnit` view synchronized with
-component stores. This lets existing focused systems migrate independently
-without paying a per-property Proxy cost in combat hot loops. New entities must
-enter through `world.roster.push()` so they receive an entity ID and components.
+Component stores are canonical while ECS phases execute. Unported hot loops use
+a temporary plain `SimUnit` write-back facade, synchronized explicitly at ECS
+phase boundaries; this avoids accessor overhead while the migration is in
+progress. New entities must enter through `world.roster.push()` so they receive
+a monotonic entity ID and components.
+
+## Migration Status
+
+The ECS implementations currently own status scheduling, terminal outcome,
+initiative, modifier/lifetime ticking, deterministic entity queries, and
+snapshot/survivor serialization. Legacy hooks remain frozen for shadow tests.
+
+Targeting, melee reservation, movement, actions, damage/death, triggers,
+spawning, hazards, and metrics still cross the temporary `SimUnit` facade. The
+migration is complete only when those hooks use `EntityId` and component stores
+directly and the facade can be removed.
 
 ## Runtime Creation
 

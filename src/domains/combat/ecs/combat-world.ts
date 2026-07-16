@@ -1,11 +1,14 @@
 import type { SimUnit } from '../combat.sim.types'
-import { FIELD_COMPONENT, createComponentStores, type ComponentName, type EntityId } from './combat-components'
+import { COMPONENT_FIELDS, FIELD_COMPONENT, createComponentStores, type ComponentName } from './combat-components'
+import type { EntityId } from './entity'
 
 export class CombatWorld {
   readonly stores = createComponentStores()
   readonly externalIdToEntity = new Map<string, EntityId>()
   readonly roster: SimUnit[]
   private readonly views: SimUnit[] = []
+  private readonly entityIds: EntityId[] = []
+  private nextEntityId = 0
 
   constructor(initialUnits: SimUnit[] = []) {
     this.roster = this.createRoster()
@@ -13,14 +16,15 @@ export class CombatWorld {
   }
 
   createEntity(unit: SimUnit): SimUnit {
-    const entityId = this.views.length
-    for (const name of Object.keys(this.stores) as ComponentName[]) this.stores[name][entityId] = {}
-    for (const field of FIELD_COMPONENT.keys()) this.bindField(entityId, unit, field)
+    const entityId = this.nextEntityId++
+    for (const name of Object.keys(this.stores) as ComponentName[]) this.stores[name].set(entityId, {})
     for (const field of Object.keys(unit) as (keyof SimUnit)[]) {
-      if (!FIELD_COMPONENT.has(field)) this.bindField(entityId, unit, field)
+      const owner = FIELD_COMPONENT.get(field) ?? 'mechanics'
+      ;(this.stores[owner].require(entityId) as Record<keyof SimUnit, unknown>)[field] = unit[field]
     }
     Object.defineProperty(unit, Symbol.for('combat.entityId'), { value: entityId })
-    this.views.push(unit)
+    this.views[entityId] = unit
+    this.entityIds.push(entityId)
     this.externalIdToEntity.set(unit.id, entityId)
     return unit
   }
@@ -34,12 +38,81 @@ export class CombatWorld {
     return entityId === undefined ? undefined : this.views[entityId]
   }
 
+  getEntityId(externalId: string): EntityId | undefined {
+    return this.externalIdToEntity.get(externalId)
+  }
+
+  query(componentNames: readonly ComponentName[], includeDead = false): EntityId[] {
+    return this.entityIds.filter(entityId => {
+      if (!componentNames.every(name => this.stores[name].has(entityId))) return false
+      if (includeDead) return true
+      return this.stores.vitality.get(entityId)?.isDead !== true
+    })
+  }
+
+  getComponent(componentName: ComponentName, entityId: EntityId) {
+    return this.stores[componentName].get(entityId)
+  }
+
+  syncEntityToComponents(entityId: EntityId): void {
+    const view = this.views[entityId]
+    if (!view) return
+    for (const field of Object.keys(view) as (keyof SimUnit)[]) {
+      const owner = FIELD_COMPONENT.get(field) ?? 'mechanics'
+      ;(this.stores[owner].require(entityId) as Record<keyof SimUnit, unknown>)[field] = view[field]
+    }
+  }
+
+  syncEntityFromComponents(entityId: EntityId): void {
+    const view = this.views[entityId]
+    if (!view) return
+    for (const store of Object.values(this.stores)) Object.assign(view, store.get(entityId))
+  }
+
+  syncComponentsToStore(entityId: EntityId, componentNames: readonly ComponentName[]): void {
+    const view = this.views[entityId]
+    if (!view) return
+    for (const componentName of componentNames) {
+      const component = this.stores[componentName].require(entityId)
+      const fields = componentName === 'mechanics'
+        ? Object.keys(component) as (keyof SimUnit)[]
+        : COMPONENT_FIELDS[componentName]
+      for (const field of fields) {
+        ;(component as Record<keyof SimUnit, unknown>)[field] = view[field]
+      }
+    }
+  }
+
+  syncComponentsFromStore(entityId: EntityId, componentNames: readonly ComponentName[]): void {
+    const view = this.views[entityId]
+    if (!view) return
+    for (const componentName of componentNames) Object.assign(view, this.stores[componentName].get(entityId))
+  }
+
+  syncAllToComponents(): void {
+    for (const entityId of this.entityIds) this.syncEntityToComponents(entityId)
+  }
+
+  syncAllFromComponents(): void {
+    for (const entityId of this.entityIds) this.syncEntityFromComponents(entityId)
+  }
+
+  syncAllComponentsToStore(componentNames: readonly ComponentName[]): void {
+    for (const entityId of this.entityIds) this.syncComponentsToStore(entityId, componentNames)
+  }
+
+  syncAllComponentsFromStore(componentNames: readonly ComponentName[]): void {
+    for (const entityId of this.entityIds) this.syncComponentsFromStore(entityId, componentNames)
+  }
+
   snapshotEntity(entityId: EntityId): SimUnit {
-    return { ...this.views[entityId] }
+    const snapshot: Record<string, unknown> = {}
+    for (const store of Object.values(this.stores)) Object.assign(snapshot, store.get(entityId))
+    return structuredClone(snapshot) as unknown as SimUnit
   }
 
   snapshot(): SimUnit[] {
-    return this.views.map((_, entityId) => this.snapshotEntity(entityId))
+    return this.entityIds.map(entityId => this.snapshotEntity(entityId))
   }
 
   private createRoster(): SimUnit[] {
@@ -54,16 +127,6 @@ export class CombatWorld {
         }
         return Reflect.get(target, property, receiver)
       },
-    })
-  }
-
-  private bindField(entityId: EntityId, unit: SimUnit, field: keyof SimUnit): void {
-    const owner = FIELD_COMPONENT.get(field) ?? 'mechanics'
-    Object.defineProperty(this.stores[owner][entityId], field, {
-      enumerable: true,
-      configurable: false,
-      get: () => unit[field],
-      set: value => { (unit as unknown as Record<keyof SimUnit, unknown>)[field] = value },
     })
   }
 

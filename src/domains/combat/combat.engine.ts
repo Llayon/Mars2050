@@ -5,7 +5,7 @@ import { processSpawnerLogic } from './combat.spawner'
 import { processPostHazardPrimitives, processPreActionPrimitives } from './combat.tick-primitives'
 import type { UnitRow, BattleAction, BattleTick, BattleResult } from './combat.types'
 import type { Team, SimUnit, Obstacle, SimHazard } from './combat.sim.types'
-import { actionSystem, tickModifiersSystem } from './combat.systems'
+import { actionSystem } from './combat.systems'
 import { targetingSystem } from './combat.targeting'
 import { movementSystem } from './combat.movement'
 import { createMeleeEngagementState, reserveMeleeEngagementSlot } from './combat.melee-engagement'
@@ -16,19 +16,19 @@ import { PRNG, generateObstacles } from './combat.utils'
 import { createPathfindingMap } from './combat.pathfinding'
 import { SpatialHash } from './spatial-hash'
 import { canAttackControlledTarget } from './combat.control'
-import { getCombatTurnOrder } from './combat.turn-order'
-import { getTerminalBattleOutcome, getTimeoutOutcome, type BattleOutcome } from './combat.outcome'
+import { getTimeoutOutcome, type BattleOutcome } from './combat.outcome'
 import { CURRENT_SIMULATION_VERSION } from './combat.version'
-import { tickStatuses } from './combat.status'
 import { resolveUnitDeath, type DeathCause } from './combat.death'
-import { CombatWorld } from './ecs/combat-world'
 import { createRuntimeSquad } from './combat.squad-factory'
+import { createLegacyCombatRuntime } from './combat.legacy-runtime'
+import { createEcsCombatRuntime } from './ecs/combat-ecs-runtime'
 export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[], providedSeed?: number, providedObstacles?: Obstacle[], attackerGlobals: string[] = [], defenderGlobals: string[] = [], options: BattleSimulationOptions = {}): BattleResult {
   const seed = providedSeed ?? Date.now(), rng = new PRNG(seed), dt = 0.1
   const maxTicks = normalizeMaxTicks(options.maxTicks)
   const timeoutPolicy = options.timeoutPolicy ?? 'draw'
-  const world = options.engine === 'legacy' ? undefined : new CombatWorld()
-  const units: SimUnit[] = world?.roster ?? [], hazards: SimHazard[] = [], activeGlobals: { team: Team, upg: GlobalUpgradeConfig }[] = []
+  const ecsRuntime = options.engine === 'legacy' ? undefined : createEcsCombatRuntime()
+  const runtime = ecsRuntime ?? createLegacyCombatRuntime()
+  const units: SimUnit[] = runtime.units, hazards: SimHazard[] = [], activeGlobals: { team: Team, upg: GlobalUpgradeConfig }[] = []
   attackerGlobals.forEach(id => { if (GLOBAL_UPGRADES[id]) activeGlobals.push({ team: 'attacker', upg: GLOBAL_UPGRADES[id] }) })
   defenderGlobals.forEach(id => { if (GLOBAL_UPGRADES[id]) activeGlobals.push({ team: 'defender', upg: GLOBAL_UPGRADES[id] }) })
   const obstacles: Obstacle[] = providedObstacles || generateObstacles(seed);
@@ -36,7 +36,7 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
   attackerUnits.forEach(row => units.push(...createRuntimeSquad(row, 'attacker', rng)))
   defenderUnits.forEach(row => units.push(...createRuntimeSquad(row, 'defender', rng)))
 
-  const initialState = JSON.parse(JSON.stringify(units))
+  const initialState = runtime.snapshotUnits()
   const metrics = options.trackMetrics ? createCombatMetrics(units) : undefined
 
   const logs: BattleTick[] = []
@@ -57,21 +57,19 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
       const source = sourceUnitId ? units.find(unit => unit.id === sourceUnitId) : undefined
       resolveUnitDeath(dead, source, cause, { units, hazards, actions, rng })
     }
-    for (const unit of units) {
-      if (!unit.isDead) tickStatuses(unit, actions, { onUnitDeath: resolveEnvironmentalDeath })
-    }
+    runtime.runStatusPhase(actions, resolveEnvironmentalDeath)
 
     const pendingAttackers = units.some(u => u.team === 'attacker' && hasPendingReassembly(u))
     const pendingDefenders = units.some(u => u.team === 'defender' && hasPendingReassembly(u))
-    const terminalOutcome = getTerminalBattleOutcome(units, hazards, pendingAttackers, pendingDefenders)
+    const terminalOutcome = runtime.getTerminalOutcome(hazards, pendingAttackers, pendingDefenders)
     if (terminalOutcome) { resolvedOutcome = terminalOutcome; break }
 
-    const turnOrder = getCombatTurnOrder(units)
+    const turnOrder = runtime.getTurnOrder()
     const meleeEngagement = createMeleeEngagementState();
 
     for (const unit of turnOrder) {
       if (unit.isDead) continue;
-      tickModifiersSystem(unit, dt, actions, expired => resolveEnvironmentalDeath(expired, undefined, 'expiration')); if (unit.isDead) continue;
+      runtime.tickModifiers(unit, dt, actions, expired => resolveEnvironmentalDeath(expired, undefined, 'expiration')); if (unit.isDead) continue;
 
       const target = targetingSystem(unit, units, meleeEngagement, spatialHash);
       if (!target) continue;
@@ -110,7 +108,7 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
     logs,
     seed,
     initialState,
-    survivors: units.filter(u => !u.isDead && !u.isTemporary),
+    survivors: runtime.getSurvivors(),
     obstacles,
     metrics: metrics ? finalizeCombatMetrics(metrics, tick) : undefined,
     terminationReason: outcome.reason,
