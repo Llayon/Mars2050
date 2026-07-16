@@ -15,6 +15,7 @@ export function createLegacyCombatRuntime(): CombatRuntime {
     units,
     hazards,
     addSquad: (row, team, rng) => { units.push(...createRuntimeSquad(row, team, rng)) },
+    flushStructuralCommands: () => undefined,
     snapshotUnits: () => JSON.parse(JSON.stringify(units)) as SimUnit[],
     getSurvivors: () => units.filter(unit => !unit.isDead && !unit.isTemporary),
     getTurnOrder: () => getCombatTurnOrder(units),

@@ -22,8 +22,10 @@ export function createEcsCombatRuntime(): EcsCombatRuntime {
     units: world.roster,
     hazards: world.hazards,
     addSquad: (row, team, rng) => { createSquadEntities(world, row, team, rng) },
-    snapshotUnits: () => { world.syncAllToComponents(); return world.snapshot() },
+    flushStructuralCommands: () => world.flushStructuralCommands(),
+    snapshotUnits: () => { world.flushStructuralCommands(); world.syncAllToComponents(); return world.snapshot() },
     getSurvivors: () => {
+      world.flushStructuralCommands()
       world.syncAllToComponents()
       return world.query(['identity', 'vitality']).flatMap(entityId => {
         if (world.stores.vitality.require(entityId).isTemporary) return []
@@ -51,12 +53,14 @@ export function createEcsCombatRuntime(): EcsCombatRuntime {
       world.syncComponentsFromStore(entityId, MODIFIER_COMPONENTS)
     },
     runStatusPhase(actions: BattleAction[], onUnitDeath: RuntimeDeathHandler): void {
+      world.flushStructuralCommands()
       world.syncAllComponentsToStore(TICK_READ_COMPONENTS)
       runStatusSystem(world, actions, (entityId, sourceUnitId, cause) => {
         world.syncAllFromComponents()
         const unit = world.getEntity(entityId)
         if (unit) {
           onUnitDeath(unit, sourceUnitId, cause)
+          world.flushStructuralCommands()
           world.syncAllToComponents()
         }
       })
@@ -65,6 +69,7 @@ export function createEcsCombatRuntime(): EcsCombatRuntime {
     runHazardPhase(actions, onUnitDeath, spatialHash): void {
       void spatialHash
       world.syncAllToComponents()
+      world.flushStructuralCommands()
       world.reconcileHazards()
       world.syncHazardsToComponents()
       world.resources.require('entitySpatial').rebuild(world)
@@ -74,6 +79,7 @@ export function createEcsCombatRuntime(): EcsCombatRuntime {
         const unit = world.getEntity(entityId)
         if (unit) {
           onUnitDeath(unit, sourceUnitId, cause)
+          world.flushStructuralCommands()
           world.syncAllToComponents()
           world.syncHazardsToComponents()
         }

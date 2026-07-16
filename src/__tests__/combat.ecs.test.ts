@@ -51,6 +51,8 @@ describe('combat ECS shadow engine', () => {
       radius: 30, damagePerTick: 12, duration: 5,
     })
 
+    expect(world.getEntityId('mine-1')).toBeUndefined()
+    world.flushStructuralCommands()
     const entityId = world.getEntityId('mine-1')
     expect(entityId).toBe(0)
     expect(world.stores.entityMeta.get(entityId!)).toEqual({ kind: 'hazard', externalId: 'mine-1' })
@@ -69,6 +71,7 @@ describe('combat ECS shadow engine', () => {
       id: 'mine-1', team: 'attacker', type: 'mine', x: 10, y: 20,
       radius: 30, damagePerTick: 12, duration: 5,
     })
+    world.flushStructuralCommands()
     const spatial = new EntitySpatialIndex()
     spatial.rebuild(world)
     world.resources.set('entitySpatial', spatial)

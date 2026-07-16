@@ -17,6 +17,7 @@ export interface CombatRuntime {
   readonly units: SimUnit[]
   readonly hazards: SimHazard[]
   addSquad(row: UnitRow, team: Team, rng: PRNG): void
+  flushStructuralCommands(): void
   snapshotUnits(): SimUnit[]
   getSurvivors(): SimUnit[]
   getTurnOrder(): SimUnit[]

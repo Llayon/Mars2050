@@ -2,10 +2,12 @@ import type { SimHazard, SimUnit } from '../combat.sim.types'
 import { COMPONENT_FIELDS, FIELD_COMPONENT, createComponentStores, type CombatComponentMap, type ComponentName, type UnitComponentName } from './combat-components'
 import { CombatResourceStore } from './combat-resources'
 import type { EntityId } from './entity'
+import { StructuralCommandBuffer } from './structural-command-buffer'
 
 export class CombatWorld {
   readonly stores = createComponentStores()
   readonly resources = new CombatResourceStore()
+  readonly structuralCommands = new StructuralCommandBuffer()
   readonly externalIdToEntity = new Map<string, EntityId>()
   readonly roster: SimUnit[]
   readonly hazards: SimHazard[]
@@ -18,6 +20,7 @@ export class CombatWorld {
     this.roster = this.createRoster()
     this.hazards = this.createHazardRoster()
     this.roster.push(...initialUnits)
+    this.flushStructuralCommands()
   }
 
   createUnitEntity(unit: SimUnit): EntityId {
@@ -42,6 +45,10 @@ export class CombatWorld {
     this.entityIds.push(entityId)
     this.externalIdToEntity.set(hazard.id, entityId)
     return entityId
+  }
+
+  flushStructuralCommands(): void {
+    this.structuralCommands.flush(this)
   }
 
   getEntity(entityId: EntityId): SimUnit | undefined {
@@ -188,8 +195,8 @@ export class CombatWorld {
         if (property === 'push') {
           return (...units: SimUnit[]) => {
             for (const unit of units) {
-              if (!this.isWorldView(unit)) this.createUnitEntity(unit)
               target.push(unit)
+              if (!this.isWorldView(unit)) this.structuralCommands.queueUnit(unit)
             }
             return target.length
           }
@@ -207,7 +214,7 @@ export class CombatWorld {
           return (...hazards: SimHazard[]) => {
             for (const hazard of hazards) {
               target.push(hazard)
-              this.createHazardEntity(hazard)
+              this.structuralCommands.queueHazard(hazard)
             }
             return target.length
           }

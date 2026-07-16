@@ -27,12 +27,12 @@ outcome, initiative, modifier/lifetime ticking, typed component/resource
 stores, deterministic entity queries, and snapshot/survivor serialization.
 Legacy hooks remain frozen for shadow tests.
 
-Targeting, melee reservation, movement, actions, damage/death, triggers,
-structural spawn commands, and metrics still cross the temporary `SimUnit`
-facade. Initial squads and spawned units receive monotonic entity IDs through
-the ECS factory/roster boundary. The migration is complete only when the
-remaining hooks use `EntityId` and component stores directly and the facade can
-be removed.
+Targeting, melee reservation, movement, actions, damage/death, triggers, and
+metrics still cross the temporary `SimUnit` facade. Initial squads, action
+spawns, trigger clones, and hazards enter a deterministic structural command
+buffer. Commands flush at phase boundaries and receive monotonic entity IDs in
+creation order. The migration is complete only when the remaining hooks use
+`EntityId` and component stores directly and the facade can be removed.
 
 ## Runtime Creation
 

@@ -64,6 +64,7 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
     }
     const unitCountBeforePrimitives = units.length
     const triggerContext = processPreActionPrimitives(tick, activeGlobals, units, hazards, actions, rng, spatialHash);
+    runtime.flushStructuralCommands()
     for (let index = unitCountBeforePrimitives; index < units.length; index++) {
       if (!units[index].isDead) spatialHash.insert(units[index])
     }
@@ -95,6 +96,8 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
       const hasEngagement = canActOnTarget ? reserveMeleeEngagementSlot(unit, target, meleeEngagement) : true;
 
       const acted = canActOnTarget && hasEngagement && actionSystem(unit, target, units, hazards, actions, rng, tick, spatialHash);
+
+      runtime.flushStructuralCommands()
 
       for (let i = unitCountBeforeActions; i < units.length; i++) {
         if (!units[i].isDead) spatialHash.insert(units[i]);
