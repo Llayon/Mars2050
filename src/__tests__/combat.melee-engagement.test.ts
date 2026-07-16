@@ -118,4 +118,20 @@ describe('melee engagement slots', () => {
 
     expect(isMeleeEngagementReady(unit, target)).toBe(true)
   })
+
+  it('reserves non-overlapping shared sectors for mixed unit sizes', () => {
+    const target = makeUnit({ id: 'target', team: 'defender', x: 0, y: 0, size: 'S' })
+    const small = makeUnit({ id: 'small', team: 'attacker', x: 40, y: 0, size: 'S' })
+    const large = makeUnit({ id: 'large', team: 'attacker', x: 50, y: 0, size: 'XL' })
+    const state = createMeleeEngagementState()
+
+    expect(reserveMeleeEngagementSlot(small, target, state)).toBe(true)
+    expect(reserveMeleeEngagementSlot(large, target, state)).toBe(true)
+    const occupiedBySmall = Object.entries(state.slotsByTarget.target).filter(([, id]) => id === 'small').map(([slot]) => slot)
+    const occupiedByLarge = Object.entries(state.slotsByTarget.target).filter(([, id]) => id === 'large').map(([slot]) => slot)
+
+    expect(occupiedBySmall.length).toBeGreaterThan(0)
+    expect(occupiedByLarge.length).toBeGreaterThan(occupiedBySmall.length)
+    expect(occupiedByLarge.some(slot => occupiedBySmall.includes(slot))).toBe(false)
+  })
 })

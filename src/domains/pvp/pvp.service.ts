@@ -18,7 +18,6 @@ import {
   loadBattleWithSnapshot,
   getAttackCooldownSeconds,
   persistBattleWithSnapshot,
-  SNAPSHOT_VERSION,
   type BattleWithSnapshot,
 } from './pvp.replay'
 
@@ -143,7 +142,7 @@ export async function executeAttack(
     [],
     [],
     [],
-    { trackMetrics: true }
+    { trackMetrics: true, engine: 'ecs', maxTicks: 1000, timeoutPolicy: 'defender_holds', profile: true }
   )
 
   let stolen: Record<string, number> = {}
@@ -182,7 +181,9 @@ export async function executeAttack(
         initial_state: battleResult.initialState as unknown as Record<string, unknown>,
         log: battleResult.logs as unknown as Record<string, unknown>,
         metrics: (battleResult.metrics ?? {}) as unknown as Record<string, unknown>,
-        simulationVersion: SNAPSHOT_VERSION,
+        simulationVersion: battleResult.simulationVersion,
+        terminationReason: battleResult.terminationReason,
+        elapsedTicks: battleResult.elapsedTicks,
       }
     )
     if (snapId) battleId = snapId
@@ -211,7 +212,9 @@ export async function executeAttack(
     battleId: battleId ?? undefined,
     seed: battleResult.seed,
     metrics: battleResult.metrics,
-    simulationVersion: SNAPSHOT_VERSION,
+    simulationVersion: battleResult.simulationVersion,
+    terminationReason: battleResult.terminationReason,
+    elapsedTicks: battleResult.elapsedTicks,
   }
 }
 

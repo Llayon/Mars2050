@@ -7,6 +7,7 @@ import { spawnCombatUnits } from './combat.spawn'
 import { applyStatus } from './combat.status'
 import type { RuntimeTriggerEffect, SimHazard, SimUnit, TriggerPayload } from './combat.sim.types'
 import { PRNG, getDistance } from './combat.utils'
+import { applyHealing } from './combat.healing'
 
 export interface TriggerContext {
   units: SimUnit[]
@@ -108,9 +109,7 @@ function applyTriggerPayload(owner: SimUnit, target: SimUnit | null, eventTarget
   }
   if (payload.kind === 'heal' && target) {
     const amount = getHealAmount(payload, target, eventTarget)
-    const before = target.hp
-    target.hp = Math.min(target.maxHp, target.hp + amount)
-    if (target.hp > before) context.actions.push({ unitId: owner.id, type: 'heal', targetId: target.id, damage: target.hp - before })
+    applyHealing(owner.id, target, amount, context.actions)
     return
   }
   if (payload.kind === 'damage' && target) {

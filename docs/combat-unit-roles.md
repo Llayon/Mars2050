@@ -141,7 +141,7 @@ Adjacent non-status state still lives on `SimUnit`: `shield`,
 3. `emp` blocks attacks, heals, support actions, and spawns; `hacked`
    supports disable, redirect, and confuse control modes.
 4. `slow` and `haste` modify movement speed in `combat.movement.ts`.
-5. `burn`, `acid`, `degeneration`, and `regen` tick every 10 simulation ticks.
+5. `burn`, `acid`, `degeneration`, and `regen` use an explicit periodic scheduler; a duration-30 effect with interval 10 ticks exactly at 10, 20, and 30.
 6. `vulnerable`, `damage_reduction`, `armor_broken`,
    `output_suppressed`, and `accuracy_reduced` feed into `combat.damage.ts`.
 7. `revealed` participates in stealth acquisition checks and breaks/suppresses active burrow defense.
@@ -185,10 +185,13 @@ richer line-of-sight/concealment mechanics.
 
 ### Damage / shield pipeline
 
-Damage now flows through `combat.damage.ts` before HP is mutated. The current
-pipeline applies defense after armor break and attacker armor pierce, output suppression, deterministic accuracy penalties, air/ground/shield/anti-summoner damage multipliers,
-movement damage reduction, status damage modifiers, shield absorption, execute,
-lifesteal, and final HP damage.
+Damage now flows through `combat.damage.ts` before HP is mutated. The contractual
+order is attack boost/percent HP, projectile interception, armor and defense,
+output suppression, accuracy, attacker multipliers, movement defense, finite
+barriers/fields, vulnerability and reduction statuses, target mark, flat block,
+shield, reactive armor, damage sharing, execute, actual lifesteal, HP mutation,
+and death resolution. `combat.damage-order.test.ts` freezes the important layer
+boundaries.
 
 Shield overflow is intentional: if a hit exceeds the current shield value, the
 shield absorbs only its remaining capacity and the leftover damage reaches HP.

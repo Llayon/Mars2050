@@ -1,16 +1,19 @@
 import type { SimUnit } from './combat.sim.types'
 import { getDistance } from './combat.utils'
+import type { SpatialHash } from './spatial-hash'
 
 interface DamageSharingContext {
   units?: SimUnit[]
   onUnitDeath?: (unit: SimUnit) => void
+  spatialHash?: SpatialHash
 }
 
 export function applyDamageSharing(target: SimUnit, damage: number, context: DamageSharingContext): { damage: number; sharedDamage: number; events: { targetId: string; damage: number }[] } {
   const ratio = Math.max(0, Math.min(0.9, target.damageShareRatio ?? 0))
   if (damage <= 0 || ratio <= 0 || !target.damageShareRadius || !context.units) return { damage, sharedDamage: 0, events: [] }
 
-  const recipients = context.units
+  const candidates = context.spatialHash?.query(target.x, target.y, target.damageShareRadius) ?? context.units
+  const recipients = candidates
     .filter(unit => !unit.isDead && unit.team === target.team && unit.id !== target.id && getDistance(unit.x, unit.y, target.x, target.y) <= target.damageShareRadius!)
     .sort((a, b) => a.id.localeCompare(b.id))
     .slice(0, Math.max(1, target.damageShareMaxTargets ?? Number.MAX_SAFE_INTEGER))

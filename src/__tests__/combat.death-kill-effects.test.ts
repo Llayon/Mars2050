@@ -6,6 +6,7 @@ import { handleDeath } from '@/domains/combat/combat.systems.utils'
 import type { UpgradeConfig } from '@/domains/combat/combat.upgrades'
 import { UPGRADES } from '@/domains/combat/combat.upgrades'
 import { getRuntimePrimitiveStats } from '@/domains/combat/combat.upgrade-primitives'
+import { resolveUnitDeath } from '@/domains/combat/combat.death'
 import type { SimHazard, SimUnit, Team } from '@/domains/combat/combat.types'
 import { PRNG } from '@/domains/combat/combat.utils'
 
@@ -123,5 +124,18 @@ describe('death and kill effect primitives', () => {
     expect(hazards[0]).toMatchObject({ type: 'acid', team: 'defender' })
     expect(actions).toContainEqual({ unitId: 'acidic', type: 'hazard_spawn', hazardId: hazards[0].id, statusType: 'acid', toX: 0, toY: 0, radius: 50 })
     expect(actions).toContainEqual({ unitId: 'recycler', type: 'trigger_effect', targetId: 'recycler', statusType: 'wreckage-recycling' })
+  })
+
+  it('expires a temporary unit exactly once without combat triggers', () => {
+    const temporary = makeUnit({
+      id: 'decoy', team: 'attacker', isTemporary: true,
+      triggerEffects: [{ id: 'must-not-fire', event: 'death', payload: { kind: 'damage', target: 'self', amount: 10 }, fired: false, counter: 0, cooldownRemaining: 0 }],
+    })
+    const actions: BattleAction[] = []
+    const context = { units: [temporary], hazards: [], actions, rng: new PRNG(9) }
+
+    expect(resolveUnitDeath(temporary, undefined, 'expiration', context)).toBe(true)
+    expect(resolveUnitDeath(temporary, undefined, 'expiration', context)).toBe(false)
+    expect(actions).toEqual([{ unitId: 'decoy', type: 'die', sourceUnitId: undefined, cause: 'expiration' }])
   })
 })

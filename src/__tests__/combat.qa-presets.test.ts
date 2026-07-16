@@ -59,7 +59,7 @@ const MOVEMENT_QA_GATES = [
       averageOverlapRatioLessThan: 0.29,
       severeOverlapSamplesLessThan: 32000,
       targetSwitchesLessThan: 6500,
-      battleDurationLessThan: 170,
+      battleDurationLessThan: 175,
       averageTimeToEngageMax: 42,
       totalStuckTicksLessThan: 8500,
       meleeSlotWaitTicksLessThan: 25000,

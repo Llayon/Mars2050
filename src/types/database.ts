@@ -428,6 +428,8 @@ export interface Database {
           initial_state: Record<string, unknown>
           log: Record<string, unknown>
           metrics?: Record<string, unknown> | null
+          termination_reason?: 'elimination' | 'mutual_elimination' | 'stalemate' | 'timeout' | null
+          elapsed_ticks?: number | null
           version?: number
           created_at?: string
         }
@@ -437,6 +439,8 @@ export interface Database {
           initial_state: Record<string, unknown>
           log: Record<string, unknown>
           metrics?: Record<string, unknown> | null
+          termination_reason?: 'elimination' | 'mutual_elimination' | 'stalemate' | 'timeout' | null
+          elapsed_ticks?: number | null
           version?: number
         }
         Update: {
@@ -445,6 +449,8 @@ export interface Database {
           initial_state?: Record<string, unknown>
           log?: Record<string, unknown>
           metrics?: Record<string, unknown> | null
+          termination_reason?: 'elimination' | 'mutual_elimination' | 'stalemate' | 'timeout' | null
+          elapsed_ticks?: number | null
           version?: number
           created_at?: string
         }

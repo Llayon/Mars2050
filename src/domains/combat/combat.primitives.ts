@@ -18,7 +18,8 @@ export type HazardKind = 'napalm' | 'radiation' | 'emp_field' | 'acid' | 'emp' |
 export interface UnitStanceConfig { mode: 'siege' | 'entrenched'; deployTicks: number; rangeMultiplier?: number; cooldownMultiplier?: number; speedMultiplier?: number }
 export interface BurrowConfig { damageReduction: number; regenPercentPerTick?: number; emergeAttackMult?: number; emergeAoeRadiusAdd?: number }
 export interface UnitModeSwitchConfig { trigger: 'while_moving'; startMode?: MobilityMode; groundForAction?: boolean; airSpeedMultiplier?: number; groundSpeedMultiplier?: number }
-export interface StatusEffect { type: StatusType; duration: number; value?: number; sourceUnitId?: string; stackKey?: string; controlMode?: HackControlMode }
+export interface StatusEffect { type: StatusType; duration: number; value?: number; sourceUnitId?: string; stackKey?: string; controlMode?: HackControlMode; tickInterval?: number }
+export interface RuntimeStatusEffect extends StatusEffect { tickInterval: number; nextTickIn: number }
 export interface TargetMark { sourceUnitId: string; duration: number; damageMultiplier?: number; sharedDamage?: boolean; squadWide?: boolean; executeThreshold?: number; focusPriority?: number }
 export type TargetMarkConfig = Omit<TargetMark, 'sourceUnitId'>
 export type PercentHpDamageBasis = 'max' | 'current'

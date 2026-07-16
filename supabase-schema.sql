@@ -363,6 +363,8 @@ create table if not exists public.battle_snapshots (
   initial_state jsonb not null,
   log jsonb not null,
   metrics jsonb,
+  termination_reason text check (termination_reason in ('elimination', 'mutual_elimination', 'stalemate', 'timeout')),
+  elapsed_ticks integer check (elapsed_ticks >= 0),
   version integer not null default 1,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );

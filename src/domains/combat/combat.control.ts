@@ -4,6 +4,7 @@ import type { BattleAction } from './combat.actions'
 import type { ControlBeamConfig, HackControlMode, SimUnit } from './combat.sim.types'
 import { canTargetUnit } from './combat.targeting-rules'
 import { getDistance } from './combat.utils'
+import { applyHealing } from './combat.healing'
 
 const HACK_CONTROL_LOCK_TICKS = 6
 const HACK_CONTROL_PRIORITY: Record<HackControlMode, number> = {
@@ -150,9 +151,7 @@ function applyControlProgress(source: SimUnit, target: SimUnit, config: ControlB
   clearMeleeEngagementSlot(target)
   actions.push({ unitId: source.id, type: 'control_convert', targetId: target.id })
   if (config.healConvertedToMax && target.hp < target.maxHp) {
-    const heal = target.maxHp - target.hp
-    target.hp = target.maxHp
-    actions.push({ unitId: source.id, type: 'heal', targetId: target.id, damage: heal })
+    applyHealing(source.id, target, target.maxHp - target.hp, actions)
   }
 }
 

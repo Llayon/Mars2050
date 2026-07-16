@@ -40,6 +40,7 @@ export function tryDeployMine(
     radius: config.radius,
     damagePerTick: config.damage,
     duration: config.duration,
+    sourceUnitId: unit.id,
   })
   actions.push({
     unitId: unit.id,

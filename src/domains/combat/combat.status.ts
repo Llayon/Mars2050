@@ -1,9 +1,11 @@
 import type { BattleAction } from './combat.actions'
-import type { SimUnit, StatusEffect, StatusType } from './combat.sim.types'
+import type { RuntimeStatusEffect, SimUnit, StatusEffect, StatusType } from './combat.sim.types'
 import { breakBurrowOnReveal } from './combat.burrow'
 import { breakControlProgress, chooseHackControlMode, isHackActionBlocked, normalizeHackControlMode } from './combat.control'
 import { getStanceRangeMultiplier } from './combat.stance'
 import { breakMovementStealthOnReveal } from './combat.stealth'
+export { tickStatuses } from './combat.status-scheduler'
+export type { StatusTickContext } from './combat.status-scheduler'
 
 const ACTION_BLOCKING_STATUSES = new Set<StatusType>(['emp'])
 export const HARMFUL_STATUS_TYPES: StatusType[] = [
@@ -55,23 +57,6 @@ export function applyStatus(target: SimUnit, effect: StatusEffect, actions?: Bat
 function isStatusBlockedByImmunity(target: SimUnit, type: StatusType): boolean {
   if (type === 'status_immunity') return false
   return HARMFUL_STATUS_TYPES.includes(type) && hasStatus(target, 'status_immunity')
-}
-
-/**
- * Ticks unit statuses once and emits deterministic expire actions.
- * @param unit Unit whose statuses should tick
- * @param actions Replay action sink
- */
-export function tickStatuses(unit: SimUnit, actions: BattleAction[]): void {
-  for (let i = unit.statusEffects.length - 1; i >= 0; i--) {
-    const effect = unit.statusEffects[i]
-    effect.duration--
-    if (effect.duration > 0 && effect.duration % 10 === 0) applyPeriodicStatusEffect(unit, effect, actions)
-    if (effect.duration > 0) continue
-
-    unit.statusEffects.splice(i, 1)
-    actions.push({ unitId: unit.id, type: 'status_expire', statusType: effect.type })
-  }
 }
 
 /**
@@ -190,12 +175,16 @@ export function getEffectiveActionRange(unit: SimUnit): number {
   return Math.max(0, effectiveRange * Math.max(0.05, 1 - Math.min(0.95, reduction)))
 }
 
-function normalizeStatus(effect: StatusEffect): StatusEffect {
+function normalizeStatus(effect: StatusEffect): RuntimeStatusEffect {
+  const periodic = ['burn', 'acid', 'degeneration', 'regen'].includes(effect.type)
+  const tickInterval = periodic ? Math.max(1, Math.floor(effect.tickInterval ?? 10)) : 0
   return {
     ...effect,
     duration: Math.max(0, Math.floor(effect.duration)),
     value: effect.value === undefined ? undefined : Number(effect.value),
     controlMode: normalizeHackControlMode(effect.controlMode),
+    tickInterval,
+    nextTickIn: tickInterval,
   }
 }
 
@@ -214,36 +203,4 @@ function chooseStatusValue(type: StatusType, current?: number, next?: number): n
   if (next === undefined) return current
   if (type === 'slow' && current <= 1 && next <= 1) return Math.min(current, next)
   return Math.max(current, next)
-}
-
-function applyPeriodicStatusEffect(unit: SimUnit, effect: StatusEffect, actions: BattleAction[]): void {
-  if (unit.isDead) return
-
-  if (effect.type === 'regen') {
-    const heal = Math.max(1, Math.floor(effect.value ?? unit.maxHp * 0.02))
-    unit.hp = Math.min(unit.maxHp, unit.hp + heal)
-    actions.push({ unitId: effect.sourceUnitId ?? effect.type, type: 'status_tick', targetId: unit.id, damage: heal, statusType: effect.type })
-    return
-  }
-
-  const damage = getPeriodicStatusDamage(unit, effect)
-  if (damage <= 0) return
-
-  unit.hp -= damage
-  actions.push({ unitId: effect.sourceUnitId ?? effect.type, type: 'status_tick', targetId: unit.id, damage, statusType: effect.type })
-
-  if (unit.hp <= 0 && !unit.isDead) {
-    unit.isDead = true
-    actions.push({ unitId: unit.id, type: 'die' })
-  }
-}
-
-function getPeriodicStatusDamage(unit: SimUnit, effect: StatusEffect): number {
-  if (effect.type === 'burn') return Math.max(1, Math.floor(effect.value ?? 3))
-  if (effect.type === 'acid') return Math.max(1, Math.floor(effect.value ?? unit.maxHp * 0.02))
-  if (effect.type === 'degeneration') {
-    if (effect.value === undefined) return Math.max(1, Math.floor(unit.maxHp * 0.03))
-    return Math.max(1, Math.floor(effect.value <= 1 ? unit.maxHp * effect.value : effect.value))
-  }
-  return 0
 }

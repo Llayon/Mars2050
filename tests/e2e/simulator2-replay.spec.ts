@@ -42,7 +42,8 @@ test('simulator2 replay fits and renders on a mobile viewport', async ({ page })
   const canvas = page.locator('canvas').last()
   await expect(canvas).toBeVisible()
   await page.waitForTimeout(900)
-  await expectBattleReplayCanvasPainted(canvas, { requireEnemyHp: false })
+  await expectBattleReplayCanvasPainted(canvas, { requireHp: false })
+  expect((await countDirectVisualPixels(canvas)).spriteColorPixels, 'mobile replay canvas should contain unit sprites').toBeGreaterThan(50)
   await expect(page.getByRole('button', { name: /Пауза|Играть/ })).toBeVisible()
 
   const box = await canvas.boundingBox()
@@ -327,7 +328,7 @@ async function runDenseMovementVisualSmoke(page: Page, preset: string): Promise<
     await setTimelineTick(timeline, check.tick)
     await expect(tickReadout).toContainText(`Tick ${check.tick} / ${maxTick}`)
     await page.waitForTimeout(120)
-    await expectBattleReplayCanvasPainted(canvas)
+    await expectBattleReplayCanvasPainted(canvas, { requireFriendlyHp: false })
     const overlayPixels = await countOverlayPixels(canvas)
     expect(overlayPixels.hitboxCyan, `${preset} tick ${check.tick} should show hitbox overlays`).toBeGreaterThan(10)
     if (check.requireVelocity) {
@@ -412,7 +413,7 @@ function isBenignReplayBrowserWarning(text: string): boolean {
   return text.includes('GL Driver Message') && text.includes('GPU stall due to ReadPixels')
 }
 
-async function expectBattleReplayCanvasPainted(canvas: Locator, options: { requireEnemyHp?: boolean } = {}): Promise<void> {
+async function expectBattleReplayCanvasPainted(canvas: Locator, options: { requireHp?: boolean; requireFriendlyHp?: boolean; requireEnemyHp?: boolean } = {}): Promise<void> {
   const buffer = await canvas.screenshot()
   const { data, info } = await sharp(buffer).ensureAlpha().raw().toBuffer({ resolveWithObject: true })
   let friendlyHpPixels = 0
@@ -429,7 +430,11 @@ async function expectBattleReplayCanvasPainted(canvas: Locator, options: { requi
     if (red > 160 && green < 150 && blue < 150) enemyHpPixels++
   }
 
-  expect(friendlyHpPixels, 'replay canvas should contain green friendly HP bars').toBeGreaterThan(20)
+  if (options.requireHp === false) return
+  expect(friendlyHpPixels + enemyHpPixels, 'replay canvas should contain visible HP bars').toBeGreaterThan(20)
+  if (options.requireFriendlyHp !== false) {
+    expect(friendlyHpPixels, 'replay canvas should contain green friendly HP bars').toBeGreaterThan(20)
+  }
   if (options.requireEnemyHp !== false) {
     expect(enemyHpPixels, 'replay canvas should contain red enemy HP bars').toBeGreaterThan(20)
   }

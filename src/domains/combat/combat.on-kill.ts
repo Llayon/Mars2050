@@ -2,6 +2,7 @@ import type { BattleAction } from './combat.actions'
 import { UNIT_TYPES } from './combat.config'
 import { applyStatus } from './combat.status'
 import type { SimUnit } from './combat.sim.types'
+import { applyHealing } from './combat.healing'
 
 /**
  * Applies deterministic effects when a unit confirms a kill.
@@ -24,12 +25,7 @@ export function applyOnKillEffects(killer: SimUnit, victim: SimUnit, actions: Ba
 
   if (effect.healPercent) {
     const healAmount = Math.max(1, Math.floor(killer.maxHp * effect.healPercent))
-    const before = killer.hp
-    killer.hp = Math.min(killer.maxHp, killer.hp + healAmount)
-    const actualHeal = killer.hp - before
-    if (actualHeal > 0) {
-      actions.push({ unitId: killer.id, type: 'heal', targetId: killer.id, damage: actualHeal })
-    }
+    applyHealing(killer.id, killer, healAmount, actions)
   }
 
   if (effect.status) {

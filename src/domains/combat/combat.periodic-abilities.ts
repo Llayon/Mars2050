@@ -6,6 +6,7 @@ import { spawnCombatUnits } from './combat.spawn'
 import { applyStatus, cleanseStatuses } from './combat.status'
 import type { PeriodicAbilityPayload, RuntimePeriodicAbility, SimHazard, SimUnit } from './combat.sim.types'
 import { getDistance, PRNG } from './combat.utils'
+import { applyHealing } from './combat.healing'
 
 export interface PeriodicAbilityContext {
   units: SimUnit[]
@@ -161,8 +162,6 @@ function getHealTargets(source: SimUnit, target: SimUnit, payload: Extract<Perio
 
 function applyPeriodicHeal(source: SimUnit, target: SimUnit, payload: Extract<PeriodicAbilityPayload, { kind: 'heal' }>, actions: BattleAction[]): void {
   const amount = payload.amount !== undefined ? Math.max(0, Math.floor(payload.amount)) : Math.max(1, Math.floor(target.maxHp * (payload.percentMaxHp ?? 0)))
-  const before = target.hp
-  target.hp = Math.min(target.maxHp, target.hp + amount)
-  if (target.hp > before) actions.push({ unitId: source.id, type: 'heal', targetId: target.id, damage: target.hp - before })
+  applyHealing(source.id, target, amount, actions)
   if (payload.cleanse) cleanseStatuses(target, payload.cleanse, actions)
 }

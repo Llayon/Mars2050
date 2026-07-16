@@ -3,6 +3,7 @@ import { getSizeRadius } from './combat.utils'
 
 const MAX_MELEE_SLOTS = 12
 const MIN_MELEE_SLOTS = 4
+const MELEE_ARC_QUANTA = 24
 const MELEE_SLOT_TOLERANCE = 12
 
 export interface MeleeEngagementState {
@@ -28,7 +29,7 @@ export function reserveMeleeEngagementSlot(unit: SimUnit, target: SimUnit, state
   }
 
   if (!state.slotsByTarget[target.id]) state.slotsByTarget[target.id] = {}
-  state.slotsByTarget[target.id][slot] = unit.id
+  reserveSector(state.slotsByTarget[target.id], slot, getMeleeSectorSpan(unit, target), unit.id)
   unit.meleeSlotTargetId = target.id
   unit.meleeSlotIndex = slot
   unit.meleeWaitingTargetId = undefined
@@ -55,13 +56,13 @@ export function getMeleeEngagementPoint(unit: SimUnit, target: SimUnit): { x: nu
     return { x: target.x, y: target.y }
   }
 
-  const slotCount = getMeleeSlotCount(unit, target)
-  if (unit.meleeSlotIndex < 0 || unit.meleeSlotIndex >= slotCount) return { x: target.x, y: target.y }
+  if (unit.meleeSlotIndex < 0 || unit.meleeSlotIndex >= MELEE_ARC_QUANTA) return { x: target.x, y: target.y }
 
   const targetRadius = getSizeRadius(target.size)
   const unitRadius = getSizeRadius(unit.size)
   const approachRadius = targetRadius + unitRadius + Math.max(2, unit.range * 0.65)
-  const angle = ((unit.meleeSlotIndex + 0.5) / slotCount) * Math.PI * 2
+  const span = getMeleeSectorSpan(unit, target)
+  const angle = ((unit.meleeSlotIndex + span / 2) / MELEE_ARC_QUANTA) * Math.PI * 2
   return {
     x: target.x + Math.cos(angle) * approachRadius,
     y: target.y + Math.sin(angle) * approachRadius,
@@ -89,38 +90,52 @@ export function getMeleeSlotCount(unit: SimUnit, target: SimUnit): number {
   const unitRadius = getSizeRadius(unit.size)
   const engagementRadius = targetRadius + unitRadius
   const rawSlots = Math.floor((2 * Math.PI * engagementRadius) / (unitRadius * 2))
-  return Math.max(MIN_MELEE_SLOTS, Math.min(MAX_MELEE_SLOTS, rawSlots))
+  const desiredSlots = Math.max(MIN_MELEE_SLOTS, Math.min(MAX_MELEE_SLOTS, rawSlots))
+  return Math.floor(MELEE_ARC_QUANTA / Math.ceil(MELEE_ARC_QUANTA / desiredSlots))
 }
 
 function findMeleeSlot(unit: SimUnit, target: SimUnit, state: MeleeEngagementState): number | null {
-  const slotCount = getMeleeSlotCount(unit, target)
-  const assigned = getAssignedSlot(unit, target, state, slotCount)
+  const span = getMeleeSectorSpan(unit, target)
+  const assigned = getAssignedSlot(unit, target, state, span)
   if (assigned !== null) return assigned
 
-  const preferred = getPreferredMeleeSlot(unit, target, slotCount)
+  const preferred = getPreferredMeleeSlot(unit, target, span)
   const slots = state.slotsByTarget[target.id] ?? {}
 
-  for (let offset = 0; offset < slotCount; offset++) {
-    const clockwise = (preferred + offset) % slotCount
-    if (isSlotAvailable(slots, clockwise, unit)) return clockwise
+  for (let offset = 0; offset < MELEE_ARC_QUANTA; offset++) {
+    const clockwise = (preferred + offset) % MELEE_ARC_QUANTA
+    if (isSectorAvailable(slots, clockwise, span, unit)) return clockwise
 
-    const counterClockwise = (preferred - offset + slotCount) % slotCount
-    if (isSlotAvailable(slots, counterClockwise, unit)) return counterClockwise
+    const counterClockwise = (preferred - offset + MELEE_ARC_QUANTA) % MELEE_ARC_QUANTA
+    if (isSectorAvailable(slots, counterClockwise, span, unit)) return counterClockwise
   }
 
   return null
 }
 
-function getAssignedSlot(unit: SimUnit, target: SimUnit, state: MeleeEngagementState, slotCount: number): number | null {
+function getAssignedSlot(unit: SimUnit, target: SimUnit, state: MeleeEngagementState, span: number): number | null {
   if (unit.meleeSlotTargetId !== target.id || unit.meleeSlotIndex === undefined) return null
-  if (unit.meleeSlotIndex < 0 || unit.meleeSlotIndex >= slotCount) return null
+  if (unit.meleeSlotIndex < 0 || unit.meleeSlotIndex >= MELEE_ARC_QUANTA) return null
 
   const slots = state.slotsByTarget[target.id] ?? {}
-  return isSlotAvailable(slots, unit.meleeSlotIndex, unit) ? unit.meleeSlotIndex : null
+  return isSectorAvailable(slots, unit.meleeSlotIndex, span, unit) ? unit.meleeSlotIndex : null
 }
 
-function isSlotAvailable(slots: Record<number, string>, slot: number, unit: SimUnit): boolean {
-  return !slots[slot] || slots[slot] === unit.id
+function isSectorAvailable(slots: Record<number, string>, start: number, span: number, unit: SimUnit): boolean {
+  for (let offset = 0; offset < span; offset++) {
+    const occupant = slots[(start + offset) % MELEE_ARC_QUANTA]
+    if (occupant && occupant !== unit.id) return false
+  }
+  return true
+}
+
+function reserveSector(slots: Record<number, string>, start: number, span: number, unitId: string): void {
+  for (let offset = 0; offset < span; offset++) slots[(start + offset) % MELEE_ARC_QUANTA] = unitId
+}
+
+function getMeleeSectorSpan(unit: SimUnit, target: SimUnit): number {
+  const slotCount = getMeleeSlotCount(unit, target)
+  return Math.max(1, Math.ceil(MELEE_ARC_QUANTA / slotCount))
 }
 
 function clearAssignedSlot(unit: SimUnit): void {
@@ -139,10 +154,11 @@ function getMeleeWaitingPoint(unit: SimUnit, target: SimUnit): { x: number; y: n
   }
 }
 
-function getPreferredMeleeSlot(unit: SimUnit, target: SimUnit, slotCount: number): number {
+function getPreferredMeleeSlot(unit: SimUnit, target: SimUnit, span: number): number {
   const angle = Math.atan2(unit.y - target.y, unit.x - target.x)
   const normalized = angle < 0 ? angle + Math.PI * 2 : angle
-  return Math.floor((normalized / (Math.PI * 2)) * slotCount) % slotCount
+  const centerQuantum = Math.floor((normalized / (Math.PI * 2)) * MELEE_ARC_QUANTA)
+  return (centerQuantum - Math.floor(span / 2) + MELEE_ARC_QUANTA) % MELEE_ARC_QUANTA
 }
 
 function isMeleeUnit(unit: SimUnit): boolean {

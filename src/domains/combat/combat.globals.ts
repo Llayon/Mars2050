@@ -3,6 +3,7 @@ import type { SimUnit, SimHazard, Team } from './combat.sim.types';
 import { PRNG, FIELD_WIDTH, FIELD_HEIGHT } from './combat.utils';
 import { GlobalUpgradeConfig } from './combat.upgrades';
 import { applyStatus } from './combat.status';
+import { applyHealing } from './combat.healing';
 
 export function processGlobals(
   tick: number,
@@ -61,8 +62,7 @@ export function processGlobals(
         } else if (upg.type === 'mass_heal') {
            const allies = units.filter(u => !u.isDead && u.team === team)
            allies.forEach(a => {
-              a.hp = Math.min(a.maxHp, a.hp + upg.value)
-              actions.push({ unitId: 'system', type: 'heal', targetId: a.id, damage: upg.value })
+              applyHealing('system', a, upg.value, actions)
            })
         }
      }

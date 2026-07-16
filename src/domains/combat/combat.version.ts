@@ -1,0 +1,2 @@
+export const CURRENT_SIMULATION_VERSION = 2
+

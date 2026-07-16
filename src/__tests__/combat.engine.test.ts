@@ -108,11 +108,16 @@ describe('combat.engine', () => {
     UPGRADES['god_mode'] = godModeUpgrade
 
     try {
-      const result = simulateBattle(attackerUnits, defenderUnits)
+      const result = simulateBattle(attackerUnits, defenderUnits, 123, [], [], [], { maxTicks: 5, timeoutPolicy: 'draw' })
 
-      // Reached MAX_TICKS with both teams still represented.
       expect(result.winner).toBe('draw')
+      expect(result.terminationReason).toBe('timeout')
+      expect(result.elapsedTicks).toBe(5)
       expect(result.survivors.length).toBeGreaterThan(0)
+
+      const held = simulateBattle(attackerUnits, defenderUnits, 123, [], [], [], { maxTicks: 5, timeoutPolicy: 'defender_holds' })
+      expect(held.winner).toBe('defender')
+      expect(held.terminationReason).toBe('timeout')
     } finally {
       if (tempUpgrade === undefined) delete UPGRADES['god_mode'];
       else UPGRADES['god_mode'] = tempUpgrade;

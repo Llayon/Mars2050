@@ -1,6 +1,7 @@
 import type { BattleTick } from '@/domains/combat/combat.types'
 import type { UnitRow, SimUnit, Obstacle } from '@/domains/combat/combat.types'
 import type { CombatMetrics } from '@/domains/combat/combat.metrics'
+import type { TerminationReason } from '@/domains/combat/combat.result'
 
 export interface AttackResult {
   success: boolean
@@ -16,6 +17,8 @@ export interface AttackResult {
   seed?: number
   metrics?: CombatMetrics
   simulationVersion?: number
+  terminationReason?: TerminationReason
+  elapsedTicks?: number
   cooldownRemaining?: number
 }
 

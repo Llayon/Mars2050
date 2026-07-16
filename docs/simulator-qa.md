@@ -216,6 +216,18 @@ unit upgrade panel.
 | `burrow_change` | Юнит вошел в underground movement state, вышел перед атакой или был раскрыт reveal. |
 | `hazard_spawn` + `statusType: smoke` | Smoke field появился как suppression-зона без прямого урона; accuracy loss виден через меньший `damage`. |
 
+## ECS, Timeout, And Spatial Diagnostics
+
+- Simulation version 2 runs the custom ECS by default. Use
+  `compareCombatEngines()` in tests for action-by-action legacy shadow checks.
+- `/simulator2` keeps the 400-tick `draw` policy. PvP uses 1000 ticks and
+  `defender_holds`; every result includes `terminationReason` and `elapsedTicks`.
+- Enable `{ profile: true }` to inspect `queryCount`, `candidateCount`, and
+  `maxCandidates` for local spatial queries.
+- Mirror gates swap teams and Y coordinates and should be run after initiative,
+  targeting, formation, or mixed-size melee-sector changes.
+- See `docs/combat-ecs.md` for the phase order and damage contract.
+
 ## Known Limitations
 - Анимации выстрелов интерполируются и могут не всегда точно совпадать с физическим тиком попадания на скорости 4.0x.
 - Оверлеи векторов рисуются только если юнит перемещается (deltaX/deltaY > 0).

@@ -112,7 +112,7 @@ describe('P0 combat role scenarios', () => {
     const hologram = simulateScenario(findScenario('p0_hologram_decoy_pressure'))
     const hologramBaseline = simulateScenario(findScenario('p0_hologram_baseline'))
     expect(countActions(hologram, 'spawn'), 'p0_hologram_decoy_pressure').toBeGreaterThan(0)
-    expect(countActions(hologram, 'spawn'), 'p0_hologram_decoy_pressure').toBeLessThanOrEqual(8)
+    expect(peakActiveSummons(hologram), 'p0_hologram_decoy_pressure').toBeLessThanOrEqual(2)
     expect(hologram.metrics?.damageTakenByUnitType.marine ?? 0, 'hologram should draw fire away from real marines')
       .toBeLessThan(hologramBaseline.metrics?.damageTakenByUnitType.marine ?? 0)
   }, 30000)
@@ -142,6 +142,17 @@ function flattenActions(result: BattleResult): BattleAction[] {
 
 function countActions(result: BattleResult, type: BattleActionType): number {
   return flattenActions(result).filter(action => action.type === type).length
+}
+
+function peakActiveSummons(result: BattleResult): number {
+  const active = new Set<string>()
+  let peak = 0
+  for (const action of flattenActions(result)) {
+    if (action.type === 'spawn' && action.targetId) active.add(action.targetId)
+    if (action.type === 'die') active.delete(action.unitId)
+    peak = Math.max(peak, active.size)
+  }
+  return peak
 }
 
 function countStatusApplications(result: BattleResult, statusType: string): number {

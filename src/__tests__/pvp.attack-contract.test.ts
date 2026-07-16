@@ -27,6 +27,7 @@ const { mockSimulateBattle } = vi.hoisted(() => ({
       damageByUnitType: { marine: 10 },
       damageTakenByUnitType: { marine: 10 },
       healingDoneByUnitType: {},
+      killsByUnitType: { marine: 1 },
       overkillDamage: 0,
     },
     survivors: [
@@ -34,6 +35,9 @@ const { mockSimulateBattle } = vi.hoisted(() => ({
       { id: 'u2', hp: 0, maxHp: 50, type: 'marine', team: 'defender' as const },
     ],
     seed: 12345,
+    terminationReason: 'elimination',
+    elapsedTicks: 2,
+    simulationVersion: 2,
   })),
 }))
 vi.mock('@/domains/pvp/pvp.replay', async () => {
@@ -121,9 +125,11 @@ describe('executeAttack — contract: simulationVersion in snapshot', () => {
 
     expect(result.success).toBe(true)
     expect(mockPersist).toHaveBeenCalledTimes(1)
-    const snapshotArg = mockPersist.mock.calls[0]![1] as { simulationVersion: number }
+    const snapshotArg = mockPersist.mock.calls[0]![1] as { simulationVersion: number; terminationReason: string; elapsedTicks: number }
     expect(typeof snapshotArg.simulationVersion).toBe('number')
     expect(snapshotArg.simulationVersion).toBeGreaterThanOrEqual(1)
+    expect(snapshotArg.terminationReason).toBe('elimination')
+    expect(snapshotArg.elapsedTicks).toBe(2)
   })
 
   it('returns simulationVersion in the response', async () => {
@@ -133,6 +139,8 @@ describe('executeAttack — contract: simulationVersion in snapshot', () => {
     )
     expect(result.simulationVersion).toBeDefined()
     expect(result.simulationVersion).toBeGreaterThanOrEqual(1)
+    expect(result.terminationReason).toBe('elimination')
+    expect(result.elapsedTicks).toBe(2)
   })
 
   it('persists and returns combat metrics with the battle snapshot', async () => {
@@ -160,7 +168,13 @@ describe('executeAttack — contract: simulationVersion in snapshot', () => {
       [],
       [],
       [],
-      { trackMetrics: true }
+      expect.objectContaining({
+        engine: 'ecs',
+        maxTicks: 1000,
+        profile: true,
+        timeoutPolicy: 'defender_holds',
+        trackMetrics: true,
+      })
     )
   })
 })

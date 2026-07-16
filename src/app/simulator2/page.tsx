@@ -117,7 +117,7 @@ export default function SimulatorPage() {
       const { simulateBattle } = await import('@/domains/combat/combat.engine')
       const aClone = structuredClone(attackerUnits) as UnitRow[]
       const dClone = structuredClone(defenderUnits) as UnitRow[]
-      const result = simulateBattle(aClone, dClone, seed, obstacles, mode === 'qa' ? attackerGlobals : [], mode === 'qa' ? defenderGlobals : [])
+      const result = simulateBattle(aClone, dClone, seed, obstacles, mode === 'qa' ? attackerGlobals : [], mode === 'qa' ? defenderGlobals : [], { engine: 'ecs', maxTicks: 400, timeoutPolicy: 'draw' })
       setReplayData({ attackerUnits: aClone, defenderUnits: dClone, logs: result.logs, winner: result.winner, initialState: result.initialState, obstacles: result.obstacles })
     } catch (err) {
       setSimulatorError(err instanceof Error ? err.message : 'Не удалось запустить симуляцию.')

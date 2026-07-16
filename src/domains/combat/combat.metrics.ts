@@ -2,9 +2,14 @@ import type { BattleAction } from './combat.actions'
 import type { SimUnit } from './combat.sim.types'
 import { isMeleeEngagementReady } from './combat.melee-engagement'
 import { collectOverlapMetrics } from './combat.metrics-overlap'
+import type { CombatEngineKind, TimeoutPolicy } from './combat.result'
 
 export interface BattleSimulationOptions {
   trackMetrics?: boolean
+  engine?: CombatEngineKind
+  maxTicks?: number
+  timeoutPolicy?: TimeoutPolicy
+  profile?: boolean
 }
 
 export interface CombatMetrics {
@@ -25,6 +30,7 @@ export interface CombatMetrics {
   damageByUnitType: Record<string, number>
   damageTakenByUnitType: Record<string, number>
   healingDoneByUnitType: Record<string, number>
+  killsByUnitType: Record<string, number>
   overkillDamage: number
 }
 
@@ -40,6 +46,7 @@ export interface CombatMetricsCollector {
   damageByUnitType: Record<string, number>
   damageTakenByUnitType: Record<string, number>
   healingDoneByUnitType: Record<string, number>
+  killsByUnitType: Record<string, number>
   targetSwitchesByUnitType: Record<string, number>
   stuckTicksByUnitType: Record<string, number>
   overkillDamage: number
@@ -64,6 +71,7 @@ export function createCombatMetrics(units: SimUnit[]): CombatMetricsCollector {
     damageByUnitType: {},
     damageTakenByUnitType: {},
     healingDoneByUnitType: {},
+    killsByUnitType: {},
     targetSwitchesByUnitType: {},
     stuckTicksByUnitType: {},
     overkillDamage: 0,
@@ -88,7 +96,7 @@ export function recordCombatActions(
     if (action.type === 'attack') recordAttackIntent(metrics, tick, action, unitById)
     if (action.type === 'damage' || action.type === 'damage_share') recordDamageAction(metrics, action, unitById)
     if (action.type === 'heal') recordHealAction(metrics, action, unitById)
-    if (action.type === 'die') metrics.hpByUnitId.set(action.unitId, 0)
+    if (action.type === 'die') recordDeathAction(metrics, action, unitById)
   }
 }
 
@@ -120,6 +128,7 @@ export function finalizeCombatMetrics(
     damageByUnitType: metrics.damageByUnitType,
     damageTakenByUnitType: metrics.damageTakenByUnitType,
     healingDoneByUnitType: metrics.healingDoneByUnitType,
+    killsByUnitType: metrics.killsByUnitType,
     overkillDamage: metrics.overkillDamage,
   }
 }
@@ -148,7 +157,7 @@ function recordDamageAction(
   unitById: Map<string, SimUnit>
 ): void {
   const damage = Math.max(0, action.damage ?? 0)
-  const attackerType = unitById.get(action.unitId)?.type ?? 'unknown'
+  const attackerType = unitById.get(action.sourceUnitId ?? action.unitId)?.type ?? 'unknown'
   metrics.damageByUnitType[attackerType] = (metrics.damageByUnitType[attackerType] ?? 0) + damage
 
   if (!action.targetId || damage <= 0) return
@@ -165,10 +174,17 @@ function recordHealAction(
   unitById: Map<string, SimUnit>
 ): void {
   if (!action.targetId) return
-  const healerType = unitById.get(action.unitId)?.type ?? 'unknown'
+  const healerType = unitById.get(action.sourceUnitId ?? action.unitId)?.type ?? 'unknown'
   metrics.healingDoneByUnitType[healerType] = (metrics.healingDoneByUnitType[healerType] ?? 0) + Math.max(0, action.damage ?? 0)
   const previousHp = metrics.hpByUnitId.get(action.targetId) ?? 0
   metrics.hpByUnitId.set(action.targetId, previousHp + Math.max(0, action.damage ?? 0))
+}
+
+function recordDeathAction(metrics: CombatMetricsCollector, action: BattleAction, unitById: Map<string, SimUnit>): void {
+  metrics.hpByUnitId.set(action.unitId, 0)
+  if (!action.sourceUnitId) return
+  const killerType = unitById.get(action.sourceUnitId)?.type ?? 'unknown'
+  metrics.killsByUnitType[killerType] = (metrics.killsByUnitType[killerType] ?? 0) + 1
 }
 
 function recordTargetSwitches(metrics: CombatMetricsCollector, units: SimUnit[]): void {

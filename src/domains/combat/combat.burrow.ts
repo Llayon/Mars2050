@@ -1,5 +1,6 @@
 import type { BattleAction } from './combat.actions'
 import type { SimUnit } from './combat.sim.types'
+import { applyHealing } from './combat.healing'
 
 /**
  * Toggles deterministic burrow state for movement-based underground units.
@@ -23,9 +24,8 @@ export function processBurrowRegeneration(units: SimUnit[], actions: BattleActio
   const ordered = units.filter(unit => !unit.isDead && unit.isBurrowed && unit.burrowConfig?.regenPercentPerTick).sort((a, b) => a.id.localeCompare(b.id))
   for (const unit of ordered) {
     const regen = Math.max(1, Math.floor(unit.maxHp * (unit.burrowConfig?.regenPercentPerTick ?? 0)))
-    const before = unit.hp
-    unit.hp = Math.min(unit.maxHp, unit.hp + regen)
-    if (unit.hp > before) actions.push({ unitId: unit.id, type: 'burrow_regen', targetId: unit.id, damage: unit.hp - before })
+    const actualHeal = applyHealing(unit.id, unit, regen)
+    if (actualHeal > 0) actions.push({ unitId: unit.id, type: 'burrow_regen', targetId: unit.id, damage: actualHeal })
   }
 }
 

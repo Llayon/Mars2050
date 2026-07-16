@@ -1,7 +1,9 @@
 import type { SimHazard, SimUnit, Team } from './combat.sim.types'
 import { canTargetUnit } from './combat.targeting-rules'
+import type { TerminationReason, TimeoutPolicy } from './combat.result'
 
 export type BattleWinner = Team | 'draw'
+export interface BattleOutcome { winner: BattleWinner; reason: TerminationReason }
 
 export function getTerminalBattleWinner(
   units: SimUnit[],
@@ -9,19 +11,28 @@ export function getTerminalBattleWinner(
   pendingAttackers: boolean,
   pendingDefenders: boolean,
 ): BattleWinner | null {
+  return getTerminalBattleOutcome(units, hazards, pendingAttackers, pendingDefenders)?.winner ?? null
+}
+
+export function getTerminalBattleOutcome(
+  units: SimUnit[],
+  hazards: SimHazard[],
+  pendingAttackers: boolean,
+  pendingDefenders: boolean,
+): BattleOutcome | null {
   const attackers = units.filter(unit => !unit.isDead && unit.team === 'attacker')
   const defenders = units.filter(unit => !unit.isDead && unit.team === 'defender')
-  if (attackers.length === 0 && defenders.length === 0) return pendingAttackers || pendingDefenders ? null : 'draw'
-  if (attackers.length === 0) return pendingAttackers ? null : 'defender'
-  if (defenders.length === 0) return pendingDefenders ? null : 'attacker'
+  if (attackers.length === 0 && defenders.length === 0) return pendingAttackers || pendingDefenders ? null : { winner: 'draw', reason: 'mutual_elimination' }
+  if (attackers.length === 0) return pendingAttackers ? null : { winner: 'defender', reason: 'elimination' }
+  if (defenders.length === 0) return pendingDefenders ? null : { winner: 'attacker', reason: 'elimination' }
   if (pendingAttackers || pendingDefenders) return null
   if (hasActiveDamageHazard(hazards)) return null
   if (canTeamDealDamage(attackers, defenders) || canTeamDealDamage(defenders, attackers)) return null
 
   const attackerPower = getOffensivePower(attackers)
   const defenderPower = getOffensivePower(defenders)
-  if (attackerPower === defenderPower) return 'draw'
-  return attackerPower > defenderPower ? 'attacker' : 'defender'
+  if (attackerPower === defenderPower) return { winner: 'draw', reason: 'stalemate' }
+  return { winner: attackerPower > defenderPower ? 'attacker' : 'defender', reason: 'stalemate' }
 }
 
 export function getSurvivorWinner(units: SimUnit[]): BattleWinner {
@@ -29,6 +40,10 @@ export function getSurvivorWinner(units: SimUnit[]): BattleWinner {
   const hasDefenders = units.some(unit => !unit.isDead && unit.team === 'defender')
   if (hasAttackers === hasDefenders) return 'draw'
   return hasAttackers ? 'attacker' : 'defender'
+}
+
+export function getTimeoutOutcome(policy: TimeoutPolicy): BattleOutcome {
+  return { winner: policy === 'defender_holds' ? 'defender' : 'draw', reason: 'timeout' }
 }
 
 function canTeamDealDamage(allies: SimUnit[], enemies: SimUnit[]): boolean {

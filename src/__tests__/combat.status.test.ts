@@ -13,6 +13,7 @@ import {
 } from '@/domains/combat/combat.status'
 import type { SimHazard, SimUnit, Team } from '@/domains/combat/combat.types'
 import { PRNG } from '@/domains/combat/combat.utils'
+import { resolveUnitDeath } from '@/domains/combat/combat.death'
 
 function makeUnit(overrides: Partial<SimUnit> & { id: string; team: Team }): SimUnit {
   return {
@@ -104,16 +105,33 @@ describe('combat.status', () => {
 
   it('applies periodic status damage deterministically', () => {
     const target = makeUnit({ id: 'target', team: 'defender', hp: 2 })
+    const source = makeUnit({ id: 'flame', team: 'attacker' })
     const actions: BattleAction[] = []
     applyStatus(target, { type: 'burn', duration: 11, value: 3, sourceUnitId: 'flame' })
 
-    tickStatuses(target, actions)
+    for (let tick = 0; tick < 10; tick++) {
+      tickStatuses(target, actions, {
+        onUnitDeath: (dead, _sourceId, cause) => resolveUnitDeath(dead, source, cause, { units: [source, target], hazards: [], actions, rng: new PRNG(1) }),
+      })
+    }
 
     expect(target.isDead).toBe(true)
     expect(actions).toEqual([
-      { unitId: 'flame', type: 'status_tick', targetId: 'target', damage: 3, statusType: 'burn' },
-      { unitId: 'target', type: 'die' },
+      { unitId: 'flame', type: 'status_tick', targetId: 'target', statusType: 'burn', value: 3 },
+      { unitId: 'flame', type: 'damage', targetId: 'target', damage: 3, statusType: 'burn', damageKind: 'dot' },
+      { unitId: 'target', type: 'die', sourceUnitId: 'flame', cause: 'burn' },
     ])
+  })
+
+  it('ticks a duration-30 periodic status exactly three times', () => {
+    const target = makeUnit({ id: 'target', team: 'defender' })
+    const actions: BattleAction[] = []
+    applyStatus(target, { type: 'burn', duration: 30, value: 3, sourceUnitId: 'flame' })
+
+    for (let tick = 0; tick < 30; tick++) tickStatuses(target, actions)
+
+    expect(target.hp).toBe(91)
+    expect(actions.filter(action => action.type === 'status_tick')).toHaveLength(3)
   })
 
   it('cleanses only selected status types', () => {

@@ -77,6 +77,6 @@ describe('combat decoys', () => {
     tickModifiersSystem(decoy, 0.1, actions)
 
     expect(decoy.isDead).toBe(true)
-    expect(actions).toEqual([{ unitId: 'decoy', type: 'die' }])
+    expect(actions).toEqual([{ unitId: 'decoy', type: 'die', cause: 'expiration' }])
   })
 })

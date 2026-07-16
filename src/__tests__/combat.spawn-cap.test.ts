@@ -43,7 +43,14 @@ describe('spawn caps', () => {
     expect(processSpawnAction(carrier, target, units, actions, new PRNG(1))).toBe(true)
 
     expect(units).toHaveLength(3)
-    expect(units[2]).toMatchObject({ summonOwnerId: 'carrier', team: 'attacker', type: 'scout_drone' })
+    expect(units[2]).toMatchObject({
+      summonOwnerId: 'carrier',
+      team: 'attacker',
+      type: 'scout_drone',
+      speed: 180,
+      range: 120,
+      markOnHit: { squadWide: true },
+    })
     expect(actions[0]).toMatchObject({ unitId: 'carrier', type: 'spawn', targetId: units[2].id })
   })
 

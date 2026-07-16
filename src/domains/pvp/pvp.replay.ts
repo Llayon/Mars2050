@@ -1,15 +1,10 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { getServerClient } from '@/domains/resource/resource.server'
+import { CURRENT_SIMULATION_VERSION } from '@/domains/combat/combat.version'
+import type { TerminationReason } from '@/domains/combat/combat.result'
 
-/**
- * Snapshot version. Mirrors `CURRENT_SIMULATION_VERSION` in
- * `@/domains/combat/combat.version` — when that file is added to the
- * repository, this import can be replaced with the combat-core constant.
- * Keeping a local copy decouples the persistence layer from the core
- * version file and lets snapshots be saved even when the core file
- * is not yet committed.
- */
-export const SNAPSHOT_VERSION: number = 1
+/** Snapshot version written by the current deterministic combat engine. */
+export const SNAPSHOT_VERSION: number = CURRENT_SIMULATION_VERSION
 
 export interface BattleRow {
   id: string
@@ -26,6 +21,8 @@ export interface BattleSnapshotRow {
   initial_state: Record<string, unknown>
   log: Record<string, unknown>
   metrics: Record<string, unknown> | null
+  termination_reason: TerminationReason | null
+  elapsed_ticks: number | null
   version: number
   created_at: string | null
 }
@@ -55,7 +52,7 @@ export async function loadBattleWithSnapshot(
 
   const { data: snapshot, error: snapError } = await supabase
     .from('battle_snapshots')
-    .select('battle_id, seed, initial_state, log, metrics, version, created_at')
+    .select('battle_id, seed, initial_state, log, metrics, termination_reason, elapsed_ticks, version, created_at')
     .eq('battle_id', battleId)
     .single()
   if (snapError || !snapshot) return null
@@ -135,6 +132,8 @@ export async function persistBattleWithSnapshot(
     log: Record<string, unknown>
     metrics?: Record<string, unknown>
     simulationVersion?: number
+    terminationReason?: TerminationReason
+    elapsedTicks?: number
   }
 ): Promise<string | null> {
   const supabase = getServerClient()
@@ -160,6 +159,8 @@ export async function persistBattleWithSnapshot(
     initial_state: snapshot.initial_state,
     log: snapshot.log,
     metrics: snapshot.metrics ?? null,
+    termination_reason: snapshot.terminationReason ?? null,
+    elapsed_ticks: snapshot.elapsedTicks ?? null,
     version,
   })
   if (snapError) {

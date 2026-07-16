@@ -4,6 +4,7 @@ import { applyStatus, cleanseStatuses, HARMFUL_STATUS_TYPES } from './combat.sta
 import { getEffectiveCombatTags } from './combat.targeting-score'
 import { UPGRADES } from './combat.upgrades'
 import { getDistance } from './combat.utils'
+import type { SpatialHash } from './spatial-hash'
 
 const DEFAULT_AURA_INTERVAL = 10
 
@@ -25,7 +26,7 @@ export function getUnitSupportAuras(baseAuras: SupportAura[] | undefined, upgrad
  * @param units All simulation units
  * @param actions Replay action sink
  */
-export function processSupportAuras(tick: number, units: SimUnit[], actions: BattleAction[]): void {
+export function processSupportAuras(tick: number, units: SimUnit[], actions: BattleAction[], spatialHash?: SpatialHash): void {
   const sources = units
     .filter(unit => !unit.isDead && unit.supportAuras && unit.supportAuras.length > 0)
     .sort((a, b) => a.id.localeCompare(b.id))
@@ -35,7 +36,8 @@ export function processSupportAuras(tick: number, units: SimUnit[], actions: Bat
       const interval = aura.interval ?? DEFAULT_AURA_INTERVAL
       if (interval > 1 && tick % interval !== 0) continue
 
-      const targets = getAuraTargets(source, aura, units)
+      const candidates = spatialHash?.query(source.x, source.y, aura.radius) ?? units
+      const targets = getAuraTargets(source, aura, candidates)
       for (const target of targets) applyAura(source, target, aura, actions)
     }
   }

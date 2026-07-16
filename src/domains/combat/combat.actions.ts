@@ -1,5 +1,7 @@
 import type { Team, SimUnit, Obstacle } from './combat.sim.types'
 import type { CombatMetrics } from './combat.metrics'
+import type { TerminationReason } from './combat.result'
+import type { SpatialQueryProfile } from './spatial-hash'
 
 export const BATTLE_ACTION_TYPES = [
   'move', 'knockback', 'attack', 'heal', 'die', 'spawn', 'hazard_spawn',
@@ -42,6 +44,9 @@ export interface BattleAction {
   hazardId?: string
   radius?: number
   statusType?: string
+  sourceUnitId?: string
+  damageKind?: 'weapon' | 'dot' | 'hazard' | 'true'
+  cause?: string
   controlMode?: string
   stanceMode?: string
   modeState?: string
@@ -61,4 +66,8 @@ export interface BattleResult {
   initialState: SimUnit[]
   obstacles?: Obstacle[]
   metrics?: CombatMetrics
+  terminationReason: TerminationReason
+  elapsedTicks: number
+  simulationVersion: number
+  profile?: SpatialQueryProfile
 }

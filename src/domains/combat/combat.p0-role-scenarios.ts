@@ -40,7 +40,7 @@ export const P0_ROLE_SCENARIOS: CombatP0RoleScenario[] = [
     [row('p0-shield-base-a-missile', 'attacker', 'missile_buggy', 220, 820), row('p0-shield-base-a-artillery', 'attacker', 'artillery_crawler', 340, 860)],
     squads('p0-shield-base-d-marine', 'defender', 'marine', 2, 245, 430, 45)),
   scenario('p0_hologram_decoy_pressure', 'P0: hologram bounded decoy pressure',
-    [row('p0-holo-a-hologram', 'attacker', 'hologram_projector', 250, 650, undefined, ['qa_fast_spawn_cap']), ...squads('p0-holo-a-marine', 'attacker', 'marine', 2, 220, 780, 56)],
+    [row('p0-holo-a-hologram', 'attacker', 'hologram_projector', 250, 800, undefined, ['qa_fast_spawn_cap']), ...squads('p0-holo-a-marine', 'attacker', 'marine', 2, 220, 780, 56)],
     [row('p0-holo-d-railgun', 'defender', 'railgun_walker', 260, 390), row('p0-holo-d-gatling', 'defender', 'gatling_rover', 335, 410)]),
   scenario('p0_hologram_baseline', 'P0 baseline: no hologram decoys',
     squads('p0-holo-base-a-marine', 'attacker', 'marine', 2, 220, 780, 56),

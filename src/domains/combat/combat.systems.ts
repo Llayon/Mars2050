@@ -3,7 +3,7 @@ import type { SimHazard, SimUnit } from './combat.sim.types';
 import { handleDeath, processSpawnAction } from './combat.systems.utils';
 import { getDistance, PRNG, getSizeRadius } from './combat.utils';
 import { isMeleeEngagementReady } from './combat.melee-engagement';
-import { applyStatus, getActionCooldownRecovery, isActionBlockedByStatus, tickStatuses } from './combat.status';
+import { applyStatus, getActionCooldownRecovery, isActionBlockedByStatus } from './combat.status';
 import { applyCombatDamage } from './combat.damage';
 import { tryDeployMine } from './combat.minefield';
 import { tryDeploySmoke } from './combat.smoke';
@@ -26,13 +26,15 @@ import { syncBurrowState } from './combat.burrow';
 import { syncModeForAction } from './combat.mode';
 import { recordAttackTrigger, recordDamageTakenTrigger, tickTriggerCooldowns } from './combat.triggers';
 import { breakMovementStealthOnAttack } from './combat.stealth';
+import { applyHealing } from './combat.healing';
+import type { SpatialHash } from './spatial-hash';
 
-export function tickModifiersSystem(unit: SimUnit, dt: number, actions: BattleAction[]) {
+export function tickModifiersSystem(unit: SimUnit, dt: number, actions: BattleAction[], onExpire?: (unit: SimUnit) => void) {
   if (unit.actionCooldown > 0) unit.actionCooldown = Math.max(0, unit.actionCooldown - getActionCooldownRecovery(unit));
   if ((unit.projectileInterceptCooldown ?? 0) > 0) unit.projectileInterceptCooldown = Math.max(0, (unit.projectileInterceptCooldown ?? 0) - 1);
-  tickTemporaryUnit(unit, actions); tickStatuses(unit, actions); tickTargetMark(unit, actions); tickTriggerCooldowns(unit);
+  tickTemporaryUnit(unit, actions, onExpire); tickTargetMark(unit, actions); tickTriggerCooldowns(unit);
 }
-export function actionSystem(unit: SimUnit, target: SimUnit, units: SimUnit[], hazards: SimHazard[], actions: BattleAction[], rng: PRNG, tick = 0): boolean {
+export function actionSystem(unit: SimUnit, target: SimUnit, units: SimUnit[], hazards: SimHazard[], actions: BattleAction[], rng: PRNG, tick = 0, spatialHash?: SpatialHash): boolean {
   const dist = getDistance(unit.x, unit.y, target.x, target.y);
   const targetRadius = getSizeRadius(target.size);
   const myRadius = getSizeRadius(unit.size);
@@ -59,9 +61,7 @@ export function actionSystem(unit: SimUnit, target: SimUnit, units: SimUnit[], h
   if (tryDeployMine(unit, target, hazards, actions, rng) || tryDeploySmoke(unit, target, hazards, actions, rng)) return true;
   if (unit.attackType === 'spawn') return processSpawnAction(unit, target, units, actions, rng);
   if (unit.attackType === 'heal') {
-     const healAmount = unit.attack;
-     target.hp = Math.min(target.maxHp, target.hp + healAmount);
-     actions.push({ unitId: unit.id, type: 'heal', targetId: target.id, damage: healAmount });
+     applyHealing(unit.id, target, unit.attack, actions);
   } else {
      const numShots = unit.multishot || 1;
      for (let shot = 0; shot < numShots; shot++) {
@@ -79,7 +79,7 @@ export function actionSystem(unit: SimUnit, target: SimUnit, units: SimUnit[], h
            target,
            primaryDamage,
            actions,
-           createDamageContext(unit, units, actions, hazards, rng, true, isProjectileInterceptableAttack(unit))
+           createDamageContext(unit, units, actions, hazards, rng, true, isProjectileInterceptableAttack(unit), true, spatialHash)
          );
 
          unit.hasAttacked = true; breakMovementStealthOnAttack(unit, actions);
@@ -104,18 +104,19 @@ export function actionSystem(unit: SimUnit, target: SimUnit, units: SimUnit[], h
          if (target.hp <= 0 && !target.isDead) {
              handleDeath(target, unit, units, actions, hazards, rng);
          }
-         processLinePierce(unit, target, units, actions, hazards, rng);
-         processConeAttack(unit, target, units, actions, hazards, rng);
-         processBeamAttack(unit, target, units, actions, hazards, rng);
-         processBarrageAttack(unit, target, units, actions, hazards, rng);
-         processChainAttack(unit, target, units, actions, hazards, rng);
-         processSplitFireAttack(unit, target, units, actions, hazards, rng);
-         processSideWeaponAttack(unit, target, units, actions, hazards, rng);
+         const weaponCandidates = localUnits(spatialHash, unit.x, unit.y, unit.range + 240, units);
+         processLinePierce(unit, target, units, actions, hazards, rng, weaponCandidates);
+         processConeAttack(unit, target, units, actions, hazards, rng, weaponCandidates);
+         processBeamAttack(unit, target, units, actions, hazards, rng, weaponCandidates);
+         processBarrageAttack(unit, target, units, actions, hazards, rng, spatialHash);
+         processChainAttack(unit, target, units, actions, hazards, rng, localUnits(spatialHash, target.x, target.y, unit.range + 240, units));
+         processSplitFireAttack(unit, target, units, actions, hazards, rng, weaponCandidates);
+         processSideWeaponAttack(unit, target, units, actions, hazards, rng, weaponCandidates);
          processConditionalAttack(unit, target, units, actions, hazards, rng);
          processSweepAttack(unit, target, units, actions, hazards, rng);
          if (unit.attackType === 'aoe' && (unit.aoeRadius || emergeStrike?.aoeRadiusAdd)) {
              const radius = (unit.aoeRadius ?? 0) + (emergeStrike?.aoeRadiusAdd ?? 0);
-             const splashEnemies = units.filter(e => !e.isDead && e.team !== unit.team && e.id !== target.id);
+             const splashEnemies = localUnits(spatialHash, target.x, target.y, radius, units).filter(e => !e.isDead && e.team !== unit.team && e.id !== target.id);
              for (const e of splashEnemies) {
                  if (getDistance(target.x, target.y, e.x, e.y) <= radius) {
                      emitAttackIntent(unit, e, actions);
@@ -145,12 +146,11 @@ function applyOnHitStatuses(unit: SimUnit, target: SimUnit, actions: BattleActio
 function emitAttackIntent(unit: SimUnit, target: SimUnit, actions: BattleAction[]): void {
   actions.push({ unitId: unit.id, type: 'attack', targetId: target.id });
 }
-
-function processLinePierce(unit: SimUnit, target: SimUnit, units: SimUnit[], actions: BattleAction[], hazards: SimHazard[], rng: PRNG): void {
+function processLinePierce(unit: SimUnit, target: SimUnit, units: SimUnit[], actions: BattleAction[], hazards: SimHazard[], rng: PRNG, candidates: SimUnit[] = units): void {
   const multiplier = getLinePierceDamageMultiplier(unit);
   if (!multiplier) return;
 
-  for (const secondary of getLinePierceTargets(unit, target, units)) {
+  for (const secondary of getLinePierceTargets(unit, target, candidates)) {
     emitAttackIntent(unit, secondary, actions);
     applyCombatDamage(unit, secondary, Math.floor(unit.attack * multiplier), actions, createDamageContext(unit, units, actions, hazards, rng, false, false));
     applyOnHitStatuses(unit, secondary, actions);
@@ -159,35 +159,36 @@ function processLinePierce(unit: SimUnit, target: SimUnit, units: SimUnit[], act
   }
 }
 
-function processConeAttack(unit: SimUnit, target: SimUnit, units: SimUnit[], actions: BattleAction[], hazards: SimHazard[], rng: PRNG): void {
+function localUnits(spatialHash: SpatialHash | undefined, x: number, y: number, radius: number, fallback: SimUnit[]): SimUnit[] {
+  return spatialHash?.query(x, y, Math.max(0, radius)) ?? fallback
+}
+function processConeAttack(unit: SimUnit, target: SimUnit, units: SimUnit[], actions: BattleAction[], hazards: SimHazard[], rng: PRNG, candidates: SimUnit[] = units): void {
   const multiplier = getConeDamageMultiplier(unit);
   if (!multiplier) return;
 
   actions.push({ unitId: unit.id, type: 'cone_attack', targetId: target.id, radius: unit.range, value: multiplier });
-  applySecondaryWeaponTargets(unit, getConeTargets(unit, target, units), multiplier, units, actions, hazards, rng);
+  applySecondaryWeaponTargets(unit, getConeTargets(unit, target, candidates), multiplier, units, actions, hazards, rng);
 }
-
-function processBeamAttack(unit: SimUnit, target: SimUnit, units: SimUnit[], actions: BattleAction[], hazards: SimHazard[], rng: PRNG): void {
+function processBeamAttack(unit: SimUnit, target: SimUnit, units: SimUnit[], actions: BattleAction[], hazards: SimHazard[], rng: PRNG, candidates: SimUnit[] = units): void {
   const multiplier = getBeamDamageMultiplier(unit);
   if (!multiplier) return;
 
   actions.push({ unitId: unit.id, type: 'beam_tick', targetId: target.id, radius: unit.range, value: multiplier });
-  applySecondaryWeaponTargets(unit, getBeamTargets(unit, target, units), multiplier, units, actions, hazards, rng);
+  applySecondaryWeaponTargets(unit, getBeamTargets(unit, target, candidates), multiplier, units, actions, hazards, rng);
 }
-
-function processBarrageAttack(unit: SimUnit, target: SimUnit, units: SimUnit[], actions: BattleAction[], hazards: SimHazard[], rng: PRNG): void {
+function processBarrageAttack(unit: SimUnit, target: SimUnit, units: SimUnit[], actions: BattleAction[], hazards: SimHazard[], rng: PRNG, spatialHash?: SpatialHash): void {
   const multiplier = getBarrageDamageMultiplier(unit);
   if (!multiplier) return;
 
   for (const impact of getBarrageImpacts(unit, target)) {
     actions.push({ unitId: unit.id, type: 'barrage_marker', targetId: target.id, toX: impact.x, toY: impact.y, radius: impact.radius, value: impact.index });
-    applySecondaryWeaponTargets(unit, getBarrageTargets(unit, impact, units), multiplier, units, actions, hazards, rng, true);
+    const candidates = localUnits(spatialHash, impact.x, impact.y, impact.radius, units)
+    applySecondaryWeaponTargets(unit, getBarrageTargets(unit, impact, candidates), multiplier, units, actions, hazards, rng, true);
     actions.push({ unitId: unit.id, type: 'barrage_impact', targetId: target.id, toX: impact.x, toY: impact.y, radius: impact.radius, value: impact.index });
   }
 }
-
-function processChainAttack(unit: SimUnit, target: SimUnit, units: SimUnit[], actions: BattleAction[], hazards: SimHazard[], rng: PRNG): void {
-  for (const hit of getChainTargets(unit, target, units)) {
+function processChainAttack(unit: SimUnit, target: SimUnit, units: SimUnit[], actions: BattleAction[], hazards: SimHazard[], rng: PRNG, candidates: SimUnit[] = units): void {
+  for (const hit of getChainTargets(unit, target, candidates)) {
     actions.push({ unitId: unit.id, type: 'chain_jump', targetId: hit.target.id, value: hit.jump });
     applyCombatDamage(unit, hit.target, Math.floor(unit.attack * hit.multiplier), actions, createDamageContext(unit, units, actions, hazards, rng, false, false));
     applyOnHitStatuses(unit, hit.target, actions);
@@ -196,11 +197,11 @@ function processChainAttack(unit: SimUnit, target: SimUnit, units: SimUnit[], ac
   }
 }
 
-function processSplitFireAttack(unit: SimUnit, target: SimUnit, units: SimUnit[], actions: BattleAction[], hazards: SimHazard[], rng: PRNG): void {
+function processSplitFireAttack(unit: SimUnit, target: SimUnit, units: SimUnit[], actions: BattleAction[], hazards: SimHazard[], rng: PRNG, candidates: SimUnit[] = units): void {
   const multiplier = getSplitFireDamageMultiplier(unit);
   if (!multiplier) return;
 
-  for (const secondary of getSplitFireTargets(unit, target, units)) {
+  for (const secondary of getSplitFireTargets(unit, target, candidates)) {
     actions.push({ unitId: unit.id, type: 'split_fire', targetId: secondary.id });
     applyCombatDamage(unit, secondary, Math.floor(unit.attack * multiplier), actions, createDamageContext(unit, units, actions, hazards, rng, false, false, allowsSplitFireMinimumDamage(unit)));
     applyOnHitStatuses(unit, secondary, actions);
@@ -209,11 +210,11 @@ function processSplitFireAttack(unit: SimUnit, target: SimUnit, units: SimUnit[]
   }
 }
 
-function processSideWeaponAttack(unit: SimUnit, target: SimUnit, units: SimUnit[], actions: BattleAction[], hazards: SimHazard[], rng: PRNG): void {
+function processSideWeaponAttack(unit: SimUnit, target: SimUnit, units: SimUnit[], actions: BattleAction[], hazards: SimHazard[], rng: PRNG, candidates: SimUnit[] = units): void {
   const damage = getSideWeaponDamage(unit);
   if (damage <= 0) return;
 
-  for (const secondary of getSideWeaponTargets(unit, target, units)) {
+  for (const secondary of getSideWeaponTargets(unit, target, candidates)) {
     actions.push({ unitId: unit.id, type: 'side_weapon_attack', targetId: secondary.id });
     applyCombatDamage(unit, secondary, damage, actions, createDamageContext(unit, units, actions, hazards, rng, false, false));
     if (secondary.hp <= 0 && !secondary.isDead) handleDeath(secondary, unit, units, actions, hazards, rng);
@@ -230,19 +231,19 @@ function applySecondaryWeaponTargets(unit: SimUnit, targets: SimUnit[], multipli
   }
 }
 
-function createDamageContext(unit: SimUnit, units: SimUnit[], actions: BattleAction[], hazards: SimHazard[], rng: PRNG, allowPercentHpDamage = true, interceptable = false, allowMinimumDamage = true) {
-  return { units, hazards, allowPercentHpDamage, interceptable, allowMinimumDamage, onUnitDeath: (target: SimUnit) => handleDeath(target, unit, units, actions, hazards, rng) };
+function createDamageContext(unit: SimUnit, units: SimUnit[], actions: BattleAction[], hazards: SimHazard[], rng: PRNG, allowPercentHpDamage = true, interceptable = false, allowMinimumDamage = true, spatialHash?: SpatialHash) {
+  return { units, hazards, allowPercentHpDamage, interceptable, allowMinimumDamage, spatialHash, onUnitDeath: (target: SimUnit) => handleDeath(target, unit, units, actions, hazards, rng) };
 }
 
 function createTriggerContext(unit: SimUnit, units: SimUnit[], actions: BattleAction[], hazards: SimHazard[], rng: PRNG, tick: number) {
   return { units, hazards, actions, rng, tick, onUnitDeath: (target: SimUnit, source: SimUnit) => handleDeath(target, source ?? unit, units, actions, hazards, rng) };
 }
 
-function tickTemporaryUnit(unit: SimUnit, actions: BattleAction[]): void {
+function tickTemporaryUnit(unit: SimUnit, actions: BattleAction[], onExpire?: (unit: SimUnit) => void): void {
   if (!unit.isTemporary || unit.temporaryDuration === undefined || unit.isDead) return;
   unit.temporaryDuration--;
   if (unit.temporaryDuration > 0) return;
 
-  unit.isDead = true;
-  actions.push({ unitId: unit.id, type: 'die' });
+  if (onExpire) onExpire(unit)
+  else { unit.isDead = true; actions.push({ unitId: unit.id, type: 'die', cause: 'expiration' }) }
 }

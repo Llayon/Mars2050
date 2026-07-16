@@ -12,6 +12,8 @@ import { tryInterceptProjectile } from './combat.projectile-defense'
 import { getRankDamageMultiplier } from './combat.rank-scaling'
 import { getStatusValue } from './combat.status'
 import { applySummonCounterDamage } from './combat.summon-counter'
+import { applyHealing } from './combat.healing'
+import type { SpatialHash } from './spatial-hash'
 export interface CombatDamageResult {
   damage: number
   sharedDamage: number
@@ -34,6 +36,7 @@ export interface CombatDamageContext {
   allowPercentHpDamage?: boolean
   allowMinimumDamage?: boolean
   interceptable?: boolean
+  spatialHash?: SpatialHash
 }
 /**
  * Applies attack damage through defense, status modifiers, shields, execute, and lifesteal.
@@ -54,14 +57,13 @@ export function applyCombatDamage(
   const boost = getStatusValue(attacker, 'attack_boost') ?? 0
   const boostMult = boost >= 1 ? boost : 1 + boost
   const baseRaw = boost > 0 ? Math.max(0, Math.floor(Math.floor(rawDamage) * Math.min(5, boostMult))) : Math.floor(rawDamage)
-
   if (baseRaw <= 0) return createDamageResult()
   const percentHpDamage = context.allowPercentHpDamage === false ? 0 : getPercentHpDamage(attacker, target)
   const raw = baseRaw + percentHpDamage
   if (percentHpDamage > 0 && actions) {
     actions.push({ unitId: attacker.id, type: 'percent_hp_damage', targetId: target.id, value: percentHpDamage })
   }
-  if (context.interceptable && context.units && tryInterceptProjectile(attacker, target, raw, context.units, actions)) {
+  if (context.interceptable && context.units && tryInterceptProjectile(attacker, target, raw, context.units, actions, context.spatialHash)) {
     return createDamageResult({ blockedDamage: raw, intercepted: true })
   }
   const defense = getEffectiveDefense(attacker, target)
@@ -105,8 +107,8 @@ export function applyCombatDamage(
   if (executeThreshold > 0 && target.hp <= executeThreshold) damage = target.hp
   let lifesteal = 0
   if (attacker.lifestealMult && damage + shareResult.sharedDamage > 0) {
-    lifesteal = Math.floor((damage + shareResult.sharedDamage) * attacker.lifestealMult)
-    attacker.hp = Math.min(attacker.maxHp, attacker.hp + lifesteal)
+    const requestedLifesteal = Math.floor((damage + shareResult.sharedDamage) * attacker.lifestealMult)
+    lifesteal = applyHealing(attacker.id, attacker, requestedLifesteal)
   }
   if (damage > 0) target.hp -= damage
 
@@ -123,7 +125,6 @@ export function applyCombatDamage(
   emitDamageActions(attacker, target, result, actions)
   return result
 }
-
 function getEffectiveDefense(attacker: SimUnit, target: SimUnit): number {
   const armorBroken = getStatusValue(target, 'armor_broken') ?? 0
   const defenseReduction = armorBroken <= 1 ? target.defense * armorBroken : armorBroken

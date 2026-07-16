@@ -85,4 +85,14 @@ describe('combat support targeting', () => {
     expect(rover.hp).toBe(60)
     expect(actions).toEqual([{ unitId: 'engineer', type: 'heal', targetId: 'rover', damage: 10 }])
   })
+
+  it('records only actual healing when a target is almost full', () => {
+    const medic = makeUnit({ id: 'medic', team: 'attacker', type: 'medic', x: 0, y: 0, attack: 34, attackType: 'heal' })
+    const marine = makeUnit({ id: 'marine', team: 'attacker', type: 'marine', x: 80, y: 0, hp: 98 })
+    const actions: BattleAction[] = []
+
+    expect(actionSystem(medic, marine, [medic, marine], [], actions, new PRNG(1))).toBe(true)
+    expect(marine.hp).toBe(100)
+    expect(actions).toEqual([{ unitId: 'medic', type: 'heal', targetId: 'marine', damage: 2 }])
+  })
 })

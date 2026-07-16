@@ -58,9 +58,15 @@ export function expectReplayHas(result: BattleResult, actionTypes: BattleActionT
 }
 
 export function expectSpawnBounded(result: BattleResult, max: number, label = 'scenario'): void {
-  const spawnCount = countActions(result, 'spawn')
-  expect(spawnCount, label).toBeGreaterThan(0)
-  expect(spawnCount, label).toBeLessThanOrEqual(max)
+  const activeSummons = new Set<string>()
+  let peakActiveSummons = 0
+  for (const action of flattenActions(result)) {
+    if (action.type === 'spawn' && action.targetId) activeSummons.add(action.targetId)
+    if (action.type === 'die') activeSummons.delete(action.unitId)
+    peakActiveSummons = Math.max(peakActiveSummons, activeSummons.size)
+  }
+  expect(countActions(result, 'spawn'), label).toBeGreaterThan(0)
+  expect(peakActiveSummons, label).toBeLessThanOrEqual(max)
 }
 
 export function expectMetricBounds(result: BattleResult, bounds: MetricBounds, label = 'scenario'): void {

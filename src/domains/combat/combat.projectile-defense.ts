@@ -3,8 +3,10 @@ import { UNIT_TYPES } from './combat.config'
 import type { SimUnit } from './combat.sim.types'
 import type { UnitTypeKey } from './combat.types'
 import { getDistance } from './combat.utils'
+import type { SpatialHash } from './spatial-hash'
 
 const MIN_INTERCEPTABLE_RANGE = 80
+const MAX_INTERCEPT_QUERY_RADIUS = 400
 
 /**
  * Checks whether an attack should be eligible for projectile interception.
@@ -35,9 +37,11 @@ export function tryInterceptProjectile(
   target: SimUnit,
   rawDamage: number,
   units: SimUnit[],
-  actions?: BattleAction[]
+  actions?: BattleAction[],
+  spatialHash?: SpatialHash,
 ): boolean {
-  const interceptor = getProjectileInterceptor(target, rawDamage, units)
+  const candidates = spatialHash?.query(target.x, target.y, MAX_INTERCEPT_QUERY_RADIUS) ?? units
+  const interceptor = getProjectileInterceptor(target, rawDamage, candidates)
   if (!interceptor) return false
 
   interceptor.projectileInterceptCooldown = interceptor.projectileInterceptCooldownMax ?? 0

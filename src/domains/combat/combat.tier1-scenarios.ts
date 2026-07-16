@@ -74,7 +74,7 @@ export const TIER1_BALANCE_SCENARIOS: CombatBalanceScenario[] = [
     [row('t1-jet-flank-a', 'attacker', 'jetpack_trooper', 520, 900), ...squads('t1-jet-flank-screen-a', 'attacker', 'marine', 2, 160, 900, 120)],
     [row('t1-jet-flank-sniper-d', 'defender', 'sniper', 520, 300), ...squads('t1-jet-flank-screen-d', 'defender', 'marine', 2, 160, 300, 120)]),
   scenario('tier1_jetpack_center_lane', 'Tier 1: jetpack forced through center',
-    [row('t1-jet-center-a', 'attacker', 'jetpack_trooper', 160, 900), ...squads('t1-jet-center-screen-a', 'attacker', 'marine', 2, 160, 900, 120)],
+    [row('t1-jet-center-a', 'attacker', 'jetpack_trooper', 340, 900), ...squads('t1-jet-center-screen-a', 'attacker', 'marine', 2, 160, 900, 120)],
     [row('t1-jet-center-sniper-d', 'defender', 'sniper', 520, 300), ...squads('t1-jet-center-screen-d', 'defender', 'marine', 2, 160, 300, 120)]),
   scenario('tier1_jetpack_vs_shock_screen', 'Tier 1: jetpack stopped after landing',
     squads('t1-jet-shock-a', 'attacker', 'jetpack_trooper', 3, 180, 900, 120),

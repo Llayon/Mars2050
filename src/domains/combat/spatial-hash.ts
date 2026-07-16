@@ -1,11 +1,18 @@
 import type { SimUnit } from './combat.sim.types'
 import { TILE_SIZE } from './combat.utils'
 
+export interface SpatialQueryProfile {
+  queryCount: number
+  candidateCount: number
+  maxCandidates: number
+}
+
 export class SpatialHash {
   private readonly cells = new Map<string, SimUnit[]>()
   private readonly order = new Map<SimUnit, number>()
   private readonly unitCells = new Map<SimUnit, string>()
   private nextOrder = 0
+  private readonly profile: SpatialQueryProfile = { queryCount: 0, candidateCount: 0, maxCandidates: 0 }
 
   constructor(private readonly cellSize = TILE_SIZE) {}
 
@@ -74,7 +81,14 @@ export class SpatialHash {
       }
     }
 
+    this.profile.queryCount++
+    this.profile.candidateCount += found.length
+    this.profile.maxCandidates = Math.max(this.profile.maxCandidates, found.length)
     return found.sort((a, b) => (this.order.get(a) ?? 0) - (this.order.get(b) ?? 0))
+  }
+
+  getProfile(): SpatialQueryProfile {
+    return { ...this.profile }
   }
 
   private getCellKey(x: number, y: number): string {
