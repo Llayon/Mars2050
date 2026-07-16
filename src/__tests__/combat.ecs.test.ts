@@ -42,6 +42,24 @@ describe('combat ECS shadow engine', () => {
     expect(world.getEntityId('second')).toBe(1)
   })
 
+  it('registers hazards as separate ECS entities and reconciles expiration', () => {
+    const world = new CombatWorld()
+    world.hazards.push({
+      id: 'mine-1', team: 'attacker', type: 'mine', x: 10, y: 20,
+      radius: 30, damagePerTick: 12, duration: 5,
+    })
+
+    const entityId = world.getEntityId('mine-1')
+    expect(entityId).toBe(0)
+    expect(world.stores.entityMeta.get(entityId!)).toEqual({ kind: 'hazard', externalId: 'mine-1' })
+    expect(world.getHazard(entityId!)).toMatchObject({ type: 'mine', duration: 5 })
+    expect(world.snapshot()).toEqual([])
+
+    world.hazards.splice(0, 1)
+    world.reconcileHazards()
+    expect(world.stores.hazard.has(entityId!)).toBe(false)
+  })
+
   it('clones nested loadout state and resets transient statuses', () => {
     const unit = createRuntimeUnitFromConfig({ id: 'source', team: 'attacker', type: 'officer', x: 10, y: 20, currentAngle: 0 })!
     unit.statusEffects.push({ type: 'burn', duration: 30, tickInterval: 10, nextTickIn: 10 })

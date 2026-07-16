@@ -1,6 +1,5 @@
 import { MAX_TICKS } from './combat.config'
 import { GLOBAL_UPGRADES, type GlobalUpgradeConfig } from './combat.upgrades'
-import { processHazards } from './combat.hazards'
 import { processSpawnerLogic } from './combat.spawner'
 import { processPostHazardPrimitives, processPreActionPrimitives } from './combat.tick-primitives'
 import type { UnitRow, BattleAction, BattleTick, BattleResult } from './combat.types'
@@ -28,7 +27,7 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
   const timeoutPolicy = options.timeoutPolicy ?? 'draw'
   const ecsRuntime = options.engine === 'legacy' ? undefined : createEcsCombatRuntime()
   const runtime = ecsRuntime ?? createLegacyCombatRuntime()
-  const units: SimUnit[] = runtime.units, hazards: SimHazard[] = [], activeGlobals: { team: Team, upg: GlobalUpgradeConfig }[] = []
+  const units: SimUnit[] = runtime.units, hazards: SimHazard[] = runtime.hazards, activeGlobals: { team: Team, upg: GlobalUpgradeConfig }[] = []
   attackerGlobals.forEach(id => { if (GLOBAL_UPGRADES[id]) activeGlobals.push({ team: 'attacker', upg: GLOBAL_UPGRADES[id] }) })
   defenderGlobals.forEach(id => { if (GLOBAL_UPGRADES[id]) activeGlobals.push({ team: 'defender', upg: GLOBAL_UPGRADES[id] }) })
   const obstacles: Obstacle[] = providedObstacles || generateObstacles(seed);
@@ -39,11 +38,27 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
   const initialState = runtime.snapshotUnits()
   const metrics = options.trackMetrics ? createCombatMetrics(units) : undefined
 
+  if (ecsRuntime) {
+    const resources = ecsRuntime.world.resources
+    resources.set('clock', { tick: 0, dt, maxTicks, timeoutPolicy })
+    resources.set('rng', rng)
+    resources.set('actions', [])
+    resources.set('obstacles', obstacles)
+    resources.set('flowField', flowFieldMap)
+    resources.set('spatial', spatialHash)
+    resources.set('globals', activeGlobals)
+    resources.set('metrics', metrics)
+  }
+
   const logs: BattleTick[] = []
   let tick = 0, resolvedOutcome: BattleOutcome | null = null
 
   while (tick < maxTicks) {
     const actions: BattleAction[] = []
+    if (ecsRuntime) {
+      ecsRuntime.world.resources.require('clock').tick = tick
+      ecsRuntime.world.resources.set('actions', actions)
+    }
     spatialHash.clear();
     for (const unit of units) {
       if (!unit.isDead) spatialHash.insert(unit);
@@ -91,7 +106,7 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
       }
     }
 
-    processHazards(hazards, units, actions, resolveEnvironmentalDeath, spatialHash);
+    runtime.runHazardPhase(actions, resolveEnvironmentalDeath, spatialHash);
     processPostHazardPrimitives(units, triggerContext);
     applyDepenetration(units, actions);
     if (metrics) { recordCombatActions(metrics, tick, actions, units); recordCombatTick(metrics, units) }

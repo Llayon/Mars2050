@@ -3,6 +3,7 @@ import type { SimHazard } from '../combat.sim.types'
 import type { CombatRuntime, RuntimeDeathHandler } from '../combat.runtime'
 import { CombatWorld } from './combat-world'
 import { getEcsTerminalOutcome, getEcsTurnOrder, runModifierSystem, runStatusSystem } from './systems'
+import { processHazards } from '../combat.hazards'
 
 const MODIFIER_COMPONENTS = ['vitality', 'combat', 'defense', 'statusControl', 'lifecycle'] as const
 const TICK_READ_COMPONENTS = ['identity', 'transform', 'vitality', 'combat', 'weapon', 'targeting', 'statusControl', 'support', 'lifecycle'] as const
@@ -17,6 +18,7 @@ export function createEcsCombatRuntime(): EcsCombatRuntime {
   return {
     world,
     units: world.roster,
+    hazards: world.hazards,
     snapshotUnits: () => { world.syncAllToComponents(); return world.snapshot() },
     getSurvivors: () => {
       world.syncAllToComponents()
@@ -56,6 +58,10 @@ export function createEcsCombatRuntime(): EcsCombatRuntime {
         }
       })
       world.syncAllComponentsFromStore(STATUS_WRITE_COMPONENTS)
+    },
+    runHazardPhase(actions, onUnitDeath, spatialHash): void {
+      processHazards(world.hazards, world.roster, actions, onUnitDeath, spatialHash)
+      world.reconcileHazards()
     },
     getTerminalOutcome(hazards: SimHazard[], pendingAttackers: boolean, pendingDefenders: boolean) {
       return getEcsTerminalOutcome(world, hazards, pendingAttackers, pendingDefenders)

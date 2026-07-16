@@ -1,14 +1,14 @@
-import type { SimUnit } from '../combat.sim.types'
+import type { SimHazard, SimUnit } from '../combat.sim.types'
 import { ComponentStore } from './component-store'
 
-export type ComponentName =
+export type UnitComponentName =
   | 'identity' | 'transform' | 'vitality' | 'combat' | 'weapon'
   | 'targeting' | 'movement' | 'statusControl' | 'defense'
-  | 'support' | 'lifecycle' | 'mechanics'
+  | 'support' | 'lifecycle'
 
-export type ComponentData = Partial<SimUnit>
+export type ComponentName = 'entityMeta' | UnitComponentName | 'hazard'
 
-export const COMPONENT_FIELDS: Record<Exclude<ComponentName, 'mechanics'>, readonly (keyof SimUnit)[]> = {
+export const COMPONENT_FIELDS = {
   identity: ['id', 'team', 'type', 'rank', 'squadId', 'summonOwnerId', 'summonSourceId'],
   transform: ['x', 'y', 'velocity', 'currentAngle', 'initialAngle', 'offsetX', 'offsetY', 'size', 'isFlying'],
   vitality: ['hp', 'maxHp', 'shield', 'maxShield', 'isDead', 'resurrectOnce', 'isTemporary', 'temporaryDuration', 'reassemblyConfig', 'reassemblyState', 'reassemblyTriggersUsed'],
@@ -20,6 +20,33 @@ export const COMPONENT_FIELDS: Record<Exclude<ComponentName, 'mechanics'>, reado
   defense: ['flatDamageBlock', 'shieldHitBlock', 'shieldHitBlockCharges', 'reactiveArmorCharges', 'reactiveArmorBlock', 'damageShareRadius', 'damageShareRatio', 'damageShareMaxTargets', 'projectileInterceptRadius', 'projectileInterceptCooldownMax', 'projectileInterceptCooldown', 'projectileInterceptMaxDamage'],
   support: ['supportAuras', 'periodicAbilities', 'fieldEffect', 'formationModifiers'],
   lifecycle: ['triggerEffects', 'statGrowth', 'attackCharge', 'spawnerConfig', 'replicateOnKill', 'onDeathPuddle'],
+} as const satisfies Record<UnitComponentName, readonly (keyof SimUnit)[]>
+
+type ComponentFrom<Name extends UnitComponentName> = Pick<SimUnit, typeof COMPONENT_FIELDS[Name][number]>
+
+export interface EntityMetaComponent {
+  kind: 'unit' | 'hazard'
+  externalId: string
+}
+
+export interface CombatComponentMap {
+  entityMeta: EntityMetaComponent
+  identity: ComponentFrom<'identity'>
+  transform: ComponentFrom<'transform'>
+  vitality: ComponentFrom<'vitality'>
+  combat: ComponentFrom<'combat'>
+  weapon: ComponentFrom<'weapon'>
+  targeting: ComponentFrom<'targeting'>
+  movement: ComponentFrom<'movement'>
+  statusControl: ComponentFrom<'statusControl'>
+  defense: ComponentFrom<'defense'>
+  support: ComponentFrom<'support'>
+  lifecycle: ComponentFrom<'lifecycle'>
+  hazard: SimHazard
+}
+
+export type CombatComponentStores = {
+  [Name in ComponentName]: ComponentStore<CombatComponentMap[Name]>
 }
 
 export const FIELD_COMPONENT = new Map<keyof SimUnit, ComponentName>(
@@ -28,11 +55,20 @@ export const FIELD_COMPONENT = new Map<keyof SimUnit, ComponentName>(
   ),
 )
 
-export function createComponentStores(): Record<ComponentName, ComponentStore<ComponentData>> {
+export function createComponentStores(): CombatComponentStores {
   return {
-    identity: new ComponentStore(), transform: new ComponentStore(), vitality: new ComponentStore(),
-    combat: new ComponentStore(), weapon: new ComponentStore(), targeting: new ComponentStore(),
-    movement: new ComponentStore(), statusControl: new ComponentStore(), defense: new ComponentStore(),
-    support: new ComponentStore(), lifecycle: new ComponentStore(), mechanics: new ComponentStore(),
+    entityMeta: new ComponentStore<CombatComponentMap['entityMeta']>(),
+    identity: new ComponentStore<CombatComponentMap['identity']>(),
+    transform: new ComponentStore<CombatComponentMap['transform']>(),
+    vitality: new ComponentStore<CombatComponentMap['vitality']>(),
+    combat: new ComponentStore<CombatComponentMap['combat']>(),
+    weapon: new ComponentStore<CombatComponentMap['weapon']>(),
+    targeting: new ComponentStore<CombatComponentMap['targeting']>(),
+    movement: new ComponentStore<CombatComponentMap['movement']>(),
+    statusControl: new ComponentStore<CombatComponentMap['statusControl']>(),
+    defense: new ComponentStore<CombatComponentMap['defense']>(),
+    support: new ComponentStore<CombatComponentMap['support']>(),
+    lifecycle: new ComponentStore<CombatComponentMap['lifecycle']>(),
+    hazard: new ComponentStore<CombatComponentMap['hazard']>(),
   }
 }

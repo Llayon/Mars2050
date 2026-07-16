@@ -1,4 +1,5 @@
 export * from './combat-components'
+export * from './combat-resources'
 export * from './entity'
 export * from './combat-world'
 export * from './component-store'
