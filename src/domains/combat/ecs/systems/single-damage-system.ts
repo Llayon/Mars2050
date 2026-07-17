@@ -11,6 +11,7 @@ import { canResolveSimpleEcsDeath, resolveSimpleEcsDeath } from './death-system'
 import { getEcsShareRecipients } from './damage-sharing-system'
 import { applyEcsPrimaryDamageModifiers } from './primary-damage-modifier-system'
 import { applyEcsOnHitEffects } from './on-hit-system'
+import { applyEcsDirectionalGeometry, canUseEcsDirectionalGeometry } from './directional-geometry-system'
 
 const FACING_TOLERANCE = 0.26
 
@@ -35,7 +36,9 @@ export function canUseSimpleSingleDamage(world: CombatWorld, entityId: EntityId,
   ) return false
   if (hasWeaponPrimitives(weapon)) return false
   if (hasLifecyclePrimitives(lifecycle) || hasLifecyclePrimitives(targetLifecycle)) return false
-  return getEcsShareRecipients(world, targetId).every(recipientId => canResolveSimpleEcsDeath(world, recipientId))
+  return getEcsShareRecipients(world, targetId).every(recipientId =>
+    canResolveSimpleEcsDeath(world, recipientId),
+  ) && canUseEcsDirectionalGeometry(world, entityId, targetId)
 }
 
 export function runSimpleSingleDamage(
@@ -63,6 +66,7 @@ export function runSimpleSingleDamage(
   status.hasAttacked = true
   if (!damageResult.intercepted) applyEcsOnHitEffects(world, entityId, targetId, actions)
   resolveSimpleEcsDeath(world, targetId, entityId, actions)
+  if (!damageResult.intercepted) applyEcsDirectionalGeometry(world, entityId, targetId, actions)
   world.syncComponentsFromStore(entityId, ['vitality', 'combat', 'targeting', 'statusControl'])
   world.syncComponentsFromStore(targetId, ['vitality', 'defense'])
   return { acted: true, actorSynchronized: true }
@@ -71,7 +75,6 @@ export function runSimpleSingleDamage(
 function hasWeaponPrimitives(weapon: ReturnType<CombatWorld['stores']['weapon']['require']>): boolean {
   return Boolean(
     weapon.aoeRadius ||
-    weapon.linePierce || weapon.coneAttack || weapon.beamAttack ||
     weapon.barrageAttack || weapon.chainAttack || weapon.splitFire ||
     weapon.sideWeapon || weapon.conditionalAttackMode || weapon.sweepAttack ||
     weapon.emergeStrikePending || weapon.leavesPuddle ||
@@ -90,10 +93,8 @@ function hasUnsupportedStatuses(
   effects: ReturnType<CombatWorld['stores']['statusControl']['require']>['statusEffects'],
   attacker: boolean,
 ): boolean {
-  const supported = attacker
-    ? new Set(['attack_boost', 'output_suppressed', 'accuracy_reduced', 'range_boost', 'range_suppressed', 'haste'])
-    : new Set(['armor_broken', 'vulnerable', 'damage_reduction', 'revealed'])
-  return effects.some(effect => effect.duration > 0 && !supported.has(effect.type))
+  return effects.some(effect => effect.duration > 0 &&
+    (effect.type === 'hacked' || (attacker && effect.type === 'emp')))
 }
 
 function getSuppressedCooldown(

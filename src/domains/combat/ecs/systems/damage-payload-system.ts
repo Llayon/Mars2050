@@ -11,6 +11,7 @@ export function buildEcsDamagePayload(
   targetId: EntityId,
   rawDamage: number,
   actions: BattleAction[],
+  allowPercentHpDamage = true,
 ): number {
   const effects = world.stores.statusControl.require(attackerId).statusEffects
   const boost = getStatusValue(effects, 'attack_boost') ?? 0
@@ -19,7 +20,9 @@ export function buildEcsDamagePayload(
     ? Math.max(0, Math.floor(Math.floor(rawDamage) * Math.min(5, boostMultiplier)))
     : Math.floor(rawDamage)
   if (baseRaw <= 0) return 0
-  const percentDamage = getPercentHpDamage(world, attackerId, targetId)
+  const percentDamage = allowPercentHpDamage
+    ? getPercentHpDamage(world, attackerId, targetId)
+    : 0
   if (percentDamage > 0) {
     actions.push({
       unitId: world.stores.identity.require(attackerId).id,

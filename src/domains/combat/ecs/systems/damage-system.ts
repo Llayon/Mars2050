@@ -25,12 +25,18 @@ interface EcsDamageResult {
   intercepted: boolean
 }
 
+export interface EcsDamageOptions {
+  allowPercentHpDamage?: boolean
+  interceptable?: boolean
+}
+
 export function applyEcsSingleDamage(
   world: CombatWorld,
   attackerId: EntityId,
   targetId: EntityId,
   rawDamage: number,
   actions: BattleAction[],
+  options: EcsDamageOptions = {},
 ): EcsDamageResult {
   const attackerIdentity = world.stores.identity.require(attackerId)
   const targetIdentity = world.stores.identity.require(targetId)
@@ -40,9 +46,17 @@ export function applyEcsSingleDamage(
   const attackerStatus = world.stores.statusControl.require(attackerId)
   const targetStatus = world.stores.statusControl.require(targetId)
   const targetDefense = world.stores.defense.require(targetId)
-  const raw = buildEcsDamagePayload(world, attackerId, targetId, rawDamage, actions)
+  const raw = buildEcsDamagePayload(
+    world,
+    attackerId,
+    targetId,
+    rawDamage,
+    actions,
+    options.allowPercentHpDamage !== false,
+  )
   if (raw <= 0) return createResult()
-  if (tryEcsProjectileInterception(world, attackerId, targetId, raw, actions)) {
+  if (options.interceptable !== false &&
+      tryEcsProjectileInterception(world, attackerId, targetId, raw, actions)) {
     return createResult({ blockedDamage: raw, intercepted: true })
   }
 
