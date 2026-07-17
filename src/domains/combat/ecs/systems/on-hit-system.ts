@@ -4,11 +4,16 @@ import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
 import { applyEcsStatus } from './status-application-system'
 
+export interface EcsOnHitOptions {
+  propagateSquadMark?: boolean
+}
+
 export function applyEcsOnHitEffects(
   world: CombatWorld,
   attackerId: EntityId,
   targetId: EntityId,
   actions: BattleAction[],
+  options: EcsOnHitOptions = {},
 ): void {
   if (world.stores.vitality.require(targetId).isDead) return
   const attacker = world.stores.identity.require(attackerId)
@@ -23,7 +28,16 @@ export function applyEcsOnHitEffects(
   for (const status of weapon.statusOnHit ?? []) {
     applyEcsStatus(world, targetId, { ...status, sourceUnitId: attacker.id }, actions)
   }
-  if (weapon.markOnHit) applyEcsTargetMark(world, attackerId, targetId, weapon.markOnHit, actions)
+  if (weapon.markOnHit) {
+    applyEcsTargetMark(
+      world,
+      attackerId,
+      targetId,
+      weapon.markOnHit,
+      actions,
+      options.propagateSquadMark !== false,
+    )
+  }
   world.syncComponentsFromStore(targetId, ['statusControl', 'movement'])
 }
 
@@ -33,6 +47,7 @@ function applyEcsTargetMark(
   targetId: EntityId,
   mark: TargetMarkConfig,
   actions: BattleAction[],
+  propagateSquad: boolean,
 ): void {
   const attacker = world.stores.identity.require(attackerId)
   const target = world.stores.identity.require(targetId)
@@ -43,7 +58,7 @@ function applyEcsTargetMark(
     targetId: target.id,
     value: mark.damageMultiplier ?? mark.executeThreshold ?? mark.focusPriority,
   })
-  if (!mark.squadWide || !target.squadId) return
+  if (!propagateSquad || !mark.squadWide || !target.squadId) return
   for (const squadmateId of world.query(['identity', 'statusControl'])) {
     if (squadmateId === targetId) continue
     const squadmate = world.stores.identity.require(squadmateId)

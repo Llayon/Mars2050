@@ -12,6 +12,7 @@ import { getEcsShareRecipients } from './damage-sharing-system'
 import { applyEcsPrimaryDamageModifiers } from './primary-damage-modifier-system'
 import { applyEcsOnHitEffects } from './on-hit-system'
 import { applyEcsDirectionalGeometry, canUseEcsDirectionalGeometry } from './directional-geometry-system'
+import { applyEcsRadialAoe, canUseEcsRadialAoe } from './radial-aoe-system'
 
 const FACING_TOLERANCE = 0.26
 
@@ -26,7 +27,8 @@ export function canUseSimpleSingleDamage(world: CombatWorld, entityId: EntityId,
   const lifecycle = world.stores.lifecycle.require(entityId)
   const targetLifecycle = world.stores.lifecycle.require(targetId)
   const config = UNIT_TYPES[identity.type as UnitTypeKey]?.baseStats
-  if (weapon.attackType !== 'single' || combat.range <= 60 || (combat.multishot ?? 1) !== 1) return false
+  if (!['single', 'aoe'].includes(weapon.attackType) || (weapon.attackType === 'single' && combat.range <= 60) ||
+      (combat.multishot ?? 1) !== 1) return false
   if (hasUnsupportedStatuses(status.statusEffects, true) || hasUnsupportedStatuses(targetStatus.statusEffects, false)) return false
   if (!canResolveSimpleEcsDeath(world, targetId)) return false
   if (movement.stanceConfig || movement.modeSwitchConfig || movement.burrowConfig || movement.stealthWhileMoving) return false
@@ -38,7 +40,8 @@ export function canUseSimpleSingleDamage(world: CombatWorld, entityId: EntityId,
   if (hasLifecyclePrimitives(lifecycle) || hasLifecyclePrimitives(targetLifecycle)) return false
   return getEcsShareRecipients(world, targetId).every(recipientId =>
     canResolveSimpleEcsDeath(world, recipientId),
-  ) && canUseEcsDirectionalGeometry(world, entityId, targetId)
+  ) && canUseEcsDirectionalGeometry(world, entityId, targetId) &&
+    canUseEcsRadialAoe(world, entityId, targetId)
 }
 
 export function runSimpleSingleDamage(
@@ -67,6 +70,7 @@ export function runSimpleSingleDamage(
   if (!damageResult.intercepted) applyEcsOnHitEffects(world, entityId, targetId, actions)
   resolveSimpleEcsDeath(world, targetId, entityId, actions)
   if (!damageResult.intercepted) applyEcsDirectionalGeometry(world, entityId, targetId, actions)
+  if (!damageResult.intercepted) applyEcsRadialAoe(world, entityId, targetId, actions)
   world.syncComponentsFromStore(entityId, ['vitality', 'combat', 'targeting', 'statusControl'])
   world.syncComponentsFromStore(targetId, ['vitality', 'defense'])
   return { acted: true, actorSynchronized: true }
@@ -74,7 +78,6 @@ export function runSimpleSingleDamage(
 
 function hasWeaponPrimitives(weapon: ReturnType<CombatWorld['stores']['weapon']['require']>): boolean {
   return Boolean(
-    weapon.aoeRadius ||
     weapon.barrageAttack || weapon.chainAttack || weapon.splitFire ||
     weapon.sideWeapon || weapon.conditionalAttackMode || weapon.sweepAttack ||
     weapon.emergeStrikePending || weapon.leavesPuddle ||

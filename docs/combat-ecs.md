@@ -40,9 +40,9 @@ statuses, rank modifiers, movement reduction, target marks, flat block, shields,
 reactive armor, execute, lifesteal, finite/reduction barriers, projectile
 interception, deterministic damage sharing, movement charge, same-target ramp,
 percent-HP payloads, on-hit statuses, and squad-wide target marks. Weapon
-line-pierce, cone, and beam geometry also run natively. Barrage, chain,
-secondary weapon families, and complex lifecycle primitives fall back before
-mutating state.
+line-pierce, cone, beam, and radial AoE geometry also run natively. Barrage,
+chain, secondary weapon families, and complex lifecycle primitives fall back
+before mutating state.
 Initial squads, action spawns,
 trigger clones, and hazards
 enter a deterministic structural command buffer. Target references and melee

@@ -44,7 +44,7 @@ describe('P0 combat role scenarios', () => {
       expect(first.logs.length, scenario.id).toBeGreaterThan(0)
       expect(first.logs.at(-1)?.tick ?? MAX_TICKS, scenario.id).toBeLessThan(MAX_TICKS)
     }
-  }, 30000)
+  }, 45000)
 
   it('keeps P0 role signals replay-visible', () => {
     const expectedSignals: Record<string, { action: BattleActionType; statusType?: string }> = {

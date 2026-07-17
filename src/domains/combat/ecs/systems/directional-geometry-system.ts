@@ -2,10 +2,9 @@ import type { BattleAction } from '../../combat.actions'
 import { getDistance, getSizeRadius } from '../../combat.utils'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
-import { applyEcsSingleDamage } from './damage-system'
 import { getEcsShareRecipients } from './damage-sharing-system'
-import { canResolveSimpleEcsDeath, resolveSimpleEcsDeath } from './death-system'
-import { applyEcsOnHitEffects } from './on-hit-system'
+import { canResolveSimpleEcsDeath } from './death-system'
+import { resolveEcsSecondaryHit } from './secondary-hit-system'
 
 export function canUseEcsDirectionalGeometry(
   world: CombatWorld,
@@ -47,19 +46,14 @@ export function applyEcsDirectionalGeometry(
   }
   if (!multiplier) return
   for (const targetId of targets) {
-    const target = world.stores.identity.require(targetId).id
-    if (emitsAttackIntent) actions.push({ unitId: attacker, type: 'attack', targetId: target })
-    applyEcsSingleDamage(
+    resolveEcsSecondaryHit(
       world,
       attackerId,
       targetId,
       Math.floor(combat.attack * multiplier),
       actions,
-      { allowPercentHpDamage: false, interceptable: false },
+      emitsAttackIntent,
     )
-    applyEcsOnHitEffects(world, attackerId, targetId, actions)
-    resolveSimpleEcsDeath(world, targetId, attackerId, actions)
-    world.syncComponentsFromStore(targetId, ['vitality', 'defense'])
   }
 }
 
