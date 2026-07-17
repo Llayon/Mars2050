@@ -9,6 +9,7 @@ import { hasPendingReassembly } from './combat.reassembly'
 import { PRNG, generateObstacles } from './combat.utils'
 import { createPathfindingMap } from './combat.pathfinding'
 import { SpatialHash } from './spatial-hash'
+import type { SpatialQueryProfile } from './spatial-hash'
 import { canAttackControlledTarget } from './combat.control'
 import { getTimeoutOutcome, type BattleOutcome } from './combat.outcome'
 import { CURRENT_SIMULATION_VERSION } from './combat.version'
@@ -131,7 +132,19 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
     terminationReason: outcome.reason,
     elapsedTicks: tick,
     simulationVersion: CURRENT_SIMULATION_VERSION,
-    profile: options.profile ? spatialHash.getProfile() : undefined,
+    profile: options.profile ? mergeSpatialProfiles(
+      spatialHash.getProfile(),
+      ecsRuntime?.world.resources.require('entitySpatial').getProfile(),
+    ) : undefined,
+  }
+}
+
+function mergeSpatialProfiles(primary: SpatialQueryProfile, secondary?: SpatialQueryProfile): SpatialQueryProfile {
+  if (!secondary) return primary
+  return {
+    queryCount: primary.queryCount + secondary.queryCount,
+    candidateCount: primary.candidateCount + secondary.candidateCount,
+    maxCandidates: Math.max(primary.maxCandidates, secondary.maxCandidates),
   }
 }
 

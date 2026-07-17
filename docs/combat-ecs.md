@@ -25,7 +25,7 @@ a monotonic entity ID and components.
 The ECS implementations currently own status scheduling, hazards, targeting,
 mixed-size melee reservation, positioning, steering, formation cohesion,
 movement state and spatial updates, direct healing actions, depenetration,
-simple single-shot damage and simple weapon deaths, terminal outcome, initiative,
+single-shot local damage modifiers and simple weapon deaths, terminal outcome, initiative,
 modifier/lifetime ticking, typed component/resource stores, deterministic
 entity queries, and snapshot/survivor serialization. Legacy hooks remain frozen
 for shadow tests.
@@ -35,9 +35,11 @@ Complex weapon actions, general damage/death, triggers, and metrics still cross 
 `EntityId`; after each move, only the changed movement components are written
 back to the facade for those unported consumers. Non-healing actions use the
 runtime action boundary but currently delegate to the frozen legacy weapon
-pipeline. A strict native single-shot fast path handles units without statuses,
-geometry, shields, barriers, sharing, interception, rank scaling, or lifecycle
-primitives; all other attacks fall back before mutating state. Initial squads, action spawns,
+pipeline. A strict native single-shot fast path handles armor, supported combat
+statuses, rank modifiers, movement reduction, target marks, flat block, shields,
+reactive armor, execute, and lifesteal. Barriers, sharing, interception, weapon
+geometry, charge/ramp, and lifecycle primitives fall back before mutating state.
+Initial squads, action spawns,
 trigger clones, and hazards
 enter a deterministic structural command buffer. Target references and melee
 sectors use `EntityId`; string IDs are written only as a compatibility mirror
@@ -124,7 +126,7 @@ before the timeout limit.
 winner, termination, replay actions, and survivors with numeric tolerance.
 Mirror gates swap teams and field coordinates to expose initiative or ID bias.
 
-With `{ profile: true }`, the result includes spatial query count, total local
-candidates, and maximum candidates in one query. Targeting, broad weapon shapes,
+With `{ profile: true }`, the result combines legacy and EntityId spatial query
+counts, total local candidates, and maximum candidates in one query. Targeting, broad weapon shapes,
 auras, hazards, projectile interception, and damage sharing use local queries
 where a spatial hash is available.

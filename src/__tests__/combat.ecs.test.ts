@@ -167,8 +167,44 @@ describe('combat ECS shadow engine', () => {
 
     expect(result).toEqual({ acted: true, actorSynchronized: true })
     expect(world.stores.vitality.require(1).isDead).toBe(true)
-    expect(actions.map(action => action.type)).toEqual(['attack', 'damage', 'die'])
+    expect(actions.map(action => action.type)).toEqual(['attack', 'unit_blocked_damage', 'damage', 'die'])
     expect(actions.at(-1)).toMatchObject({ unitId: 'defender', sourceUnitId: 'attacker', cause: 'weapon' })
+  })
+
+  it('orders ECS status, mark, flat block, and shield defenses', () => {
+    const attacker = createRuntimeUnitFromConfig({ id: 'attacker', team: 'attacker', type: 'marine', x: 10, y: 20, currentAngle: 0 })!
+    const defender = createRuntimeUnitFromConfig({ id: 'defender', team: 'defender', type: 'marine', x: 100, y: 20, currentAngle: Math.PI })!
+    attacker.attack = 100
+    attacker.statusEffects.push({ type: 'attack_boost', duration: 10, value: 0.5, tickInterval: 0, nextTickIn: 0 })
+    defender.defense = 20
+    defender.shield = 50
+    defender.maxShield = 50
+    defender.shieldHitBlockCharges = 1
+    defender.flatDamageBlock = { amount: 10 }
+    defender.targetMark = { sourceUnitId: attacker.id, duration: 10, damageMultiplier: 0.5, sharedDamage: true }
+    defender.statusEffects.push(
+      { type: 'armor_broken', duration: 10, value: 1, tickInterval: 0, nextTickIn: 0 },
+      { type: 'vulnerable', duration: 10, value: 0.25, tickInterval: 0, nextTickIn: 0 },
+      { type: 'damage_reduction', duration: 10, value: 0.2, tickInterval: 0, nextTickIn: 0 },
+    )
+    const world = new CombatWorld([attacker, defender])
+    const actions: Parameters<typeof runActionSystem>[3] = []
+
+    const result = runActionSystem(world, 0, 1, actions, {
+      rng: new PRNG(1),
+      tick: 0,
+      spatialHash: new SpatialHash(),
+    })
+
+    expect(result).toEqual({ acted: true, actorSynchronized: true })
+    expect(world.stores.vitality.require(1)).toMatchObject({ hp: defender.maxHp, shield: 0 })
+    expect(world.stores.defense.require(1).shieldHitBlockCharges).toBe(0)
+    expect(actions.slice(1)).toEqual([
+      { unitId: 'defender', type: 'unit_blocked_damage', targetId: 'attacker', damage: 163 },
+      { unitId: 'defender', type: 'shield_hit_block', targetId: 'attacker', damage: 163 },
+      { unitId: 'attacker', type: 'shield_damage', targetId: 'defender', damage: 50, isShieldHit: true },
+      { unitId: 'attacker', type: 'shield_break', targetId: 'defender' },
+    ])
   })
 
   it('clones nested loadout state and resets transient statuses', () => {

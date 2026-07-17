@@ -6,13 +6,13 @@ import { getDistance, getSizeRadius } from '../../combat.utils'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
 import { getEcsEffectiveActionRange } from '../movement-positioning'
+import { applyEcsSingleDamage } from './damage-system'
 import { resolveSimpleEcsDeath } from './death-system'
 
 const FACING_TOLERANCE = 0.26
 
 export function canUseSimpleSingleDamage(world: CombatWorld, entityId: EntityId, targetId: EntityId): boolean {
   const identity = world.stores.identity.require(entityId)
-  const targetIdentity = world.stores.identity.require(targetId)
   const vitality = world.stores.vitality.require(targetId)
   const combat = world.stores.combat.require(entityId)
   const weapon = world.stores.weapon.require(entityId)
@@ -26,15 +26,17 @@ export function canUseSimpleSingleDamage(world: CombatWorld, entityId: EntityId,
   const config = UNIT_TYPES[identity.type as UnitTypeKey]?.baseStats
   if (weapon.attackType !== 'single' || combat.range <= 60 || (combat.multishot ?? 1) !== 1) return false
   if (world.hazards.length > 0 || hasProjectileInterceptor(world)) return false
-  if (identity.rank && identity.rank > 1 || targetIdentity.rank && targetIdentity.rank > 1) return false
-  if (status.statusEffects.length > 0 || targetStatus.statusEffects.length > 0 || targetStatus.targetMark) return false
-  if (vitality.shield > 0 || vitality.resurrectOnce || vitality.reassemblyConfig) return false
+  if (hasUnsupportedStatuses(status.statusEffects, true) || hasUnsupportedStatuses(targetStatus.statusEffects, false)) return false
+  if (vitality.resurrectOnce || vitality.reassemblyConfig) return false
   if (movement.stanceConfig || movement.modeSwitchConfig || movement.burrowConfig || movement.stealthWhileMoving) return false
-  if (targeting.conditionalRange?.length || config?.minimumRange || config?.percentHpDamage || config?.onKill) return false
-  if (hasCombatModifiers(combat) || hasWeaponPrimitives(weapon) || hasDefensePrimitives(defense)) return false
+  if (
+    targeting.conditionalRange?.length || targeting.chargeDistance ||
+    targeting.rampTargetId || targeting.rampMultiplier ||
+    config?.minimumRange || config?.percentHpDamage || config?.chargeDamage || config?.onKill
+  ) return false
+  if (hasWeaponPrimitives(weapon) || hasUnsupportedDefensePrimitives(defense)) return false
   if (hasLifecyclePrimitives(lifecycle) || hasLifecyclePrimitives(targetLifecycle)) return false
-  const targetMovement = world.stores.movement.require(targetId)
-  return !targetMovement.damageReductionWhileMoving && !targetMovement.isBurrowed
+  return true
 }
 
 export function runSimpleSingleDamage(
@@ -47,8 +49,6 @@ export function runSimpleSingleDamage(
   const transform = world.stores.transform.require(entityId)
   const targetTransform = world.stores.transform.require(targetId)
   const combat = world.stores.combat.require(entityId)
-  const targetCombat = world.stores.combat.require(targetId)
-  const targetVitality = world.stores.vitality.require(targetId)
   const status = world.stores.statusControl.require(entityId)
   const edgeDistance = getDistance(transform.x, transform.y, targetTransform.x, targetTransform.y) -
     getSizeRadius(transform.size) - getSizeRadius(targetTransform.size)
@@ -57,26 +57,14 @@ export function runSimpleSingleDamage(
   if (Math.abs(normalizeAngle(targetAngle - transform.currentAngle)) > FACING_TOLERANCE) return notActed()
   if (combat.actionCooldown > 0) return notActed()
 
-  combat.actionCooldown = combat.actionCooldownMax
+  combat.actionCooldown = getSuppressedCooldown(combat.actionCooldownMax, status.statusEffects)
   actions.push({ unitId: identity.id, type: 'attack', targetId: world.stores.identity.require(targetId).id })
-  const damage = Math.max(1, Math.floor(combat.attack) - Math.floor(Math.max(0, targetCombat.defense)))
-  targetVitality.hp -= damage
-  actions.push({ unitId: identity.id, type: 'damage', targetId: world.stores.identity.require(targetId).id, damage })
+  applyEcsSingleDamage(world, entityId, targetId, combat.attack, actions)
   status.hasAttacked = true
   resolveSimpleEcsDeath(world, targetId, entityId, actions)
-  world.syncComponentsFromStore(entityId, ['combat', 'statusControl'])
-  world.syncComponentsFromStore(targetId, ['vitality'])
+  world.syncComponentsFromStore(entityId, ['vitality', 'combat', 'statusControl'])
+  world.syncComponentsFromStore(targetId, ['vitality', 'defense'])
   return { acted: true, actorSynchronized: true }
-}
-
-function hasCombatModifiers(combat: ReturnType<CombatWorld['stores']['combat']['require']>): boolean {
-  return Boolean(
-    combat.antiAirDamageMult || combat.executeThreshold || combat.lifestealMult ||
-    combat.armorPierceRatio || combat.summonCounterDamageMult ||
-    combat.accuracyPenaltyResist || combat.rankScaling ||
-    (combat.groundDamageMult !== undefined && combat.groundDamageMult !== 1) ||
-    (combat.shieldDamageMult !== undefined && combat.shieldDamageMult !== 1),
-  )
 }
 
 function hasWeaponPrimitives(weapon: ReturnType<CombatWorld['stores']['weapon']['require']>): boolean {
@@ -90,11 +78,9 @@ function hasWeaponPrimitives(weapon: ReturnType<CombatWorld['stores']['weapon'][
   )
 }
 
-function hasDefensePrimitives(defense: ReturnType<CombatWorld['stores']['defense']['require']>): boolean {
+function hasUnsupportedDefensePrimitives(defense: ReturnType<CombatWorld['stores']['defense']['require']>): boolean {
   return Boolean(
-    defense.flatDamageBlock || defense.shieldHitBlock ||
-    defense.reactiveArmorCharges || defense.damageShareRadius ||
-    defense.projectileInterceptRadius,
+    defense.damageShareRadius || defense.projectileInterceptRadius,
   )
 }
 
@@ -110,6 +96,30 @@ function hasProjectileInterceptor(world: CombatWorld): boolean {
     const defense = world.stores.defense.require(entityId)
     return Boolean(defense.projectileInterceptRadius && (defense.projectileInterceptCooldown ?? 0) <= 0)
   })
+}
+
+function hasUnsupportedStatuses(
+  effects: ReturnType<CombatWorld['stores']['statusControl']['require']>['statusEffects'],
+  attacker: boolean,
+): boolean {
+  const supported = attacker
+    ? new Set(['attack_boost', 'output_suppressed', 'accuracy_reduced', 'range_boost', 'range_suppressed', 'haste'])
+    : new Set(['armor_broken', 'vulnerable', 'damage_reduction', 'revealed'])
+  return effects.some(effect => effect.duration > 0 && !supported.has(effect.type))
+}
+
+function getSuppressedCooldown(
+  baseCooldown: number,
+  effects: ReturnType<CombatWorld['stores']['statusControl']['require']>['statusEffects'],
+): number {
+  let suppression = 0
+  for (const effect of effects) {
+    if (effect.type === 'output_suppressed' && effect.duration > 0 && effect.value && effect.value > 0) {
+      suppression += effect.value <= 1 ? effect.value : effect.value / 100
+    }
+  }
+  const base = Math.max(1, Math.round(baseCooldown))
+  return Math.max(1, Math.round(base * (1 + Math.min(0.5, suppression))))
 }
 
 function notActed(): RuntimeActionResult {

@@ -1,10 +1,12 @@
 import { TILE_SIZE } from '../combat.utils'
+import type { SpatialQueryProfile } from '../spatial-hash'
 import type { CombatWorld } from './combat-world'
 import type { EntityId } from './entity'
 
 export class EntitySpatialIndex {
   private readonly cells = new Map<string, EntityId[]>()
   private readonly entityCells = new Map<EntityId, string>()
+  private readonly profile: SpatialQueryProfile = { queryCount: 0, candidateCount: 0, maxCandidates: 0 }
 
   constructor(private readonly cellSize = TILE_SIZE) {}
 
@@ -56,7 +58,14 @@ export class EntitySpatialIndex {
         }
       }
     }
+    this.profile.queryCount++
+    this.profile.candidateCount += found.length
+    this.profile.maxCandidates = Math.max(this.profile.maxCandidates, found.length)
     return found.sort((left, right) => left - right)
+  }
+
+  getProfile(): SpatialQueryProfile {
+    return { ...this.profile }
   }
 
   private getCellKey(x: number, y: number): string {
