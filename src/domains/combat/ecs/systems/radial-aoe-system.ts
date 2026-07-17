@@ -35,7 +35,7 @@ export function applyEcsRadialAoe(
       targetId,
       splashDamage,
       actions,
-      true,
+      { emitAttackIntent: true },
     )
   }
 }

@@ -13,6 +13,7 @@ import { applyEcsPrimaryDamageModifiers } from './primary-damage-modifier-system
 import { applyEcsOnHitEffects } from './on-hit-system'
 import { applyEcsDirectionalGeometry, canUseEcsDirectionalGeometry } from './directional-geometry-system'
 import { applyEcsRadialAoe, canUseEcsRadialAoe } from './radial-aoe-system'
+import { applyEcsSplitFire, canUseEcsSplitFire } from './split-fire-system'
 
 const FACING_TOLERANCE = 0.26
 
@@ -41,6 +42,7 @@ export function canUseSimpleSingleDamage(world: CombatWorld, entityId: EntityId,
   return getEcsShareRecipients(world, targetId).every(recipientId =>
     canResolveSimpleEcsDeath(world, recipientId),
   ) && canUseEcsDirectionalGeometry(world, entityId, targetId) &&
+    canUseEcsSplitFire(world, entityId, targetId) &&
     canUseEcsRadialAoe(world, entityId, targetId)
 }
 
@@ -70,6 +72,7 @@ export function runSimpleSingleDamage(
   if (!damageResult.intercepted) applyEcsOnHitEffects(world, entityId, targetId, actions)
   resolveSimpleEcsDeath(world, targetId, entityId, actions)
   if (!damageResult.intercepted) applyEcsDirectionalGeometry(world, entityId, targetId, actions)
+  if (!damageResult.intercepted) applyEcsSplitFire(world, entityId, targetId, actions)
   if (!damageResult.intercepted) applyEcsRadialAoe(world, entityId, targetId, actions)
   world.syncComponentsFromStore(entityId, ['vitality', 'combat', 'targeting', 'statusControl'])
   world.syncComponentsFromStore(targetId, ['vitality', 'defense'])
@@ -78,7 +81,7 @@ export function runSimpleSingleDamage(
 
 function hasWeaponPrimitives(weapon: ReturnType<CombatWorld['stores']['weapon']['require']>): boolean {
   return Boolean(
-    weapon.barrageAttack || weapon.chainAttack || weapon.splitFire ||
+    weapon.barrageAttack || weapon.chainAttack ||
     weapon.sideWeapon || weapon.conditionalAttackMode || weapon.sweepAttack ||
     weapon.emergeStrikePending || weapon.leavesPuddle ||
     weapon.smokeOnAction || weapon.pullOnHit || weapon.knockbackOnHit,

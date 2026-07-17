@@ -5,19 +5,25 @@ import { applyEcsSingleDamage } from './damage-system'
 import { resolveSimpleEcsDeath } from './death-system'
 import { applyEcsOnHitEffects } from './on-hit-system'
 
+export interface EcsSecondaryHitOptions {
+  allowMinimumDamage?: boolean
+  emitAttackIntent?: boolean
+}
+
 export function resolveEcsSecondaryHit(
   world: CombatWorld,
   attackerId: EntityId,
   targetId: EntityId,
   rawDamage: number,
   actions: BattleAction[],
-  emitAttackIntent: boolean,
+  options: EcsSecondaryHitOptions = {},
 ): void {
   const attacker = world.stores.identity.require(attackerId).id
   const target = world.stores.identity.require(targetId).id
-  if (emitAttackIntent) actions.push({ unitId: attacker, type: 'attack', targetId: target })
+  if (options.emitAttackIntent) actions.push({ unitId: attacker, type: 'attack', targetId: target })
   applyEcsSingleDamage(world, attackerId, targetId, rawDamage, actions, {
     allowPercentHpDamage: false,
+    allowMinimumDamage: options.allowMinimumDamage,
     interceptable: false,
   })
   applyEcsOnHitEffects(world, attackerId, targetId, actions, {

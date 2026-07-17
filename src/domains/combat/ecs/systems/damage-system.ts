@@ -27,6 +27,7 @@ interface EcsDamageResult {
 
 export interface EcsDamageOptions {
   allowPercentHpDamage?: boolean
+  allowMinimumDamage?: boolean
   interceptable?: boolean
 }
 
@@ -64,7 +65,8 @@ export function applyEcsSingleDamage(
   const defenseReduction = armorBroken <= 1 ? targetCombat.defense * armorBroken : armorBroken
   const remainingDefense = Math.max(0, targetCombat.defense - defenseReduction)
   const pierce = Math.max(0, Math.min(1, attacker.armorPierceRatio ?? 0))
-  let damage = Math.max(1, raw - Math.floor(remainingDefense * (1 - pierce)))
+  const afterDefense = raw - Math.floor(remainingDefense * (1 - pierce))
+  let damage = options.allowMinimumDamage === false ? Math.max(0, afterDefense) : Math.max(1, afterDefense)
   damage = applyOutputSuppression(attackerStatus.statusEffects, damage)
   damage = applyAccuracy(attackerStatus.statusEffects, attacker.accuracyPenaltyResist, damage)
   const targetTransform = world.stores.transform.require(targetId)

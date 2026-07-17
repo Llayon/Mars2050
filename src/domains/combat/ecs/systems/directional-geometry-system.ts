@@ -52,7 +52,7 @@ export function applyEcsDirectionalGeometry(
       targetId,
       Math.floor(combat.attack * multiplier),
       actions,
-      emitsAttackIntent,
+      { emitAttackIntent: emitsAttackIntent },
     )
   }
 }
