@@ -4,7 +4,6 @@ import { processSpawnerLogic } from './combat.spawner'
 import { processPostHazardPrimitives, processPreActionPrimitives } from './combat.tick-primitives'
 import type { UnitRow, BattleAction, BattleTick, BattleResult } from './combat.types'
 import type { Team, SimUnit, Obstacle, SimHazard } from './combat.sim.types'
-import { actionSystem } from './combat.systems'
 import { createCombatMetrics, finalizeCombatMetrics, recordCombatActions, recordCombatTick, type BattleSimulationOptions } from './combat.metrics'
 import { hasPendingReassembly } from './combat.reassembly'
 import { PRNG, generateObstacles } from './combat.utils'
@@ -93,7 +92,10 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
       const canActOnTarget = target.team !== unit.team || unit.attackType === 'heal' || canAttackControlledTarget(unit, target);
       const hasEngagement = canActOnTarget ? runtime.reserveMeleeSlot(unit, target) : true;
 
-      const acted = canActOnTarget && hasEngagement && actionSystem(unit, target, units, hazards, actions, rng, tick, spatialHash);
+      const actionResult = canActOnTarget && hasEngagement
+        ? runtime.actUnit(unit, target, actions, { rng, tick, spatialHash })
+        : { acted: false, actorSynchronized: false }
+      const acted = actionResult.acted
 
       runtime.flushStructuralCommands()
 
@@ -103,7 +105,7 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
       if (!acted) {
         runtime.moveUnit(unit, target, actions, movementContext);
       }
-      runtime.completeActorTurn(unit, actions, actionStart, !acted)
+      runtime.completeActorTurn(unit, actions, actionStart, !acted || actionResult.actorSynchronized)
     }
 
     runtime.runHazardPhase(actions, resolveEnvironmentalDeath, spatialHash);

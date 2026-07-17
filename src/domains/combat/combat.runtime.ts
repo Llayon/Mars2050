@@ -22,6 +22,17 @@ export interface RuntimeMovementContext {
   spatialHash: SpatialHash
 }
 
+export interface RuntimeActionContext {
+  rng: PRNG
+  tick: number
+  spatialHash: SpatialHash
+}
+
+export interface RuntimeActionResult {
+  acted: boolean
+  actorSynchronized: boolean
+}
+
 export interface CombatRuntime {
   readonly units: SimUnit[]
   readonly hazards: SimHazard[]
@@ -30,6 +41,7 @@ export interface CombatRuntime {
   beginTargetingPhase(spatialHash: SpatialHash): void
   selectTarget(unit: SimUnit): SimUnit | null
   reserveMeleeSlot(unit: SimUnit, target: SimUnit): boolean
+  actUnit(unit: SimUnit, target: SimUnit, actions: BattleAction[], context: RuntimeActionContext): RuntimeActionResult
   moveUnit(unit: SimUnit, target: SimUnit, actions: BattleAction[], context: RuntimeMovementContext): void
   completeActorTurn(unit: SimUnit, actions: readonly BattleAction[], actionStart: number, actorSynchronized?: boolean): void
   insertSpatialUnit(unit: SimUnit): void

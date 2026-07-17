@@ -2,7 +2,7 @@ import type { BattleAction } from '../combat.actions'
 import type { SimHazard } from '../combat.sim.types'
 import type { CombatRuntime, RuntimeDeathHandler } from '../combat.runtime'
 import { CombatWorld } from './combat-world'
-import { createEcsMeleeEngagementState, getEcsTerminalOutcome, getEcsTurnOrder, reserveEcsMeleeSlot, runDepenetrationSystem, runHazardSystem, runModifierSystem, runMovementSystem, runStatusSystem, runTargetingSystem, syncEcsTargetRefs } from './systems'
+import { createEcsMeleeEngagementState, getEcsTerminalOutcome, getEcsTurnOrder, reserveEcsMeleeSlot, runActionSystem, runDepenetrationSystem, runHazardSystem, runModifierSystem, runMovementSystem, runStatusSystem, runTargetingSystem, syncEcsTargetRefs } from './systems'
 import { createSquadEntities } from './combat-entity-factory'
 import { EntitySpatialIndex } from './entity-spatial-index'
 
@@ -45,6 +45,12 @@ export function createEcsCombatRuntime(): EcsCombatRuntime {
       const reserved = reserveEcsMeleeSlot(world, unitId, targetId, meleeEngagement)
       world.syncComponentsFromStore(unitId, ['targeting'])
       return reserved
+    },
+    actUnit: (unit, target, actions, context) => {
+      const unitId = world.getEntityId(unit.id)
+      const targetId = world.getEntityId(target.id)
+      if (unitId === undefined || targetId === undefined) return { acted: false, actorSynchronized: false }
+      return runActionSystem(world, unitId, targetId, actions, context)
     },
     moveUnit: (unit, target, actions, context) => {
       const unitId = world.getEntityId(unit.id)

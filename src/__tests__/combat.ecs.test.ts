@@ -3,7 +3,7 @@ import { compareCombatEngines } from '@/domains/combat/combat.shadow'
 import { simulateBattle } from '@/domains/combat/combat.engine'
 import { cloneRuntimeUnit, createRuntimeUnitFromConfig } from '@/domains/combat/combat.unit-factory'
 import { CombatWorld } from '@/domains/combat/ecs/combat-world'
-import { createEcsMeleeEngagementState, reserveEcsMeleeSlot, runHazardSystem, runMovementSystem, runTargetingSystem, syncEcsTargetRefs } from '@/domains/combat/ecs/systems'
+import { createEcsMeleeEngagementState, reserveEcsMeleeSlot, runActionSystem, runHazardSystem, runMovementSystem, runTargetingSystem, syncEcsTargetRefs } from '@/domains/combat/ecs/systems'
 import { EntitySpatialIndex } from '@/domains/combat/ecs/entity-spatial-index'
 import { getSimulatorPreset } from '@/app/simulator2/simulator.presets'
 import { createPathfindingMap } from '@/domains/combat/combat.pathfinding'
@@ -131,6 +131,25 @@ describe('combat ECS shadow engine', () => {
     expect(transform.x).toBeGreaterThan(10)
     expect(transform.x).toBe(attacker.x)
     expect(entitySpatial.query(world, transform.x, transform.y, 1)).toContain(0)
+  })
+
+  it('applies actual healing through ECS action components', () => {
+    const medic = createRuntimeUnitFromConfig({ id: 'medic', team: 'attacker', type: 'medic', x: 10, y: 20, currentAngle: 0 })!
+    const marine = createRuntimeUnitFromConfig({ id: 'marine', team: 'attacker', type: 'marine', x: 100, y: 20, currentAngle: 0 })!
+    marine.hp = marine.maxHp - 20
+    const world = new CombatWorld([medic, marine])
+    const actions: Parameters<typeof runActionSystem>[3] = []
+
+    const result = runActionSystem(world, 0, 1, actions, {
+      rng: new PRNG(1),
+      tick: 0,
+      spatialHash: new SpatialHash(),
+    })
+
+    expect(result).toEqual({ acted: true, actorSynchronized: true })
+    expect(world.stores.vitality.require(1).hp).toBe(marine.maxHp)
+    expect(world.stores.combat.require(0).actionCooldown).toBe(medic.actionCooldownMax)
+    expect(actions).toContainEqual({ unitId: 'medic', type: 'heal', targetId: 'marine', damage: 20 })
   })
 
   it('clones nested loadout state and resets transient statuses', () => {

@@ -12,6 +12,7 @@ import { targetingSystem } from './combat.targeting'
 import { SpatialHash } from './spatial-hash'
 import { applyDepenetration } from './combat.depenetration'
 import { movementSystem } from './combat.movement'
+import { actionSystem } from './combat.systems'
 
 export function createLegacyCombatRuntime(): CombatRuntime {
   const units: SimUnit[] = []
@@ -26,6 +27,10 @@ export function createLegacyCombatRuntime(): CombatRuntime {
     beginTargetingPhase: spatial => { meleeEngagement = createMeleeEngagementState(); targetingSpatialHash = spatial },
     selectTarget: unit => targetingSystem(unit, units, meleeEngagement, targetingSpatialHash),
     reserveMeleeSlot: (unit, target) => reserveMeleeEngagementSlot(unit, target, meleeEngagement),
+    actUnit: (unit, target, actions, context) => ({
+      acted: actionSystem(unit, target, units, hazards, actions, context.rng, context.tick, context.spatialHash),
+      actorSynchronized: false,
+    }),
     moveUnit: (unit, target, actions, context) => {
       movementSystem(unit, target, units, actions, context.dt, context.rng, context.flowField, context.obstacles, context.spatialHash)
       context.spatialHash.update(unit)
