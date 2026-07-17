@@ -25,17 +25,19 @@ a monotonic entity ID and components.
 The ECS implementations currently own status scheduling, hazards, targeting,
 mixed-size melee reservation, positioning, steering, formation cohesion,
 movement state and spatial updates, direct healing actions, depenetration,
-terminal outcome, initiative,
+simple single-shot damage and simple weapon deaths, terminal outcome, initiative,
 modifier/lifetime ticking, typed component/resource stores, deterministic
 entity queries, and snapshot/survivor serialization. Legacy hooks remain frozen
 for shadow tests.
 
-Weapon actions, damage/death, triggers, and metrics still cross the temporary
+Complex weapon actions, general damage/death, triggers, and metrics still cross the temporary
 `SimUnit` facade. Movement and healing read and write component stores directly through
 `EntityId`; after each move, only the changed movement components are written
 back to the facade for those unported consumers. Non-healing actions use the
 runtime action boundary but currently delegate to the frozen legacy weapon
-pipeline. Initial squads, action spawns,
+pipeline. A strict native single-shot fast path handles units without statuses,
+geometry, shields, barriers, sharing, interception, rank scaling, or lifecycle
+primitives; all other attacks fall back before mutating state. Initial squads, action spawns,
 trigger clones, and hazards
 enter a deterministic structural command buffer. Target references and melee
 sectors use `EntityId`; string IDs are written only as a compatibility mirror

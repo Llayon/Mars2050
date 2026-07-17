@@ -9,6 +9,7 @@ import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
 import { getEcsEffectiveActionRange } from '../movement-positioning'
 import { applyEcsHealing } from './healing-system'
+import { canUseSimpleSingleDamage, runSimpleSingleDamage } from './single-damage-system'
 
 const FACING_TOLERANCE = 0.26
 
@@ -20,6 +21,9 @@ export function runActionSystem(
   context: RuntimeActionContext,
 ): RuntimeActionResult {
   const weapon = world.stores.weapon.require(entityId)
+  if (canUseSimpleSingleDamage(world, entityId, targetId)) {
+    return runSimpleSingleDamage(world, entityId, targetId, actions)
+  }
   if (weapon.attackType !== 'heal') return runLegacyAction(world, entityId, targetId, actions, context)
   return runHealAction(world, entityId, targetId, actions)
 }

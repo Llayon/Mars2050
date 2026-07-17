@@ -152,6 +152,25 @@ describe('combat ECS shadow engine', () => {
     expect(actions).toContainEqual({ unitId: 'medic', type: 'heal', targetId: 'marine', damage: 20 })
   })
 
+  it('resolves simple single damage and death through ECS components', () => {
+    const attacker = createRuntimeUnitFromConfig({ id: 'attacker', team: 'attacker', type: 'marine', x: 10, y: 20, currentAngle: 0 })!
+    const defender = createRuntimeUnitFromConfig({ id: 'defender', team: 'defender', type: 'marine', x: 100, y: 20, currentAngle: Math.PI })!
+    defender.hp = 1
+    const world = new CombatWorld([attacker, defender])
+    const actions: Parameters<typeof runActionSystem>[3] = []
+
+    const result = runActionSystem(world, 0, 1, actions, {
+      rng: new PRNG(1),
+      tick: 0,
+      spatialHash: new SpatialHash(),
+    })
+
+    expect(result).toEqual({ acted: true, actorSynchronized: true })
+    expect(world.stores.vitality.require(1).isDead).toBe(true)
+    expect(actions.map(action => action.type)).toEqual(['attack', 'damage', 'die'])
+    expect(actions.at(-1)).toMatchObject({ unitId: 'defender', sourceUnitId: 'attacker', cause: 'weapon' })
+  })
+
   it('clones nested loadout state and resets transient statuses', () => {
     const unit = createRuntimeUnitFromConfig({ id: 'source', team: 'attacker', type: 'officer', x: 10, y: 20, currentAngle: 0 })!
     unit.statusEffects.push({ type: 'burn', duration: 30, tickInterval: 10, nextTickIn: 10 })
