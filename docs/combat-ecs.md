@@ -23,17 +23,17 @@ a monotonic entity ID and components.
 ## Migration Status
 
 The ECS implementations currently own status scheduling, hazards, targeting,
-mixed-size melee reservation, movement phase orchestration and spatial updates,
-depenetration, terminal outcome, initiative,
+mixed-size melee reservation, positioning, steering, formation cohesion,
+movement state and spatial updates, depenetration, terminal outcome, initiative,
 modifier/lifetime ticking, typed component/resource stores, deterministic
 entity queries, and snapshot/survivor serialization. Legacy hooks remain frozen
 for shadow tests.
 
-Movement math, actions, damage/death, triggers, and metrics still cross the
-temporary `SimUnit` facade. The engine no longer invokes movement or spatial
-updates directly: `runMovementSystem()` owns that phase while steering,
-formation, and movement-state helpers are ported incrementally. Initial squads,
-action spawns, trigger clones, and hazards
+Actions, damage/death, triggers, and metrics still cross the temporary
+`SimUnit` facade. Movement reads and writes component stores directly through
+`EntityId`; after each move, only the changed movement components are written
+back to the facade for those unported consumers. Initial squads, action spawns,
+trigger clones, and hazards
 enter a deterministic structural command buffer. Target references and melee
 sectors use `EntityId`; string IDs are written only as a compatibility mirror
 for unported movement/action code. The migration is complete only when the
