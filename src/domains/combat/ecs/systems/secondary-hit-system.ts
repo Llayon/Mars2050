@@ -7,6 +7,7 @@ import { applyEcsOnHitEffects } from './on-hit-system'
 
 export interface EcsSecondaryHitOptions {
   allowMinimumDamage?: boolean
+  applyOnHitEffects?: boolean
   emitAttackIntent?: boolean
 }
 
@@ -26,9 +27,11 @@ export function resolveEcsSecondaryHit(
     allowMinimumDamage: options.allowMinimumDamage,
     interceptable: false,
   })
-  applyEcsOnHitEffects(world, attackerId, targetId, actions, {
-    propagateSquadMark: false,
-  })
+  if (options.applyOnHitEffects !== false) {
+    applyEcsOnHitEffects(world, attackerId, targetId, actions, {
+      propagateSquadMark: false,
+    })
+  }
   resolveSimpleEcsDeath(world, targetId, attackerId, actions)
   world.syncComponentsFromStore(targetId, ['vitality', 'defense'])
 }
