@@ -7,36 +7,34 @@ import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
 import { getEcsEffectiveActionRange } from '../movement-positioning'
 import { applyEcsSingleDamage } from './damage-system'
-import { resolveSimpleEcsDeath } from './death-system'
+import { canResolveSimpleEcsDeath, resolveSimpleEcsDeath } from './death-system'
+import { getEcsShareRecipients } from './damage-sharing-system'
 
 const FACING_TOLERANCE = 0.26
 
 export function canUseSimpleSingleDamage(world: CombatWorld, entityId: EntityId, targetId: EntityId): boolean {
   const identity = world.stores.identity.require(entityId)
-  const vitality = world.stores.vitality.require(targetId)
   const combat = world.stores.combat.require(entityId)
   const weapon = world.stores.weapon.require(entityId)
   const targeting = world.stores.targeting.require(entityId)
   const movement = world.stores.movement.require(entityId)
   const status = world.stores.statusControl.require(entityId)
   const targetStatus = world.stores.statusControl.require(targetId)
-  const defense = world.stores.defense.require(targetId)
   const lifecycle = world.stores.lifecycle.require(entityId)
   const targetLifecycle = world.stores.lifecycle.require(targetId)
   const config = UNIT_TYPES[identity.type as UnitTypeKey]?.baseStats
   if (weapon.attackType !== 'single' || combat.range <= 60 || (combat.multishot ?? 1) !== 1) return false
-  if (world.hazards.length > 0 || hasProjectileInterceptor(world)) return false
   if (hasUnsupportedStatuses(status.statusEffects, true) || hasUnsupportedStatuses(targetStatus.statusEffects, false)) return false
-  if (vitality.resurrectOnce || vitality.reassemblyConfig) return false
+  if (!canResolveSimpleEcsDeath(world, targetId)) return false
   if (movement.stanceConfig || movement.modeSwitchConfig || movement.burrowConfig || movement.stealthWhileMoving) return false
   if (
     targeting.conditionalRange?.length || targeting.chargeDistance ||
     targeting.rampTargetId || targeting.rampMultiplier ||
     config?.minimumRange || config?.percentHpDamage || config?.chargeDamage || config?.onKill
   ) return false
-  if (hasWeaponPrimitives(weapon) || hasUnsupportedDefensePrimitives(defense)) return false
+  if (hasWeaponPrimitives(weapon)) return false
   if (hasLifecyclePrimitives(lifecycle) || hasLifecyclePrimitives(targetLifecycle)) return false
-  return true
+  return getEcsShareRecipients(world, targetId).every(recipientId => canResolveSimpleEcsDeath(world, recipientId))
 }
 
 export function runSimpleSingleDamage(
@@ -78,24 +76,11 @@ function hasWeaponPrimitives(weapon: ReturnType<CombatWorld['stores']['weapon'][
   )
 }
 
-function hasUnsupportedDefensePrimitives(defense: ReturnType<CombatWorld['stores']['defense']['require']>): boolean {
-  return Boolean(
-    defense.damageShareRadius || defense.projectileInterceptRadius,
-  )
-}
-
 function hasLifecyclePrimitives(lifecycle: ReturnType<CombatWorld['stores']['lifecycle']['require']>): boolean {
   return Boolean(
     lifecycle.triggerEffects?.length || lifecycle.attackCharge ||
     lifecycle.replicateOnKill || lifecycle.onDeathPuddle,
   )
-}
-
-function hasProjectileInterceptor(world: CombatWorld): boolean {
-  return world.query(['defense']).some(entityId => {
-    const defense = world.stores.defense.require(entityId)
-    return Boolean(defense.projectileInterceptRadius && (defense.projectileInterceptCooldown ?? 0) <= 0)
-  })
 }
 
 function hasUnsupportedStatuses(

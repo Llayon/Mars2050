@@ -20,6 +20,8 @@ export function runActionSystem(
   actions: BattleAction[],
   context: RuntimeActionContext,
 ): RuntimeActionResult {
+  world.reconcileHazards()
+  world.syncHazardsToComponents()
   const weapon = world.stores.weapon.require(entityId)
   if (canUseSimpleSingleDamage(world, entityId, targetId)) {
     return runSimpleSingleDamage(world, entityId, targetId, actions)
@@ -66,8 +68,11 @@ function runLegacyAction(world: CombatWorld, entityId: EntityId, targetId: Entit
   const unit = world.getEntity(entityId)
   const target = world.getEntity(targetId)
   if (!unit || !target) return notActed()
+  const acted = actionSystem(unit, target, world.roster, world.hazards, actions, context.rng, context.tick, context.spatialHash)
+  world.reconcileHazards()
+  world.syncHazardsToComponents()
   return {
-    acted: actionSystem(unit, target, world.roster, world.hazards, actions, context.rng, context.tick, context.spatialHash),
+    acted,
     actorSynchronized: false,
   }
 }

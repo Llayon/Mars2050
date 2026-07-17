@@ -5,6 +5,9 @@ import type { UnitTypeKey } from '../../combat.types'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
 import { applyEcsHealing } from './healing-system'
+import { applyEcsBarriers } from './damage-barrier-system'
+import { applyEcsDamageSharing } from './damage-sharing-system'
+import { tryEcsProjectileInterception } from './damage-interception-system'
 
 interface EcsDamageResult {
   damage: number
@@ -13,7 +16,12 @@ interface EcsDamageResult {
   shieldHitBlock: boolean
   shieldHitBlockedDamage: number
   blockedDamage: number
+  barrierBlockedDamage: number
+  barrierBreaks: { hazardId: string; sourceUnitId: string }[]
+  sharedDamage: number
+  sharedDamageEvents: { targetId: string; damage: number }[]
   lifesteal: number
+  intercepted: boolean
 }
 
 export function applyEcsSingleDamage(
@@ -37,6 +45,9 @@ export function applyEcsSingleDamage(
     ? Math.max(0, Math.floor(Math.floor(rawDamage) * Math.min(5, boostMultiplier)))
     : Math.floor(rawDamage)
   if (raw <= 0) return createResult()
+  if (tryEcsProjectileInterception(world, attackerId, targetId, raw, actions)) {
+    return createResult({ blockedDamage: raw, intercepted: true })
+  }
 
   const armorBroken = getStatusValue(targetStatus.statusEffects, 'armor_broken') ?? 0
   const defenseReduction = armorBroken <= 1 ? targetCombat.defense * armorBroken : armorBroken
@@ -51,6 +62,8 @@ export function applyEcsSingleDamage(
   damage = Math.floor(damage * getRankMultiplier(world, attackerId, targetId))
   damage = applySummonCounter(world, attackerId, targetId, damage)
   damage = applyMovementReduction(world, targetId, damage)
+  const barrier = applyEcsBarriers(world, targetId, damage)
+  damage = barrier.damage
   damage = applyTargetStatuses(targetStatus.statusEffects, damage)
   const markMultiplier = getMarkDamageMultiplier(attackerIdentity.id, targetStatus.targetMark)
   if (markMultiplier > 0) damage = Math.max(0, Math.floor(damage * (1 + markMultiplier)))
@@ -64,18 +77,24 @@ export function applyEcsSingleDamage(
     reactiveBlock = Math.min(damage, Math.max(0, Math.floor(targetDefense.reactiveArmorBlock)))
     damage -= reactiveBlock
   }
+  const sharing = applyEcsDamageSharing(world, targetId, attackerId, damage, actions)
+  damage = sharing.damage
   const markedExecute = getMarkExecuteThreshold(attackerIdentity.id, targetStatus.targetMark)
   const execute = Math.max(attacker.executeThreshold ?? 0, markedExecute)
   if (execute > 0 && targetVitality.hp <= execute) damage = targetVitality.hp
   let lifesteal = 0
-  if (attacker.lifestealMult && damage > 0) {
-    lifesteal = applyEcsHealing(world, attackerId, attackerId, Math.floor(damage * attacker.lifestealMult))
+  if (attacker.lifestealMult && damage + sharing.sharedDamage > 0) {
+    lifesteal = applyEcsHealing(world, attackerId, attackerId, Math.floor((damage + sharing.sharedDamage) * attacker.lifestealMult))
   }
   if (damage > 0) targetVitality.hp -= damage
   const result = {
     ...shield,
     damage,
     blockedDamage: blockedBeforeShield + shield.shieldHitBlockedDamage + reactiveBlock,
+    barrierBlockedDamage: barrier.blockedDamage,
+    barrierBreaks: barrier.breaks,
+    sharedDamage: sharing.sharedDamage,
+    sharedDamageEvents: sharing.events,
     lifesteal,
   }
   emitDamageActions(world, attackerId, targetId, result, actions)
@@ -110,9 +129,12 @@ function emitDamageActions(world: CombatWorld, attackerId: EntityId, targetId: E
   const target = world.stores.identity.require(targetId).id
   if (result.blockedDamage > 0) actions.push({ unitId: target, type: 'unit_blocked_damage', targetId: attacker, damage: result.blockedDamage })
   if (result.shieldHitBlock) actions.push({ unitId: target, type: 'shield_hit_block', targetId: attacker, damage: result.shieldHitBlockedDamage })
+  if (result.barrierBlockedDamage > 0) actions.push({ unitId: target, type: 'barrier_absorb', targetId: attacker, damage: result.barrierBlockedDamage })
+  for (const event of result.barrierBreaks) actions.push({ unitId: event.sourceUnitId, type: 'barrier_break', hazardId: event.hazardId })
   if (result.shieldDamage > 0) actions.push({ unitId: attacker, type: 'shield_damage', targetId: target, damage: result.shieldDamage, isShieldHit: true })
   if (result.shieldBroken) actions.push({ unitId: attacker, type: 'shield_break', targetId: target })
   if (result.damage > 0) actions.push({ unitId: attacker, type: 'damage', targetId: target, damage: result.damage })
+  for (const event of result.sharedDamageEvents) actions.push({ unitId: attacker, type: 'damage_share', targetId: event.targetId, damage: event.damage })
   if (result.lifesteal > 0) actions.push({ unitId: attacker, type: 'lifesteal', targetId: attacker, damage: result.lifesteal })
 }
 
@@ -207,6 +229,8 @@ function createResult(overrides: Partial<EcsDamageResult> = {}): EcsDamageResult
   return {
     damage: 0, shieldDamage: 0, shieldBroken: false,
     shieldHitBlock: false, shieldHitBlockedDamage: 0,
-    blockedDamage: 0, lifesteal: 0, ...overrides,
+    blockedDamage: 0, barrierBlockedDamage: 0, barrierBreaks: [],
+    sharedDamage: 0, sharedDamageEvents: [],
+    lifesteal: 0, intercepted: false, ...overrides,
   }
 }

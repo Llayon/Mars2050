@@ -19,3 +19,10 @@ export function resolveSimpleEcsDeath(
   })
   return true
 }
+
+export function canResolveSimpleEcsDeath(world: CombatWorld, entityId: EntityId): boolean {
+  const vitality = world.stores.vitality.require(entityId)
+  const lifecycle = world.stores.lifecycle.require(entityId)
+  return !vitality.resurrectOnce && !vitality.reassemblyConfig &&
+    !lifecycle.triggerEffects?.length && !lifecycle.onDeathPuddle
+}
