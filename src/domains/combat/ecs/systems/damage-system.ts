@@ -8,6 +8,7 @@ import { applyEcsHealing } from './healing-system'
 import { applyEcsBarriers } from './damage-barrier-system'
 import { applyEcsDamageSharing } from './damage-sharing-system'
 import { tryEcsProjectileInterception } from './damage-interception-system'
+import { buildEcsDamagePayload } from './damage-payload-system'
 
 interface EcsDamageResult {
   damage: number
@@ -39,11 +40,7 @@ export function applyEcsSingleDamage(
   const attackerStatus = world.stores.statusControl.require(attackerId)
   const targetStatus = world.stores.statusControl.require(targetId)
   const targetDefense = world.stores.defense.require(targetId)
-  const boost = getStatusValue(attackerStatus.statusEffects, 'attack_boost') ?? 0
-  const boostMultiplier = boost >= 1 ? boost : 1 + boost
-  const raw = boost > 0
-    ? Math.max(0, Math.floor(Math.floor(rawDamage) * Math.min(5, boostMultiplier)))
-    : Math.floor(rawDamage)
+  const raw = buildEcsDamagePayload(world, attackerId, targetId, rawDamage, actions)
   if (raw <= 0) return createResult()
   if (tryEcsProjectileInterception(world, attackerId, targetId, raw, actions)) {
     return createResult({ blockedDamage: raw, intercepted: true })

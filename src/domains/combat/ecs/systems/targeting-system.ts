@@ -19,6 +19,7 @@ export function syncEcsTargetRefs(world: CombatWorld, entityIds = world.query(['
     const targeting = world.stores.targeting.require(entityId)
     const refs = world.stores.entityTargets.require(entityId)
     refs.attackTarget = resolveExternalId(world, targeting.attackTargetId)
+    refs.rampTarget = resolveExternalId(world, targeting.rampTargetId)
     refs.meleeTarget = resolveExternalId(world, targeting.meleeSlotTargetId)
     refs.meleeWaitingTarget = resolveExternalId(world, targeting.meleeWaitingTargetId)
   }

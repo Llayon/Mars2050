@@ -32,6 +32,7 @@ export interface EntityMetaComponent {
 
 export interface EntityTargetRefsComponent {
   attackTarget?: EntityId
+  rampTarget?: EntityId
   meleeTarget?: EntityId
   meleeWaitingTarget?: EntityId
 }

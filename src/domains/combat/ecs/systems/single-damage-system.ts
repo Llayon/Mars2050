@@ -9,6 +9,7 @@ import { getEcsEffectiveActionRange } from '../movement-positioning'
 import { applyEcsSingleDamage } from './damage-system'
 import { canResolveSimpleEcsDeath, resolveSimpleEcsDeath } from './death-system'
 import { getEcsShareRecipients } from './damage-sharing-system'
+import { applyEcsPrimaryDamageModifiers } from './primary-damage-modifier-system'
 
 const FACING_TOLERANCE = 0.26
 
@@ -28,9 +29,8 @@ export function canUseSimpleSingleDamage(world: CombatWorld, entityId: EntityId,
   if (!canResolveSimpleEcsDeath(world, targetId)) return false
   if (movement.stanceConfig || movement.modeSwitchConfig || movement.burrowConfig || movement.stealthWhileMoving) return false
   if (
-    targeting.conditionalRange?.length || targeting.chargeDistance ||
-    targeting.rampTargetId || targeting.rampMultiplier ||
-    config?.minimumRange || config?.percentHpDamage || config?.chargeDamage || config?.onKill
+    targeting.conditionalRange?.length ||
+    config?.minimumRange || config?.onKill
   ) return false
   if (hasWeaponPrimitives(weapon)) return false
   if (hasLifecyclePrimitives(lifecycle) || hasLifecyclePrimitives(targetLifecycle)) return false
@@ -57,10 +57,11 @@ export function runSimpleSingleDamage(
 
   combat.actionCooldown = getSuppressedCooldown(combat.actionCooldownMax, status.statusEffects)
   actions.push({ unitId: identity.id, type: 'attack', targetId: world.stores.identity.require(targetId).id })
-  applyEcsSingleDamage(world, entityId, targetId, combat.attack, actions)
+  const primaryDamage = applyEcsPrimaryDamageModifiers(world, entityId, targetId, combat.attack, actions)
+  applyEcsSingleDamage(world, entityId, targetId, primaryDamage, actions)
   status.hasAttacked = true
   resolveSimpleEcsDeath(world, targetId, entityId, actions)
-  world.syncComponentsFromStore(entityId, ['vitality', 'combat', 'statusControl'])
+  world.syncComponentsFromStore(entityId, ['vitality', 'combat', 'targeting', 'statusControl'])
   world.syncComponentsFromStore(targetId, ['vitality', 'defense'])
   return { acted: true, actorSynchronized: true }
 }

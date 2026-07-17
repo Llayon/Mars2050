@@ -38,8 +38,9 @@ runtime action boundary but currently delegate to the frozen legacy weapon
 pipeline. A strict native single-shot fast path handles armor, supported combat
 statuses, rank modifiers, movement reduction, target marks, flat block, shields,
 reactive armor, execute, lifesteal, finite/reduction barriers, projectile
-interception, and deterministic damage sharing. Weapon geometry, charge/ramp,
-and complex lifecycle primitives fall back before mutating state.
+interception, deterministic damage sharing, movement charge, same-target ramp,
+and percent-HP payloads. Weapon geometry and complex lifecycle primitives fall
+back before mutating state.
 Initial squads, action spawns,
 trigger clones, and hazards
 enter a deterministic structural command buffer. Target references and melee
