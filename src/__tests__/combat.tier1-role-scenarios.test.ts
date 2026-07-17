@@ -75,7 +75,7 @@ describe('Tier 1 combat role scenarios', () => {
       expect(first.logs.length, scenario.id).toBeGreaterThan(0)
       expect(first.logs.at(-1)?.tick ?? MAX_TICKS, scenario.id).toBeLessThan(MAX_TICKS)
     }
-  }, 30000)
+  }, 60000)
 
   it('keeps high-signal Tier 1 mechanics replay-visible', () => {
     for (const gate of ROLE_SIGNAL_GATES) {

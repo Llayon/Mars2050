@@ -2,7 +2,7 @@ import type { BattleAction } from '../combat.actions'
 import type { SimHazard } from '../combat.sim.types'
 import type { CombatRuntime, RuntimeDeathHandler } from '../combat.runtime'
 import { CombatWorld } from './combat-world'
-import { createEcsMeleeEngagementState, getEcsTerminalOutcome, getEcsTurnOrder, reserveEcsMeleeSlot, runDepenetrationSystem, runHazardSystem, runModifierSystem, runStatusSystem, runTargetingSystem, syncEcsTargetRefs } from './systems'
+import { createEcsMeleeEngagementState, getEcsTerminalOutcome, getEcsTurnOrder, reserveEcsMeleeSlot, runDepenetrationSystem, runHazardSystem, runModifierSystem, runMovementSystem, runStatusSystem, runTargetingSystem, syncEcsTargetRefs } from './systems'
 import { createSquadEntities } from './combat-entity-factory'
 import { EntitySpatialIndex } from './entity-spatial-index'
 
@@ -46,16 +46,22 @@ export function createEcsCombatRuntime(): EcsCombatRuntime {
       world.syncComponentsFromStore(unitId, ['targeting'])
       return reserved
     },
-    completeActorTurn: (unit, actions, actionStart) => {
+    moveUnit: (unit, target, actions, context) => {
+      const unitId = world.getEntityId(unit.id)
+      const targetId = world.getEntityId(target.id)
+      if (unitId === undefined || targetId === undefined) return
+      runMovementSystem(world, unitId, targetId, actions, context)
+    },
+    completeActorTurn: (unit, actions, actionStart, actorSynchronized = false) => {
       const dirtyIds = new Set<number>()
       const actorId = world.getEntityId(unit.id)
-      if (actorId !== undefined) dirtyIds.add(actorId)
+      if (actorId !== undefined && !actorSynchronized) dirtyIds.add(actorId)
       let hasSquadMark = false
       for (let index = actionStart; index < actions.length; index++) {
         const action = actions[index]
         for (const externalId of [action.unitId, action.targetId, action.sourceUnitId]) {
           const entityId = externalId ? world.getEntityId(externalId) : undefined
-          if (entityId !== undefined) dirtyIds.add(entityId)
+          if (entityId !== undefined && (!actorSynchronized || entityId !== actorId)) dirtyIds.add(entityId)
         }
         if (action.type === 'target_mark') hasSquadMark = true
       }
@@ -68,10 +74,6 @@ export function createEcsCombatRuntime(): EcsCombatRuntime {
     insertSpatialUnit: unit => {
       const entityId = world.getEntityId(unit.id)
       if (entityId !== undefined) world.resources.require('entitySpatial').insert(world, entityId)
-    },
-    updateSpatialUnit: unit => {
-      const entityId = world.getEntityId(unit.id)
-      if (entityId !== undefined) world.resources.require('entitySpatial').update(world, entityId)
     },
     snapshotUnits: () => { world.flushStructuralCommands(); world.syncAllToComponents(); return world.snapshot() },
     getSurvivors: () => {

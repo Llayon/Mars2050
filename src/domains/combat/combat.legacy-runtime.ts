@@ -11,6 +11,7 @@ import { createMeleeEngagementState, reserveMeleeEngagementSlot } from './combat
 import { targetingSystem } from './combat.targeting'
 import { SpatialHash } from './spatial-hash'
 import { applyDepenetration } from './combat.depenetration'
+import { movementSystem } from './combat.movement'
 
 export function createLegacyCombatRuntime(): CombatRuntime {
   const units: SimUnit[] = []
@@ -25,9 +26,12 @@ export function createLegacyCombatRuntime(): CombatRuntime {
     beginTargetingPhase: spatial => { meleeEngagement = createMeleeEngagementState(); targetingSpatialHash = spatial },
     selectTarget: unit => targetingSystem(unit, units, meleeEngagement, targetingSpatialHash),
     reserveMeleeSlot: (unit, target) => reserveMeleeEngagementSlot(unit, target, meleeEngagement),
+    moveUnit: (unit, target, actions, context) => {
+      movementSystem(unit, target, units, actions, context.dt, context.rng, context.flowField, context.obstacles, context.spatialHash)
+      context.spatialHash.update(unit)
+    },
     completeActorTurn: () => undefined,
     insertSpatialUnit: () => undefined,
-    updateSpatialUnit: () => undefined,
     snapshotUnits: () => JSON.parse(JSON.stringify(units)) as SimUnit[],
     getSurvivors: () => units.filter(unit => !unit.isDead && !unit.isTemporary),
     getTurnOrder: () => getCombatTurnOrder(units),

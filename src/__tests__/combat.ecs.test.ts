@@ -3,9 +3,12 @@ import { compareCombatEngines } from '@/domains/combat/combat.shadow'
 import { simulateBattle } from '@/domains/combat/combat.engine'
 import { cloneRuntimeUnit, createRuntimeUnitFromConfig } from '@/domains/combat/combat.unit-factory'
 import { CombatWorld } from '@/domains/combat/ecs/combat-world'
-import { createEcsMeleeEngagementState, reserveEcsMeleeSlot, runHazardSystem, runTargetingSystem, syncEcsTargetRefs } from '@/domains/combat/ecs/systems'
+import { createEcsMeleeEngagementState, reserveEcsMeleeSlot, runHazardSystem, runMovementSystem, runTargetingSystem, syncEcsTargetRefs } from '@/domains/combat/ecs/systems'
 import { EntitySpatialIndex } from '@/domains/combat/ecs/entity-spatial-index'
 import { getSimulatorPreset } from '@/app/simulator2/simulator.presets'
+import { createPathfindingMap } from '@/domains/combat/combat.pathfinding'
+import { SpatialHash } from '@/domains/combat/spatial-hash'
+import { PRNG } from '@/domains/combat/combat.utils'
 
 const CORE_SHADOW_PRESETS = ['ranged_duel', 'summon_caps', 'control_status', 'qa_primitive_events'] as const
 
@@ -103,6 +106,31 @@ describe('combat ECS shadow engine', () => {
     world.stores.targeting.require(0).attackTargetId = undefined
     syncEcsTargetRefs(world)
     expect(world.stores.entityTargets.require(0).attackTarget).toBeUndefined()
+  })
+
+  it('writes movement results to ECS components and spatial indexes', () => {
+    const attacker = createRuntimeUnitFromConfig({ id: 'attacker', team: 'attacker', type: 'marine', x: 10, y: 20, currentAngle: 0 })!
+    const defender = createRuntimeUnitFromConfig({ id: 'defender', team: 'defender', type: 'marine', x: 400, y: 20, currentAngle: Math.PI })!
+    const world = new CombatWorld([attacker, defender])
+    const entitySpatial = new EntitySpatialIndex()
+    entitySpatial.rebuild(world)
+    world.resources.set('entitySpatial', entitySpatial)
+    const spatialHash = new SpatialHash()
+    spatialHash.insert(attacker)
+    spatialHash.insert(defender)
+
+    runMovementSystem(world, 0, 1, [], {
+      dt: 0.1,
+      rng: new PRNG(1),
+      flowField: createPathfindingMap([]),
+      obstacles: [],
+      spatialHash,
+    })
+
+    const transform = world.stores.transform.require(0)
+    expect(transform.x).toBeGreaterThan(10)
+    expect(transform.x).toBe(attacker.x)
+    expect(entitySpatial.query(world, transform.x, transform.y, 1)).toContain(0)
   })
 
   it('clones nested loadout state and resets transient statuses', () => {

@@ -5,7 +5,6 @@ import { processPostHazardPrimitives, processPreActionPrimitives } from './comba
 import type { UnitRow, BattleAction, BattleTick, BattleResult } from './combat.types'
 import type { Team, SimUnit, Obstacle, SimHazard } from './combat.sim.types'
 import { actionSystem } from './combat.systems'
-import { movementSystem } from './combat.movement'
 import { createCombatMetrics, finalizeCombatMetrics, recordCombatActions, recordCombatTick, type BattleSimulationOptions } from './combat.metrics'
 import { hasPendingReassembly } from './combat.reassembly'
 import { PRNG, generateObstacles } from './combat.utils'
@@ -28,6 +27,7 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
   defenderGlobals.forEach(id => { if (GLOBAL_UPGRADES[id]) activeGlobals.push({ team: 'defender', upg: GLOBAL_UPGRADES[id] }) })
   const obstacles: Obstacle[] = providedObstacles || generateObstacles(seed);
   const flowFieldMap = createPathfindingMap(obstacles), spatialHash = new SpatialHash();
+  const movementContext = { dt, rng, flowField: flowFieldMap, obstacles, spatialHash }
   attackerUnits.forEach(row => runtime.addSquad(row, 'attacker', rng))
   defenderUnits.forEach(row => runtime.addSquad(row, 'defender', rng))
 
@@ -101,11 +101,9 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
         if (!units[i].isDead) { spatialHash.insert(units[i]); runtime.insertSpatialUnit(units[i]) }
       }
       if (!acted) {
-        movementSystem(unit, target, units, actions, dt, rng, flowFieldMap, obstacles, spatialHash);
-        spatialHash.update(unit);
+        runtime.moveUnit(unit, target, actions, movementContext);
       }
-      runtime.completeActorTurn(unit, actions, actionStart)
-      if (!acted) runtime.updateSpatialUnit(unit)
+      runtime.completeActorTurn(unit, actions, actionStart, !acted)
     }
 
     runtime.runHazardPhase(actions, resolveEnvironmentalDeath, spatialHash);
