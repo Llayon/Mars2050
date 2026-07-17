@@ -10,6 +10,7 @@ import { applyEcsSingleDamage } from './damage-system'
 import { canResolveSimpleEcsDeath, resolveSimpleEcsDeath } from './death-system'
 import { getEcsShareRecipients } from './damage-sharing-system'
 import { applyEcsPrimaryDamageModifiers } from './primary-damage-modifier-system'
+import { applyEcsOnHitEffects } from './on-hit-system'
 
 const FACING_TOLERANCE = 0.26
 
@@ -58,8 +59,9 @@ export function runSimpleSingleDamage(
   combat.actionCooldown = getSuppressedCooldown(combat.actionCooldownMax, status.statusEffects)
   actions.push({ unitId: identity.id, type: 'attack', targetId: world.stores.identity.require(targetId).id })
   const primaryDamage = applyEcsPrimaryDamageModifiers(world, entityId, targetId, combat.attack, actions)
-  applyEcsSingleDamage(world, entityId, targetId, primaryDamage, actions)
+  const damageResult = applyEcsSingleDamage(world, entityId, targetId, primaryDamage, actions)
   status.hasAttacked = true
+  if (!damageResult.intercepted) applyEcsOnHitEffects(world, entityId, targetId, actions)
   resolveSimpleEcsDeath(world, targetId, entityId, actions)
   world.syncComponentsFromStore(entityId, ['vitality', 'combat', 'targeting', 'statusControl'])
   world.syncComponentsFromStore(targetId, ['vitality', 'defense'])
@@ -68,11 +70,11 @@ export function runSimpleSingleDamage(
 
 function hasWeaponPrimitives(weapon: ReturnType<CombatWorld['stores']['weapon']['require']>): boolean {
   return Boolean(
-    weapon.aoeRadius || weapon.statusOnHit?.length || weapon.markOnHit ||
+    weapon.aoeRadius ||
     weapon.linePierce || weapon.coneAttack || weapon.beamAttack ||
     weapon.barrageAttack || weapon.chainAttack || weapon.splitFire ||
     weapon.sideWeapon || weapon.conditionalAttackMode || weapon.sweepAttack ||
-    weapon.emergeStrikePending || weapon.appliesEmp || weapon.leavesPuddle ||
+    weapon.emergeStrikePending || weapon.leavesPuddle ||
     weapon.smokeOnAction || weapon.pullOnHit || weapon.knockbackOnHit,
   )
 }

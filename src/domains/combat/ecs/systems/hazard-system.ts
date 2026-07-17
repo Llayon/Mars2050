@@ -1,10 +1,8 @@
 import type { BattleAction } from '../../combat.actions'
 import type { DeathCause } from '../../combat.death'
-import { chooseHackControlMode } from '../../combat.control'
-import type { RuntimeStatusEffect, StatusEffect } from '../../combat.primitives'
-import { HARMFUL_STATUS_TYPES, chooseStatusStrength, getStatusStackIdentity, normalizeStatusEffect } from '../../combat.status'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
+import { applyEcsStatus } from './status-application-system'
 
 export type EcsHazardDeathHandler = (
   entityId: EntityId,
@@ -69,7 +67,7 @@ function processSmoke(world: CombatWorld, hazardId: EntityId, actions: BattleAct
   const targets = getTargetsInRadius(world, hazardId)
     .sort((left, right) => getExternalId(world, left).localeCompare(getExternalId(world, right)))
   for (const targetId of targets) {
-    for (const effect of hazard.statusEffects) applyHazardStatus(world, targetId, { ...effect, sourceUnitId: hazard.id, stackKey: hazard.id }, actions)
+    for (const effect of hazard.statusEffects) applyEcsStatus(world, targetId, { ...effect, sourceUnitId: hazard.id, stackKey: hazard.id }, actions)
   }
 }
 
@@ -79,45 +77,6 @@ function getTargetsInRadius(world: CombatWorld, hazardId: EntityId): EntityId[] 
     const transform = world.stores.transform.require(entityId)
     return !transform.isFlying
   })
-}
-
-function applyHazardStatus(world: CombatWorld, entityId: EntityId, effect: StatusEffect, actions: BattleAction[]): void {
-  const identity = world.stores.identity.require(entityId)
-  const statuses = world.stores.statusControl.require(entityId).statusEffects
-  const normalized = normalizeStatusEffect(effect)
-  if (normalized.duration <= 0) return
-  if (normalized.type !== 'status_immunity' && HARMFUL_STATUS_TYPES.includes(normalized.type) && hasStatus(statuses, 'status_immunity')) {
-    actions.push({ unitId: identity.id, type: 'status_immune', statusType: normalized.type })
-    return
-  }
-  const existing = statuses.find(status => getStatusStackIdentity(status) === getStatusStackIdentity(normalized))
-  if (existing) refreshStatus(existing, normalized)
-  else statuses.push(normalized)
-  actions.push({ unitId: identity.id, type: 'status_apply', statusType: normalized.type, value: normalized.value })
-  if (normalized.type === 'revealed') breakRevealStates(world, entityId, actions)
-}
-
-function refreshStatus(existing: RuntimeStatusEffect, next: RuntimeStatusEffect): void {
-  existing.duration = Math.max(existing.duration, next.duration)
-  existing.value = chooseStatusStrength(existing.type, existing.value, next.value)
-  existing.controlMode = chooseHackControlMode(existing.controlMode, next.controlMode)
-}
-
-function hasStatus(statuses: RuntimeStatusEffect[], type: RuntimeStatusEffect['type']): boolean {
-  return statuses.some(status => status.type === type && status.duration > 0)
-}
-
-function breakRevealStates(world: CombatWorld, entityId: EntityId, actions: BattleAction[]): void {
-  const identity = world.stores.identity.require(entityId)
-  const movement = world.stores.movement.require(entityId)
-  if (movement.isBurrowed) {
-    movement.isBurrowed = false
-    actions.push({ unitId: identity.id, type: 'burrow_change', value: 0 })
-  }
-  if (movement.movementStealthActive) {
-    movement.movementStealthActive = false
-    actions.push({ unitId: identity.id, type: 'stealth_change', modeState: 'movement_inactive' })
-  }
 }
 
 function createDamageAction(world: CombatWorld, hazardId: EntityId, targetId: EntityId): BattleAction {

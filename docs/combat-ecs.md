@@ -39,8 +39,8 @@ pipeline. A strict native single-shot fast path handles armor, supported combat
 statuses, rank modifiers, movement reduction, target marks, flat block, shields,
 reactive armor, execute, lifesteal, finite/reduction barriers, projectile
 interception, deterministic damage sharing, movement charge, same-target ramp,
-and percent-HP payloads. Weapon geometry and complex lifecycle primitives fall
-back before mutating state.
+percent-HP payloads, on-hit statuses, and squad-wide target marks. Weapon
+geometry and complex lifecycle primitives fall back before mutating state.
 Initial squads, action spawns,
 trigger clones, and hazards
 enter a deterministic structural command buffer. Target references and melee
