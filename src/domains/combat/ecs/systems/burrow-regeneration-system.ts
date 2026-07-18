@@ -1,17 +1,15 @@
 import type { BattleAction } from '../../combat.actions'
 import type { CombatWorld } from '../combat-world'
+import type { EntityId } from '../entity'
 import { applyEcsHealing } from './healing-system'
 
 export function runEcsBurrowRegenerationSystem(
   world: CombatWorld,
   actions: BattleAction[],
+  entityIds = getEcsBurrowRegenerationEntities(world),
 ): void {
-  const burrowed = world.query(['identity', 'vitality', 'movement'])
-    .filter(entityId => {
-      const movement = world.stores.movement.require(entityId)
-      return movement.isBurrowed &&
-        Boolean(movement.burrowConfig?.regenPercentPerTick)
-    })
+  const burrowed = entityIds
+    .filter(entityId => world.stores.movement.require(entityId).isBurrowed)
     .sort((left, right) =>
       world.stores.identity.require(left).id.localeCompare(
         world.stores.identity.require(right).id,
@@ -42,4 +40,16 @@ export function runEcsBurrowRegenerationSystem(
       damage: actualHeal,
     })
   }
+}
+
+export function getEcsBurrowRegenerationEntities(
+  world: CombatWorld,
+): EntityId[] {
+  return world.query(['identity', 'vitality', 'movement'])
+    .filter(entityId =>
+      Boolean(
+        world.stores.movement.require(entityId)
+          .burrowConfig?.regenPercentPerTick,
+      ),
+    )
 }

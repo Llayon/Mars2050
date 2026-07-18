@@ -1,0 +1,98 @@
+import { describe, expect, it } from 'vitest'
+import type { BattleAction } from '@/domains/combat/combat.actions'
+import type { SimUnit } from '@/domains/combat/combat.sim.types'
+import { createLegacyCombatRuntime } from '@/domains/combat/combat.legacy-runtime'
+import { createRuntimeUnitFromConfig } from '@/domains/combat/combat.unit-factory'
+import { createEcsCombatRuntime } from '@/domains/combat/ecs/combat-ecs-runtime'
+import { CombatWorld } from '@/domains/combat/ecs/combat-world'
+import { runEcsGrowthAndChargeSystem } from '@/domains/combat/ecs/systems'
+
+function unit(id: string): SimUnit {
+  return createRuntimeUnitFromConfig({
+    id,
+    team: 'attacker',
+    type: 'marine',
+    x: 100,
+    y: 100,
+    currentAngle: 0,
+  })!
+}
+
+function configure(unit: SimUnit): void {
+  unit.hp = Math.max(1, unit.maxHp - 10)
+  unit.statGrowth = {
+    intervalTicks: 2,
+    maxStacks: 2,
+    attackMultPerStack: 0.5,
+    hpMultPerStack: 0.1,
+    nextTick: 2,
+    stacks: 0,
+  }
+  unit.attackCharge = {
+    intervalTicks: 1,
+    maxStacks: 3,
+    attackMultPerStack: 0.25,
+    nextTick: 1,
+    stacks: 0,
+  }
+}
+
+describe('combat ECS growth and charge phase', () => {
+  it('matches legacy capped accumulation through the runtime boundary', () => {
+    const growing = unit('growing')
+    configure(growing)
+    const legacy = createLegacyCombatRuntime()
+    const ecs = createEcsCombatRuntime()
+    legacy.units.push(structuredClone(growing))
+    ecs.units.push(structuredClone(growing))
+    ecs.flushStructuralCommands()
+    const legacyActions: BattleAction[] = []
+    const ecsActions: BattleAction[] = []
+
+    for (let tick = 0; tick <= 6; tick++) {
+      legacy.runGrowthAndChargePhase(tick, legacyActions)
+      ecs.runGrowthAndChargePhase(tick, ecsActions)
+    }
+
+    expect(ecsActions).toEqual(legacyActions)
+    expect(ecs.snapshotUnits()).toEqual(legacy.snapshotUnits())
+    expect(ecs.world.stores.lifecycle.require(0)).toMatchObject({
+      statGrowth: expect.objectContaining({ stacks: 2 }),
+      attackCharge: expect.objectContaining({ stacks: 3 }),
+    })
+  })
+
+  it('reads canonical stores in stable external-ID order', () => {
+    const world = new CombatWorld([unit('zeta'), unit('alpha')])
+    for (const entityId of [0, 1]) {
+      const lifecycle = world.stores.lifecycle.require(entityId)
+      lifecycle.statGrowth = {
+        intervalTicks: 1,
+        maxStacks: 1,
+        attackMultPerStack: 0.5,
+        nextTick: 1,
+        stacks: 0,
+      }
+      lifecycle.attackCharge = {
+        intervalTicks: 1,
+        maxStacks: 1,
+        attackMultPerStack: 0.25,
+        nextTick: 1,
+        stacks: 0,
+      }
+    }
+    const actions: BattleAction[] = []
+
+    expect(world.roster.every(candidate => !candidate.statGrowth)).toBe(true)
+    runEcsGrowthAndChargeSystem(world, 1, actions)
+
+    expect(actions.map(action => `${action.unitId}:${action.type}`)).toEqual([
+      'alpha:stat_growth',
+      'alpha:attack_charge',
+      'zeta:stat_growth',
+      'zeta:attack_charge',
+    ])
+    expect(world.stores.combat.require(0).attack)
+      .toBeGreaterThan(world.roster[0].attack)
+  })
+})

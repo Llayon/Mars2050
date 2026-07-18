@@ -4,7 +4,6 @@ import { processControlBeams } from './combat.control'
 import { processFieldEffects } from './combat.field-effects'
 import { processFormationBonuses } from './combat.formation'
 import { processGlobals } from './combat.globals'
-import { processGrowthAndCharge } from './combat.growth-charge'
 import { processPeriodicAbilities } from './combat.periodic-abilities'
 import { handleDeath } from './combat.systems.utils'
 import { processHpThresholdTriggers, type TriggerContext } from './combat.triggers'
@@ -15,6 +14,7 @@ import type { PRNG } from './combat.utils'
 import type { SpatialHash } from './spatial-hash'
 
 export interface PreActionRuntimePhases {
+  runGrowthAndCharge(): void
   runBurrowRegeneration(): void
 }
 
@@ -31,7 +31,7 @@ export function processPreActionPrimitives(
   const triggerContext = { units, hazards, actions, rng, tick, onUnitDeath: (target: SimUnit, source: SimUnit) => handleDeath(target, source, units, actions, hazards, rng) }
   processGlobals(tick, activeGlobals, units, hazards, actions, rng)
   processSupportAuras(tick, units, actions, spatialHash)
-  processGrowthAndCharge(tick, units, actions)
+  runtimePhases.runGrowthAndCharge()
   runtimePhases.runBurrowRegeneration()
   processTransformModes(tick, units, actions)
   processFieldEffects(tick, units, hazards, actions)

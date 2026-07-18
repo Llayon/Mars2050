@@ -26,7 +26,8 @@ The ECS implementations currently own status scheduling, hazards, targeting,
 mixed-size melee reservation, positioning, steering, formation cohesion,
 movement state, burrow regeneration, and spatial updates, direct healing actions, depenetration,
 single-shot local damage modifiers and simple weapon deaths, terminal outcome, initiative,
-modifier/lifetime ticking, periodic spawner and reassembly ownership,
+modifier/lifetime ticking, stat-growth and attack-charge accumulation,
+periodic spawner and reassembly ownership,
 typed component/resource stores, deterministic
 entity queries, and snapshot/survivor serialization. Legacy hooks remain frozen
 for shadow tests.
@@ -56,7 +57,9 @@ healing through the ECS healing kernel, and emits only the contractual
 Sequential multishot actions run through the same native per-shot pipeline and
 stop immediately when the primary target dies. Accumulated attack charge is
 released natively after other primary modifiers and is consumed by only the
-first shot in a series. Successful incendiary hits create seeded napalm hazards
+first shot in a series. Pre-action stat growth and attack-charge accumulation
+now mutate combat, vitality, and lifecycle components in stable external-ID
+order before burrow regeneration. Successful incendiary hits create seeded napalm hazards
 through the ECS structural buffer after primary on-hit effects; multishot creates
 one puddle per non-intercepted shot. Smoke actions now deploy seeded suppression
 hazards through a native ECS action path without primary damage or movement

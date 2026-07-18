@@ -66,6 +66,8 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
       actions,
       rng,
       {
+        runGrowthAndCharge: () =>
+          runtime.runGrowthAndChargePhase(tick, actions),
         runBurrowRegeneration: () =>
           runtime.runBurrowRegenerationPhase(actions),
       },

@@ -45,6 +45,7 @@ export interface CombatRuntime {
   getTurnOrder(): SimUnit[]
   tickModifiers(unit: SimUnit, dt: number, actions: BattleAction[], rng: PRNG): void
   runReassemblyPhase(actions: BattleAction[]): void
+  runGrowthAndChargePhase(tick: number, actions: BattleAction[]): void
   runBurrowRegenerationPhase(actions: BattleAction[]): void
   runStatusPhase(actions: BattleAction[], rng: PRNG): void
   runHazardPhase(actions: BattleAction[], spatialHash: SpatialHash, rng: PRNG): void
