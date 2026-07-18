@@ -4,7 +4,6 @@ import { processPreActionPrimitives } from './combat.tick-primitives'
 import type { UnitRow, BattleAction, BattleTick, BattleResult } from './combat.types'
 import type { Team, SimUnit, Obstacle, SimHazard } from './combat.sim.types'
 import { createCombatMetrics, finalizeCombatMetrics, recordCombatActions, recordCombatTick, type BattleSimulationOptions } from './combat.metrics'
-import { hasPendingReassembly } from './combat.reassembly'
 import { PRNG, generateObstacles } from './combat.utils'
 import { createPathfindingMap } from './combat.pathfinding'
 import { SpatialHash } from './spatial-hash'
@@ -58,6 +57,7 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
       if (!unit.isDead) spatialHash.insert(unit);
     }
     const unitCountBeforePrimitives = units.length
+    runtime.runReassemblyPhase(actions)
     const triggerContext = processPreActionPrimitives(tick, activeGlobals, units, hazards, actions, rng, spatialHash);
     runtime.flushStructuralCommands()
     for (let index = unitCountBeforePrimitives; index < units.length; index++) {
@@ -65,9 +65,7 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
     }
     runtime.runStatusPhase(actions, rng)
 
-    const pendingAttackers = units.some(u => u.team === 'attacker' && hasPendingReassembly(u))
-    const pendingDefenders = units.some(u => u.team === 'defender' && hasPendingReassembly(u))
-    const terminalOutcome = runtime.getTerminalOutcome(hazards, pendingAttackers, pendingDefenders)
+    const terminalOutcome = runtime.getTerminalOutcome(hazards)
     if (terminalOutcome) { resolvedOutcome = terminalOutcome; break }
 
     const turnOrder = runtime.getTurnOrder()

@@ -2,7 +2,7 @@ import type { BattleAction } from '../combat.actions'
 import type { SimHazard } from '../combat.sim.types'
 import type { CombatRuntime } from '../combat.runtime'
 import { CombatWorld } from './combat-world'
-import { createEcsMeleeEngagementState, getEcsTerminalOutcome, getEcsTurnOrder, processEcsHpThresholdTriggers, reserveEcsMeleeSlot, resolveEcsDeath, runActionSystem, runDepenetrationSystem, runEcsPeriodicSpawnerSystem, runHazardSystem, runModifierSystem, runMovementSystem, runStatusSystem, runTargetingSystem, syncEcsTargetRefs } from './systems'
+import { createEcsMeleeEngagementState, getEcsTerminalOutcome, getEcsTurnOrder, processEcsHpThresholdTriggers, reserveEcsMeleeSlot, resolveEcsDeath, runActionSystem, runDepenetrationSystem, runEcsPeriodicSpawnerSystem, runEcsReassemblySystem, runHazardSystem, runModifierSystem, runMovementSystem, runStatusSystem, runTargetingSystem, syncEcsTargetRefs } from './systems'
 import { createSquadEntities } from './combat-entity-factory'
 import { EntitySpatialIndex } from './entity-spatial-index'
 
@@ -111,6 +111,10 @@ export function createEcsCombatRuntime(): EcsCombatRuntime {
       })
       world.syncComponentsFromStore(entityId, MODIFIER_COMPONENTS)
     },
+    runReassemblyPhase(actions): void {
+      runEcsReassemblySystem(world, actions)
+      world.syncAllComponentsFromStore(['vitality', 'combat', 'statusControl', 'targeting'])
+    },
     runStatusPhase(actions: BattleAction[], _rng): void {
       world.flushStructuralCommands()
       world.syncAllComponentsToStore(TICK_READ_COMPONENTS)
@@ -155,8 +159,8 @@ export function createEcsCombatRuntime(): EcsCombatRuntime {
       runDepenetrationSystem(world, actions)
       world.syncAllComponentsFromStore(['transform'])
     },
-    getTerminalOutcome(hazards: SimHazard[], pendingAttackers: boolean, pendingDefenders: boolean) {
-      return getEcsTerminalOutcome(world, hazards, pendingAttackers, pendingDefenders)
+    getTerminalOutcome(hazards: SimHazard[]) {
+      return getEcsTerminalOutcome(world, hazards)
     },
   }
 }

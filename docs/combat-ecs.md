@@ -26,7 +26,8 @@ The ECS implementations currently own status scheduling, hazards, targeting,
 mixed-size melee reservation, positioning, steering, formation cohesion,
 movement state and spatial updates, direct healing actions, depenetration,
 single-shot local damage modifiers and simple weapon deaths, terminal outcome, initiative,
-modifier/lifetime ticking, periodic spawner ownership, typed component/resource stores, deterministic
+modifier/lifetime ticking, periodic spawner and reassembly ownership,
+typed component/resource stores, deterministic
 entity queries, and snapshot/survivor serialization. Legacy hooks remain frozen
 for shadow tests.
 
@@ -87,7 +88,9 @@ replay action and before any killer-owned effects.
 Trigger spawn payloads now share the runtime unit factory, seeded IDs, owner and
 source caps, HP scaling, replay contract, and structural command buffer.
 Delayed-reassembly trigger payloads now schedule bounded vitality state and
-source attribution natively; completion remains in the existing pre-action phase.
+source attribution natively. Reassembly countdown, completion resets, replay
+events, and pending-team elimination protection now run inside the selected
+runtime; ECS reads canonical vitality state without a `SimUnit` round trip.
 Trigger fields now create finite or reducing barriers, cleanse hazards and
 harmful allied statuses, or buffer persistent hazards through EntityId stores.
 Trigger capability gates and their facade fallback have been removed now that

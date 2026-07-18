@@ -16,6 +16,7 @@ import { actionSystem } from './combat.systems'
 import { processPostHazardPrimitives } from './combat.tick-primitives'
 import { resolveUnitDeath, type DeathCause } from './combat.death'
 import { processSpawnerLogic } from './combat.spawner'
+import { hasPendingReassembly, processReassemblies } from './combat.reassembly'
 import type { PRNG } from './combat.utils'
 
 export function createLegacyCombatRuntime(): CombatRuntime {
@@ -53,6 +54,7 @@ export function createLegacyCombatRuntime(): CombatRuntime {
       actions,
       expired => resolveEnvironmentalDeath(expired, undefined, 'expiration', actions, rng),
     ),
+    runReassemblyPhase: actions => processReassemblies(units, actions),
     runStatusPhase(actions: BattleAction[], rng: PRNG): void {
       for (const unit of units) {
         if (!unit.isDead) {
@@ -75,7 +77,13 @@ export function createLegacyCombatRuntime(): CombatRuntime {
     },
     runPostHazardPhase: triggerContext => processPostHazardPrimitives(units, triggerContext),
     runDepenetration: actions => applyDepenetration(units, actions),
-    getTerminalOutcome(hazards: SimHazard[], pendingAttackers: boolean, pendingDefenders: boolean) {
+    getTerminalOutcome(hazards: SimHazard[]) {
+      const pendingAttackers = units.some(unit =>
+        unit.team === 'attacker' && hasPendingReassembly(unit),
+      )
+      const pendingDefenders = units.some(unit =>
+        unit.team === 'defender' && hasPendingReassembly(unit),
+      )
       return getTerminalBattleOutcome(units, hazards, pendingAttackers, pendingDefenders)
     },
   }

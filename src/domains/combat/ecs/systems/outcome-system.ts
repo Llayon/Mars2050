@@ -6,9 +6,9 @@ import type { EntityId } from '../entity'
 export function getEcsTerminalOutcome(
   world: CombatWorld,
   hazards: SimHazard[],
-  pendingAttackers: boolean,
-  pendingDefenders: boolean,
 ): BattleOutcome | null {
+  const pendingAttackers = hasPendingReassembly(world, 'attacker')
+  const pendingDefenders = hasPendingReassembly(world, 'defender')
   const active = world.query(['identity', 'vitality'])
   const attackers = active.filter(entityId => getTeam(world, entityId) === 'attacker')
   const defenders = active.filter(entityId => getTeam(world, entityId) === 'defender')
@@ -22,6 +22,13 @@ export function getEcsTerminalOutcome(
   const defenderPower = getOffensivePower(world, defenders)
   if (attackerPower === defenderPower) return { winner: 'draw', reason: 'stalemate' }
   return { winner: attackerPower > defenderPower ? 'attacker' : 'defender', reason: 'stalemate' }
+}
+
+function hasPendingReassembly(world: CombatWorld, team: Team): boolean {
+  return world.query(['identity', 'vitality'], true).some(entityId =>
+    world.stores.identity.require(entityId).team === team &&
+    world.stores.vitality.require(entityId).reassemblyState !== undefined,
+  )
 }
 
 function getTeam(world: CombatWorld, entityId: EntityId): Team | undefined {

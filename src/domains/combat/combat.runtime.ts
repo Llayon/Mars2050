@@ -44,13 +44,10 @@ export interface CombatRuntime {
   getSurvivors(): SimUnit[]
   getTurnOrder(): SimUnit[]
   tickModifiers(unit: SimUnit, dt: number, actions: BattleAction[], rng: PRNG): void
+  runReassemblyPhase(actions: BattleAction[]): void
   runStatusPhase(actions: BattleAction[], rng: PRNG): void
   runHazardPhase(actions: BattleAction[], spatialHash: SpatialHash, rng: PRNG): void
   runPostHazardPhase(triggerContext: TriggerContext): void
   runDepenetration(actions: BattleAction[]): void
-  getTerminalOutcome(
-    hazards: SimHazard[],
-    pendingAttackers: boolean,
-    pendingDefenders: boolean,
-  ): BattleOutcome | null
+  getTerminalOutcome(hazards: SimHazard[]): BattleOutcome | null
 }
