@@ -74,6 +74,8 @@ remain behind an explicit legacy capability gate.
 HP-threshold triggers with the same payload set run in an EntityId post-hazard
 phase. Unsupported threshold payloads fall back per owner and synchronize their
 effects back into component stores without disabling native weapon actions.
+Kill triggers with status, shield, heal, or cooldown payloads now execute after
+configured on-kill effects and before replication or death hazards.
 Initial squads, action spawns,
 trigger clones, and hazards
 enter a deterministic structural command buffer. Target references and melee

@@ -9,6 +9,7 @@ import { applyEcsStatus } from './status-application-system'
 const SUPPORTED_EVENTS = new Set<RuntimeTriggerEffect['event']>([
   'attack_count',
   'damage_taken',
+  'kill',
 ])
 const SUPPORTED_PAYLOADS = new Set<TriggerPayload['kind']>([
   'status',
@@ -52,6 +53,18 @@ export function processEcsHpThresholdTriggers(
     }
   }
   world.syncComponentsFromStore(entityId, ['lifecycle'])
+}
+
+export function processEcsKillTriggers(
+  world: CombatWorld,
+  killerId: EntityId,
+  victimId: EntityId,
+  actions: BattleAction[],
+): void {
+  for (const trigger of getTriggers(world, killerId, 'kill')) {
+    fireTrigger(world, killerId, trigger, victimId, killerId, actions)
+  }
+  world.syncComponentsFromStore(killerId, ['lifecycle'])
 }
 
 export function recordEcsAttackTriggers(

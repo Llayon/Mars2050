@@ -4,6 +4,7 @@ import { cloneRuntimeUnit } from '../../combat.unit-factory'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
 import { applyEcsOnKillEffects } from './on-kill-system'
+import { processEcsKillTriggers } from './post-hit-trigger-system'
 
 export function resolveSimpleEcsDeath(
   world: CombatWorld,
@@ -20,7 +21,11 @@ export function resolveSimpleEcsDeath(
     sourceUnitId: world.stores.identity.require(sourceId).id,
     cause: 'weapon',
   })
-  applyEcsOnKillEffects(world, sourceId, targetId, actions)
+  if (world.stores.identity.require(sourceId).team !==
+      world.stores.identity.require(targetId).team) {
+    applyEcsOnKillEffects(world, sourceId, targetId, actions)
+    processEcsKillTriggers(world, sourceId, targetId, actions)
+  }
   replicateEcsKiller(world, sourceId, targetId, actions)
   spawnEcsDeathHazard(world, targetId, actions)
   return true
