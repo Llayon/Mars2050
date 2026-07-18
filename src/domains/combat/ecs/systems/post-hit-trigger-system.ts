@@ -9,6 +9,7 @@ import { applyEcsStatus } from './status-application-system'
 const SUPPORTED_EVENTS = new Set<RuntimeTriggerEffect['event']>([
   'attack_count',
   'damage_taken',
+  'death',
   'kill',
 ])
 const SUPPORTED_PAYLOADS = new Set<TriggerPayload['kind']>([
@@ -26,9 +27,13 @@ export function canUseEcsPostHitTriggers(
   return [attackerId, targetId].every(entityId =>
     (world.stores.lifecycle.require(entityId).triggerEffects ?? []).every(trigger =>
       trigger.event === 'hp_threshold' ||
-      SUPPORTED_EVENTS.has(trigger.event) && SUPPORTED_PAYLOADS.has(trigger.payload.kind),
+      SUPPORTED_EVENTS.has(trigger.event) && isEcsTriggerSupported(trigger),
     ),
   )
+}
+
+export function isEcsTriggerSupported(trigger: RuntimeTriggerEffect): boolean {
+  return SUPPORTED_PAYLOADS.has(trigger.payload.kind)
 }
 
 export function canUseEcsHpThresholdTriggers(
@@ -36,7 +41,7 @@ export function canUseEcsHpThresholdTriggers(
   entityId: EntityId,
 ): boolean {
   return getTriggers(world, entityId, 'hp_threshold')
-    .every(trigger => SUPPORTED_PAYLOADS.has(trigger.payload.kind))
+    .every(isEcsTriggerSupported)
 }
 
 export function processEcsHpThresholdTriggers(
@@ -49,7 +54,7 @@ export function processEcsHpThresholdTriggers(
     const threshold = trigger.threshold ?? 0
     const value = threshold <= 1 ? vitality.hp / vitality.maxHp : vitality.hp
     if (value <= threshold) {
-      fireTrigger(world, entityId, trigger, entityId, entityId, actions)
+      fireEcsTrigger(world, entityId, trigger, entityId, entityId, actions)
     }
   }
   world.syncComponentsFromStore(entityId, ['lifecycle'])
@@ -62,7 +67,7 @@ export function processEcsKillTriggers(
   actions: BattleAction[],
 ): void {
   for (const trigger of getTriggers(world, killerId, 'kill')) {
-    fireTrigger(world, killerId, trigger, victimId, killerId, actions)
+    fireEcsTrigger(world, killerId, trigger, victimId, killerId, actions)
   }
   world.syncComponentsFromStore(killerId, ['lifecycle'])
 }
@@ -76,7 +81,7 @@ export function recordEcsAttackTriggers(
   for (const trigger of getTriggers(world, sourceId, 'attack_count')) {
     trigger.counter++
     if (trigger.counter >= Math.max(1, trigger.count ?? 1)) {
-      fireTrigger(world, sourceId, trigger, targetId, sourceId, actions)
+      fireEcsTrigger(world, sourceId, trigger, targetId, sourceId, actions)
     }
   }
 }
@@ -91,7 +96,7 @@ export function recordEcsDamageTakenTriggers(
   if (damage <= 0) return
   for (const trigger of getTriggers(world, targetId, 'damage_taken')) {
     if (damage < Math.max(0, trigger.threshold ?? 0)) continue
-    fireTrigger(world, targetId, trigger, attackerId, attackerId, actions)
+    fireEcsTrigger(world, targetId, trigger, attackerId, attackerId, actions)
   }
 }
 
@@ -104,7 +109,7 @@ function getTriggers(
     .filter(trigger => trigger.event === event)
 }
 
-function fireTrigger(
+export function fireEcsTrigger(
   world: CombatWorld,
   ownerId: EntityId,
   trigger: RuntimeTriggerEffect,

@@ -5,6 +5,10 @@ import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
 import { applyEcsOnKillEffects } from './on-kill-system'
 import { processEcsKillTriggers } from './post-hit-trigger-system'
+import {
+  canUseEcsDeathTriggers,
+  processEcsDeathTriggers,
+} from './death-trigger-system'
 
 export function resolveSimpleEcsDeath(
   world: CombatWorld,
@@ -21,6 +25,7 @@ export function resolveSimpleEcsDeath(
     sourceUnitId: world.stores.identity.require(sourceId).id,
     cause: 'weapon',
   })
+  processEcsDeathTriggers(world, targetId, sourceId, actions)
   if (world.stores.identity.require(sourceId).team !==
       world.stores.identity.require(targetId).team) {
     applyEcsOnKillEffects(world, sourceId, targetId, actions)
@@ -63,9 +68,8 @@ function replicateEcsKiller(
 
 export function canResolveSimpleEcsDeath(world: CombatWorld, entityId: EntityId): boolean {
   const vitality = world.stores.vitality.require(entityId)
-  const lifecycle = world.stores.lifecycle.require(entityId)
   return !vitality.resurrectOnce && !vitality.reassemblyConfig &&
-    !(lifecycle.triggerEffects ?? []).some(trigger => trigger.event === 'death')
+    canUseEcsDeathTriggers(world, entityId)
 }
 
 function spawnEcsDeathHazard(
