@@ -64,6 +64,8 @@ Configured on-kill cooldown resets, actual healing, and statuses now resolve
 natively after a confirmed enemy death across primary and secondary hits.
 Conditional air, ground, combat-tag, and rank ranges are target-aware in both
 ECS positioning and action setup, including sequential modifier stacking.
+Seeded on-death puddles now spawn after confirmed ECS weapon deaths with legacy
+source attribution, damage payloads, replay order, and structural buffering.
 Initial squads, action spawns,
 trigger clones, and hazards
 enter a deterministic structural command buffer. Target references and melee

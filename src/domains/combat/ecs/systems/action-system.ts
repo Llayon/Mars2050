@@ -29,6 +29,7 @@ export function runActionSystem(
   actions: BattleAction[],
   context: RuntimeActionContext,
 ): RuntimeActionResult {
+  world.resources.set('rng', context.rng)
   world.reconcileHazards()
   world.syncHazardsToComponents()
   const weapon = world.stores.weapon.require(entityId)
