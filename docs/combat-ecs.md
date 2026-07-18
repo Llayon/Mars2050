@@ -68,6 +68,9 @@ Seeded on-death puddles now spawn after confirmed ECS weapon deaths with legacy
 source attribution, damage payloads, replay order, and structural buffering.
 Replicate-on-kill clones are built from canonical ECS snapshots at the victim
 position and enter the same seeded structural lifecycle before death puddles.
+Attack-count and damage-taken triggers with status, shield, heal, or cooldown
+payloads now run natively after primary damage; unsupported trigger payloads
+remain behind an explicit legacy capability gate.
 Initial squads, action spawns,
 trigger clones, and hazards
 enter a deterministic structural command buffer. Target references and melee

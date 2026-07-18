@@ -13,6 +13,10 @@ import { applyEcsDirectionalGeometry } from './directional-geometry-system'
 import { applyEcsDisplacement } from './displacement-system'
 import { consumeEcsEmergeStrike } from './emerge-strike-system'
 import { applyEcsOnHitEffects } from './on-hit-system'
+import {
+  recordEcsAttackTriggers,
+  recordEcsDamageTakenTriggers,
+} from './post-hit-trigger-system'
 import { applyEcsPrimaryDamageModifiers } from './primary-damage-modifier-system'
 import { spawnEcsAttackPuddle } from './puddle-system'
 import { applyEcsRadialAoe } from './radial-aoe-system'
@@ -64,6 +68,14 @@ export function resolveEcsSingleShot(
   status.hasAttacked = true
   breakEcsMovementStealthOnAttack(world, entityId, actions)
   if (!damageResult.intercepted) {
+    recordEcsAttackTriggers(world, entityId, targetId, actions)
+    recordEcsDamageTakenTriggers(
+      world,
+      entityId,
+      targetId,
+      damageResult.damage + damageResult.sharedDamage,
+      actions,
+    )
     applyEcsOnHitEffects(world, entityId, targetId, actions)
     spawnEcsAttackPuddle(world, entityId, targetId, rng)
   }

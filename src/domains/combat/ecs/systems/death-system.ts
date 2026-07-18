@@ -60,7 +60,7 @@ export function canResolveSimpleEcsDeath(world: CombatWorld, entityId: EntityId)
   const vitality = world.stores.vitality.require(entityId)
   const lifecycle = world.stores.lifecycle.require(entityId)
   return !vitality.resurrectOnce && !vitality.reassemblyConfig &&
-    !lifecycle.triggerEffects?.length
+    !(lifecycle.triggerEffects ?? []).some(trigger => trigger.event === 'death')
 }
 
 function spawnEcsDeathHazard(

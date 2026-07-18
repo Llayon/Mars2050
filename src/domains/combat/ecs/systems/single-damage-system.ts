@@ -17,6 +17,7 @@ import { canUseEcsConditionalAttack } from './conditional-attack-system'
 import { canUseEcsBarrageAttack } from './barrage-attack-system'
 import { syncEcsBurrowForAction } from './emerge-strike-system'
 import { resolveEcsSingleShot } from './single-shot-system'
+import { canUseEcsPostHitTriggers } from './post-hit-trigger-system'
 import {
   getEcsActionCooldown,
   isEcsWeaponActionInRange,
@@ -31,12 +32,10 @@ export function canUseSimpleSingleDamage(world: CombatWorld, entityId: EntityId,
   const movement = world.stores.movement.require(entityId)
   const status = world.stores.statusControl.require(entityId)
   const targetStatus = world.stores.statusControl.require(targetId)
-  const lifecycle = world.stores.lifecycle.require(entityId)
-  const targetLifecycle = world.stores.lifecycle.require(targetId)
   if (!['single', 'aoe'].includes(weapon.attackType)) return false
   if (hasUnsupportedStatuses(status.statusEffects, true) || hasUnsupportedStatuses(targetStatus.statusEffects, false)) return false
   if (!canResolveSimpleEcsDeath(world, targetId)) return false
-  if (hasLifecyclePrimitives(lifecycle) || hasLifecyclePrimitives(targetLifecycle)) return false
+  if (!canUseEcsPostHitTriggers(world, entityId, targetId)) return false
   return getEcsShareRecipients(world, targetId).every(recipientId =>
     canResolveSimpleEcsDeath(world, recipientId),
   ) && canUseEcsDirectionalGeometry(world, entityId, targetId) &&
@@ -81,12 +80,15 @@ export function runSimpleSingleDamage(
     resolveEcsSingleShot(world, entityId, targetId, actions, tick, rng)
   }
   world.syncComponentsFromStore(entityId, ['transform', 'vitality', 'combat', 'weapon', 'targeting', 'statusControl', 'movement', 'lifecycle'])
-  world.syncComponentsFromStore(targetId, ['vitality', 'defense'])
+  world.syncComponentsFromStore(targetId, [
+    'vitality',
+    'defense',
+    'combat',
+    'statusControl',
+    'movement',
+    'lifecycle',
+  ])
   return { acted: true, actorSynchronized: true }
-}
-
-function hasLifecyclePrimitives(lifecycle: ReturnType<CombatWorld['stores']['lifecycle']['require']>): boolean {
-  return Boolean(lifecycle.triggerEffects?.length)
 }
 
 function hasUnsupportedStatuses(
