@@ -24,6 +24,7 @@ import {
   getEcsActionCooldown,
   isEcsWeaponActionInRange,
   prepareEcsStanceForAction,
+  syncEcsModeForAction,
 } from './action-setup'
 
 const FACING_TOLERANCE = 0.26
@@ -39,11 +40,10 @@ export function canUseSimpleSingleDamage(world: CombatWorld, entityId: EntityId,
   const lifecycle = world.stores.lifecycle.require(entityId)
   const targetLifecycle = world.stores.lifecycle.require(targetId)
   const config = UNIT_TYPES[identity.type as UnitTypeKey]?.baseStats
-  if (!['single', 'aoe'].includes(weapon.attackType) || (weapon.attackType === 'single' && combat.range <= 60) ||
-      (combat.multishot ?? 1) !== 1) return false
+  if (!['single', 'aoe'].includes(weapon.attackType) || (combat.multishot ?? 1) !== 1) return false
   if (hasUnsupportedStatuses(status.statusEffects, true) || hasUnsupportedStatuses(targetStatus.statusEffects, false)) return false
   if (!canResolveSimpleEcsDeath(world, targetId)) return false
-  if (movement.modeSwitchConfig || movement.burrowConfig || movement.stealthWhileMoving) return false
+  if (movement.burrowConfig || movement.stealthWhileMoving) return false
   if (
     targeting.conditionalRange?.length ||
     config?.onKill
@@ -76,7 +76,7 @@ export function runSimpleSingleDamage(
   const status = world.stores.statusControl.require(entityId)
   const edgeDistance = getDistance(transform.x, transform.y, targetTransform.x, targetTransform.y) -
     getSizeRadius(transform.size) - getSizeRadius(targetTransform.size)
-  if (!isEcsWeaponActionInRange(world, entityId, edgeDistance)) return notActed()
+  if (!isEcsWeaponActionInRange(world, entityId, targetId, edgeDistance)) return notActed()
   const targetAngle = Math.atan2(targetTransform.y - transform.y, targetTransform.x - transform.x)
   if (Math.abs(normalizeAngle(targetAngle - transform.currentAngle)) > FACING_TOLERANCE) return notActed()
   if (combat.actionCooldown > 0) return notActed()
@@ -85,6 +85,7 @@ export function runSimpleSingleDamage(
     return { acted: true, actorSynchronized: true }
   }
 
+  syncEcsModeForAction(world, entityId, actions)
   combat.actionCooldown = getEcsActionCooldown(world, entityId)
   actions.push({ unitId: identity.id, type: 'attack', targetId: world.stores.identity.require(targetId).id })
   const primaryDamage = applyEcsPrimaryDamageModifiers(world, entityId, targetId, combat.attack, actions)
@@ -101,7 +102,7 @@ export function runSimpleSingleDamage(
   if (!damageResult.intercepted) applyEcsSweepAttack(world, entityId, targetId, actions)
   if (!damageResult.intercepted) applyEcsRadialAoe(world, entityId, targetId, actions)
   if (!damageResult.intercepted) applyEcsDisplacement(world, entityId, targetId, actions)
-  world.syncComponentsFromStore(entityId, ['vitality', 'combat', 'targeting', 'statusControl', 'movement'])
+  world.syncComponentsFromStore(entityId, ['transform', 'vitality', 'combat', 'targeting', 'statusControl', 'movement'])
   world.syncComponentsFromStore(targetId, ['vitality', 'defense'])
   return { acted: true, actorSynchronized: true }
 }

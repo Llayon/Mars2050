@@ -3,18 +3,20 @@ import { UNIT_TYPES } from '../../combat.config'
 import type { UnitTypeKey } from '../../combat.types'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
-import { getEcsEffectiveActionRange } from '../movement-positioning'
+import { getEcsEffectiveActionRange, isEcsMeleeEngagementReady } from '../movement-positioning'
 
 const GRID_TO_PIXELS = 40
 
 export function isEcsWeaponActionInRange(
   world: CombatWorld,
   entityId: EntityId,
+  targetId: EntityId,
   edgeDistance: number,
 ): boolean {
   const minimumRange = getEcsMinimumActionRange(world, entityId)
   return (minimumRange <= 0 || edgeDistance >= minimumRange) &&
-    edgeDistance <= getEcsStanceSetupActionRange(world, entityId)
+    edgeDistance <= getEcsStanceSetupActionRange(world, entityId) &&
+    isEcsMeleeEngagementReady(world, entityId, targetId)
 }
 
 export function getEcsStanceSetupActionRange(world: CombatWorld, entityId: EntityId): number {
@@ -58,6 +60,22 @@ export function getEcsActionCooldown(world: CombatWorld, entityId: EntityId): nu
     suppression += effect.value <= 1 ? effect.value : effect.value / 100
   }
   return Math.max(1, Math.round(base * (1 + Math.min(0.5, suppression))))
+}
+
+export function syncEcsModeForAction(
+  world: CombatWorld,
+  entityId: EntityId,
+  actions: BattleAction[],
+): void {
+  const identity = world.stores.identity.require(entityId)
+  const transform = world.stores.transform.require(entityId)
+  const movement = world.stores.movement.require(entityId)
+  const config = movement.modeSwitchConfig
+  if (!config || config.groundForAction === false ||
+      (movement.mobilityMode === 'ground' && !transform.isFlying)) return
+  movement.mobilityMode = 'ground'
+  transform.isFlying = false
+  actions.push({ unitId: identity.id, type: 'mode_change', modeState: 'ground' })
 }
 
 function getEcsMinimumActionRange(world: CombatWorld, entityId: EntityId): number {

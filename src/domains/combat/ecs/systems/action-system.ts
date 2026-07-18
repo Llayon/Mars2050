@@ -13,6 +13,7 @@ import {
   getEcsActionCooldown,
   getEcsStanceSetupActionRange,
   prepareEcsStanceForAction,
+  syncEcsModeForAction,
 } from './action-setup'
 
 const FACING_TOLERANCE = 0.26
@@ -61,7 +62,8 @@ function runHealAction(
     return { acted: true, actorSynchronized: true }
   }
 
-  syncActionModes(world, entityId, actions)
+  syncEcsModeForAction(world, entityId, actions)
+  syncBurrowForAction(world, entityId, actions)
   combat.actionCooldown = getEcsActionCooldown(world, entityId)
   applyEcsHealing(world, entityId, targetId, combat.attack, actions)
   syncActorView(world, entityId)
@@ -89,17 +91,10 @@ function canHealTarget(sourceType: string, target: NonNullable<ReturnType<Combat
   return tags.some(tag => targetTags.has(tag))
 }
 
-function syncActionModes(world: CombatWorld, entityId: EntityId, actions: BattleAction[]): void {
+function syncBurrowForAction(world: CombatWorld, entityId: EntityId, actions: BattleAction[]): void {
   const identity = world.stores.identity.require(entityId)
-  const transform = world.stores.transform.require(entityId)
   const movement = world.stores.movement.require(entityId)
   const weapon = world.stores.weapon.require(entityId)
-  const mode = movement.modeSwitchConfig
-  if (mode && mode.groundForAction !== false && (movement.mobilityMode !== 'ground' || transform.isFlying)) {
-    movement.mobilityMode = 'ground'
-    transform.isFlying = false
-    actions.push({ unitId: identity.id, type: 'mode_change', modeState: 'ground' })
-  }
   if (!movement.isBurrowed) return
   movement.isBurrowed = false
   const attackMult = movement.burrowConfig?.emergeAttackMult

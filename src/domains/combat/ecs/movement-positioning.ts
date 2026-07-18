@@ -87,6 +87,15 @@ export function getEcsStatusValue(effects: RuntimeStatusEffect[], type: RuntimeS
   return getStatusValue(effects, type)
 }
 
+export function isEcsMeleeEngagementReady(
+  world: CombatWorld,
+  entityId: EntityId,
+  targetId: EntityId,
+): boolean {
+  if (world.stores.combat.require(entityId).range > MELEE_RANGE) return true
+  return isMeleeReady(world, entityId, targetId, getMeleePoint(world, entityId, targetId))
+}
+
 function getStatusValue(effects: RuntimeStatusEffect[], type: RuntimeStatusEffect['type']): number | undefined {
   let value: number | undefined
   for (const effect of effects) {
