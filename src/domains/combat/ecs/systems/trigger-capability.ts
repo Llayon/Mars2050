@@ -5,6 +5,7 @@ const SUPPORTED_PAYLOADS = new Set<TriggerPayload['kind']>([
   'shield',
   'heal',
   'spawn',
+  'delayed_reassembly',
   'cooldown_reset',
 ])
 

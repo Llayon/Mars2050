@@ -145,6 +145,60 @@ describe('combat ECS death-trigger action', () => {
     })
   })
 
+  it('matches delayed self-reassembly state after death', () => {
+    const attacker = unit('attacker', 'attacker', 'marine', 100)
+    const target = unit('reassembler', 'defender', 'marine', 220)
+    attacker.attack = 200
+    target.hp = 20
+    target.defense = 0
+    target.triggerEffects = [{
+      id: 'rebuild',
+      event: 'death',
+      payload: {
+        kind: 'delayed_reassembly',
+        target: 'self',
+        delayTicks: 3.8,
+        hpPercent: 0.4,
+      },
+      fired: false,
+      counter: 0,
+      cooldownRemaining: 0,
+    }]
+    const legacyUnits = structuredClone([attacker, target])
+    const legacyActions: Parameters<typeof actionSystem>[4] = []
+    const nativeActions: Parameters<typeof runActionSystem>[3] = []
+    const world = createWorld([attacker, target])
+
+    actionSystem(
+      legacyUnits[0],
+      legacyUnits[1],
+      legacyUnits,
+      [],
+      legacyActions,
+      new PRNG(89),
+    )
+    expect(canUseSimpleSingleDamage(world, 0, 1)).toBe(true)
+    runActionSystem(world, 0, 1, nativeActions, {
+      rng: new PRNG(89),
+      tick: 0,
+      spatialHash: new SpatialHash(),
+    })
+
+    expect(nativeActions).toEqual(legacyActions)
+    expect(world.stores.vitality.require(1)).toMatchObject({
+      reassemblyTriggersUsed: 1,
+      reassemblyState: {
+        remainingTicks: 3,
+        hpPercent: 0.4,
+        sourceUnitId: 'reassembler',
+      },
+    })
+    expect(nativeActions.slice(-2).map(action => action.type)).toEqual([
+      'trigger_effect',
+      'reassembly_start',
+    ])
+  })
+
   it('keeps unsupported death damage on the legacy path', () => {
     const attacker = unit('attacker', 'attacker', 'marine', 100)
     const target = unit('explosive-wreck', 'defender', 'marine', 220)

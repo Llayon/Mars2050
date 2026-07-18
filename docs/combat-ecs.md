@@ -80,6 +80,8 @@ Death triggers with the same payload set execute immediately after the death
 replay action and before any killer-owned effects.
 Trigger spawn payloads now share the runtime unit factory, seeded IDs, owner and
 source caps, HP scaling, replay contract, and structural command buffer.
+Delayed-reassembly trigger payloads now schedule bounded vitality state and
+source attribution natively; completion remains in the existing pre-action phase.
 Initial squads, action spawns,
 trigger clones, and hazards
 enter a deterministic structural command buffer. Target references and melee

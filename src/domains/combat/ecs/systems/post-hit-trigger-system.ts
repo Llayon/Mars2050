@@ -6,6 +6,7 @@ import type { EntityId } from '../entity'
 import { applyEcsHealing } from './healing-system'
 import { applyEcsStatus } from './status-application-system'
 import { isEcsTriggerSupported } from './trigger-capability'
+import { startEcsTriggerReassembly } from './trigger-reassembly-system'
 import { spawnEcsTriggerUnits } from './trigger-spawn-system'
 
 const SUPPORTED_EVENTS = new Set<RuntimeTriggerEffect['event']>([
@@ -173,6 +174,10 @@ function applyPayload(
     return
   }
   if (targetId === null) return
+  if (payload.kind === 'delayed_reassembly') {
+    startEcsTriggerReassembly(world, ownerId, targetId, payload, actions)
+    return
+  }
   if (payload.kind === 'status') {
     applyEcsStatus(world, targetId, {
       ...payload.status,
