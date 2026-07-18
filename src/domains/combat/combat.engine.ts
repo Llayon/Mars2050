@@ -1,6 +1,5 @@
 import { MAX_TICKS } from './combat.config'
 import { GLOBAL_UPGRADES, type GlobalUpgradeConfig } from './combat.upgrades'
-import { processSpawnerLogic } from './combat.spawner'
 import { processPreActionPrimitives } from './combat.tick-primitives'
 import type { UnitRow, BattleAction, BattleTick, BattleResult } from './combat.types'
 import type { Team, SimUnit, Obstacle, SimHazard } from './combat.sim.types'
@@ -83,7 +82,7 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
 
       const unitCountBeforeActions = units.length;
       const actionStart = actions.length;
-      processSpawnerLogic(unit, target, units, hazards, actions, rng);
+      runtime.processSpawner(unit, target, actions, { rng, tick, spatialHash });
 
       const canActOnTarget = target.team !== unit.team || unit.attackType === 'heal' || canAttackControlledTarget(unit, target);
       const hasEngagement = canActOnTarget ? runtime.reserveMeleeSlot(unit, target) : true;

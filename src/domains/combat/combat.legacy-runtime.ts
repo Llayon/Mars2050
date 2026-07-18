@@ -15,6 +15,7 @@ import { movementSystem } from './combat.movement'
 import { actionSystem } from './combat.systems'
 import { processPostHazardPrimitives } from './combat.tick-primitives'
 import { resolveUnitDeath, type DeathCause } from './combat.death'
+import { processSpawnerLogic } from './combat.spawner'
 import type { PRNG } from './combat.utils'
 
 export function createLegacyCombatRuntime(): CombatRuntime {
@@ -30,6 +31,9 @@ export function createLegacyCombatRuntime(): CombatRuntime {
     beginTargetingPhase: spatial => { meleeEngagement = createMeleeEngagementState(); targetingSpatialHash = spatial },
     selectTarget: unit => targetingSystem(unit, units, meleeEngagement, targetingSpatialHash),
     reserveMeleeSlot: (unit, target) => reserveMeleeEngagementSlot(unit, target, meleeEngagement),
+    processSpawner: (unit, target, actions, context) => {
+      processSpawnerLogic(unit, target, units, hazards, actions, context.rng)
+    },
     actUnit: (unit, target, actions, context) => ({
       acted: actionSystem(unit, target, units, hazards, actions, context.rng, context.tick, context.spatialHash),
       actorSynchronized: false,

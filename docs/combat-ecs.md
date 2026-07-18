@@ -26,7 +26,7 @@ The ECS implementations currently own status scheduling, hazards, targeting,
 mixed-size melee reservation, positioning, steering, formation cohesion,
 movement state and spatial updates, direct healing actions, depenetration,
 single-shot local damage modifiers and simple weapon deaths, terminal outcome, initiative,
-modifier/lifetime ticking, typed component/resource stores, deterministic
+modifier/lifetime ticking, periodic spawner ownership, typed component/resource stores, deterministic
 entity queries, and snapshot/survivor serialization. Legacy hooks remain frozen
 for shadow tests.
 
@@ -62,6 +62,10 @@ now enforce owner caps and create fully prepared summons through the runtime
 factory and ECS structural buffer. Remaining secondary
 weapon families and complex lifecycle primitives fall back
 before mutating state.
+Upgrade-driven periodic spawners now decrement their lifecycle timer and issue
+seeded spawn commands through the selected runtime. The ECS path keeps the
+primary weapon and cooldown intact and no longer temporarily rewrites
+`attackType` through the legacy action pipeline.
 Configured on-kill cooldown resets, actual healing, and statuses now resolve
 natively after a confirmed enemy death across primary and secondary hits.
 Conditional air, ground, combat-tag, and rank ranges are target-aware in both

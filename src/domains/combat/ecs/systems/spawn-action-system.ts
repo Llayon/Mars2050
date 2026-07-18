@@ -27,6 +27,7 @@ export function runEcsSpawnAction(
   targetId: EntityId,
   actions: BattleAction[],
   context: RuntimeActionContext,
+  options: { spawnType?: string; preserveCooldown?: boolean } = {},
 ): RuntimeActionResult {
   const identity = world.stores.identity.require(entityId)
   const transform = world.stores.transform.require(entityId)
@@ -34,11 +35,13 @@ export function runEcsSpawnAction(
   const combat = world.stores.combat.require(entityId)
   const status = world.stores.statusControl.require(entityId)
   const weapon = world.stores.weapon.require(entityId)
-  if (weapon.attackType !== 'spawn' ||
+  if ((weapon.attackType !== 'spawn' && options.spawnType === undefined) ||
       !isEcsMeleeEngagementReady(world, entityId, targetId)) return notActed()
   const targetAngle = Math.atan2(targetTransform.y - transform.y, targetTransform.x - transform.x)
   if (Math.abs(normalizeAngle(targetAngle - transform.currentAngle)) > FACING_TOLERANCE) return notActed()
-  if (combat.actionCooldown > 0 || isActionBlocked(status.statusEffects)) return notActed()
+  const previousCooldown = combat.actionCooldown
+  if ((!options.preserveCooldown && combat.actionCooldown > 0) ||
+      isActionBlocked(status.statusEffects)) return notActed()
   if (!prepareEcsStanceForAction(world, entityId, actions)) {
     syncActorView(world, entityId)
     return { acted: true, actorSynchronized: true }
@@ -50,12 +53,14 @@ export function runEcsSpawnAction(
   if (isSpawnCapReached(world, entityId)) {
     combat.actionCooldown = Math.min(5, combat.actionCooldownMax)
     actions.push({ unitId: identity.id, type: 'spawn_blocked', value: weapon.spawnCap ?? 0 })
+    if (options.preserveCooldown) combat.actionCooldown = previousCooldown
     syncActorView(world, entityId)
     return { acted: false, actorSynchronized: true }
   }
 
-  const spawn = createSpawnedUnit(world, entityId, targetId, context)
+  const spawn = createSpawnedUnit(world, entityId, targetId, context, options.spawnType)
   if (!spawn) {
+    if (options.preserveCooldown) combat.actionCooldown = previousCooldown
     syncActorView(world, entityId)
     return { acted: false, actorSynchronized: true }
   }
@@ -70,8 +75,23 @@ export function runEcsSpawnAction(
     spawnMaxHp: spawn.spawnMaxHp,
     targetId: spawn.unit.id,
   })
+  if (options.preserveCooldown) combat.actionCooldown = previousCooldown
   syncActorView(world, entityId)
   return { acted: true, actorSynchronized: true }
+}
+
+export function runEcsPeriodicSpawnAction(
+  world: CombatWorld,
+  entityId: EntityId,
+  targetId: EntityId,
+  actions: BattleAction[],
+  context: RuntimeActionContext,
+  spawnType: string,
+): RuntimeActionResult {
+  return runEcsSpawnAction(world, entityId, targetId, actions, context, {
+    spawnType,
+    preserveCooldown: true,
+  })
 }
 
 function createSpawnedUnit(
@@ -79,12 +99,13 @@ function createSpawnedUnit(
   entityId: EntityId,
   targetId: EntityId,
   context: RuntimeActionContext,
+  configuredSpawnType?: string,
 ): { unit: SimUnit; spawnMaxHp: number } | null {
   const identity = world.stores.identity.require(entityId)
   const transform = world.stores.transform.require(entityId)
   const target = world.stores.transform.require(targetId)
   const weapon = world.stores.weapon.require(entityId)
-  const spawnType = weapon.spawnType || 'turret'
+  const spawnType = configuredSpawnType ?? weapon.spawnType ?? 'turret'
   const spawnConfig = UNIT_TYPES[spawnType as UnitTypeKey]
   const sourceConfig = UNIT_TYPES[identity.type as UnitTypeKey]
   const dx = target.x - transform.x

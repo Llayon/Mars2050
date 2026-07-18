@@ -35,6 +35,7 @@ export interface CombatRuntime {
   beginTargetingPhase(spatialHash: SpatialHash): void
   selectTarget(unit: SimUnit): SimUnit | null
   reserveMeleeSlot(unit: SimUnit, target: SimUnit): boolean
+  processSpawner(unit: SimUnit, target: SimUnit, actions: BattleAction[], context: RuntimeActionContext): void
   actUnit(unit: SimUnit, target: SimUnit, actions: BattleAction[], context: RuntimeActionContext): RuntimeActionResult
   moveUnit(unit: SimUnit, target: SimUnit, actions: BattleAction[], context: RuntimeMovementContext): void
   completeActorTurn(unit: SimUnit, actions: readonly BattleAction[], actionStart: number, actorSynchronized?: boolean): void
