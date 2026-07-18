@@ -19,6 +19,7 @@ import { applyEcsSideWeapon, canUseEcsSideWeapon } from './side-weapon-system'
 import { applyEcsDisplacement, canUseEcsDisplacement } from './displacement-system'
 import { applyEcsSweepAttack, canUseEcsSweepAttack } from './sweep-attack-system'
 import { applyEcsConditionalAttack, canUseEcsConditionalAttack } from './conditional-attack-system'
+import { applyEcsBarrageAttack, canUseEcsBarrageAttack } from './barrage-attack-system'
 
 const FACING_TOLERANCE = 0.26
 
@@ -47,6 +48,7 @@ export function canUseSimpleSingleDamage(world: CombatWorld, entityId: EntityId,
   return getEcsShareRecipients(world, targetId).every(recipientId =>
     canResolveSimpleEcsDeath(world, recipientId),
   ) && canUseEcsDirectionalGeometry(world, entityId, targetId) &&
+    canUseEcsBarrageAttack(world, entityId, targetId) &&
     canUseEcsChainAttack(world, entityId, targetId) &&
     canUseEcsSplitFire(world, entityId, targetId) &&
     canUseEcsSideWeapon(world, entityId, targetId) &&
@@ -82,6 +84,7 @@ export function runSimpleSingleDamage(
   if (!damageResult.intercepted) applyEcsOnHitEffects(world, entityId, targetId, actions)
   resolveSimpleEcsDeath(world, targetId, entityId, actions)
   if (!damageResult.intercepted) applyEcsDirectionalGeometry(world, entityId, targetId, actions)
+  if (!damageResult.intercepted) applyEcsBarrageAttack(world, entityId, targetId, actions)
   if (!damageResult.intercepted) applyEcsChainAttack(world, entityId, targetId, actions)
   if (!damageResult.intercepted) applyEcsSplitFire(world, entityId, targetId, actions)
   if (!damageResult.intercepted) applyEcsSideWeapon(world, entityId, targetId, actions)
@@ -96,7 +99,6 @@ export function runSimpleSingleDamage(
 
 function hasWeaponPrimitives(weapon: ReturnType<CombatWorld['stores']['weapon']['require']>): boolean {
   return Boolean(
-    weapon.barrageAttack ||
     weapon.emergeStrikePending || weapon.leavesPuddle ||
     weapon.smokeOnAction,
   )

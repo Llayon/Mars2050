@@ -40,9 +40,10 @@ statuses, rank modifiers, movement reduction, target marks, flat block, shields,
 reactive armor, execute, lifesteal, finite/reduction barriers, projectile
 interception, deterministic damage sharing, movement charge, same-target ramp,
 percent-HP payloads, on-hit statuses, and squad-wide target marks. Weapon
-line-pierce, cone, beam, radial AoE, chain, conditional cluster attacks, sweep,
-split-fire, side weapons, and post-hit pull/knockback displacement also run natively. Barrage, remaining
-secondary weapon families, and complex lifecycle primitives fall back
+line-pierce, cone, beam, barrage, radial AoE, chain, conditional cluster attacks,
+sweep, split-fire, side weapons, and post-hit pull/knockback displacement also
+run natively. Siege stance and minimum-range action setup, remaining secondary
+weapon families, and complex lifecycle primitives fall back
 before mutating state.
 Initial squads, action spawns,
 trigger clones, and hazards

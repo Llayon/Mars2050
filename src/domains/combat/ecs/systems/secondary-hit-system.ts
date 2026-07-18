@@ -9,6 +9,7 @@ export interface EcsSecondaryHitOptions {
   allowMinimumDamage?: boolean
   applyOnHitEffects?: boolean
   emitAttackIntent?: boolean
+  interceptable?: boolean
 }
 
 export function resolveEcsSecondaryHit(
@@ -22,11 +23,15 @@ export function resolveEcsSecondaryHit(
   const attacker = world.stores.identity.require(attackerId).id
   const target = world.stores.identity.require(targetId).id
   if (options.emitAttackIntent) actions.push({ unitId: attacker, type: 'attack', targetId: target })
-  applyEcsSingleDamage(world, attackerId, targetId, rawDamage, actions, {
+  const result = applyEcsSingleDamage(world, attackerId, targetId, rawDamage, actions, {
     allowPercentHpDamage: false,
     allowMinimumDamage: options.allowMinimumDamage,
-    interceptable: false,
+    interceptable: options.interceptable ?? false,
   })
+  if (result.intercepted) {
+    world.syncComponentsFromStore(targetId, ['vitality', 'defense'])
+    return
+  }
   if (options.applyOnHitEffects !== false) {
     applyEcsOnHitEffects(world, attackerId, targetId, actions, {
       propagateSquadMark: false,
