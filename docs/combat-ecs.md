@@ -47,7 +47,8 @@ mobility mode changes also run natively. Burrowed attackers surface through the
 native action setup; one-shot emerge damage and expanded radial AoE payloads are
 consumed by the ECS damage path. Movement stealth now breaks natively after the
 primary damage or interception and before on-hit and secondary weapon effects.
-Remaining secondary
+Sequential multishot actions run through the same native per-shot pipeline and
+stop immediately when the primary target dies. Remaining secondary
 weapon families and complex lifecycle primitives fall back
 before mutating state.
 Initial squads, action spawns,
