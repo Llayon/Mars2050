@@ -71,6 +71,9 @@ position and enter the same seeded structural lifecycle before death puddles.
 Attack-count and damage-taken triggers with status, shield, heal, or cooldown
 payloads now run natively after primary damage; unsupported trigger payloads
 remain behind an explicit legacy capability gate.
+HP-threshold triggers with the same payload set run in an EntityId post-hazard
+phase. Unsupported threshold payloads fall back per owner and synchronize their
+effects back into component stores without disabling native weapon actions.
 Initial squads, action spawns,
 trigger clones, and hazards
 enter a deterministic structural command buffer. Target references and melee

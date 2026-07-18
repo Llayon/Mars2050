@@ -13,6 +13,7 @@ import { SpatialHash } from './spatial-hash'
 import { applyDepenetration } from './combat.depenetration'
 import { movementSystem } from './combat.movement'
 import { actionSystem } from './combat.systems'
+import { processPostHazardPrimitives } from './combat.tick-primitives'
 
 export function createLegacyCombatRuntime(): CombatRuntime {
   const units: SimUnit[] = []
@@ -49,6 +50,7 @@ export function createLegacyCombatRuntime(): CombatRuntime {
     runHazardPhase(actions, onUnitDeath, spatialHash): void {
       processHazards(hazards, units, actions, onUnitDeath, spatialHash)
     },
+    runPostHazardPhase: triggerContext => processPostHazardPrimitives(units, triggerContext),
     runDepenetration: actions => applyDepenetration(units, actions),
     getTerminalOutcome(hazards: SimHazard[], pendingAttackers: boolean, pendingDefenders: boolean) {
       return getTerminalBattleOutcome(units, hazards, pendingAttackers, pendingDefenders)

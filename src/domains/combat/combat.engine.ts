@@ -1,7 +1,7 @@
 import { MAX_TICKS } from './combat.config'
 import { GLOBAL_UPGRADES, type GlobalUpgradeConfig } from './combat.upgrades'
 import { processSpawnerLogic } from './combat.spawner'
-import { processPostHazardPrimitives, processPreActionPrimitives } from './combat.tick-primitives'
+import { processPreActionPrimitives } from './combat.tick-primitives'
 import type { UnitRow, BattleAction, BattleTick, BattleResult } from './combat.types'
 import type { Team, SimUnit, Obstacle, SimHazard } from './combat.sim.types'
 import { createCombatMetrics, finalizeCombatMetrics, recordCombatActions, recordCombatTick, type BattleSimulationOptions } from './combat.metrics'
@@ -110,7 +110,7 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
     }
 
     runtime.runHazardPhase(actions, resolveEnvironmentalDeath, spatialHash);
-    processPostHazardPrimitives(units, triggerContext);
+    runtime.runPostHazardPhase(triggerContext);
     runtime.runDepenetration(actions);
     if (metrics) { recordCombatActions(metrics, tick, actions, units); recordCombatTick(metrics, units) }
     

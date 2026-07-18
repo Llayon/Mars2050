@@ -24,9 +24,34 @@ export function canUseEcsPostHitTriggers(
 ): boolean {
   return [attackerId, targetId].every(entityId =>
     (world.stores.lifecycle.require(entityId).triggerEffects ?? []).every(trigger =>
+      trigger.event === 'hp_threshold' ||
       SUPPORTED_EVENTS.has(trigger.event) && SUPPORTED_PAYLOADS.has(trigger.payload.kind),
     ),
   )
+}
+
+export function canUseEcsHpThresholdTriggers(
+  world: CombatWorld,
+  entityId: EntityId,
+): boolean {
+  return getTriggers(world, entityId, 'hp_threshold')
+    .every(trigger => SUPPORTED_PAYLOADS.has(trigger.payload.kind))
+}
+
+export function processEcsHpThresholdTriggers(
+  world: CombatWorld,
+  entityId: EntityId,
+  actions: BattleAction[],
+): void {
+  const vitality = world.stores.vitality.require(entityId)
+  for (const trigger of getTriggers(world, entityId, 'hp_threshold')) {
+    const threshold = trigger.threshold ?? 0
+    const value = threshold <= 1 ? vitality.hp / vitality.maxHp : vitality.hp
+    if (value <= threshold) {
+      fireTrigger(world, entityId, trigger, entityId, entityId, actions)
+    }
+  }
+  world.syncComponentsFromStore(entityId, ['lifecycle'])
 }
 
 export function recordEcsAttackTriggers(
