@@ -9,6 +9,7 @@ import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
 import { applyEcsHealing } from './healing-system'
 import { canUseSimpleSingleDamage, runSimpleSingleDamage } from './single-damage-system'
+import { canUseEcsMineAction, runEcsMineAction } from './mine-action-system'
 import { canUseEcsSmokeAction, runEcsSmokeAction } from './smoke-action-system'
 import { syncEcsBurrowForAction } from './emerge-strike-system'
 import {
@@ -30,6 +31,9 @@ export function runActionSystem(
   world.reconcileHazards()
   world.syncHazardsToComponents()
   const weapon = world.stores.weapon.require(entityId)
+  if (canUseEcsMineAction(world, entityId)) {
+    return runEcsMineAction(world, entityId, targetId, actions, context)
+  }
   if (canUseEcsSmokeAction(world, entityId)) {
     return runEcsSmokeAction(world, entityId, targetId, actions, context)
   }

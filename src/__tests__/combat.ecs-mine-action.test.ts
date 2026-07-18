@@ -6,17 +6,23 @@ import { PRNG } from '@/domains/combat/combat.utils'
 import { CombatWorld } from '@/domains/combat/ecs/combat-world'
 import { EntitySpatialIndex } from '@/domains/combat/ecs/entity-spatial-index'
 import {
+  canUseEcsMineAction,
   canUseEcsSmokeAction,
   canUseSimpleSingleDamage,
   runActionSystem,
 } from '@/domains/combat/ecs/systems'
 import { SpatialHash } from '@/domains/combat/spatial-hash'
 
-function unit(id: string, team: 'attacker' | 'defender', x: number): SimUnit {
+function unit(
+  id: string,
+  team: 'attacker' | 'defender',
+  type: string,
+  x: number,
+): SimUnit {
   return createRuntimeUnitFromConfig({
     id,
     team,
-    type: 'marine',
+    type,
     x,
     y: 100,
     currentAngle: team === 'attacker' ? 0 : Math.PI,
@@ -31,19 +37,11 @@ function createWorld(units: SimUnit[]): CombatWorld {
   return world
 }
 
-describe('combat ECS smoke action', () => {
-  it('matches seeded legacy deployment without marking the unit as attacked', () => {
-    const attacker = unit('smoker', 'attacker', 100)
-    const target = unit('target', 'defender', 220)
-    attacker.smokeOnAction = {
-      radius: 80,
-      duration: 30,
-      rangeSuppression: 0.5,
-      outputSuppression: 0.25,
-      accuracySuppression: 0.4,
-    }
-    attacker.stealthWhileMoving = true
-    attacker.movementStealthActive = true
+describe('combat ECS mine action', () => {
+  it('matches seeded legacy deployment and preserves priority over smoke', () => {
+    const attacker = unit('minelayer', 'attacker', 'minelayer_rover', 100)
+    const target = unit('target', 'defender', 'marine', 220)
+    attacker.smokeOnAction = { radius: 80, duration: 30, rangeSuppression: 0.5 }
     const legacyUnits = structuredClone([attacker, target])
     const legacyHazards: Parameters<typeof actionSystem>[3] = []
     const legacyActions: Parameters<typeof actionSystem>[4] = []
@@ -58,14 +56,15 @@ describe('combat ECS smoke action', () => {
       legacyUnits,
       legacyHazards,
       legacyActions,
-      new PRNG(7),
+      new PRNG(11),
       0,
       legacySpatial,
     )
+    expect(canUseEcsMineAction(world, 0)).toBe(true)
     expect(canUseEcsSmokeAction(world, 0)).toBe(true)
     expect(canUseSimpleSingleDamage(world, 0, 1)).toBe(true)
     const nativeResult = runActionSystem(world, 0, 1, nativeActions, {
-      rng: new PRNG(7),
+      rng: new PRNG(11),
       tick: 0,
       spatialHash: new SpatialHash(),
     })
@@ -74,31 +73,26 @@ describe('combat ECS smoke action', () => {
     expect(nativeActions).toEqual(legacyActions)
     expect(world.hazards).toEqual(legacyHazards)
     expect(world.hazards).toHaveLength(1)
-    expect(world.hazards[0].statusEffects).toEqual([
-      { type: 'range_suppressed', duration: 12, value: 0.5 },
-      { type: 'output_suppressed', duration: 12, value: 0.25 },
-      { type: 'accuracy_reduced', duration: 12, value: 0.4 },
-    ])
+    expect(world.hazards[0]).toMatchObject({
+      team: 'attacker',
+      type: 'mine',
+      radius: 42,
+      damagePerTick: 65,
+      duration: 90,
+      sourceUnitId: 'minelayer',
+    })
     expect(world.getEntity(1)?.hp).toBe(legacyUnits[1].hp)
     expect(world.getEntity(0)?.actionCooldown).toBe(legacyUnits[0].actionCooldown)
-    expect(world.getEntity(0)?.hasAttacked).toBe(legacyUnits[0].hasAttacked)
-    expect(world.getEntity(0)?.movementStealthActive).toBe(true)
-    expect(nativeActions.some(action =>
-      action.type === 'attack' || action.type === 'stealth_change',
-    )).toBe(false)
+    expect(nativeActions).toHaveLength(1)
+    expect(nativeActions[0]).toMatchObject({
+      unitId: 'minelayer',
+      type: 'hazard_spawn',
+      radius: 42,
+    })
 
     world.flushStructuralCommands()
     const hazardId = world.getEntityId(world.hazards[0].id)
     expect(hazardId).not.toBeUndefined()
     expect(world.getHazard(hazardId!)).toEqual(world.hazards[0])
-  })
-
-  it('reports smoke capability independently from mine routing priority', () => {
-    const attacker = unit('hybrid', 'attacker', 100)
-    attacker.type = 'minelayer_rover'
-    attacker.smokeOnAction = { radius: 80, duration: 30, rangeSuppression: 0.5 }
-    const world = createWorld([attacker, unit('target', 'defender', 220)])
-
-    expect(canUseEcsSmokeAction(world, 0)).toBe(true)
   })
 })

@@ -1,6 +1,8 @@
 import type { BattleAction } from '../../combat.actions'
+import { UNIT_TYPES } from '../../combat.config'
 import type { RuntimeActionContext, RuntimeActionResult } from '../../combat.runtime'
-import type { SimUnit, StatusEffect } from '../../combat.sim.types'
+import type { StatusEffect } from '../../combat.sim.types'
+import type { UnitBaseStats, UnitTypeKey } from '../../combat.types'
 import { FIELD_HEIGHT, FIELD_WIDTH, getDistance, getSizeRadius } from '../../combat.utils'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
@@ -13,12 +15,13 @@ import {
 import { syncEcsBurrowForAction } from './emerge-strike-system'
 
 const FACING_TOLERANCE = 0.26
+type MineConfig = NonNullable<UnitBaseStats['mineOnAction']>
 
-export function canUseEcsSmokeAction(world: CombatWorld, entityId: EntityId): boolean {
-  return createSmokeStatuses(world.stores.weapon.require(entityId).smokeOnAction).length > 0
+export function canUseEcsMineAction(world: CombatWorld, entityId: EntityId): boolean {
+  return getMineConfig(world, entityId) !== undefined
 }
 
-export function runEcsSmokeAction(
+export function runEcsMineAction(
   world: CombatWorld,
   entityId: EntityId,
   targetId: EntityId,
@@ -30,9 +33,8 @@ export function runEcsSmokeAction(
   const targetTransform = world.stores.transform.require(targetId)
   const combat = world.stores.combat.require(entityId)
   const status = world.stores.statusControl.require(entityId)
-  const config = world.stores.weapon.require(entityId).smokeOnAction
-  const statusEffects = createSmokeStatuses(config)
-  if (!config || statusEffects.length === 0) return notActed()
+  const config = getMineConfig(world, entityId)
+  if (!config) return notActed()
 
   const edgeDistance = getDistance(transform.x, transform.y, targetTransform.x, targetTransform.y) -
     getSizeRadius(transform.size) - getSizeRadius(targetTransform.size)
@@ -48,18 +50,17 @@ export function runEcsSmokeAction(
   syncEcsModeForAction(world, entityId, actions)
   syncEcsBurrowForAction(world, entityId, actions)
   combat.actionCooldown = getEcsActionCooldown(world, entityId)
-  deploySmoke(world, identity.id, entityId, targetId, config, statusEffects, actions, context)
+  deployMine(world, identity.id, entityId, targetId, config, actions, context)
   syncActorView(world, entityId)
   return { acted: true, actorSynchronized: true }
 }
 
-function deploySmoke(
+function deployMine(
   world: CombatWorld,
   externalId: string,
   entityId: EntityId,
   targetId: EntityId,
-  config: NonNullable<SimUnit['smokeOnAction']>,
-  statusEffects: StatusEffect[],
+  config: MineConfig,
   actions: BattleAction[],
   context: RuntimeActionContext,
 ): void {
@@ -70,21 +71,21 @@ function deploySmoke(
   const dx = targetTransform.x - transform.x
   const dy = targetTransform.y - transform.y
   const distance = Math.hypot(dx, dy) || 1
-  const placementDistance = Math.min(range, Math.max(24, distance * 0.75))
+  const placementDistance = Math.min(range, Math.max(24, distance * 0.65))
   const x = clamp(transform.x + (dx / distance) * placementDistance, 0, FIELD_WIDTH)
   const y = clamp(transform.y + (dy / distance) * placementDistance, 0, FIELD_HEIGHT)
-  const id = `smoke_${Math.floor(context.rng.next() * 1000000)}`
+  const id = `mine_${Math.floor(context.rng.next() * 1000000)}`
 
   world.hazards.push({
     id,
     team,
-    type: 'smoke',
+    type: 'mine',
     x,
     y,
     radius: config.radius,
-    damagePerTick: 0,
+    damagePerTick: config.damage,
     duration: config.duration,
-    statusEffects,
+    sourceUnitId: externalId,
   })
   actions.push({
     unitId: externalId,
@@ -93,23 +94,12 @@ function deploySmoke(
     toX: round(x),
     toY: round(y),
     radius: config.radius,
-    statusType: 'smoke',
   })
 }
 
-function createSmokeStatuses(config: SimUnit['smokeOnAction']): StatusEffect[] {
-  if (!config) return []
-  const effects: StatusEffect[] = []
-  if ((config.rangeSuppression ?? 0) > 0) {
-    effects.push({ type: 'range_suppressed', duration: 12, value: config.rangeSuppression })
-  }
-  if ((config.outputSuppression ?? 0) > 0) {
-    effects.push({ type: 'output_suppressed', duration: 12, value: config.outputSuppression })
-  }
-  if ((config.accuracySuppression ?? 0) > 0) {
-    effects.push({ type: 'accuracy_reduced', duration: 12, value: config.accuracySuppression })
-  }
-  return effects
+function getMineConfig(world: CombatWorld, entityId: EntityId): MineConfig | undefined {
+  const type = world.stores.identity.require(entityId).type as UnitTypeKey
+  return UNIT_TYPES[type]?.baseStats.mineOnAction
 }
 
 function isActionBlocked(effects: StatusEffect[]): boolean {
