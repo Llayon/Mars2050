@@ -60,6 +60,8 @@ now enforce owner caps and create fully prepared summons through the runtime
 factory and ECS structural buffer. Remaining secondary
 weapon families and complex lifecycle primitives fall back
 before mutating state.
+Configured on-kill cooldown resets, actual healing, and statuses now resolve
+natively after a confirmed enemy death across primary and secondary hits.
 Initial squads, action spawns,
 trigger clones, and hazards
 enter a deterministic structural command buffer. Target references and melee

@@ -1,6 +1,7 @@
 import type { BattleAction } from '../../combat.actions'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
+import { applyEcsOnKillEffects } from './on-kill-system'
 
 export function resolveSimpleEcsDeath(
   world: CombatWorld,
@@ -17,6 +18,7 @@ export function resolveSimpleEcsDeath(
     sourceUnitId: world.stores.identity.require(sourceId).id,
     cause: 'weapon',
   })
+  applyEcsOnKillEffects(world, sourceId, targetId, actions)
   return true
 }
 

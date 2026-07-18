@@ -1,7 +1,5 @@
 import type { BattleAction } from '../../combat.actions'
-import { UNIT_TYPES } from '../../combat.config'
 import type { RuntimeActionResult } from '../../combat.runtime'
-import type { UnitTypeKey } from '../../combat.types'
 import { getDistance, getSizeRadius, type PRNG } from '../../combat.utils'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
@@ -29,7 +27,6 @@ import {
 const FACING_TOLERANCE = 0.26
 
 export function canUseSimpleSingleDamage(world: CombatWorld, entityId: EntityId, targetId: EntityId): boolean {
-  const identity = world.stores.identity.require(entityId)
   const weapon = world.stores.weapon.require(entityId)
   const targeting = world.stores.targeting.require(entityId)
   const movement = world.stores.movement.require(entityId)
@@ -37,14 +34,10 @@ export function canUseSimpleSingleDamage(world: CombatWorld, entityId: EntityId,
   const targetStatus = world.stores.statusControl.require(targetId)
   const lifecycle = world.stores.lifecycle.require(entityId)
   const targetLifecycle = world.stores.lifecycle.require(targetId)
-  const config = UNIT_TYPES[identity.type as UnitTypeKey]?.baseStats
   if (!['single', 'aoe'].includes(weapon.attackType)) return false
   if (hasUnsupportedStatuses(status.statusEffects, true) || hasUnsupportedStatuses(targetStatus.statusEffects, false)) return false
   if (!canResolveSimpleEcsDeath(world, targetId)) return false
-  if (
-    targeting.conditionalRange?.length ||
-    config?.onKill
-  ) return false
+  if (targeting.conditionalRange?.length) return false
   if (hasLifecyclePrimitives(lifecycle) || hasLifecyclePrimitives(targetLifecycle)) return false
   return getEcsShareRecipients(world, targetId).every(recipientId =>
     canResolveSimpleEcsDeath(world, recipientId),
