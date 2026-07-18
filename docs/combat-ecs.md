@@ -50,7 +50,9 @@ primary damage or interception and before on-hit and secondary weapon effects.
 Sequential multishot actions run through the same native per-shot pipeline and
 stop immediately when the primary target dies. Accumulated attack charge is
 released natively after other primary modifiers and is consumed by only the
-first shot in a series. Remaining secondary
+first shot in a series. Successful incendiary hits create seeded napalm hazards
+through the ECS structural buffer after primary on-hit effects; multishot creates
+one puddle per non-intercepted shot. Remaining secondary
 weapon families and complex lifecycle primitives fall back
 before mutating state.
 Initial squads, action spawns,

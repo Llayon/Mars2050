@@ -30,7 +30,14 @@ export function runActionSystem(
   world.syncHazardsToComponents()
   const weapon = world.stores.weapon.require(entityId)
   if (canUseSimpleSingleDamage(world, entityId, targetId)) {
-    return runSimpleSingleDamage(world, entityId, targetId, actions, context.tick)
+    return runSimpleSingleDamage(
+      world,
+      entityId,
+      targetId,
+      actions,
+      context.tick,
+      context.rng,
+    )
   }
   if (weapon.attackType !== 'heal') return runLegacyAction(world, entityId, targetId, actions, context)
   return runHealAction(world, entityId, targetId, actions)

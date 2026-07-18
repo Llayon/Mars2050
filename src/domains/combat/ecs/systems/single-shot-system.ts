@@ -1,4 +1,5 @@
 import type { BattleAction } from '../../combat.actions'
+import type { PRNG } from '../../combat.utils'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
 import { breakEcsMovementStealthOnAttack } from '../movement-state'
@@ -13,6 +14,7 @@ import { applyEcsDisplacement } from './displacement-system'
 import { consumeEcsEmergeStrike } from './emerge-strike-system'
 import { applyEcsOnHitEffects } from './on-hit-system'
 import { applyEcsPrimaryDamageModifiers } from './primary-damage-modifier-system'
+import { spawnEcsAttackPuddle } from './puddle-system'
 import { applyEcsRadialAoe } from './radial-aoe-system'
 import { applyEcsSideWeapon } from './side-weapon-system'
 import { applyEcsSplitFire } from './split-fire-system'
@@ -24,6 +26,7 @@ export function resolveEcsSingleShot(
   targetId: EntityId,
   actions: BattleAction[],
   tick: number,
+  rng: PRNG,
 ): void {
   const identity = world.stores.identity.require(entityId)
   const combat = world.stores.combat.require(entityId)
@@ -60,7 +63,10 @@ export function resolveEcsSingleShot(
   )
   status.hasAttacked = true
   breakEcsMovementStealthOnAttack(world, entityId, actions)
-  if (!damageResult.intercepted) applyEcsOnHitEffects(world, entityId, targetId, actions)
+  if (!damageResult.intercepted) {
+    applyEcsOnHitEffects(world, entityId, targetId, actions)
+    spawnEcsAttackPuddle(world, entityId, targetId, rng)
+  }
   resolveSimpleEcsDeath(world, targetId, entityId, actions)
   if (damageResult.intercepted) return
   applyEcsDirectionalGeometry(world, entityId, targetId, actions)

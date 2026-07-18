@@ -2,7 +2,7 @@ import type { BattleAction } from '../../combat.actions'
 import { UNIT_TYPES } from '../../combat.config'
 import type { RuntimeActionResult } from '../../combat.runtime'
 import type { UnitTypeKey } from '../../combat.types'
-import { getDistance, getSizeRadius } from '../../combat.utils'
+import { getDistance, getSizeRadius, type PRNG } from '../../combat.utils'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
 import { getEcsEffectiveActionRange } from '../movement-positioning'
@@ -65,7 +65,8 @@ export function runSimpleSingleDamage(
   entityId: EntityId,
   targetId: EntityId,
   actions: BattleAction[],
-  tick = 0,
+  tick: number,
+  rng: PRNG,
 ): RuntimeActionResult {
   const transform = world.stores.transform.require(entityId)
   const targetTransform = world.stores.transform.require(targetId)
@@ -87,7 +88,7 @@ export function runSimpleSingleDamage(
   const shots = combat.multishot || 1
   for (let shot = 0; shot < shots; shot++) {
     if (world.stores.vitality.require(targetId).isDead) break
-    resolveEcsSingleShot(world, entityId, targetId, actions, tick)
+    resolveEcsSingleShot(world, entityId, targetId, actions, tick, rng)
   }
   world.syncComponentsFromStore(entityId, ['transform', 'vitality', 'combat', 'weapon', 'targeting', 'statusControl', 'movement', 'lifecycle'])
   world.syncComponentsFromStore(targetId, ['vitality', 'defense'])
@@ -96,7 +97,7 @@ export function runSimpleSingleDamage(
 
 function hasWeaponPrimitives(weapon: ReturnType<CombatWorld['stores']['weapon']['require']>): boolean {
   return Boolean(
-    weapon.leavesPuddle || weapon.smokeOnAction,
+    weapon.smokeOnAction,
   )
 }
 
