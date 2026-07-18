@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
+import { applyCombatDamage } from '@/domains/combat/combat.damage'
 import { actionSystem } from '@/domains/combat/combat.systems'
+import { recordAttackTrigger } from '@/domains/combat/combat.triggers'
 import type { SimUnit } from '@/domains/combat/combat.sim.types'
 import { createRuntimeUnitFromConfig } from '@/domains/combat/combat.unit-factory'
 import { PRNG } from '@/domains/combat/combat.utils'
@@ -8,8 +10,10 @@ import { EntitySpatialIndex } from '@/domains/combat/ecs/entity-spatial-index'
 import {
   canUseEcsPostHitTriggers,
   canUseSimpleSingleDamage,
+  recordEcsAttackTriggers,
   runActionSystem,
 } from '@/domains/combat/ecs/systems'
+import { applyEcsSingleDamage } from '@/domains/combat/ecs/systems/damage-system'
 import { SpatialHash } from '@/domains/combat/spatial-hash'
 
 function unit(id: string, team: 'attacker' | 'defender', x: number): SimUnit {
@@ -117,23 +121,17 @@ describe('combat ECS post-hit triggers', () => {
     ])
   })
 
-  it('keeps unsupported trigger payloads on the legacy path', () => {
-    const attacker = unit('field-owner', 'attacker', 100)
+  it('keeps unsupported trigger damage on the legacy path', () => {
+    const attacker = unit('blast-owner', 'attacker', 100)
     const target = unit('target', 'defender', 220)
     attacker.triggerEffects = [{
-      id: 'field-trigger',
+      id: 'blast-trigger',
       event: 'attack_count',
       count: 1,
       payload: {
-        kind: 'field',
-        target: 'self',
-        field: {
-          id: 'dome',
-          kind: 'barrier_dome',
-          radius: 80,
-          intervalTicks: 99,
-          capacity: 30,
-        },
+        kind: 'damage',
+        target: 'target',
+        amount: 20,
       },
       fired: false,
       counter: 0,
@@ -143,5 +141,73 @@ describe('combat ECS post-hit triggers', () => {
 
     expect(canUseEcsPostHitTriggers(world, 0, 1)).toBe(false)
     expect(canUseSimpleSingleDamage(world, 0, 1)).toBe(false)
+  })
+
+  it('matches finite trigger barriers and their damage break order', () => {
+    const owner = unit('accumulator', 'attacker', 100)
+    const target = unit('target', 'defender', 220)
+    const enemy = unit('enemy', 'defender', 180)
+    owner.triggerEffects = [{
+      id: 'accumulator-shield',
+      event: 'attack_count',
+      count: 2,
+      payload: {
+        kind: 'field',
+        target: 'self',
+        field: {
+          id: 'accumulator-dome',
+          kind: 'barrier_dome',
+          radius: 80,
+          intervalTicks: 99,
+          duration: 20,
+          capacity: 30,
+        },
+      },
+      fired: false,
+      counter: 0,
+      cooldownRemaining: 0,
+    }]
+    enemy.attack = 50
+    const legacyUnits = structuredClone([owner, target, enemy])
+    const legacyActions: Parameters<typeof recordAttackTrigger>[2]['actions'] = []
+    const legacyHazards: Parameters<typeof recordAttackTrigger>[2]['hazards'] = []
+    const nativeActions: Parameters<typeof recordEcsAttackTriggers>[3] = []
+    const world = createWorld([owner, target, enemy])
+    world.resources.set('clock', {
+      tick: 7,
+      dt: 0.1,
+      maxTicks: 400,
+      timeoutPolicy: 'draw',
+    })
+
+    const legacyContext = {
+      units: legacyUnits,
+      hazards: legacyHazards,
+      actions: legacyActions,
+      rng: new PRNG(97),
+      tick: 7,
+    }
+    recordAttackTrigger(legacyUnits[0], legacyUnits[1], legacyContext)
+    recordEcsAttackTriggers(world, 0, 1, nativeActions)
+    recordAttackTrigger(legacyUnits[0], legacyUnits[1], legacyContext)
+    recordEcsAttackTriggers(world, 0, 1, nativeActions)
+    world.flushStructuralCommands()
+
+    expect(nativeActions).toEqual(legacyActions)
+    expect(world.hazards).toEqual(legacyHazards)
+    applyCombatDamage(
+      legacyUnits[2],
+      legacyUnits[0],
+      50,
+      legacyActions,
+      { units: legacyUnits, hazards: legacyHazards },
+    )
+    applyEcsSingleDamage(world, 2, 0, 50, nativeActions, {
+      allowPercentHpDamage: false,
+      interceptable: false,
+    })
+
+    expect(nativeActions).toEqual(legacyActions)
+    expect(world.stores.hazard.require(3).capacity).toBe(0)
   })
 })
