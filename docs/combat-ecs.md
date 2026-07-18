@@ -52,7 +52,9 @@ stop immediately when the primary target dies. Accumulated attack charge is
 released natively after other primary modifiers and is consumed by only the
 first shot in a series. Successful incendiary hits create seeded napalm hazards
 through the ECS structural buffer after primary on-hit effects; multishot creates
-one puddle per non-intercepted shot. Remaining secondary
+one puddle per non-intercepted shot. Smoke actions now deploy seeded suppression
+hazards through a native ECS action path without primary damage or movement
+stealth break. Remaining secondary
 weapon families and complex lifecycle primitives fall back
 before mutating state.
 Initial squads, action spawns,

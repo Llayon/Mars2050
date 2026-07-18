@@ -45,7 +45,6 @@ export function canUseSimpleSingleDamage(world: CombatWorld, entityId: EntityId,
     targeting.conditionalRange?.length ||
     config?.onKill
   ) return false
-  if (hasWeaponPrimitives(weapon)) return false
   if (hasLifecyclePrimitives(lifecycle) || hasLifecyclePrimitives(targetLifecycle)) return false
   return getEcsShareRecipients(world, targetId).every(recipientId =>
     canResolveSimpleEcsDeath(world, recipientId),
@@ -93,12 +92,6 @@ export function runSimpleSingleDamage(
   world.syncComponentsFromStore(entityId, ['transform', 'vitality', 'combat', 'weapon', 'targeting', 'statusControl', 'movement', 'lifecycle'])
   world.syncComponentsFromStore(targetId, ['vitality', 'defense'])
   return { acted: true, actorSynchronized: true }
-}
-
-function hasWeaponPrimitives(weapon: ReturnType<CombatWorld['stores']['weapon']['require']>): boolean {
-  return Boolean(
-    weapon.smokeOnAction,
-  )
 }
 
 function hasLifecyclePrimitives(lifecycle: ReturnType<CombatWorld['stores']['lifecycle']['require']>): boolean {
