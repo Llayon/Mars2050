@@ -6,6 +6,7 @@ import { getDistance, getSizeRadius } from '../../combat.utils'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
 import { getEcsEffectiveActionRange } from '../movement-positioning'
+import { breakEcsMovementStealthOnAttack } from '../movement-state'
 import { applyEcsSingleDamage } from './damage-system'
 import { canResolveSimpleEcsDeath, resolveSimpleEcsDeath } from './death-system'
 import { getEcsShareRecipients } from './damage-sharing-system'
@@ -47,7 +48,6 @@ export function canUseSimpleSingleDamage(world: CombatWorld, entityId: EntityId,
   if (!['single', 'aoe'].includes(weapon.attackType) || (combat.multishot ?? 1) !== 1) return false
   if (hasUnsupportedStatuses(status.statusEffects, true) || hasUnsupportedStatuses(targetStatus.statusEffects, false)) return false
   if (!canResolveSimpleEcsDeath(world, targetId)) return false
-  if (movement.stealthWhileMoving) return false
   if (
     targeting.conditionalRange?.length ||
     config?.onKill
@@ -98,6 +98,7 @@ export function runSimpleSingleDamage(
   if (emergeStrike?.attackMult) primaryDamage = Math.floor(primaryDamage * emergeStrike.attackMult)
   const damageResult = applyEcsSingleDamage(world, entityId, targetId, primaryDamage, actions)
   status.hasAttacked = true
+  breakEcsMovementStealthOnAttack(world, entityId, actions)
   if (!damageResult.intercepted) applyEcsOnHitEffects(world, entityId, targetId, actions)
   resolveSimpleEcsDeath(world, targetId, entityId, actions)
   if (!damageResult.intercepted) applyEcsDirectionalGeometry(world, entityId, targetId, actions)

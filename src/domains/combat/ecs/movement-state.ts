@@ -64,6 +64,21 @@ export function syncEcsMovementActivity(world: CombatWorld, entityId: EntityId, 
   }
 }
 
+export function breakEcsMovementStealthOnAttack(
+  world: CombatWorld,
+  entityId: EntityId,
+  actions: BattleAction[],
+): void {
+  const movement = world.stores.movement.require(entityId)
+  if (!movement.movementStealthActive) return
+  movement.movementStealthActive = false
+  actions.push({
+    unitId: world.stores.identity.require(entityId).id,
+    type: 'stealth_change',
+    modeState: 'movement_inactive',
+  })
+}
+
 export function getEcsMovementSpeed(world: CombatWorld, entityId: EntityId): number {
   const combat = world.stores.combat.require(entityId)
   const movement = world.stores.movement.require(entityId)
