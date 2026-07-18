@@ -71,13 +71,20 @@ test('simulator2 replay debug overlays render hitboxes, velocity, and target lin
   await startSelectedSimulation(page)
 
   const canvas = page.locator('canvas').last()
+  const timeline = page.getByTestId('replay-timeline')
+  const tickReadout = page.getByTestId('replay-current-tick')
   await expect(canvas).toBeVisible()
+  await page.getByRole('button', { name: /Пауза/ }).click()
+  await expect(page.getByRole('button', { name: /Играть/ })).toBeVisible()
   await page.getByLabel(/Хитбоксы/).check()
   await page.getByLabel(/Векторы движения/).check()
   await page.getByLabel(/Линии атак/).check()
+  await setTimelineTick(timeline, 7)
+  await expect(tickReadout).toContainText(/Tick 7 \//)
 
   await expect.poll(async () => (await countOverlayPixels(canvas)).hitboxCyan, { timeout: 5000 }).toBeGreaterThan(10)
   await expect.poll(async () => (await countOverlayPixels(canvas)).velocityYellow, { timeout: 8000 }).toBeGreaterThan(5)
+  await page.getByRole('button', { name: /Играть/ }).click()
   await expect.poll(async () => (await countOverlayPixels(canvas)).targetRed, { timeout: 12000 }).toBeGreaterThan(5)
 
   expect(network.hasChunk('pixi'), 'simulator2 replay overlays should use the Pixi default renderer').toBe(true)
@@ -361,16 +368,7 @@ function getDenseMovementChecks(preset: string, maxTick: number): { tick: number
 
 async function loadReplayPreset(page: Page, preset: string): Promise<void> {
   const presetSelect = page.locator('select').first()
-  await presetSelect.evaluate((element, value) => {
-    const input = element as HTMLSelectElement
-    const valueSetter = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value')?.set
-    valueSetter?.call(input, '')
-    input.dispatchEvent(new Event('input', { bubbles: true }))
-    input.dispatchEvent(new Event('change', { bubbles: true }))
-    valueSetter?.call(input, value)
-    input.dispatchEvent(new Event('input', { bubbles: true }))
-    input.dispatchEvent(new Event('change', { bubbles: true }))
-  }, preset)
+  await presetSelect.selectOption(preset)
   await expect(presetSelect).toHaveValue(preset)
 }
 
