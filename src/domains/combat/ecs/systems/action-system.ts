@@ -11,6 +11,7 @@ import { applyEcsHealing } from './healing-system'
 import { canUseSimpleSingleDamage, runSimpleSingleDamage } from './single-damage-system'
 import { canUseEcsMineAction, runEcsMineAction } from './mine-action-system'
 import { canUseEcsSmokeAction, runEcsSmokeAction } from './smoke-action-system'
+import { canUseEcsSpawnAction, runEcsSpawnAction } from './spawn-action-system'
 import { syncEcsBurrowForAction } from './emerge-strike-system'
 import {
   getEcsActionCooldown,
@@ -36,6 +37,9 @@ export function runActionSystem(
   }
   if (canUseEcsSmokeAction(world, entityId)) {
     return runEcsSmokeAction(world, entityId, targetId, actions, context)
+  }
+  if (canUseEcsSpawnAction(world, entityId)) {
+    return runEcsSpawnAction(world, entityId, targetId, actions, context)
   }
   if (canUseSimpleSingleDamage(world, entityId, targetId)) {
     return runSimpleSingleDamage(

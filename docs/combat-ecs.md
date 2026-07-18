@@ -55,7 +55,9 @@ through the ECS structural buffer after primary on-hit effects; multishot create
 one puddle per non-intercepted shot. Smoke actions now deploy seeded suppression
 hazards through a native ECS action path without primary damage or movement
 stealth break. Mine actions use the same structural path while preserving mine
-source attribution and their priority over smoke actions. Remaining secondary
+source attribution and their priority over smoke actions. Active spawn actions
+now enforce owner caps and create fully prepared summons through the runtime
+factory and ECS structural buffer. Remaining secondary
 weapon families and complex lifecycle primitives fall back
 before mutating state.
 Initial squads, action spawns,
