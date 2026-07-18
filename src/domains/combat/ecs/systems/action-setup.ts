@@ -3,7 +3,7 @@ import { UNIT_TYPES } from '../../combat.config'
 import type { UnitTypeKey } from '../../combat.types'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
-import { getEcsEffectiveActionRange, isEcsMeleeEngagementReady } from '../movement-positioning'
+import { getEcsEffectiveActionRangeAgainst, isEcsMeleeEngagementReady } from '../movement-positioning'
 
 const GRID_TO_PIXELS = 40
 
@@ -15,12 +15,16 @@ export function isEcsWeaponActionInRange(
 ): boolean {
   const minimumRange = getEcsMinimumActionRange(world, entityId)
   return (minimumRange <= 0 || edgeDistance >= minimumRange) &&
-    edgeDistance <= getEcsStanceSetupActionRange(world, entityId) &&
+    edgeDistance <= getEcsStanceSetupActionRange(world, entityId, targetId) &&
     isEcsMeleeEngagementReady(world, entityId, targetId)
 }
 
-export function getEcsStanceSetupActionRange(world: CombatWorld, entityId: EntityId): number {
-  const range = getEcsEffectiveActionRange(world, entityId)
+export function getEcsStanceSetupActionRange(
+  world: CombatWorld,
+  entityId: EntityId,
+  targetId: EntityId,
+): number {
+  const range = getEcsEffectiveActionRangeAgainst(world, entityId, targetId)
   const movement = world.stores.movement.require(entityId)
   if (!movement.stanceConfig || movement.stanceMode === 'deployed') return range
   return range * getPositiveMultiplier(movement.stanceConfig.rangeMultiplier, 1)

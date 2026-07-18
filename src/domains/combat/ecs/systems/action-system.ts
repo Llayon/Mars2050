@@ -7,6 +7,7 @@ import type { UnitTypeKey } from '../../combat.types'
 import { getDistance, getSizeRadius } from '../../combat.utils'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
+import { getEcsEffectiveActionRangeAgainst } from '../movement-positioning'
 import { applyEcsHealing } from './healing-system'
 import { canUseSimpleSingleDamage, runSimpleSingleDamage } from './single-damage-system'
 import { canUseEcsMineAction, runEcsMineAction } from './mine-action-system'
@@ -15,7 +16,6 @@ import { canUseEcsSpawnAction, runEcsSpawnAction } from './spawn-action-system'
 import { syncEcsBurrowForAction } from './emerge-strike-system'
 import {
   getEcsActionCooldown,
-  getEcsStanceSetupActionRange,
   prepareEcsStanceForAction,
   syncEcsModeForAction,
 } from './action-setup'
@@ -73,7 +73,7 @@ function runHealAction(
   const distance = getDistance(transform.x, transform.y, targetTransform.x, targetTransform.y) -
     getSizeRadius(targetTransform.size) - getSizeRadius(transform.size)
   if (targetVitality.hp >= targetVitality.maxHp ||
-      distance > getEcsStanceSetupActionRange(world, entityId)) return notActed()
+      distance > getEcsEffectiveActionRangeAgainst(world, entityId, targetId)) return notActed()
   const angle = Math.atan2(targetTransform.y - transform.y, targetTransform.x - transform.x)
   if (Math.abs(normalizeAngle(angle - transform.currentAngle)) > FACING_TOLERANCE) return notActed()
   if (combat.actionCooldown > 0 || isActionBlocked(status.statusEffects)) return notActed()

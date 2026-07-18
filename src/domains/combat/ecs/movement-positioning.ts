@@ -1,9 +1,10 @@
 import { UNIT_TYPES } from '../combat.config'
-import type { RuntimeStatusEffect } from '../combat.sim.types'
+import type { ConditionalRangeConfig, RuntimeStatusEffect } from '../combat.sim.types'
 import type { UnitTypeKey } from '../combat.types'
 import { getSizeRadius } from '../combat.utils'
 import type { CombatWorld } from './combat-world'
 import type { EntityId } from './entity'
+import { getEcsCombatTags } from './targeting-evaluation'
 
 const GRID_TO_PIXELS = 40
 const MELEE_RANGE = 60
@@ -33,7 +34,7 @@ export function getEcsPositioningDecision(
   const targetPoint = { x: targetTransform.x, y: targetTransform.y }
   if (combat.speed <= 0 || weapon.attackType === 'spawn') return { point: targetPoint, shouldMove: false, combatInRange: true }
 
-  const effectiveRange = getEcsEffectiveActionRange(world, entityId)
+  const effectiveRange = getEcsEffectiveActionRangeAgainst(world, entityId, targetId)
   const minimumRange = getMinimumRange(world, entityId)
   const combatInRange = weapon.attackType === 'heal'
     ? targetVitality.hp < targetVitality.maxHp && distEdge <= effectiveRange
@@ -83,8 +84,43 @@ export function getEcsEffectiveActionRange(world: CombatWorld, entityId: EntityI
   return Math.max(0, range * Math.max(0.05, 1 - Math.min(0.95, reduction)))
 }
 
+export function getEcsEffectiveActionRangeAgainst(
+  world: CombatWorld,
+  entityId: EntityId,
+  targetId: EntityId,
+): number {
+  let range = getEcsEffectiveActionRange(world, entityId)
+  const configs = world.stores.targeting.require(entityId).conditionalRange ?? []
+  for (const config of configs) {
+    if (!matchesConditionalRange(world, entityId, targetId, config)) continue
+    if (config.rangeMult !== undefined) range *= Math.max(0, config.rangeMult)
+    if (config.rangeAdd !== undefined) range += config.rangeAdd
+  }
+  return Math.max(0, range)
+}
+
 export function getEcsStatusValue(effects: RuntimeStatusEffect[], type: RuntimeStatusEffect['type']): number | undefined {
   return getStatusValue(effects, type)
+}
+
+function matchesConditionalRange(
+  world: CombatWorld,
+  entityId: EntityId,
+  targetId: EntityId,
+  config: ConditionalRangeConfig,
+): boolean {
+  const target = world.stores.transform.require(targetId)
+  if (config.target === 'air') return target.isFlying
+  if (config.target === 'ground') return !target.isFlying
+  if (config.target === 'tag') {
+    return config.tag !== undefined && getEcsCombatTags(world, targetId).includes(config.tag)
+  }
+  const sourceRank = world.stores.identity.require(entityId).rank ?? 1
+  const targetRank = world.stores.identity.require(targetId).rank ?? 1
+  const relation = sourceRank === targetRank
+    ? 'same_rank'
+    : targetRank > sourceRank ? 'higher_rank' : 'lower_rank'
+  return config.target === relation
 }
 
 export function isEcsMeleeEngagementReady(

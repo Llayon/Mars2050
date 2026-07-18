@@ -28,7 +28,6 @@ const FACING_TOLERANCE = 0.26
 
 export function canUseSimpleSingleDamage(world: CombatWorld, entityId: EntityId, targetId: EntityId): boolean {
   const weapon = world.stores.weapon.require(entityId)
-  const targeting = world.stores.targeting.require(entityId)
   const movement = world.stores.movement.require(entityId)
   const status = world.stores.statusControl.require(entityId)
   const targetStatus = world.stores.statusControl.require(targetId)
@@ -37,7 +36,6 @@ export function canUseSimpleSingleDamage(world: CombatWorld, entityId: EntityId,
   if (!['single', 'aoe'].includes(weapon.attackType)) return false
   if (hasUnsupportedStatuses(status.statusEffects, true) || hasUnsupportedStatuses(targetStatus.statusEffects, false)) return false
   if (!canResolveSimpleEcsDeath(world, targetId)) return false
-  if (targeting.conditionalRange?.length) return false
   if (hasLifecyclePrimitives(lifecycle) || hasLifecyclePrimitives(targetLifecycle)) return false
   return getEcsShareRecipients(world, targetId).every(recipientId =>
     canResolveSimpleEcsDeath(world, recipientId),
