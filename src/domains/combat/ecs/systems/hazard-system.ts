@@ -39,7 +39,7 @@ export function runHazardSystem(
       for (const targetId of getTargetsInRadius(world, hazardId)) {
         const vitality = world.stores.vitality.require(targetId)
         vitality.hp -= hazard.damagePerTick
-        actions.push(createDamageAction(world, hazardId, targetId))
+        actions.push(createDamageAction(world, hazard, targetId))
         if (vitality.hp <= 0 && !vitality.isDead) onUnitDeath(targetId, hazard.sourceUnitId, 'hazard')
       }
     }
@@ -55,7 +55,7 @@ function processMine(world: CombatWorld, hazardId: EntityId, actions: BattleActi
   for (const targetId of targets) {
     const vitality = world.stores.vitality.require(targetId)
     vitality.hp -= hazard.damagePerTick
-    actions.push(createDamageAction(world, hazardId, targetId))
+    actions.push(createDamageAction(world, hazard, targetId))
     if (vitality.hp <= 0 && !vitality.isDead) onDeath(targetId, hazard.sourceUnitId, 'mine')
   }
   return true
@@ -79,8 +79,11 @@ function getTargetsInRadius(world: CombatWorld, hazardId: EntityId): EntityId[] 
   })
 }
 
-function createDamageAction(world: CombatWorld, hazardId: EntityId, targetId: EntityId): BattleAction {
-  const hazard = world.stores.hazard.require(hazardId)
+function createDamageAction(
+  world: CombatWorld,
+  hazard: ReturnType<CombatWorld['stores']['hazard']['require']>,
+  targetId: EntityId,
+): BattleAction {
   const action: BattleAction = { unitId: hazard.sourceUnitId ?? hazard.id, type: 'damage', targetId: getExternalId(world, targetId), damage: hazard.damagePerTick, hazardId: hazard.id, damageKind: 'hazard' }
   if (hazard.sourceUnitId) action.sourceUnitId = hazard.sourceUnitId
   return action

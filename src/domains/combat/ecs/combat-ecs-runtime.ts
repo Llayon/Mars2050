@@ -121,7 +121,7 @@ export function createEcsCombatRuntime(): EcsCombatRuntime {
       })
       world.syncAllFromComponents()
     },
-    runHazardPhase(actions, onUnitDeath, spatialHash): void {
+    runHazardPhase(actions, _onUnitDeath, spatialHash): void {
       void spatialHash
       world.syncAllToComponents()
       world.flushStructuralCommands()
@@ -129,15 +129,11 @@ export function createEcsCombatRuntime(): EcsCombatRuntime {
       world.syncHazardsToComponents()
       world.resources.require('entitySpatial').rebuild(world)
       runHazardSystem(world, actions, (entityId, sourceUnitId, cause) => {
-        world.syncAllFromComponents()
-        world.syncHazardsFromComponents()
-        const unit = world.getEntity(entityId)
-        if (unit) {
-          onUnitDeath(unit, sourceUnitId, cause)
-          world.flushStructuralCommands()
-          world.syncAllToComponents()
-          world.syncHazardsToComponents()
-        }
+        const sourceId = sourceUnitId === undefined
+          ? undefined
+          : world.getEntityId(sourceUnitId)
+        resolveEcsDeath(world, entityId, sourceId, actions, cause)
+        world.flushStructuralCommands()
       })
       world.syncAllFromComponents()
       world.syncHazardsFromComponents()

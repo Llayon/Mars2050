@@ -91,8 +91,9 @@ every configured event and payload is native. The post-hazard HP-threshold phase
 always reads canonical vitality/lifecycle stores in stable external-ID order.
 Periodic burn, acid, and degeneration deaths now resolve inside the ECS status
 phase, including source-less deaths, resurrection, reassembly, and death/kill
-triggers. The legacy environmental death callback remains only at the hazard
-phase boundary.
+triggers. Mine and periodic hazard deaths use the same resolver without
+round-tripping through unit or hazard facades. The shared environmental callback
+is now consumed only by the legacy shadow runtime.
 Initial squads, action spawns, trigger clones, and hazards enter a deterministic
 structural command buffer. Target references and melee
 sectors use `EntityId`; string IDs are written only as a compatibility mirror
