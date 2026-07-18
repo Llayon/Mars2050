@@ -21,6 +21,7 @@ import { processBurrowRegeneration } from './combat.burrow'
 import { processGrowthAndCharge } from './combat.growth-charge'
 import { processTransformModes } from './combat.transform'
 import { processFieldEffects } from './combat.field-effects'
+import { processFormationBonuses } from './combat.formation'
 import type { PRNG } from './combat.utils'
 
 export function createLegacyCombatRuntime(): CombatRuntime {
@@ -65,6 +66,8 @@ export function createLegacyCombatRuntime(): CombatRuntime {
     runTransformModePhase: (tick, actions) => processTransformModes(tick, units, actions),
     runFieldEffectPhase: (tick, actions) =>
       processFieldEffects(tick, units, hazards, actions),
+    runFormationBonusPhase: (tick, actions) =>
+      processFormationBonuses(tick, units, actions),
     runStatusPhase(actions: BattleAction[], rng: PRNG): void {
       for (const unit of units) {
         if (!unit.isDead) {

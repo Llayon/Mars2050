@@ -74,6 +74,8 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
           runtime.runTransformModePhase(tick, actions),
         runFieldEffects: () =>
           runtime.runFieldEffectPhase(tick, actions),
+        runFormationBonuses: () =>
+          runtime.runFormationBonusPhase(tick, actions),
       },
       spatialHash,
     );

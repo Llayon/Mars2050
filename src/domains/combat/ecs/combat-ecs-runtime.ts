@@ -2,7 +2,7 @@ import type { BattleAction } from '../combat.actions'
 import type { SimHazard } from '../combat.sim.types'
 import type { CombatRuntime } from '../combat.runtime'
 import { CombatWorld } from './combat-world'
-import { createEcsMeleeEngagementState, getEcsBurrowRegenerationEntities, getEcsFieldEffectEntities, getEcsGrowthAndChargeEntities, getEcsTerminalOutcome, getEcsTransformModeEntities, getEcsTurnOrder, processEcsHpThresholdTriggers, reserveEcsMeleeSlot, resolveEcsDeath, runActionSystem, runDepenetrationSystem, runEcsBurrowRegenerationSystem, runEcsFieldEffectSystem, runEcsGrowthAndChargeSystem, runEcsPeriodicSpawnerSystem, runEcsReassemblySystem, runEcsTransformModeSystem, runHazardSystem, runModifierSystem, runMovementSystem, runStatusSystem, runTargetingSystem, syncEcsTargetRefs } from './systems'
+import { createEcsMeleeEngagementState, getEcsBurrowRegenerationEntities, getEcsFieldEffectEntities, getEcsFormationBonusEntities, getEcsGrowthAndChargeEntities, getEcsTerminalOutcome, getEcsTransformModeEntities, getEcsTurnOrder, processEcsHpThresholdTriggers, reserveEcsMeleeSlot, resolveEcsDeath, runActionSystem, runDepenetrationSystem, runEcsBurrowRegenerationSystem, runEcsFieldEffectSystem, runEcsFormationBonusSystem, runEcsGrowthAndChargeSystem, runEcsPeriodicSpawnerSystem, runEcsReassemblySystem, runEcsTransformModeSystem, runHazardSystem, runModifierSystem, runMovementSystem, runStatusSystem, runTargetingSystem, syncEcsTargetRefs } from './systems'
 import { createSquadEntities } from './combat-entity-factory'
 import { EntitySpatialIndex } from './entity-spatial-index'
 
@@ -173,6 +173,21 @@ export function createEcsCombatRuntime(): EcsCombatRuntime {
         world.syncComponentsFromStore(entityId, ['support'])
       }
       world.syncAllComponentsFromStore(['statusControl', 'targeting'])
+    },
+    runFormationBonusPhase(tick, actions): void {
+      world.syncAllComponentsToStore([
+        'transform',
+        'vitality',
+        'support',
+        'statusControl',
+        'movement',
+      ])
+      world.resources.require('entitySpatial').rebuild(world)
+      const entityIds = getEcsFormationBonusEntities(world)
+      runEcsFormationBonusSystem(world, tick, actions, entityIds)
+      for (const entityId of entityIds) {
+        world.syncComponentsFromStore(entityId, ['statusControl', 'movement'])
+      }
     },
     runStatusPhase(actions: BattleAction[], _rng): void {
       world.flushStructuralCommands()
