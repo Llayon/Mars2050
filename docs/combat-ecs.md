@@ -43,7 +43,9 @@ percent-HP payloads, on-hit statuses, and squad-wide target marks. Weapon
 line-pierce, cone, beam, barrage, radial AoE, chain, conditional cluster attacks,
 sweep, split-fire, side weapons, post-hit pull/knockback displacement, minimum
 range, short-range melee hits, siege stance action setup, and ground-for-action
-mobility mode changes also run natively. Remaining secondary
+mobility mode changes also run natively. Burrowed attackers surface through the
+native action setup; one-shot emerge damage and expanded radial AoE payloads are
+consumed by the ECS damage path. Remaining secondary
 weapon families and complex lifecycle primitives fall back
 before mutating state.
 Initial squads, action spawns,

@@ -21,6 +21,10 @@ import { applyEcsSweepAttack, canUseEcsSweepAttack } from './sweep-attack-system
 import { applyEcsConditionalAttack, canUseEcsConditionalAttack } from './conditional-attack-system'
 import { applyEcsBarrageAttack, canUseEcsBarrageAttack } from './barrage-attack-system'
 import {
+  consumeEcsEmergeStrike,
+  syncEcsBurrowForAction,
+} from './emerge-strike-system'
+import {
   getEcsActionCooldown,
   isEcsWeaponActionInRange,
   prepareEcsStanceForAction,
@@ -43,7 +47,7 @@ export function canUseSimpleSingleDamage(world: CombatWorld, entityId: EntityId,
   if (!['single', 'aoe'].includes(weapon.attackType) || (combat.multishot ?? 1) !== 1) return false
   if (hasUnsupportedStatuses(status.statusEffects, true) || hasUnsupportedStatuses(targetStatus.statusEffects, false)) return false
   if (!canResolveSimpleEcsDeath(world, targetId)) return false
-  if (movement.burrowConfig || movement.stealthWhileMoving) return false
+  if (movement.stealthWhileMoving) return false
   if (
     targeting.conditionalRange?.length ||
     config?.onKill
@@ -86,9 +90,12 @@ export function runSimpleSingleDamage(
   }
 
   syncEcsModeForAction(world, entityId, actions)
+  syncEcsBurrowForAction(world, entityId, actions)
   combat.actionCooldown = getEcsActionCooldown(world, entityId)
   actions.push({ unitId: identity.id, type: 'attack', targetId: world.stores.identity.require(targetId).id })
-  const primaryDamage = applyEcsPrimaryDamageModifiers(world, entityId, targetId, combat.attack, actions)
+  const emergeStrike = consumeEcsEmergeStrike(world, entityId)
+  let primaryDamage = applyEcsPrimaryDamageModifiers(world, entityId, targetId, combat.attack, actions)
+  if (emergeStrike?.attackMult) primaryDamage = Math.floor(primaryDamage * emergeStrike.attackMult)
   const damageResult = applyEcsSingleDamage(world, entityId, targetId, primaryDamage, actions)
   status.hasAttacked = true
   if (!damageResult.intercepted) applyEcsOnHitEffects(world, entityId, targetId, actions)
@@ -100,17 +107,18 @@ export function runSimpleSingleDamage(
   if (!damageResult.intercepted) applyEcsSideWeapon(world, entityId, targetId, actions)
   if (!damageResult.intercepted) applyEcsConditionalAttack(world, entityId, targetId, actions)
   if (!damageResult.intercepted) applyEcsSweepAttack(world, entityId, targetId, actions)
-  if (!damageResult.intercepted) applyEcsRadialAoe(world, entityId, targetId, actions)
+  if (!damageResult.intercepted) {
+    applyEcsRadialAoe(world, entityId, targetId, actions, emergeStrike?.aoeRadiusAdd)
+  }
   if (!damageResult.intercepted) applyEcsDisplacement(world, entityId, targetId, actions)
-  world.syncComponentsFromStore(entityId, ['transform', 'vitality', 'combat', 'targeting', 'statusControl', 'movement'])
+  world.syncComponentsFromStore(entityId, ['transform', 'vitality', 'combat', 'weapon', 'targeting', 'statusControl', 'movement'])
   world.syncComponentsFromStore(targetId, ['vitality', 'defense'])
   return { acted: true, actorSynchronized: true }
 }
 
 function hasWeaponPrimitives(weapon: ReturnType<CombatWorld['stores']['weapon']['require']>): boolean {
   return Boolean(
-    weapon.emergeStrikePending || weapon.leavesPuddle ||
-    weapon.smokeOnAction,
+    weapon.leavesPuddle || weapon.smokeOnAction,
   )
 }
 

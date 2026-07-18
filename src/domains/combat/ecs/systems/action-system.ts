@@ -9,6 +9,7 @@ import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
 import { applyEcsHealing } from './healing-system'
 import { canUseSimpleSingleDamage, runSimpleSingleDamage } from './single-damage-system'
+import { syncEcsBurrowForAction } from './emerge-strike-system'
 import {
   getEcsActionCooldown,
   getEcsStanceSetupActionRange,
@@ -63,7 +64,7 @@ function runHealAction(
   }
 
   syncEcsModeForAction(world, entityId, actions)
-  syncBurrowForAction(world, entityId, actions)
+  syncEcsBurrowForAction(world, entityId, actions)
   combat.actionCooldown = getEcsActionCooldown(world, entityId)
   applyEcsHealing(world, entityId, targetId, combat.attack, actions)
   syncActorView(world, entityId)
@@ -89,21 +90,6 @@ function canHealTarget(sourceType: string, target: NonNullable<ReturnType<Combat
   if (!tags?.length) return true
   const targetTags = new Set(getEffectiveCombatTags(target))
   return tags.some(tag => targetTags.has(tag))
-}
-
-function syncBurrowForAction(world: CombatWorld, entityId: EntityId, actions: BattleAction[]): void {
-  const identity = world.stores.identity.require(entityId)
-  const movement = world.stores.movement.require(entityId)
-  const weapon = world.stores.weapon.require(entityId)
-  if (!movement.isBurrowed) return
-  movement.isBurrowed = false
-  const attackMult = movement.burrowConfig?.emergeAttackMult
-  const aoeRadiusAdd = movement.burrowConfig?.emergeAoeRadiusAdd
-  if (attackMult || aoeRadiusAdd) {
-    weapon.emergeStrikePending = { attackMult, aoeRadiusAdd }
-    actions.push({ unitId: identity.id, type: 'emerge_strike', value: attackMult ?? aoeRadiusAdd })
-  }
-  actions.push({ unitId: identity.id, type: 'burrow_change', value: 0 })
 }
 
 function isActionBlocked(effects: { type: string; duration: number }[]): boolean {

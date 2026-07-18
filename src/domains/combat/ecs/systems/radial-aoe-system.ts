@@ -3,6 +3,7 @@ import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
 import { getEcsShareRecipients } from './damage-sharing-system'
 import { canResolveSimpleEcsDeath } from './death-system'
+import { getEcsProspectiveEmergeStrike } from './emerge-strike-system'
 import { resolveEcsSecondaryHit } from './secondary-hit-system'
 
 export function canUseEcsRadialAoe(
@@ -10,9 +11,10 @@ export function canUseEcsRadialAoe(
   attackerId: EntityId,
   primaryId: EntityId,
 ): boolean {
-  if (!hasRadialAoe(world, attackerId)) return true
+  const radiusAdd = getEcsProspectiveEmergeStrike(world, attackerId)?.aoeRadiusAdd ?? 0
+  if (!hasRadialAoe(world, attackerId, radiusAdd)) return true
   if (!world.resources.get('entitySpatial')) return false
-  return getRadialTargets(world, attackerId, primaryId).every(targetId =>
+  return getRadialTargets(world, attackerId, primaryId, radiusAdd).every(targetId =>
     canResolveSimpleEcsDeath(world, targetId) &&
     getEcsShareRecipients(world, targetId).every(recipientId =>
       canResolveSimpleEcsDeath(world, recipientId),
@@ -25,10 +27,11 @@ export function applyEcsRadialAoe(
   attackerId: EntityId,
   primaryId: EntityId,
   actions: BattleAction[],
+  radiusAdd = 0,
 ): void {
-  if (!hasRadialAoe(world, attackerId)) return
+  if (!hasRadialAoe(world, attackerId, radiusAdd)) return
   const splashDamage = Math.floor(world.stores.combat.require(attackerId).attack * 0.5)
-  for (const targetId of getRadialTargets(world, attackerId, primaryId)) {
+  for (const targetId of getRadialTargets(world, attackerId, primaryId, radiusAdd)) {
     resolveEcsSecondaryHit(
       world,
       attackerId,
@@ -44,8 +47,9 @@ function getRadialTargets(
   world: CombatWorld,
   attackerId: EntityId,
   primaryId: EntityId,
+  radiusAdd: number,
 ): EntityId[] {
-  const radius = world.stores.weapon.require(attackerId).aoeRadius ?? 0
+  const radius = (world.stores.weapon.require(attackerId).aoeRadius ?? 0) + radiusAdd
   if (radius <= 0) return []
   const primary = world.stores.transform.require(primaryId)
   const attackerTeam = world.stores.identity.require(attackerId).team
@@ -57,7 +61,7 @@ function getRadialTargets(
     })
 }
 
-function hasRadialAoe(world: CombatWorld, attackerId: EntityId): boolean {
+function hasRadialAoe(world: CombatWorld, attackerId: EntityId, radiusAdd: number): boolean {
   const weapon = world.stores.weapon.require(attackerId)
-  return weapon.attackType === 'aoe' && (weapon.aoeRadius ?? 0) > 0
+  return weapon.attackType === 'aoe' && (weapon.aoeRadius ?? 0) + radiusAdd > 0
 }
