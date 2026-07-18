@@ -2,8 +2,6 @@ import type { BattleAction } from '../../combat.actions'
 import { getDistance, getSizeRadius } from '../../combat.utils'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
-import { getEcsShareRecipients } from './damage-sharing-system'
-import { canResolveEcsDeath } from './death-system'
 import { resolveEcsSecondaryHit } from './secondary-hit-system'
 
 const CANDIDATE_MARGIN = 240
@@ -20,13 +18,7 @@ export function canUseEcsChainAttack(
   primaryId: EntityId,
 ): boolean {
   if (!world.stores.weapon.require(attackerId).chainAttack) return true
-  if (!world.resources.get('entitySpatial')) return false
-  return getChainHits(world, attackerId, primaryId).every(hit =>
-    canResolveEcsDeath(world, hit.targetId) &&
-    getEcsShareRecipients(world, hit.targetId).every(recipientId =>
-      canResolveEcsDeath(world, recipientId),
-    ),
-  )
+  return world.resources.get('entitySpatial') !== undefined
 }
 
 export function applyEcsChainAttack(

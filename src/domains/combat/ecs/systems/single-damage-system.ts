@@ -4,8 +4,6 @@ import { getDistance, getSizeRadius, type PRNG } from '../../combat.utils'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
 import { getEcsEffectiveActionRange } from '../movement-positioning'
-import { canResolveEcsDeath } from './death-system'
-import { getEcsShareRecipients } from './damage-sharing-system'
 import { canUseEcsDirectionalGeometry } from './directional-geometry-system'
 import { canUseEcsRadialAoe } from './radial-aoe-system'
 import { canUseEcsSplitFire } from './split-fire-system'
@@ -17,7 +15,6 @@ import { canUseEcsConditionalAttack } from './conditional-attack-system'
 import { canUseEcsBarrageAttack } from './barrage-attack-system'
 import { syncEcsBurrowForAction } from './emerge-strike-system'
 import { resolveEcsSingleShot } from './single-shot-system'
-import { canUseEcsPostHitTriggers } from './post-hit-trigger-system'
 import {
   getEcsActionCooldown,
   isEcsWeaponActionInRange,
@@ -29,16 +26,11 @@ const FACING_TOLERANCE = 0.26
 
 export function canUseSimpleSingleDamage(world: CombatWorld, entityId: EntityId, targetId: EntityId): boolean {
   const weapon = world.stores.weapon.require(entityId)
-  const movement = world.stores.movement.require(entityId)
   const status = world.stores.statusControl.require(entityId)
   const targetStatus = world.stores.statusControl.require(targetId)
   if (!['single', 'aoe'].includes(weapon.attackType)) return false
   if (hasUnsupportedStatuses(status.statusEffects, true) || hasUnsupportedStatuses(targetStatus.statusEffects, false)) return false
-  if (!canResolveEcsDeath(world, targetId)) return false
-  if (!canUseEcsPostHitTriggers(world, entityId, targetId)) return false
-  return getEcsShareRecipients(world, targetId).every(recipientId =>
-    canResolveEcsDeath(world, recipientId),
-  ) && canUseEcsDirectionalGeometry(world, entityId, targetId) &&
+  return canUseEcsDirectionalGeometry(world, entityId, targetId) &&
     canUseEcsBarrageAttack(world, entityId, targetId) &&
     canUseEcsChainAttack(world, entityId, targetId) &&
     canUseEcsSplitFire(world, entityId, targetId) &&

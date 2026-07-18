@@ -6,7 +6,6 @@ import { PRNG } from '@/domains/combat/combat.utils'
 import { CombatWorld } from '@/domains/combat/ecs/combat-world'
 import { EntitySpatialIndex } from '@/domains/combat/ecs/entity-spatial-index'
 import {
-  canUseEcsDeathTriggers,
   canUseSimpleSingleDamage,
   runActionSystem,
 } from '@/domains/combat/ecs/systems'
@@ -65,7 +64,6 @@ describe('combat ECS death-trigger action', () => {
       legacyActions,
       new PRNG(79),
     )
-    expect(canUseEcsDeathTriggers(world, 1)).toBe(true)
     expect(canUseSimpleSingleDamage(world, 0, 1)).toBe(true)
     runActionSystem(world, 0, 1, nativeActions, {
       rng: world.resources.require('rng'),
@@ -125,7 +123,6 @@ describe('combat ECS death-trigger action', () => {
       legacyActions,
       new PRNG(83),
     )
-    expect(canUseEcsDeathTriggers(world, 1)).toBe(true)
     expect(canUseSimpleSingleDamage(world, 0, 1)).toBe(true)
     runActionSystem(world, 0, 1, nativeActions, {
       rng: world.resources.require('rng'),
@@ -234,7 +231,6 @@ describe('combat ECS death-trigger action', () => {
       spatialHash: new SpatialHash(),
     })
 
-    expect(canUseEcsDeathTriggers(world, 1)).toBe(true)
     expect(canUseSimpleSingleDamage(world, 0, 1)).toBe(true)
     expect(nativeActions).toEqual(legacyActions)
     expect(world.stores.vitality.require(0).hp).toBe(legacyUnits[0].hp)

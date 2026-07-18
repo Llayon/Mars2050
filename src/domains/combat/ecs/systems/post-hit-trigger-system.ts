@@ -3,35 +3,7 @@ import type { RuntimeTriggerEffect, TriggerPayload } from '../../combat.sim.type
 import { getDistance } from '../../combat.utils'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
-import { isEcsTriggerSupported } from './trigger-capability'
 import { applyEcsTriggerPayload } from './trigger-payload-system'
-
-const SUPPORTED_EVENTS = new Set<RuntimeTriggerEffect['event']>([
-  'attack_count',
-  'damage_taken',
-  'death',
-  'kill',
-])
-export function canUseEcsPostHitTriggers(
-  world: CombatWorld,
-  attackerId: EntityId,
-  targetId: EntityId,
-): boolean {
-  return [attackerId, targetId].every(entityId =>
-    (world.stores.lifecycle.require(entityId).triggerEffects ?? []).every(trigger =>
-      trigger.event === 'hp_threshold' ||
-      SUPPORTED_EVENTS.has(trigger.event) && isEcsTriggerSupported(trigger),
-    ),
-  )
-}
-
-export function canUseEcsHpThresholdTriggers(
-  world: CombatWorld,
-  entityId: EntityId,
-): boolean {
-  return getTriggers(world, entityId, 'hp_threshold')
-    .every(isEcsTriggerSupported)
-}
 
 export function processEcsHpThresholdTriggers(
   world: CombatWorld,

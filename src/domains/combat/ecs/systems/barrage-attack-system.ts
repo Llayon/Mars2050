@@ -2,8 +2,6 @@ import type { BattleAction } from '../../combat.actions'
 import { getDistance, getSizeRadius } from '../../combat.utils'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
-import { getEcsShareRecipients } from './damage-sharing-system'
-import { canResolveEcsDeath } from './death-system'
 import { resolveEcsSecondaryHit } from './secondary-hit-system'
 
 interface EcsBarrageImpact {
@@ -19,15 +17,7 @@ export function canUseEcsBarrageAttack(
   primaryId: EntityId,
 ): boolean {
   if (!world.stores.weapon.require(attackerId).barrageAttack) return true
-  if (!world.resources.get('entitySpatial')) return false
-  return getImpacts(world, attackerId, primaryId).every(impact =>
-    getTargets(world, attackerId, impact).every(targetId =>
-      canResolveEcsDeath(world, targetId) &&
-      getEcsShareRecipients(world, targetId).every(recipientId =>
-        canResolveEcsDeath(world, recipientId),
-      ),
-    ),
-  )
+  return world.resources.get('entitySpatial') !== undefined
 }
 
 export function applyEcsBarrageAttack(

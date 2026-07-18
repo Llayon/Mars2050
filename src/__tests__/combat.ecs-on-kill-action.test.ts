@@ -6,7 +6,6 @@ import { PRNG } from '@/domains/combat/combat.utils'
 import { CombatWorld } from '@/domains/combat/ecs/combat-world'
 import { EntitySpatialIndex } from '@/domains/combat/ecs/entity-spatial-index'
 import {
-  canUseEcsPostHitTriggers,
   canUseSimpleSingleDamage,
   runActionSystem,
 } from '@/domains/combat/ecs/systems'
@@ -186,7 +185,6 @@ describe('combat ECS on-kill action', () => {
       spatialHash: new SpatialHash(),
     })
 
-    expect(canUseEcsPostHitTriggers(world, 0, 1)).toBe(true)
     expect(canUseSimpleSingleDamage(world, 0, 1)).toBe(true)
     expect(nativeActions).toEqual(legacyActions)
   })

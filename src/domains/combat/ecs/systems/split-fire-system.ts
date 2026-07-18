@@ -2,8 +2,6 @@ import type { BattleAction } from '../../combat.actions'
 import { getDistance, getSizeRadius } from '../../combat.utils'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
-import { getEcsShareRecipients } from './damage-sharing-system'
-import { canResolveEcsDeath } from './death-system'
 import { resolveEcsSecondaryHit } from './secondary-hit-system'
 
 const GRID_TO_PIXELS = 40
@@ -15,13 +13,7 @@ export function canUseEcsSplitFire(
   primaryId: EntityId,
 ): boolean {
   if (!world.stores.weapon.require(attackerId).splitFire) return true
-  if (!world.resources.get('entitySpatial')) return false
-  return getSplitFireTargets(world, attackerId, primaryId).every(targetId =>
-    canResolveEcsDeath(world, targetId) &&
-    getEcsShareRecipients(world, targetId).every(recipientId =>
-      canResolveEcsDeath(world, recipientId),
-    ),
-  )
+  return world.resources.get('entitySpatial') !== undefined
 }
 
 export function applyEcsSplitFire(

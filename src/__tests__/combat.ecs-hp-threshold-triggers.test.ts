@@ -6,8 +6,6 @@ import { PRNG } from '@/domains/combat/combat.utils'
 import { createEcsCombatRuntime } from '@/domains/combat/ecs/combat-ecs-runtime'
 import { CombatWorld } from '@/domains/combat/ecs/combat-world'
 import {
-  canUseEcsHpThresholdTriggers,
-  canUseEcsPostHitTriggers,
   canUseSimpleSingleDamage,
   processEcsHpThresholdTriggers,
 } from '@/domains/combat/ecs/systems'
@@ -57,7 +55,6 @@ describe('combat ECS hp-threshold triggers', () => {
     })
     processEcsHpThresholdTriggers(world, 0, nativeActions)
 
-    expect(canUseEcsHpThresholdTriggers(world, 0)).toBe(true)
     expect(nativeActions).toEqual(legacyActions)
     expect(world.stores.vitality.require(0).shield).toBe(30)
     expect(world.stores.lifecycle.require(0).triggerEffects).toEqual(
@@ -79,8 +76,6 @@ describe('combat ECS hp-threshold triggers', () => {
     }]
     const world = new CombatWorld([attacker, target])
 
-    expect(canUseEcsHpThresholdTriggers(world, 0)).toBe(true)
-    expect(canUseEcsPostHitTriggers(world, 0, 1)).toBe(true)
     expect(canUseSimpleSingleDamage(world, 0, 1)).toBe(true)
   })
 
@@ -138,5 +133,43 @@ describe('combat ECS hp-threshold triggers', () => {
       type: 'trigger_effect',
       targetId: 'target',
     }))
+  })
+
+  it('reads threshold state from the canonical vitality store', () => {
+    const owner = unit('store-owner', 'attacker', 100)
+    owner.hp = owner.maxHp = 100
+    owner.triggerEffects = [{
+      id: 'store-shield',
+      event: 'hp_threshold',
+      threshold: 0.5,
+      payload: { kind: 'shield', target: 'self', amount: 25 },
+      fired: false,
+      counter: 0,
+      cooldownRemaining: 0,
+    }]
+    const runtime = createEcsCombatRuntime()
+    runtime.world.roster.push(owner)
+    runtime.world.flushStructuralCommands()
+    const ownerId = runtime.world.getEntityId(owner.id)!
+    runtime.world.stores.vitality.require(ownerId).hp = 40
+    const actions: Parameters<typeof runtime.runPostHazardPhase>[0]['actions'] = []
+
+    expect(owner.hp).toBe(100)
+    runtime.runPostHazardPhase({
+      units: runtime.units,
+      hazards: runtime.hazards,
+      actions,
+      rng: new PRNG(73),
+    })
+
+    expect(runtime.world.stores.vitality.require(ownerId)).toMatchObject({
+      hp: 40,
+      shield: 25,
+    })
+    expect(owner).toMatchObject({ hp: 40, shield: 25 })
+    expect(actions.map(action => action.type)).toEqual([
+      'trigger_effect',
+      'shield_apply',
+    ])
   })
 })

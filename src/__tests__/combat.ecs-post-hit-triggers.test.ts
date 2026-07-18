@@ -8,7 +8,6 @@ import { PRNG } from '@/domains/combat/combat.utils'
 import { CombatWorld } from '@/domains/combat/ecs/combat-world'
 import { EntitySpatialIndex } from '@/domains/combat/ecs/entity-spatial-index'
 import {
-  canUseEcsPostHitTriggers,
   canUseSimpleSingleDamage,
   recordEcsAttackTriggers,
   runActionSystem,
@@ -152,7 +151,6 @@ describe('combat ECS post-hit triggers', () => {
     })
     recordEcsAttackTriggers(world, 0, 1, nativeActions)
 
-    expect(canUseEcsPostHitTriggers(world, 0, 1)).toBe(true)
     expect(canUseSimpleSingleDamage(world, 0, 1)).toBe(true)
     expect(nativeActions).toEqual(legacyActions)
     expect(world.stores.vitality.require(1).hp).toBe(legacyUnits[1].hp)

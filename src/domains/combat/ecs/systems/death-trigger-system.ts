@@ -4,16 +4,6 @@ import type { EntityId } from '../entity'
 import {
   fireEcsTrigger,
 } from './post-hit-trigger-system'
-import { isEcsTriggerSupported } from './trigger-capability'
-
-export function canUseEcsDeathTriggers(
-  world: CombatWorld,
-  deadId: EntityId,
-): boolean {
-  return (world.stores.lifecycle.require(deadId).triggerEffects ?? [])
-    .filter(trigger => trigger.event === 'death')
-    .every(isEcsTriggerSupported)
-}
 
 export function processEcsDeathTriggers(
   world: CombatWorld,

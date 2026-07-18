@@ -6,10 +6,7 @@ import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
 import { applyEcsOnKillEffects } from './on-kill-system'
 import { processEcsKillTriggers } from './post-hit-trigger-system'
-import {
-  canUseEcsDeathTriggers,
-  processEcsDeathTriggers,
-} from './death-trigger-system'
+import { processEcsDeathTriggers } from './death-trigger-system'
 import { applyEcsHealing } from './healing-system'
 
 export function resolveEcsDeath(
@@ -74,10 +71,6 @@ function replicateEcsKiller(
     spawnMaxHp: world.stores.vitality.require(sourceId).maxHp,
     targetId: clone.id,
   })
-}
-
-export function canResolveEcsDeath(world: CombatWorld, entityId: EntityId): boolean {
-  return canUseEcsDeathTriggers(world, entityId)
 }
 
 function startDeathReassembly(

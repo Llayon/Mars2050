@@ -2,10 +2,9 @@ import type { BattleAction } from '../combat.actions'
 import type { SimHazard } from '../combat.sim.types'
 import type { CombatRuntime, RuntimeDeathHandler } from '../combat.runtime'
 import { CombatWorld } from './combat-world'
-import { canUseEcsHpThresholdTriggers, createEcsMeleeEngagementState, getEcsTerminalOutcome, getEcsTurnOrder, processEcsHpThresholdTriggers, reserveEcsMeleeSlot, runActionSystem, runDepenetrationSystem, runHazardSystem, runModifierSystem, runMovementSystem, runStatusSystem, runTargetingSystem, syncEcsTargetRefs } from './systems'
+import { createEcsMeleeEngagementState, getEcsTerminalOutcome, getEcsTurnOrder, processEcsHpThresholdTriggers, reserveEcsMeleeSlot, runActionSystem, runDepenetrationSystem, runHazardSystem, runModifierSystem, runMovementSystem, runStatusSystem, runTargetingSystem, syncEcsTargetRefs } from './systems'
 import { createSquadEntities } from './combat-entity-factory'
 import { EntitySpatialIndex } from './entity-spatial-index'
-import { processHpThresholdTriggers } from '../combat.triggers'
 
 const MODIFIER_COMPONENTS = ['vitality', 'combat', 'defense', 'statusControl', 'lifecycle'] as const
 const TICK_READ_COMPONENTS = ['identity', 'transform', 'vitality', 'combat', 'weapon', 'targeting', 'statusControl', 'support', 'lifecycle'] as const
@@ -154,17 +153,7 @@ export function createEcsCombatRuntime(): EcsCombatRuntime {
           ),
         )
       for (const entityId of ordered) {
-        if (canUseEcsHpThresholdTriggers(world, entityId)) {
-          processEcsHpThresholdTriggers(world, entityId, triggerContext.actions)
-          continue
-        }
-        const unit = world.getEntity(entityId)
-        if (!unit) continue
-        processHpThresholdTriggers(unit, triggerContext)
-        world.flushStructuralCommands()
-        world.syncAllToComponents()
-        world.reconcileHazards()
-        world.syncHazardsToComponents()
+        processEcsHpThresholdTriggers(world, entityId, triggerContext.actions)
       }
     },
     runDepenetration: actions => {
