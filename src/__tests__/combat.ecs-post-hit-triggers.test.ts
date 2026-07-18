@@ -121,9 +121,11 @@ describe('combat ECS post-hit triggers', () => {
     ])
   })
 
-  it('keeps unsupported trigger damage on the legacy path', () => {
+  it('matches direct trigger damage on the native path', () => {
     const attacker = unit('blast-owner', 'attacker', 100)
     const target = unit('target', 'defender', 220)
+    target.hp = target.maxHp = 100
+    target.defense = 0
     attacker.triggerEffects = [{
       id: 'blast-trigger',
       event: 'attack_count',
@@ -137,10 +139,23 @@ describe('combat ECS post-hit triggers', () => {
       counter: 0,
       cooldownRemaining: 0,
     }]
+    const legacyUnits = structuredClone([attacker, target])
+    const legacyActions: Parameters<typeof recordAttackTrigger>[2]['actions'] = []
+    const nativeActions: Parameters<typeof recordEcsAttackTriggers>[3] = []
     const world = createWorld([attacker, target])
 
-    expect(canUseEcsPostHitTriggers(world, 0, 1)).toBe(false)
-    expect(canUseSimpleSingleDamage(world, 0, 1)).toBe(false)
+    recordAttackTrigger(legacyUnits[0], legacyUnits[1], {
+      units: legacyUnits,
+      hazards: [],
+      actions: legacyActions,
+      rng: new PRNG(59),
+    })
+    recordEcsAttackTriggers(world, 0, 1, nativeActions)
+
+    expect(canUseEcsPostHitTriggers(world, 0, 1)).toBe(true)
+    expect(canUseSimpleSingleDamage(world, 0, 1)).toBe(true)
+    expect(nativeActions).toEqual(legacyActions)
+    expect(world.stores.vitality.require(1).hp).toBe(legacyUnits[1].hp)
   })
 
   it('matches finite trigger barriers and their damage break order', () => {

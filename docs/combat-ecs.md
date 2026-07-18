@@ -31,8 +31,8 @@ entity queries, and snapshot/survivor serialization. Legacy hooks remain frozen
 for shadow tests.
 
 Complex weapon actions, remaining general damage/death paths, and metrics still
-cross the temporary `SimUnit` facade. Trigger event selection and every payload
-except direct trigger damage now use component stores and EntityId references.
+cross the temporary `SimUnit` facade. Trigger event selection and every trigger
+payload now use component stores and EntityId references.
 Movement and healing read and write component stores directly through
 `EntityId`; after each move, only the changed movement components are written
 back to the facade for those unported consumers. Non-healing actions use the
@@ -70,12 +70,12 @@ Seeded on-death puddles now spawn after confirmed ECS weapon deaths with legacy
 source attribution, damage payloads, replay order, and structural buffering.
 Replicate-on-kill clones are built from canonical ECS snapshots at the victim
 position and enter the same seeded structural lifecycle before death puddles.
-Attack-count and damage-taken triggers with status, shield, heal, spawn, field,
-delayed-reassembly, or cooldown payloads now run natively after primary damage;
-direct damage remains behind an explicit legacy capability gate.
+Attack-count and damage-taken triggers with status, shield, heal, damage, spawn,
+field, delayed-reassembly, or cooldown payloads now run natively after primary
+damage. Direct damage supports configured percent HP, deterministic radial
+selection, the shared damage pipeline, and trigger death attribution.
 HP-threshold triggers with the same payload set run in an EntityId post-hazard
-phase. Unsupported threshold payloads fall back per owner and synchronize their
-effects back into component stores without disabling native weapon actions.
+phase.
 Kill triggers with the same payload set now execute after
 configured on-kill effects and before replication or death hazards.
 Death triggers execute immediately after the death
@@ -128,6 +128,9 @@ interval 10 ticks exactly at 10, 20, and 30 before it expires.
 `resolveUnitDeath()` is the only production death path and receives source and
 cause. It owns resurrection, reassembly, death triggers, kill credit, kill
 triggers, death hazards, replication, and the final replay `die` action.
+The ECS resolver mirrors one-time resurrection and configured reassembly before
+resolving EntityId death triggers. Trigger damage propagates `cause: trigger`
+through direct and shared damage deaths.
 
 Expiration is a non-combat death cause. It does not grant kill credit or execute
 death/kill triggers. DoT, mine, hazard, trigger, and weapon deaths keep their

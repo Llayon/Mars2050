@@ -4,6 +4,7 @@ import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
 import { applyEcsHealing } from './healing-system'
 import { applyEcsStatus } from './status-application-system'
+import { applyEcsTriggerDamage } from './trigger-damage-system'
 import { applyEcsTriggerField } from './trigger-field-system'
 import { startEcsTriggerReassembly } from './trigger-reassembly-system'
 import { spawnEcsTriggerUnits } from './trigger-spawn-system'
@@ -23,6 +24,10 @@ export function applyEcsTriggerPayload(
   if (targetId === null) return
   if (payload.kind === 'field') {
     applyEcsTriggerField(world, ownerId, targetId, payload, actions)
+    return
+  }
+  if (payload.kind === 'damage') {
+    applyEcsTriggerDamage(world, ownerId, targetId, payload, actions)
     return
   }
   if (payload.kind === 'delayed_reassembly') {

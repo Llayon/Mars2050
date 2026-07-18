@@ -1,8 +1,9 @@
 import { getDistance } from '../../combat.utils'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
-import { resolveSimpleEcsDeath } from './death-system'
+import { resolveEcsDeath } from './death-system'
 import type { BattleAction } from '../../combat.actions'
+import type { DeathCause } from '../../combat.death'
 
 export interface EcsDamageShareResult {
   damage: number
@@ -16,6 +17,7 @@ export function applyEcsDamageSharing(
   attackerId: EntityId,
   damage: number,
   actions: BattleAction[],
+  deathCause: DeathCause = 'weapon',
 ): EcsDamageShareResult {
   const defense = world.stores.defense.require(targetId)
   const ratio = Math.max(0, Math.min(0.9, defense.damageShareRatio ?? 0))
@@ -41,7 +43,7 @@ export function applyEcsDamageSharing(
     if (shared <= 0) continue
     world.stores.vitality.require(recipientId).hp -= shared
     events.push({ targetId: world.stores.identity.require(recipientId).id, damage: shared })
-    resolveSimpleEcsDeath(world, recipientId, attackerId, actions)
+    resolveEcsDeath(world, recipientId, attackerId, actions, deathCause)
     world.syncComponentsFromStore(recipientId, ['vitality'])
   }
   const sharedDamage = events.reduce((sum, event) => sum + event.damage, 0)

@@ -3,7 +3,7 @@ import type { SimHazard, SimUnit } from './combat.sim.types';
 import type { UnitTypeKey } from './combat.types';
 import { UNIT_TYPES } from './combat.config';
 import { PRNG, FIELD_WIDTH, FIELD_HEIGHT } from './combat.utils';
-import { resolveUnitDeath } from './combat.death';
+import { resolveUnitDeath, type DeathCause } from './combat.death';
 import { createRuntimeUnitFromConfig } from './combat.unit-factory';
 
 /**
@@ -15,8 +15,8 @@ import { createRuntimeUnitFromConfig } from './combat.unit-factory';
  * @param hazards The global list of hazards
  * @param rng The PRNG instance
  */
-export function handleDeath(t: SimUnit, unit: SimUnit, units: SimUnit[], actions: BattleAction[], hazards: SimHazard[], rng: PRNG) {
-    resolveUnitDeath(t, unit, 'weapon', { units, hazards, actions, rng });
+export function handleDeath(t: SimUnit, unit: SimUnit, units: SimUnit[], actions: BattleAction[], hazards: SimHazard[], rng: PRNG, cause: DeathCause = 'weapon') {
+    resolveUnitDeath(t, unit, cause, { units, hazards, actions, rng });
 }
 
 /**

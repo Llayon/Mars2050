@@ -3,7 +3,7 @@ import { getDistance } from '../../combat.utils'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
 import { getEcsShareRecipients } from './damage-sharing-system'
-import { canResolveSimpleEcsDeath } from './death-system'
+import { canResolveEcsDeath } from './death-system'
 import { resolveEcsSecondaryHit } from './secondary-hit-system'
 
 interface EcsSweepHit {
@@ -19,9 +19,9 @@ export function canUseEcsSweepAttack(
   if (!world.stores.weapon.require(attackerId).sweepAttack) return true
   if (!world.resources.get('entitySpatial')) return false
   return getSweepHits(world, attackerId, primaryId).every(hit =>
-    canResolveSimpleEcsDeath(world, hit.targetId) &&
+    canResolveEcsDeath(world, hit.targetId) &&
     getEcsShareRecipients(world, hit.targetId).every(recipientId =>
-      canResolveSimpleEcsDeath(world, recipientId),
+      canResolveEcsDeath(world, recipientId),
     ),
   )
 }

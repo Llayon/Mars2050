@@ -8,7 +8,7 @@ import { applyEcsBarrageAttack } from './barrage-attack-system'
 import { applyEcsChainAttack } from './chain-attack-system'
 import { applyEcsConditionalAttack } from './conditional-attack-system'
 import { applyEcsSingleDamage } from './damage-system'
-import { resolveSimpleEcsDeath } from './death-system'
+import { resolveEcsDeath } from './death-system'
 import { applyEcsDirectionalGeometry } from './directional-geometry-system'
 import { applyEcsDisplacement } from './displacement-system'
 import { consumeEcsEmergeStrike } from './emerge-strike-system'
@@ -79,7 +79,7 @@ export function resolveEcsSingleShot(
     applyEcsOnHitEffects(world, entityId, targetId, actions)
     spawnEcsAttackPuddle(world, entityId, targetId, rng)
   }
-  resolveSimpleEcsDeath(world, targetId, entityId, actions)
+  resolveEcsDeath(world, targetId, entityId, actions)
   if (damageResult.intercepted) return
   applyEcsDirectionalGeometry(world, entityId, targetId, actions)
   applyEcsBarrageAttack(world, entityId, targetId, actions)

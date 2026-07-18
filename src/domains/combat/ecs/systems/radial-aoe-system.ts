@@ -2,7 +2,7 @@ import type { BattleAction } from '../../combat.actions'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
 import { getEcsShareRecipients } from './damage-sharing-system'
-import { canResolveSimpleEcsDeath } from './death-system'
+import { canResolveEcsDeath } from './death-system'
 import { getEcsProspectiveEmergeStrike } from './emerge-strike-system'
 import { resolveEcsSecondaryHit } from './secondary-hit-system'
 
@@ -15,9 +15,9 @@ export function canUseEcsRadialAoe(
   if (!hasRadialAoe(world, attackerId, radiusAdd)) return true
   if (!world.resources.get('entitySpatial')) return false
   return getRadialTargets(world, attackerId, primaryId, radiusAdd).every(targetId =>
-    canResolveSimpleEcsDeath(world, targetId) &&
+    canResolveEcsDeath(world, targetId) &&
     getEcsShareRecipients(world, targetId).every(recipientId =>
-      canResolveSimpleEcsDeath(world, recipientId),
+      canResolveEcsDeath(world, recipientId),
     ),
   )
 }

@@ -4,7 +4,7 @@ import { getDistance, getSizeRadius, type PRNG } from '../../combat.utils'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
 import { getEcsEffectiveActionRange } from '../movement-positioning'
-import { canResolveSimpleEcsDeath } from './death-system'
+import { canResolveEcsDeath } from './death-system'
 import { getEcsShareRecipients } from './damage-sharing-system'
 import { canUseEcsDirectionalGeometry } from './directional-geometry-system'
 import { canUseEcsRadialAoe } from './radial-aoe-system'
@@ -34,10 +34,10 @@ export function canUseSimpleSingleDamage(world: CombatWorld, entityId: EntityId,
   const targetStatus = world.stores.statusControl.require(targetId)
   if (!['single', 'aoe'].includes(weapon.attackType)) return false
   if (hasUnsupportedStatuses(status.statusEffects, true) || hasUnsupportedStatuses(targetStatus.statusEffects, false)) return false
-  if (!canResolveSimpleEcsDeath(world, targetId)) return false
+  if (!canResolveEcsDeath(world, targetId)) return false
   if (!canUseEcsPostHitTriggers(world, entityId, targetId)) return false
   return getEcsShareRecipients(world, targetId).every(recipientId =>
-    canResolveSimpleEcsDeath(world, recipientId),
+    canResolveEcsDeath(world, recipientId),
   ) && canUseEcsDirectionalGeometry(world, entityId, targetId) &&
     canUseEcsBarrageAttack(world, entityId, targetId) &&
     canUseEcsChainAttack(world, entityId, targetId) &&

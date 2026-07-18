@@ -1,4 +1,5 @@
 import type { BattleAction } from '../../combat.actions'
+import type { DeathCause } from '../../combat.death'
 import type { SimHazard } from '../../combat.sim.types'
 import { cloneRuntimeUnit } from '../../combat.unit-factory'
 import type { CombatWorld } from '../combat-world'
@@ -9,21 +10,30 @@ import {
   canUseEcsDeathTriggers,
   processEcsDeathTriggers,
 } from './death-trigger-system'
+import { applyEcsHealing } from './healing-system'
 
-export function resolveSimpleEcsDeath(
+export function resolveEcsDeath(
   world: CombatWorld,
   targetId: EntityId,
   sourceId: EntityId,
   actions: BattleAction[],
+  cause: DeathCause = 'weapon',
 ): boolean {
   const target = world.stores.vitality.require(targetId)
   if (target.isDead || target.hp > 0) return false
+  if (target.resurrectOnce) {
+    target.resurrectOnce = false
+    applyEcsHealing(world, targetId, targetId, target.maxHp, actions)
+    world.syncComponentsFromStore(targetId, ['vitality'])
+    return false
+  }
+  startDeathReassembly(world, targetId, actions)
   target.isDead = true
   actions.push({
     unitId: world.stores.identity.require(targetId).id,
     type: 'die',
     sourceUnitId: world.stores.identity.require(sourceId).id,
-    cause: 'weapon',
+    cause,
   })
   processEcsDeathTriggers(world, targetId, sourceId, actions)
   if (world.stores.identity.require(sourceId).team !==
@@ -66,10 +76,34 @@ function replicateEcsKiller(
   })
 }
 
-export function canResolveSimpleEcsDeath(world: CombatWorld, entityId: EntityId): boolean {
-  const vitality = world.stores.vitality.require(entityId)
-  return !vitality.resurrectOnce && !vitality.reassemblyConfig &&
-    canUseEcsDeathTriggers(world, entityId)
+export function canResolveEcsDeath(world: CombatWorld, entityId: EntityId): boolean {
+  return canUseEcsDeathTriggers(world, entityId)
+}
+
+function startDeathReassembly(
+  world: CombatWorld,
+  targetId: EntityId,
+  actions: BattleAction[],
+): void {
+  const vitality = world.stores.vitality.require(targetId)
+  const config = vitality.reassemblyConfig
+  if (!config || vitality.reassemblyState ||
+      (vitality.reassemblyTriggersUsed ?? 0) >= Math.max(1, config.maxTriggers ?? 1)) {
+    return
+  }
+  vitality.reassemblyTriggersUsed = (vitality.reassemblyTriggersUsed ?? 0) + 1
+  vitality.reassemblyState = {
+    remainingTicks: Math.max(0, Math.floor(config.delayTicks)),
+    hpPercent: Math.max(0.01, Math.min(1, config.hpPercent ?? 1)),
+    sourceUnitId: world.stores.identity.require(targetId).id,
+  }
+  const target = world.stores.identity.require(targetId).id
+  actions.push({
+    unitId: target,
+    type: 'reassembly_start',
+    targetId: target,
+    value: vitality.reassemblyState.remainingTicks,
+  })
 }
 
 function spawnEcsDeathHazard(

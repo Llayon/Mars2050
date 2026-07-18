@@ -236,7 +236,7 @@ function createDamageContext(unit: SimUnit, units: SimUnit[], actions: BattleAct
 }
 
 function createTriggerContext(unit: SimUnit, units: SimUnit[], actions: BattleAction[], hazards: SimHazard[], rng: PRNG, tick: number) {
-  return { units, hazards, actions, rng, tick, onUnitDeath: (target: SimUnit, source: SimUnit) => handleDeath(target, source ?? unit, units, actions, hazards, rng) };
+  return { units, hazards, actions, rng, tick, onUnitDeath: (target: SimUnit, source: SimUnit) => handleDeath(target, source ?? unit, units, actions, hazards, rng, 'trigger') };
 }
 
 function tickTemporaryUnit(unit: SimUnit, actions: BattleAction[], onExpire?: (unit: SimUnit) => void): void {

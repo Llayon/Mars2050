@@ -3,7 +3,7 @@ import { getDistance } from '../../combat.utils'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
 import { getEcsShareRecipients } from './damage-sharing-system'
-import { canResolveSimpleEcsDeath } from './death-system'
+import { canResolveEcsDeath } from './death-system'
 import { resolveEcsSecondaryHit } from './secondary-hit-system'
 
 export function canUseEcsConditionalAttack(
@@ -14,9 +14,9 @@ export function canUseEcsConditionalAttack(
   if (!world.stores.weapon.require(attackerId).conditionalAttackMode) return true
   if (!world.resources.get('entitySpatial')) return false
   return getConditionalTargets(world, attackerId, primaryId).every(targetId =>
-    canResolveSimpleEcsDeath(world, targetId) &&
+    canResolveEcsDeath(world, targetId) &&
     getEcsShareRecipients(world, targetId).every(recipientId =>
-      canResolveSimpleEcsDeath(world, recipientId),
+      canResolveEcsDeath(world, recipientId),
     ),
   )
 }

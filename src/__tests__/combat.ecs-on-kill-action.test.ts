@@ -149,9 +149,12 @@ describe('combat ECS on-kill action', () => {
     ])
   })
 
-  it('keeps unsupported kill damage on the legacy weapon path', () => {
+  it('matches kill-trigger damage on the native weapon path', () => {
     const attacker = unit('carrier', 'attacker', 'marine', 100)
     const target = unit('victim', 'defender', 'marine', 220)
+    attacker.attack = 200
+    target.hp = 20
+    target.defense = 0
     attacker.triggerEffects = [{
       id: 'kill-blast',
       event: 'kill',
@@ -164,9 +167,27 @@ describe('combat ECS on-kill action', () => {
       counter: 0,
       cooldownRemaining: 0,
     }]
+    const legacyUnits = structuredClone([attacker, target])
+    const legacyActions: Parameters<typeof actionSystem>[4] = []
+    const nativeActions: Parameters<typeof runActionSystem>[3] = []
     const world = createWorld([attacker, target])
 
-    expect(canUseEcsPostHitTriggers(world, 0, 1)).toBe(false)
-    expect(canUseSimpleSingleDamage(world, 0, 1)).toBe(false)
+    actionSystem(
+      legacyUnits[0],
+      legacyUnits[1],
+      legacyUnits,
+      [],
+      legacyActions,
+      new PRNG(101),
+    )
+    runActionSystem(world, 0, 1, nativeActions, {
+      rng: new PRNG(101),
+      tick: 0,
+      spatialHash: new SpatialHash(),
+    })
+
+    expect(canUseEcsPostHitTriggers(world, 0, 1)).toBe(true)
+    expect(canUseSimpleSingleDamage(world, 0, 1)).toBe(true)
+    expect(nativeActions).toEqual(legacyActions)
   })
 })

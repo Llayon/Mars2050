@@ -2,7 +2,7 @@ import type { BattleAction } from '../../combat.actions'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
 import { applyEcsSingleDamage } from './damage-system'
-import { resolveSimpleEcsDeath } from './death-system'
+import { resolveEcsDeath } from './death-system'
 import { applyEcsOnHitEffects } from './on-hit-system'
 
 export interface EcsSecondaryHitOptions {
@@ -37,6 +37,6 @@ export function resolveEcsSecondaryHit(
       propagateSquadMark: false,
     })
   }
-  resolveSimpleEcsDeath(world, targetId, attackerId, actions)
+  resolveEcsDeath(world, targetId, attackerId, actions)
   world.syncComponentsFromStore(targetId, ['vitality', 'defense'])
 }

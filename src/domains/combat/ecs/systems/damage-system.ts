@@ -1,5 +1,6 @@
 import type { BattleAction } from '../../combat.actions'
 import { UNIT_TYPES } from '../../combat.config'
+import type { DeathCause } from '../../combat.death'
 import type { RuntimeStatusEffect } from '../../combat.sim.types'
 import type { UnitTypeKey } from '../../combat.types'
 import type { CombatWorld } from '../combat-world'
@@ -9,7 +10,6 @@ import { applyEcsBarriers } from './damage-barrier-system'
 import { applyEcsDamageSharing } from './damage-sharing-system'
 import { tryEcsProjectileInterception } from './damage-interception-system'
 import { buildEcsDamagePayload } from './damage-payload-system'
-
 interface EcsDamageResult {
   damage: number
   shieldDamage: number
@@ -24,11 +24,11 @@ interface EcsDamageResult {
   lifesteal: number
   intercepted: boolean
 }
-
 export interface EcsDamageOptions {
   allowPercentHpDamage?: boolean
   allowMinimumDamage?: boolean
   interceptable?: boolean
+  deathCause?: DeathCause
 }
 
 export function applyEcsSingleDamage(
@@ -90,7 +90,7 @@ export function applyEcsSingleDamage(
     reactiveBlock = Math.min(damage, Math.max(0, Math.floor(targetDefense.reactiveArmorBlock)))
     damage -= reactiveBlock
   }
-  const sharing = applyEcsDamageSharing(world, targetId, attackerId, damage, actions)
+  const sharing = applyEcsDamageSharing(world, targetId, attackerId, damage, actions, options.deathCause)
   damage = sharing.damage
   const markedExecute = getMarkExecuteThreshold(attackerIdentity.id, targetStatus.targetMark)
   const execute = Math.max(attacker.executeThreshold ?? 0, markedExecute)

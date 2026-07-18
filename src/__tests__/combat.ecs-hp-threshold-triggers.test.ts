@@ -65,7 +65,7 @@ describe('combat ECS hp-threshold triggers', () => {
     )
   })
 
-  it('does not block native attacks for separately scheduled triggers', () => {
+  it('enables native attacks for separately scheduled damage triggers', () => {
     const attacker = unit('threshold-owner', 'attacker', 100)
     const target = unit('target', 'defender', 220)
     attacker.triggerEffects = [{
@@ -79,12 +79,12 @@ describe('combat ECS hp-threshold triggers', () => {
     }]
     const world = new CombatWorld([attacker, target])
 
-    expect(canUseEcsHpThresholdTriggers(world, 0)).toBe(false)
+    expect(canUseEcsHpThresholdTriggers(world, 0)).toBe(true)
     expect(canUseEcsPostHitTriggers(world, 0, 1)).toBe(true)
     expect(canUseSimpleSingleDamage(world, 0, 1)).toBe(true)
   })
 
-  it('synchronizes fallback damage into ECS stores', () => {
+  it('matches native percent-HP damage and synchronizes stores', () => {
     const owner = unit('disintegrator', 'attacker', 100)
     const target = unit('target', 'defender', 180)
     owner.hp = 40
@@ -106,22 +106,31 @@ describe('combat ECS hp-threshold triggers', () => {
     target.hp = 80
     target.maxHp = 200
     target.defense = 0
+    const legacyUnits = structuredClone([owner, target])
+    const legacyActions: Parameters<typeof processHpThresholdTriggers>[1]['actions'] = []
     const runtime = createEcsCombatRuntime()
     runtime.world.roster.push(owner, target)
     runtime.world.flushStructuralCommands()
     const actions: Parameters<typeof runtime.runPostHazardPhase>[0]['actions'] = []
 
-    runtime.runPostHazardPhase({
+    const triggerContext = {
       units: runtime.units,
       hazards: runtime.hazards,
       actions,
       rng: new PRNG(71),
+    }
+    processHpThresholdTriggers(legacyUnits[0], {
+      ...triggerContext,
+      units: legacyUnits,
+      actions: legacyActions,
     })
+    runtime.runPostHazardPhase(triggerContext)
 
     const targetId = runtime.world.getEntityId('target')!
     const ownerId = runtime.world.getEntityId('disintegrator')!
     expect(runtime.world.stores.vitality.require(targetId).hp).toBe(target.hp)
-    expect(target.hp).toBeLessThan(80)
+    expect(target.hp).toBe(legacyUnits[1].hp)
+    expect(actions).toEqual(legacyActions)
     expect(runtime.world.stores.lifecycle.require(ownerId).triggerEffects?.[0].fired)
       .toBe(true)
     expect(actions).toContainEqual(expect.objectContaining({

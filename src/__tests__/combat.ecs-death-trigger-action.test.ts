@@ -199,20 +199,44 @@ describe('combat ECS death-trigger action', () => {
     ])
   })
 
-  it('keeps unsupported death damage on the legacy path', () => {
+  it('matches radial death-trigger damage on the native path', () => {
     const attacker = unit('attacker', 'attacker', 'marine', 100)
     const target = unit('explosive-wreck', 'defender', 'marine', 220)
+    attacker.hp = attacker.maxHp = 100
+    attacker.defense = 0
+    target.hp = 20
+    target.defense = 0
+    attacker.attack = 200
     target.triggerEffects = [{
       id: 'detonation',
       event: 'death',
-      payload: { kind: 'damage', target: 'self', amount: 30, radius: 100 },
+      payload: { kind: 'damage', target: 'self', amount: 30, radius: 150 },
       fired: false,
       counter: 0,
       cooldownRemaining: 0,
     }]
+    const legacyUnits = structuredClone([attacker, target])
+    const legacyActions: Parameters<typeof actionSystem>[4] = []
+    const nativeActions: Parameters<typeof runActionSystem>[3] = []
     const world = createWorld([attacker, target])
 
-    expect(canUseEcsDeathTriggers(world, 1)).toBe(false)
-    expect(canUseSimpleSingleDamage(world, 0, 1)).toBe(false)
+    actionSystem(
+      legacyUnits[0],
+      legacyUnits[1],
+      legacyUnits,
+      [],
+      legacyActions,
+      new PRNG(97),
+    )
+    runActionSystem(world, 0, 1, nativeActions, {
+      rng: new PRNG(97),
+      tick: 0,
+      spatialHash: new SpatialHash(),
+    })
+
+    expect(canUseEcsDeathTriggers(world, 1)).toBe(true)
+    expect(canUseSimpleSingleDamage(world, 0, 1)).toBe(true)
+    expect(nativeActions).toEqual(legacyActions)
+    expect(world.stores.vitality.require(0).hp).toBe(legacyUnits[0].hp)
   })
 })

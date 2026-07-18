@@ -4,6 +4,7 @@ const SUPPORTED_PAYLOADS = new Set<TriggerPayload['kind']>([
   'status',
   'shield',
   'heal',
+  'damage',
   'spawn',
   'field',
   'delayed_reassembly',
