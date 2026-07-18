@@ -1,5 +1,4 @@
 import type { BattleAction } from './combat.actions'
-import type { DeathCause } from './combat.death'
 import type { BattleOutcome } from './combat.outcome'
 import type { SimHazard, SimUnit } from './combat.sim.types'
 import type { FlowFieldMap } from './combat.pathfinding'
@@ -8,12 +7,6 @@ import type { Obstacle, Team } from './combat.sim.types'
 import type { UnitRow } from './combat.types'
 import type { PRNG } from './combat.utils'
 import type { TriggerContext } from './combat.triggers'
-
-export type RuntimeDeathHandler = (
-  unit: SimUnit,
-  sourceUnitId: string | undefined,
-  cause: DeathCause,
-) => void
 
 export interface RuntimeMovementContext {
   dt: number
@@ -49,9 +42,9 @@ export interface CombatRuntime {
   snapshotUnits(): SimUnit[]
   getSurvivors(): SimUnit[]
   getTurnOrder(): SimUnit[]
-  tickModifiers(unit: SimUnit, dt: number, actions: BattleAction[], onExpire: (unit: SimUnit) => void): void
-  runStatusPhase(actions: BattleAction[], onUnitDeath: RuntimeDeathHandler): void
-  runHazardPhase(actions: BattleAction[], onUnitDeath: RuntimeDeathHandler, spatialHash: SpatialHash): void
+  tickModifiers(unit: SimUnit, dt: number, actions: BattleAction[], rng: PRNG): void
+  runStatusPhase(actions: BattleAction[], rng: PRNG): void
+  runHazardPhase(actions: BattleAction[], spatialHash: SpatialHash, rng: PRNG): void
   runPostHazardPhase(triggerContext: TriggerContext): void
   runDepenetration(actions: BattleAction[]): void
   getTerminalOutcome(

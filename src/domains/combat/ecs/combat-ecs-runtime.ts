@@ -1,6 +1,6 @@
 import type { BattleAction } from '../combat.actions'
 import type { SimHazard } from '../combat.sim.types'
-import type { CombatRuntime, RuntimeDeathHandler } from '../combat.runtime'
+import type { CombatRuntime } from '../combat.runtime'
 import { CombatWorld } from './combat-world'
 import { createEcsMeleeEngagementState, getEcsTerminalOutcome, getEcsTurnOrder, processEcsHpThresholdTriggers, reserveEcsMeleeSlot, resolveEcsDeath, runActionSystem, runDepenetrationSystem, runHazardSystem, runModifierSystem, runMovementSystem, runStatusSystem, runTargetingSystem, syncEcsTargetRefs } from './systems'
 import { createSquadEntities } from './combat-entity-factory'
@@ -95,7 +95,7 @@ export function createEcsCombatRuntime(): EcsCombatRuntime {
         return unit ? [unit] : []
       })
     },
-    tickModifiers(unit, _dt, actions, _onExpire): void {
+    tickModifiers(unit, _dt, actions, _rng): void {
       const entityId = world.getEntityId(unit.id)
       if (entityId === undefined) return
       world.syncComponentsToStore(entityId, MODIFIER_COMPONENTS)
@@ -104,7 +104,7 @@ export function createEcsCombatRuntime(): EcsCombatRuntime {
       })
       world.syncComponentsFromStore(entityId, MODIFIER_COMPONENTS)
     },
-    runStatusPhase(actions: BattleAction[], _onUnitDeath: RuntimeDeathHandler): void {
+    runStatusPhase(actions: BattleAction[], _rng): void {
       world.flushStructuralCommands()
       world.syncAllComponentsToStore(TICK_READ_COMPONENTS)
       runStatusSystem(world, actions, (entityId, sourceUnitId, cause) => {
@@ -116,7 +116,7 @@ export function createEcsCombatRuntime(): EcsCombatRuntime {
       })
       world.syncAllFromComponents()
     },
-    runHazardPhase(actions, _onUnitDeath, spatialHash): void {
+    runHazardPhase(actions, spatialHash, _rng): void {
       void spatialHash
       world.syncAllToComponents()
       world.flushStructuralCommands()

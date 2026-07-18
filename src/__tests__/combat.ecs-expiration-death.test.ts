@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
 import type { BattleAction } from '@/domains/combat/combat.actions'
-import { resolveUnitDeath } from '@/domains/combat/combat.death'
 import { createLegacyCombatRuntime } from '@/domains/combat/combat.legacy-runtime'
 import type { SimUnit } from '@/domains/combat/combat.sim.types'
 import { createRuntimeUnitFromConfig } from '@/domains/combat/combat.unit-factory'
@@ -40,22 +39,12 @@ describe('combat ECS expiration death', () => {
     const nativeActions: BattleAction[] = []
     const legacyRuntime = createLegacyCombatRuntime()
     legacyRuntime.units.push(legacy)
-    const legacyRng = new PRNG(131)
-    legacyRuntime.tickModifiers(legacy, 0.1, legacyActions, expired => {
-      resolveUnitDeath(expired, undefined, 'expiration', {
-        units: legacyRuntime.units,
-        hazards: legacyRuntime.hazards,
-        actions: legacyActions,
-        rng: legacyRng,
-      })
-    })
+    legacyRuntime.tickModifiers(legacy, 0.1, legacyActions, new PRNG(131))
     const runtime = createEcsCombatRuntime()
     runtime.world.roster.push(unit)
     runtime.world.flushStructuralCommands()
 
-    runtime.tickModifiers(unit, 0.1, nativeActions, () => {
-      throw new Error('ECS expiration used the facade callback')
-    })
+    runtime.tickModifiers(unit, 0.1, nativeActions, new PRNG(131))
 
     expect(nativeActions).toEqual(legacyActions)
     expect(runtime.world.snapshotEntity(0)).toEqual(legacy)

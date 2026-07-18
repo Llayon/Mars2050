@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
 import type { BattleAction } from '@/domains/combat/combat.actions'
-import { resolveUnitDeath } from '@/domains/combat/combat.death'
 import { createLegacyCombatRuntime } from '@/domains/combat/combat.legacy-runtime'
 import type { SimUnit } from '@/domains/combat/combat.sim.types'
 import { normalizeStatusEffect } from '@/domains/combat/combat.status'
@@ -22,18 +21,7 @@ function unit(id: string, team: 'attacker' | 'defender'): SimUnit {
 function runLegacyStatus(units: SimUnit[], actions: BattleAction[]): void {
   const runtime = createLegacyCombatRuntime()
   runtime.units.push(...units)
-  const rng = new PRNG(107)
-  runtime.runStatusPhase(actions, (dead, sourceUnitId, cause) => {
-    const source = sourceUnitId
-      ? runtime.units.find(candidate => candidate.id === sourceUnitId)
-      : undefined
-    resolveUnitDeath(dead, source, cause, {
-      units: runtime.units,
-      hazards: runtime.hazards,
-      actions,
-      rng,
-    })
-  })
+  runtime.runStatusPhase(actions, new PRNG(107))
 }
 
 describe('combat ECS status death', () => {
@@ -67,9 +55,7 @@ describe('combat ECS status death', () => {
     runtime.world.resources.set('rng', new PRNG(107))
 
     runLegacyStatus(legacyUnits, legacyActions)
-    runtime.runStatusPhase(nativeActions, () => {
-      throw new Error('ECS status death used the facade callback')
-    })
+    runtime.runStatusPhase(nativeActions, new PRNG(107))
 
     expect(nativeActions).toEqual(legacyActions)
     expect(runtime.world.snapshot()).toEqual(legacyUnits)
@@ -101,9 +87,7 @@ describe('combat ECS status death', () => {
     runtime.world.resources.set('rng', new PRNG(109))
 
     runLegacyStatus(legacyUnits, legacyActions)
-    runtime.runStatusPhase(nativeActions, () => {
-      throw new Error('ECS status death used the facade callback')
-    })
+    runtime.runStatusPhase(nativeActions, new PRNG(109))
 
     expect(nativeActions).toEqual(legacyActions)
     expect(nativeActions).toContainEqual({

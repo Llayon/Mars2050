@@ -92,8 +92,10 @@ always reads canonical vitality/lifecycle stores in stable external-ID order.
 Periodic burn, acid, and degeneration deaths now resolve inside the ECS status
 phase, including source-less deaths, resurrection, reassembly, and death/kill
 triggers. Mine and periodic hazard deaths use the same resolver without
-round-tripping through unit or hazard facades. The shared environmental callback
-is now consumed only by the legacy shadow runtime.
+round-tripping through unit or hazard facades. Environmental death ownership now
+belongs to the selected runtime: ECS uses component resolution, while the legacy
+shadow runtime invokes its array resolver internally. The engine no longer
+constructs or passes death callbacks across this boundary.
 Initial squads, action spawns, trigger clones, and hazards enter a deterministic
 structural command buffer. Target references and melee
 sectors use `EntityId`; string IDs are written only as a compatibility mirror

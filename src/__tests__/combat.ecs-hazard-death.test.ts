@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
 import type { BattleAction } from '@/domains/combat/combat.actions'
-import { resolveUnitDeath } from '@/domains/combat/combat.death'
 import { createLegacyCombatRuntime } from '@/domains/combat/combat.legacy-runtime'
 import type { SimHazard, SimUnit } from '@/domains/combat/combat.sim.types'
 import { createRuntimeUnitFromConfig } from '@/domains/combat/combat.unit-factory'
@@ -31,20 +30,9 @@ function runLegacyHazards(
   const runtime = createLegacyCombatRuntime()
   runtime.units.push(...units)
   runtime.hazards.push(...hazards)
-  const rng = new PRNG(113)
   const spatial = new SpatialHash()
   for (const candidate of units) spatial.insert(candidate)
-  runtime.runHazardPhase(actions, (dead, sourceUnitId, cause) => {
-    const source = sourceUnitId
-      ? runtime.units.find(candidate => candidate.id === sourceUnitId)
-      : undefined
-    resolveUnitDeath(dead, source, cause, {
-      units: runtime.units,
-      hazards: runtime.hazards,
-      actions,
-      rng,
-    })
-  }, spatial)
+  runtime.runHazardPhase(actions, spatial, new PRNG(113))
   hazards.splice(0, hazards.length, ...runtime.hazards)
 }
 
@@ -94,9 +82,7 @@ describe('combat ECS hazard death', () => {
     runtime.world.resources.set('rng', new PRNG(113))
 
     runLegacyHazards(legacyUnits, legacyHazards, legacyActions)
-    runtime.runHazardPhase(nativeActions, () => {
-      throw new Error('ECS hazard death used the facade callback')
-    }, new SpatialHash())
+    runtime.runHazardPhase(nativeActions, new SpatialHash(), new PRNG(113))
 
     expect(nativeActions).toEqual(legacyActions)
     expect(runtime.hazards).toEqual(legacyHazards)
@@ -129,9 +115,7 @@ describe('combat ECS hazard death', () => {
     runtime.world.resources.set('rng', new PRNG(127))
 
     runLegacyHazards(legacyUnits, legacyHazards, legacyActions)
-    runtime.runHazardPhase(nativeActions, () => {
-      throw new Error('ECS hazard death used the facade callback')
-    }, new SpatialHash())
+    runtime.runHazardPhase(nativeActions, new SpatialHash(), new PRNG(127))
 
     expect(nativeActions).toEqual(legacyActions)
     expect(nativeActions).toContainEqual({

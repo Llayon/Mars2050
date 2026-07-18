@@ -13,7 +13,6 @@ import type { SpatialQueryProfile } from './spatial-hash'
 import { canAttackControlledTarget } from './combat.control'
 import { getTimeoutOutcome, type BattleOutcome } from './combat.outcome'
 import { CURRENT_SIMULATION_VERSION } from './combat.version'
-import { resolveUnitDeath, type DeathCause } from './combat.death'
 import { createLegacyCombatRuntime } from './combat.legacy-runtime'
 import { createEcsCombatRuntime } from './ecs/combat-ecs-runtime'
 export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[], providedSeed?: number, providedObstacles?: Obstacle[], attackerGlobals: string[] = [], defenderGlobals: string[] = [], options: BattleSimulationOptions = {}): BattleResult {
@@ -65,11 +64,7 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
     for (let index = unitCountBeforePrimitives; index < units.length; index++) {
       if (!units[index].isDead) spatialHash.insert(units[index])
     }
-    const resolveEnvironmentalDeath = (dead: SimUnit, sourceUnitId: string | undefined, cause: DeathCause) => {
-      const source = sourceUnitId ? units.find(unit => unit.id === sourceUnitId) : undefined
-      resolveUnitDeath(dead, source, cause, { units, hazards, actions, rng })
-    }
-    runtime.runStatusPhase(actions, resolveEnvironmentalDeath)
+    runtime.runStatusPhase(actions, rng)
 
     const pendingAttackers = units.some(u => u.team === 'attacker' && hasPendingReassembly(u))
     const pendingDefenders = units.some(u => u.team === 'defender' && hasPendingReassembly(u))
@@ -81,7 +76,7 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
 
     for (const unit of turnOrder) {
       if (unit.isDead) continue;
-      runtime.tickModifiers(unit, dt, actions, expired => resolveEnvironmentalDeath(expired, undefined, 'expiration')); if (unit.isDead) continue;
+      runtime.tickModifiers(unit, dt, actions, rng); if (unit.isDead) continue;
 
       const target = runtime.selectTarget(unit);
       if (!target) continue;
@@ -109,7 +104,7 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
       runtime.completeActorTurn(unit, actions, actionStart, !acted || actionResult.actorSynchronized)
     }
 
-    runtime.runHazardPhase(actions, resolveEnvironmentalDeath, spatialHash);
+    runtime.runHazardPhase(actions, spatialHash, rng);
     runtime.runPostHazardPhase(triggerContext);
     runtime.runDepenetration(actions);
     if (metrics) { recordCombatActions(metrics, tick, actions, units); recordCombatTick(metrics, units) }

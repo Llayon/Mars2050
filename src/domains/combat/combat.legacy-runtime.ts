@@ -2,7 +2,7 @@ import type { BattleAction } from './combat.actions'
 import { getTerminalBattleOutcome } from './combat.outcome'
 import type { SimHazard, SimUnit } from './combat.sim.types'
 import { tickStatuses } from './combat.status'
-import type { CombatRuntime, RuntimeDeathHandler } from './combat.runtime'
+import type { CombatRuntime } from './combat.runtime'
 import { getCombatTurnOrder } from './combat.turn-order'
 import { tickModifiersSystem } from './combat.systems'
 import { processHazards } from './combat.hazards'
@@ -14,6 +14,8 @@ import { applyDepenetration } from './combat.depenetration'
 import { movementSystem } from './combat.movement'
 import { actionSystem } from './combat.systems'
 import { processPostHazardPrimitives } from './combat.tick-primitives'
+import { resolveUnitDeath, type DeathCause } from './combat.death'
+import type { PRNG } from './combat.utils'
 
 export function createLegacyCombatRuntime(): CombatRuntime {
   const units: SimUnit[] = []
@@ -41,19 +43,49 @@ export function createLegacyCombatRuntime(): CombatRuntime {
     snapshotUnits: () => JSON.parse(JSON.stringify(units)) as SimUnit[],
     getSurvivors: () => units.filter(unit => !unit.isDead && !unit.isTemporary),
     getTurnOrder: () => getCombatTurnOrder(units),
-    tickModifiers: (unit, dt, actions, onExpire) => tickModifiersSystem(unit, dt, actions, onExpire),
-    runStatusPhase(actions: BattleAction[], onUnitDeath: RuntimeDeathHandler): void {
+    tickModifiers: (unit, dt, actions, rng) => tickModifiersSystem(
+      unit,
+      dt,
+      actions,
+      expired => resolveEnvironmentalDeath(expired, undefined, 'expiration', actions, rng),
+    ),
+    runStatusPhase(actions: BattleAction[], rng: PRNG): void {
       for (const unit of units) {
-        if (!unit.isDead) tickStatuses(unit, actions, { onUnitDeath })
+        if (!unit.isDead) {
+          tickStatuses(unit, actions, {
+            onUnitDeath: (dead, sourceUnitId, cause) =>
+              resolveEnvironmentalDeath(dead, sourceUnitId, cause, actions, rng),
+          })
+        }
       }
     },
-    runHazardPhase(actions, onUnitDeath, spatialHash): void {
-      processHazards(hazards, units, actions, onUnitDeath, spatialHash)
+    runHazardPhase(actions, spatialHash, rng): void {
+      processHazards(
+        hazards,
+        units,
+        actions,
+        (dead, sourceUnitId, cause) =>
+          resolveEnvironmentalDeath(dead, sourceUnitId, cause, actions, rng),
+        spatialHash,
+      )
     },
     runPostHazardPhase: triggerContext => processPostHazardPrimitives(units, triggerContext),
     runDepenetration: actions => applyDepenetration(units, actions),
     getTerminalOutcome(hazards: SimHazard[], pendingAttackers: boolean, pendingDefenders: boolean) {
       return getTerminalBattleOutcome(units, hazards, pendingAttackers, pendingDefenders)
     },
+  }
+
+  function resolveEnvironmentalDeath(
+    dead: SimUnit,
+    sourceUnitId: string | undefined,
+    cause: DeathCause,
+    actions: BattleAction[],
+    rng: PRNG,
+  ): void {
+    const source = sourceUnitId
+      ? units.find(unit => unit.id === sourceUnitId)
+      : undefined
+    resolveUnitDeath(dead, source, cause, { units, hazards, actions, rng })
   }
 }
