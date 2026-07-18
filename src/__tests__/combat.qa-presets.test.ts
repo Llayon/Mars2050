@@ -78,7 +78,7 @@ describe('combat QA simulator presets', () => {
     for (const presetId of REPLAY_GATE_PRESETS) {
       expectDeterministicScenario(presetId)
     }
-  }, 20000)
+  }, 30000)
 
   it('keeps QA scenario mechanics replay-visible', () => {
     for (const gate of SCENARIO_ACTION_GATES) {

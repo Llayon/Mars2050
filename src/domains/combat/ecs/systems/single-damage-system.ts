@@ -16,6 +16,7 @@ import { applyEcsRadialAoe, canUseEcsRadialAoe } from './radial-aoe-system'
 import { applyEcsSplitFire, canUseEcsSplitFire } from './split-fire-system'
 import { applyEcsChainAttack, canUseEcsChainAttack } from './chain-attack-system'
 import { applyEcsSideWeapon, canUseEcsSideWeapon } from './side-weapon-system'
+import { applyEcsDisplacement, canUseEcsDisplacement } from './displacement-system'
 
 const FACING_TOLERANCE = 0.26
 
@@ -47,7 +48,8 @@ export function canUseSimpleSingleDamage(world: CombatWorld, entityId: EntityId,
     canUseEcsChainAttack(world, entityId, targetId) &&
     canUseEcsSplitFire(world, entityId, targetId) &&
     canUseEcsSideWeapon(world, entityId, targetId) &&
-    canUseEcsRadialAoe(world, entityId, targetId)
+    canUseEcsRadialAoe(world, entityId, targetId) &&
+    canUseEcsDisplacement(world, entityId)
 }
 
 export function runSimpleSingleDamage(
@@ -80,6 +82,7 @@ export function runSimpleSingleDamage(
   if (!damageResult.intercepted) applyEcsSplitFire(world, entityId, targetId, actions)
   if (!damageResult.intercepted) applyEcsSideWeapon(world, entityId, targetId, actions)
   if (!damageResult.intercepted) applyEcsRadialAoe(world, entityId, targetId, actions)
+  if (!damageResult.intercepted) applyEcsDisplacement(world, entityId, targetId, actions)
   world.syncComponentsFromStore(entityId, ['vitality', 'combat', 'targeting', 'statusControl'])
   world.syncComponentsFromStore(targetId, ['vitality', 'defense'])
   return { acted: true, actorSynchronized: true }
@@ -90,7 +93,7 @@ function hasWeaponPrimitives(weapon: ReturnType<CombatWorld['stores']['weapon'][
     weapon.barrageAttack ||
     weapon.conditionalAttackMode || weapon.sweepAttack ||
     weapon.emergeStrikePending || weapon.leavesPuddle ||
-    weapon.smokeOnAction || weapon.pullOnHit || weapon.knockbackOnHit,
+    weapon.smokeOnAction,
   )
 }
 
