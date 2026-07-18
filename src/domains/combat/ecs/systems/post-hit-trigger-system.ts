@@ -5,6 +5,8 @@ import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
 import { applyEcsHealing } from './healing-system'
 import { applyEcsStatus } from './status-application-system'
+import { isEcsTriggerSupported } from './trigger-capability'
+import { spawnEcsTriggerUnits } from './trigger-spawn-system'
 
 const SUPPORTED_EVENTS = new Set<RuntimeTriggerEffect['event']>([
   'attack_count',
@@ -12,13 +14,6 @@ const SUPPORTED_EVENTS = new Set<RuntimeTriggerEffect['event']>([
   'death',
   'kill',
 ])
-const SUPPORTED_PAYLOADS = new Set<TriggerPayload['kind']>([
-  'status',
-  'shield',
-  'heal',
-  'cooldown_reset',
-])
-
 export function canUseEcsPostHitTriggers(
   world: CombatWorld,
   attackerId: EntityId,
@@ -30,10 +25,6 @@ export function canUseEcsPostHitTriggers(
       SUPPORTED_EVENTS.has(trigger.event) && isEcsTriggerSupported(trigger),
     ),
   )
-}
-
-export function isEcsTriggerSupported(trigger: RuntimeTriggerEffect): boolean {
-  return SUPPORTED_PAYLOADS.has(trigger.payload.kind)
 }
 
 export function canUseEcsHpThresholdTriggers(
@@ -177,6 +168,10 @@ function applyPayload(
   payload: TriggerPayload,
   actions: BattleAction[],
 ): void {
+  if (payload.kind === 'spawn') {
+    spawnEcsTriggerUnits(world, ownerId, targetId ?? eventTargetId, payload, actions)
+    return
+  }
   if (targetId === null) return
   if (payload.kind === 'status') {
     applyEcsStatus(world, targetId, {

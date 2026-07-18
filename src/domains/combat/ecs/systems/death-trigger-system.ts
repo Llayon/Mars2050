@@ -3,8 +3,8 @@ import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
 import {
   fireEcsTrigger,
-  isEcsTriggerSupported,
 } from './post-hit-trigger-system'
+import { isEcsTriggerSupported } from './trigger-capability'
 
 export function canUseEcsDeathTriggers(
   world: CombatWorld,

@@ -90,9 +90,12 @@ describe('combat ECS death-trigger action', () => {
     ])
   })
 
-  it('keeps unsupported death spawns on the legacy path', () => {
+  it('matches capped death spawns through the structural buffer', () => {
     const attacker = unit('attacker', 'attacker', 'marine', 100)
     const target = unit('carrier-wreck', 'defender', 'marine', 220)
+    attacker.attack = 200
+    target.hp = 20
+    target.defense = 0
     target.triggerEffects = [{
       id: 'mechanical-division',
       event: 'death',
@@ -101,7 +104,54 @@ describe('combat ECS death-trigger action', () => {
         target: 'self',
         unitType: 'alien_bug',
         count: 2,
+        cap: 1,
+        hpPercent: 0.5,
       },
+      fired: false,
+      counter: 0,
+      cooldownRemaining: 0,
+    }]
+    const legacyUnits = structuredClone([attacker, target])
+    const legacyActions: Parameters<typeof actionSystem>[4] = []
+    const nativeActions: Parameters<typeof runActionSystem>[3] = []
+    const world = createWorld([attacker, target])
+    world.resources.set('rng', new PRNG(83))
+
+    actionSystem(
+      legacyUnits[0],
+      legacyUnits[1],
+      legacyUnits,
+      [],
+      legacyActions,
+      new PRNG(83),
+    )
+    expect(canUseEcsDeathTriggers(world, 1)).toBe(true)
+    expect(canUseSimpleSingleDamage(world, 0, 1)).toBe(true)
+    runActionSystem(world, 0, 1, nativeActions, {
+      rng: world.resources.require('rng'),
+      tick: 0,
+      spatialHash: new SpatialHash(),
+    })
+    world.flushStructuralCommands()
+
+    expect(nativeActions).toEqual(legacyActions)
+    const spawned = world.roster.filter(unit => unit.summonOwnerId === 'carrier-wreck')
+    expect(spawned).toHaveLength(1)
+    expect(spawned[0]).toMatchObject({
+      type: 'alien_bug',
+      team: 'defender',
+      hp: 10,
+      maxHp: 10,
+    })
+  })
+
+  it('keeps unsupported death damage on the legacy path', () => {
+    const attacker = unit('attacker', 'attacker', 'marine', 100)
+    const target = unit('explosive-wreck', 'defender', 'marine', 220)
+    target.triggerEffects = [{
+      id: 'detonation',
+      event: 'death',
+      payload: { kind: 'damage', target: 'self', amount: 30, radius: 100 },
       fired: false,
       counter: 0,
       cooldownRemaining: 0,

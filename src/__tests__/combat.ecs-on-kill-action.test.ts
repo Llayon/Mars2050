@@ -149,16 +149,16 @@ describe('combat ECS on-kill action', () => {
     ])
   })
 
-  it('keeps unsupported kill payloads on the legacy weapon path', () => {
+  it('keeps unsupported kill damage on the legacy weapon path', () => {
     const attacker = unit('carrier', 'attacker', 'marine', 100)
     const target = unit('victim', 'defender', 'marine', 220)
     attacker.triggerEffects = [{
-      id: 'kill-spawn',
+      id: 'kill-blast',
       event: 'kill',
       payload: {
-        kind: 'spawn',
+        kind: 'damage',
         target: 'victim',
-        unitType: 'alien_bug',
+        amount: 20,
       },
       fired: false,
       counter: 0,

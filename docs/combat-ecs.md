@@ -78,6 +78,8 @@ Kill triggers with status, shield, heal, or cooldown payloads now execute after
 configured on-kill effects and before replication or death hazards.
 Death triggers with the same payload set execute immediately after the death
 replay action and before any killer-owned effects.
+Trigger spawn payloads now share the runtime unit factory, seeded IDs, owner and
+source caps, HP scaling, replay contract, and structural command buffer.
 Initial squads, action spawns,
 trigger clones, and hazards
 enter a deterministic structural command buffer. Target references and melee
