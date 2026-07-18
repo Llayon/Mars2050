@@ -2,6 +2,7 @@ import type { BattleAction } from '../../combat.actions'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
 import { breakEcsMovementStealthOnAttack } from '../movement-state'
+import { consumeEcsAttackCharge } from './attack-charge-system'
 import { applyEcsBarrageAttack } from './barrage-attack-system'
 import { applyEcsChainAttack } from './chain-attack-system'
 import { applyEcsConditionalAttack } from './conditional-attack-system'
@@ -22,6 +23,7 @@ export function resolveEcsSingleShot(
   entityId: EntityId,
   targetId: EntityId,
   actions: BattleAction[],
+  tick: number,
 ): void {
   const identity = world.stores.identity.require(entityId)
   const combat = world.stores.combat.require(entityId)
@@ -42,6 +44,13 @@ export function resolveEcsSingleShot(
   if (emergeStrike?.attackMult) {
     primaryDamage = Math.floor(primaryDamage * emergeStrike.attackMult)
   }
+  primaryDamage = consumeEcsAttackCharge(
+    world,
+    entityId,
+    primaryDamage,
+    actions,
+    tick,
+  )
   const damageResult = applyEcsSingleDamage(
     world,
     entityId,

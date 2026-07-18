@@ -65,6 +65,7 @@ export function runSimpleSingleDamage(
   entityId: EntityId,
   targetId: EntityId,
   actions: BattleAction[],
+  tick = 0,
 ): RuntimeActionResult {
   const transform = world.stores.transform.require(entityId)
   const targetTransform = world.stores.transform.require(targetId)
@@ -86,9 +87,9 @@ export function runSimpleSingleDamage(
   const shots = combat.multishot || 1
   for (let shot = 0; shot < shots; shot++) {
     if (world.stores.vitality.require(targetId).isDead) break
-    resolveEcsSingleShot(world, entityId, targetId, actions)
+    resolveEcsSingleShot(world, entityId, targetId, actions, tick)
   }
-  world.syncComponentsFromStore(entityId, ['transform', 'vitality', 'combat', 'weapon', 'targeting', 'statusControl', 'movement'])
+  world.syncComponentsFromStore(entityId, ['transform', 'vitality', 'combat', 'weapon', 'targeting', 'statusControl', 'movement', 'lifecycle'])
   world.syncComponentsFromStore(targetId, ['vitality', 'defense'])
   return { acted: true, actorSynchronized: true }
 }
@@ -101,8 +102,8 @@ function hasWeaponPrimitives(weapon: ReturnType<CombatWorld['stores']['weapon'][
 
 function hasLifecyclePrimitives(lifecycle: ReturnType<CombatWorld['stores']['lifecycle']['require']>): boolean {
   return Boolean(
-    lifecycle.triggerEffects?.length || lifecycle.attackCharge ||
-    lifecycle.replicateOnKill || lifecycle.onDeathPuddle,
+    lifecycle.triggerEffects?.length || lifecycle.replicateOnKill ||
+    lifecycle.onDeathPuddle,
   )
 }
 
