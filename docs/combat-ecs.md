@@ -141,8 +141,9 @@ resolving EntityId death triggers. Trigger damage propagates `cause: trigger`
 through direct and shared damage deaths.
 
 Expiration is a non-combat death cause. It does not grant kill credit or execute
-death/kill triggers. DoT, mine, hazard, trigger, and weapon deaths keep their
-source attribution when a source entity exists.
+death/kill triggers. Temporary-unit expiration now resolves directly in the ECS
+modifier phase without invoking the facade callback. DoT, mine, hazard, trigger,
+and weapon deaths keep their source attribution when a source entity exists.
 
 ## Damage Contract
 

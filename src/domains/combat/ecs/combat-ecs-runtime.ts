@@ -95,17 +95,12 @@ export function createEcsCombatRuntime(): EcsCombatRuntime {
         return unit ? [unit] : []
       })
     },
-    tickModifiers(unit, _dt, actions, onExpire): void {
+    tickModifiers(unit, _dt, actions, _onExpire): void {
       const entityId = world.getEntityId(unit.id)
       if (entityId === undefined) return
       world.syncComponentsToStore(entityId, MODIFIER_COMPONENTS)
       runModifierSystem(world, entityId, actions, expiredId => {
-        world.syncComponentsFromStore(expiredId, MODIFIER_COMPONENTS)
-        const expired = world.getEntity(expiredId)
-        if (expired) {
-          onExpire(expired)
-          world.syncComponentsToStore(expiredId, MODIFIER_COMPONENTS)
-        }
+        resolveEcsDeath(world, expiredId, undefined, actions, 'expiration')
       })
       world.syncComponentsFromStore(entityId, MODIFIER_COMPONENTS)
     },

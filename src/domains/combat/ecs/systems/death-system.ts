@@ -17,7 +17,20 @@ export function resolveEcsDeath(
   cause: DeathCause = 'weapon',
 ): boolean {
   const target = world.stores.vitality.require(targetId)
-  if (target.isDead || target.hp > 0) return false
+  if (target.isDead) return false
+  if (cause === 'expiration') {
+    target.isDead = true
+    actions.push({
+      unitId: world.stores.identity.require(targetId).id,
+      type: 'die',
+      sourceUnitId: sourceId === undefined
+        ? undefined
+        : world.stores.identity.require(sourceId).id,
+      cause,
+    })
+    return true
+  }
+  if (target.hp > 0) return false
   if (target.resurrectOnce) {
     target.resurrectOnce = false
     applyEcsHealing(world, targetId, targetId, target.maxHp, actions)
