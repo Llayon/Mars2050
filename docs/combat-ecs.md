@@ -30,8 +30,10 @@ modifier/lifetime ticking, typed component/resource stores, deterministic
 entity queries, and snapshot/survivor serialization. Legacy hooks remain frozen
 for shadow tests.
 
-Complex weapon actions, general damage/death, triggers, and metrics still cross the temporary
-`SimUnit` facade. Movement and healing read and write component stores directly through
+Complex weapon actions, remaining general damage/death paths, and metrics still
+cross the temporary `SimUnit` facade. Trigger event selection and every payload
+except direct trigger damage now use component stores and EntityId references.
+Movement and healing read and write component stores directly through
 `EntityId`; after each move, only the changed movement components are written
 back to the facade for those unported consumers. Non-healing actions use the
 runtime action boundary but currently delegate to the frozen legacy weapon
@@ -68,15 +70,15 @@ Seeded on-death puddles now spawn after confirmed ECS weapon deaths with legacy
 source attribution, damage payloads, replay order, and structural buffering.
 Replicate-on-kill clones are built from canonical ECS snapshots at the victim
 position and enter the same seeded structural lifecycle before death puddles.
-Attack-count and damage-taken triggers with status, shield, heal, or cooldown
-payloads now run natively after primary damage; unsupported trigger payloads
-remain behind an explicit legacy capability gate.
+Attack-count and damage-taken triggers with status, shield, heal, spawn, field,
+delayed-reassembly, or cooldown payloads now run natively after primary damage;
+direct damage remains behind an explicit legacy capability gate.
 HP-threshold triggers with the same payload set run in an EntityId post-hazard
 phase. Unsupported threshold payloads fall back per owner and synchronize their
 effects back into component stores without disabling native weapon actions.
-Kill triggers with status, shield, heal, or cooldown payloads now execute after
+Kill triggers with the same payload set now execute after
 configured on-kill effects and before replication or death hazards.
-Death triggers with the same payload set execute immediately after the death
+Death triggers execute immediately after the death
 replay action and before any killer-owned effects.
 Trigger spawn payloads now share the runtime unit factory, seeded IDs, owner and
 source caps, HP scaling, replay contract, and structural command buffer.
@@ -84,9 +86,8 @@ Delayed-reassembly trigger payloads now schedule bounded vitality state and
 source attribution natively; completion remains in the existing pre-action phase.
 Trigger fields now create finite or reducing barriers, cleanse hazards and
 harmful allied statuses, or buffer persistent hazards through EntityId stores.
-Initial squads, action spawns,
-trigger clones, and hazards
-enter a deterministic structural command buffer. Target references and melee
+Initial squads, action spawns, trigger clones, and hazards enter a deterministic
+structural command buffer. Target references and melee
 sectors use `EntityId`; string IDs are written only as a compatibility mirror
 for unported movement/action code. The migration is complete only when the
 remaining hooks use component stores directly and the facade can be removed.
