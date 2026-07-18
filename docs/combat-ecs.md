@@ -41,9 +41,9 @@ reactive armor, execute, lifesteal, finite/reduction barriers, projectile
 interception, deterministic damage sharing, movement charge, same-target ramp,
 percent-HP payloads, on-hit statuses, and squad-wide target marks. Weapon
 line-pierce, cone, beam, barrage, radial AoE, chain, conditional cluster attacks,
-sweep, split-fire, side weapons, and post-hit pull/knockback displacement also
-run natively. Siege stance and minimum-range action setup, remaining secondary
-weapon families, and complex lifecycle primitives fall back
+sweep, split-fire, side weapons, post-hit pull/knockback displacement, minimum
+range, and siege stance action setup also run natively. Remaining secondary
+weapon families and complex lifecycle primitives fall back
 before mutating state.
 Initial squads, action spawns,
 trigger clones, and hazards

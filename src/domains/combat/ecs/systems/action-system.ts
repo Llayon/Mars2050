@@ -7,9 +7,13 @@ import type { UnitTypeKey } from '../../combat.types'
 import { getDistance, getSizeRadius } from '../../combat.utils'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
-import { getEcsEffectiveActionRange } from '../movement-positioning'
 import { applyEcsHealing } from './healing-system'
 import { canUseSimpleSingleDamage, runSimpleSingleDamage } from './single-damage-system'
+import {
+  getEcsActionCooldown,
+  getEcsStanceSetupActionRange,
+  prepareEcsStanceForAction,
+} from './action-setup'
 
 const FACING_TOLERANCE = 0.26
 
@@ -47,17 +51,18 @@ function runHealAction(
   if (!targetView || !canHealTarget(identity.type, targetView)) return notActed()
   const distance = getDistance(transform.x, transform.y, targetTransform.x, targetTransform.y) -
     getSizeRadius(targetTransform.size) - getSizeRadius(transform.size)
-  if (targetVitality.hp >= targetVitality.maxHp || distance > getEcsEffectiveActionRange(world, entityId)) return notActed()
+  if (targetVitality.hp >= targetVitality.maxHp ||
+      distance > getEcsStanceSetupActionRange(world, entityId)) return notActed()
   const angle = Math.atan2(targetTransform.y - transform.y, targetTransform.x - transform.x)
   if (Math.abs(normalizeAngle(angle - transform.currentAngle)) > FACING_TOLERANCE) return notActed()
   if (combat.actionCooldown > 0 || isActionBlocked(status.statusEffects)) return notActed()
-  if (!prepareStance(world, entityId, actions)) {
+  if (!prepareEcsStanceForAction(world, entityId, actions)) {
     syncActorView(world, entityId)
     return { acted: true, actorSynchronized: true }
   }
 
   syncActionModes(world, entityId, actions)
-  combat.actionCooldown = getActionCooldown(world, entityId)
+  combat.actionCooldown = getEcsActionCooldown(world, entityId)
   applyEcsHealing(world, entityId, targetId, combat.attack, actions)
   syncActorView(world, entityId)
   world.syncComponentsFromStore(targetId, ['vitality'])
@@ -84,27 +89,6 @@ function canHealTarget(sourceType: string, target: NonNullable<ReturnType<Combat
   return tags.some(tag => targetTags.has(tag))
 }
 
-function prepareStance(world: CombatWorld, entityId: EntityId, actions: BattleAction[]): boolean {
-  const identity = world.stores.identity.require(entityId)
-  const movement = world.stores.movement.require(entityId)
-  const config = movement.stanceConfig
-  if (!config || movement.stanceMode === 'deployed') return true
-  const required = Math.max(0, Math.floor(config.deployTicks))
-  if (required <= 0) {
-    movement.stanceMode = 'deployed'
-    movement.stanceTicks = 0
-    actions.push({ unitId: identity.id, type: 'stance_change', stanceMode: 'deployed' })
-    return true
-  }
-  movement.stanceTicks = (movement.stanceTicks ?? 0) + 1
-  if (movement.stanceTicks >= required) {
-    movement.stanceMode = 'deployed'
-    movement.stanceTicks = 0
-    actions.push({ unitId: identity.id, type: 'stance_change', stanceMode: 'deployed' })
-  }
-  return false
-}
-
 function syncActionModes(world: CombatWorld, entityId: EntityId, actions: BattleAction[]): void {
   const identity = world.stores.identity.require(entityId)
   const transform = world.stores.transform.require(entityId)
@@ -125,22 +109,6 @@ function syncActionModes(world: CombatWorld, entityId: EntityId, actions: Battle
     actions.push({ unitId: identity.id, type: 'emerge_strike', value: attackMult ?? aoeRadiusAdd })
   }
   actions.push({ unitId: identity.id, type: 'burrow_change', value: 0 })
-}
-
-function getActionCooldown(world: CombatWorld, entityId: EntityId): number {
-  const combat = world.stores.combat.require(entityId)
-  const movement = world.stores.movement.require(entityId)
-  const effects = world.stores.statusControl.require(entityId).statusEffects
-  const stance = movement.stanceMode === 'deployed' && movement.stanceConfig?.cooldownMultiplier
-    ? movement.stanceConfig.cooldownMultiplier
-    : 1
-  const base = Math.max(1, Math.round(combat.actionCooldownMax * stance))
-  let suppression = 0
-  for (const effect of effects) {
-    if (effect.type !== 'output_suppressed' || effect.duration <= 0 || !effect.value || effect.value <= 0) continue
-    suppression += effect.value <= 1 ? effect.value : effect.value / 100
-  }
-  return Math.max(1, Math.round(base * (1 + Math.min(0.5, suppression))))
 }
 
 function isActionBlocked(effects: { type: string; duration: number }[]): boolean {

@@ -20,6 +20,11 @@ import { applyEcsDisplacement, canUseEcsDisplacement } from './displacement-syst
 import { applyEcsSweepAttack, canUseEcsSweepAttack } from './sweep-attack-system'
 import { applyEcsConditionalAttack, canUseEcsConditionalAttack } from './conditional-attack-system'
 import { applyEcsBarrageAttack, canUseEcsBarrageAttack } from './barrage-attack-system'
+import {
+  getEcsActionCooldown,
+  isEcsWeaponActionInRange,
+  prepareEcsStanceForAction,
+} from './action-setup'
 
 const FACING_TOLERANCE = 0.26
 
@@ -38,10 +43,10 @@ export function canUseSimpleSingleDamage(world: CombatWorld, entityId: EntityId,
       (combat.multishot ?? 1) !== 1) return false
   if (hasUnsupportedStatuses(status.statusEffects, true) || hasUnsupportedStatuses(targetStatus.statusEffects, false)) return false
   if (!canResolveSimpleEcsDeath(world, targetId)) return false
-  if (movement.stanceConfig || movement.modeSwitchConfig || movement.burrowConfig || movement.stealthWhileMoving) return false
+  if (movement.modeSwitchConfig || movement.burrowConfig || movement.stealthWhileMoving) return false
   if (
     targeting.conditionalRange?.length ||
-    config?.minimumRange || config?.onKill
+    config?.onKill
   ) return false
   if (hasWeaponPrimitives(weapon)) return false
   if (hasLifecyclePrimitives(lifecycle) || hasLifecyclePrimitives(targetLifecycle)) return false
@@ -71,12 +76,16 @@ export function runSimpleSingleDamage(
   const status = world.stores.statusControl.require(entityId)
   const edgeDistance = getDistance(transform.x, transform.y, targetTransform.x, targetTransform.y) -
     getSizeRadius(transform.size) - getSizeRadius(targetTransform.size)
-  if (edgeDistance > getEcsEffectiveActionRange(world, entityId)) return notActed()
+  if (!isEcsWeaponActionInRange(world, entityId, edgeDistance)) return notActed()
   const targetAngle = Math.atan2(targetTransform.y - transform.y, targetTransform.x - transform.x)
   if (Math.abs(normalizeAngle(targetAngle - transform.currentAngle)) > FACING_TOLERANCE) return notActed()
   if (combat.actionCooldown > 0) return notActed()
+  if (!prepareEcsStanceForAction(world, entityId, actions)) {
+    world.syncComponentsFromStore(entityId, ['movement'])
+    return { acted: true, actorSynchronized: true }
+  }
 
-  combat.actionCooldown = getSuppressedCooldown(combat.actionCooldownMax, status.statusEffects)
+  combat.actionCooldown = getEcsActionCooldown(world, entityId)
   actions.push({ unitId: identity.id, type: 'attack', targetId: world.stores.identity.require(targetId).id })
   const primaryDamage = applyEcsPrimaryDamageModifiers(world, entityId, targetId, combat.attack, actions)
   const damageResult = applyEcsSingleDamage(world, entityId, targetId, primaryDamage, actions)
@@ -92,7 +101,7 @@ export function runSimpleSingleDamage(
   if (!damageResult.intercepted) applyEcsSweepAttack(world, entityId, targetId, actions)
   if (!damageResult.intercepted) applyEcsRadialAoe(world, entityId, targetId, actions)
   if (!damageResult.intercepted) applyEcsDisplacement(world, entityId, targetId, actions)
-  world.syncComponentsFromStore(entityId, ['vitality', 'combat', 'targeting', 'statusControl'])
+  world.syncComponentsFromStore(entityId, ['vitality', 'combat', 'targeting', 'statusControl', 'movement'])
   world.syncComponentsFromStore(targetId, ['vitality', 'defense'])
   return { acted: true, actorSynchronized: true }
 }
@@ -117,20 +126,6 @@ function hasUnsupportedStatuses(
 ): boolean {
   return effects.some(effect => effect.duration > 0 &&
     (effect.type === 'hacked' || (attacker && effect.type === 'emp')))
-}
-
-function getSuppressedCooldown(
-  baseCooldown: number,
-  effects: ReturnType<CombatWorld['stores']['statusControl']['require']>['statusEffects'],
-): number {
-  let suppression = 0
-  for (const effect of effects) {
-    if (effect.type === 'output_suppressed' && effect.duration > 0 && effect.value && effect.value > 0) {
-      suppression += effect.value <= 1 ? effect.value : effect.value / 100
-    }
-  }
-  const base = Math.max(1, Math.round(baseCooldown))
-  return Math.max(1, Math.round(base * (1 + Math.min(0.5, suppression))))
 }
 
 function notActed(): RuntimeActionResult {
