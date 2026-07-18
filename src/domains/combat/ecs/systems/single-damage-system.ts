@@ -86,9 +86,7 @@ export function runSimpleSingleDamage(
 }
 
 function hasLifecyclePrimitives(lifecycle: ReturnType<CombatWorld['stores']['lifecycle']['require']>): boolean {
-  return Boolean(
-    lifecycle.triggerEffects?.length || lifecycle.replicateOnKill,
-  )
+  return Boolean(lifecycle.triggerEffects?.length)
 }
 
 function hasUnsupportedStatuses(
