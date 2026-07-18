@@ -7,7 +7,6 @@ import { processGlobals } from './combat.globals'
 import { processPeriodicAbilities } from './combat.periodic-abilities'
 import { handleDeath } from './combat.systems.utils'
 import { processHpThresholdTriggers, type TriggerContext } from './combat.triggers'
-import { processTransformModes } from './combat.transform'
 import type { GlobalUpgradeConfig } from './combat.upgrades'
 import type { SimHazard, SimUnit, Team } from './combat.sim.types'
 import type { PRNG } from './combat.utils'
@@ -16,6 +15,7 @@ import type { SpatialHash } from './spatial-hash'
 export interface PreActionRuntimePhases {
   runGrowthAndCharge(): void
   runBurrowRegeneration(): void
+  runTransformModes(): void
 }
 
 export function processPreActionPrimitives(
@@ -33,7 +33,7 @@ export function processPreActionPrimitives(
   processSupportAuras(tick, units, actions, spatialHash)
   runtimePhases.runGrowthAndCharge()
   runtimePhases.runBurrowRegeneration()
-  processTransformModes(tick, units, actions)
+  runtimePhases.runTransformModes()
   processFieldEffects(tick, units, hazards, actions)
   processFormationBonuses(tick, units, actions)
   processControlBeams(units, actions)

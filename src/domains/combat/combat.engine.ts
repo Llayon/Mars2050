@@ -70,6 +70,8 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
           runtime.runGrowthAndChargePhase(tick, actions),
         runBurrowRegeneration: () =>
           runtime.runBurrowRegenerationPhase(actions),
+        runTransformModes: () =>
+          runtime.runTransformModePhase(tick, actions),
       },
       spatialHash,
     );

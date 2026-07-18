@@ -19,6 +19,7 @@ import { processSpawnerLogic } from './combat.spawner'
 import { hasPendingReassembly, processReassemblies } from './combat.reassembly'
 import { processBurrowRegeneration } from './combat.burrow'
 import { processGrowthAndCharge } from './combat.growth-charge'
+import { processTransformModes } from './combat.transform'
 import type { PRNG } from './combat.utils'
 
 export function createLegacyCombatRuntime(): CombatRuntime {
@@ -60,6 +61,7 @@ export function createLegacyCombatRuntime(): CombatRuntime {
     runGrowthAndChargePhase: (tick, actions) =>
       processGrowthAndCharge(tick, units, actions),
     runBurrowRegenerationPhase: actions => processBurrowRegeneration(units, actions),
+    runTransformModePhase: (tick, actions) => processTransformModes(tick, units, actions),
     runStatusPhase(actions: BattleAction[], rng: PRNG): void {
       for (const unit of units) {
         if (!unit.isDead) {

@@ -59,7 +59,10 @@ stop immediately when the primary target dies. Accumulated attack charge is
 released natively after other primary modifiers and is consumed by only the
 first shot in a series. Pre-action stat growth and attack-charge accumulation
 now mutate combat, vitality, and lifecycle components in stable external-ID
-order before burrow regeneration. Successful incendiary hits create seeded napalm hazards
+order before burrow regeneration. Battle-start and HP-threshold transform modes
+now mutate transform, vitality, combat, weapon, and status components natively
+in stable external-ID order, including one-time role swaps, flight changes, and
+jump displacement. Successful incendiary hits create seeded napalm hazards
 through the ECS structural buffer after primary on-hit effects; multishot creates
 one puddle per non-intercepted shot. Smoke actions now deploy seeded suppression
 hazards through a native ECS action path without primary damage or movement
