@@ -85,6 +85,8 @@ test('simulator2 replay debug overlays render hitboxes, velocity, and target lin
   await expect.poll(async () => (await countOverlayPixels(canvas)).hitboxCyan, { timeout: 5000 }).toBeGreaterThan(10)
   await expect.poll(async () => (await countOverlayPixels(canvas)).velocityYellow, { timeout: 8000 }).toBeGreaterThan(5)
   await page.getByRole('button', { name: /Играть/ }).click()
+  await expect.poll(async () => Number(await timeline.inputValue())).toBeGreaterThan(7)
+  await page.getByRole('button', { name: /Пауза/ }).click()
   await expect.poll(async () => (await countOverlayPixels(canvas)).targetRed, { timeout: 12000 }).toBeGreaterThan(5)
 
   expect(network.hasChunk('pixi'), 'simulator2 replay overlays should use the Pixi default renderer').toBe(true)
@@ -386,6 +388,9 @@ async function playEventTick(page: Page, timeline: Locator, tick: number): Promi
   await expect(timeline).toHaveValue(String(tick))
   await expect(page.getByRole('button', { name: /Играть/ })).toBeVisible()
   await page.getByRole('button', { name: /Играть/ }).click()
+  await expect.poll(async () => Number(await timeline.inputValue())).toBeGreaterThan(tick)
+  await page.getByRole('button', { name: /Пауза/ }).click()
+  await expect(page.getByRole('button', { name: /Играть/ })).toBeVisible()
 }
 
 async function setTimelineTick(timeline: Locator, tick: number): Promise<void> {
