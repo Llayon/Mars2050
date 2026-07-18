@@ -27,10 +27,21 @@ export function applyEcsTriggerField(
   actions: BattleAction[],
 ): void {
   const effect = payload.field
-  const owner = world.stores.identity.require(ownerId)
   const anchor = world.stores.transform.require(anchorId)
   const tick = world.resources.get('clock')?.tick ?? 0
   const suffix = `trigger_${tick}_${actions.length}`
+  applyEcsFieldEffectAt(world, ownerId, anchor, effect, actions, suffix)
+}
+
+export function applyEcsFieldEffectAt(
+  world: CombatWorld,
+  ownerId: EntityId,
+  anchor: { x: number; y: number },
+  effect: FieldEffectConfig,
+  actions: BattleAction[],
+  suffix: string,
+): void {
+  const owner = world.stores.identity.require(ownerId)
   actions.push({
     unitId: owner.id,
     type: 'field_effect',

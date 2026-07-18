@@ -2,7 +2,7 @@ import type { BattleAction } from '../combat.actions'
 import type { SimHazard } from '../combat.sim.types'
 import type { CombatRuntime } from '../combat.runtime'
 import { CombatWorld } from './combat-world'
-import { createEcsMeleeEngagementState, getEcsBurrowRegenerationEntities, getEcsGrowthAndChargeEntities, getEcsTerminalOutcome, getEcsTransformModeEntities, getEcsTurnOrder, processEcsHpThresholdTriggers, reserveEcsMeleeSlot, resolveEcsDeath, runActionSystem, runDepenetrationSystem, runEcsBurrowRegenerationSystem, runEcsGrowthAndChargeSystem, runEcsPeriodicSpawnerSystem, runEcsReassemblySystem, runEcsTransformModeSystem, runHazardSystem, runModifierSystem, runMovementSystem, runStatusSystem, runTargetingSystem, syncEcsTargetRefs } from './systems'
+import { createEcsMeleeEngagementState, getEcsBurrowRegenerationEntities, getEcsFieldEffectEntities, getEcsGrowthAndChargeEntities, getEcsTerminalOutcome, getEcsTransformModeEntities, getEcsTurnOrder, processEcsHpThresholdTriggers, reserveEcsMeleeSlot, resolveEcsDeath, runActionSystem, runDepenetrationSystem, runEcsBurrowRegenerationSystem, runEcsFieldEffectSystem, runEcsGrowthAndChargeSystem, runEcsPeriodicSpawnerSystem, runEcsReassemblySystem, runEcsTransformModeSystem, runHazardSystem, runModifierSystem, runMovementSystem, runStatusSystem, runTargetingSystem, syncEcsTargetRefs } from './systems'
 import { createSquadEntities } from './combat-entity-factory'
 import { EntitySpatialIndex } from './entity-spatial-index'
 
@@ -156,6 +156,23 @@ export function createEcsCombatRuntime(): EcsCombatRuntime {
           'statusControl',
         ])
       }
+    },
+    runFieldEffectPhase(tick, actions): void {
+      world.flushStructuralCommands()
+      world.reconcileHazards()
+      world.syncAllComponentsToStore([
+        'transform',
+        'vitality',
+        'support',
+        'statusControl',
+        'targeting',
+      ])
+      const entityIds = getEcsFieldEffectEntities(world)
+      runEcsFieldEffectSystem(world, tick, actions, entityIds)
+      for (const entityId of entityIds) {
+        world.syncComponentsFromStore(entityId, ['support'])
+      }
+      world.syncAllComponentsFromStore(['statusControl', 'targeting'])
     },
     runStatusPhase(actions: BattleAction[], _rng): void {
       world.flushStructuralCommands()

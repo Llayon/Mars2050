@@ -48,6 +48,7 @@ export interface CombatRuntime {
   runGrowthAndChargePhase(tick: number, actions: BattleAction[]): void
   runBurrowRegenerationPhase(actions: BattleAction[]): void
   runTransformModePhase(tick: number, actions: BattleAction[]): void
+  runFieldEffectPhase(tick: number, actions: BattleAction[]): void
   runStatusPhase(actions: BattleAction[], rng: PRNG): void
   runHazardPhase(actions: BattleAction[], spatialHash: SpatialHash, rng: PRNG): void
   runPostHazardPhase(triggerContext: TriggerContext): void

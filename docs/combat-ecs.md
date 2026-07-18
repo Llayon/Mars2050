@@ -62,7 +62,9 @@ now mutate combat, vitality, and lifecycle components in stable external-ID
 order before burrow regeneration. Battle-start and HP-threshold transform modes
 now mutate transform, vitality, combat, weapon, and status components natively
 in stable external-ID order, including one-time role swaps, flight changes, and
-jump displacement. Successful incendiary hits create seeded napalm hazards
+jump displacement. Periodic field scheduling and trigger field payloads now
+share one ECS kernel for finite and reducing barriers, hazard cleansing, allied
+status cleansing, and persistent hazards. Successful incendiary hits create seeded napalm hazards
 through the ECS structural buffer after primary on-hit effects; multishot creates
 one puddle per non-intercepted shot. Smoke actions now deploy seeded suppression
 hazards through a native ECS action path without primary damage or movement
