@@ -58,7 +58,19 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
     }
     const unitCountBeforePrimitives = units.length
     runtime.runReassemblyPhase(actions)
-    const triggerContext = processPreActionPrimitives(tick, activeGlobals, units, hazards, actions, rng, spatialHash);
+    const triggerContext = processPreActionPrimitives(
+      tick,
+      activeGlobals,
+      units,
+      hazards,
+      actions,
+      rng,
+      {
+        runBurrowRegeneration: () =>
+          runtime.runBurrowRegenerationPhase(actions),
+      },
+      spatialHash,
+    );
     runtime.flushStructuralCommands()
     for (let index = unitCountBeforePrimitives; index < units.length; index++) {
       if (!units[index].isDead) spatialHash.insert(units[index])

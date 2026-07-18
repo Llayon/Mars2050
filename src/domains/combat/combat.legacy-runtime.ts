@@ -17,6 +17,7 @@ import { processPostHazardPrimitives } from './combat.tick-primitives'
 import { resolveUnitDeath, type DeathCause } from './combat.death'
 import { processSpawnerLogic } from './combat.spawner'
 import { hasPendingReassembly, processReassemblies } from './combat.reassembly'
+import { processBurrowRegeneration } from './combat.burrow'
 import type { PRNG } from './combat.utils'
 
 export function createLegacyCombatRuntime(): CombatRuntime {
@@ -55,6 +56,7 @@ export function createLegacyCombatRuntime(): CombatRuntime {
       expired => resolveEnvironmentalDeath(expired, undefined, 'expiration', actions, rng),
     ),
     runReassemblyPhase: actions => processReassemblies(units, actions),
+    runBurrowRegenerationPhase: actions => processBurrowRegeneration(units, actions),
     runStatusPhase(actions: BattleAction[], rng: PRNG): void {
       for (const unit of units) {
         if (!unit.isDead) {

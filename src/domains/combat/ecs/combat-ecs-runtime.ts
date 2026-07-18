@@ -2,7 +2,7 @@ import type { BattleAction } from '../combat.actions'
 import type { SimHazard } from '../combat.sim.types'
 import type { CombatRuntime } from '../combat.runtime'
 import { CombatWorld } from './combat-world'
-import { createEcsMeleeEngagementState, getEcsTerminalOutcome, getEcsTurnOrder, processEcsHpThresholdTriggers, reserveEcsMeleeSlot, resolveEcsDeath, runActionSystem, runDepenetrationSystem, runEcsPeriodicSpawnerSystem, runEcsReassemblySystem, runHazardSystem, runModifierSystem, runMovementSystem, runStatusSystem, runTargetingSystem, syncEcsTargetRefs } from './systems'
+import { createEcsMeleeEngagementState, getEcsTerminalOutcome, getEcsTurnOrder, processEcsHpThresholdTriggers, reserveEcsMeleeSlot, resolveEcsDeath, runActionSystem, runDepenetrationSystem, runEcsBurrowRegenerationSystem, runEcsPeriodicSpawnerSystem, runEcsReassemblySystem, runHazardSystem, runModifierSystem, runMovementSystem, runStatusSystem, runTargetingSystem, syncEcsTargetRefs } from './systems'
 import { createSquadEntities } from './combat-entity-factory'
 import { EntitySpatialIndex } from './entity-spatial-index'
 
@@ -114,6 +114,11 @@ export function createEcsCombatRuntime(): EcsCombatRuntime {
     runReassemblyPhase(actions): void {
       runEcsReassemblySystem(world, actions)
       world.syncAllComponentsFromStore(['vitality', 'combat', 'statusControl', 'targeting'])
+    },
+    runBurrowRegenerationPhase(actions): void {
+      world.syncAllComponentsToStore(['vitality', 'movement'])
+      runEcsBurrowRegenerationSystem(world, actions)
+      world.syncAllComponentsFromStore(['vitality'])
     },
     runStatusPhase(actions: BattleAction[], _rng): void {
       world.flushStructuralCommands()

@@ -24,7 +24,7 @@ a monotonic entity ID and components.
 
 The ECS implementations currently own status scheduling, hazards, targeting,
 mixed-size melee reservation, positioning, steering, formation cohesion,
-movement state and spatial updates, direct healing actions, depenetration,
+movement state, burrow regeneration, and spatial updates, direct healing actions, depenetration,
 single-shot local damage modifiers and simple weapon deaths, terminal outcome, initiative,
 modifier/lifetime ticking, periodic spawner and reassembly ownership,
 typed component/resource stores, deterministic
@@ -50,6 +50,9 @@ mobility mode changes also run natively. Burrowed attackers surface through the
 native action setup; one-shot emerge damage and expanded radial AoE payloads are
 consumed by the ECS damage path. Movement stealth now breaks natively after the
 primary damage or interception and before on-hit and secondary weapon effects.
+Burrow regeneration now reads movement/vitality components, applies actual
+healing through the ECS healing kernel, and emits only the contractual
+`burrow_regen` replay action in stable external-ID order.
 Sequential multishot actions run through the same native per-shot pipeline and
 stop immediately when the primary target dies. Accumulated attack charge is
 released natively after other primary modifiers and is consumed by only the
