@@ -89,6 +89,10 @@ harmful allied statuses, or buffer persistent hazards through EntityId stores.
 Trigger capability gates and their facade fallback have been removed now that
 every configured event and payload is native. The post-hazard HP-threshold phase
 always reads canonical vitality/lifecycle stores in stable external-ID order.
+Periodic burn, acid, and degeneration deaths now resolve inside the ECS status
+phase, including source-less deaths, resurrection, reassembly, and death/kill
+triggers. The legacy environmental death callback remains only at the hazard
+phase boundary.
 Initial squads, action spawns, trigger clones, and hazards enter a deterministic
 structural command buffer. Target references and melee
 sectors use `EntityId`; string IDs are written only as a compatibility mirror

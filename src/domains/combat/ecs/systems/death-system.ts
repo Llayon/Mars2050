@@ -12,7 +12,7 @@ import { applyEcsHealing } from './healing-system'
 export function resolveEcsDeath(
   world: CombatWorld,
   targetId: EntityId,
-  sourceId: EntityId,
+  sourceId: EntityId | undefined,
   actions: BattleAction[],
   cause: DeathCause = 'weapon',
 ): boolean {
@@ -26,19 +26,23 @@ export function resolveEcsDeath(
   }
   startDeathReassembly(world, targetId, actions)
   target.isDead = true
+  const actorId = sourceId ?? targetId
   actions.push({
     unitId: world.stores.identity.require(targetId).id,
     type: 'die',
-    sourceUnitId: world.stores.identity.require(sourceId).id,
+    sourceUnitId: sourceId === undefined
+      ? undefined
+      : world.stores.identity.require(sourceId).id,
     cause,
   })
-  processEcsDeathTriggers(world, targetId, sourceId, actions)
-  if (world.stores.identity.require(sourceId).team !==
+  processEcsDeathTriggers(world, targetId, actorId, actions)
+  if (sourceId !== undefined &&
+      world.stores.identity.require(sourceId).team !==
       world.stores.identity.require(targetId).team) {
     applyEcsOnKillEffects(world, sourceId, targetId, actions)
     processEcsKillTriggers(world, sourceId, targetId, actions)
+    replicateEcsKiller(world, sourceId, targetId, actions)
   }
-  replicateEcsKiller(world, sourceId, targetId, actions)
   spawnEcsDeathHazard(world, targetId, actions)
   return true
 }

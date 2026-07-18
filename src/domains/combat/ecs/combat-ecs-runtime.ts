@@ -2,13 +2,12 @@ import type { BattleAction } from '../combat.actions'
 import type { SimHazard } from '../combat.sim.types'
 import type { CombatRuntime, RuntimeDeathHandler } from '../combat.runtime'
 import { CombatWorld } from './combat-world'
-import { createEcsMeleeEngagementState, getEcsTerminalOutcome, getEcsTurnOrder, processEcsHpThresholdTriggers, reserveEcsMeleeSlot, runActionSystem, runDepenetrationSystem, runHazardSystem, runModifierSystem, runMovementSystem, runStatusSystem, runTargetingSystem, syncEcsTargetRefs } from './systems'
+import { createEcsMeleeEngagementState, getEcsTerminalOutcome, getEcsTurnOrder, processEcsHpThresholdTriggers, reserveEcsMeleeSlot, resolveEcsDeath, runActionSystem, runDepenetrationSystem, runHazardSystem, runModifierSystem, runMovementSystem, runStatusSystem, runTargetingSystem, syncEcsTargetRefs } from './systems'
 import { createSquadEntities } from './combat-entity-factory'
 import { EntitySpatialIndex } from './entity-spatial-index'
 
 const MODIFIER_COMPONENTS = ['vitality', 'combat', 'defense', 'statusControl', 'lifecycle'] as const
 const TICK_READ_COMPONENTS = ['identity', 'transform', 'vitality', 'combat', 'weapon', 'targeting', 'statusControl', 'support', 'lifecycle'] as const
-const STATUS_WRITE_COMPONENTS = ['vitality', 'statusControl'] as const
 
 export interface EcsCombatRuntime extends CombatRuntime {
   readonly world: CombatWorld
@@ -110,19 +109,17 @@ export function createEcsCombatRuntime(): EcsCombatRuntime {
       })
       world.syncComponentsFromStore(entityId, MODIFIER_COMPONENTS)
     },
-    runStatusPhase(actions: BattleAction[], onUnitDeath: RuntimeDeathHandler): void {
+    runStatusPhase(actions: BattleAction[], _onUnitDeath: RuntimeDeathHandler): void {
       world.flushStructuralCommands()
       world.syncAllComponentsToStore(TICK_READ_COMPONENTS)
       runStatusSystem(world, actions, (entityId, sourceUnitId, cause) => {
-        world.syncAllFromComponents()
-        const unit = world.getEntity(entityId)
-        if (unit) {
-          onUnitDeath(unit, sourceUnitId, cause)
-          world.flushStructuralCommands()
-          world.syncAllToComponents()
-        }
+        const sourceId = sourceUnitId === undefined
+          ? undefined
+          : world.getEntityId(sourceUnitId)
+        resolveEcsDeath(world, entityId, sourceId, actions, cause)
+        world.flushStructuralCommands()
       })
-      world.syncAllComponentsFromStore(STATUS_WRITE_COMPONENTS)
+      world.syncAllFromComponents()
     },
     runHazardPhase(actions, onUnitDeath, spatialHash): void {
       void spatialHash
