@@ -7,7 +7,6 @@ import { EntitySpatialIndex } from './entity-spatial-index'
 import { runEcsControlBeamPhase, runEcsFieldEffectPhase, runEcsFormationBonusPhase, runEcsGlobalEffectPhase, runEcsPeriodicAbilityPhase, runEcsSupportAuraPhase } from './combat-ecs-phase-boundaries'
 
 const MODIFIER_COMPONENTS = ['vitality', 'combat', 'defense', 'statusControl', 'lifecycle'] as const
-const TICK_READ_COMPONENTS = ['identity', 'transform', 'vitality', 'combat', 'weapon', 'targeting', 'statusControl', 'support', 'lifecycle'] as const
 
 export interface EcsCombatRuntime extends CombatRuntime {
   readonly world: CombatWorld
@@ -155,7 +154,6 @@ export function createEcsCombatRuntime(): EcsCombatRuntime {
       runEcsPeriodicAbilityPhase(world, tick, actions, rng),
     runStatusPhase(actions: BattleAction[], _rng): void {
       world.flushStructuralCommands()
-      world.syncAllComponentsToStore(TICK_READ_COMPONENTS)
       runStatusSystem(world, actions, (entityId, sourceUnitId, cause) => {
         const sourceId = sourceUnitId === undefined
           ? undefined

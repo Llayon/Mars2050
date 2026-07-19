@@ -98,4 +98,38 @@ describe('combat ECS status death', () => {
     expect(nativeActions.some(action => action.type === 'on_kill')).toBe(false)
     expect(runtime.world.stores.vitality.require(0).isDead).toBe(true)
   })
+
+  it('does not overwrite canonical periodic status state from the facade', () => {
+    const attacker = unit('canonical-source', 'attacker')
+    const target = unit('canonical-target', 'defender')
+    target.hp = 5
+    target.statusEffects = [
+      normalizeStatusEffect({
+        type: 'burn',
+        duration: 1,
+        value: 10,
+        tickInterval: 1,
+        sourceUnitId: attacker.id,
+      }),
+    ]
+    const runtime = createEcsCombatRuntime()
+    runtime.units.push(attacker, target)
+    runtime.flushStructuralCommands()
+    target.hp = target.maxHp
+    target.statusEffects = []
+    const actions: BattleAction[] = []
+
+    runtime.runStatusPhase(actions, new PRNG(113))
+
+    const targetId = runtime.world.getEntityId(target.id)!
+    expect(actions).toContainEqual({
+      unitId: 'canonical-target',
+      type: 'die',
+      sourceUnitId: 'canonical-source',
+      cause: 'burn',
+    })
+    expect(runtime.world.stores.vitality.require(targetId).isDead).toBe(true)
+    expect(runtime.units[1].isDead).toBe(true)
+    expect(runtime.units[1].statusEffects).toEqual([])
+  })
 })

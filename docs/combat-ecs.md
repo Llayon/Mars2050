@@ -124,6 +124,9 @@ runtime receives the tick, replay actions, and seeded RNG directly.
 Terminal outcome resolution also owns its runtime state: ECS queries canonical
 unit and hazard components after flushing structural commands, so the engine no
 longer passes the runtime's hazard facade back into it.
+The global status phase likewise consumes canonical vitality and status stores
+directly; it no longer performs a full facade import before periodic scheduling
+and death resolution.
 Periodic burn, acid, and degeneration deaths now resolve inside the ECS status
 phase, including source-less deaths, resurrection, reassembly, and death/kill
 triggers. Mine and periodic hazard deaths use the same resolver without
