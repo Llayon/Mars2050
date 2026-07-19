@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 import { actionSystem } from '@/__tests__/helpers/combat-ecs-action-harness'
 import type { SimUnit } from '@/domains/combat/combat.sim.types'
 import { createRuntimeUnitFromConfig } from '@/domains/combat/combat.unit-factory'
-import { getEffectiveActionRangeAgainst } from '@/domains/combat/combat.weapon-rules'
 import { getSizeRadius, PRNG } from '@/domains/combat/combat.utils'
 import { CombatWorld } from '@/domains/combat/ecs/combat-world'
 import { EntitySpatialIndex } from '@/domains/combat/ecs/entity-spatial-index'
@@ -46,9 +45,6 @@ describe('combat ECS conditional range', () => {
     target.rank = 2
     const world = createWorld([attacker, target])
 
-    expect(getEcsEffectiveActionRangeAgainst(world, 0, 1)).toBe(
-      getEffectiveActionRangeAgainst(attacker, target),
-    )
     expect(getEcsEffectiveActionRangeAgainst(world, 0, 1)).toBe(340)
   })
 

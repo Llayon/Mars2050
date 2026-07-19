@@ -6,7 +6,6 @@ import { PRNG } from '@/domains/combat/combat.utils'
 import { CombatWorld } from '@/domains/combat/ecs/combat-world'
 import { EntitySpatialIndex } from '@/domains/combat/ecs/entity-spatial-index'
 import { canUseSimpleSingleDamage, runActionSystem } from '@/domains/combat/ecs/systems'
-import { SpatialHash } from '@/domains/combat/spatial-hash'
 
 function unit(id: string, team: 'attacker' | 'defender', x: number): SimUnit {
   return createRuntimeUnitFromConfig({
@@ -37,8 +36,6 @@ describe('combat ECS movement stealth action', () => {
     const world = createWorld([attacker, target])
     const legacyActions: Parameters<typeof actionSystem>[4] = []
     const nativeActions: Parameters<typeof runActionSystem>[3] = []
-    const legacySpatial = new SpatialHash()
-    for (const legacyUnit of legacyUnits) legacySpatial.insert(legacyUnit)
 
     const legacyActed = actionSystem(
       legacyUnits[0],
@@ -48,7 +45,6 @@ describe('combat ECS movement stealth action', () => {
       legacyActions,
       new PRNG(1),
       0,
-      legacySpatial,
     )
     expect(canUseSimpleSingleDamage(world, 0, 1)).toBe(true)
     const nativeResult = runActionSystem(world, 0, 1, nativeActions, {

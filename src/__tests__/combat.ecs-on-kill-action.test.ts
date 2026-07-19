@@ -9,7 +9,6 @@ import {
   canUseSimpleSingleDamage,
   runActionSystem,
 } from '@/domains/combat/ecs/systems'
-import { SpatialHash } from '@/domains/combat/spatial-hash'
 
 function unit(
   id: string,
@@ -43,8 +42,6 @@ describe('combat ECS on-kill action', () => {
     const legacyUnits = structuredClone([attacker, target])
     const legacyActions: Parameters<typeof actionSystem>[4] = []
     const nativeActions: Parameters<typeof runActionSystem>[3] = []
-    const legacySpatial = new SpatialHash()
-    for (const legacyUnit of legacyUnits) legacySpatial.insert(legacyUnit)
     const world = createWorld([attacker, target])
 
     const legacyActed = actionSystem(
@@ -55,7 +52,6 @@ describe('combat ECS on-kill action', () => {
       legacyActions,
       new PRNG(29),
       0,
-      legacySpatial,
     )
     expect(canUseSimpleSingleDamage(world, 0, 1)).toBe(true)
     const nativeResult = runActionSystem(world, 0, 1, nativeActions, {

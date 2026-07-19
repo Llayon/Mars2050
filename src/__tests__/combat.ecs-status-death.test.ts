@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { BattleAction } from '@/domains/combat/combat.actions'
 import type { SimUnit } from '@/domains/combat/combat.sim.types'
-import { normalizeStatusEffect } from '@/domains/combat/combat.status'
+import { normalizeStatusEffect } from '@/domains/combat/combat.status-core'
 import { createRuntimeUnitFromConfig } from '@/domains/combat/combat.unit-factory'
 import { PRNG } from '@/domains/combat/combat.utils'
 import { createEcsCombatRuntime } from '@/domains/combat/ecs/combat-ecs-runtime'

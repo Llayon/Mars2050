@@ -10,7 +10,6 @@ import {
   canUseSimpleSingleDamage,
   runActionSystem,
 } from '@/domains/combat/ecs/systems'
-import { SpatialHash } from '@/domains/combat/spatial-hash'
 
 function unit(id: string, team: 'attacker' | 'defender', x: number): SimUnit {
   return createRuntimeUnitFromConfig({
@@ -48,8 +47,6 @@ describe('combat ECS smoke action', () => {
     const legacyHazards: Parameters<typeof actionSystem>[3] = []
     const legacyActions: Parameters<typeof actionSystem>[4] = []
     const nativeActions: Parameters<typeof runActionSystem>[3] = []
-    const legacySpatial = new SpatialHash()
-    for (const legacyUnit of legacyUnits) legacySpatial.insert(legacyUnit)
     const world = createWorld([attacker, target])
 
     const legacyActed = actionSystem(
@@ -60,7 +57,6 @@ describe('combat ECS smoke action', () => {
       legacyActions,
       new PRNG(7),
       0,
-      legacySpatial,
     )
     expect(canUseEcsSmokeAction(world, 0)).toBe(true)
     expect(canUseSimpleSingleDamage(world, 0, 1)).toBe(true)

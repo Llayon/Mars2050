@@ -1,38 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { UNIT_TYPES } from '@/domains/combat/combat.config'
-import { applyCombatDamage } from '@/domains/combat/combat.damage'
 import { simulateBattle } from '@/domains/combat/combat.engine'
-import type { SimUnit, Team, UnitRow } from '@/domains/combat/combat.types'
-
-function makeUnit(overrides: Partial<SimUnit> & { id: string; team: Team }): SimUnit {
-  return {
-    type: 'marine',
-    rank: 1,
-    hp: 100,
-    maxHp: 100,
-    attack: 10,
-    defense: 0,
-    speed: 10,
-    range: 120,
-    attackType: 'single',
-    actionCooldownMax: 10,
-    actionCooldown: 0,
-    isFlying: false,
-    canTargetAir: false,
-    x: 0,
-    y: 0,
-    isDead: false,
-    turnSpeed: 10,
-    currentAngle: 0,
-    size: 'S',
-    shield: 0,
-    maxShield: 0,
-    statusEffects: [],
-    aggroLockTicks: 0,
-    velocity: { x: 0, y: 0 },
-    ...overrides,
-  }
-}
+import type { UnitRow } from '@/domains/combat/combat.types'
+import { createRuntimeUnitFromConfig } from '@/domains/combat/combat.unit-factory'
+import { CombatWorld } from '@/domains/combat/ecs/combat-world'
+import { applyEcsSingleDamage } from '@/domains/combat/ecs/systems'
 
 describe('combat rank scaling', () => {
   it('copies UnitRow tier into squad members and scales starting stats', () => {
@@ -52,11 +24,27 @@ describe('combat rank scaling', () => {
   })
 
   it('applies rank-conditional damage modifiers only when relation matches', () => {
-    const attacker = makeUnit({ id: 'elite', team: 'attacker', rank: 3, attack: 20, rankScaling: { damageModifiers: [{ relation: 'same_rank', multiplier: 2 }] } })
-    const sameRank = makeUnit({ id: 'same', team: 'defender', rank: 3 })
-    const lowerRank = makeUnit({ id: 'lower', team: 'defender', rank: 1 })
+    const attacker = createRuntimeUnitFromConfig({
+      id: 'elite', team: 'attacker', type: 'marine', x: 0, y: 0, currentAngle: 0,
+    })!
+    const sameRank = createRuntimeUnitFromConfig({
+      id: 'same', team: 'defender', type: 'marine', x: 0, y: 0, currentAngle: Math.PI,
+    })!
+    const lowerRank = createRuntimeUnitFromConfig({
+      id: 'lower', team: 'defender', type: 'marine', x: 0, y: 0, currentAngle: Math.PI,
+    })!
+    Object.assign(attacker, {
+      rank: 3,
+      attack: 20,
+      rankScaling: { damageModifiers: [{ relation: 'same_rank', multiplier: 2 }] },
+    })
+    sameRank.rank = 3
+    lowerRank.rank = 1
+    const world = new CombatWorld([attacker, sameRank, lowerRank])
+    world.stores.combat.require(1).defense = 0
+    world.stores.combat.require(2).defense = 0
 
-    expect(applyCombatDamage(attacker, sameRank, attacker.attack).damage).toBe(40)
-    expect(applyCombatDamage(attacker, lowerRank, attacker.attack).damage).toBe(20)
+    expect(applyEcsSingleDamage(world, 0, 1, attacker.attack, []).damage).toBe(40)
+    expect(applyEcsSingleDamage(world, 0, 2, attacker.attack, []).damage).toBe(20)
   })
 })

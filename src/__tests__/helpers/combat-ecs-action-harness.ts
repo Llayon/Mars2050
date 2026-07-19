@@ -2,7 +2,6 @@ import type { BattleAction } from '@/domains/combat/combat.actions'
 import { UNIT_TYPES } from '@/domains/combat/combat.config'
 import { prepareRuntimePrimitives } from '@/domains/combat/combat.runtime-primitives'
 import type { SimHazard, SimUnit } from '@/domains/combat/combat.sim.types'
-import type { SpatialHash } from '@/domains/combat/spatial-hash'
 import type { UnitTypeKey } from '@/domains/combat/combat.types'
 import { CombatWorld } from '@/domains/combat/ecs/combat-world'
 import { EntitySpatialIndex } from '@/domains/combat/ecs/entity-spatial-index'
@@ -27,7 +26,6 @@ export function actionSystem(
   actions: BattleAction[],
   rng: PRNG,
   tick = 0,
-  _spatialHash?: SpatialHash,
 ): boolean {
   const world = new CombatWorld(units.map(hydrateRuntimePrimitives))
   world.queueHazardCreation(...structuredClone(hazards))

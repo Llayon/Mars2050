@@ -13,7 +13,6 @@ import {
   reserveEcsMeleeSlot,
   runActionSystem,
 } from '@/domains/combat/ecs/systems'
-import { SpatialHash } from '@/domains/combat/spatial-hash'
 
 function unit(id: string, team: 'attacker' | 'defender', type: string, x: number): SimUnit {
   return createRuntimeUnitFromConfig({
@@ -98,8 +97,6 @@ describe('combat ECS emerge strike action', () => {
     const legacyUnits = structuredClone([attacker, primary, splash])
     const world = createWorld([attacker, primary, splash])
     const legacyActions: Parameters<typeof actionSystem>[4] = []
-    const legacySpatial = new SpatialHash()
-    for (const legacyUnit of legacyUnits) legacySpatial.insert(legacyUnit)
 
     const legacyActed = actionSystem(
       legacyUnits[0],
@@ -109,7 +106,6 @@ describe('combat ECS emerge strike action', () => {
       legacyActions,
       new PRNG(2),
       0,
-      legacySpatial,
     )
     expect(canUseSimpleSingleDamage(world, 0, 1)).toBe(true)
     const { actions, result } = runNative(world)

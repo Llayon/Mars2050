@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { BattleAction } from '@/domains/combat/combat.actions'
 import type { SimUnit } from '@/domains/combat/combat.sim.types'
-import { applyStatus, normalizeStatusEffect } from '@/domains/combat/combat.status'
+import { normalizeStatusEffect } from '@/domains/combat/combat.status-core'
 import { createRuntimeUnitFromConfig } from '@/domains/combat/combat.unit-factory'
 import { PRNG } from '@/domains/combat/combat.utils'
 import { createEcsCombatRuntime } from '@/domains/combat/ecs/combat-ecs-runtime'
@@ -116,7 +116,7 @@ describe('combat ECS periodic ability phase', () => {
     ]
     const ally = unit('ally', 'attacker', 130)
     ally.hp = Math.max(1, ally.maxHp - 15)
-    applyStatus(ally, { type: 'burn', duration: 10 })
+    ally.statusEffects.push(normalizeStatusEffect({ type: 'burn', duration: 10 }))
     const ground = unit('ground', 'defender', 160)
     const secondary = unit('secondary', 'defender', 190)
     const air = unit('air', 'defender', 220)

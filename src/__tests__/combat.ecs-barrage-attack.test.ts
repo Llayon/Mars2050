@@ -6,7 +6,6 @@ import { PRNG } from '@/domains/combat/combat.utils'
 import { CombatWorld } from '@/domains/combat/ecs/combat-world'
 import { EntitySpatialIndex } from '@/domains/combat/ecs/entity-spatial-index'
 import { runActionSystem } from '@/domains/combat/ecs/systems'
-import { SpatialHash } from '@/domains/combat/spatial-hash'
 
 function unit(
   id: string,
@@ -31,8 +30,6 @@ function runParity(units: SimUnit[]) {
   const legacyUnits = structuredClone(units)
   const legacyActions: Parameters<typeof actionSystem>[4] = []
   const nativeActions: Parameters<typeof runActionSystem>[3] = []
-  const legacySpatial = new SpatialHash()
-  for (const legacyUnit of legacyUnits) legacySpatial.insert(legacyUnit)
   const world = createWorld(units)
   const legacyActed = actionSystem(
     legacyUnits[0],
@@ -42,7 +39,6 @@ function runParity(units: SimUnit[]) {
     legacyActions,
     new PRNG(1),
     0,
-    legacySpatial,
   )
   const nativeResult = runActionSystem(world, 0, 1, nativeActions, {
     rng: new PRNG(1),

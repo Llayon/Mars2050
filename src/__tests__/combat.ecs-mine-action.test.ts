@@ -11,7 +11,6 @@ import {
   canUseSimpleSingleDamage,
   runActionSystem,
 } from '@/domains/combat/ecs/systems'
-import { SpatialHash } from '@/domains/combat/spatial-hash'
 
 function unit(
   id: string,
@@ -46,8 +45,6 @@ describe('combat ECS mine action', () => {
     const legacyHazards: Parameters<typeof actionSystem>[3] = []
     const legacyActions: Parameters<typeof actionSystem>[4] = []
     const nativeActions: Parameters<typeof runActionSystem>[3] = []
-    const legacySpatial = new SpatialHash()
-    for (const legacyUnit of legacyUnits) legacySpatial.insert(legacyUnit)
     const world = createWorld([attacker, target])
 
     const legacyActed = actionSystem(
@@ -58,7 +55,6 @@ describe('combat ECS mine action', () => {
       legacyActions,
       new PRNG(11),
       0,
-      legacySpatial,
     )
     expect(canUseEcsMineAction(world, 0)).toBe(true)
     expect(canUseEcsSmokeAction(world, 0)).toBe(true)

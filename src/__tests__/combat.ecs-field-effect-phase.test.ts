@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { BattleAction } from '@/domains/combat/combat.actions'
 import type { SimUnit } from '@/domains/combat/combat.sim.types'
-import { applyStatus } from '@/domains/combat/combat.status'
+import { normalizeStatusEffect } from '@/domains/combat/combat.status-core'
 import { createRuntimeUnitFromConfig } from '@/domains/combat/combat.unit-factory'
 import { createEcsCombatRuntime } from '@/domains/combat/ecs/combat-ecs-runtime'
 import { CombatWorld } from '@/domains/combat/ecs/combat-world'
@@ -50,7 +50,7 @@ describe('combat ECS field effect phase', () => {
       },
     ]
     const ally = unit('ally', 140)
-    applyStatus(ally, { type: 'burn', duration: 20 })
+    ally.statusEffects.push(normalizeStatusEffect({ type: 'burn', duration: 20 }))
     const fire = {
       id: 'fire',
       team: 'defender' as const,

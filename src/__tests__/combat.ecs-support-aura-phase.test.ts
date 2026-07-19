@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { BattleAction } from '@/domains/combat/combat.actions'
 import type { SimUnit } from '@/domains/combat/combat.sim.types'
-import { applyStatus } from '@/domains/combat/combat.status'
+import { normalizeStatusEffect } from '@/domains/combat/combat.status-core'
 import { createRuntimeUnitFromConfig } from '@/domains/combat/combat.unit-factory'
 import { createEcsCombatRuntime } from '@/domains/combat/ecs/combat-ecs-runtime'
 import { CombatWorld } from '@/domains/combat/ecs/combat-world'
@@ -41,7 +41,7 @@ describe('combat ECS support aura phase', () => {
     const ally = unit('ally', 'attacker', 150)
     ally.maxShield = 20
     ally.shield = 5
-    applyStatus(ally, { type: 'burn', duration: 10 })
+    ally.statusEffects.push(normalizeStatusEffect({ type: 'burn', duration: 10 }))
     const enemy = unit('enemy', 'defender', 220)
     enemy.stealthUntilAttack = true
     const ecs = createEcsCombatRuntime()
