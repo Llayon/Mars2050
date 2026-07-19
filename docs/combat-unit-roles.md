@@ -82,18 +82,17 @@ Mechabellum-style control is not one generic status. Mars2050 should separate
 short-lived combat statuses from special mechanics such as shields, stealth,
 revive, projectile interception, and forced movement.
 
-Current runtime status support is centralized in `combat.status.ts`. The active
+Current runtime status support is owned by
+`ecs/systems/status-application-system.ts` and `ecs/systems/status-system.ts`.
+Normalization and stack rules live in `combat.status-core.ts`. The active
 typed set is `emp`, `slow`, `burn`, `acid`, `vulnerable`,
 `range_suppressed`, `revealed`, `hacked`, `damage_reduction`, `regen`,
 `output_suppressed`, `accuracy_reduced`, `armor_broken`, `degeneration`, `haste`, and
 `range_boost`.
 Status application, refresh, strongest-value selection, ticking, expiration,
 and cleanse all emit deterministic replay actions when an action sink is passed.
-Adjacent non-status state still lives on `SimUnit`: `shield`,
-`stealthUntilAttack`, `lifestealMult`, `armorPierceRatio`,
-`summonCounterDamageMult`, `damageReductionWhileMoving`, `burrowConfig`,
-`isBurrowed`,
-`onDeathPuddle`, temporary spawns, and hazards.
+Adjacent non-status state lives in canonical ECS components. `SimUnit` is used
+only at configuration, initial-state, snapshot, and replay boundaries.
 
 ### Core statuses to add first
 
@@ -140,10 +139,11 @@ Adjacent non-status state still lives on `SimUnit`: `shield`,
 2. Same stack identity refreshes duration and keeps the strongest value.
 3. `emp` blocks attacks, heals, support actions, and spawns; `hacked`
    supports disable, redirect, and confuse control modes.
-4. `slow` and `haste` modify movement speed in `combat.movement.ts`.
+4. `slow` and `haste` modify movement through ECS movement components.
 5. `burn`, `acid`, `degeneration`, and `regen` use an explicit periodic scheduler; a duration-30 effect with interval 10 ticks exactly at 10, 20, and 30.
 6. `vulnerable`, `damage_reduction`, `armor_broken`,
-   `output_suppressed`, and `accuracy_reduced` feed into `combat.damage.ts`.
+   `output_suppressed`, and `accuracy_reduced` feed into
+   `ecs/systems/damage-system.ts`.
 7. `revealed` participates in stealth acquisition checks and breaks/suppresses active burrow defense.
 8. Shield, stealth, lifesteal, armor pierce, anti-summoner damage,
    pull/knockback, mines, barriers, and decoys
@@ -155,29 +155,18 @@ The following mechanics are now implemented as reusable runtime primitives:
 
 | Primitive | Runtime files | Current users |
 | --- | --- | --- |
-| Detailed damage/shield events | `combat.damage.ts` | all attacks through `applyCombatDamage` |
-| Shield-breaker damage | `combat.damage.ts`, `combat.upgrades.ts` | `shield_breaker_rounds` |
-| Armor-pierce damage | `combat.damage.ts`, `combat.upgrades.ts` | `armor_piercing_rounds` |
-| Anti-summoner damage | `combat.summon-counter.ts`, `combat.damage.ts`, `combat.upgrades.ts` | `anti_summoner_protocol` |
-| Shield aura / shield repair / regen / cleanse / immunity | `combat.auras.ts`, `combat.status.ts` | `shield_emitter`, `engineer`, `nanite_generator` |
-| Anti-stealth reveal aura | `combat.auras.ts`, `combat.status.ts`, `combat.upgrades.ts` | `radar_zepplin`, `sensor_suite` |
-| Accuracy suppression / optics resist | `combat.accuracy.ts`, `combat.damage.ts`, `combat.smoke.ts`, `combat.upgrades.ts` | smoke fields, `thermal_optics` |
-| Command haste aura | `combat.auras.ts`, `combat.status.ts` | `officer` |
-| Range relay aura | `combat.auras.ts`, `combat.status.ts` | `radar_zepplin` |
-| Tag-limited repair | `combat.support.ts`, `combat.targeting.ts` | `engineer` |
-| Mine placement | `combat.minefield.ts` | `minelayer_rover` |
-| Smoke suppression field | `combat.smoke.ts`, `combat.hazards.ts`, `combat.status.ts` | configurable `smokeOnAction` units/upgrades |
-| Pull / knockback displacement | `combat.displacement.ts` | `gravity_manipulator`, `sonic_devastator` |
-| Decoys / temporary barriers | `combat.systems.utils.ts` | `hologram_projector`, `shield_emitter` |
-| Projectile interception | `combat.projectile-defense.ts`, `combat.damage.ts` | `shield_emitter` |
-| Cone / beam / barrage / chain / split-fire / side weapons | `combat.attack-geometry.ts`, `combat.split-fire.ts`, `combat.side-weapon.ts` | `flamethrower`, `sonic_devastator`, `ion_crawler`, `artillery_crawler`, `plasma_tank`, `gatling_rover`, `goliath_gunship` |
-| Minimum range / back-away positioning | `combat.weapon-rules.ts`, `combat.positioning.ts` | `artillery_crawler` |
-| Stance / mode transform | `combat.stance.ts`, `combat.mode.ts`, `combat.status.ts`, `combat.movement.ts` | `artillery_crawler`, `jetpack_trooper` |
-| Burrow / underground movement | `combat.burrow.ts`, `combat.movement.ts`, `combat.damage.ts` | `subterranean_blitz` |
-| Ramp focused-fire damage | `combat.ramp.ts` | `ion_crawler` |
-| Charge damage scaling | `combat.charge.ts`, `combat.movement.ts` | `scavenger_buggy` |
-| Percent-HP damage | `combat.percent-damage.ts`, `combat.damage.ts` | `railgun_walker` |
-| On-kill effects | `combat.on-kill.ts` | `stealth_operative` |
+| Detailed damage/shield events and counters | `ecs/systems/damage-*.ts` | all weapon and effect damage |
+| Status apply, scheduler, cleanse, and reveal | `combat.status-core.ts`, `ecs/systems/status-*.ts` | statuses, DoT, regeneration |
+| Shield, repair, regen, cleanse, and immunity auras | `ecs/systems/support-aura-system.ts` | `shield_emitter`, `engineer`, `nanite_generator` |
+| Tag-limited repair and target selection | `ecs/systems/action-system.ts`, `ecs/targeting-evaluation.ts` | `engineer` |
+| Mines, smoke, barriers, and field effects | `ecs/systems/*-action-system.ts`, `ecs/systems/field-effect-system.ts` | field and hazard units |
+| Pull / knockback displacement | `ecs/systems/displacement-system.ts` | `gravity_manipulator`, `sonic_devastator` |
+| Projectile interception | `ecs/systems/damage-interception-system.ts` | `shield_emitter` |
+| Cone / beam / barrage / chain / split-fire / side weapons | `ecs/systems/*attack-system.ts` | shaped and secondary weapons |
+| Minimum range / back-away positioning | `ecs/movement-positioning.ts` | `artillery_crawler` |
+| Stance, mobility mode, and burrow | ECS movement and action systems | artillery, jetpack, subterranean units |
+| Ramp, charge, and percent-HP damage | ECS damage payload and primary modifier systems | `ion_crawler`, `scavenger_buggy`, `railgun_walker` |
+| Death, kill, replication, and reassembly | `ecs/systems/death-system.ts`, trigger and reassembly systems | death-driven mechanics |
 
 Remaining design/balance gaps are richer mode-switch variants, richer
 underground counter variants, PvP tuning for permanent conversion control, and
@@ -185,7 +174,7 @@ richer line-of-sight/concealment mechanics.
 
 ### Damage / shield pipeline
 
-Damage now flows through `combat.damage.ts` before HP is mutated. The contractual
+Damage now flows through `ecs/systems/damage-system.ts` before HP is mutated. The contractual
 order is attack boost/percent HP, projectile interception, armor and defense,
 output suppression, accuracy, attacker multipliers, movement defense, finite
 barriers/fields, vulnerability and reduction statuses, target mark, flat block,

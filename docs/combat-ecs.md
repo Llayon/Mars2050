@@ -226,21 +226,20 @@ interval 10 ticks exactly at 10, 20, and 30 before it expires.
 
 ## Health And Death
 
-`applyHealing()` records actual restored HP, never requested overheal.
-`resolveUnitDeath()` is the only production death path and receives source and
-cause. It owns resurrection, reassembly, death triggers, kill credit, kill
+`applyEcsHealing()` records actual restored HP, never requested overheal.
+`resolveEcsUnitDeath()` is the only production death path and receives source
+and cause. It owns resurrection, reassembly, death triggers, kill credit, kill
 triggers, death hazards, replication, and the final replay `die` action.
-The ECS resolver mirrors one-time resurrection and configured reassembly before
+The resolver handles one-time resurrection and configured reassembly before
 resolving EntityId death triggers. Trigger damage propagates `cause: trigger`
 through direct and shared damage deaths.
 
 Expiration is a non-combat death cause. It does not grant kill credit or execute
-death/kill triggers. Temporary-unit expiration now resolves directly in the ECS
-modifier phase without invoking the facade callback. The modifier boundary reads
-canonical cooldown, lifetime, defense, status, and trigger state without importing
-the unit facade, then mirrors its results for unported consumers. DoT, mine,
+death/kill triggers. Temporary-unit expiration resolves directly in the ECS
+modifier phase. The modifier boundary reads canonical cooldown, lifetime,
+defense, status, and trigger state without importing the unit facade. DoT, mine,
 hazard, trigger, and weapon deaths keep their source attribution when a source
-entity exists.
+entity exists. There is no object-runtime death callback or facade mirror.
 
 ## Damage Contract
 
