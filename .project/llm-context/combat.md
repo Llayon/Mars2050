@@ -4,41 +4,19 @@
 - `src/domains/combat/combat.engine.ts` — главный tick loop `simulateBattle`.
 - `src/domains/combat/combat.config.ts` — unit configs and balance constants.
 - `src/domains/combat/combat.types.ts` — DB/config-facing combat types and public re-exports.
-- `src/domains/combat/combat.sim.types.ts` — runtime simulation types (`SimUnit`, `SimHazard`, `Obstacle`).
+- `src/domains/combat/combat.unit-*-components.ts` — canonical unit component schemas; `UnitSnapshot` is their flat boundary type.
+- `src/domains/combat/combat.sim.types.ts` — snapshot/hazard/obstacle boundary aliases.
 - `src/domains/combat/combat.actions.ts` — replay action/result types.
-- `src/domains/combat/combat.targeting.ts` — sticky aggro, local acquisition, movement fallback.
-- `src/domains/combat/combat.movement.ts` — flow/path movement plus steering integration.
-- `src/domains/combat/combat.steering.ts` — separation, alignment, emergency depenetration.
-- `src/domains/combat/spatial-hash.ts` — deterministic spatial index.
-- `src/domains/combat/combat.systems.ts` — action, damage, heal, AoE, status application.
-- `src/domains/combat/combat.systems.utils.ts` — death, clone, spawn helpers.
-- `src/domains/combat/combat.status.ts` — deterministic status apply/tick/cleanse helpers.
-- `src/domains/combat/combat.damage.ts` — defense, armor pierce, shield/shield-breaker, status mitigation, accuracy penalties, lifesteal, and HP damage pipeline.
-- `src/domains/combat/combat.accuracy.ts` — deterministic accuracy penalty and optics resistance helpers.
-- `src/domains/combat/combat.auras.ts` — periodic shield, shield repair, regen, reveal, sensor-suite reveal, haste, range relay, and status auras.
-- `src/domains/combat/combat.minefield.ts` — deterministic mine deployment.
-- `src/domains/combat/combat.smoke.ts` — deterministic smoke field deployment.
-- `src/domains/combat/combat.attack-geometry.ts` — line pierce and reusable attack geometry helpers.
-- `src/domains/combat/combat.displacement.ts` — deterministic pull and knockback displacement.
-- `src/domains/combat/combat.stance.ts` — deterministic deploy/undeploy stance transforms.
-- `src/domains/combat/combat.mode.ts` — deterministic ground/air mobility mode swaps.
-- `src/domains/combat/combat.burrow.ts` — deterministic movement-state burrow toggles and burrow damage reduction.
-- `src/domains/combat/combat.split-fire.ts` — deterministic split-fire target selection.
-- `src/domains/combat/combat.side-weapon.ts` — deterministic side weapon target selection.
-- `src/domains/combat/combat.ramp.ts` — same-target focused-fire damage scaling.
-- `src/domains/combat/combat.charge.ts` — movement-distance charge damage scaling.
-- `src/domains/combat/combat.percent-damage.ts` — capped percent-HP anti-giant damage.
-- `src/domains/combat/combat.summon-counter.ts` — anti-summoner damage against summoners, summoned units, and temporary decoys.
-- `src/domains/combat/combat.projectile-defense.ts` — deterministic projectile interception.
-- `src/domains/combat/combat.support.ts` — tag-limited healing/support targeting rules.
-- `src/domains/combat/combat.on-kill.ts` — deterministic on-kill effects.
-- `src/domains/combat/combat.weapon-rules.ts` — shared weapon constraints such as minimum range.
-- `src/domains/combat/combat.positioning.ts` — approach/back-away positioning decisions.
+- `src/domains/combat/ecs/combat-world.ts` — entity lifecycle, component stores, structural flush, snapshots.
+- `src/domains/combat/ecs/combat-ecs-runtime.ts` — only production `CombatRuntime` implementation.
+- `src/domains/combat/ecs/combat-components.ts` — typed stores and exhaustive snapshot-field mapping.
+- `src/domains/combat/ecs/entity-spatial-index.ts` — deterministic local EntityId queries.
+- `src/domains/combat/ecs/systems/` — targeting, movement, actions, damage, death, status, trigger, support, and hazard systems.
 - `src/domains/combat/combat.deployment.ts` — attack/defense placement zones and validation.
-- `src/domains/combat/combat.melee-engagement.ts` — melee engagement slot readiness.
 - `src/domains/combat/combat.metrics.ts` — optional simulation metrics for simulator QA.
 - `src/domains/combat/combat.upgrades.ts` — unit and global upgrade definitions.
 - `src/domains/combat/combat.pathfinding.ts` — static obstacle flow field.
+- `docs/combat-ecs.md` — authoritative runtime, phase, damage, timeout, and migration contract.
 
 ## UI / Renderer Layer
 - `src/components/game/battle-replay-visuals.ts` — purely visual configuration (scale, anchor, hover, VFX scale, muzzle offsets). Kept strictly separated from `combat.config.ts` to preserve simulation determinism.
@@ -53,41 +31,39 @@
 - Normal units should not use full-map aggro. Full-map acquisition must be explicit for special long-range units.
 - Use `UnitBaseStats.targetingProfile = 'global'` for explicit full-map acquisition; do not add hidden hardcoded unit lists in targeting code.
 - Movement uses flow/pathfinding plus steering. Do not remove flow or facing/turn logic without regression tests.
-- Keep runtime simulation types in `combat.sim.types.ts`; keep DB/config-facing types in `combat.types.ts`.
+- Keep canonical runtime state in ECS component stores. `SimUnit` is allowed only at factory input and immutable output boundaries.
 
 ## Current Targeting Model
 - Heal targeting scans allies directly.
-- Attack targeting uses sticky `attackTargetId` and `aggroLockTicks`.
-- Local acquisition uses spatial hash radius:
+- Attack targeting uses canonical EntityId references plus snapshot-only external IDs.
+- Local acquisition uses `EntitySpatialIndex` radius:
   - melee: fixed local radius.
   - ranged: `max(local radius, range + buffer)`.
   - special long-range units may acquire globally.
 - If no local enemy is acquired, movement can use a global fallback target without setting aggro lock.
 
 ## Current Movement Model
-- `combat.engine.ts` rebuilds `SpatialHash` at the start of each tick.
-- Moving units call `spatialHash.update(unit)` after movement, so later units in the same tick query current positions.
-- `combat.movement.ts` keeps flow-field navigation, turn speed, formation cohesion, obstacle push, and velocity smoothing.
-- Movement-state burrow is toggled by `combat.burrow.ts`; it emits `burrow_change`, applies only while the unit is moving, and is broken by `revealed`.
-- Ground/air mobility mode is toggled by `combat.mode.ts`; movement-triggered units emit `mode_change`, become flying while advancing, and can ground before active actions.
-- `combat.steering.ts` adds separation/alignment over nearby units.
+- The targeting phase rebuilds the canonical `EntitySpatialIndex`; moved and spawned entities are inserted at deterministic points.
+- `ecs/systems/movement-system.ts` combines flow fields, facing, cohesion, steering, obstacle recovery, and minimum-range positioning.
+- Burrow, stance, and ground/air mobility mutate movement and transform components and emit deterministic replay actions.
+- `ecs/systems/depenetration-system.ts` performs the final overlap correction.
 - Fully overlapped unit pairs use deterministic opposite separation directions; do not make zero-distance push one-sided.
-- `SpatialHash.update()` preserves initial insertion order; do not reinsert moved units in a way that changes replay ordering.
+- Mixed-size melee engagement reserves physical angular sectors rather than incompatible per-attacker slot indices.
 
 ## Current Status / Damage Model
-- Runtime statuses live in `combat.status.ts`; do not implement one-off status ticking in `combat.systems.ts`.
+- Runtime statuses live in `statusControl` components and tick through `ecs/systems/status-system.ts`.
 - Current status types are `emp`, `slow`, `burn`, `acid`, `vulnerable`, `range_suppressed`, `revealed`, `hacked`, `damage_reduction`, `regen`, `output_suppressed`, `accuracy_reduced`, `armor_broken`, `degeneration`, `haste`, and `range_boost`.
 - Same stack identity refreshes duration and keeps the strongest value. Avoid unbounded duplicate status stacks.
 - `emp` and `hacked` block active actions. `slow` and `haste` affect movement. `range_boost` and `range_suppressed` affect acquisition, positioning, and action range. `burn`, `acid`, `degeneration`, and `regen` tick every 10 simulation ticks.
-- Damage must go through `applyCombatDamage()` in `combat.damage.ts`. Do not subtract HP directly in attack code except for explicitly modeled hazards/status ticks with tests.
+- Damage must go through the ECS damage systems; death must go through `resolveEcsDeath()`.
 - `accuracy_reduced` turns smoke/suppression into deterministic glancing damage; `accuracyPenaltyResist` from optics upgrades reduces that penalty without adding random miss rolls.
-- `burrowConfig` is explicit movement-state defense. It toggles `isBurrowed` while moving, is suppressed by `revealed`, and feeds into `applyCombatDamage()` through `getMovementDefenseReduction()`.
+- `burrowConfig` is explicit movement-state defense. It toggles `isBurrowed` while moving, is suppressed by `revealed`, and feeds the ECS movement-defense modifier.
 - `armorPierceRatio` reduces the target's effective defense for one attack after `armor_broken` is applied. It does not add a persistent status.
 - `summonCounterDamageMult` increases damage against `summoner` units, units with `summonOwnerId`, and temporary decoys. It does not affect normal units.
 - `sensor_suite` grants a tag-limited enemy reveal aura. This reveal runs in the support aura pass before targeting, so hidden units can become valid targets without special-case acquisition.
 - Shield overflow is intentional: shields absorb only remaining shield HP; leftover damage reaches HP. `shieldDamageMult` spends damage more efficiently against shield HP without multiplying damage against unshielded HP.
-- `applyCombatDamage()` may emit detailed replay events: `unit_blocked_damage`, `shield_damage`, `shield_break`, `damage`, and `lifesteal`.
-- `combat.systems.ts` still emits legacy `attack` events for projectile, recoil, and old replay compatibility.
+- The damage system may emit detailed replay events: `unit_blocked_damage`, `shield_damage`, `shield_break`, `damage`, and `lifesteal`.
+- ECS action systems still emit `attack` intent events for projectile, recoil, and old replay compatibility.
 - The canvas replay renderer exported through `battle-replay-engine.ts` applies detailed `damage`, `damage_share`, and `lifesteal` events for HP/text while still supporting old attack-only logs.
 
 ## Current Weapon / Utility Primitives
@@ -100,11 +76,11 @@
 - Defensive and support primitives: shield aura, tag-limited shield repair, regen aura, command haste aura, range relay aura, anti-stealth reveal aura, cleanse, status immunity, damage sharing, reactive armor charges, projectile interception, shield-breaker damage, armor-pierce damage, and anti-summoner damage.
 - Battlefield objects: barriers/temporary spawns, mines, smoke fields, decoys, hazards, and deterministic pull/knockback displacement.
 - Smoke fields are `smoke` hazards that apply `range_suppressed`, `output_suppressed`, and/or `accuracy_reduced` through the status kernel. Accuracy suppression is deterministic glancing damage, not random miss chance.
-- Stance transforms: `stanceConfig` units deploy through `combat.stance.ts`, can change effective range/cooldown/movement, and emit `stance_change` replay actions. `artillery_crawler` uses siege stance.
-- Mobility mode transforms: `modeSwitchConfig` units switch runtime `mobilityMode` and `isFlying` through `combat.mode.ts`, and emit `mode_change` replay actions. `jetpack_trooper` uses ground/air swap while moving.
+- Stance transforms: `stanceConfig` units deploy through ECS action/movement systems, can change effective range/cooldown/movement, and emit `stance_change` replay actions.
+- Mobility mode transforms: `modeSwitchConfig` units switch runtime `mobilityMode` and `isFlying` through ECS movement state and emit `mode_change` replay actions.
 - Burrow transforms: `burrowConfig` units enter underground movement while advancing, leave it before acting or when revealed, and emit `burrow_change` replay actions. `subterranean_blitz` uses this primitive.
 - Support targeting: `healTargetTags` restricts heal actions and `SupportAura.targetTags` restricts aura targets by combat tags. Engineer uses both for mechanical repair and mechanical shield restoration.
-- Minimum range is handled by `combat.weapon-rules.ts` and `combat.positioning.ts`; artillery can back away instead of firing point blank.
+- Minimum range is handled by `ecs/movement-positioning.ts`; artillery can back away instead of firing point blank.
 
 ## Current Known Gaps
 - Stance/mode transforms have reusable siege/entrenched, movement-state burrow, and ground/air mobility mode primitives; richer mode-switch variants and richer underground counter variants remain future work.
@@ -112,31 +88,12 @@
 - Richer line-of-sight and concealment are still future work. Projectile accuracy now has a first deterministic penalty/resist primitive, but no line-of-sight occlusion yet.
 
 ## Tests & QA
-- `src/__tests__/combat.engine.test.ts` — basic battle outcomes and timeout behavior.
-- `src/__tests__/combat.spatial-hash.test.ts` — deterministic spatial query behavior.
-- `src/__tests__/combat.targeting.test.ts` — sticky aggro, acquisition radius, fallback, long-range exceptions.
-- `src/__tests__/combat.metrics.test.ts` — replay determinism and crowd movement metrics.
-- `src/__tests__/combat.status.test.ts` — status stacking, ticking, cleanse, and action blocking.
-- `src/__tests__/combat.damage.test.ts` — damage mitigation, shield overflow, and detailed damage replay actions.
-- `src/__tests__/combat.accuracy.test.ts` — deterministic accuracy suppression and optics upgrade mapping.
-- `src/__tests__/combat.armor-pierce.test.ts` — attacker-side armor pierce and upgrade mapping.
-- `src/__tests__/combat.anti-summoner.test.ts` — anti-summoner damage, summoned tags, and upgrade mapping.
-- `src/__tests__/combat.anti-stealth.test.ts` — sensor-suite reveal aura and upgrade mapping.
-- `src/__tests__/combat.weapon-shapes.test.ts` — cone and beam targeting/damage.
-- `src/__tests__/combat.barrage.test.ts` — barrage impacts and minimum range behavior.
-- `src/__tests__/combat.chain.test.ts` — deterministic chain jumps.
-- `src/__tests__/combat.split-fire.test.ts` — split-fire targeting/damage.
-- `src/__tests__/combat.side-weapon.test.ts` — side weapon targeting/damage.
-- `src/__tests__/combat.support.test.ts` — tag-limited healing and repair targeting.
-- `src/__tests__/combat.auras.test.ts` — support aura behavior including shield repair, cleanse, immunity, reveal, haste, and range relay.
-- `src/__tests__/combat.ramp.test.ts` — focused-fire ramp damage.
-- `src/__tests__/combat.charge.test.ts` — movement-distance charge damage.
-- `src/__tests__/combat.damage.test.ts` — includes capped percent-HP damage regression coverage.
-- `src/__tests__/combat.on-kill.test.ts` — on-kill cooldown/heal behavior.
-- `src/__tests__/combat.stance.test.ts` — deploy/undeploy stance transforms and config mapping.
-- `src/__tests__/combat.mode.test.ts` — ground/air mode transforms, dynamic aircraft targeting tags, and config mapping.
-- `src/__tests__/combat.burrow.test.ts` — burrow movement state, reveal counter, damage reduction, and upgrade mapping.
-- `src/__tests__/combat.smoke.test.ts` — smoke deployment and deterministic suppression fields.
+- `src/__tests__/combat.ecs*.test.ts` — direct `CombatWorld` contracts for all runtime phases and mechanics.
+- `src/__tests__/combat.engine.test.ts` — public battle outcomes and timeout behavior.
+- `src/__tests__/combat.damage-order.test.ts` — contractual damage modifier order.
+- `src/__tests__/combat.mirror-gate.test.ts` — team/coordinate symmetry gates.
+- Scenario and ECS contracts assert seeded replay stability alongside behavior.
+- `src/__tests__/combat.metrics.test.ts` — crowd movement and spatial-query metrics.
 - `src/__tests__/battle-replay-labels.test.ts` — every `BATTLE_ACTION_TYPES` entry has a readable label/color or explicit exemption.
 - `tests/e2e/simulator2-replay.spec.ts` — canvas replay smoke, mobile rendering, and debug overlays for hitboxes, velocity vectors, and target lines.
 - `tests/e2e/simulator2-load.spec.ts` — simulator first screen defers replay chunks, Pixi chunks, and API calls until simulation starts.

@@ -18,8 +18,13 @@ Component stores are canonical while ECS phases execute. No facade-to-component
 or component-to-facade synchronization API remains. Production systems create
 units and hazards through explicit structural commands so they receive
 monotonic entity IDs at deterministic flush points.
+Component schemas are declared explicitly in `combat.unit-*-components.ts`.
+`SimUnit` is a flat `UnitSnapshot` alias used only for factory input, initial
+state, survivors, and replay serialization. It is not runtime storage.
+`COMPONENT_FIELDS_ARE_EXHAUSTIVE` makes missing component-to-snapshot mappings a
+compile-time error.
 
-## Migration Status
+## Migration Status: Complete
 
 The ECS implementations currently own status scheduling, hazards, targeting,
 mixed-size melee reservation, positioning, steering, formation cohesion,
@@ -37,8 +42,8 @@ Trigger event selection and every trigger payload use component stores and
 EntityId references.
 Turn order, modifier ticking, target selection, melee reservation, spawning,
 actions, and movement now pass only `EntityId` values between the tick
-orchestrator and ECS runtime. The remaining facade use is limited to structural
-factory input and compatibility snapshots.
+orchestrator and ECS runtime. Flat unit objects exist only at structural factory
+input and immutable output snapshot boundaries.
 Movement and healing read and write component stores directly through
 `EntityId`. Every action family now stays inside the ECS runtime. Unsupported
 weapon configurations fail explicitly
@@ -84,8 +89,7 @@ native ECS kernels. The periodic runtime boundary preserves structural flush,
 EntityId target references, seeded RNG, and local spatial queries without
 importing the unit facade. Global mass shields, EMP, orbital hazards, and actual mass
 healing now operate on canonical components at their contractual trigger ticks.
-Their runtime boundary no longer imports facade identity, position, vitality, or
-status before execution and only mirrors changed vitality/status results back.
+Their runtime boundary reads and writes canonical component stores directly.
 Support auras now use local EntityId queries, ECS combat-tag filters, actual
 shield deltas, and shared status/cleanse kernels. Their runtime boundary rebuilds
 the spatial index from canonical components without importing the unit facade.
@@ -154,9 +158,9 @@ that exercise structural creation use the explicit `CombatWorld` boundary.
 Runtime and phase boundaries no longer mirror component results into unit or
 hazard facade views.
 The production array-based action executor and periodic spawner have been
-deleted. Behavioral tests that still use their historical call shape execute
-the native ECS action system through a test-only harness; this preserves their
-scenario fixtures without retaining a second combat implementation.
+deleted. Behavioral tests construct `CombatWorld` directly and assert canonical
+component state, replay actions, and structural flush results. No test-only
+compatibility executor or legacy oracle remains.
 The legacy array death/spawn utilities and their unreachable conditional weapon
 handlers have also been removed. Death and spawn fixtures now invoke the native
 ECS resolvers.
@@ -190,9 +194,21 @@ component resolution; the engine no longer constructs or passes death callbacks
 across this boundary.
 Initial squads, action spawns, trigger clones, and hazards enter a deterministic
 structural command buffer. Target references and melee
-sectors use `EntityId`; string IDs are written only as a compatibility mirror
-for unported movement/action code. The migration is complete only when the
-remaining hooks use component stores directly and the facade can be removed.
+sectors use `EntityId`; external string IDs remain only in serialized snapshots
+and replay actions. All combat phases, actions, movement, damage, death,
+targeting, hazards, support effects, and termination now use component stores
+directly. There is no alternate object-runtime execution path.
+
+## Completion Invariants
+
+- `createEcsCombatRuntime()` is the only production `CombatRuntime`.
+- ECS systems do not import `SimUnit`; they read typed component stores.
+- `SimUnit` aliases `UnitSnapshot` and is restricted to factories, structural
+  input, initial state, survivors, and replay output.
+- All structural mutations pass through `StructuralCommandBuffer`.
+- All behavioral tests invoke `CombatWorld` or the public simulator directly;
+  no compatibility executor or object-runtime oracle exists.
+- CI must pass the full Vitest suite, TypeScript, and architecture limits.
 
 ## Runtime Creation
 
@@ -227,7 +243,7 @@ interval 10 ticks exactly at 10, 20, and 30 before it expires.
 ## Health And Death
 
 `applyEcsHealing()` records actual restored HP, never requested overheal.
-`resolveEcsUnitDeath()` is the only production death path and receives source
+`resolveEcsDeath()` is the only production death path and receives source
 and cause. It owns resurrection, reassembly, death triggers, kill credit, kill
 triggers, death hazards, replication, and the final replay `die` action.
 The resolver handles one-time resurrection and configured reassembly before
