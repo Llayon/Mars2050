@@ -1,7 +1,7 @@
 # Combat ECS Runtime
 
-Simulation version 2 uses the in-repository ECS runtime by default. The legacy
-array engine remains selectable only for deterministic shadow comparison.
+Simulation version 2 uses the in-repository ECS runtime exclusively. The public
+simulation API no longer exposes an engine selector or legacy array runtime.
 
 ## World Model
 
@@ -29,8 +29,7 @@ single-shot local damage modifiers and simple weapon deaths, terminal outcome, i
 modifier/lifetime ticking, stat-growth and attack-charge accumulation,
 periodic spawner and reassembly ownership,
 typed component/resource stores, deterministic
-entity queries, and snapshot/survivor serialization. Legacy hooks remain frozen
-for shadow tests.
+entity queries, and snapshot/survivor serialization.
 
 Metrics and tick orchestration still consume the temporary `SimUnit` facade.
 Trigger event selection and every trigger payload use component stores and
@@ -242,11 +241,11 @@ before the timeout limit.
 
 ## Verification And Profiling
 
-`compareCombatEngines()` runs legacy and ECS from cloned inputs and compares
-winner, termination, replay actions, and survivors with numeric tolerance.
-Mirror gates swap teams and field coordinates to expose initiative or ID bias.
+Deterministic scenario contracts cover winner, termination, replay actions,
+survivors, and metrics. Mirror gates swap teams and field coordinates to expose
+initiative or ID bias.
 
-With `{ profile: true }`, the result combines legacy and EntityId spatial query
+With `{ profile: true }`, the result combines facade and EntityId spatial query
 counts, total local candidates, and maximum candidates in one query. Targeting, broad weapon shapes,
 auras, hazards, projectile interception, and damage sharing use local queries
 where a spatial hash is available.

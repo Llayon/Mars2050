@@ -142,7 +142,7 @@ export async function executeAttack(
     [],
     [],
     [],
-    { trackMetrics: true, engine: 'ecs', maxTicks: 1000, timeoutPolicy: 'defender_holds', profile: true }
+    { trackMetrics: true, maxTicks: 1000, timeoutPolicy: 'defender_holds', profile: true }
   )
 
   let stolen: Record<string, number> = {}

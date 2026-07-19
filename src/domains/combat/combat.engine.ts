@@ -11,14 +11,12 @@ import type { SpatialQueryProfile } from './spatial-hash'
 import { canAttackControlledTarget } from './combat.control'
 import { getTimeoutOutcome, type BattleOutcome } from './combat.outcome'
 import { CURRENT_SIMULATION_VERSION } from './combat.version'
-import { createLegacyCombatRuntime } from './combat.legacy-runtime'
 import { createEcsCombatRuntime } from './ecs/combat-ecs-runtime'
 export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[], providedSeed?: number, providedObstacles?: Obstacle[], attackerGlobals: string[] = [], defenderGlobals: string[] = [], options: BattleSimulationOptions = {}): BattleResult {
   const seed = providedSeed ?? Date.now(), rng = new PRNG(seed), dt = 0.1
   const maxTicks = normalizeMaxTicks(options.maxTicks)
   const timeoutPolicy = options.timeoutPolicy ?? 'draw'
-  const ecsRuntime = options.engine === 'legacy' ? undefined : createEcsCombatRuntime()
-  const runtime = ecsRuntime ?? createLegacyCombatRuntime()
+  const runtime = createEcsCombatRuntime()
   const units: SimUnit[] = runtime.units, hazards: SimHazard[] = runtime.hazards, activeGlobals: { team: Team, upg: GlobalUpgradeConfig }[] = []
   attackerGlobals.forEach(id => { if (GLOBAL_UPGRADES[id]) activeGlobals.push({ team: 'attacker', upg: GLOBAL_UPGRADES[id] }) })
   defenderGlobals.forEach(id => { if (GLOBAL_UPGRADES[id]) activeGlobals.push({ team: 'defender', upg: GLOBAL_UPGRADES[id] }) })
@@ -31,27 +29,23 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
   const initialState = runtime.snapshotUnits()
   const metrics = options.trackMetrics ? createCombatMetrics(units) : undefined
 
-  if (ecsRuntime) {
-    const resources = ecsRuntime.world.resources
-    resources.set('clock', { tick: 0, dt, maxTicks, timeoutPolicy })
-    resources.set('rng', rng)
-    resources.set('actions', [])
-    resources.set('obstacles', obstacles)
-    resources.set('flowField', flowFieldMap)
-    resources.set('spatial', spatialHash)
-    resources.set('globals', activeGlobals)
-    resources.set('metrics', metrics)
-  }
+  const resources = runtime.world.resources
+  resources.set('clock', { tick: 0, dt, maxTicks, timeoutPolicy })
+  resources.set('rng', rng)
+  resources.set('actions', [])
+  resources.set('obstacles', obstacles)
+  resources.set('flowField', flowFieldMap)
+  resources.set('spatial', spatialHash)
+  resources.set('globals', activeGlobals)
+  resources.set('metrics', metrics)
 
   const logs: BattleTick[] = []
   let tick = 0, resolvedOutcome: BattleOutcome | null = null
 
   while (tick < maxTicks) {
     const actions: BattleAction[] = []
-    if (ecsRuntime) {
-      ecsRuntime.world.resources.require('clock').tick = tick
-      ecsRuntime.world.resources.set('actions', actions)
-    }
+    runtime.world.resources.require('clock').tick = tick
+    runtime.world.resources.set('actions', actions)
     spatialHash.clear();
     for (const unit of units) {
       if (!unit.isDead) spatialHash.insert(unit);
@@ -145,7 +139,7 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
     simulationVersion: CURRENT_SIMULATION_VERSION,
     profile: options.profile ? mergeSpatialProfiles(
       spatialHash.getProfile(),
-      ecsRuntime?.world.resources.require('entitySpatial').getProfile(),
+      runtime.world.resources.require('entitySpatial').getProfile(),
     ) : undefined,
   }
 }

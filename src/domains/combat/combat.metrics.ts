@@ -2,11 +2,10 @@ import type { BattleAction } from './combat.actions'
 import type { SimUnit } from './combat.sim.types'
 import { isMeleeEngagementReady } from './combat.melee-engagement'
 import { collectOverlapMetrics } from './combat.metrics-overlap'
-import type { CombatEngineKind, TimeoutPolicy } from './combat.result'
+import type { TimeoutPolicy } from './combat.result'
 
 export interface BattleSimulationOptions {
   trackMetrics?: boolean
-  engine?: CombatEngineKind
   maxTicks?: number
   timeoutPolicy?: TimeoutPolicy
   profile?: boolean

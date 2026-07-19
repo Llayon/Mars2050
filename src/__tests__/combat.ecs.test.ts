@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest'
-import { compareCombatEngines } from '@/domains/combat/combat.shadow'
 import { simulateBattle } from '@/domains/combat/combat.engine'
 import { cloneRuntimeUnit, createRuntimeUnitFromConfig } from '@/domains/combat/combat.unit-factory'
 import { CombatWorld } from '@/domains/combat/ecs/combat-world'
@@ -10,9 +9,7 @@ import { createPathfindingMap } from '@/domains/combat/combat.pathfinding'
 import { SpatialHash } from '@/domains/combat/spatial-hash'
 import { PRNG } from '@/domains/combat/combat.utils'
 
-const CORE_SHADOW_PRESETS = ['ranged_duel', 'summon_caps', 'control_status', 'qa_primitive_events'] as const
-
-describe('combat ECS shadow engine', () => {
+describe('combat ECS runtime', () => {
   it('stores mutable runtime state in component stores', () => {
     const unit = createRuntimeUnitFromConfig({ id: 'marine', team: 'attacker', type: 'marine', x: 10, y: 20, currentAngle: 0 })
     expect(unit).not.toBeNull()
@@ -217,14 +214,6 @@ describe('combat ECS shadow engine', () => {
     expect(unit.statusEffects[0].duration).toBe(30)
     expect(unit.supportAuras![0].value).toBe(0.35)
   })
-
-  it.each(CORE_SHADOW_PRESETS)('matches legacy replay for %s', id => {
-    const preset = getSimulatorPreset(id)
-    expect(preset).not.toBeNull()
-    const comparison = compareCombatEngines(preset!.attackers, preset!.defenders, 12345, [], [], [], { trackMetrics: true })
-
-    expect(comparison.differences).toEqual([])
-  }, 120000)
 
   it('reports deterministic local-query profiling', () => {
     const preset = getSimulatorPreset('ranged_duel')

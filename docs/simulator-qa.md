@@ -218,8 +218,8 @@ unit upgrade panel.
 
 ## ECS, Timeout, And Spatial Diagnostics
 
-- Simulation version 2 runs the custom ECS by default. Use
-  `compareCombatEngines()` in tests for action-by-action legacy shadow checks.
+- Simulation version 2 runs only the custom ECS. Deterministic scenario and
+  replay contracts guard action order, survivors, termination, and metrics.
 - `/simulator2` keeps the 400-tick `draw` policy. PvP uses 1000 ticks and
   `defender_holds`; every result includes `terminationReason` and `elapsedTicks`.
 - Enable `{ profile: true }` to inspect `queryCount`, `candidateCount`, and

@@ -169,7 +169,6 @@ describe('executeAttack — contract: simulationVersion in snapshot', () => {
       [],
       [],
       expect.objectContaining({
-        engine: 'ecs',
         maxTicks: 1000,
         profile: true,
         timeoutPolicy: 'defender_holds',

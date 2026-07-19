@@ -8,7 +8,3 @@ export const TERMINATION_REASONS = [
   'timeout',
 ] as const
 export type TerminationReason = typeof TERMINATION_REASONS[number]
-
-export const COMBAT_ENGINES = ['legacy', 'ecs'] as const
-export type CombatEngineKind = typeof COMBAT_ENGINES[number]
-
