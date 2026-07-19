@@ -5,7 +5,7 @@ import { CombatWorld } from './combat-world'
 import { createEcsMeleeEngagementState, getEcsBurrowRegenerationEntities, getEcsFieldEffectEntities, getEcsFormationBonusEntities, getEcsGrowthAndChargeEntities, getEcsTerminalOutcome, getEcsTransformModeEntities, getEcsTurnOrder, processEcsHpThresholdTriggers, reserveEcsMeleeSlot, resolveEcsDeath, runActionSystem, runDepenetrationSystem, runEcsBurrowRegenerationSystem, runEcsFieldEffectSystem, runEcsFormationBonusSystem, runEcsGrowthAndChargeSystem, runEcsPeriodicSpawnerSystem, runEcsReassemblySystem, runEcsTransformModeSystem, runHazardSystem, runModifierSystem, runMovementSystem, runStatusSystem, runTargetingSystem, syncEcsTargetRefs } from './systems'
 import { createSquadEntities } from './combat-entity-factory'
 import { EntitySpatialIndex } from './entity-spatial-index'
-import { runEcsControlBeamPhase, runEcsPeriodicAbilityPhase } from './combat-ecs-phase-boundaries'
+import { runEcsControlBeamPhase, runEcsGlobalEffectPhase, runEcsPeriodicAbilityPhase } from './combat-ecs-phase-boundaries'
 
 const MODIFIER_COMPONENTS = ['vitality', 'combat', 'defense', 'statusControl', 'lifecycle'] as const
 const TICK_READ_COMPONENTS = ['identity', 'transform', 'vitality', 'combat', 'weapon', 'targeting', 'statusControl', 'support', 'lifecycle'] as const
@@ -116,6 +116,8 @@ export function createEcsCombatRuntime(): EcsCombatRuntime {
       runEcsReassemblySystem(world, actions)
       world.syncAllComponentsFromStore(['vitality', 'combat', 'statusControl', 'targeting'])
     },
+    runGlobalEffectPhase: (tick, activeGlobals, actions, rng) =>
+      runEcsGlobalEffectPhase(world, tick, activeGlobals, actions, rng),
     runGrowthAndChargePhase(tick, actions): void {
       const entityIds = getEcsGrowthAndChargeEntities(world)
       for (const entityId of entityIds) {

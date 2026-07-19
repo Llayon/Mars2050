@@ -70,7 +70,9 @@ external-ID order. Control beams now acquire locally and own progress, stale
 link breaks, conversion, target-reference clearing, and actual conversion
 healing in ECS. Periodic ability scheduling, target policies, charges, damage,
 status, hazard, shield, healing, spawn, and mark payloads now run through
-native ECS kernels. Successful incendiary hits create seeded napalm hazards
+native ECS kernels. Global mass shields, EMP, orbital hazards, and actual mass
+healing now operate on canonical components at their contractual trigger ticks.
+Successful incendiary hits create seeded napalm hazards
 through the ECS structural buffer after primary on-hit effects; multishot creates
 one puddle per non-intercepted shot. Smoke actions now deploy seeded suppression
 hazards through a native ECS action path without primary damage or movement

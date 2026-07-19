@@ -9,6 +9,22 @@ export function applyEcsHealing(
   requestedAmount: number,
   actions?: BattleAction[],
 ): number {
+  return applyEcsHealingFromSource(
+    world,
+    world.stores.identity.require(sourceId).id,
+    targetId,
+    requestedAmount,
+    actions,
+  )
+}
+
+export function applyEcsHealingFromSource(
+  world: CombatWorld,
+  sourceExternalId: string,
+  targetId: EntityId,
+  requestedAmount: number,
+  actions?: BattleAction[],
+): number {
   const target = world.stores.vitality.require(targetId)
   if (target.isDead || requestedAmount <= 0) return 0
   const before = Math.max(0, Math.min(target.maxHp, target.hp))
@@ -16,7 +32,7 @@ export function applyEcsHealing(
   const actualHeal = target.hp - before
   if (actualHeal <= 0) return 0
   actions?.push({
-    unitId: world.stores.identity.require(sourceId).id,
+    unitId: sourceExternalId,
     type: 'heal',
     targetId: world.stores.identity.require(targetId).id,
     damage: actualHeal,

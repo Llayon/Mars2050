@@ -7,6 +7,7 @@ import type { Obstacle, Team } from './combat.sim.types'
 import type { UnitRow } from './combat.types'
 import type { PRNG } from './combat.utils'
 import type { TriggerContext } from './combat.triggers'
+import type { GlobalUpgradeConfig } from './combat.upgrades'
 
 export interface RuntimeMovementContext {
   dt: number
@@ -45,6 +46,12 @@ export interface CombatRuntime {
   getTurnOrder(): SimUnit[]
   tickModifiers(unit: SimUnit, dt: number, actions: BattleAction[], rng: PRNG): void
   runReassemblyPhase(actions: BattleAction[]): void
+  runGlobalEffectPhase(
+    tick: number,
+    activeGlobals: { team: Team, upg: GlobalUpgradeConfig }[],
+    actions: BattleAction[],
+    rng: PRNG,
+  ): void
   runGrowthAndChargePhase(tick: number, actions: BattleAction[]): void
   runBurrowRegenerationPhase(actions: BattleAction[]): void
   runTransformModePhase(tick: number, actions: BattleAction[]): void

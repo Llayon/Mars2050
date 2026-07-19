@@ -60,12 +60,13 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
     runtime.runReassemblyPhase(actions)
     const triggerContext = processPreActionPrimitives(
       tick,
-      activeGlobals,
       units,
       hazards,
       actions,
       rng,
       {
+        runGlobals: () =>
+          runtime.runGlobalEffectPhase(tick, activeGlobals, actions, rng),
         runGrowthAndCharge: () =>
           runtime.runGrowthAndChargePhase(tick, actions),
         runBurrowRegeneration: () =>

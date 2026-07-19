@@ -24,6 +24,7 @@ import { processFieldEffects } from './combat.field-effects'
 import { processFormationBonuses } from './combat.formation'
 import { processControlBeams } from './combat.control'
 import { processPeriodicAbilities } from './combat.periodic-abilities'
+import { processGlobals } from './combat.globals'
 import type { PRNG } from './combat.utils'
 
 export function createLegacyCombatRuntime(): CombatRuntime {
@@ -62,6 +63,8 @@ export function createLegacyCombatRuntime(): CombatRuntime {
       expired => resolveEnvironmentalDeath(expired, undefined, 'expiration', actions, rng),
     ),
     runReassemblyPhase: actions => processReassemblies(units, actions),
+    runGlobalEffectPhase: (tick, activeGlobals, actions, rng) =>
+      processGlobals(tick, activeGlobals, units, hazards, actions, rng),
     runGrowthAndChargePhase: (tick, actions) =>
       processGrowthAndCharge(tick, units, actions),
     runBurrowRegenerationPhase: actions => processBurrowRegeneration(units, actions),

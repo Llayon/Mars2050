@@ -4,10 +4,14 @@ import type { CombatWorld } from './combat-world'
 import {
   getEcsControlBeamEntities,
   getEcsPeriodicAbilityEntities,
+  hasEcsGlobalEffectAtTick,
   runEcsControlBeamSystem,
+  runEcsGlobalEffectSystem,
   runEcsPeriodicAbilitySystem,
   syncEcsTargetRefs,
 } from './systems'
+import type { GlobalUpgradeConfig } from '../combat.upgrades'
+import type { Team } from '../combat.sim.types'
 
 const CONTROL_COMPONENTS = [
   'identity',
@@ -16,6 +20,24 @@ const CONTROL_COMPONENTS = [
   'combat',
   'targeting',
 ] as const
+
+export function runEcsGlobalEffectPhase(
+  world: CombatWorld,
+  tick: number,
+  activeGlobals: { team: Team, upg: GlobalUpgradeConfig }[],
+  actions: BattleAction[],
+  rng: PRNG,
+): void {
+  if (!hasEcsGlobalEffectAtTick(tick, activeGlobals)) return
+  world.syncAllComponentsToStore([
+    'identity',
+    'transform',
+    'vitality',
+    'statusControl',
+  ])
+  runEcsGlobalEffectSystem(world, tick, activeGlobals, actions, rng)
+  world.syncAllComponentsFromStore(['vitality', 'statusControl'])
+}
 
 export function runEcsControlBeamPhase(
   world: CombatWorld,
