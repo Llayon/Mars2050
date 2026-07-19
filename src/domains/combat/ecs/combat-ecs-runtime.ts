@@ -165,7 +165,6 @@ export function createEcsCombatRuntime(): EcsCombatRuntime {
     },
     runHazardPhase(actions, spatialHash, _rng): void {
       void spatialHash
-      world.syncAllToComponents()
       world.flushStructuralCommands()
       world.reconcileHazards()
       world.syncHazardsToComponents()

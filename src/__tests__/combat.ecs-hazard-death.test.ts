@@ -125,4 +125,40 @@ describe('combat ECS hazard death', () => {
     })
     expect(runtime.world.stores.vitality.require(0).isDead).toBe(true)
   })
+
+  it('does not overwrite canonical unit state from the facade', () => {
+    const target = unit('canonical-target', 'defender', 200)
+    target.hp = 3
+    const mine: SimHazard = {
+      id: 'canonical-mine',
+      team: 'attacker',
+      type: 'mine',
+      x: 200,
+      y: 100,
+      radius: 40,
+      damagePerTick: 5,
+      duration: 5,
+    }
+    const runtime = createEcsCombatRuntime()
+    runtime.units.push(target)
+    runtime.hazards.push(mine)
+    runtime.flushStructuralCommands()
+    target.x = 900
+    target.hp = target.maxHp
+    const actions: BattleAction[] = []
+
+    runtime.runHazardPhase(actions, new SpatialHash(), new PRNG(131))
+
+    const targetId = runtime.world.getEntityId(target.id)!
+    expect(actions).toContainEqual({
+      unitId: 'canonical-mine',
+      type: 'damage',
+      targetId: 'canonical-target',
+      damage: 5,
+      hazardId: 'canonical-mine',
+      damageKind: 'hazard',
+    })
+    expect(runtime.world.stores.vitality.require(targetId).isDead).toBe(true)
+    expect(runtime.units[0].isDead).toBe(true)
+  })
 })
