@@ -66,7 +66,9 @@ jump displacement. Periodic field scheduling and trigger field payloads now
 share one ECS kernel for finite and reducing barriers, hazard cleansing, allied
 status cleansing, and persistent hazards. Adjacency formation bonuses now use
 local EntityId spatial queries and the shared ECS status kernel in stable
-external-ID order. Successful incendiary hits create seeded napalm hazards
+external-ID order. Control beams now acquire locally and own progress, stale
+link breaks, conversion, target-reference clearing, and actual conversion
+healing in ECS. Successful incendiary hits create seeded napalm hazards
 through the ECS structural buffer after primary on-hit effects; multishot creates
 one puddle per non-intercepted shot. Smoke actions now deploy seeded suppression
 hazards through a native ECS action path without primary damage or movement

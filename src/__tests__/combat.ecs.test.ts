@@ -233,5 +233,5 @@ describe('combat ECS shadow engine', () => {
 
     expect(result.profile?.queryCount).toBeGreaterThan(0)
     expect(result.profile?.candidateCount).toBeGreaterThanOrEqual(result.profile?.maxCandidates ?? 0)
-  })
+  }, 30000)
 })

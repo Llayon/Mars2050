@@ -1,6 +1,5 @@
 import type { BattleAction } from './combat.actions'
 import { processSupportAuras } from './combat.auras'
-import { processControlBeams } from './combat.control'
 import { processGlobals } from './combat.globals'
 import { processPeriodicAbilities } from './combat.periodic-abilities'
 import { handleDeath } from './combat.systems.utils'
@@ -16,6 +15,7 @@ export interface PreActionRuntimePhases {
   runTransformModes(): void
   runFieldEffects(): void
   runFormationBonuses(): void
+  runControlBeams(): void
 }
 
 export function processPreActionPrimitives(
@@ -36,7 +36,7 @@ export function processPreActionPrimitives(
   runtimePhases.runTransformModes()
   runtimePhases.runFieldEffects()
   runtimePhases.runFormationBonuses()
-  processControlBeams(units, actions)
+  runtimePhases.runControlBeams()
   processPeriodicAbilities(tick, triggerContext)
   return triggerContext
 }

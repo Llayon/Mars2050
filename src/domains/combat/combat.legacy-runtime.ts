@@ -22,6 +22,7 @@ import { processGrowthAndCharge } from './combat.growth-charge'
 import { processTransformModes } from './combat.transform'
 import { processFieldEffects } from './combat.field-effects'
 import { processFormationBonuses } from './combat.formation'
+import { processControlBeams } from './combat.control'
 import type { PRNG } from './combat.utils'
 
 export function createLegacyCombatRuntime(): CombatRuntime {
@@ -68,6 +69,7 @@ export function createLegacyCombatRuntime(): CombatRuntime {
       processFieldEffects(tick, units, hazards, actions),
     runFormationBonusPhase: (tick, actions) =>
       processFormationBonuses(tick, units, actions),
+    runControlBeamPhase: actions => processControlBeams(units, actions),
     runStatusPhase(actions: BattleAction[], rng: PRNG): void {
       for (const unit of units) {
         if (!unit.isDead) {
