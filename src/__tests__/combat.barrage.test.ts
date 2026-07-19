@@ -2,12 +2,13 @@ import { describe, expect, it } from 'vitest'
 import type { BattleAction } from '@/domains/combat/combat.actions'
 import { getBarrageImpacts, getBarrageTargets } from '@/domains/combat/combat.attack-geometry'
 import { getPositioningDecision } from '@/domains/combat/combat.positioning'
-import { actionSystem } from '@/domains/combat/combat.systems'
+import { actionSystem } from '@/__tests__/helpers/combat-ecs-action-harness'
 import type { SimHazard, SimUnit, Team } from '@/domains/combat/combat.types'
+import { createRuntimeUnitFromConfig } from '@/domains/combat/combat.unit-factory'
 import { PRNG } from '@/domains/combat/combat.utils'
 
 function makeUnit(overrides: Partial<SimUnit> & { id: string; team: Team; type?: string }): SimUnit {
-  return {
+  const base: SimUnit = {
     type: 'marine',
     hp: 500,
     maxHp: 500,
@@ -33,11 +34,28 @@ function makeUnit(overrides: Partial<SimUnit> & { id: string; team: Team; type?:
     velocity: { x: 0, y: 0 },
     ...overrides,
   }
+  return Object.assign(
+    createRuntimeUnitFromConfig({
+      id: base.id,
+      team: base.team,
+      type: base.type,
+      x: base.x,
+      y: base.y,
+      currentAngle: base.currentAngle,
+    }) ?? base,
+    base,
+  )
 }
 
 describe('combat barrage weapons', () => {
   it('creates deterministic artillery impacts around the primary target', () => {
-    const attacker = makeUnit({ id: 'artillery', team: 'attacker', type: 'artillery_crawler' })
+    const attacker = makeUnit({
+      id: 'artillery',
+      team: 'attacker',
+      type: 'artillery_crawler',
+      stanceConfig: undefined,
+      stanceMode: undefined,
+    })
     const primary = makeUnit({ id: 'primary', team: 'defender', x: 220, y: 0, size: 'S' })
 
     const impacts = getBarrageImpacts(attacker, primary)
@@ -58,7 +76,13 @@ describe('combat barrage weapons', () => {
   })
 
   it('applies barrage impacts through the action system', () => {
-    const attacker = makeUnit({ id: 'artillery', team: 'attacker', type: 'artillery_crawler' })
+    const attacker = makeUnit({
+      id: 'artillery',
+      team: 'attacker',
+      type: 'artillery_crawler',
+      stanceConfig: undefined,
+      stanceMode: undefined,
+    })
     const primary = makeUnit({ id: 'primary', team: 'defender', x: 220, y: 0, size: 'S' })
     const side = makeUnit({ id: 'side', team: 'defender', x: 250, y: 0, size: 'S' })
     const actions: BattleAction[] = []

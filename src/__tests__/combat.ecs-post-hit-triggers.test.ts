@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { applyCombatDamage } from '@/domains/combat/combat.damage'
-import { actionSystem } from '@/domains/combat/combat.systems'
+import { actionSystem } from '@/__tests__/helpers/combat-ecs-action-harness'
 import { recordAttackTrigger } from '@/domains/combat/combat.triggers'
 import type { SimUnit } from '@/domains/combat/combat.sim.types'
 import { createRuntimeUnitFromConfig } from '@/domains/combat/combat.unit-factory'

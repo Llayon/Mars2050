@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { BattleAction } from '@/domains/combat/combat.actions'
 import { applyKnockbackOnHit, applyPullOnHit } from '@/domains/combat/combat.displacement'
 import type { SimHazard, SimUnit, Team } from '@/domains/combat/combat.types'
-import { actionSystem } from '@/domains/combat/combat.systems'
+import { actionSystem } from '@/__tests__/helpers/combat-ecs-action-harness'
 import { PRNG } from '@/domains/combat/combat.utils'
 
 function makeUnit(overrides: Partial<SimUnit> & { id: string; team: Team }): SimUnit {

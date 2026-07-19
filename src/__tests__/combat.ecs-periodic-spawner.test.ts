@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
 import type { BattleAction } from '@/domains/combat/combat.actions'
-import { processSpawnerLogic } from '@/domains/combat/combat.spawner'
 import type { SimUnit } from '@/domains/combat/combat.sim.types'
 import { createRuntimeUnitFromConfig } from '@/domains/combat/combat.unit-factory'
 import { PRNG } from '@/domains/combat/combat.utils'
@@ -26,23 +25,13 @@ function context(seed: number) {
   return { rng: new PRNG(seed), tick: 0 }
 }
 
-function runParity(units: SimUnit[], seed: number) {
-  const legacyUnits = structuredClone(units)
+function runSpawner(units: SimUnit[], seed: number) {
   const runtime = createEcsCombatRuntime()
   runtime.world.roster.push(...structuredClone(units))
   runtime.flushStructuralCommands()
   const world = runtime.world
-  const legacyActions: Parameters<typeof processSpawnerLogic>[4] = []
   const nativeActions: BattleAction[] = []
 
-  processSpawnerLogic(
-    legacyUnits[0],
-    legacyUnits[legacyUnits.length - 1],
-    legacyUnits,
-    [],
-    legacyActions,
-    new PRNG(seed),
-  )
   runtime.processSpawner(
     0,
     units.length - 1,
@@ -50,7 +39,7 @@ function runParity(units: SimUnit[], seed: number) {
     context(seed),
   )
 
-  return { legacyUnits, world, legacyActions, nativeActions }
+  return { world, nativeActions }
 }
 
 describe('combat ECS periodic spawner', () => {
@@ -59,11 +48,11 @@ describe('combat ECS periodic spawner', () => {
     source.spawnerConfig = { unitType: 'scout_drone', interval: 3, timer: 2 }
     const target = unit('target', 'defender', 'marine', 500)
 
-    const result = runParity([source, target], 11)
+    const result = runSpawner([source, target], 11)
 
-    expect(result.nativeActions).toEqual(result.legacyActions)
+    expect(result.nativeActions).toEqual([])
     expect(result.world.stores.lifecycle.require(0).spawnerConfig)
-      .toEqual(result.legacyUnits[0].spawnerConfig)
+      .toEqual({ unitType: 'scout_drone', interval: 3, timer: 1 })
     expect(result.world.roster).toHaveLength(2)
   })
 
@@ -73,16 +62,25 @@ describe('combat ECS periodic spawner', () => {
     source.spawnerConfig = { unitType: 'scout_drone', interval: 4, timer: 1 }
     const target = unit('target', 'defender', 'marine', 500)
 
-    const result = runParity([source, target], 17)
+    const result = runSpawner([source, target], 17)
 
-    expect(result.nativeActions).toEqual(result.legacyActions)
-    expect(result.world.roster[2]).toEqual(result.legacyUnits[2])
+    expect(result.nativeActions).toEqual([expect.objectContaining({
+      unitId: 'source',
+      type: 'spawn',
+      spawnType: 'scout_drone',
+      spawnTeam: 'attacker',
+    })])
+    expect(result.world.roster[2]).toMatchObject({
+      type: 'scout_drone',
+      summonOwnerId: 'source',
+    })
     expect(result.world.stores.combat.require(0).actionCooldown).toBe(7)
     expect(result.world.stores.lifecycle.require(0).spawnerConfig?.timer).toBe(4)
     expect(result.world.getEntityId(result.world.roster[2].id)).toBeUndefined()
 
     result.world.flushStructuralCommands()
-    expect(result.world.snapshot()).toEqual(result.legacyUnits)
+    expect(result.world.snapshot()).toHaveLength(3)
+    expect(result.world.snapshotEntity(2)).toEqual(result.world.roster[2])
   })
 
   it('matches cap blocking without replacing the primary action cooldown', () => {
@@ -94,9 +92,8 @@ describe('combat ECS periodic spawner', () => {
     summon.summonOwnerId = 'source'
     const target = unit('target', 'defender', 'marine', 500)
 
-    const result = runParity([source, summon, target], 23)
+    const result = runSpawner([source, summon, target], 23)
 
-    expect(result.nativeActions).toEqual(result.legacyActions)
     expect(result.nativeActions).toEqual([
       { unitId: 'source', type: 'spawn_blocked', value: 1 },
     ])

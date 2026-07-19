@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { applyCombatDamage } from '@/domains/combat/combat.damage'
 import { applyStatus } from '@/domains/combat/combat.status'
-import { actionSystem } from '@/domains/combat/combat.systems'
+import { actionSystem } from '@/__tests__/helpers/combat-ecs-action-harness'
 import type { BattleAction, SimHazard, SimUnit, Team } from '@/domains/combat/combat.types'
 import { PRNG } from '@/domains/combat/combat.utils'
 

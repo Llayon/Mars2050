@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { actionSystem } from '@/domains/combat/combat.systems'
+import { actionSystem } from '@/__tests__/helpers/combat-ecs-action-harness'
 import type { BattleAction, SimUnit, Team } from '@/domains/combat/combat.types'
 import { PRNG } from '@/domains/combat/combat.utils'
 

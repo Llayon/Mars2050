@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import type { BattleAction } from '@/domains/combat/combat.actions'
-import { tickModifiersSystem } from '@/domains/combat/combat.systems'
 import { processSpawnAction } from '@/domains/combat/combat.systems.utils'
 import type { SimHazard, SimUnit, Team } from '@/domains/combat/combat.types'
 import { PRNG } from '@/domains/combat/combat.utils'
+import { createEcsCombatRuntime } from '@/domains/combat/ecs/combat-ecs-runtime'
 
 function makeUnit(overrides: Partial<SimUnit> & { id: string; team: Team }): SimUnit {
   return {
@@ -73,10 +73,13 @@ describe('combat decoys', () => {
       temporaryDuration: 1,
     })
     const actions: BattleAction[] = []
+    const runtime = createEcsCombatRuntime()
+    runtime.world.roster.push(decoy)
+    runtime.flushStructuralCommands()
 
-    tickModifiersSystem(decoy, 0.1, actions)
+    runtime.tickModifiers(0, 0.1, actions, new PRNG(1))
 
-    expect(decoy.isDead).toBe(true)
+    expect(runtime.world.stores.vitality.require(0).isDead).toBe(true)
     expect(actions).toEqual([{ unitId: 'decoy', type: 'die', cause: 'expiration' }])
   })
 })

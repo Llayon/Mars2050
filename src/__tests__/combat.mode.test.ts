@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { actionSystem } from '@/domains/combat/combat.systems'
+import { actionSystem } from '@/__tests__/helpers/combat-ecs-action-harness'
 import { movementSystem } from '@/domains/combat/combat.movement'
 import { createPathfindingMap } from '@/domains/combat/combat.pathfinding'
 import { simulateBattle } from '@/domains/combat/combat.engine'

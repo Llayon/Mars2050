@@ -2,11 +2,12 @@ import { describe, expect, it } from 'vitest'
 import type { BattleAction } from '@/domains/combat/combat.actions'
 import { getLinePierceTargets } from '@/domains/combat/combat.attack-geometry'
 import type { SimHazard, SimUnit, Team } from '@/domains/combat/combat.types'
-import { actionSystem } from '@/domains/combat/combat.systems'
+import { actionSystem } from '@/__tests__/helpers/combat-ecs-action-harness'
+import { createRuntimeUnitFromConfig } from '@/domains/combat/combat.unit-factory'
 import { PRNG } from '@/domains/combat/combat.utils'
 
 function makeUnit(overrides: Partial<SimUnit> & { id: string; team: Team }): SimUnit {
-  return {
+  const base: SimUnit = {
     type: 'marine',
     hp: 100,
     maxHp: 100,
@@ -32,6 +33,17 @@ function makeUnit(overrides: Partial<SimUnit> & { id: string; team: Team }): Sim
     velocity: { x: 0, y: 0 },
     ...overrides,
   }
+  return Object.assign(
+    createRuntimeUnitFromConfig({
+      id: base.id,
+      team: base.team,
+      type: base.type,
+      x: base.x,
+      y: base.y,
+      currentAngle: base.currentAngle,
+    }) ?? base,
+    base,
+  )
 }
 
 describe('combat.attack-geometry', () => {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { actionSystem } from '@/domains/combat/combat.systems'
+import { actionSystem } from '@/__tests__/helpers/combat-ecs-action-harness'
 import { createRuntimeUnitFromConfig } from '@/domains/combat/combat.unit-factory'
 import type { SimUnit } from '@/domains/combat/combat.sim.types'
 import { PRNG } from '@/domains/combat/combat.utils'

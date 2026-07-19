@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { BattleAction } from '@/domains/combat/combat.actions'
 import type { SimHazard, SimUnit, Team } from '@/domains/combat/combat.types'
 import { getBeamTargets, getConeTargets } from '@/domains/combat/combat.attack-geometry'
-import { actionSystem } from '@/domains/combat/combat.systems'
+import { actionSystem } from '@/__tests__/helpers/combat-ecs-action-harness'
 import { hasStatus } from '@/domains/combat/combat.status'
 import { PRNG } from '@/domains/combat/combat.utils'
 

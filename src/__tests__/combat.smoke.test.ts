@@ -4,7 +4,7 @@ import { applyCombatDamage } from '@/domains/combat/combat.damage'
 import { processHazards } from '@/domains/combat/combat.hazards'
 import { tryDeploySmoke } from '@/domains/combat/combat.smoke'
 import { getEffectiveActionRange } from '@/domains/combat/combat.status'
-import { actionSystem } from '@/domains/combat/combat.systems'
+import { actionSystem } from '@/__tests__/helpers/combat-ecs-action-harness'
 import type { SimHazard, SimUnit, Team } from '@/domains/combat/combat.types'
 import { PRNG } from '@/domains/combat/combat.utils'
 

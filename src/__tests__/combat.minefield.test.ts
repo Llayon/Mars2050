@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { BattleAction } from '@/domains/combat/combat.actions'
 import { processHazards } from '@/domains/combat/combat.hazards'
 import { tryDeployMine } from '@/domains/combat/combat.minefield'
-import { actionSystem } from '@/domains/combat/combat.systems'
+import { actionSystem } from '@/__tests__/helpers/combat-ecs-action-harness'
 import type { SimHazard, SimUnit, Team } from '@/domains/combat/combat.types'
 import { PRNG } from '@/domains/combat/combat.utils'
 

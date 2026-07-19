@@ -14,11 +14,11 @@ reused during a battle. Runtime data is exposed through grouped component stores
 - movement and status/control;
 - support, lifecycle, and mechanics.
 
-Component stores are canonical while ECS phases execute. Unported hot loops read
-a temporary plain `SimUnit` output facade, mirrored explicitly from ECS phase
-results; no facade-to-component synchronization API remains. New entities must
+Component stores are canonical while ECS phases execute. No facade-to-component
+or component-to-facade synchronization API remains. New entities must currently
 enter through `world.roster.push()` so they receive a monotonic entity ID and
-components.
+components; replacing this structural compatibility boundary is the next
+migration stage.
 
 ## Migration Status
 
@@ -38,12 +38,11 @@ Trigger event selection and every trigger payload use component stores and
 EntityId references.
 Turn order, modifier ticking, target selection, melee reservation, spawning,
 actions, and movement now pass only `EntityId` values between the tick
-orchestrator and ECS runtime. The remaining facade use is limited to
-replay-facing mirrors and structural factory input.
+orchestrator and ECS runtime. The remaining facade use is limited to structural
+factory input and compatibility snapshots.
 Movement and healing read and write component stores directly through
-`EntityId`; after each move, only the changed movement components are written
-back to the facade for those unported consumers. Every action family now stays
-inside the ECS runtime. Unsupported weapon configurations fail explicitly
+`EntityId`. Every action family now stays inside the ECS runtime. Unsupported
+weapon configurations fail explicitly
 instead of delegating to the legacy weapon pipeline. The native damage path handles armor, supported combat
 statuses, rank modifiers, movement reduction, target marks, flat block, shields,
 reactive armor, execute, lifesteal, finite/reduction barriers, projectile
@@ -68,8 +67,8 @@ order before burrow regeneration. Battle-start and HP-threshold transform modes
 now mutate transform, vitality, combat, weapon, and status components natively
 in stable external-ID order, including one-time role swaps, flight changes, and
 jump displacement. Growth/charge, burrow regeneration, and transform runtime
-boundaries no longer copy facade state into components; they only mirror native
-results back for unported consumers. Periodic field scheduling and trigger field payloads now
+boundaries no longer copy facade state into components or mirror native results
+back to facades. Periodic field scheduling and trigger field payloads now
 share one ECS kernel for finite and reducing barriers, hazard cleansing, allied
 status cleansing, and persistent hazards. The field runtime boundary reads
 canonical transform, support, vitality, status, and targeting stores without a
@@ -155,6 +154,10 @@ the legacy object-based spatial hash.
 that exercise structural creation use the explicit `CombatWorld` boundary.
 Runtime and phase boundaries no longer mirror component results into unit or
 hazard facade views.
+The production array-based action executor and periodic spawner have been
+deleted. Behavioral tests that still use their historical call shape execute
+the native ECS action system through a test-only harness; this preserves their
+scenario fixtures without retaining a second combat implementation.
 ECS action, damage, death, trigger, displacement, and movement systems likewise
 write only component stores; all component-to-facade synchronization APIs have
 been removed from `CombatWorld`.
