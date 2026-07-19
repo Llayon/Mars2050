@@ -2,12 +2,14 @@ import { describe, expect, it } from 'vitest'
 import type { BattleAction } from '@/domains/combat/combat.actions'
 import { UNIT_TYPES } from '@/domains/combat/combat.config'
 import { prepareRuntimePrimitives } from '@/domains/combat/combat.runtime-primitives'
-import { actionSystem } from '@/__tests__/helpers/combat-ecs-action-harness'
 import type { UpgradeConfig } from '@/domains/combat/combat.upgrades'
 import { UPGRADES } from '@/domains/combat/combat.upgrades'
 import { getRuntimePrimitiveStats } from '@/domains/combat/combat.upgrade-primitives'
-import type { SimHazard, SimUnit, Team } from '@/domains/combat/combat.types'
+import type { SimUnit, Team } from '@/domains/combat/combat.types'
 import { PRNG } from '@/domains/combat/combat.utils'
+import { CombatWorld } from '@/domains/combat/ecs/combat-world'
+import { EntitySpatialIndex } from '@/domains/combat/ecs/entity-spatial-index'
+import { runActionSystem } from '@/domains/combat/ecs/systems'
 
 function makeUnit(overrides: Partial<SimUnit> & { id: string; team: Team }): SimUnit {
   return {
@@ -48,6 +50,18 @@ function withUpgrade(id: string, upgrade: UpgradeConfig, run: () => void): void 
   }
 }
 
+function runAction(units: SimUnit[], actions: BattleAction[]) {
+  const world = new CombatWorld(units)
+  const spatial = new EntitySpatialIndex()
+  spatial.rebuild(world)
+  world.resources.set('entitySpatial', spatial)
+  const result = runActionSystem(world, 0, 1, actions, {
+    rng: new PRNG(1),
+    tick: 0,
+  })
+  return { acted: result.acted, world }
+}
+
 describe('weapon shape upgrade modifiers', () => {
   it('adds beam attack geometry through upgrade runtime stats', () => {
     withUpgrade('test_beam_shape', { id: 'test_beam_shape', name: 'Beam', description: 'test', cost: 0, allowedUnits: ['marine'], modifiers: { beamAttack: { width: 18, damageMultiplier: 0.5, maxTargets: 2 } } }, () => {
@@ -57,12 +71,12 @@ describe('weapon shape upgrade modifiers', () => {
       const primary = makeUnit({ id: 'primary', team: 'defender', x: 80 })
       const secondary = makeUnit({ id: 'secondary', team: 'defender', x: 130, y: 8 })
       const actions: BattleAction[] = []
-      const hazards: SimHazard[] = []
 
-      expect(actionSystem(attacker, primary, [attacker, primary, secondary], hazards, actions, new PRNG(1))).toBe(true)
+      const result = runAction([attacker, primary, secondary], actions)
 
-      expect(primary.hp).toBe(80)
-      expect(secondary.hp).toBe(90)
+      expect(result.acted).toBe(true)
+      expect(result.world.stores.vitality.require(1).hp).toBe(80)
+      expect(result.world.stores.vitality.require(2).hp).toBe(90)
       expect(actions).toContainEqual({ unitId: 'beam', type: 'beam_tick', targetId: 'primary', radius: 200, value: 0.5 })
     })
   })
@@ -75,12 +89,12 @@ describe('weapon shape upgrade modifiers', () => {
       const primary = makeUnit({ id: 'primary', team: 'defender', x: 80 })
       const side = makeUnit({ id: 'side', team: 'defender', x: 120, y: 20 })
       const actions: BattleAction[] = []
-      const hazards: SimHazard[] = []
 
-      expect(actionSystem(attacker, primary, [attacker, primary, side], hazards, actions, new PRNG(1))).toBe(true)
+      const result = runAction([attacker, primary, side], actions)
 
-      expect(primary.hp).toBe(80)
-      expect(side.hp).toBe(93)
+      expect(result.acted).toBe(true)
+      expect(result.world.stores.vitality.require(1).hp).toBe(80)
+      expect(result.world.stores.vitality.require(2).hp).toBe(93)
       expect(actions).toContainEqual({ unitId: 'side-gun', type: 'side_weapon_attack', targetId: 'side' })
     })
   })

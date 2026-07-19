@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest'
-import { actionSystem } from '@/__tests__/helpers/combat-ecs-action-harness'
 import { createRuntimeUnitFromConfig } from '@/domains/combat/combat.unit-factory'
 import type { SimUnit } from '@/domains/combat/combat.sim.types'
 import { PRNG } from '@/domains/combat/combat.utils'
@@ -32,41 +31,24 @@ function createWorld(units: SimUnit[]): CombatWorld {
 }
 
 describe('combat ECS attack puddle action', () => {
-  it('matches seeded napalm creation for every multishot hit', () => {
+  it('creates deterministic napalm for every multishot hit', () => {
     const attacker = unit('buggy', 'attacker', 'missile_buggy', 100)
     const target = unit('target', 'defender', 'marine', 300)
     attacker.leavesPuddle = true
     attacker.multishot = 2
     target.hp = target.maxHp = 1000
-    const legacyUnits = structuredClone([attacker, target])
-    const legacyHazards: Parameters<typeof actionSystem>[3] = []
     const world = createWorld([attacker, target])
-    const legacyActions: Parameters<typeof actionSystem>[4] = []
     const nativeActions: Parameters<typeof runActionSystem>[3] = []
 
-    const legacyActed = actionSystem(
-      legacyUnits[0],
-      legacyUnits[1],
-      legacyUnits,
-      legacyHazards,
-      legacyActions,
-      new PRNG(7),
-      0,
-    )
     expect(canUseSimpleSingleDamage(world, 0, 1)).toBe(true)
     const nativeResult = runActionSystem(world, 0, 1, nativeActions, {
       rng: new PRNG(7),
       tick: 0,
     })
 
-    expect(nativeResult).toEqual({
-      acted: legacyActed,
-      actorSynchronized: true,
-    })
-    expect(nativeActions).toEqual(legacyActions)
+    expect(nativeResult).toEqual({ acted: true, actorSynchronized: true })
     expect(nativeActions.some(action => action.type === 'hazard_spawn')).toBe(false)
     world.flushStructuralCommands()
-    expect(world.snapshotHazards()).toEqual(legacyHazards)
     expect(world.snapshotHazards()).toHaveLength(2)
     expect(world.snapshotHazards()[0]).toMatchObject({
       team: 'attacker',

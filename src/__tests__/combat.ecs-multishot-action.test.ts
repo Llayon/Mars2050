@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest'
-import { actionSystem } from '@/__tests__/helpers/combat-ecs-action-harness'
 import { createRuntimeUnitFromConfig } from '@/domains/combat/combat.unit-factory'
 import type { SimUnit } from '@/domains/combat/combat.sim.types'
 import { PRNG } from '@/domains/combat/combat.utils'
@@ -32,35 +31,16 @@ function createWorld(units: SimUnit[]): CombatWorld {
 }
 
 function compareAction(units: SimUnit[]) {
-  const legacyUnits = structuredClone(units)
   const world = createWorld(units)
-  const legacyActions: Parameters<typeof actionSystem>[4] = []
   const nativeActions: Parameters<typeof runActionSystem>[3] = []
-  const legacyActed = actionSystem(
-    legacyUnits[0],
-    legacyUnits[1],
-    legacyUnits,
-    [],
-    legacyActions,
-    new PRNG(1),
-    0,
-  )
   expect(canUseSimpleSingleDamage(world, 0, 1)).toBe(true)
   const nativeResult = runActionSystem(world, 0, 1, nativeActions, {
     rng: new PRNG(1),
     tick: 0,
   })
-  expect(nativeResult).toEqual({
-    acted: legacyActed,
-    actorSynchronized: true,
-  })
-  expect(nativeActions).toEqual(legacyActions)
-  expect(world.stores.vitality.require(1).hp).toBe(legacyUnits[1].hp)
-  expect(world.stores.vitality.require(1).isDead).toBe(legacyUnits[1].isDead)
-  expect(world.stores.combat.require(0).actionCooldown).toBe(
-    legacyUnits[0].actionCooldown,
-  )
-  return nativeActions
+  expect(nativeResult).toEqual({ acted: true, actorSynchronized: true })
+  expect(world.stores.combat.require(0).actionCooldown).toBeGreaterThan(0)
+  return { actions: nativeActions, world }
 }
 
 describe('combat ECS multishot action', () => {
@@ -71,10 +51,14 @@ describe('combat ECS multishot action', () => {
     sniper.attack = 51
     target.hp = target.maxHp = 200
 
-    const actions = compareAction([sniper, target])
+    const { actions, world } = compareAction([sniper, target])
 
     expect(actions.filter(action => action.type === 'attack')).toHaveLength(2)
     expect(actions.filter(action => action.type === 'damage')).toHaveLength(2)
+    expect(world.stores.vitality.require(1)).toMatchObject({
+      hp: 102,
+      isDead: false,
+    })
   })
 
   it('stops doubleshot after the first lethal hit', () => {
@@ -83,9 +67,10 @@ describe('combat ECS multishot action', () => {
     sniper.multishot = 2
     sniper.attack = 51
 
-    const actions = compareAction([sniper, target])
+    const { actions, world } = compareAction([sniper, target])
 
     expect(actions.filter(action => action.type === 'attack')).toHaveLength(1)
     expect(actions.filter(action => action.type === 'die')).toHaveLength(1)
+    expect(world.stores.vitality.require(1).isDead).toBe(true)
   })
 })

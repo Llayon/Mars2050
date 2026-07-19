@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { resolveDeathInEcs } from '@/__tests__/helpers/combat-ecs-death-harness'
 import type { BattleAction } from '@/domains/combat/combat.actions'
-import type { SimHazard, SimUnit, Team } from '@/domains/combat/combat.types'
+import type { SimUnit, Team } from '@/domains/combat/combat.types'
 import { PRNG } from '@/domains/combat/combat.utils'
+import { CombatWorld } from '@/domains/combat/ecs/combat-world'
+import { resolveEcsDeath } from '@/domains/combat/ecs/systems'
 
 function makeUnit(overrides: Partial<SimUnit> & { id: string; team: Team; type?: string }): SimUnit {
   return {
@@ -38,13 +39,14 @@ describe('combat on-kill effects', () => {
     const killer = makeUnit({ id: 'ghost', team: 'attacker', type: 'stealth_operative', hp: 50, actionCooldown: 18 })
     const victim = makeUnit({ id: 'victim', team: 'defender', hp: 0, x: 80 })
     const actions: BattleAction[] = []
-    const hazards: SimHazard[] = []
+    const world = new CombatWorld([killer, victim])
+    world.resources.set('rng', new PRNG(1))
 
-    resolveDeathInEcs(victim, killer, [killer, victim], actions, hazards, new PRNG(1))
+    resolveEcsDeath(world, 1, 0, actions, 'weapon')
 
-    expect(victim.isDead).toBe(true)
-    expect(killer.actionCooldown).toBe(0)
-    expect(killer.hp).toBe(75)
+    expect(world.stores.vitality.require(1).isDead).toBe(true)
+    expect(world.stores.combat.require(0).actionCooldown).toBe(0)
+    expect(world.stores.vitality.require(0).hp).toBe(75)
     expect(actions).toContainEqual({ unitId: 'ghost', type: 'on_kill', targetId: 'victim' })
     expect(actions).toContainEqual({ unitId: 'ghost', type: 'heal', targetId: 'ghost', damage: 25 })
   })
@@ -53,13 +55,13 @@ describe('combat on-kill effects', () => {
     const killer = makeUnit({ id: 'ghost', team: 'attacker', type: 'stealth_operative', hp: 50, actionCooldown: 18 })
     const victim = makeUnit({ id: 'victim', team: 'defender', hp: 0, maxHp: 80, resurrectOnce: true })
     const actions: BattleAction[] = []
-    const hazards: SimHazard[] = []
+    const world = new CombatWorld([killer, victim])
+    world.resources.set('rng', new PRNG(1))
 
-    resolveDeathInEcs(victim, killer, [killer, victim], actions, hazards, new PRNG(1))
+    resolveEcsDeath(world, 1, 0, actions, 'weapon')
 
-    expect(victim.isDead).toBe(false)
-    expect(victim.hp).toBe(80)
-    expect(killer.actionCooldown).toBe(18)
+    expect(world.stores.vitality.require(1)).toMatchObject({ isDead: false, hp: 80 })
+    expect(world.stores.combat.require(0).actionCooldown).toBe(18)
     expect(actions.some(action => action.type === 'on_kill')).toBe(false)
   })
 
@@ -67,12 +69,13 @@ describe('combat on-kill effects', () => {
     const killer = makeUnit({ id: 'marine', team: 'attacker', type: 'marine', hp: 50, actionCooldown: 8 })
     const victim = makeUnit({ id: 'victim', team: 'defender', hp: 0 })
     const actions: BattleAction[] = []
-    const hazards: SimHazard[] = []
+    const world = new CombatWorld([killer, victim])
+    world.resources.set('rng', new PRNG(1))
 
-    resolveDeathInEcs(victim, killer, [killer, victim], actions, hazards, new PRNG(1))
+    resolveEcsDeath(world, 1, 0, actions, 'weapon')
 
-    expect(killer.actionCooldown).toBe(8)
-    expect(killer.hp).toBe(50)
+    expect(world.stores.combat.require(0).actionCooldown).toBe(8)
+    expect(world.stores.vitality.require(0).hp).toBe(50)
     expect(actions.some(action => action.type === 'on_kill')).toBe(false)
   })
 })

@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest'
-import { actionSystem } from '@/__tests__/helpers/combat-ecs-action-harness'
 import { createRuntimeUnitFromConfig } from '@/domains/combat/combat.unit-factory'
 import type { SimUnit } from '@/domains/combat/combat.sim.types'
 import { PRNG } from '@/domains/combat/combat.utils'
@@ -26,27 +25,13 @@ function createWorld(units: SimUnit[]): CombatWorld {
   return world
 }
 
-function runStep(world: CombatWorld, legacyUnits: SimUnit[]) {
-  const legacyActions: Parameters<typeof actionSystem>[4] = []
+function runStep(world: CombatWorld, acted = true) {
   const nativeActions: Parameters<typeof runActionSystem>[3] = []
-  const legacyActed = actionSystem(
-    legacyUnits[0],
-    legacyUnits[1],
-    legacyUnits,
-    [],
-    legacyActions,
-    new PRNG(1),
-    0,
-  )
   const nativeResult = runActionSystem(world, 0, 1, nativeActions, {
     rng: new PRNG(1),
     tick: 0,
   })
-  expect(nativeResult).toEqual({
-    acted: legacyActed,
-    actorSynchronized: legacyActed,
-  })
-  expect(nativeActions).toEqual(legacyActions)
+  expect(nativeResult).toEqual({ acted, actorSynchronized: acted })
   return nativeActions
 }
 
@@ -58,11 +43,10 @@ describe('combat ECS artillery action setup', () => {
     primary.hp = primary.maxHp = 1000
     nearby.hp = nearby.maxHp = 1000
     const units = [artillery, primary, nearby]
-    const legacyUnits = structuredClone(units)
     const world = createWorld(units)
 
     expect(canUseSimpleSingleDamage(world, 0, 1)).toBe(true)
-    const deployActions = runStep(world, legacyUnits)
+    const deployActions = runStep(world)
 
     expect(deployActions).toEqual([
       { unitId: 'artillery', type: 'stance_change', stanceMode: 'deployed' },
@@ -70,7 +54,7 @@ describe('combat ECS artillery action setup', () => {
     expect(world.stores.movement.require(0).stanceMode).toBe('deployed')
     expect(world.stores.combat.require(0).actionCooldown).toBe(0)
 
-    const attackActions = runStep(world, legacyUnits)
+    const attackActions = runStep(world)
 
     expect(attackActions[0]).toEqual({
       unitId: 'artillery',
@@ -80,8 +64,8 @@ describe('combat ECS artillery action setup', () => {
     expect(attackActions.filter(action => action.type === 'barrage_marker')).toHaveLength(4)
     expect(attackActions.filter(action => action.type === 'barrage_impact')).toHaveLength(4)
     expect(world.stores.combat.require(0).actionCooldown).toBe(144)
-    expect(world.stores.vitality.require(1).hp).toBe(legacyUnits[1].hp)
-    expect(world.stores.vitality.require(2).hp).toBe(legacyUnits[2].hp)
+    expect(world.stores.vitality.require(1).hp).toBeLessThan(1000)
+    expect(world.stores.vitality.require(2).hp).toBeLessThan(1000)
   })
 
   it('keeps artillery from acting inside its minimum range', () => {
@@ -89,11 +73,10 @@ describe('combat ECS artillery action setup', () => {
       unit('artillery', 'attacker', 'artillery_crawler', 10, 100, 0),
       unit('close-target', 'defender', 'marine', 100, 100, Math.PI),
     ]
-    const legacyUnits = structuredClone(units)
     const world = createWorld(units)
 
     expect(canUseSimpleSingleDamage(world, 0, 1)).toBe(true)
-    const actions = runStep(world, legacyUnits)
+    const actions = runStep(world, false)
 
     expect(actions).toEqual([])
     expect(world.stores.movement.require(0).stanceMode).toBe('mobile')

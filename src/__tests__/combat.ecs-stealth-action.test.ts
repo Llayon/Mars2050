@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest'
-import { actionSystem } from '@/__tests__/helpers/combat-ecs-action-harness'
 import { createRuntimeUnitFromConfig } from '@/domains/combat/combat.unit-factory'
 import type { SimUnit } from '@/domains/combat/combat.sim.types'
 import { PRNG } from '@/domains/combat/combat.utils'
@@ -27,36 +26,21 @@ function createWorld(units: SimUnit[]): CombatWorld {
 }
 
 describe('combat ECS movement stealth action', () => {
-  it('matches legacy stealth break after the primary damage', () => {
+  it('breaks movement stealth after the primary damage', () => {
     const attacker = unit('ghost', 'attacker', 100)
     const target = unit('target', 'defender', 220)
     attacker.stealthWhileMoving = true
     attacker.movementStealthActive = true
-    const legacyUnits = structuredClone([attacker, target])
     const world = createWorld([attacker, target])
-    const legacyActions: Parameters<typeof actionSystem>[4] = []
     const nativeActions: Parameters<typeof runActionSystem>[3] = []
 
-    const legacyActed = actionSystem(
-      legacyUnits[0],
-      legacyUnits[1],
-      legacyUnits,
-      [],
-      legacyActions,
-      new PRNG(1),
-      0,
-    )
     expect(canUseSimpleSingleDamage(world, 0, 1)).toBe(true)
     const nativeResult = runActionSystem(world, 0, 1, nativeActions, {
       rng: new PRNG(1),
       tick: 0,
     })
 
-    expect(nativeResult).toEqual({
-      acted: legacyActed,
-      actorSynchronized: true,
-    })
-    expect(nativeActions).toEqual(legacyActions)
+    expect(nativeResult).toEqual({ acted: true, actorSynchronized: true })
     expect(nativeActions.at(-1)).toEqual({
       unitId: 'ghost',
       type: 'stealth_change',

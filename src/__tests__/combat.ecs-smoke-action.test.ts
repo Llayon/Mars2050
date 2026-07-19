@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest'
-import { actionSystem } from '@/__tests__/helpers/combat-ecs-action-harness'
 import type { SimUnit } from '@/domains/combat/combat.sim.types'
 import { createRuntimeUnitFromConfig } from '@/domains/combat/combat.unit-factory'
 import { PRNG } from '@/domains/combat/combat.utils'
@@ -31,7 +30,7 @@ function createWorld(units: SimUnit[]): CombatWorld {
 }
 
 describe('combat ECS smoke action', () => {
-  it('matches seeded legacy deployment without marking the unit as attacked', () => {
+  it('deploys deterministically without marking the unit as attacked', () => {
     const attacker = unit('smoker', 'attacker', 100)
     const target = unit('target', 'defender', 220)
     attacker.smokeOnAction = {
@@ -43,21 +42,9 @@ describe('combat ECS smoke action', () => {
     }
     attacker.stealthWhileMoving = true
     attacker.movementStealthActive = true
-    const legacyUnits = structuredClone([attacker, target])
-    const legacyHazards: Parameters<typeof actionSystem>[3] = []
-    const legacyActions: Parameters<typeof actionSystem>[4] = []
     const nativeActions: Parameters<typeof runActionSystem>[3] = []
     const world = createWorld([attacker, target])
 
-    const legacyActed = actionSystem(
-      legacyUnits[0],
-      legacyUnits[1],
-      legacyUnits,
-      legacyHazards,
-      legacyActions,
-      new PRNG(7),
-      0,
-    )
     expect(canUseEcsSmokeAction(world, 0)).toBe(true)
     expect(canUseSimpleSingleDamage(world, 0, 1)).toBe(true)
     const nativeResult = runActionSystem(world, 0, 1, nativeActions, {
@@ -65,19 +52,17 @@ describe('combat ECS smoke action', () => {
       tick: 0,
     })
 
-    expect(nativeResult).toEqual({ acted: legacyActed, actorSynchronized: true })
-    expect(nativeActions).toEqual(legacyActions)
+    expect(nativeResult).toEqual({ acted: true, actorSynchronized: true })
     world.flushStructuralCommands()
-    expect(world.snapshotHazards()).toEqual(legacyHazards)
     expect(world.snapshotHazards()).toHaveLength(1)
     expect(world.snapshotHazards()[0].statusEffects).toEqual([
       { type: 'range_suppressed', duration: 12, value: 0.5 },
       { type: 'output_suppressed', duration: 12, value: 0.25 },
       { type: 'accuracy_reduced', duration: 12, value: 0.4 },
     ])
-    expect(world.stores.vitality.require(1).hp).toBe(legacyUnits[1].hp)
-    expect(world.stores.combat.require(0).actionCooldown).toBe(legacyUnits[0].actionCooldown)
-    expect(world.stores.statusControl.require(0).hasAttacked).toBe(legacyUnits[0].hasAttacked)
+    expect(world.stores.vitality.require(1).hp).toBe(target.maxHp)
+    expect(world.stores.combat.require(0).actionCooldown).toBeGreaterThan(0)
+    expect(world.stores.statusControl.require(0).hasAttacked).not.toBe(true)
     expect(world.stores.movement.require(0).movementStealthActive).toBe(true)
     expect(nativeActions.some(action =>
       action.type === 'attack' || action.type === 'stealth_change',

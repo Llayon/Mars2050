@@ -85,8 +85,8 @@ baseline suite as the fallback renderer.
 | Loose formation | Formation spacing modifier | `formationModifiers.spacingMultiplier` | `combat.formation-spacing.test.ts` | Implemented |
 | Grid / neighbor bonus | Adjacency status bonus | `formationModifiers.adjacencyBonus` including attack/range/defense | `combat.ecs-formation-bonus-phase.test.ts` | Implemented |
 | Air defense / fortified / anti-heavy priority mark | Target score mark priority | `targetMark.focusPriority`, `targetPriorityProfile` | `combat.ecs-targeting-boundary.test.ts` | Implemented |
-| Whirlwind / conditional AoE | Conditional attack mode | `conditionalAttackMode`, `conditional_attack_mode` replay | `combat.conditional-sweep-weapons.test.ts` | Implemented |
-| Vertical sweep | Sweep secondary hits | `sweepAttack`, `sweep_hit` replay | `combat.conditional-sweep-weapons.test.ts` | Implemented |
+| Whirlwind / conditional AoE | Conditional attack mode | `conditionalAttackMode`, `conditional_attack_mode` replay | `combat.ecs-conditional-attack.test.ts` | Implemented |
+| Vertical sweep | Sweep secondary hits | `sweepAttack`, `sweep_hit` replay | `combat.ecs-sweep-attack.test.ts` | Implemented |
 | Stealth while moving | Movement-derived targetability | `stealthWhileMoving`, `movementStealthActive`, `stealth_change` replay | `combat.ecs-stealth-action.test.ts`, `combat.upgrade-runtime-contract.test.ts` | Implemented |
 | Stored upgrade on-death spawn modifier | Upgrade adapter to death trigger spawn | `onDeathSpawn` -> `triggerEffects.event = death` | `combat.ecs-death-trigger-action.test.ts`, `combat.upgrade-runtime-contract.test.ts` | Implemented |
 

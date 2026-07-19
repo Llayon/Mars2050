@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest'
-import { actionSystem } from '@/__tests__/helpers/combat-ecs-action-harness'
 import type { SimUnit } from '@/domains/combat/combat.sim.types'
 import { createRuntimeUnitFromConfig } from '@/domains/combat/combat.unit-factory'
 import { getSizeRadius, PRNG } from '@/domains/combat/combat.utils'
@@ -55,22 +54,12 @@ describe('combat ECS conditional range', () => {
     airAttacker.canTargetAir = true
     airAttacker.conditionalRange = [{ target: 'air', rangeAdd: 60 }]
     airTarget.isFlying = true
-    const legacyUnits = structuredClone([airAttacker, airTarget])
-    const legacyActions: Parameters<typeof actionSystem>[4] = []
     const nativeActions: Parameters<typeof runActionSystem>[3] = []
     const airWorld = createWorld([airAttacker, airTarget])
     const targetRadius = getSizeRadius(airTarget.size)
     const attackerRadius = getSizeRadius(airAttacker.size)
     const edgeDistance = 130 - targetRadius - attackerRadius
 
-    const legacyActed = actionSystem(
-      legacyUnits[0],
-      legacyUnits[1],
-      legacyUnits,
-      [],
-      legacyActions,
-      new PRNG(31),
-    )
     expect(canUseSimpleSingleDamage(airWorld, 0, 1)).toBe(true)
     const nativeResult = runActionSystem(airWorld, 0, 1, nativeActions, {
       rng: new PRNG(31),
@@ -85,8 +74,12 @@ describe('combat ECS conditional range', () => {
       attackerRadius,
     )
 
-    expect(nativeResult).toEqual({ acted: legacyActed, actorSynchronized: true })
-    expect(nativeActions).toEqual(legacyActions)
+    expect(nativeResult).toEqual({ acted: true, actorSynchronized: true })
+    expect(nativeActions[0]).toEqual({
+      unitId: 'aa-air',
+      type: 'attack',
+      targetId: 'air',
+    })
     expect(airPositioning).toMatchObject({ shouldMove: false, combatInRange: true })
 
     const groundAttacker = unit('aa-ground', 'attacker', 100)

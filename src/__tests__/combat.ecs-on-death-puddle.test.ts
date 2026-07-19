@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest'
-import { actionSystem } from '@/__tests__/helpers/combat-ecs-action-harness'
 import type { SimUnit } from '@/domains/combat/combat.sim.types'
 import { createRuntimeUnitFromConfig } from '@/domains/combat/combat.unit-factory'
 import { PRNG } from '@/domains/combat/combat.utils'
@@ -27,36 +26,22 @@ function createWorld(units: SimUnit[]): CombatWorld {
 }
 
 describe('combat ECS on-death puddle', () => {
-  it('matches seeded acid hazard creation after a weapon death', () => {
+  it('creates a deterministic acid hazard after a weapon death', () => {
     const attacker = unit('attacker', 'attacker', 100)
     const target = unit('acidic', 'defender', 220)
     target.hp = 1
     target.onDeathPuddle = 'acid'
-    const legacyUnits = structuredClone([attacker, target])
-    const legacyHazards: Parameters<typeof actionSystem>[3] = []
-    const legacyActions: Parameters<typeof actionSystem>[4] = []
     const nativeActions: Parameters<typeof runActionSystem>[3] = []
     const world = createWorld([attacker, target])
 
-    const legacyActed = actionSystem(
-      legacyUnits[0],
-      legacyUnits[1],
-      legacyUnits,
-      legacyHazards,
-      legacyActions,
-      new PRNG(37),
-      0,
-    )
     expect(canUseSimpleSingleDamage(world, 0, 1)).toBe(true)
     const nativeResult = runActionSystem(world, 0, 1, nativeActions, {
       rng: new PRNG(37),
       tick: 0,
     })
 
-    expect(nativeResult).toEqual({ acted: legacyActed, actorSynchronized: true })
-    expect(nativeActions).toEqual(legacyActions)
+    expect(nativeResult).toEqual({ acted: true, actorSynchronized: true })
     world.flushStructuralCommands()
-    expect(world.snapshotHazards()).toEqual(legacyHazards)
     expect(world.snapshotHazards()).toHaveLength(1)
     expect(world.snapshotHazards()[0]).toMatchObject({
       team: 'defender',

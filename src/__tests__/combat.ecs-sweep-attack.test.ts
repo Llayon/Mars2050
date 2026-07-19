@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest'
-import { actionSystem } from '@/__tests__/helpers/combat-ecs-action-harness'
 import { createRuntimeUnitFromConfig } from '@/domains/combat/combat.unit-factory'
 import type { SimUnit } from '@/domains/combat/combat.sim.types'
 import { PRNG } from '@/domains/combat/combat.utils'
@@ -26,7 +25,7 @@ function createWorld(units: SimUnit[]): CombatWorld {
 }
 
 describe('combat ECS sweep attack', () => {
-  it('matches strip order, size multiplier, air handling, and replay actions', () => {
+  it('applies strip order, size multiplier, air handling, and replay actions', () => {
     const units = [
       unit('sweeper', 'attacker', 10, 100, 0),
       unit('primary', 'defender', 100, 100, Math.PI),
@@ -43,29 +42,20 @@ describe('combat ECS sweep attack', () => {
     units[0].statusOnHit = [{ type: 'burn', duration: 30, value: 3 }]
     units[2].isFlying = true
     units[3].size = 'XL'
-    const legacyUnits = structuredClone(units)
-    const legacyActions: Parameters<typeof actionSystem>[4] = []
     const nativeActions: Parameters<typeof runActionSystem>[3] = []
     const world = createWorld(units)
     const entitySpatial = world.resources.require('entitySpatial')
 
-    const legacyActed = actionSystem(
-      legacyUnits[0],
-      legacyUnits[1],
-      legacyUnits,
-      [],
-      legacyActions,
-      new PRNG(1),
-    )
     const nativeResult = runActionSystem(world, 0, 1, nativeActions, {
       rng: new PRNG(1),
       tick: 0,
     })
 
-    expect(nativeResult).toEqual({ acted: legacyActed, actorSynchronized: true })
-    expect(nativeActions).toEqual(legacyActions)
-    expect(world.stores.vitality.require(2).hp).toBe(legacyUnits[2].hp)
-    expect(world.stores.vitality.require(3).hp).toBe(legacyUnits[3].hp)
+    expect(nativeResult).toEqual({ acted: true, actorSynchronized: true })
+    expect(world.stores.vitality.require(2).hp)
+      .toBeLessThan(world.stores.vitality.require(2).maxHp)
+    expect(world.stores.vitality.require(3).hp)
+      .toBeLessThan(world.stores.vitality.require(3).maxHp)
     expect(nativeActions.filter(action => action.type === 'sweep_hit')).toEqual([
       { unitId: 'sweeper', type: 'sweep_hit', targetId: 'a-target', value: 1 },
       { unitId: 'sweeper', type: 'sweep_hit', targetId: 'b-target', value: 0.5 },

@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest'
-import { actionSystem } from '@/__tests__/helpers/combat-ecs-action-harness'
 import { createRuntimeUnitFromConfig } from '@/domains/combat/combat.unit-factory'
 import type { SimUnit } from '@/domains/combat/combat.sim.types'
 import { PRNG } from '@/domains/combat/combat.utils'
@@ -27,7 +26,7 @@ function createWorld(units: SimUnit[]): CombatWorld {
 }
 
 describe('combat ECS attack charge action', () => {
-  it('matches legacy release and consumes charge only on the first shot', () => {
+  it('releases and consumes charge only on the first shot', () => {
     const attacker = unit('launcher', 'attacker', 100)
     const target = unit('target', 'defender', 220)
     attacker.multishot = 2
@@ -39,31 +38,16 @@ describe('combat ECS attack charge action', () => {
       stacks: 3,
     }
     target.hp = target.maxHp = 1000
-    const legacyUnits = structuredClone([attacker, target])
     const world = createWorld([attacker, target])
-    const legacyActions: Parameters<typeof actionSystem>[4] = []
     const nativeActions: Parameters<typeof runActionSystem>[3] = []
 
-    const legacyActed = actionSystem(
-      legacyUnits[0],
-      legacyUnits[1],
-      legacyUnits,
-      [],
-      legacyActions,
-      new PRNG(1),
-      11,
-    )
     expect(canUseSimpleSingleDamage(world, 0, 1)).toBe(true)
     const nativeResult = runActionSystem(world, 0, 1, nativeActions, {
       rng: new PRNG(1),
       tick: 11,
     })
 
-    expect(nativeResult).toEqual({
-      acted: legacyActed,
-      actorSynchronized: true,
-    })
-    expect(nativeActions).toEqual(legacyActions)
+    expect(nativeResult).toEqual({ acted: true, actorSynchronized: true })
     expect(nativeActions.filter(action =>
       action.type === 'attack_charge_release',
     )).toEqual([
@@ -75,7 +59,10 @@ describe('combat ECS attack charge action', () => {
       },
     ])
     expect(nativeActions.filter(action => action.type === 'attack')).toHaveLength(2)
-    expect(world.stores.vitality.require(1).hp).toBe(legacyUnits[1].hp)
+    const damage = nativeActions
+      .filter(action => action.type === 'damage' && action.targetId === 'target')
+      .reduce((total, action) => total + (action.damage ?? 0), 0)
+    expect(world.stores.vitality.require(1).hp).toBe(1000 - damage)
     expect(world.stores.lifecycle.require(0).attackCharge).toEqual({
       intervalTicks: 3,
       maxStacks: 3,
@@ -83,8 +70,5 @@ describe('combat ECS attack charge action', () => {
       nextTick: 14,
       stacks: 0,
     })
-    expect(world.stores.lifecycle.require(0).attackCharge).toEqual(
-      legacyUnits[0].attackCharge,
-    )
   })
 })

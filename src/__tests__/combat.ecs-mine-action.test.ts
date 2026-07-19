@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest'
-import { actionSystem } from '@/__tests__/helpers/combat-ecs-action-harness'
 import type { SimUnit } from '@/domains/combat/combat.sim.types'
 import { createRuntimeUnitFromConfig } from '@/domains/combat/combat.unit-factory'
 import { PRNG } from '@/domains/combat/combat.utils'
@@ -37,25 +36,13 @@ function createWorld(units: SimUnit[]): CombatWorld {
 }
 
 describe('combat ECS mine action', () => {
-  it('matches seeded legacy deployment and preserves priority over smoke', () => {
+  it('deploys deterministically and preserves priority over smoke', () => {
     const attacker = unit('minelayer', 'attacker', 'minelayer_rover', 100)
     const target = unit('target', 'defender', 'marine', 220)
     attacker.smokeOnAction = { radius: 80, duration: 30, rangeSuppression: 0.5 }
-    const legacyUnits = structuredClone([attacker, target])
-    const legacyHazards: Parameters<typeof actionSystem>[3] = []
-    const legacyActions: Parameters<typeof actionSystem>[4] = []
     const nativeActions: Parameters<typeof runActionSystem>[3] = []
     const world = createWorld([attacker, target])
 
-    const legacyActed = actionSystem(
-      legacyUnits[0],
-      legacyUnits[1],
-      legacyUnits,
-      legacyHazards,
-      legacyActions,
-      new PRNG(11),
-      0,
-    )
     expect(canUseEcsMineAction(world, 0)).toBe(true)
     expect(canUseEcsSmokeAction(world, 0)).toBe(true)
     expect(canUseSimpleSingleDamage(world, 0, 1)).toBe(true)
@@ -64,10 +51,8 @@ describe('combat ECS mine action', () => {
       tick: 0,
     })
 
-    expect(nativeResult).toEqual({ acted: legacyActed, actorSynchronized: true })
-    expect(nativeActions).toEqual(legacyActions)
+    expect(nativeResult).toEqual({ acted: true, actorSynchronized: true })
     world.flushStructuralCommands()
-    expect(world.snapshotHazards()).toEqual(legacyHazards)
     expect(world.snapshotHazards()).toHaveLength(1)
     expect(world.snapshotHazards()[0]).toMatchObject({
       team: 'attacker',
@@ -77,8 +62,8 @@ describe('combat ECS mine action', () => {
       duration: 90,
       sourceUnitId: 'minelayer',
     })
-    expect(world.stores.vitality.require(1).hp).toBe(legacyUnits[1].hp)
-    expect(world.stores.combat.require(0).actionCooldown).toBe(legacyUnits[0].actionCooldown)
+    expect(world.stores.vitality.require(1).hp).toBe(target.maxHp)
+    expect(world.stores.combat.require(0).actionCooldown).toBeGreaterThan(0)
     expect(nativeActions).toHaveLength(1)
     expect(nativeActions[0]).toMatchObject({
       unitId: 'minelayer',

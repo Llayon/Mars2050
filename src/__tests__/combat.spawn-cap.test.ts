@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { actionSystem } from '@/__tests__/helpers/combat-ecs-action-harness'
 import type { BattleAction } from '@/domains/combat/combat.actions'
 import type { SimUnit, Team } from '@/domains/combat/combat.types'
 import { PRNG } from '@/domains/combat/combat.utils'
+import { CombatWorld } from '@/domains/combat/ecs/combat-world'
+import { EntitySpatialIndex } from '@/domains/combat/ecs/entity-spatial-index'
+import { runActionSystem } from '@/domains/combat/ecs/systems'
 
 function makeUnit(overrides: Partial<SimUnit> & { id: string; team: Team }): SimUnit {
   return {
@@ -33,15 +35,29 @@ function makeUnit(overrides: Partial<SimUnit> & { id: string; team: Team }): Sim
   }
 }
 
+function runSpawn(units: SimUnit[], targetId: number, actions: BattleAction[]) {
+  const world = new CombatWorld(units)
+  const spatial = new EntitySpatialIndex()
+  spatial.rebuild(world)
+  world.resources.set('entitySpatial', spatial)
+  const result = runActionSystem(world, 0, targetId, actions, {
+    rng: new PRNG(1),
+    tick: 0,
+  })
+  world.flushStructuralCommands()
+  return { result, world }
+}
+
 describe('spawn caps', () => {
   it('tags spawned units with their owner id', () => {
     const carrier = makeUnit({ id: 'carrier', team: 'attacker', type: 'drone_carrier', attackType: 'spawn', spawnType: 'scout_drone', spawnCap: 2 })
     const target = makeUnit({ id: 'target', team: 'defender', x: 160, y: 100 })
-    const units = [carrier, target]
     const actions: BattleAction[] = []
 
-    expect(actionSystem(carrier, target, units, [], actions, new PRNG(1))).toBe(true)
+    const { result, world } = runSpawn([carrier, target], 1, actions)
+    const units = world.snapshot()
 
+    expect(result.acted).toBe(true)
     expect(units).toHaveLength(3)
     expect(units[2]).toMatchObject({
       summonOwnerId: 'carrier',
@@ -58,13 +74,13 @@ describe('spawn caps', () => {
     const carrier = makeUnit({ id: 'carrier', team: 'attacker', type: 'drone_carrier', attackType: 'spawn', spawnType: 'scout_drone', spawnCap: 1, actionCooldownMax: 60 })
     const existing = makeUnit({ id: 'summon', team: 'attacker', summonOwnerId: 'carrier' })
     const target = makeUnit({ id: 'target', team: 'defender', x: 160, y: 100 })
-    const units = [carrier, existing, target]
     const actions: BattleAction[] = []
 
-    expect(actionSystem(carrier, target, units, [], actions, new PRNG(1))).toBe(false)
+    const { result, world } = runSpawn([carrier, existing, target], 2, actions)
 
-    expect(units).toHaveLength(3)
-    expect(carrier.actionCooldown).toBe(5)
+    expect(result.acted).toBe(false)
+    expect(world.snapshot()).toHaveLength(3)
+    expect(world.stores.combat.require(0).actionCooldown).toBe(5)
     expect(actions).toEqual([{ unitId: 'carrier', type: 'spawn_blocked', value: 1 }])
   })
 
@@ -72,9 +88,9 @@ describe('spawn caps', () => {
     const carrier = makeUnit({ id: 'carrier', team: 'attacker', type: 'drone_carrier', attackType: 'spawn', spawnType: 'scout_drone', spawnCap: 1 })
     const deadSummon = makeUnit({ id: 'dead-summon', team: 'attacker', summonOwnerId: 'carrier', isDead: true })
     const target = makeUnit({ id: 'target', team: 'defender', x: 160, y: 100 })
-    const units = [carrier, deadSummon, target]
+    const { result, world } = runSpawn([carrier, deadSummon, target], 2, [])
 
-    expect(actionSystem(carrier, target, units, [], [], new PRNG(1))).toBe(true)
-    expect(units).toHaveLength(4)
+    expect(result.acted).toBe(true)
+    expect(world.snapshot()).toHaveLength(4)
   })
 })

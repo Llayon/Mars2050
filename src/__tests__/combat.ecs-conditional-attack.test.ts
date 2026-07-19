@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest'
-import { actionSystem } from '@/__tests__/helpers/combat-ecs-action-harness'
 import { createRuntimeUnitFromConfig } from '@/domains/combat/combat.unit-factory'
 import type { SimUnit } from '@/domains/combat/combat.sim.types'
 import { PRNG } from '@/domains/combat/combat.utils'
@@ -25,30 +24,19 @@ function createWorld(units: SimUnit[]): CombatWorld {
   return world
 }
 
-function runParity(units: SimUnit[]) {
-  const legacyUnits = structuredClone(units)
-  const legacyActions: Parameters<typeof actionSystem>[4] = []
+function runNative(units: SimUnit[]) {
   const nativeActions: Parameters<typeof runActionSystem>[3] = []
   const world = createWorld(units)
-  const legacyActed = actionSystem(
-    legacyUnits[0],
-    legacyUnits[1],
-    legacyUnits,
-    [],
-    legacyActions,
-    new PRNG(1),
-  )
   const nativeResult = runActionSystem(world, 0, 1, nativeActions, {
     rng: new PRNG(1),
     tick: 0,
   })
-  expect(nativeResult).toEqual({ acted: legacyActed, actorSynchronized: true })
-  expect(nativeActions).toEqual(legacyActions)
-  return { world, legacyUnits, nativeActions }
+  expect(nativeResult).toEqual({ acted: true, actorSynchronized: true })
+  return { world, nativeActions }
 }
 
 describe('combat ECS conditional attack', () => {
-  it('matches cluster threshold, ID order, damage, and on-hit effects', () => {
+  it('applies cluster threshold, ID order, damage, and on-hit effects', () => {
     const units = [
       unit('cluster-gun', 'attacker', 10, 100, 0),
       unit('primary', 'defender', 100, 100, Math.PI),
@@ -60,10 +48,12 @@ describe('combat ECS conditional attack', () => {
     units[0].statusOnHit = [{ type: 'burn', duration: 30, value: 3 }]
     units[3].isFlying = true
 
-    const { world, legacyUnits, nativeActions } = runParity(units)
+    const { world, nativeActions } = runNative(units)
 
-    expect(world.stores.vitality.require(2).hp).toBe(legacyUnits[2].hp)
-    expect(world.stores.vitality.require(3).hp).toBe(legacyUnits[3].hp)
+    expect(world.stores.vitality.require(2).hp)
+      .toBeLessThan(world.stores.vitality.require(2).maxHp)
+    expect(world.stores.vitality.require(3).hp)
+      .toBeLessThan(world.stores.vitality.require(3).maxHp)
     expect(nativeActions).toContainEqual({
       unitId: 'cluster-gun',
       type: 'conditional_attack_mode',
@@ -86,7 +76,7 @@ describe('combat ECS conditional attack', () => {
     ]
     units[0].conditionalAttackMode = { minTargets: 3, radius: 80, damageMultiplier: 0.5 }
 
-    const { world, nativeActions } = runParity(units)
+    const { world, nativeActions } = runNative(units)
 
     expect(nativeActions.some(action => action.type === 'conditional_attack_mode')).toBe(false)
     expect(world.stores.vitality.require(2).hp).toBe(world.stores.vitality.require(2).maxHp)

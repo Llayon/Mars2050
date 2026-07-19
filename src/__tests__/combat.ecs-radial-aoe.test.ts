@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest'
-import { actionSystem } from '@/__tests__/helpers/combat-ecs-action-harness'
 import { createRuntimeUnitFromConfig } from '@/domains/combat/combat.unit-factory'
 import type { SimUnit } from '@/domains/combat/combat.sim.types'
 import { PRNG } from '@/domains/combat/combat.utils'
@@ -31,33 +30,25 @@ function actionContext() {
 }
 
 describe('combat ECS radial AoE', () => {
-  it('matches legacy radial damage and action order', () => {
+  it('applies radial damage and deterministic action order', () => {
     const units = [
       unit('grenadier', 'attacker', 'grenadier', 10, 20, 0),
       unit('primary', 'defender', 'marine', 100, 20, Math.PI),
       unit('splash', 'defender', 'marine', 125, 30, Math.PI),
       unit('outside', 'defender', 'marine', 180, 20, Math.PI),
     ]
-    const legacyUnits = structuredClone(units)
-    const legacyActions: Parameters<typeof actionSystem>[4] = []
     const nativeActions: Parameters<typeof runActionSystem>[3] = []
     const world = createWorld(units)
 
-    const legacyActed = actionSystem(
-      legacyUnits[0],
-      legacyUnits[1],
-      legacyUnits,
-      [],
-      legacyActions,
-      new PRNG(1),
-    )
     const nativeResult = runActionSystem(world, 0, 1, nativeActions, actionContext())
 
-    expect(nativeResult).toEqual({ acted: legacyActed, actorSynchronized: true })
-    expect(nativeActions).toEqual(legacyActions)
-    expect(world.stores.vitality.require(1).hp).toBe(legacyUnits[1].hp)
-    expect(world.stores.vitality.require(2).hp).toBe(legacyUnits[2].hp)
-    expect(world.stores.vitality.require(3).hp).toBe(legacyUnits[3].hp)
+    expect(nativeResult).toEqual({ acted: true, actorSynchronized: true })
+    expect(world.stores.vitality.require(1).hp)
+      .toBeLessThan(world.stores.vitality.require(1).maxHp)
+    expect(world.stores.vitality.require(2).hp)
+      .toBeLessThan(world.stores.vitality.require(2).maxHp)
+    expect(world.stores.vitality.require(3).hp)
+      .toBe(world.stores.vitality.require(3).maxHp)
     expect(nativeActions).toContainEqual({
       unitId: 'grenadier',
       type: 'attack',

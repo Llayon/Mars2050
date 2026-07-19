@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest'
-import { actionSystem } from '@/__tests__/helpers/combat-ecs-action-harness'
 import type { SimUnit } from '@/domains/combat/combat.sim.types'
 import { createRuntimeUnitFromConfig } from '@/domains/combat/combat.unit-factory'
 import { PRNG } from '@/domains/combat/combat.utils'
@@ -27,38 +26,24 @@ function createWorld(units: SimUnit[]): CombatWorld {
 }
 
 describe('combat ECS replicate on kill', () => {
-  it('matches canonical clone creation before a seeded death puddle', () => {
+  it('creates a canonical clone before a seeded death puddle', () => {
     const attacker = unit('replicator', 'attacker', 100)
     const target = unit('victim', 'defender', 220)
     attacker.replicateOnKill = true
     target.hp = 1
     target.onDeathPuddle = 'acid'
-    const legacyUnits = structuredClone([attacker, target])
-    const legacyHazards: Parameters<typeof actionSystem>[3] = []
-    const legacyActions: Parameters<typeof actionSystem>[4] = []
     const nativeActions: Parameters<typeof runActionSystem>[3] = []
     const world = createWorld([attacker, target])
 
-    const legacyActed = actionSystem(
-      legacyUnits[0],
-      legacyUnits[1],
-      legacyUnits,
-      legacyHazards,
-      legacyActions,
-      new PRNG(41),
-      0,
-    )
     expect(canUseSimpleSingleDamage(world, 0, 1)).toBe(true)
     const nativeResult = runActionSystem(world, 0, 1, nativeActions, {
       rng: new PRNG(41),
       tick: 0,
     })
 
-    expect(nativeResult).toEqual({ acted: legacyActed, actorSynchronized: true })
-    expect(nativeActions).toEqual(legacyActions)
+    expect(nativeResult).toEqual({ acted: true, actorSynchronized: true })
     world.flushStructuralCommands()
-    expect(world.snapshot()).toHaveLength(legacyUnits.length)
-    expect(world.snapshot()[2]).toEqual(legacyUnits[2])
+    expect(world.snapshot()).toHaveLength(3)
     expect(world.snapshot()[2]).toMatchObject({
       team: 'attacker',
       type: 'marine',
@@ -68,7 +53,7 @@ describe('combat ECS replicate on kill', () => {
       actionCooldown: 0,
       replicateOnKill: true,
     })
-    expect(world.snapshotHazards()).toEqual(legacyHazards)
+    expect(world.snapshotHazards()).toHaveLength(1)
     expect(nativeActions.slice(-3).map(action => action.type)).toEqual([
       'die',
       'spawn',
