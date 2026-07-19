@@ -53,7 +53,7 @@ export function spawnEcsPeriodicUnits(
       unit.hp = Math.max(1, Math.floor(unit.maxHp * payload.hpPercent))
       unit.maxHp = unit.hp
     }
-    world.roster.push(unit)
+    world.queueUnitCreation(unit)
     spawned++
     actions.push({
       unitId: source.id,

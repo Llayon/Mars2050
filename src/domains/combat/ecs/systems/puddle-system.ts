@@ -13,7 +13,7 @@ export function spawnEcsAttackPuddle(
   const identity = world.stores.identity.require(entityId)
   const combat = world.stores.combat.require(entityId)
   const target = world.stores.transform.require(targetId)
-  world.hazards.push({
+  world.queueHazardCreation({
     id: `hazard_${Math.floor(rng.next() * 1000000)}`,
     team: identity.team,
     type: 'napalm',

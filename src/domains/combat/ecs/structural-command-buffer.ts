@@ -25,12 +25,12 @@ export class StructuralCommandBuffer {
   flush(world: CombatWorld): void {
     for (const command of this.drain()) {
       if (command.type === 'create_unit') {
-        if (world.roster.includes(command.unit) && world.getEntityId(command.unit.id) === undefined) {
+        if (world.getEntityId(command.unit.id) === undefined) {
           world.createUnitEntity(command.unit)
         }
         continue
       }
-      if (world.hazards.includes(command.hazard) && world.getEntityId(command.hazard.id) === undefined) {
+      if (world.getEntityId(command.hazard.id) === undefined) {
         world.createHazardEntity(command.hazard)
       }
     }

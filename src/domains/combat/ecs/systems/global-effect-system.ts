@@ -91,7 +91,7 @@ function createOrbitalStrike(
     x /= enemies.length
     y /= enemies.length
   }
-  world.hazards.push({
+  world.queueHazardCreation({
     id: `orb_strike_${Math.floor(rng.next() * 1000000)}`,
     team,
     type: 'napalm',

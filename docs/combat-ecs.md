@@ -15,10 +15,9 @@ reused during a battle. Runtime data is exposed through grouped component stores
 - support, lifecycle, and mechanics.
 
 Component stores are canonical while ECS phases execute. No facade-to-component
-or component-to-facade synchronization API remains. New entities must currently
-enter through `world.roster.push()` so they receive a monotonic entity ID and
-components; replacing this structural compatibility boundary is the next
-migration stage.
+or component-to-facade synchronization API remains. Production systems create
+units and hazards through explicit structural commands so they receive
+monotonic entity IDs at deterministic flush points.
 
 ## Migration Status
 
@@ -161,6 +160,9 @@ scenario fixtures without retaining a second combat implementation.
 The legacy array death/spawn utilities and their unreachable conditional weapon
 handlers have also been removed. Death and spawn fixtures now invoke the native
 ECS resolvers.
+Production systems no longer read or write the compatibility roster and hazard
+arrays. Unit creation, hazard creation, cloning, and summon cap checks use
+component-native world APIs; entity object-view getters have been removed.
 ECS action, damage, death, trigger, displacement, and movement systems likewise
 write only component stores; all component-to-facade synchronization APIs have
 been removed from `CombatWorld`.

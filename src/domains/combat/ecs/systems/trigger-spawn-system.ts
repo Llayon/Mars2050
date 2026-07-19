@@ -19,11 +19,12 @@ export function spawnEcsTriggerUnits(
   const ownerTransform = world.stores.transform.require(ownerId)
   const sourceKey = payload.unitType
   const cap = payload.cap ?? Number.MAX_SAFE_INTEGER
-  const existing = world.roster.filter(unit =>
-    !unit.isDead &&
-    unit.summonOwnerId === owner.id &&
-    unit.summonSourceId === sourceKey,
-  ).length
+  const existing = world.query(['identity', 'vitality'], true).filter(entityId => {
+    const identity = world.stores.identity.require(entityId)
+    return !world.stores.vitality.require(entityId).isDead &&
+      identity.summonOwnerId === owner.id &&
+      identity.summonSourceId === sourceKey
+  }).length
   const count = Math.max(1, payload.count ?? 1)
   let spawned = 0
 
@@ -46,7 +47,7 @@ export function spawnEcsTriggerUnits(
       unit.hp = Math.max(1, Math.floor(unit.maxHp * payload.hpPercent))
       unit.maxHp = unit.hp
     }
-    world.roster.push(unit)
+    world.queueUnitCreation(unit)
     spawned++
     actions.push({
       unitId: owner.id,

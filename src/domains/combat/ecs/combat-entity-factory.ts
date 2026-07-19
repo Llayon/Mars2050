@@ -9,14 +9,14 @@ import type { EntityId } from './entity'
 export function createConfiguredUnitEntity(world: CombatWorld, input: RuntimeUnitFactoryInput): EntityId | null {
   const unit = createRuntimeUnitFromConfig(input)
   if (!unit) return null
-  world.roster.push(unit)
+  world.queueUnitCreation(unit)
   world.flushStructuralCommands()
   return world.getEntityId(unit.id) ?? null
 }
 
 export function createSquadEntities(world: CombatWorld, row: UnitRow, team: Team, rng: PRNG): EntityId[] {
   const units = createRuntimeSquad(row, team, rng)
-  world.roster.push(...units)
+  world.queueUnitCreation(...units)
   world.flushStructuralCommands()
   return units.flatMap(unit => {
     const entityId = world.getEntityId(unit.id)
@@ -25,10 +25,9 @@ export function createSquadEntities(world: CombatWorld, row: UnitRow, team: Team
 }
 
 export function cloneUnitEntity(world: CombatWorld, sourceId: EntityId, id: string, x: number, y: number): EntityId | null {
-  const source = world.getEntity(sourceId)
-  if (!source) return null
+  const source = world.snapshotEntity(sourceId)
   const clone = cloneRuntimeUnit(source, id, x, y)
-  world.roster.push(clone)
+  world.queueUnitCreation(clone)
   world.flushStructuralCommands()
   return world.getEntityId(clone.id) ?? null
 }

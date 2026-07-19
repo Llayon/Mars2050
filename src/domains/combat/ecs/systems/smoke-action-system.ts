@@ -73,7 +73,7 @@ function deploySmoke(
   const y = clamp(transform.y + (dy / distance) * placementDistance, 0, FIELD_HEIGHT)
   const id = `smoke_${Math.floor(context.rng.next() * 1000000)}`
 
-  world.hazards.push({
+  world.queueHazardCreation({
     id,
     team,
     type: 'smoke',

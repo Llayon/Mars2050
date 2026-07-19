@@ -61,7 +61,7 @@ export function runEcsSpawnAction(
     if (options.preserveCooldown) combat.actionCooldown = previousCooldown
     return { acted: false, actorSynchronized: true }
   }
-  world.roster.push(spawn.unit)
+  world.queueUnitCreation(spawn.unit)
   actions.push({
     unitId: identity.id,
     type: 'spawn',

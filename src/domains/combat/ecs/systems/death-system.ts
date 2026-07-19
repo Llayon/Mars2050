@@ -76,7 +76,7 @@ function replicateEcsKiller(
     target.x,
     target.y,
   )
-  world.roster.push(clone)
+  world.queueUnitCreation(clone)
   actions.push({
     unitId: sourceIdentity.id,
     type: 'spawn',
@@ -138,7 +138,7 @@ function spawnEcsDeathHazard(
     duration: 40,
     sourceUnitId: identity.id,
   }
-  world.hazards.push(hazard)
+  world.queueHazardCreation(hazard)
   actions.push({
     unitId: identity.id,
     type: 'hazard_spawn',

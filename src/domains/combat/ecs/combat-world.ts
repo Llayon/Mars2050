@@ -11,7 +11,8 @@ export class CombatWorld {
   readonly externalIdToEntity = new Map<string, EntityId>()
   readonly roster: SimUnit[]
   readonly hazards: SimHazard[]
-  private readonly views: SimUnit[] = []
+  private readonly rosterValues: SimUnit[] = []
+  private readonly hazardValues: SimHazard[] = []
   private readonly hazardViews: Array<SimHazard | undefined> = []
   private readonly entityIds: EntityId[] = []
   private nextEntityId = 0
@@ -19,8 +20,22 @@ export class CombatWorld {
   constructor(initialUnits: SimUnit[] = []) {
     this.roster = this.createRoster()
     this.hazards = this.createHazardRoster()
-    this.roster.push(...initialUnits)
+    this.queueUnitCreation(...initialUnits)
     this.flushStructuralCommands()
+  }
+
+  queueUnitCreation(...units: SimUnit[]): void {
+    for (const unit of units) {
+      this.rosterValues.push(unit)
+      if (!this.isWorldView(unit)) this.structuralCommands.queueUnit(unit)
+    }
+  }
+
+  queueHazardCreation(...hazards: SimHazard[]): void {
+    for (const hazard of hazards) {
+      this.hazardValues.push(hazard)
+      this.structuralCommands.queueHazard(hazard)
+    }
   }
 
   createUnitEntity(unit: SimUnit): EntityId {
@@ -32,7 +47,6 @@ export class CombatWorld {
     }
     this.assertKnownFields(unit)
     Object.defineProperty(unit, Symbol.for('combat.entityId'), { value: entityId })
-    this.views[entityId] = unit
     this.entityIds.push(entityId)
     this.externalIdToEntity.set(unit.id, entityId)
     return entityId
@@ -58,15 +72,6 @@ export class CombatWorld {
 
   getUnitsCreatedSince(watermark: number): EntityId[] {
     return this.query(['transform', 'vitality']).filter(entityId => entityId >= watermark)
-  }
-
-  getEntity(entityId: EntityId): SimUnit | undefined {
-    return this.views[entityId]
-  }
-
-  getByExternalId(externalId: string): SimUnit | undefined {
-    const entityId = this.externalIdToEntity.get(externalId)
-    return entityId === undefined ? undefined : this.views[entityId]
   }
 
   getHazard(entityId: EntityId): SimHazard | undefined {
@@ -115,15 +120,11 @@ export class CombatWorld {
   }
 
   private createRoster(): SimUnit[] {
-    const values: SimUnit[] = []
-    return new Proxy(values, {
+    return new Proxy(this.rosterValues, {
       get: (target, property, receiver) => {
         if (property === 'push') {
           return (...units: SimUnit[]) => {
-            for (const unit of units) {
-              target.push(unit)
-              if (!this.isWorldView(unit)) this.structuralCommands.queueUnit(unit)
-            }
+            this.queueUnitCreation(...units)
             return target.length
           }
         }
@@ -133,15 +134,11 @@ export class CombatWorld {
   }
 
   private createHazardRoster(): SimHazard[] {
-    const values: SimHazard[] = []
-    return new Proxy(values, {
+    return new Proxy(this.hazardValues, {
       get: (target, property, receiver) => {
         if (property === 'push') {
           return (...hazards: SimHazard[]) => {
-            for (const hazard of hazards) {
-              target.push(hazard)
-              this.structuralCommands.queueHazard(hazard)
-            }
+            this.queueHazardCreation(...hazards)
             return target.length
           }
         }
