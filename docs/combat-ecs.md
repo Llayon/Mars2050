@@ -142,6 +142,9 @@ Native hazard processing rebuilds its spatial index from canonical transforms,
 vitality, and hazard components without importing unit or hazard facades at the
 end of each combat tick. Legacy action and cleanse adapters reconcile their
 facade changes locally before returning to ECS.
+The targeting-phase boundary also flushes structural commands, resolves
+EntityId references, and rebuilds the spatial index directly from canonical
+components without a roster-facade import.
 Periodic burn, acid, and degeneration deaths now resolve inside the ECS status
 phase, including source-less deaths, resurrection, reassembly, and death/kill
 triggers. Mine and periodic hazard deaths use the same resolver without

@@ -24,7 +24,6 @@ export function createEcsCombatRuntime(): EcsCombatRuntime {
     flushStructuralCommands: () => world.flushStructuralCommands(),
     beginTargetingPhase: () => {
       world.flushStructuralCommands()
-      world.syncAllToComponents()
       syncEcsTargetRefs(world)
       world.resources.require('entitySpatial').rebuild(world)
       meleeEngagement = createEcsMeleeEngagementState()
