@@ -3,7 +3,6 @@ import type { BattleAction } from '@/domains/combat/combat.actions'
 import type { SimUnit } from '@/domains/combat/combat.sim.types'
 import { applyStatus } from '@/domains/combat/combat.status'
 import { createRuntimeUnitFromConfig } from '@/domains/combat/combat.unit-factory'
-import { SpatialHash } from '@/domains/combat/spatial-hash'
 import { createEcsCombatRuntime } from '@/domains/combat/ecs/combat-ecs-runtime'
 import { CombatWorld } from '@/domains/combat/ecs/combat-world'
 import { EntitySpatialIndex } from '@/domains/combat/ecs/entity-spatial-index'
@@ -50,12 +49,10 @@ describe('combat ECS support aura phase', () => {
       ecs.units.push(structuredClone(candidate))
     }
     ecs.flushStructuralCommands()
-    const spatial = new SpatialHash()
-    for (const candidate of ecs.units) spatial.insert(candidate)
     const ecsActions: BattleAction[] = []
 
     for (const tick of [0, 1]) {
-      ecs.runSupportAuraPhase(tick, ecsActions, spatial)
+      ecs.runSupportAuraPhase(tick, ecsActions)
     }
 
     expect(ecsActions.filter(action => action.type === 'shield_apply'))
@@ -119,7 +116,7 @@ describe('combat ECS support aura phase', () => {
     ally.maxShield = 30
     const actions: BattleAction[] = []
 
-    runtime.runSupportAuraPhase(0, actions, new SpatialHash())
+    runtime.runSupportAuraPhase(0, actions)
 
     const allyId = runtime.world.getEntityId(ally.id)!
     expect(actions).toEqual([{

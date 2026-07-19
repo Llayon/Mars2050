@@ -33,7 +33,7 @@ export interface CombatRuntime {
   readonly hazards: SimHazard[]
   addSquad(row: UnitRow, team: Team, rng: PRNG): void
   flushStructuralCommands(): void
-  beginTargetingPhase(spatialHash?: SpatialHash): void
+  beginTargetingPhase(): void
   selectTarget(entityId: EntityId): EntityId | null
   reserveMeleeSlot(entityId: EntityId, targetId: EntityId): boolean
   processSpawner(entityId: EntityId, targetId: EntityId, actions: BattleAction[], context: RuntimeActionContext): void
@@ -53,11 +53,7 @@ export interface CombatRuntime {
     actions: BattleAction[],
     rng: PRNG,
   ): void
-  runSupportAuraPhase(
-    tick: number,
-    actions: BattleAction[],
-    spatialHash?: SpatialHash,
-  ): void
+  runSupportAuraPhase(tick: number, actions: BattleAction[]): void
   runGrowthAndChargePhase(tick: number, actions: BattleAction[]): void
   runBurrowRegenerationPhase(actions: BattleAction[]): void
   runTransformModePhase(tick: number, actions: BattleAction[]): void

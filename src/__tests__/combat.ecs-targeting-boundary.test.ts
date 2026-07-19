@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 import type { SimUnit } from '@/domains/combat/combat.sim.types'
 import { createRuntimeUnitFromConfig } from '@/domains/combat/combat.unit-factory'
 import { createEcsCombatRuntime } from '@/domains/combat/ecs/combat-ecs-runtime'
-import { SpatialHash } from '@/domains/combat/spatial-hash'
 
 function unit(
   id: string,
@@ -32,7 +31,7 @@ describe('combat ECS targeting boundary', () => {
     near.isDead = true
     far.x = 850
 
-    runtime.beginTargetingPhase(new SpatialHash())
+    runtime.beginTargetingPhase()
     const attackerId = runtime.world.getEntityId(attacker.id)!
     const nearId = runtime.world.getEntityId(near.id)!
     const targetId = runtime.selectTarget(attackerId)
