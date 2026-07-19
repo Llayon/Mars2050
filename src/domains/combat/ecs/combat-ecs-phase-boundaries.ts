@@ -76,13 +76,6 @@ export function runEcsFormationBonusPhase(
   if (tick % 10 !== 0) return
   const entityIds = getEcsFormationBonusEntities(world)
   if (entityIds.length === 0) return
-  world.syncAllComponentsToStore([
-    'transform',
-    'vitality',
-    'support',
-    'statusControl',
-    'movement',
-  ])
   world.resources.require('entitySpatial').rebuild(world)
   runEcsFormationBonusSystem(world, tick, actions, entityIds)
   for (const entityId of entityIds) {

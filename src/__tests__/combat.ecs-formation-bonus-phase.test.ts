@@ -86,4 +86,39 @@ describe('combat ECS formation bonus phase', () => {
       }))
     expect(spatial.getProfile().queryCount).toBe(2)
   })
+
+  it('does not overwrite canonical formation inputs from facades', () => {
+    const source = unit('canonical-source', 100)
+    source.formationModifiers = {
+      adjacencyBonus: {
+        radius: 100,
+        maxStacks: 2,
+        attackBoostPerAlly: 0.25,
+      },
+    }
+    const neighbor = unit('canonical-neighbor', 140)
+    const runtime = createEcsCombatRuntime()
+    runtime.units.push(source, neighbor)
+    runtime.flushStructuralCommands()
+    source.formationModifiers = undefined
+    source.x = 800
+    neighbor.x = 950
+    const actions: BattleAction[] = []
+
+    runtime.runFormationBonusPhase(10, actions)
+
+    const sourceId = runtime.world.getEntityId(source.id)!
+    expect(actions).toContainEqual({
+      unitId: 'canonical-source',
+      type: 'adjacency_bonus',
+      value: 1,
+    })
+    expect(runtime.world.stores.statusControl.require(sourceId).statusEffects)
+      .toContainEqual(expect.objectContaining({
+        type: 'attack_boost',
+        value: 0.25,
+      }))
+    expect(runtime.units[0].statusEffects)
+      .toContainEqual(expect.objectContaining({ type: 'attack_boost' }))
+  })
 })

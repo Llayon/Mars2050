@@ -70,7 +70,8 @@ status cleansing, and persistent hazards. The field runtime boundary reads
 canonical transform, support, vitality, status, and targeting stores without a
 unit-facade import. Adjacency formation bonuses now use
 local EntityId spatial queries and the shared ECS status kernel in stable
-external-ID order. Control beams now acquire locally and own progress, stale
+external-ID order. Their runtime boundary reads canonical positions, formation
+configuration, and status state without importing the unit facade. Control beams now acquire locally and own progress, stale
 link breaks, conversion, target-reference clearing, and actual conversion
 healing in ECS. Periodic ability scheduling, target policies, charges, damage,
 status, hazard, shield, healing, spawn, and mark payloads now run through
