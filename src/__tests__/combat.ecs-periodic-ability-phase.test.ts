@@ -1,0 +1,203 @@
+import { describe, expect, it } from 'vitest'
+import type { BattleAction } from '@/domains/combat/combat.actions'
+import type { SimUnit } from '@/domains/combat/combat.sim.types'
+import { applyStatus } from '@/domains/combat/combat.status'
+import { createLegacyCombatRuntime } from '@/domains/combat/combat.legacy-runtime'
+import { createRuntimeUnitFromConfig } from '@/domains/combat/combat.unit-factory'
+import { PRNG } from '@/domains/combat/combat.utils'
+import { createEcsCombatRuntime } from '@/domains/combat/ecs/combat-ecs-runtime'
+import { CombatWorld } from '@/domains/combat/ecs/combat-world'
+import { EntitySpatialIndex } from '@/domains/combat/ecs/entity-spatial-index'
+import { runEcsPeriodicAbilitySystem } from '@/domains/combat/ecs/systems'
+
+function unit(
+  id: string,
+  team: 'attacker' | 'defender',
+  x: number,
+): SimUnit {
+  return createRuntimeUnitFromConfig({
+    id,
+    team,
+    type: 'marine',
+    x,
+    y: 500,
+    currentAngle: 0,
+  })!
+}
+
+describe('combat ECS periodic ability phase', () => {
+  it('matches legacy payloads, scheduling, spawning, and replay order', () => {
+    const source = unit('source', 'attacker', 100)
+    source.hp = Math.max(1, source.maxHp - 10)
+    source.periodicAbilities = [
+      {
+        id: 'damage',
+        intervalTicks: 5,
+        nextTick: 0,
+        chargesRemaining: 1,
+        targetPolicy: 'nearest_enemy',
+        payload: {
+          kind: 'damage',
+          amount: 3,
+          radius: 60,
+          percentHp: { basis: 'current', percent: 0.1 },
+          statusEffects: [{ type: 'slow', duration: 5, value: 0.5 }],
+        },
+      },
+      {
+        id: 'status',
+        intervalTicks: 5,
+        nextTick: 0,
+        chargesRemaining: 1,
+        targetPolicy: 'nearest_enemy',
+        payload: { kind: 'status', effects: [{ type: 'emp', duration: 4 }] },
+      },
+      {
+        id: 'hazard',
+        intervalTicks: 5,
+        nextTick: 0,
+        chargesRemaining: 1,
+        targetPolicy: 'nearest_enemy',
+        payload: {
+          kind: 'hazard',
+          hazardType: 'napalm',
+          radius: 30,
+          duration: 10,
+          damagePerTick: 2,
+        },
+      },
+      {
+        id: 'shield',
+        intervalTicks: 5,
+        nextTick: 0,
+        chargesRemaining: 1,
+        targetPolicy: 'self',
+        payload: { kind: 'shield', amount: 12 },
+      },
+      {
+        id: 'heal',
+        intervalTicks: 5,
+        nextTick: 0,
+        chargesRemaining: 1,
+        targetPolicy: 'self',
+        payload: {
+          kind: 'heal',
+          amount: 8,
+          radius: 60,
+          cleanse: ['burn'],
+        },
+      },
+      {
+        id: 'spawn',
+        intervalTicks: 5,
+        nextTick: 0,
+        chargesRemaining: 1,
+        targetPolicy: 'self',
+        payload: {
+          kind: 'spawn',
+          unitType: 'marine',
+          count: 2,
+          cap: 2,
+          hpPercent: 0.5,
+          spreadRadius: 20,
+        },
+      },
+      {
+        id: 'mark',
+        intervalTicks: 5,
+        nextTick: 0,
+        chargesRemaining: 1,
+        targetPolicy: 'nearest_air',
+        canTargetAir: true,
+        payload: {
+          kind: 'mark',
+          mark: { duration: 8, damageMultiplier: 0.2, focusPriority: 500 },
+        },
+      },
+    ]
+    const ally = unit('ally', 'attacker', 130)
+    ally.hp = Math.max(1, ally.maxHp - 15)
+    applyStatus(ally, { type: 'burn', duration: 10 })
+    const ground = unit('ground', 'defender', 160)
+    const secondary = unit('secondary', 'defender', 190)
+    const air = unit('air', 'defender', 220)
+    air.isFlying = true
+    const legacy = createLegacyCombatRuntime()
+    const ecs = createEcsCombatRuntime()
+    for (const candidate of [source, ally, secondary, air, ground]) {
+      legacy.units.push(structuredClone(candidate))
+      ecs.units.push(structuredClone(candidate))
+    }
+    ecs.flushStructuralCommands()
+    const legacyActions: BattleAction[] = []
+    const ecsActions: BattleAction[] = []
+
+    legacy.runPeriodicAbilityPhase(0, legacyActions, new PRNG(7))
+    ecs.runPeriodicAbilityPhase(0, ecsActions, new PRNG(7))
+
+    expect(ecsActions).toEqual(legacyActions)
+    expect(ecs.snapshotUnits()).toEqual(legacy.snapshotUnits())
+    expect(ecs.hazards).toEqual(legacy.hazards)
+    expect(ecsActions.filter(action => action.type === 'periodic_ability'))
+      .toHaveLength(7)
+  })
+
+  it('owns scheduler charges in canonical support state', () => {
+    const world = new CombatWorld([
+      unit('source', 'attacker', 100),
+      unit('target', 'defender', 160),
+    ])
+    const spatial = new EntitySpatialIndex()
+    world.resources.set('entitySpatial', spatial)
+    world.resources.set('rng', new PRNG(3))
+    world.stores.support.require(0).periodicAbilities = [{
+      id: 'pulse',
+      intervalTicks: 4,
+      nextTick: 0,
+      chargesRemaining: 1,
+      targetPolicy: 'nearest_enemy',
+      payload: { kind: 'status', effects: [{ type: 'slow', duration: 3 }] },
+    }]
+    spatial.rebuild(world)
+    const actions: BattleAction[] = []
+
+    expect(world.roster[0].periodicAbilities).toBeUndefined()
+    runEcsPeriodicAbilitySystem(world, 0, actions)
+
+    expect(world.stores.support.require(0).periodicAbilities?.[0])
+      .toMatchObject({ nextTick: 4, chargesRemaining: 0 })
+    expect(actions[0]).toMatchObject({
+      unitId: 'source',
+      type: 'periodic_ability',
+      targetId: 'target',
+    })
+  })
+
+  it('rejects an out-of-range current target before spending a charge', () => {
+    const world = new CombatWorld([
+      unit('source', 'attacker', 100),
+      unit('target', 'defender', 300),
+    ])
+    const spatial = new EntitySpatialIndex()
+    world.resources.set('entitySpatial', spatial)
+    world.resources.set('rng', new PRNG(5))
+    world.stores.support.require(0).periodicAbilities = [{
+      id: 'limited',
+      intervalTicks: 4,
+      nextTick: 0,
+      chargesRemaining: 1,
+      targetPolicy: 'current_target',
+      maxRange: 100,
+      payload: { kind: 'damage', amount: 5 },
+    }]
+    world.stores.entityTargets.require(0).attackTarget = 1
+    spatial.rebuild(world)
+    const actions: BattleAction[] = []
+
+    runEcsPeriodicAbilitySystem(world, 0, actions)
+
+    expect(actions).toEqual([])
+    expect(world.stores.support.require(0).periodicAbilities?.[0])
+      .toMatchObject({ nextTick: 0, chargesRemaining: 1 })
+  })
+})

@@ -23,6 +23,7 @@ import { processTransformModes } from './combat.transform'
 import { processFieldEffects } from './combat.field-effects'
 import { processFormationBonuses } from './combat.formation'
 import { processControlBeams } from './combat.control'
+import { processPeriodicAbilities } from './combat.periodic-abilities'
 import type { PRNG } from './combat.utils'
 
 export function createLegacyCombatRuntime(): CombatRuntime {
@@ -70,6 +71,20 @@ export function createLegacyCombatRuntime(): CombatRuntime {
     runFormationBonusPhase: (tick, actions) =>
       processFormationBonuses(tick, units, actions),
     runControlBeamPhase: actions => processControlBeams(units, actions),
+    runPeriodicAbilityPhase: (tick, actions, rng) =>
+      processPeriodicAbilities(tick, {
+        units,
+        hazards,
+        actions,
+        rng,
+        onUnitDeath: (dead, source) => resolveEnvironmentalDeath(
+          dead,
+          source.id,
+          'weapon',
+          actions,
+          rng,
+        ),
+      }),
     runStatusPhase(actions: BattleAction[], rng: PRNG): void {
       for (const unit of units) {
         if (!unit.isDead) {

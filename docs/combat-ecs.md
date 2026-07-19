@@ -68,7 +68,9 @@ status cleansing, and persistent hazards. Adjacency formation bonuses now use
 local EntityId spatial queries and the shared ECS status kernel in stable
 external-ID order. Control beams now acquire locally and own progress, stale
 link breaks, conversion, target-reference clearing, and actual conversion
-healing in ECS. Successful incendiary hits create seeded napalm hazards
+healing in ECS. Periodic ability scheduling, target policies, charges, damage,
+status, hazard, shield, healing, spawn, and mark payloads now run through
+native ECS kernels. Successful incendiary hits create seeded napalm hazards
 through the ECS structural buffer after primary on-hit effects; multishot creates
 one puddle per non-intercepted shot. Smoke actions now deploy seeded suppression
 hazards through a native ECS action path without primary damage or movement

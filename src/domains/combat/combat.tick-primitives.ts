@@ -1,7 +1,6 @@
 import type { BattleAction } from './combat.actions'
 import { processSupportAuras } from './combat.auras'
 import { processGlobals } from './combat.globals'
-import { processPeriodicAbilities } from './combat.periodic-abilities'
 import { handleDeath } from './combat.systems.utils'
 import { processHpThresholdTriggers, type TriggerContext } from './combat.triggers'
 import type { GlobalUpgradeConfig } from './combat.upgrades'
@@ -16,6 +15,7 @@ export interface PreActionRuntimePhases {
   runFieldEffects(): void
   runFormationBonuses(): void
   runControlBeams(): void
+  runPeriodicAbilities(): void
 }
 
 export function processPreActionPrimitives(
@@ -37,7 +37,7 @@ export function processPreActionPrimitives(
   runtimePhases.runFieldEffects()
   runtimePhases.runFormationBonuses()
   runtimePhases.runControlBeams()
-  processPeriodicAbilities(tick, triggerContext)
+  runtimePhases.runPeriodicAbilities()
   return triggerContext
 }
 

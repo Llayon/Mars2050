@@ -3,6 +3,7 @@ import { HARMFUL_STATUS_TYPES } from '../../combat.status'
 import type {
   FieldEffectConfig,
   HazardKind,
+  StatusType,
   TriggerPayload,
 } from '../../combat.sim.types'
 import { getDistance } from '../../combat.utils'
@@ -153,19 +154,23 @@ function cleanseAllies(
         world.stores.identity.require(right).id,
       ),
     )
-  for (const allyId of allies) cleanseUnit(world, allyId, actions)
+  for (const allyId of allies) {
+    cleanseEcsStatuses(world, allyId, HARMFUL_STATUS_TYPES, actions)
+  }
 }
 
-function cleanseUnit(
+export function cleanseEcsStatuses(
   world: CombatWorld,
   entityId: EntityId,
+  types: readonly StatusType[],
   actions: BattleAction[],
 ): void {
   const identity = world.stores.identity.require(entityId)
   const status = world.stores.statusControl.require(entityId)
+  const allowed = new Set(types)
   for (let index = status.statusEffects.length - 1; index >= 0; index--) {
     const effect = status.statusEffects[index]
-    if (!HARMFUL_STATUS_TYPES.includes(effect.type)) continue
+    if (!allowed.has(effect.type)) continue
     status.statusEffects.splice(index, 1)
     actions.push({
       unitId: identity.id,

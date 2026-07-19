@@ -78,6 +78,8 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
           runtime.runFormationBonusPhase(tick, actions),
         runControlBeams: () =>
           runtime.runControlBeamPhase(actions),
+        runPeriodicAbilities: () =>
+          runtime.runPeriodicAbilityPhase(tick, actions, rng),
       },
       spatialHash,
     );

@@ -5,7 +5,7 @@ import { CombatWorld } from './combat-world'
 import { createEcsMeleeEngagementState, getEcsBurrowRegenerationEntities, getEcsFieldEffectEntities, getEcsFormationBonusEntities, getEcsGrowthAndChargeEntities, getEcsTerminalOutcome, getEcsTransformModeEntities, getEcsTurnOrder, processEcsHpThresholdTriggers, reserveEcsMeleeSlot, resolveEcsDeath, runActionSystem, runDepenetrationSystem, runEcsBurrowRegenerationSystem, runEcsFieldEffectSystem, runEcsFormationBonusSystem, runEcsGrowthAndChargeSystem, runEcsPeriodicSpawnerSystem, runEcsReassemblySystem, runEcsTransformModeSystem, runHazardSystem, runModifierSystem, runMovementSystem, runStatusSystem, runTargetingSystem, syncEcsTargetRefs } from './systems'
 import { createSquadEntities } from './combat-entity-factory'
 import { EntitySpatialIndex } from './entity-spatial-index'
-import { runEcsControlBeamPhase } from './combat-ecs-phase-boundaries'
+import { runEcsControlBeamPhase, runEcsPeriodicAbilityPhase } from './combat-ecs-phase-boundaries'
 
 const MODIFIER_COMPONENTS = ['vitality', 'combat', 'defense', 'statusControl', 'lifecycle'] as const
 const TICK_READ_COMPONENTS = ['identity', 'transform', 'vitality', 'combat', 'weapon', 'targeting', 'statusControl', 'support', 'lifecycle'] as const
@@ -194,6 +194,8 @@ export function createEcsCombatRuntime(): EcsCombatRuntime {
       }
     },
     runControlBeamPhase: actions => runEcsControlBeamPhase(world, actions),
+    runPeriodicAbilityPhase: (tick, actions, rng) =>
+      runEcsPeriodicAbilityPhase(world, tick, actions, rng),
     runStatusPhase(actions: BattleAction[], _rng): void {
       world.flushStructuralCommands()
       world.syncAllComponentsToStore(TICK_READ_COMPONENTS)
