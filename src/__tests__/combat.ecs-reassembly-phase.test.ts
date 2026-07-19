@@ -55,7 +55,7 @@ describe('combat ECS reassembly phase', () => {
     const restoredHp = Math.max(1, Math.floor(pending.maxHp * 0.5))
     const enemy = unit('enemy', 'defender', 500)
     const ecs = createEcsCombatRuntime()
-    ecs.units.push(structuredClone(pending), structuredClone(enemy))
+    ecs.world.roster.push(structuredClone(pending), structuredClone(enemy))
     ecs.flushStructuralCommands()
     const ecsActions: BattleAction[] = []
 
@@ -84,7 +84,7 @@ describe('combat ECS reassembly phase', () => {
     dead.isDead = true
     const enemy = unit('enemy', 'defender', 500)
     const runtime = createEcsCombatRuntime()
-    runtime.units.push(dead, enemy)
+    runtime.world.roster.push(dead, enemy)
     runtime.flushStructuralCommands()
     runtime.world.stores.vitality.require(0).reassemblyState = {
       remainingTicks: 2,
@@ -92,7 +92,7 @@ describe('combat ECS reassembly phase', () => {
       sourceUnitId: 'dead',
     }
 
-    expect(runtime.units[0].reassemblyState).toBeUndefined()
+    expect(runtime.world.roster[0].reassemblyState).toBeUndefined()
     expect(runtime.getTerminalOutcome()).toBeNull()
   })
 })

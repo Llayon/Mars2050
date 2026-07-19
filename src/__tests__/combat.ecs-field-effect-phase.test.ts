@@ -63,9 +63,9 @@ describe('combat ECS field effect phase', () => {
     }
     const ecs = createEcsCombatRuntime()
     for (const candidate of [emitter, ally]) {
-      ecs.units.push(structuredClone(candidate))
+      ecs.world.roster.push(structuredClone(candidate))
     }
-    ecs.hazards.push(structuredClone(fire))
+    ecs.world.hazards.push(structuredClone(fire))
     ecs.flushStructuralCommands()
     const ecsActions: BattleAction[] = []
 
@@ -74,7 +74,7 @@ describe('combat ECS field effect phase', () => {
 
     expect(ecsActions.filter(action => action.type === 'field_effect')).toHaveLength(3)
     expect(ecs.world.stores.statusControl.require(1).statusEffects).toEqual([])
-    expect(ecs.hazards.map(hazard => hazard.type).sort()).toEqual(['barrier_dome', 'smoke'])
+    expect(ecs.world.hazards.map(hazard => hazard.type).sort()).toEqual(['barrier_dome', 'smoke'])
   })
 
   it('reads scheduler state from canonical stores in external-ID order', () => {
@@ -116,7 +116,7 @@ describe('combat ECS field effect phase', () => {
       capacity: 20,
     }]
     const runtime = createEcsCombatRuntime()
-    runtime.units.push(emitter)
+    runtime.world.roster.push(emitter)
     runtime.flushStructuralCommands()
     emitter.x = 900
     emitter.fieldEffect = undefined
@@ -129,13 +129,13 @@ describe('combat ECS field effect phase', () => {
       unitId: 'canonical-emitter',
       type: 'field_effect',
     }))
-    expect(runtime.hazards).toContainEqual(expect.objectContaining({
+    expect(runtime.world.hazards).toContainEqual(expect.objectContaining({
       id: 'barrier_canonical-emitter_canonical-barrier_0',
       x: 100,
       capacity: 20,
     }))
     expect(runtime.world.stores.support.require(emitterId)
       .fieldEffect?.[0].nextTick).toBe(5)
-    expect(runtime.units[0].fieldEffect?.[0].nextTick).toBe(5)
+    expect(runtime.world.roster[0].fieldEffect?.[0].nextTick).toBe(5)
   })
 })

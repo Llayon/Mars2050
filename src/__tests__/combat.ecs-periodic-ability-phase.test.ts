@@ -123,7 +123,7 @@ describe('combat ECS periodic ability phase', () => {
     air.isFlying = true
     const ecs = createEcsCombatRuntime()
     for (const candidate of [source, ally, secondary, air, ground]) {
-      ecs.units.push(structuredClone(candidate))
+      ecs.world.roster.push(structuredClone(candidate))
     }
     ecs.flushStructuralCommands()
     const ecsActions: BattleAction[] = []
@@ -135,7 +135,7 @@ describe('combat ECS periodic ability phase', () => {
     expect(ecs.snapshotUnits().filter(candidate =>
       candidate.summonOwnerId === 'source',
     )).toHaveLength(2)
-    expect(ecs.hazards).toContainEqual(expect.objectContaining({
+    expect(ecs.world.hazards).toContainEqual(expect.objectContaining({
       type: 'napalm',
       id: 'periodic_source_hazard_0',
     }))
@@ -213,7 +213,7 @@ describe('combat ECS periodic ability phase', () => {
     }]
     const target = unit('canonical-target', 'defender', 160)
     const runtime = createEcsCombatRuntime()
-    runtime.units.push(source, target)
+    runtime.world.roster.push(source, target)
     runtime.flushStructuralCommands()
     source.periodicAbilities = undefined
     source.x = 700
@@ -240,8 +240,8 @@ describe('combat ECS periodic ability phase', () => {
       })
     expect(runtime.world.stores.statusControl.require(targetId).statusEffects)
       .toEqual([expect.objectContaining({ type: 'slow' })])
-    expect(runtime.units[0].periodicAbilities?.[0].chargesRemaining).toBe(0)
-    expect(runtime.units[1].statusEffects)
+    expect(runtime.world.roster[0].periodicAbilities?.[0].chargesRemaining).toBe(0)
+    expect(runtime.world.roster[1].statusEffects)
       .toEqual([expect.objectContaining({ type: 'slow' })])
   })
 })

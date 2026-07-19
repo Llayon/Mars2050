@@ -32,7 +32,7 @@ describe('combat ECS formation bonus phase', () => {
     }
     const ecs = createEcsCombatRuntime()
     for (const candidate of [source, unit('near-a', 140), unit('near-b', 180)]) {
-      ecs.units.push(structuredClone(candidate))
+      ecs.world.roster.push(structuredClone(candidate))
     }
     ecs.flushStructuralCommands()
     const ecsActions: BattleAction[] = []
@@ -93,7 +93,7 @@ describe('combat ECS formation bonus phase', () => {
     }
     const neighbor = unit('canonical-neighbor', 140)
     const runtime = createEcsCombatRuntime()
-    runtime.units.push(source, neighbor)
+    runtime.world.roster.push(source, neighbor)
     runtime.flushStructuralCommands()
     source.formationModifiers = undefined
     source.x = 800
@@ -113,7 +113,7 @@ describe('combat ECS formation bonus phase', () => {
         type: 'attack_boost',
         value: 0.25,
       }))
-    expect(runtime.units[0].statusEffects)
+    expect(runtime.world.roster[0].statusEffects)
       .toContainEqual(expect.objectContaining({ type: 'attack_boost' }))
   })
 })

@@ -47,7 +47,7 @@ describe('combat ECS transform mode phase', () => {
 
     const ecs = createEcsCombatRuntime()
     for (const candidate of [assault, jumper]) {
-      ecs.units.push(structuredClone(candidate))
+      ecs.world.roster.push(structuredClone(candidate))
     }
     ecs.flushStructuralCommands()
     const ecsActions: BattleAction[] = []
@@ -95,7 +95,7 @@ describe('combat ECS transform mode phase', () => {
     }]
     transforming.transformState = { appliedIds: [] }
     const runtime = createEcsCombatRuntime()
-    runtime.units.push(transforming)
+    runtime.world.roster.push(transforming)
     runtime.flushStructuralCommands()
     transforming.attack = 999
     transforming.transformMode = undefined
@@ -112,6 +112,6 @@ describe('combat ECS transform mode phase', () => {
     expect(runtime.world.stores.combat.require(entityId).attack).toBeLessThan(999)
     expect(transforming.attack)
       .toBe(runtime.world.stores.combat.require(entityId).attack)
-    expect(runtime.units[0].transformState?.appliedIds).toEqual(['canonical'])
+    expect(runtime.world.roster[0].transformState?.appliedIds).toEqual(['canonical'])
   })
 })

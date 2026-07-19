@@ -66,7 +66,7 @@ describe('combat ECS hazard death', () => {
 
     expect(nativeActions.filter(action => action.type === 'die')
       .map(action => action.unitId)).toEqual(['a-target', 'b-target'])
-    expect(runtime.hazards).toEqual([])
+    expect(runtime.world.hazards).toEqual([])
     expect(runtime.world.stores.vitality.require(1).isDead).toBe(true)
     expect(runtime.world.stores.vitality.require(2).isDead).toBe(true)
   })
@@ -115,8 +115,8 @@ describe('combat ECS hazard death', () => {
       duration: 5,
     }
     const runtime = createEcsCombatRuntime()
-    runtime.units.push(target)
-    runtime.hazards.push(mine)
+    runtime.world.roster.push(target)
+    runtime.world.hazards.push(mine)
     runtime.flushStructuralCommands()
     target.x = 900
     target.hp = target.maxHp
@@ -137,6 +137,6 @@ describe('combat ECS hazard death', () => {
       damageKind: 'hazard',
     })
     expect(runtime.world.stores.vitality.require(targetId).isDead).toBe(true)
-    expect(runtime.units[0].isDead).toBe(true)
+    expect(runtime.world.roster[0].isDead).toBe(true)
   })
 })

@@ -25,7 +25,7 @@ describe('combat ECS serialization boundary', () => {
     dead.hp = 0
     dead.isDead = true
     const runtime = createEcsCombatRuntime()
-    runtime.units.push(alive, temporary, dead)
+    runtime.world.roster.push(alive, temporary, dead)
     runtime.flushStructuralCommands()
     const canonicalAliveHp = alive.hp
 

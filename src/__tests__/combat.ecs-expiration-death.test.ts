@@ -46,7 +46,7 @@ describe('combat ECS expiration death', () => {
       sourceUnitId: undefined,
       cause: 'expiration',
     }])
-    expect(runtime.hazards).toEqual([])
+    expect(runtime.world.hazards).toEqual([])
     expect(runtime.world.stores.vitality.require(0)).toMatchObject({
       hp: unit.maxHp,
       isDead: true,

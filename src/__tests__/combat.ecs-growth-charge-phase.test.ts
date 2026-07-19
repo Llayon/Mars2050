@@ -41,7 +41,7 @@ describe('combat ECS growth and charge phase', () => {
     const growing = unit('growing')
     configure(growing)
     const ecs = createEcsCombatRuntime()
-    ecs.units.push(structuredClone(growing))
+    ecs.world.roster.push(structuredClone(growing))
     ecs.flushStructuralCommands()
     const ecsActions: BattleAction[] = []
 
@@ -95,7 +95,7 @@ describe('combat ECS growth and charge phase', () => {
     const growing = unit('canonical-growth')
     configure(growing)
     const runtime = createEcsCombatRuntime()
-    runtime.units.push(growing)
+    runtime.world.roster.push(growing)
     runtime.flushStructuralCommands()
     growing.attack = 999
     growing.statGrowth = undefined
@@ -111,7 +111,7 @@ describe('combat ECS growth and charge phase', () => {
     ])
     expect(runtime.world.stores.combat.require(entityId).attack).toBeLessThan(999)
     expect(growing.attack).toBe(runtime.world.stores.combat.require(entityId).attack)
-    expect(runtime.units[0].statGrowth?.stacks).toBe(1)
-    expect(runtime.units[0].attackCharge?.stacks).toBe(1)
+    expect(runtime.world.roster[0].statGrowth?.stacks).toBe(1)
+    expect(runtime.world.roster[0].attackCharge?.stacks).toBe(1)
   })
 })

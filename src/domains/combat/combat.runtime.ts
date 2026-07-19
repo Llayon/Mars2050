@@ -1,6 +1,6 @@
 import type { BattleAction } from './combat.actions'
 import type { BattleOutcome } from './combat.outcome'
-import type { SimHazard, SimUnit } from './combat.sim.types'
+import type { SimUnit } from './combat.sim.types'
 import type { FlowFieldMap } from './combat.pathfinding'
 import type { Obstacle, Team } from './combat.sim.types'
 import type { UnitRow } from './combat.types'
@@ -26,8 +26,6 @@ export interface RuntimeActionResult {
 }
 
 export interface CombatRuntime {
-  readonly units: SimUnit[]
-  readonly hazards: SimHazard[]
   addSquad(row: UnitRow, team: Team, rng: PRNG): void
   flushStructuralCommands(): void
   beginTargetingPhase(): void

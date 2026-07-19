@@ -29,7 +29,7 @@ function context(seed: number) {
 function runParity(units: SimUnit[], seed: number) {
   const legacyUnits = structuredClone(units)
   const runtime = createEcsCombatRuntime()
-  runtime.units.push(...structuredClone(units))
+  runtime.world.roster.push(...structuredClone(units))
   runtime.flushStructuralCommands()
   const world = runtime.world
   const legacyActions: Parameters<typeof processSpawnerLogic>[4] = []

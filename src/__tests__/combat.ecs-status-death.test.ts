@@ -103,7 +103,7 @@ describe('combat ECS status death', () => {
       }),
     ]
     const runtime = createEcsCombatRuntime()
-    runtime.units.push(attacker, target)
+    runtime.world.roster.push(attacker, target)
     runtime.flushStructuralCommands()
     target.hp = target.maxHp
     target.statusEffects = []
@@ -119,7 +119,7 @@ describe('combat ECS status death', () => {
       cause: 'burn',
     })
     expect(runtime.world.stores.vitality.require(targetId).isDead).toBe(true)
-    expect(runtime.units[1].isDead).toBe(true)
-    expect(runtime.units[1].statusEffects).toEqual([])
+    expect(runtime.world.roster[1].isDead).toBe(true)
+    expect(runtime.world.roster[1].statusEffects).toEqual([])
   })
 })

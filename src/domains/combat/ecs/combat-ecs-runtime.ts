@@ -18,8 +18,6 @@ export function createEcsCombatRuntime(): EcsCombatRuntime {
   world.resources.set('entitySpatial', new EntitySpatialIndex())
   return {
     world,
-    units: world.roster,
-    hazards: world.hazards,
     addSquad: (row, team, rng) => { createSquadEntities(world, row, team, rng) },
     flushStructuralCommands: () => world.flushStructuralCommands(),
     beginTargetingPhase: () => {

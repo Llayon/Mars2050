@@ -46,7 +46,7 @@ describe('combat ECS support aura phase', () => {
     enemy.stealthUntilAttack = true
     const ecs = createEcsCombatRuntime()
     for (const candidate of [source, enemy, ally]) {
-      ecs.units.push(structuredClone(candidate))
+      ecs.world.roster.push(structuredClone(candidate))
     }
     ecs.flushStructuralCommands()
     const ecsActions: BattleAction[] = []
@@ -107,7 +107,7 @@ describe('combat ECS support aura phase', () => {
     }]
     const ally = unit('canonical-ally', 'attacker', 150)
     const runtime = createEcsCombatRuntime()
-    runtime.units.push(source, ally)
+    runtime.world.roster.push(source, ally)
     runtime.flushStructuralCommands()
     source.supportAuras = undefined
     source.x = 900
@@ -129,8 +129,8 @@ describe('combat ECS support aura phase', () => {
       shield: 30,
       maxShield: 30,
     })
-    expect(runtime.units[0].supportAuras).toHaveLength(1)
-    expect(runtime.units[0].x).toBe(100)
-    expect(runtime.units[1].x).toBe(150)
+    expect(runtime.world.roster[0].supportAuras).toHaveLength(1)
+    expect(runtime.world.roster[0].x).toBe(100)
+    expect(runtime.world.roster[1].x).toBe(150)
   })
 })

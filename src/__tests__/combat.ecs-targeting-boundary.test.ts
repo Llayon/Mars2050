@@ -24,7 +24,7 @@ describe('combat ECS targeting boundary', () => {
     const near = unit('canonical-near', 'defender', 200)
     const far = unit('canonical-far', 'defender', 500)
     const runtime = createEcsCombatRuntime()
-    runtime.units.push(attacker, near, far)
+    runtime.world.roster.push(attacker, near, far)
     runtime.flushStructuralCommands()
     attacker.x = 900
     near.x = 0
