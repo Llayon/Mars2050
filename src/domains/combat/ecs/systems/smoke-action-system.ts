@@ -1,6 +1,7 @@
 import type { BattleAction } from '../../combat.actions'
 import type { RuntimeActionContext, RuntimeActionResult } from '../../combat.runtime'
-import type { SimUnit, StatusEffect } from '../../combat.sim.types'
+import type { StatusEffect } from '../../combat.sim.types'
+import type { UnitWeaponComponent } from '../../combat.unit-ability-components'
 import { FIELD_HEIGHT, FIELD_WIDTH, getDistance, getSizeRadius } from '../../combat.utils'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
@@ -56,7 +57,7 @@ function deploySmoke(
   externalId: string,
   entityId: EntityId,
   targetId: EntityId,
-  config: NonNullable<SimUnit['smokeOnAction']>,
+  config: NonNullable<UnitWeaponComponent['smokeOnAction']>,
   statusEffects: StatusEffect[],
   actions: BattleAction[],
   context: RuntimeActionContext,
@@ -95,7 +96,7 @@ function deploySmoke(
   })
 }
 
-function createSmokeStatuses(config: SimUnit['smokeOnAction']): StatusEffect[] {
+function createSmokeStatuses(config: UnitWeaponComponent['smokeOnAction']): StatusEffect[] {
   if (!config) return []
   const effects: StatusEffect[] = []
   if ((config.rangeSuppression ?? 0) > 0) {

@@ -1,4 +1,4 @@
-import type { RankRelation, RankScalingConfig, SimUnit } from './combat.sim.types'
+import type { RankScalingConfig } from './combat.sim.types'
 import type { UnitRow } from './combat.types'
 
 export interface RankScaledStats {
@@ -28,19 +28,4 @@ export function applyRankScaling(stats: RankScaledStats, config: RankScalingConf
     range: Math.max(0, stats.range + Math.max(0, config.rangeAddPerRank ?? 0) * steps),
     cooldown: Math.max(1, stats.cooldown * Math.max(0.05, 1 - cooldownReduction)),
   }
-}
-
-export function getRankDamageMultiplier(attacker: SimUnit, target: SimUnit): number {
-  let multiplier = 1
-  for (const modifier of attacker.rankScaling?.damageModifiers ?? []) {
-    if (getRankRelation(attacker, target) === modifier.relation) multiplier *= Math.max(0, modifier.multiplier)
-  }
-  return multiplier
-}
-
-export function getRankRelation(source: Pick<SimUnit, 'rank'>, target: Pick<SimUnit, 'rank'>): RankRelation {
-  const sourceRank = source.rank ?? 1
-  const targetRank = target.rank ?? 1
-  if (sourceRank === targetRank) return 'same_rank'
-  return targetRank > sourceRank ? 'higher_rank' : 'lower_rank'
 }

@@ -1,4 +1,5 @@
-import type { SimHazard, SimUnit } from '../combat.sim.types'
+import type { SimHazard } from '../combat.sim.types'
+import type { UnitComponentDataMap, UnitField } from '../combat.unit-components'
 import { ComponentStore } from './component-store'
 import type { EntityId } from './entity'
 
@@ -21,9 +22,15 @@ export const COMPONENT_FIELDS = {
   defense: ['flatDamageBlock', 'shieldHitBlock', 'shieldHitBlockCharges', 'reactiveArmorCharges', 'reactiveArmorBlock', 'damageShareRadius', 'damageShareRatio', 'damageShareMaxTargets', 'projectileInterceptRadius', 'projectileInterceptCooldownMax', 'projectileInterceptCooldown', 'projectileInterceptMaxDamage'],
   support: ['supportAuras', 'periodicAbilities', 'fieldEffect', 'formationModifiers'],
   lifecycle: ['triggerEffects', 'statGrowth', 'attackCharge', 'spawnerConfig', 'replicateOnKill', 'onDeathPuddle'],
-} as const satisfies Record<UnitComponentName, readonly (keyof SimUnit)[]>
+} as const satisfies { [Name in UnitComponentName]: readonly (keyof UnitComponentDataMap[Name])[] }
 
-type ComponentFrom<Name extends UnitComponentName> = Pick<SimUnit, typeof COMPONENT_FIELDS[Name][number]>
+type MissingComponentField = {
+  [Name in UnitComponentName]:
+    Exclude<keyof UnitComponentDataMap[Name], typeof COMPONENT_FIELDS[Name][number]>
+}[UnitComponentName]
+
+export const COMPONENT_FIELDS_ARE_EXHAUSTIVE:
+  MissingComponentField extends never ? true : never = true
 
 export interface EntityMetaComponent {
   kind: 'unit' | 'hazard'
@@ -39,17 +46,17 @@ export interface EntityTargetRefsComponent {
 
 export interface CombatComponentMap {
   entityMeta: EntityMetaComponent
-  identity: ComponentFrom<'identity'>
-  transform: ComponentFrom<'transform'>
-  vitality: ComponentFrom<'vitality'>
-  combat: ComponentFrom<'combat'>
-  weapon: ComponentFrom<'weapon'>
-  targeting: ComponentFrom<'targeting'>
-  movement: ComponentFrom<'movement'>
-  statusControl: ComponentFrom<'statusControl'>
-  defense: ComponentFrom<'defense'>
-  support: ComponentFrom<'support'>
-  lifecycle: ComponentFrom<'lifecycle'>
+  identity: UnitComponentDataMap['identity']
+  transform: UnitComponentDataMap['transform']
+  vitality: UnitComponentDataMap['vitality']
+  combat: UnitComponentDataMap['combat']
+  weapon: UnitComponentDataMap['weapon']
+  targeting: UnitComponentDataMap['targeting']
+  movement: UnitComponentDataMap['movement']
+  statusControl: UnitComponentDataMap['statusControl']
+  defense: UnitComponentDataMap['defense']
+  support: UnitComponentDataMap['support']
+  lifecycle: UnitComponentDataMap['lifecycle']
   entityTargets: EntityTargetRefsComponent
   hazard: SimHazard
 }
@@ -58,7 +65,7 @@ export type CombatComponentStores = {
   [Name in ComponentName]: ComponentStore<CombatComponentMap[Name]>
 }
 
-export const FIELD_COMPONENT = new Map<keyof SimUnit, ComponentName>(
+export const FIELD_COMPONENT = new Map<UnitField, ComponentName>(
   Object.entries(COMPONENT_FIELDS).flatMap(([name, fields]) =>
     fields.map(field => [field, name as ComponentName] as const),
   ),

@@ -116,7 +116,7 @@ export class CombatWorld {
     for (const field of COMPONENT_FIELDS[name]) {
       if (field in unit) component[field] = unit[field]
     }
-    this.stores[name].set(entityId, component as CombatComponentMap[Name])
+    this.stores[name].set(entityId, component as unknown as CombatComponentMap[Name])
   }
 
   private assertKnownFields(unit: SimUnit): void {

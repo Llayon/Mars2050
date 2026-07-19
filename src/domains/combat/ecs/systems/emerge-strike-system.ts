@@ -1,9 +1,9 @@
 import type { BattleAction } from '../../combat.actions'
-import type { SimUnit } from '../../combat.sim.types'
+import type { UnitWeaponComponent } from '../../combat.unit-ability-components'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
 
-type EmergeStrikePayload = NonNullable<SimUnit['emergeStrikePending']>
+type EmergeStrikePayload = NonNullable<UnitWeaponComponent['emergeStrikePending']>
 
 export function syncEcsBurrowForAction(
   world: CombatWorld,

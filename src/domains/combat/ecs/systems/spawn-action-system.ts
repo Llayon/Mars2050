@@ -1,7 +1,8 @@
 import type { BattleAction } from '../../combat.actions'
 import { UNIT_TYPES } from '../../combat.config'
 import type { RuntimeActionContext, RuntimeActionResult } from '../../combat.runtime'
-import type { SimUnit, StatusEffect } from '../../combat.sim.types'
+import type { StatusEffect } from '../../combat.sim.types'
+import type { UnitSnapshot } from '../../combat.unit-components'
 import type { UnitTypeKey } from '../../combat.types'
 import { createRuntimeUnitFromConfig } from '../../combat.unit-factory'
 import { FIELD_HEIGHT, FIELD_WIDTH } from '../../combat.utils'
@@ -96,7 +97,7 @@ function createSpawnedUnit(
   targetId: EntityId,
   context: RuntimeActionContext,
   configuredSpawnType?: string,
-): { unit: SimUnit; spawnMaxHp: number } | null {
+): { unit: UnitSnapshot; spawnMaxHp: number } | null {
   const identity = world.stores.identity.require(entityId)
   const transform = world.stores.transform.require(entityId)
   const target = world.stores.transform.require(targetId)
