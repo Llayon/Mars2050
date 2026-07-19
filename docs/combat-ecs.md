@@ -14,11 +14,11 @@ reused during a battle. Runtime data is exposed through grouped component stores
 - movement and status/control;
 - support, lifecycle, and mechanics.
 
-Component stores are canonical while ECS phases execute. Unported hot loops use
-a temporary plain `SimUnit` write-back facade, synchronized explicitly at ECS
-phase boundaries; this avoids accessor overhead while the migration is in
-progress. New entities must enter through `world.roster.push()` so they receive
-a monotonic entity ID and components.
+Component stores are canonical while ECS phases execute. Unported hot loops read
+a temporary plain `SimUnit` output facade, mirrored explicitly from ECS phase
+results; no facade-to-component synchronization API remains. New entities must
+enter through `world.roster.push()` so they receive a monotonic entity ID and
+components.
 
 ## Migration Status
 
@@ -137,7 +137,8 @@ and death resolution.
 Native hazard processing rebuilds its spatial index from canonical transforms,
 vitality, and hazard components without importing unit or hazard facades at the
 end of each combat tick. Actor-turn completion no longer imports replay-linked
-facade objects into component stores.
+facade objects into component stores. Hazard cleansing queries canonical hazard
+entities and removes them structurally in deterministic reverse-creation order.
 The targeting-phase boundary also flushes structural commands, resolves
 EntityId references, and rebuilds the spatial index directly from canonical
 components without a roster-facade import.

@@ -119,11 +119,12 @@ function cleanseHazards(
   const owner = world.stores.identity.require(ownerId)
   const source = world.stores.transform.require(ownerId)
   const removable = new Set(effect.hazardTypes ?? CLEANSE_HAZARDS)
-  for (let index = world.hazards.length - 1; index >= 0; index--) {
-    const hazard = world.hazards[index]
+  const hazardIds = world.query(['hazard'], true).reverse()
+  for (const hazardId of hazardIds) {
+    const hazard = world.stores.hazard.require(hazardId)
     if (!removable.has(hazard.type) ||
         getDistance(source.x, source.y, hazard.x, hazard.y) > effect.radius) continue
-    world.hazards.splice(index, 1)
+    world.removeHazardEntity(hazardId)
     actions.push({
       unitId: owner.id,
       type: 'hazard_cleanse',
@@ -131,7 +132,6 @@ function cleanseHazards(
       statusType: hazard.type,
     })
   }
-  world.reconcileHazards()
 }
 
 function cleanseAllies(

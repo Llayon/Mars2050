@@ -92,33 +92,11 @@ export class CombatWorld {
     return this.stores[componentName].get(entityId)
   }
 
-  syncEntityToComponents(entityId: EntityId): void {
-    const view = this.views[entityId]
-    if (!view) return
-    for (const field of Object.keys(view) as (keyof SimUnit)[]) {
-      const owner = FIELD_COMPONENT.get(field)
-      if (!owner) throw new Error(`Unmapped SimUnit field: ${String(field)}`)
-      ;(this.stores[owner].require(entityId) as Record<keyof SimUnit, unknown>)[field] = view[field]
-    }
-  }
-
   syncEntityFromComponents(entityId: EntityId): void {
     const view = this.views[entityId]
     if (!view) return
     for (const name of Object.keys(COMPONENT_FIELDS) as UnitComponentName[]) {
       Object.assign(view, this.stores[name].get(entityId))
-    }
-  }
-
-  syncComponentsToStore(entityId: EntityId, componentNames: readonly UnitComponentName[]): void {
-    const view = this.views[entityId]
-    if (!view) return
-    for (const componentName of componentNames) {
-      const component = this.stores[componentName].require(entityId)
-      const fields = COMPONENT_FIELDS[componentName]
-      for (const field of fields) {
-        ;(component as Record<keyof SimUnit, unknown>)[field] = view[field]
-      }
     }
   }
 
@@ -128,16 +106,8 @@ export class CombatWorld {
     for (const componentName of componentNames) Object.assign(view, this.stores[componentName].get(entityId))
   }
 
-  syncAllToComponents(): void {
-    for (const entityId of this.entityIds) this.syncEntityToComponents(entityId)
-  }
-
   syncAllFromComponents(): void {
     for (const entityId of this.entityIds) this.syncEntityFromComponents(entityId)
-  }
-
-  syncAllComponentsToStore(componentNames: readonly UnitComponentName[]): void {
-    for (const entityId of this.entityIds) this.syncComponentsToStore(entityId, componentNames)
   }
 
   syncAllComponentsFromStore(componentNames: readonly UnitComponentName[]): void {
@@ -156,29 +126,6 @@ export class CombatWorld {
     return this.entityIds
       .filter(entityId => this.stores.entityMeta.get(entityId)?.kind === 'unit')
       .map(entityId => this.snapshotEntity(entityId))
-  }
-
-  reconcileHazards(): void {
-    const activeIds = new Set(this.hazards.map(hazard => hazard.id))
-    for (const entityId of this.entityIds) {
-      const meta = this.stores.entityMeta.get(entityId)
-      if (meta?.kind !== 'hazard') continue
-      if (!activeIds.has(meta.externalId)) {
-        this.stores.hazard.delete(entityId)
-        this.hazardViews[entityId] = undefined
-        this.externalIdToEntity.delete(meta.externalId)
-        continue
-      }
-      const view = this.hazardViews[entityId]
-      if (view) this.stores.hazard.set(entityId, structuredClone(view))
-    }
-  }
-
-  syncHazardsToComponents(): void {
-    for (const entityId of this.entityIds) {
-      const view = this.hazardViews[entityId]
-      if (view && this.stores.hazard.has(entityId)) this.stores.hazard.set(entityId, structuredClone(view))
-    }
   }
 
   syncHazardsFromComponents(): void {

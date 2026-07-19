@@ -10,21 +10,20 @@ import { SpatialHash } from '@/domains/combat/spatial-hash'
 import { PRNG } from '@/domains/combat/combat.utils'
 
 describe('combat ECS runtime', () => {
-  it('stores mutable runtime state in component stores', () => {
+  it('keeps component state canonical and mirrors it to runtime views', () => {
     const unit = createRuntimeUnitFromConfig({ id: 'marine', team: 'attacker', type: 'marine', x: 10, y: 20, currentAngle: 0 })
     expect(unit).not.toBeNull()
     const world = new CombatWorld([unit!])
     const view = world.roster[0]
 
-    view.hp = 17
-    view.x = 44
-
-    world.syncEntityToComponents(0)
-    expect(world.stores.vitality.get(0)?.hp).toBe(17)
-    expect(world.stores.transform.get(0)?.x).toBe(44)
+    world.stores.vitality.require(0).hp = 17
+    world.stores.transform.require(0).x = 44
+    expect(view.hp).not.toBe(17)
+    expect(view.x).not.toBe(44)
     world.stores.vitality.require(0).hp = 23
     world.syncEntityFromComponents(0)
     expect(view.hp).toBe(23)
+    expect(view.x).toBe(44)
     expect(world.snapshotEntity(0)).toMatchObject({ id: 'marine', hp: 23, x: 44 })
     const snapshot = world.snapshotEntity(0)
     view.velocity.x = 99
@@ -36,8 +35,7 @@ describe('combat ECS runtime', () => {
     const second = createRuntimeUnitFromConfig({ id: 'second', team: 'defender', type: 'marine', x: 20, y: 20, currentAngle: 0 })!
     const world = new CombatWorld([first, second])
 
-    world.roster[0].isDead = true
-    world.syncEntityToComponents(0)
+    world.stores.vitality.require(0).isDead = true
 
     expect(world.query(['identity', 'transform', 'vitality'])).toEqual([1])
     expect(world.query(['identity', 'transform', 'vitality'], true)).toEqual([0, 1])
@@ -59,8 +57,7 @@ describe('combat ECS runtime', () => {
     expect(world.getHazard(entityId!)).toMatchObject({ type: 'mine', duration: 5 })
     expect(world.snapshot()).toEqual([])
 
-    world.hazards.splice(0, 1)
-    world.reconcileHazards()
+    world.removeHazardEntity(entityId!)
     expect(world.stores.hazard.has(entityId!)).toBe(false)
   })
 
