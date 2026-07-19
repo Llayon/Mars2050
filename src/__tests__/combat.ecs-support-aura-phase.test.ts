@@ -100,4 +100,43 @@ describe('combat ECS support aura phase', () => {
     })
     expect(spatial.getProfile().queryCount).toBe(1)
   })
+
+  it('does not overwrite canonical aura inputs from facades', () => {
+    const source = unit('canonical-source', 'attacker', 100)
+    source.supportAuras = [{
+      type: 'shield',
+      radius: 100,
+      value: 30,
+      interval: 10,
+      target: 'allies',
+      targetTags: ['infantry'],
+    }]
+    const ally = unit('canonical-ally', 'attacker', 150)
+    const runtime = createEcsCombatRuntime()
+    runtime.units.push(source, ally)
+    runtime.flushStructuralCommands()
+    source.supportAuras = undefined
+    source.x = 900
+    ally.x = 900
+    ally.shield = 30
+    ally.maxShield = 30
+    const actions: BattleAction[] = []
+
+    runtime.runSupportAuraPhase(0, actions, new SpatialHash())
+
+    const allyId = runtime.world.getEntityId(ally.id)!
+    expect(actions).toEqual([{
+      unitId: 'canonical-source',
+      type: 'shield_apply',
+      targetId: 'canonical-ally',
+      damage: 30,
+    }])
+    expect(runtime.world.stores.vitality.require(allyId)).toMatchObject({
+      shield: 30,
+      maxShield: 30,
+    })
+    expect(runtime.units[0].supportAuras).toHaveLength(1)
+    expect(runtime.units[0].x).toBe(100)
+    expect(runtime.units[1].x).toBe(150)
+  })
 })

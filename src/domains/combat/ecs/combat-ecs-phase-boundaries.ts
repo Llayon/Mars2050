@@ -47,7 +47,6 @@ export function runEcsSupportAuraPhase(
 ): void {
   const entityIds = getEcsSupportAuraEntities(world)
   if (!hasEcsSupportAuraAtTick(world, tick, entityIds)) return
-  world.syncAllToComponents()
   world.resources.require('entitySpatial').rebuild(world)
   runEcsSupportAuraSystem(world, tick, actions, entityIds)
   world.syncAllFromComponents()
