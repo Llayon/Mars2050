@@ -111,4 +111,39 @@ describe('combat ECS field effect phase', () => {
       'barrier_zeta_barrier_0',
     ])
   })
+
+  it('does not overwrite canonical field inputs from the facade', () => {
+    const emitter = unit('canonical-emitter', 100)
+    emitter.fieldEffect = [{
+      id: 'canonical-barrier',
+      kind: 'barrier_dome',
+      radius: 80,
+      intervalTicks: 5,
+      nextTick: 0,
+      duration: 5,
+      capacity: 20,
+    }]
+    const runtime = createEcsCombatRuntime()
+    runtime.units.push(emitter)
+    runtime.flushStructuralCommands()
+    emitter.x = 900
+    emitter.fieldEffect = undefined
+    const actions: BattleAction[] = []
+
+    runtime.runFieldEffectPhase(0, actions)
+
+    const emitterId = runtime.world.getEntityId(emitter.id)!
+    expect(actions).toContainEqual(expect.objectContaining({
+      unitId: 'canonical-emitter',
+      type: 'field_effect',
+    }))
+    expect(runtime.hazards).toContainEqual(expect.objectContaining({
+      id: 'barrier_canonical-emitter_canonical-barrier_0',
+      x: 100,
+      capacity: 20,
+    }))
+    expect(runtime.world.stores.support.require(emitterId)
+      .fieldEffect?.[0].nextTick).toBe(5)
+    expect(runtime.units[0].fieldEffect?.[0].nextTick).toBe(5)
+  })
 })

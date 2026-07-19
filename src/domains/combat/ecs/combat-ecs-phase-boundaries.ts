@@ -61,13 +61,6 @@ export function runEcsFieldEffectPhase(
   if (entityIds.length === 0) return
   world.flushStructuralCommands()
   world.reconcileHazards()
-  world.syncAllComponentsToStore([
-    'transform',
-    'vitality',
-    'support',
-    'statusControl',
-    'targeting',
-  ])
   runEcsFieldEffectSystem(world, tick, actions, entityIds)
   for (const entityId of entityIds) {
     world.syncComponentsFromStore(entityId, ['support'])

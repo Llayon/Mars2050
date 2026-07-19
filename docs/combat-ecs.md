@@ -66,7 +66,9 @@ jump displacement. Growth/charge, burrow regeneration, and transform runtime
 boundaries no longer copy facade state into components; they only mirror native
 results back for unported consumers. Periodic field scheduling and trigger field payloads now
 share one ECS kernel for finite and reducing barriers, hazard cleansing, allied
-status cleansing, and persistent hazards. Adjacency formation bonuses now use
+status cleansing, and persistent hazards. The field runtime boundary reads
+canonical transform, support, vitality, status, and targeting stores without a
+unit-facade import. Adjacency formation bonuses now use
 local EntityId spatial queries and the shared ECS status kernel in stable
 external-ID order. Control beams now acquire locally and own progress, stale
 link breaks, conversion, target-reference clearing, and actual conversion
