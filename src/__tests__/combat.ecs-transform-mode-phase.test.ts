@@ -89,4 +89,34 @@ describe('combat ECS transform mode phase', () => {
     expect(world.stores.statusControl.require(0).transformState?.appliedIds)
       .toEqual(['canonical'])
   })
+
+  it('does not overwrite canonical transform state from the runtime facade', () => {
+    const transforming = unit('canonical-transform')
+    transforming.transformMode = [{
+      id: 'canonical',
+      mode: 'assault',
+      trigger: 'battle_start',
+      attackMult: 2,
+    }]
+    transforming.transformState = { appliedIds: [] }
+    const runtime = createEcsCombatRuntime()
+    runtime.units.push(transforming)
+    runtime.flushStructuralCommands()
+    transforming.attack = 999
+    transforming.transformMode = undefined
+    transforming.transformState = undefined
+    const actions: BattleAction[] = []
+
+    runtime.runTransformModePhase(0, actions)
+
+    const entityId = runtime.world.getEntityId(transforming.id)!
+    expect(actions).toEqual([expect.objectContaining({
+      unitId: 'canonical-transform',
+      type: 'transform_mode',
+    })])
+    expect(runtime.world.stores.combat.require(entityId).attack).toBeLessThan(999)
+    expect(transforming.attack)
+      .toBe(runtime.world.stores.combat.require(entityId).attack)
+    expect(runtime.units[0].transformState?.appliedIds).toEqual(['canonical'])
+  })
 })

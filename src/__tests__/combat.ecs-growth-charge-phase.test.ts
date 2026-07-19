@@ -95,4 +95,28 @@ describe('combat ECS growth and charge phase', () => {
     expect(world.stores.combat.require(0).attack)
       .toBeGreaterThan(world.roster[0].attack)
   })
+
+  it('does not overwrite canonical growth state from the runtime facade', () => {
+    const growing = unit('canonical-growth')
+    configure(growing)
+    const runtime = createEcsCombatRuntime()
+    runtime.units.push(growing)
+    runtime.flushStructuralCommands()
+    growing.attack = 999
+    growing.statGrowth = undefined
+    growing.attackCharge = undefined
+    const actions: BattleAction[] = []
+
+    runtime.runGrowthAndChargePhase(2, actions)
+
+    const entityId = runtime.world.getEntityId(growing.id)!
+    expect(actions.map(action => action.type)).toEqual([
+      'stat_growth',
+      'attack_charge',
+    ])
+    expect(runtime.world.stores.combat.require(entityId).attack).toBeLessThan(999)
+    expect(growing.attack).toBe(runtime.world.stores.combat.require(entityId).attack)
+    expect(runtime.units[0].statGrowth?.stacks).toBe(1)
+    expect(runtime.units[0].attackCharge?.stacks).toBe(1)
+  })
 })

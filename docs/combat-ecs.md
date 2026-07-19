@@ -62,7 +62,9 @@ now mutate combat, vitality, and lifecycle components in stable external-ID
 order before burrow regeneration. Battle-start and HP-threshold transform modes
 now mutate transform, vitality, combat, weapon, and status components natively
 in stable external-ID order, including one-time role swaps, flight changes, and
-jump displacement. Periodic field scheduling and trigger field payloads now
+jump displacement. Growth/charge, burrow regeneration, and transform runtime
+boundaries no longer copy facade state into components; they only mirror native
+results back for unported consumers. Periodic field scheduling and trigger field payloads now
 share one ECS kernel for finite and reducing barriers, hazard cleansing, allied
 status cleansing, and persistent hazards. Adjacency formation bonuses now use
 local EntityId spatial queries and the shared ECS status kernel in stable

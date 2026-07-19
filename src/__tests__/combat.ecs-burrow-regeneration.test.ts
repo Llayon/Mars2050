@@ -71,4 +71,31 @@ describe('combat ECS burrow regeneration', () => {
     expect(world.stores.vitality.require(0).hp).toBeGreaterThan(1)
     expect(world.stores.vitality.require(1).hp).toBeGreaterThan(1)
   })
+
+  it('does not overwrite canonical burrow state from the runtime facade', () => {
+    const burrowed = unit('canonical-burrow')
+    burrowed.hp = burrowed.maxHp - 3
+    burrowed.isBurrowed = true
+    burrowed.burrowConfig = {
+      damageReduction: 0.4,
+      regenPercentPerTick: 0.2,
+    }
+    const runtime = createEcsCombatRuntime()
+    runtime.units.push(burrowed)
+    runtime.flushStructuralCommands()
+    burrowed.hp = burrowed.maxHp
+    burrowed.isBurrowed = false
+    burrowed.burrowConfig = undefined
+    const actions: BattleAction[] = []
+
+    runtime.runBurrowRegenerationPhase(actions)
+
+    expect(actions).toEqual([{
+      unitId: 'canonical-burrow',
+      type: 'burrow_regen',
+      targetId: 'canonical-burrow',
+      damage: 3,
+    }])
+    expect(burrowed.hp).toBe(burrowed.maxHp)
+  })
 })

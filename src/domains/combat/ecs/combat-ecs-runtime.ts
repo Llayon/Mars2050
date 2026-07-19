@@ -121,9 +121,6 @@ export function createEcsCombatRuntime(): EcsCombatRuntime {
       runEcsSupportAuraPhase(world, tick, actions),
     runGrowthAndChargePhase(tick, actions): void {
       const entityIds = getEcsGrowthAndChargeEntities(world)
-      for (const entityId of entityIds) {
-        world.syncComponentsToStore(entityId, ['vitality', 'combat', 'lifecycle'])
-      }
       runEcsGrowthAndChargeSystem(world, tick, actions, entityIds)
       for (const entityId of entityIds) {
         world.syncComponentsFromStore(entityId, ['vitality', 'combat', 'lifecycle'])
@@ -131,9 +128,6 @@ export function createEcsCombatRuntime(): EcsCombatRuntime {
     },
     runBurrowRegenerationPhase(actions): void {
       const entityIds = getEcsBurrowRegenerationEntities(world)
-      for (const entityId of entityIds) {
-        world.syncComponentsToStore(entityId, ['vitality', 'movement'])
-      }
       runEcsBurrowRegenerationSystem(world, actions, entityIds)
       for (const entityId of entityIds) {
         world.syncComponentsFromStore(entityId, ['vitality'])
@@ -141,15 +135,6 @@ export function createEcsCombatRuntime(): EcsCombatRuntime {
     },
     runTransformModePhase(tick, actions): void {
       const entityIds = getEcsTransformModeEntities(world)
-      for (const entityId of entityIds) {
-        world.syncComponentsToStore(entityId, [
-          'transform',
-          'vitality',
-          'combat',
-          'weapon',
-          'statusControl',
-        ])
-      }
       runEcsTransformModeSystem(world, tick, actions, entityIds)
       for (const entityId of entityIds) {
         world.syncComponentsFromStore(entityId, [
