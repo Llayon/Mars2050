@@ -1,5 +1,5 @@
 import type { BattleAction } from '../../combat.actions'
-import { chooseHackControlMode } from '../../combat.control'
+import { chooseHackControlMode } from '../../combat.control-mode'
 import type { HackControlMode, RuntimeStatusEffect } from '../../combat.primitives'
 import type { RuntimeActionResult } from '../../combat.runtime'
 import { getDistance, getSizeRadius, type PRNG } from '../../combat.utils'

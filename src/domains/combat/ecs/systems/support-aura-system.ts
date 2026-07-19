@@ -1,5 +1,5 @@
 import type { BattleAction } from '../../combat.actions'
-import { HARMFUL_STATUS_TYPES } from '../../combat.status'
+import { HARMFUL_STATUS_TYPES } from '../../combat.status-core'
 import type { StatusType, SupportAura } from '../../combat.sim.types'
 import { getDistance } from '../../combat.utils'
 import { getEcsCombatTags } from '../targeting-evaluation'

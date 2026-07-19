@@ -5,28 +5,20 @@ import type { ControlBeamConfig, HackControlMode, SimUnit } from './combat.sim.t
 import { canTargetUnit } from './combat.targeting-rules'
 import { getDistance } from './combat.utils'
 import { applyHealing } from './combat.healing'
+import {
+  chooseHackControlMode,
+  normalizeHackControlMode,
+} from './combat.control-mode'
+export {
+  chooseHackControlMode,
+  normalizeHackControlMode,
+} from './combat.control-mode'
 
 const HACK_CONTROL_LOCK_TICKS = 6
-const HACK_CONTROL_PRIORITY: Record<HackControlMode, number> = {
-  disable: 0,
-  redirect: 1,
-  confuse: 2,
-}
 
 export interface HackControlTargetResult {
   handled: boolean
   target: SimUnit | null
-}
-
-export function normalizeHackControlMode(mode?: HackControlMode): HackControlMode | undefined {
-  if (mode === 'disable' || mode === 'redirect' || mode === 'confuse') return mode
-  return undefined
-}
-
-export function chooseHackControlMode(current?: HackControlMode, next?: HackControlMode): HackControlMode | undefined {
-  if (!current) return next
-  if (!next) return current
-  return HACK_CONTROL_PRIORITY[next] > HACK_CONTROL_PRIORITY[current] ? next : current
 }
 
 export function getHackControlMode(unit: SimUnit): HackControlMode | null {

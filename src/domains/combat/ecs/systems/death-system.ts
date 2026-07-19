@@ -1,5 +1,5 @@
 import type { BattleAction } from '../../combat.actions'
-import type { DeathCause } from '../../combat.death'
+import type { DeathCause } from '../../combat.death.types'
 import type { SimHazard } from '../../combat.sim.types'
 import { cloneRuntimeUnit } from '../../combat.unit-factory'
 import type { CombatWorld } from '../combat-world'

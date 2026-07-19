@@ -1,5 +1,5 @@
 import type { BattleAction } from '@/domains/combat/combat.actions'
-import type { DeathCause } from '@/domains/combat/combat.death'
+import type { DeathCause } from '@/domains/combat/combat.death.types'
 import type { SimHazard, SimUnit } from '@/domains/combat/combat.sim.types'
 import type { PRNG } from '@/domains/combat/combat.utils'
 import { CombatWorld } from '@/domains/combat/ecs/combat-world'

@@ -1,5 +1,5 @@
 import type { BattleAction } from '../../combat.actions'
-import type { DeathCause } from '../../combat.death'
+import type { DeathCause } from '../../combat.death.types'
 import type { RuntimeStatusEffect, StatusEffect } from '../../combat.primitives'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'

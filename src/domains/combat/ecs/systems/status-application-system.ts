@@ -1,12 +1,12 @@
 import type { BattleAction } from '../../combat.actions'
-import { chooseHackControlMode } from '../../combat.control'
+import { chooseHackControlMode } from '../../combat.control-mode'
 import type { RuntimeStatusEffect, StatusEffect } from '../../combat.primitives'
 import {
   HARMFUL_STATUS_TYPES,
   chooseStatusStrength,
   getStatusStackIdentity,
   normalizeStatusEffect,
-} from '../../combat.status'
+} from '../../combat.status-core'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
 

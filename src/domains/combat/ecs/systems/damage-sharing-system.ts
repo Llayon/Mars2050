@@ -3,7 +3,7 @@ import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
 import { resolveEcsDeath } from './death-system'
 import type { BattleAction } from '../../combat.actions'
-import type { DeathCause } from '../../combat.death'
+import type { DeathCause } from '../../combat.death.types'
 
 export interface EcsDamageShareResult {
   damage: number

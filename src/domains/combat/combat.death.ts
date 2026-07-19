@@ -6,9 +6,9 @@ import type { SimHazard, SimUnit } from './combat.sim.types'
 import { processDeathTriggers, processKillTriggers } from './combat.triggers'
 import type { PRNG } from './combat.utils'
 import { cloneRuntimeUnit } from './combat.unit-factory'
-
-export const DEATH_CAUSES = ['weapon', 'burn', 'acid', 'degeneration', 'mine', 'hazard', 'trigger', 'expiration'] as const
-export type DeathCause = typeof DEATH_CAUSES[number]
+import type { DeathCause } from './combat.death.types'
+export { DEATH_CAUSES } from './combat.death.types'
+export type { DeathCause } from './combat.death.types'
 
 export interface DeathContext {
   units: SimUnit[]

@@ -1,4 +1,4 @@
-import { chooseHackControlMode } from '../../combat.control'
+import { chooseHackControlMode } from '../../combat.control-mode'
 import type { HackControlMode } from '../../combat.primitives'
 import type { TargetingProfileConfig } from '../../combat.types'
 import type { CombatWorld } from '../combat-world'

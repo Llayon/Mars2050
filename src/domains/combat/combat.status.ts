@@ -1,27 +1,26 @@
 import type { BattleAction } from './combat.actions'
-import type { RuntimeStatusEffect, SimUnit, StatusEffect, StatusType } from './combat.sim.types'
+import type { SimUnit, StatusEffect, StatusType } from './combat.sim.types'
 import { breakBurrowOnReveal } from './combat.burrow'
-import { breakControlProgress, chooseHackControlMode, isHackActionBlocked, normalizeHackControlMode } from './combat.control'
+import { breakControlProgress, isHackActionBlocked } from './combat.control'
+import {
+  chooseHackControlMode,
+  chooseStatusStrength,
+  getStatusStackIdentity,
+  HARMFUL_STATUS_TYPES,
+  normalizeStatusEffect,
+} from './combat.status-core'
 import { getStanceRangeMultiplier } from './combat.stance'
 import { breakMovementStealthOnReveal } from './combat.stealth'
 export { tickStatuses } from './combat.status-scheduler'
 export type { StatusTickContext } from './combat.status-scheduler'
+export {
+  chooseStatusStrength,
+  getStatusStackIdentity,
+  HARMFUL_STATUS_TYPES,
+  normalizeStatusEffect,
+} from './combat.status-core'
 
 const ACTION_BLOCKING_STATUSES = new Set<StatusType>(['emp'])
-export const HARMFUL_STATUS_TYPES: StatusType[] = [
-  'emp',
-  'slow',
-  'burn',
-  'acid',
-  'vulnerable',
-  'range_suppressed',
-  'revealed',
-  'hacked',
-  'output_suppressed',
-  'accuracy_reduced',
-  'armor_broken',
-  'degeneration',
-]
 
 /**
  * Applies or refreshes a status effect using deterministic stack identity.
@@ -175,32 +174,8 @@ export function getEffectiveActionRange(unit: SimUnit): number {
   return Math.max(0, effectiveRange * Math.max(0.05, 1 - Math.min(0.95, reduction)))
 }
 
-export function normalizeStatusEffect(effect: StatusEffect): RuntimeStatusEffect {
-  const periodic = ['burn', 'acid', 'degeneration', 'regen'].includes(effect.type)
-  const tickInterval = periodic ? Math.max(1, Math.floor(effect.tickInterval ?? 10)) : 0
-  return {
-    ...effect,
-    duration: Math.max(0, Math.floor(effect.duration)),
-    value: effect.value === undefined ? undefined : Number(effect.value),
-    controlMode: normalizeHackControlMode(effect.controlMode),
-    tickInterval,
-    nextTickIn: tickInterval,
-  }
-}
-
 function createStatusApplyAction(unitId: string, effect: StatusEffect): BattleAction {
   const action: BattleAction = { unitId, type: 'status_apply', statusType: effect.type, value: effect.value }
   if (effect.controlMode !== undefined) action.controlMode = effect.controlMode
   return action
-}
-
-export function getStatusStackIdentity(effect: StatusEffect): string {
-  return `${effect.type}:${effect.stackKey ?? effect.sourceUnitId ?? 'global'}`
-}
-
-export function chooseStatusStrength(type: StatusType, current?: number, next?: number): number | undefined {
-  if (current === undefined) return next
-  if (next === undefined) return current
-  if (type === 'slow' && current <= 1 && next <= 1) return Math.min(current, next)
-  return Math.max(current, next)
 }

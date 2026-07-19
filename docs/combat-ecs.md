@@ -163,6 +163,11 @@ ECS resolvers.
 Unreachable array phase implementations for global effects, growth/charge,
 periodic abilities, transforms, turn order, and depenetration have been deleted.
 Their regression contracts now target the corresponding ECS systems directly.
+ECS death causes, hack-mode priority, and status normalization now live in
+object-free core contract modules. Squad creation imports aura configuration
+without loading the old aura processor, and tick orchestration no longer exports
+an unused facade post-hazard hook. Consequently the production engine import
+graph does not reach the legacy object damage/death/control/status/trigger graph.
 The compatibility roster and hazard arrays, their proxy storage, and entity
 object-view getters have been removed from `CombatWorld`. Unit creation, hazard
 creation, cloning, and summon cap checks use component-native world APIs.

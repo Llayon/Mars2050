@@ -1,4 +1,4 @@
-import { getUnitSupportAuras } from './combat.auras'
+import { getUnitSupportAuras } from './combat.support-aura-config'
 import { UNIT_TYPES } from './combat.config'
 import { applyRankScaling, getUnitRank } from './combat.rank-scaling'
 import { getFormationSpacing, prepareRuntimePrimitives } from './combat.runtime-primitives'

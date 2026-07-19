@@ -1,6 +1,6 @@
 import type { BattleAction } from '../../combat.actions'
 import { UNIT_TYPES } from '../../combat.config'
-import type { DeathCause } from '../../combat.death'
+import type { DeathCause } from '../../combat.death.types'
 import type { RuntimeStatusEffect } from '../../combat.sim.types'
 import type { UnitTypeKey } from '../../combat.types'
 import type { CombatWorld } from '../combat-world'

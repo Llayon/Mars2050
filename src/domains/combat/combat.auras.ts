@@ -2,23 +2,11 @@ import type { BattleAction } from './combat.actions'
 import type { SimUnit, SupportAura } from './combat.sim.types'
 import { applyStatus, cleanseStatuses, HARMFUL_STATUS_TYPES } from './combat.status'
 import { getEffectiveCombatTags } from './combat.targeting-score'
-import { UPGRADES } from './combat.upgrades'
+export { getUnitSupportAuras } from './combat.support-aura-config'
 import { getDistance } from './combat.utils'
 import type { SpatialHash } from './spatial-hash'
 
 const DEFAULT_AURA_INTERVAL = 10
-
-export function getUnitSupportAuras(baseAuras: SupportAura[] | undefined, upgradePath: unknown): SupportAura[] | undefined {
-  const auras = baseAuras?.map(aura => ({ ...aura })) ?? []
-  if (Array.isArray(upgradePath)) {
-    for (const upgradeId of upgradePath) {
-      if (typeof upgradeId !== 'string') continue
-      const revealAura = UPGRADES[upgradeId]?.modifiers.grantRevealAura
-      if (revealAura) auras.push({ type: 'reveal', radius: revealAura.radius, value: 0, duration: revealAura.duration, interval: revealAura.interval, target: 'enemies', targetTags: ['stealth'] })
-    }
-  }
-  return auras.length > 0 ? auras : undefined
-}
 
 /**
  * Processes deterministic support auras for one simulation tick.
