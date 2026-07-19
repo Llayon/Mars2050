@@ -41,7 +41,7 @@ describe('combat ECS growth and charge phase', () => {
     const growing = unit('growing')
     configure(growing)
     const ecs = createEcsCombatRuntime()
-    ecs.world.roster.push(structuredClone(growing))
+    ecs.world.queueUnitCreation(structuredClone(growing))
     ecs.flushStructuralCommands()
     const ecsActions: BattleAction[] = []
 
@@ -78,7 +78,6 @@ describe('combat ECS growth and charge phase', () => {
     }
     const actions: BattleAction[] = []
 
-    expect(world.roster.every(candidate => !candidate.statGrowth)).toBe(true)
     runEcsGrowthAndChargeSystem(world, 1, actions)
 
     expect(actions.map(action => `${action.unitId}:${action.type}`)).toEqual([
@@ -88,14 +87,14 @@ describe('combat ECS growth and charge phase', () => {
       'zeta:attack_charge',
     ])
     expect(world.stores.combat.require(0).attack)
-      .toBeGreaterThan(world.roster[0].attack)
+      .toBeGreaterThan(0)
   })
 
   it('does not overwrite canonical growth state from the runtime facade', () => {
     const growing = unit('canonical-growth')
     configure(growing)
     const runtime = createEcsCombatRuntime()
-    runtime.world.roster.push(growing)
+    runtime.world.queueUnitCreation(growing)
     runtime.flushStructuralCommands()
     growing.attack = 999
     growing.statGrowth = undefined

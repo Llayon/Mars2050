@@ -38,7 +38,7 @@ function prepareRuntime() {
   const attacker = passiveUnit('attacker', 'attacker', 100)
   const defender = passiveUnit('defender', 'defender', 500)
   const ecs = createEcsCombatRuntime()
-  ecs.world.roster.push(structuredClone(attacker), structuredClone(defender))
+  ecs.world.queueUnitCreation(structuredClone(attacker), structuredClone(defender))
   ecs.flushStructuralCommands()
   return ecs
 }
@@ -52,16 +52,16 @@ describe('combat ECS outcome system', () => {
       reason: 'stalemate',
     })
 
-    ecs.world.hazards.push(damageHazard())
+    ecs.world.queueHazardCreation(damageHazard())
 
     expect(ecs.getTerminalOutcome()).toBeNull()
   })
 
   it('reads active hazards from canonical component state', () => {
     const ecs = prepareRuntime()
-    ecs.world.hazards.push(damageHazard())
+    ecs.world.queueHazardCreation(damageHazard())
     ecs.flushStructuralCommands()
-    ecs.world.hazards[0].damagePerTick = 0
+    ecs.world.snapshotHazards()[0].damagePerTick = 0
     const hazardId = ecs.world.getEntityId('active-fire')!
 
     expect(ecs.world.stores.hazard.require(hazardId).damagePerTick).toBe(5)

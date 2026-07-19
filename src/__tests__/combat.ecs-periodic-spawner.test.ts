@@ -27,7 +27,7 @@ function context(seed: number) {
 
 function runSpawner(units: SimUnit[], seed: number) {
   const runtime = createEcsCombatRuntime()
-  runtime.world.roster.push(...structuredClone(units))
+  runtime.world.queueUnitCreation(...structuredClone(units))
   runtime.flushStructuralCommands()
   const world = runtime.world
   const nativeActions: BattleAction[] = []
@@ -53,7 +53,7 @@ describe('combat ECS periodic spawner', () => {
     expect(result.nativeActions).toEqual([])
     expect(result.world.stores.lifecycle.require(0).spawnerConfig)
       .toEqual({ unitType: 'scout_drone', interval: 3, timer: 1 })
-    expect(result.world.roster).toHaveLength(2)
+    expect(result.world.snapshot()).toHaveLength(2)
   })
 
   it('matches seeded spawn creation and preserves the primary action cooldown', () => {
@@ -70,17 +70,15 @@ describe('combat ECS periodic spawner', () => {
       spawnType: 'scout_drone',
       spawnTeam: 'attacker',
     })])
-    expect(result.world.roster[2]).toMatchObject({
+    result.world.flushStructuralCommands()
+    expect(result.world.snapshot()[2]).toMatchObject({
       type: 'scout_drone',
       summonOwnerId: 'source',
     })
     expect(result.world.stores.combat.require(0).actionCooldown).toBe(7)
     expect(result.world.stores.lifecycle.require(0).spawnerConfig?.timer).toBe(4)
-    expect(result.world.getEntityId(result.world.roster[2].id)).toBeUndefined()
-
-    result.world.flushStructuralCommands()
     expect(result.world.snapshot()).toHaveLength(3)
-    expect(result.world.snapshotEntity(2)).toEqual(result.world.roster[2])
+    expect(result.world.snapshotEntity(2)).toEqual(result.world.snapshot()[2])
   })
 
   it('matches cap blocking without replacing the primary action cooldown', () => {
@@ -99,6 +97,6 @@ describe('combat ECS periodic spawner', () => {
     ])
     expect(result.world.stores.combat.require(0).actionCooldown).toBe(9)
     expect(result.world.stores.lifecycle.require(0).spawnerConfig?.timer).toBe(5)
-    expect(result.world.roster).toHaveLength(3)
+    expect(result.world.snapshot()).toHaveLength(3)
   })
 })

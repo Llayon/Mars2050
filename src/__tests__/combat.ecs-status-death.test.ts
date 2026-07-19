@@ -41,7 +41,7 @@ describe('combat ECS status death', () => {
     }]
     const nativeActions: BattleAction[] = []
     const runtime = createEcsCombatRuntime()
-    runtime.world.roster.push(attacker, target)
+    runtime.world.queueUnitCreation(attacker, target)
     runtime.world.flushStructuralCommands()
     runtime.world.resources.set('rng', new PRNG(107))
 
@@ -74,7 +74,7 @@ describe('combat ECS status death', () => {
     ]
     const nativeActions: BattleAction[] = []
     const runtime = createEcsCombatRuntime()
-    runtime.world.roster.push(target)
+    runtime.world.queueUnitCreation(target)
     runtime.world.flushStructuralCommands()
     runtime.world.resources.set('rng', new PRNG(109))
 
@@ -103,7 +103,7 @@ describe('combat ECS status death', () => {
       }),
     ]
     const runtime = createEcsCombatRuntime()
-    runtime.world.roster.push(attacker, target)
+    runtime.world.queueUnitCreation(attacker, target)
     runtime.flushStructuralCommands()
     target.hp = target.maxHp
     target.statusEffects = []

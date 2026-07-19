@@ -71,9 +71,10 @@ describe('combat ECS smoke action', () => {
 
     expect(nativeResult).toEqual({ acted: legacyActed, actorSynchronized: true })
     expect(nativeActions).toEqual(legacyActions)
-    expect(world.hazards).toEqual(legacyHazards)
-    expect(world.hazards).toHaveLength(1)
-    expect(world.hazards[0].statusEffects).toEqual([
+    world.flushStructuralCommands()
+    expect(world.snapshotHazards()).toEqual(legacyHazards)
+    expect(world.snapshotHazards()).toHaveLength(1)
+    expect(world.snapshotHazards()[0].statusEffects).toEqual([
       { type: 'range_suppressed', duration: 12, value: 0.5 },
       { type: 'output_suppressed', duration: 12, value: 0.25 },
       { type: 'accuracy_reduced', duration: 12, value: 0.4 },
@@ -87,9 +88,9 @@ describe('combat ECS smoke action', () => {
     )).toBe(false)
 
     world.flushStructuralCommands()
-    const hazardId = world.getEntityId(world.hazards[0].id)
+    const hazardId = world.getEntityId(world.snapshotHazards()[0].id)
     expect(hazardId).not.toBeUndefined()
-    expect(world.getHazard(hazardId!)).toEqual(world.hazards[0])
+    expect(world.getHazard(hazardId!)).toEqual(world.snapshotHazards()[0])
   })
 
   it('reports smoke capability independently from mine routing priority', () => {

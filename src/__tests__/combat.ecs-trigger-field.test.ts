@@ -98,7 +98,7 @@ describe('combat ECS trigger fields', () => {
     const legacyActions: Parameters<typeof applyFieldEffectAt>[5] = []
     const nativeActions: Parameters<typeof applyEcsTriggerField>[4] = []
     const world = new CombatWorld([source, ally, enemy])
-    world.hazards.push(...structuredClone(hazards))
+    world.queueHazardCreation(...structuredClone(hazards))
     world.flushStructuralCommands()
 
     applyFieldEffectAt(
@@ -119,7 +119,7 @@ describe('combat ECS trigger fields', () => {
     applyEcsTriggerField(world, 0, 0, payload(effect), nativeActions)
 
     expect(nativeActions).toEqual(legacyActions)
-    expect(world.hazards).toEqual(legacyHazards)
+    expect(world.snapshotHazards()).toEqual(legacyHazards)
     expect(world.snapshot()).toEqual(legacyUnits)
   })
 
@@ -160,8 +160,8 @@ describe('combat ECS trigger fields', () => {
     world.flushStructuralCommands()
 
     expect(nativeActions).toEqual(legacyActions)
-    expect(world.hazards).toEqual(legacyHazards)
+    expect(world.snapshotHazards()).toEqual(legacyHazards)
     expect(world.stores.hazard.require(2)).toEqual(legacyHazards[0])
-    expect(world.hazards[0].statusEffects).not.toBe(effect.statusEffects)
+    expect(world.snapshotHazards()[0].statusEffects).not.toBe(effect.statusEffects)
   })
 })

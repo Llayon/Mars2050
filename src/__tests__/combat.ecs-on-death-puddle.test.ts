@@ -59,9 +59,10 @@ describe('combat ECS on-death puddle', () => {
 
     expect(nativeResult).toEqual({ acted: legacyActed, actorSynchronized: true })
     expect(nativeActions).toEqual(legacyActions)
-    expect(world.hazards).toEqual(legacyHazards)
-    expect(world.hazards).toHaveLength(1)
-    expect(world.hazards[0]).toMatchObject({
+    world.flushStructuralCommands()
+    expect(world.snapshotHazards()).toEqual(legacyHazards)
+    expect(world.snapshotHazards()).toHaveLength(1)
+    expect(world.snapshotHazards()[0]).toMatchObject({
       team: 'defender',
       type: 'acid',
       x: 220,
@@ -77,8 +78,8 @@ describe('combat ECS on-death puddle', () => {
     ])
 
     world.flushStructuralCommands()
-    const hazardId = world.getEntityId(world.hazards[0].id)
+    const hazardId = world.getEntityId(world.snapshotHazards()[0].id)
     expect(hazardId).not.toBeUndefined()
-    expect(world.getHazard(hazardId!)).toEqual(world.hazards[0])
+    expect(world.getHazard(hazardId!)).toEqual(world.snapshotHazards()[0])
   })
 })

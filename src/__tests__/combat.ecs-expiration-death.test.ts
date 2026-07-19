@@ -35,7 +35,7 @@ describe('combat ECS expiration death', () => {
     const unit = temporaryUnit()
     const nativeActions: BattleAction[] = []
     const runtime = createEcsCombatRuntime()
-    runtime.world.roster.push(unit)
+    runtime.world.queueUnitCreation(unit)
     runtime.world.flushStructuralCommands()
 
     runtime.tickModifiers(0, 0.1, nativeActions, new PRNG(131))
@@ -46,7 +46,7 @@ describe('combat ECS expiration death', () => {
       sourceUnitId: undefined,
       cause: 'expiration',
     }])
-    expect(runtime.world.hazards).toEqual([])
+    expect(runtime.world.snapshotHazards()).toEqual([])
     expect(runtime.world.stores.vitality.require(0)).toMatchObject({
       hp: unit.maxHp,
       isDead: true,
@@ -62,7 +62,7 @@ describe('combat ECS expiration death', () => {
     unit.actionCooldown = 3
     const actions: BattleAction[] = []
     const runtime = createEcsCombatRuntime()
-    runtime.world.roster.push(unit)
+    runtime.world.queueUnitCreation(unit)
     runtime.world.flushStructuralCommands()
 
     unit.actionCooldown = 99

@@ -9,31 +9,22 @@ export class CombatWorld {
   readonly resources = new CombatResourceStore()
   readonly structuralCommands = new StructuralCommandBuffer()
   readonly externalIdToEntity = new Map<string, EntityId>()
-  readonly roster: SimUnit[]
-  readonly hazards: SimHazard[]
-  private readonly rosterValues: SimUnit[] = []
-  private readonly hazardValues: SimHazard[] = []
-  private readonly hazardViews: Array<SimHazard | undefined> = []
   private readonly entityIds: EntityId[] = []
   private nextEntityId = 0
 
   constructor(initialUnits: SimUnit[] = []) {
-    this.roster = this.createRoster()
-    this.hazards = this.createHazardRoster()
     this.queueUnitCreation(...initialUnits)
     this.flushStructuralCommands()
   }
 
   queueUnitCreation(...units: SimUnit[]): void {
     for (const unit of units) {
-      this.rosterValues.push(unit)
-      if (!this.isWorldView(unit)) this.structuralCommands.queueUnit(unit)
+      this.structuralCommands.queueUnit(unit)
     }
   }
 
   queueHazardCreation(...hazards: SimHazard[]): void {
     for (const hazard of hazards) {
-      this.hazardValues.push(hazard)
       this.structuralCommands.queueHazard(hazard)
     }
   }
@@ -46,7 +37,6 @@ export class CombatWorld {
       this.setComponentFromUnit(name, entityId, unit)
     }
     this.assertKnownFields(unit)
-    Object.defineProperty(unit, Symbol.for('combat.entityId'), { value: entityId })
     this.entityIds.push(entityId)
     this.externalIdToEntity.set(unit.id, entityId)
     return entityId
@@ -56,7 +46,6 @@ export class CombatWorld {
     const entityId = this.nextEntityId++
     this.stores.entityMeta.set(entityId, { kind: 'hazard', externalId: hazard.id })
     this.stores.hazard.set(entityId, structuredClone(hazard))
-    this.hazardViews[entityId] = hazard
     this.entityIds.push(entityId)
     this.externalIdToEntity.set(hazard.id, entityId)
     return entityId
@@ -79,13 +68,8 @@ export class CombatWorld {
   }
 
   removeHazardEntity(entityId: EntityId): void {
-    const view = this.hazardViews[entityId]
-    if (view) {
-      const index = this.hazards.indexOf(view)
-      if (index !== -1) this.hazards.splice(index, 1)
-      this.externalIdToEntity.delete(view.id)
-    }
-    this.hazardViews[entityId] = undefined
+    const hazard = this.stores.hazard.get(entityId)
+    if (hazard) this.externalIdToEntity.delete(hazard.id)
     this.stores.hazard.delete(entityId)
   }
 
@@ -119,36 +103,12 @@ export class CombatWorld {
       .map(entityId => this.snapshotEntity(entityId))
   }
 
-  private createRoster(): SimUnit[] {
-    return new Proxy(this.rosterValues, {
-      get: (target, property, receiver) => {
-        if (property === 'push') {
-          return (...units: SimUnit[]) => {
-            this.queueUnitCreation(...units)
-            return target.length
-          }
-        }
-        return Reflect.get(target, property, receiver)
-      },
-    })
-  }
-
-  private createHazardRoster(): SimHazard[] {
-    return new Proxy(this.hazardValues, {
-      get: (target, property, receiver) => {
-        if (property === 'push') {
-          return (...hazards: SimHazard[]) => {
-            this.queueHazardCreation(...hazards)
-            return target.length
-          }
-        }
-        return Reflect.get(target, property, receiver)
-      },
-    })
-  }
-
-  private isWorldView(unit: SimUnit): boolean {
-    return typeof (unit as unknown as Record<symbol, unknown>)[Symbol.for('combat.entityId')] === 'number'
+  snapshotHazards(): SimHazard[] {
+    return this.query(['hazard'], true)
+      .flatMap(entityId => {
+        const hazard = this.stores.hazard.get(entityId)
+        return hazard ? [structuredClone(hazard)] : []
+      })
   }
 
   private setComponentFromUnit<Name extends UnitComponentName>(name: Name, entityId: EntityId, unit: SimUnit): void {

@@ -15,7 +15,7 @@ export function resolveDeathInEcs(
   cause: DeathCause = 'weapon',
 ): boolean {
   const world = new CombatWorld(structuredClone(units))
-  world.hazards.push(...structuredClone(hazards))
+  world.queueHazardCreation(...structuredClone(hazards))
   world.flushStructuralCommands()
   world.resources.set('rng', rng)
   const targetId = world.getEntityId(target.id)

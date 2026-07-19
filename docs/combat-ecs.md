@@ -160,9 +160,11 @@ scenario fixtures without retaining a second combat implementation.
 The legacy array death/spawn utilities and their unreachable conditional weapon
 handlers have also been removed. Death and spawn fixtures now invoke the native
 ECS resolvers.
-Production systems no longer read or write the compatibility roster and hazard
-arrays. Unit creation, hazard creation, cloning, and summon cap checks use
-component-native world APIs; entity object-view getters have been removed.
+The compatibility roster and hazard arrays, their proxy storage, and entity
+object-view getters have been removed from `CombatWorld`. Unit creation, hazard
+creation, cloning, and summon cap checks use component-native world APIs.
+Tests enqueue structural commands explicitly and inspect immutable canonical
+snapshots after deterministic flush points.
 ECS action, damage, death, trigger, displacement, and movement systems likewise
 write only component stores; all component-to-facade synchronization APIs have
 been removed from `CombatWorld`.

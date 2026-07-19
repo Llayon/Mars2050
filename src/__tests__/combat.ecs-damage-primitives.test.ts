@@ -32,7 +32,7 @@ describe('combat ECS multi-entity damage primitives', () => {
     const target = createRuntimeUnitFromConfig({ id: 'target', team: 'defender', type: 'marine', x: 100, y: 20, currentAngle: Math.PI })!
     attacker.attack = 100
     const world = new CombatWorld([attacker, target])
-    world.hazards.push({
+    world.queueHazardCreation({
       id: 'barrier',
       sourceUnitId: 'emitter',
       team: 'defender',

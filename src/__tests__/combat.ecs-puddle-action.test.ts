@@ -69,9 +69,10 @@ describe('combat ECS attack puddle action', () => {
     })
     expect(nativeActions).toEqual(legacyActions)
     expect(nativeActions.some(action => action.type === 'hazard_spawn')).toBe(false)
-    expect(world.hazards).toEqual(legacyHazards)
-    expect(world.hazards).toHaveLength(2)
-    expect(world.hazards[0]).toMatchObject({
+    world.flushStructuralCommands()
+    expect(world.snapshotHazards()).toEqual(legacyHazards)
+    expect(world.snapshotHazards()).toHaveLength(2)
+    expect(world.snapshotHazards()[0]).toMatchObject({
       team: 'attacker',
       type: 'napalm',
       x: 300,
@@ -80,9 +81,7 @@ describe('combat ECS attack puddle action', () => {
       damagePerTick: 5,
       duration: 50,
     })
-
-    world.flushStructuralCommands()
-    for (const hazard of world.hazards) {
+    for (const hazard of world.snapshotHazards()) {
       const entityId = world.getEntityId(hazard.id)
       expect(entityId).not.toBeUndefined()
       expect(world.getHazard(entityId!)).toEqual(hazard)

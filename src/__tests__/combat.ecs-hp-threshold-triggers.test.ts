@@ -105,7 +105,7 @@ describe('combat ECS hp-threshold triggers', () => {
     const legacyUnits = structuredClone([owner, target])
     const legacyActions: Parameters<typeof processHpThresholdTriggers>[1]['actions'] = []
     const runtime = createEcsCombatRuntime()
-    runtime.world.roster.push(owner, target)
+    runtime.world.queueUnitCreation(owner, target)
     runtime.world.flushStructuralCommands()
     const actions: BattleAction[] = []
     processHpThresholdTriggers(legacyUnits[0], {
@@ -142,7 +142,7 @@ describe('combat ECS hp-threshold triggers', () => {
       cooldownRemaining: 0,
     }]
     const runtime = createEcsCombatRuntime()
-    runtime.world.roster.push(owner)
+    runtime.world.queueUnitCreation(owner)
     runtime.world.flushStructuralCommands()
     const ownerId = runtime.world.getEntityId(owner.id)!
     runtime.world.stores.vitality.require(ownerId).hp = 40

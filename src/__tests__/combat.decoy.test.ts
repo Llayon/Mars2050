@@ -74,7 +74,7 @@ describe('combat decoys', () => {
     })
     const actions: BattleAction[] = []
     const runtime = createEcsCombatRuntime()
-    runtime.world.roster.push(decoy)
+    runtime.world.queueUnitCreation(decoy)
     runtime.flushStructuralCommands()
 
     runtime.tickModifiers(0, 0.1, actions, new PRNG(1))

@@ -123,7 +123,7 @@ describe('combat ECS periodic ability phase', () => {
     air.isFlying = true
     const ecs = createEcsCombatRuntime()
     for (const candidate of [source, ally, secondary, air, ground]) {
-      ecs.world.roster.push(structuredClone(candidate))
+      ecs.world.queueUnitCreation(structuredClone(candidate))
     }
     ecs.flushStructuralCommands()
     const ecsActions: BattleAction[] = []
@@ -135,7 +135,7 @@ describe('combat ECS periodic ability phase', () => {
     expect(ecs.snapshotUnits().filter(candidate =>
       candidate.summonOwnerId === 'source',
     )).toHaveLength(2)
-    expect(ecs.world.hazards).toContainEqual(expect.objectContaining({
+    expect(ecs.world.snapshotHazards()).toContainEqual(expect.objectContaining({
       type: 'napalm',
       id: 'periodic_source_hazard_0',
     }))
@@ -160,7 +160,6 @@ describe('combat ECS periodic ability phase', () => {
     spatial.rebuild(world)
     const actions: BattleAction[] = []
 
-    expect(world.roster[0].periodicAbilities).toBeUndefined()
     runEcsPeriodicAbilitySystem(world, 0, actions)
 
     expect(world.stores.support.require(0).periodicAbilities?.[0])
@@ -213,7 +212,7 @@ describe('combat ECS periodic ability phase', () => {
     }]
     const target = unit('canonical-target', 'defender', 160)
     const runtime = createEcsCombatRuntime()
-    runtime.world.roster.push(source, target)
+    runtime.world.queueUnitCreation(source, target)
     runtime.flushStructuralCommands()
     source.periodicAbilities = undefined
     source.x = 700

@@ -39,12 +39,12 @@ describe('combat ECS runtime', () => {
     const world = new CombatWorld([initial])
     const watermark = world.captureEntityWatermark()
 
-    world.hazards.push({
+    world.queueHazardCreation({
       id: 'hazard', team: 'attacker', type: 'mine', x: 10, y: 10,
       radius: 10, damagePerTick: 1, duration: 5,
     })
     world.flushStructuralCommands()
-    world.roster.push(created)
+    world.queueUnitCreation(created)
     world.flushStructuralCommands()
 
     expect(world.getUnitsCreatedSince(watermark)).toEqual([2])
@@ -52,7 +52,7 @@ describe('combat ECS runtime', () => {
 
   it('registers hazards as separate ECS entities and reconciles expiration', () => {
     const world = new CombatWorld()
-    world.hazards.push({
+    world.queueHazardCreation({
       id: 'mine-1', team: 'attacker', type: 'mine', x: 10, y: 20,
       radius: 30, damagePerTick: 12, duration: 5,
     })
@@ -72,7 +72,7 @@ describe('combat ECS runtime', () => {
   it('processes mine damage from ECS hazard components', () => {
     const target = createRuntimeUnitFromConfig({ id: 'target', team: 'defender', type: 'marine', x: 10, y: 20, currentAngle: 0 })!
     const world = new CombatWorld([target])
-    world.hazards.push({
+    world.queueHazardCreation({
       id: 'mine-1', team: 'attacker', type: 'mine', x: 10, y: 20,
       radius: 30, damagePerTick: 12, duration: 5,
     })

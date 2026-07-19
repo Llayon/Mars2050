@@ -57,9 +57,10 @@ describe('combat ECS spawn action', () => {
 
     expect(nativeResult).toEqual({ acted: legacyActed, actorSynchronized: true })
     expect(nativeActions).toEqual(legacyActions)
-    expect(world.roster).toHaveLength(legacyUnits.length)
-    expect(world.roster[2]).toEqual(legacyUnits[2])
-    expect(world.roster[2]).toMatchObject({
+    world.flushStructuralCommands()
+    expect(world.snapshot()).toHaveLength(legacyUnits.length)
+    expect(world.snapshot()[2]).toEqual(legacyUnits[2])
+    expect(world.snapshot()[2]).toMatchObject({
       summonOwnerId: 'carrier',
       team: 'attacker',
       type: 'scout_drone',
@@ -67,12 +68,9 @@ describe('combat ECS spawn action', () => {
       range: 120,
       markOnHit: { squadWide: true },
     })
-    expect(world.getEntityId(world.roster[2].id)).toBeUndefined()
-
-    world.flushStructuralCommands()
-    const spawnedId = world.getEntityId(world.roster[2].id)
+    const spawnedId = world.getEntityId(world.snapshot()[2].id)
     expect(spawnedId).not.toBeUndefined()
-    expect(world.snapshotEntity(spawnedId!)).toEqual(world.roster[2])
+    expect(world.snapshotEntity(spawnedId!)).toEqual(world.snapshot()[2])
   })
 
   it('matches cap blocking and the shortened retry cooldown', () => {
@@ -103,7 +101,7 @@ describe('combat ECS spawn action', () => {
       { unitId: 'carrier', type: 'spawn_blocked', value: 1 },
     ])
     expect(world.stores.combat.require(0).actionCooldown).toBe(5)
-    expect(world.roster).toHaveLength(3)
+    expect(world.snapshot()).toHaveLength(3)
   })
 
   it('matches source-configured spawn overrides', () => {
@@ -125,8 +123,9 @@ describe('combat ECS spawn action', () => {
     runActionSystem(world, 0, 1, nativeActions, context(23))
 
     expect(nativeActions).toEqual(legacyActions)
-    expect(world.roster[2]).toEqual(legacyUnits[2])
-    expect(world.roster[2]).toMatchObject({
+    world.flushStructuralCommands()
+    expect(world.snapshot()[2]).toEqual(legacyUnits[2])
+    expect(world.snapshot()[2]).toMatchObject({
       type: 'exosuit',
       hp: 35,
       maxHp: 35,

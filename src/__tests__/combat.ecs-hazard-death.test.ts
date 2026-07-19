@@ -57,8 +57,8 @@ describe('combat ECS hazard death', () => {
     }
     const nativeActions: BattleAction[] = []
     const runtime = createEcsCombatRuntime()
-    runtime.world.roster.push(owner, first, second)
-    runtime.world.hazards.push(structuredClone(mine))
+    runtime.world.queueUnitCreation(owner, first, second)
+    runtime.world.queueHazardCreation(structuredClone(mine))
     runtime.world.flushStructuralCommands()
     runtime.world.resources.set('rng', new PRNG(113))
 
@@ -66,7 +66,7 @@ describe('combat ECS hazard death', () => {
 
     expect(nativeActions.filter(action => action.type === 'die')
       .map(action => action.unitId)).toEqual(['a-target', 'b-target'])
-    expect(runtime.world.hazards).toEqual([])
+    expect(runtime.world.snapshotHazards()).toEqual([])
     expect(runtime.world.stores.vitality.require(1).isDead).toBe(true)
     expect(runtime.world.stores.vitality.require(2).isDead).toBe(true)
   })
@@ -86,8 +86,8 @@ describe('combat ECS hazard death', () => {
     }
     const nativeActions: BattleAction[] = []
     const runtime = createEcsCombatRuntime()
-    runtime.world.roster.push(target)
-    runtime.world.hazards.push(structuredClone(hazard))
+    runtime.world.queueUnitCreation(target)
+    runtime.world.queueHazardCreation(structuredClone(hazard))
     runtime.world.flushStructuralCommands()
     runtime.world.resources.set('rng', new PRNG(127))
 
@@ -115,8 +115,8 @@ describe('combat ECS hazard death', () => {
       duration: 5,
     }
     const runtime = createEcsCombatRuntime()
-    runtime.world.roster.push(target)
-    runtime.world.hazards.push(mine)
+    runtime.world.queueUnitCreation(target)
+    runtime.world.queueHazardCreation(mine)
     runtime.flushStructuralCommands()
     target.x = 900
     target.hp = target.maxHp

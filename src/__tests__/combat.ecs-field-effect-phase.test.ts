@@ -63,9 +63,9 @@ describe('combat ECS field effect phase', () => {
     }
     const ecs = createEcsCombatRuntime()
     for (const candidate of [emitter, ally]) {
-      ecs.world.roster.push(structuredClone(candidate))
+      ecs.world.queueUnitCreation(structuredClone(candidate))
     }
-    ecs.world.hazards.push(structuredClone(fire))
+    ecs.world.queueHazardCreation(structuredClone(fire))
     ecs.flushStructuralCommands()
     const ecsActions: BattleAction[] = []
 
@@ -74,7 +74,7 @@ describe('combat ECS field effect phase', () => {
 
     expect(ecsActions.filter(action => action.type === 'field_effect')).toHaveLength(3)
     expect(ecs.world.stores.statusControl.require(1).statusEffects).toEqual([])
-    expect(ecs.world.hazards.map(hazard => hazard.type).sort()).toEqual(['barrier_dome', 'smoke'])
+    expect(ecs.world.snapshotHazards().map(hazard => hazard.type).sort()).toEqual(['barrier_dome', 'smoke'])
   })
 
   it('reads scheduler state from canonical stores in external-ID order', () => {
@@ -92,13 +92,13 @@ describe('combat ECS field effect phase', () => {
     }
     const actions: BattleAction[] = []
 
-    expect(world.roster.every(candidate => !candidate.fieldEffect)).toBe(true)
     runEcsFieldEffectSystem(world, 0, actions)
+    world.flushStructuralCommands()
 
     expect(actions.filter(action => action.type === 'field_effect')
       .map(action => action.unitId)).toEqual(['alpha', 'zeta'])
     expect(world.stores.support.require(0).fieldEffect?.[0].nextTick).toBe(5)
-    expect(world.hazards.map(hazard => hazard.id)).toEqual([
+    expect(world.snapshotHazards().map(hazard => hazard.id)).toEqual([
       'barrier_alpha_barrier_0',
       'barrier_zeta_barrier_0',
     ])
@@ -116,20 +116,21 @@ describe('combat ECS field effect phase', () => {
       capacity: 20,
     }]
     const runtime = createEcsCombatRuntime()
-    runtime.world.roster.push(emitter)
+    runtime.world.queueUnitCreation(emitter)
     runtime.flushStructuralCommands()
     emitter.x = 900
     emitter.fieldEffect = undefined
     const actions: BattleAction[] = []
 
     runtime.runFieldEffectPhase(0, actions)
+    runtime.flushStructuralCommands()
 
     const emitterId = runtime.world.getEntityId(emitter.id)!
     expect(actions).toContainEqual(expect.objectContaining({
       unitId: 'canonical-emitter',
       type: 'field_effect',
     }))
-    expect(runtime.world.hazards).toContainEqual(expect.objectContaining({
+    expect(runtime.world.snapshotHazards()).toContainEqual(expect.objectContaining({
       id: 'barrier_canonical-emitter_canonical-barrier_0',
       x: 100,
       capacity: 20,

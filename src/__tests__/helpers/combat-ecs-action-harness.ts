@@ -30,7 +30,7 @@ export function actionSystem(
   _spatialHash?: SpatialHash,
 ): boolean {
   const world = new CombatWorld(units.map(hydrateRuntimePrimitives))
-  world.hazards.push(...structuredClone(hazards))
+  world.queueHazardCreation(...structuredClone(hazards))
   world.flushStructuralCommands()
   syncEcsTargetRefs(world)
   const spatial = new EntitySpatialIndex()

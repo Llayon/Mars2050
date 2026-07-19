@@ -27,7 +27,7 @@ describe('combat ECS burrow regeneration', () => {
       regenPercentPerTick: 0.2,
     }
     const ecs = createEcsCombatRuntime()
-    ecs.world.roster.push(structuredClone(burrowed))
+    ecs.world.queueUnitCreation(structuredClone(burrowed))
     ecs.flushStructuralCommands()
     const ecsActions: BattleAction[] = []
 
@@ -58,7 +58,6 @@ describe('combat ECS burrow regeneration', () => {
     }
     const actions: BattleAction[] = []
 
-    expect(world.roster.every(candidate => !candidate.isBurrowed)).toBe(true)
     runEcsBurrowRegenerationSystem(world, actions)
 
     expect(actions.map(action => action.unitId)).toEqual(['alpha', 'zeta'])
@@ -75,7 +74,7 @@ describe('combat ECS burrow regeneration', () => {
       regenPercentPerTick: 0.2,
     }
     const runtime = createEcsCombatRuntime()
-    runtime.world.roster.push(burrowed)
+    runtime.world.queueUnitCreation(burrowed)
     runtime.flushStructuralCommands()
     burrowed.hp = burrowed.maxHp
     burrowed.isBurrowed = false

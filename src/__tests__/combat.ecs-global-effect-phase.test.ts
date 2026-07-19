@@ -39,7 +39,7 @@ describe('combat ECS global effect phase', () => {
     const secondEnemy = unit('enemy-b', 'defender', 500)
     const ecs = createEcsCombatRuntime()
     for (const candidate of [attacker, secondEnemy, firstEnemy]) {
-      ecs.world.roster.push(structuredClone(candidate))
+      ecs.world.queueUnitCreation(structuredClone(candidate))
     }
     ecs.flushStructuralCommands()
     const ecsActions: BattleAction[] = []
@@ -87,8 +87,6 @@ describe('combat ECS global effect phase', () => {
     expect(world.stores.vitality.require(0).shield).toBeGreaterThan(0)
     expect(world.stores.statusControl.require(1).statusEffects)
       .toContainEqual(expect.objectContaining({ type: 'emp' }))
-    expect(world.roster[0].shield).toBe(0)
-    expect(world.roster[1].statusEffects).toEqual([])
   })
 
   it('does not overwrite canonical global-effect inputs from facades', () => {
@@ -96,7 +94,7 @@ describe('combat ECS global effect phase', () => {
     ally.hp = ally.maxHp - 20
     const enemy = unit('canonical-enemy', 'defender', 300)
     const runtime = createEcsCombatRuntime()
-    runtime.world.roster.push(ally, enemy)
+    runtime.world.queueUnitCreation(ally, enemy)
     runtime.flushStructuralCommands()
     ally.hp = ally.maxHp
     enemy.x = 900

@@ -60,9 +60,10 @@ describe('combat ECS replicate on kill', () => {
 
     expect(nativeResult).toEqual({ acted: legacyActed, actorSynchronized: true })
     expect(nativeActions).toEqual(legacyActions)
-    expect(world.roster).toHaveLength(legacyUnits.length)
-    expect(world.roster[2]).toEqual(legacyUnits[2])
-    expect(world.roster[2]).toMatchObject({
+    world.flushStructuralCommands()
+    expect(world.snapshot()).toHaveLength(legacyUnits.length)
+    expect(world.snapshot()[2]).toEqual(legacyUnits[2])
+    expect(world.snapshot()[2]).toMatchObject({
       team: 'attacker',
       type: 'marine',
       x: 220,
@@ -71,23 +72,20 @@ describe('combat ECS replicate on kill', () => {
       actionCooldown: 0,
       replicateOnKill: true,
     })
-    expect(world.hazards).toEqual(legacyHazards)
+    expect(world.snapshotHazards()).toEqual(legacyHazards)
     expect(nativeActions.slice(-3).map(action => action.type)).toEqual([
       'die',
       'spawn',
       'hazard_spawn',
     ])
-    expect(world.roster[2].id).toMatch(/^clone_/)
-    expect(world.hazards[0].id).toMatch(/^hazard_/)
-    expect(world.getEntityId(world.roster[2].id)).toBeUndefined()
-    expect(world.getEntityId(world.hazards[0].id)).toBeUndefined()
+    expect(world.snapshot()[2].id).toMatch(/^clone_/)
+    expect(world.snapshotHazards()[0].id).toMatch(/^hazard_/)
 
-    world.flushStructuralCommands()
-    const cloneId = world.getEntityId(world.roster[2].id)
-    const hazardId = world.getEntityId(world.hazards[0].id)
+    const cloneId = world.getEntityId(world.snapshot()[2].id)
+    const hazardId = world.getEntityId(world.snapshotHazards()[0].id)
     expect(cloneId).not.toBeUndefined()
     expect(hazardId).not.toBeUndefined()
-    expect(world.snapshotEntity(cloneId!)).toEqual(world.roster[2])
-    expect(world.getHazard(hazardId!)).toEqual(world.hazards[0])
+    expect(world.snapshotEntity(cloneId!)).toEqual(world.snapshot()[2])
+    expect(world.getHazard(hazardId!)).toEqual(world.snapshotHazards()[0])
   })
 })

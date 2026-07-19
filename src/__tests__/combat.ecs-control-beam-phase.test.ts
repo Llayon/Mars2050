@@ -44,7 +44,7 @@ describe('combat ECS control beam phase', () => {
     second.hp = Math.max(1, second.maxHp - 20)
     const ecs = createEcsCombatRuntime()
     for (const candidate of [hacker, second, first]) {
-      ecs.world.roster.push(structuredClone(candidate))
+      ecs.world.queueUnitCreation(structuredClone(candidate))
     }
     ecs.flushStructuralCommands()
     const ecsActions: BattleAction[] = []
@@ -77,8 +77,6 @@ describe('combat ECS control beam phase', () => {
     spatial.rebuild(world)
     const actions: BattleAction[] = []
 
-    expect(world.roster.slice(0, 2)
-      .every(candidate => !candidate.controlBeam)).toBe(true)
     runEcsControlBeamSystem(world, actions)
 
     expect(actions.filter(action => action.type === 'control_progress')
@@ -99,7 +97,7 @@ describe('combat ECS control beam phase', () => {
     const target = unit('canonical-target', 'defender', 180)
     target.hp = target.maxHp - 10
     const runtime = createEcsCombatRuntime()
-    runtime.world.roster.push(hacker, target)
+    runtime.world.queueUnitCreation(hacker, target)
     runtime.flushStructuralCommands()
     hacker.controlBeam = undefined
     hacker.x = 800

@@ -206,7 +206,7 @@ describe('combat ECS post-hit triggers', () => {
     world.flushStructuralCommands()
 
     expect(nativeActions).toEqual(legacyActions)
-    expect(world.hazards).toEqual(legacyHazards)
+    expect(world.snapshotHazards()).toEqual(legacyHazards)
     applyCombatDamage(
       legacyUnits[2],
       legacyUnits[0],

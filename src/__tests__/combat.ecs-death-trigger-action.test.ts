@@ -129,7 +129,7 @@ describe('combat ECS death-trigger action', () => {
     world.flushStructuralCommands()
 
     expect(nativeActions).toEqual(legacyActions)
-    const spawned = world.roster.filter(unit => unit.summonOwnerId === 'carrier-wreck')
+    const spawned = world.snapshot().filter(unit => unit.summonOwnerId === 'carrier-wreck')
     expect(spawned).toHaveLength(1)
     expect(spawned[0]).toMatchObject({
       type: 'alien_bug',
