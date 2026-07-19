@@ -59,9 +59,43 @@ describe('combat ECS expiration death', () => {
       hp: unit.maxHp,
       isDead: true,
       resurrectOnce: true,
-      reassemblyState: undefined,
     })
+    expect(runtime.world.stores.vitality.require(0).reassemblyState).toBeUndefined()
     expect(runtime.world.stores.lifecycle.require(0).triggerEffects?.[0].fired)
       .toBe(false)
+  })
+
+  it('ticks canonical cooldown and lifetime without importing facade state', () => {
+    const unit = temporaryUnit()
+    unit.actionCooldown = 3
+    const actions: BattleAction[] = []
+    const runtime = createEcsCombatRuntime()
+    runtime.world.roster.push(unit)
+    runtime.world.flushStructuralCommands()
+
+    unit.actionCooldown = 99
+    unit.isTemporary = false
+    unit.temporaryDuration = 99
+
+    runtime.tickModifiers(unit, 0.1, actions, new PRNG(137))
+
+    expect(actions).toEqual([{
+      unitId: 'temporary',
+      type: 'die',
+      sourceUnitId: undefined,
+      cause: 'expiration',
+    }])
+    expect(runtime.world.stores.combat.require(0).actionCooldown).toBe(2)
+    expect(runtime.world.stores.vitality.require(0)).toMatchObject({
+      isDead: true,
+      isTemporary: true,
+      temporaryDuration: 0,
+    })
+    expect(unit).toMatchObject({
+      actionCooldown: 2,
+      isDead: true,
+      isTemporary: true,
+      temporaryDuration: 0,
+    })
   })
 })

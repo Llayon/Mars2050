@@ -203,8 +203,11 @@ through direct and shared damage deaths.
 
 Expiration is a non-combat death cause. It does not grant kill credit or execute
 death/kill triggers. Temporary-unit expiration now resolves directly in the ECS
-modifier phase without invoking the facade callback. DoT, mine, hazard, trigger,
-and weapon deaths keep their source attribution when a source entity exists.
+modifier phase without invoking the facade callback. The modifier boundary reads
+canonical cooldown, lifetime, defense, status, and trigger state without importing
+the unit facade, then mirrors its results for unported consumers. DoT, mine,
+hazard, trigger, and weapon deaths keep their source attribution when a source
+entity exists.
 
 ## Damage Contract
 
