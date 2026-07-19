@@ -42,6 +42,23 @@ describe('combat ECS runtime', () => {
     expect(world.getEntityId('second')).toBe(1)
   })
 
+  it('discovers units created across internal structural flushes by watermark', () => {
+    const initial = createRuntimeUnitFromConfig({ id: 'initial', team: 'attacker', type: 'marine', x: 0, y: 0, currentAngle: 0 })!
+    const created = createRuntimeUnitFromConfig({ id: 'created', team: 'attacker', type: 'marine', x: 20, y: 20, currentAngle: 0 })!
+    const world = new CombatWorld([initial])
+    const watermark = world.captureEntityWatermark()
+
+    world.hazards.push({
+      id: 'hazard', team: 'attacker', type: 'mine', x: 10, y: 10,
+      radius: 10, damagePerTick: 1, duration: 5,
+    })
+    world.flushStructuralCommands()
+    world.roster.push(created)
+    world.flushStructuralCommands()
+
+    expect(world.getUnitsCreatedSince(watermark)).toEqual([2])
+  })
+
   it('registers hazards as separate ECS entities and reconciles expiration', () => {
     const world = new CombatWorld()
     world.hazards.push({

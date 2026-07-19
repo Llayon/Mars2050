@@ -2,7 +2,7 @@ import { MAX_TICKS } from './combat.config'
 import { GLOBAL_UPGRADES, type GlobalUpgradeConfig } from './combat.upgrades'
 import { processPreActionPrimitives } from './combat.tick-primitives'
 import type { UnitRow, BattleAction, BattleTick, BattleResult } from './combat.types'
-import type { Team, SimUnit, Obstacle, SimHazard } from './combat.sim.types'
+import type { Team, Obstacle } from './combat.sim.types'
 import { createCombatMetrics, finalizeCombatMetrics, recordCombatActions, recordCombatTick, type BattleSimulationOptions } from './combat.metrics'
 import { PRNG, generateObstacles } from './combat.utils'
 import { createPathfindingMap } from './combat.pathfinding'
@@ -14,7 +14,7 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
   const maxTicks = normalizeMaxTicks(options.maxTicks)
   const timeoutPolicy = options.timeoutPolicy ?? 'draw'
   const runtime = createEcsCombatRuntime()
-  const units: SimUnit[] = runtime.units, hazards: SimHazard[] = runtime.hazards, activeGlobals: { team: Team, upg: GlobalUpgradeConfig }[] = []
+  const activeGlobals: { team: Team, upg: GlobalUpgradeConfig }[] = []
   attackerGlobals.forEach(id => { if (GLOBAL_UPGRADES[id]) activeGlobals.push({ team: 'attacker', upg: GLOBAL_UPGRADES[id] }) })
   defenderGlobals.forEach(id => { if (GLOBAL_UPGRADES[id]) activeGlobals.push({ team: 'defender', upg: GLOBAL_UPGRADES[id] }) })
   const obstacles: Obstacle[] = providedObstacles || generateObstacles(seed);
@@ -79,7 +79,7 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
       const targetId = runtime.selectTarget(entityId);
       if (targetId === null) continue;
 
-      const unitCountBeforeActions = units.length;
+      const entityWatermark = runtime.world.captureEntityWatermark()
       runtime.processSpawner(entityId, targetId, actions, { rng, tick });
 
       const canActOnTarget = runtime.canActOnTarget(entityId, targetId);
@@ -91,13 +91,8 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
       const acted = actionResult.acted
 
       runtime.flushStructuralCommands()
-
-      for (let i = unitCountBeforeActions; i < units.length; i++) {
-        const newEntityId = runtime.world.getEntityId(units[i].id)
-        if (!units[i].isDead && newEntityId !== undefined) {
-          runtime.insertSpatialUnit(newEntityId)
-        }
-      }
+      for (const createdId of runtime.world.getUnitsCreatedSince(entityWatermark))
+        runtime.insertSpatialUnit(createdId)
       if (!acted) {
         runtime.moveUnit(entityId, targetId, actions, movementContext);
       }

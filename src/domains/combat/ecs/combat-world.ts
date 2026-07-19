@@ -52,6 +52,14 @@ export class CombatWorld {
     this.structuralCommands.flush(this)
   }
 
+  captureEntityWatermark(): number {
+    return this.nextEntityId
+  }
+
+  getUnitsCreatedSince(watermark: number): EntityId[] {
+    return this.query(['transform', 'vitality']).filter(entityId => entityId >= watermark)
+  }
+
   getEntity(entityId: EntityId): SimUnit | undefined {
     return this.views[entityId]
   }
