@@ -1,73 +1,69 @@
 import { describe, expect, it } from 'vitest'
-import { applyCombatDamage } from '@/domains/combat/combat.damage'
 import { simulateBattle } from '@/domains/combat/combat.engine'
-import { getEffectiveCombatTags } from '@/domains/combat/combat.targeting-score'
-import type { SimUnit, Team, UnitRow } from '@/domains/combat/combat.types'
+import type { UnitRow } from '@/domains/combat/combat.types'
+import { createRuntimeUnitFromConfig } from '@/domains/combat/combat.unit-factory'
+import { CombatWorld } from '@/domains/combat/ecs/combat-world'
+import { getEcsCombatTags } from '@/domains/combat/ecs/targeting-evaluation'
+import { applyEcsSingleDamage } from '@/domains/combat/ecs/systems'
 
-function makeUnit(overrides: Partial<SimUnit> & { id: string; team: Team }): SimUnit {
-  return {
-    type: 'marine',
-    hp: 200,
-    maxHp: 200,
-    attack: 40,
-    defense: 0,
-    speed: 10,
-    range: 120,
-    attackType: 'single',
-    actionCooldownMax: 10,
-    actionCooldown: 0,
-    isFlying: false,
-    canTargetAir: false,
-    x: 0,
-    y: 0,
-    isDead: false,
-    turnSpeed: 10,
-    currentAngle: 0,
-    size: 'M',
-    shield: 0,
-    maxShield: 0,
-    statusEffects: [],
-    aggroLockTicks: 0,
-    velocity: { x: 0, y: 0 },
-    ...overrides,
+function createWorld(): CombatWorld {
+  const attacker = createRuntimeUnitFromConfig({
+    id: 'hunter', team: 'attacker', type: 'marine', x: 0, y: 0, currentAngle: 0,
+  })!
+  const factory = createRuntimeUnitFromConfig({
+    id: 'factory', team: 'defender', type: 'mobile_factory', x: 0, y: 0, currentAngle: Math.PI,
+  })!
+  const marine = createRuntimeUnitFromConfig({
+    id: 'marine', team: 'defender', type: 'marine', x: 0, y: 0, currentAngle: Math.PI,
+  })!
+  const summoned = createRuntimeUnitFromConfig({
+    id: 'summoned', team: 'defender', type: 'marine', x: 0, y: 0,
+    currentAngle: Math.PI, summonOwnerId: 'factory',
+  })!
+  const temporary = createRuntimeUnitFromConfig({
+    id: 'temporary', team: 'defender', type: 'marine', x: 0, y: 0, currentAngle: Math.PI,
+  })!
+  temporary.isTemporary = true
+  const world = new CombatWorld([attacker, factory, marine, summoned, temporary])
+  world.stores.combat.require(0).summonCounterDamageMult = 1.75
+  for (const targetId of [1, 2, 3, 4]) {
+    world.stores.combat.require(targetId).defense = 0
+    Object.assign(world.stores.vitality.require(targetId), { hp: 200, maxHp: 200 })
   }
+  return world
 }
 
 describe('combat anti-summoner counter', () => {
   it('amplifies damage against summoner units without applying a status', () => {
-    const attacker = makeUnit({ id: 'hunter', team: 'attacker', summonCounterDamageMult: 1.75 })
-    const target = makeUnit({ id: 'factory', team: 'defender', type: 'mobile_factory', attackType: 'spawn' })
+    const world = createWorld()
 
-    const result = applyCombatDamage(attacker, target, attacker.attack)
+    const result = applyEcsSingleDamage(world, 0, 1, 40, [])
 
     expect(result.damage).toBe(70)
-    expect(target.hp).toBe(130)
-    expect(target.statusEffects).toEqual([])
+    expect(world.stores.vitality.require(1).hp).toBe(130)
+    expect(world.stores.statusControl.require(1).statusEffects).toEqual([])
   })
 
   it('does not increase damage against normal units', () => {
-    const attacker = makeUnit({ id: 'hunter', team: 'attacker', summonCounterDamageMult: 1.75 })
-    const target = makeUnit({ id: 'marine', team: 'defender' })
+    const world = createWorld()
 
-    const result = applyCombatDamage(attacker, target, attacker.attack)
+    const result = applyEcsSingleDamage(world, 0, 2, 40, [])
 
     expect(result.damage).toBe(40)
-    expect(target.hp).toBe(160)
+    expect(world.stores.vitality.require(2).hp).toBe(160)
   })
 
   it('amplifies damage against summoned or temporary units', () => {
-    const attacker = makeUnit({ id: 'hunter', team: 'attacker', summonCounterDamageMult: 1.75 })
-    const summoned = makeUnit({ id: 'summoned', team: 'defender', summonOwnerId: 'factory' })
-    const temporary = makeUnit({ id: 'temporary', team: 'defender', isTemporary: true })
+    const world = createWorld()
 
-    expect(applyCombatDamage(attacker, summoned, attacker.attack).damage).toBe(70)
-    expect(applyCombatDamage(attacker, temporary, attacker.attack).damage).toBe(70)
+    expect(applyEcsSingleDamage(world, 0, 3, 40, []).damage).toBe(70)
+    expect(applyEcsSingleDamage(world, 0, 4, 40, []).damage).toBe(70)
   })
 
   it('exposes summoned units as targeting tags', () => {
-    const summoned = makeUnit({ id: 'summoned', team: 'defender', summonOwnerId: 'factory' })
+    const world = createWorld()
 
-    expect(getEffectiveCombatTags(summoned)).toContain('summoned')
+    expect(getEcsCombatTags(world, 3)).toContain('summoned')
   })
 
   it('maps anti-summoner upgrades into runtime units', () => {

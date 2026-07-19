@@ -1,59 +1,48 @@
 import { describe, expect, it } from 'vitest'
-import { applyCombatDamage } from '@/domains/combat/combat.damage'
 import { simulateBattle } from '@/domains/combat/combat.engine'
-import { applyStatus } from '@/domains/combat/combat.status'
-import type { SimUnit, Team, UnitRow } from '@/domains/combat/combat.types'
+import { normalizeStatusEffect } from '@/domains/combat/combat.status-core'
+import type { UnitRow } from '@/domains/combat/combat.types'
+import { createRuntimeUnitFromConfig } from '@/domains/combat/combat.unit-factory'
+import { CombatWorld } from '@/domains/combat/ecs/combat-world'
+import { applyEcsSingleDamage } from '@/domains/combat/ecs/systems'
 
-function makeUnit(overrides: Partial<SimUnit> & { id: string; team: Team }): SimUnit {
-  return {
-    type: 'marine',
-    hp: 100,
-    maxHp: 100,
-    attack: 10,
-    defense: 0,
-    speed: 10,
-    range: 120,
-    attackType: 'single',
-    actionCooldownMax: 10,
-    actionCooldown: 0,
-    isFlying: false,
-    canTargetAir: false,
-    x: 0,
-    y: 0,
-    isDead: false,
-    turnSpeed: 10,
-    currentAngle: 0,
-    size: 'S',
-    shield: 0,
-    maxShield: 0,
-    statusEffects: [],
-    aggroLockTicks: 0,
-    velocity: { x: 0, y: 0 },
-    ...overrides,
-  }
+function createWorld(): CombatWorld {
+  const attacker = createRuntimeUnitFromConfig({
+    id: 'attacker', team: 'attacker', type: 'marine', x: 0, y: 0, currentAngle: 0,
+  })!
+  const target = createRuntimeUnitFromConfig({
+    id: 'target', team: 'defender', type: 'marine', x: 0, y: 0, currentAngle: Math.PI,
+  })!
+  const world = new CombatWorld([attacker, target])
+  world.stores.combat.require(1).defense = 0
+  Object.assign(world.stores.vitality.require(1), { hp: 100, maxHp: 100 })
+  return world
 }
 
 describe('combat accuracy suppression', () => {
   it('converts accuracy reduction into deterministic glancing damage', () => {
-    const attacker = makeUnit({ id: 'attacker', team: 'attacker', attack: 50 })
-    const target = makeUnit({ id: 'target', team: 'defender' })
-    applyStatus(attacker, { type: 'accuracy_reduced', duration: 5, value: 0.4 })
+    const world = createWorld()
+    world.stores.statusControl.require(0).statusEffects.push(
+      normalizeStatusEffect({ type: 'accuracy_reduced', duration: 5, value: 0.4 }),
+    )
 
-    const result = applyCombatDamage(attacker, target, attacker.attack)
+    const result = applyEcsSingleDamage(world, 0, 1, 50, [])
 
     expect(result.damage).toBe(30)
-    expect(target.hp).toBe(70)
+    expect(world.stores.vitality.require(1).hp).toBe(70)
   })
 
   it('lets thermal optics resist accuracy penalties without changing clean hits', () => {
-    const attacker = makeUnit({ id: 'attacker', team: 'attacker', attack: 50, accuracyPenaltyResist: 0.6 })
-    const target = makeUnit({ id: 'target', team: 'defender' })
-    applyStatus(attacker, { type: 'accuracy_reduced', duration: 5, value: 0.5 })
+    const world = createWorld()
+    world.stores.combat.require(0).accuracyPenaltyResist = 0.6
+    world.stores.statusControl.require(0).statusEffects.push(
+      normalizeStatusEffect({ type: 'accuracy_reduced', duration: 5, value: 0.5 }),
+    )
 
-    const result = applyCombatDamage(attacker, target, attacker.attack)
+    const result = applyEcsSingleDamage(world, 0, 1, 50, [])
 
     expect(result.damage).toBe(40)
-    expect(target.hp).toBe(60)
+    expect(world.stores.vitality.require(1).hp).toBe(60)
   })
 
   it('maps thermal optics upgrades into runtime units', () => {

@@ -1,7 +1,7 @@
 import type { Team, SimUnit, Obstacle } from './combat.sim.types'
 import type { CombatMetrics } from './combat.metrics'
 import type { TerminationReason } from './combat.result'
-import type { SpatialQueryProfile } from './spatial-hash'
+import type { SpatialQueryProfile } from './combat.spatial-profile'
 
 export const BATTLE_ACTION_TYPES = [
   'move', 'knockback', 'attack', 'heal', 'die', 'spawn', 'hazard_spawn',

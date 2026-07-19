@@ -1,5 +1,5 @@
 import { TILE_SIZE } from '../combat.utils'
-import type { SpatialQueryProfile } from '../spatial-hash'
+import type { SpatialQueryProfile } from '../combat.spatial-profile'
 import type { CombatWorld } from './combat-world'
 import type { EntityId } from './entity'
 

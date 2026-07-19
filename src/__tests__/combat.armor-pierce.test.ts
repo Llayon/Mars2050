@@ -1,69 +1,55 @@
 import { describe, expect, it } from 'vitest'
-import { applyCombatDamage } from '@/domains/combat/combat.damage'
 import { simulateBattle } from '@/domains/combat/combat.engine'
-import { applyStatus } from '@/domains/combat/combat.status'
-import type { SimUnit, Team, UnitRow } from '@/domains/combat/combat.types'
+import { normalizeStatusEffect } from '@/domains/combat/combat.status-core'
+import type { UnitRow } from '@/domains/combat/combat.types'
+import { createRuntimeUnitFromConfig } from '@/domains/combat/combat.unit-factory'
+import { CombatWorld } from '@/domains/combat/ecs/combat-world'
+import { applyEcsSingleDamage } from '@/domains/combat/ecs/systems'
 
-function makeUnit(overrides: Partial<SimUnit> & { id: string; team: Team }): SimUnit {
-  return {
-    type: 'marine',
-    hp: 100,
-    maxHp: 100,
-    attack: 10,
-    defense: 0,
-    speed: 10,
-    range: 120,
-    attackType: 'single',
-    actionCooldownMax: 10,
-    actionCooldown: 0,
-    isFlying: false,
-    canTargetAir: false,
-    x: 0,
-    y: 0,
-    isDead: false,
-    turnSpeed: 10,
-    currentAngle: 0,
-    size: 'S',
-    shield: 0,
-    maxShield: 0,
-    statusEffects: [],
-    aggroLockTicks: 0,
-    velocity: { x: 0, y: 0 },
-    ...overrides,
-  }
+function createWorld(defense: number): CombatWorld {
+  const attacker = createRuntimeUnitFromConfig({
+    id: 'attacker', team: 'attacker', type: 'marine', x: 0, y: 0, currentAngle: 0,
+  })!
+  const target = createRuntimeUnitFromConfig({
+    id: 'target', team: 'defender', type: 'marine', x: 0, y: 0, currentAngle: Math.PI,
+  })!
+  const world = new CombatWorld([attacker, target])
+  world.stores.combat.require(0).armorPierceRatio = 0.5
+  world.stores.combat.require(1).defense = defense
+  Object.assign(world.stores.vitality.require(1), { hp: 100, maxHp: 100 })
+  return world
 }
 
 describe('combat armor pierce', () => {
   it('reduces target defense for the attacker hit without applying a status', () => {
-    const attacker = makeUnit({ id: 'attacker', team: 'attacker', attack: 50, armorPierceRatio: 0.5 })
-    const target = makeUnit({ id: 'target', team: 'defender', defense: 20 })
+    const world = createWorld(20)
 
-    const result = applyCombatDamage(attacker, target, attacker.attack)
+    const result = applyEcsSingleDamage(world, 0, 1, 50, [])
 
     expect(result.damage).toBe(40)
-    expect(target.hp).toBe(60)
-    expect(target.statusEffects).toEqual([])
+    expect(world.stores.vitality.require(1).hp).toBe(60)
+    expect(world.stores.statusControl.require(1).statusEffects).toEqual([])
   })
 
   it('does not increase damage against unarmored targets', () => {
-    const attacker = makeUnit({ id: 'attacker', team: 'attacker', attack: 50, armorPierceRatio: 0.5 })
-    const target = makeUnit({ id: 'target', team: 'defender', defense: 0 })
+    const world = createWorld(0)
 
-    const result = applyCombatDamage(attacker, target, attacker.attack)
+    const result = applyEcsSingleDamage(world, 0, 1, 50, [])
 
     expect(result.damage).toBe(50)
-    expect(target.hp).toBe(50)
+    expect(world.stores.vitality.require(1).hp).toBe(50)
   })
 
   it('stacks after armor broken reduces the target defense pool', () => {
-    const attacker = makeUnit({ id: 'attacker', team: 'attacker', attack: 50, armorPierceRatio: 0.5 })
-    const target = makeUnit({ id: 'target', team: 'defender', defense: 20 })
-    applyStatus(target, { type: 'armor_broken', duration: 5, value: 0.5 })
+    const world = createWorld(20)
+    world.stores.statusControl.require(1).statusEffects.push(
+      normalizeStatusEffect({ type: 'armor_broken', duration: 5, value: 0.5 }),
+    )
 
-    const result = applyCombatDamage(attacker, target, attacker.attack)
+    const result = applyEcsSingleDamage(world, 0, 1, 50, [])
 
     expect(result.damage).toBe(45)
-    expect(target.hp).toBe(55)
+    expect(world.stores.vitality.require(1).hp).toBe(55)
   })
 
   it('maps armor-piercing upgrades into runtime units', () => {

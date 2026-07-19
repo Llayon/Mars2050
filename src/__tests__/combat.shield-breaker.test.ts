@@ -1,52 +1,43 @@
 import { describe, expect, it } from 'vitest'
 import type { BattleAction } from '@/domains/combat/combat.actions'
-import { applyCombatDamage } from '@/domains/combat/combat.damage'
 import { simulateBattle } from '@/domains/combat/combat.engine'
-import type { SimUnit, Team, UnitRow } from '@/domains/combat/combat.types'
+import type { UnitRow } from '@/domains/combat/combat.types'
+import { createRuntimeUnitFromConfig } from '@/domains/combat/combat.unit-factory'
+import { CombatWorld } from '@/domains/combat/ecs/combat-world'
+import { applyEcsSingleDamage } from '@/domains/combat/ecs/systems'
 
-function makeUnit(overrides: Partial<SimUnit> & { id: string; team: Team }): SimUnit {
-  return {
-    type: 'marine',
-    hp: 100,
-    maxHp: 100,
-    attack: 10,
-    defense: 0,
-    speed: 10,
-    range: 120,
-    attackType: 'single',
-    actionCooldownMax: 10,
-    actionCooldown: 0,
-    isFlying: false,
-    canTargetAir: false,
-    x: 0,
-    y: 0,
-    isDead: false,
-    turnSpeed: 10,
-    currentAngle: 0,
-    size: 'S',
-    shield: 0,
-    maxShield: 0,
-    statusEffects: [],
-    aggroLockTicks: 0,
-    velocity: { x: 0, y: 0 },
-    ...overrides,
+function createWorld(): CombatWorld {
+  const attacker = createRuntimeUnitFromConfig({
+    id: 'attacker', team: 'attacker', type: 'marine', x: 0, y: 0, currentAngle: 0,
+  })!
+  const shielded = createRuntimeUnitFromConfig({
+    id: 'shielded', team: 'defender', type: 'marine', x: 0, y: 0, currentAngle: Math.PI,
+  })!
+  const unshielded = createRuntimeUnitFromConfig({
+    id: 'unshielded', team: 'defender', type: 'marine', x: 0, y: 0, currentAngle: Math.PI,
+  })!
+  const world = new CombatWorld([attacker, shielded, unshielded])
+  world.stores.combat.require(0).shieldDamageMult = 2
+  for (const targetId of [1, 2]) {
+    world.stores.combat.require(targetId).defense = 0
+    Object.assign(world.stores.vitality.require(targetId), { hp: 100, maxHp: 100 })
   }
+  return world
 }
 
 describe('combat shield breaker', () => {
   it('amplifies shield damage without multiplying unshielded HP damage', () => {
-    const attacker = makeUnit({ id: 'attacker', team: 'attacker', attack: 40, shieldDamageMult: 2 })
-    const shielded = makeUnit({ id: 'shielded', team: 'defender', shield: 60, maxShield: 60 })
-    const unshielded = makeUnit({ id: 'unshielded', team: 'defender' })
+    const world = createWorld()
+    Object.assign(world.stores.vitality.require(1), { shield: 60, maxShield: 60 })
     const actions: BattleAction[] = []
 
-    const shieldedResult = applyCombatDamage(attacker, shielded, attacker.attack, actions)
-    const unshieldedResult = applyCombatDamage(attacker, unshielded, attacker.attack)
+    const shieldedResult = applyEcsSingleDamage(world, 0, 1, 40, actions)
+    const unshieldedResult = applyEcsSingleDamage(world, 0, 2, 40, [])
 
     expect(shieldedResult).toMatchObject({ damage: 10, shieldDamage: 60, shieldBroken: true })
-    expect(shielded.hp).toBe(90)
+    expect(world.stores.vitality.require(1).hp).toBe(90)
     expect(unshieldedResult.damage).toBe(40)
-    expect(unshielded.hp).toBe(60)
+    expect(world.stores.vitality.require(2).hp).toBe(60)
     expect(actions).toEqual([
       { unitId: 'attacker', type: 'shield_damage', targetId: 'shielded', damage: 60, isShieldHit: true },
       { unitId: 'attacker', type: 'shield_break', targetId: 'shielded' },
@@ -55,14 +46,13 @@ describe('combat shield breaker', () => {
   })
 
   it('spends shield breaker damage into shield HP before HP overflow', () => {
-    const attacker = makeUnit({ id: 'attacker', team: 'attacker', attack: 40, shieldDamageMult: 2 })
-    const target = makeUnit({ id: 'target', team: 'defender', shield: 100, maxShield: 100 })
+    const world = createWorld()
+    Object.assign(world.stores.vitality.require(1), { shield: 100, maxShield: 100 })
 
-    const result = applyCombatDamage(attacker, target, attacker.attack)
+    const result = applyEcsSingleDamage(world, 0, 1, 40, [])
 
     expect(result).toMatchObject({ damage: 0, shieldDamage: 80, shieldBroken: false })
-    expect(target.hp).toBe(100)
-    expect(target.shield).toBe(20)
+    expect(world.stores.vitality.require(1)).toMatchObject({ hp: 100, shield: 20 })
   })
 
   it('maps shield breaker upgrades into runtime units', () => {
