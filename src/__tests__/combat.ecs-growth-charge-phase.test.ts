@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { BattleAction } from '@/domains/combat/combat.actions'
 import type { SimUnit } from '@/domains/combat/combat.sim.types'
-import { createLegacyCombatRuntime } from '@/domains/combat/combat.legacy-runtime'
 import { createRuntimeUnitFromConfig } from '@/domains/combat/combat.unit-factory'
 import { createEcsCombatRuntime } from '@/domains/combat/ecs/combat-ecs-runtime'
 import { CombatWorld } from '@/domains/combat/ecs/combat-world'
@@ -38,28 +37,24 @@ function configure(unit: SimUnit): void {
 }
 
 describe('combat ECS growth and charge phase', () => {
-  it('matches legacy capped accumulation through the runtime boundary', () => {
+  it('caps accumulation through the runtime boundary', () => {
     const growing = unit('growing')
     configure(growing)
-    const legacy = createLegacyCombatRuntime()
     const ecs = createEcsCombatRuntime()
-    legacy.units.push(structuredClone(growing))
     ecs.units.push(structuredClone(growing))
     ecs.flushStructuralCommands()
-    const legacyActions: BattleAction[] = []
     const ecsActions: BattleAction[] = []
 
     for (let tick = 0; tick <= 6; tick++) {
-      legacy.runGrowthAndChargePhase(tick, legacyActions)
       ecs.runGrowthAndChargePhase(tick, ecsActions)
     }
 
-    expect(ecsActions).toEqual(legacyActions)
-    expect(ecs.snapshotUnits()).toEqual(legacy.snapshotUnits())
     expect(ecs.world.stores.lifecycle.require(0)).toMatchObject({
       statGrowth: expect.objectContaining({ stacks: 2 }),
       attackCharge: expect.objectContaining({ stacks: 3 }),
     })
+    expect(ecsActions.filter(action => action.type === 'stat_growth')).toHaveLength(2)
+    expect(ecsActions.filter(action => action.type === 'attack_charge')).toHaveLength(3)
   })
 
   it('reads canonical stores in stable external-ID order', () => {

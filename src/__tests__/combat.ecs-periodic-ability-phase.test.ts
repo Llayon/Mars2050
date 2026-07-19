@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 import type { BattleAction } from '@/domains/combat/combat.actions'
 import type { SimUnit } from '@/domains/combat/combat.sim.types'
 import { applyStatus, normalizeStatusEffect } from '@/domains/combat/combat.status'
-import { createLegacyCombatRuntime } from '@/domains/combat/combat.legacy-runtime'
 import { createRuntimeUnitFromConfig } from '@/domains/combat/combat.unit-factory'
 import { PRNG } from '@/domains/combat/combat.utils'
 import { createEcsCombatRuntime } from '@/domains/combat/ecs/combat-ecs-runtime'
@@ -26,7 +25,7 @@ function unit(
 }
 
 describe('combat ECS periodic ability phase', () => {
-  it('matches legacy payloads, scheduling, spawning, and replay order', () => {
+  it('runs payloads, scheduling, spawning, and replay in order', () => {
     const source = unit('source', 'attacker', 100)
     source.hp = Math.max(1, source.maxHp - 10)
     source.periodicAbilities = [
@@ -122,24 +121,24 @@ describe('combat ECS periodic ability phase', () => {
     const secondary = unit('secondary', 'defender', 190)
     const air = unit('air', 'defender', 220)
     air.isFlying = true
-    const legacy = createLegacyCombatRuntime()
     const ecs = createEcsCombatRuntime()
     for (const candidate of [source, ally, secondary, air, ground]) {
-      legacy.units.push(structuredClone(candidate))
       ecs.units.push(structuredClone(candidate))
     }
     ecs.flushStructuralCommands()
-    const legacyActions: BattleAction[] = []
     const ecsActions: BattleAction[] = []
 
-    legacy.runPeriodicAbilityPhase(0, legacyActions, new PRNG(7))
     ecs.runPeriodicAbilityPhase(0, ecsActions, new PRNG(7))
 
-    expect(ecsActions).toEqual(legacyActions)
-    expect(ecs.snapshotUnits()).toEqual(legacy.snapshotUnits())
-    expect(ecs.hazards).toEqual(legacy.hazards)
     expect(ecsActions.filter(action => action.type === 'periodic_ability'))
       .toHaveLength(7)
+    expect(ecs.snapshotUnits().filter(candidate =>
+      candidate.summonOwnerId === 'source',
+    )).toHaveLength(2)
+    expect(ecs.hazards).toContainEqual(expect.objectContaining({
+      type: 'napalm',
+      id: 'periodic_source_hazard_0',
+    }))
   })
 
   it('owns scheduler charges in canonical support state', () => {

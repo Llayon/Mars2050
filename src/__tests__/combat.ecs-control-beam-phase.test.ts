@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { BattleAction } from '@/domains/combat/combat.actions'
 import type { SimUnit } from '@/domains/combat/combat.sim.types'
-import { createLegacyCombatRuntime } from '@/domains/combat/combat.legacy-runtime'
 import { createRuntimeUnitFromConfig } from '@/domains/combat/combat.unit-factory'
 import { createEcsCombatRuntime } from '@/domains/combat/ecs/combat-ecs-runtime'
 import { CombatWorld } from '@/domains/combat/ecs/combat-world'
@@ -24,7 +23,7 @@ function unit(
 }
 
 describe('combat ECS control beam phase', () => {
-  it('matches legacy multi-target conversion, healing, and target clearing', () => {
+  it('converts, heals, and clears targets for multiple units', () => {
     const hacker = unit('hacker', 'attacker', 100)
     hacker.attack = 0
     hacker.controlBeam = {
@@ -43,25 +42,21 @@ describe('combat ECS control beam phase', () => {
     first.meleeSlotIndex = 2
     const second = unit('second', 'defender', 180)
     second.hp = Math.max(1, second.maxHp - 20)
-    const legacy = createLegacyCombatRuntime()
     const ecs = createEcsCombatRuntime()
     for (const candidate of [hacker, second, first]) {
-      legacy.units.push(structuredClone(candidate))
       ecs.units.push(structuredClone(candidate))
     }
     ecs.flushStructuralCommands()
-    const legacyActions: BattleAction[] = []
     const ecsActions: BattleAction[] = []
 
-    legacy.runControlBeamPhase(legacyActions)
     ecs.runControlBeamPhase(ecsActions)
-    legacy.runControlBeamPhase(legacyActions)
     ecs.runControlBeamPhase(ecsActions)
 
-    expect(ecsActions).toEqual(legacyActions)
-    expect(ecs.snapshotUnits()).toEqual(legacy.snapshotUnits())
     expect(ecsActions.filter(action => action.type === 'control_convert')
       .map(action => action.targetId)).toEqual(['first', 'second'])
+    expect(ecs.snapshotUnits().slice(1).every(candidate =>
+      candidate.team === 'attacker' && candidate.hp === candidate.maxHp,
+    )).toBe(true)
   })
 
   it('reads canonical beam configs and uses local queries in source order', () => {

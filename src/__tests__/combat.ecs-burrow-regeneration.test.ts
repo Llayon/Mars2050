@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { BattleAction } from '@/domains/combat/combat.actions'
 import type { SimUnit } from '@/domains/combat/combat.sim.types'
-import { createLegacyCombatRuntime } from '@/domains/combat/combat.legacy-runtime'
 import { createRuntimeUnitFromConfig } from '@/domains/combat/combat.unit-factory'
 import { createEcsCombatRuntime } from '@/domains/combat/ecs/combat-ecs-runtime'
 import { CombatWorld } from '@/domains/combat/ecs/combat-world'
@@ -19,7 +18,7 @@ function unit(id: string): SimUnit {
 }
 
 describe('combat ECS burrow regeneration', () => {
-  it('matches legacy actual healing through the runtime boundary', () => {
+  it('records actual healing through the runtime boundary', () => {
     const burrowed = unit('burrowed')
     burrowed.hp = burrowed.maxHp - 3
     burrowed.isBurrowed = true
@@ -27,25 +26,20 @@ describe('combat ECS burrow regeneration', () => {
       damageReduction: 0.4,
       regenPercentPerTick: 0.2,
     }
-    const legacy = createLegacyCombatRuntime()
     const ecs = createEcsCombatRuntime()
-    legacy.units.push(structuredClone(burrowed))
     ecs.units.push(structuredClone(burrowed))
     ecs.flushStructuralCommands()
-    const legacyActions: BattleAction[] = []
     const ecsActions: BattleAction[] = []
 
-    legacy.runBurrowRegenerationPhase(legacyActions)
     ecs.runBurrowRegenerationPhase(ecsActions)
 
-    expect(ecsActions).toEqual(legacyActions)
     expect(ecsActions).toEqual([{
       unitId: 'burrowed',
       type: 'burrow_regen',
       targetId: 'burrowed',
       damage: 3,
     }])
-    expect(ecs.snapshotUnits()).toEqual(legacy.snapshotUnits())
+    expect(ecs.world.stores.vitality.require(0).hp).toBe(burrowed.maxHp)
   })
 
   it('reads canonical components and emits actions in external-ID order', () => {

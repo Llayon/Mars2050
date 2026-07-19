@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 import type { BattleAction } from '@/domains/combat/combat.actions'
 import type { SimUnit } from '@/domains/combat/combat.sim.types'
 import { applyStatus } from '@/domains/combat/combat.status'
-import { createLegacyCombatRuntime } from '@/domains/combat/combat.legacy-runtime'
 import { createRuntimeUnitFromConfig } from '@/domains/combat/combat.unit-factory'
 import { createEcsCombatRuntime } from '@/domains/combat/ecs/combat-ecs-runtime'
 import { CombatWorld } from '@/domains/combat/ecs/combat-world'
@@ -20,7 +19,7 @@ function unit(id: string, x = 100): SimUnit {
 }
 
 describe('combat ECS field effect phase', () => {
-  it('matches legacy cleanse, barrier, and hazard scheduling', () => {
+  it('cleanses, creates barriers, and schedules hazards', () => {
     const emitter = unit('emitter')
     emitter.fieldEffect = [
       {
@@ -62,27 +61,20 @@ describe('combat ECS field effect phase', () => {
       damagePerTick: 2,
       duration: 20,
     }
-    const legacy = createLegacyCombatRuntime()
     const ecs = createEcsCombatRuntime()
     for (const candidate of [emitter, ally]) {
-      legacy.units.push(structuredClone(candidate))
       ecs.units.push(structuredClone(candidate))
     }
-    legacy.hazards.push(structuredClone(fire))
     ecs.hazards.push(structuredClone(fire))
     ecs.flushStructuralCommands()
-    const legacyActions: BattleAction[] = []
     const ecsActions: BattleAction[] = []
 
-    legacy.runFieldEffectPhase(0, legacyActions)
     ecs.runFieldEffectPhase(0, ecsActions)
-    legacy.runFieldEffectPhase(1, legacyActions)
     ecs.runFieldEffectPhase(1, ecsActions)
 
-    expect(ecsActions).toEqual(legacyActions)
-    expect(ecs.snapshotUnits()).toEqual(legacy.snapshotUnits())
-    expect(ecs.hazards).toEqual(legacy.hazards)
     expect(ecsActions.filter(action => action.type === 'field_effect')).toHaveLength(3)
+    expect(ecs.world.stores.statusControl.require(1).statusEffects).toEqual([])
+    expect(ecs.hazards.map(hazard => hazard.type).sort()).toEqual(['barrier_dome', 'smoke'])
   })
 
   it('reads scheduler state from canonical stores in external-ID order', () => {

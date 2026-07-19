@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
 import type { BattleAction } from '@/domains/combat/combat.actions'
-import { createLegacyCombatRuntime } from '@/domains/combat/combat.legacy-runtime'
 import type { SimHazard, SimUnit } from '@/domains/combat/combat.sim.types'
 import { createRuntimeUnitFromConfig } from '@/domains/combat/combat.unit-factory'
 import { PRNG } from '@/domains/combat/combat.utils'
@@ -20,20 +19,6 @@ function unit(
     y: 100,
     currentAngle: team === 'attacker' ? 0 : Math.PI,
   })!
-}
-
-function runLegacyHazards(
-  units: SimUnit[],
-  hazards: SimHazard[],
-  actions: BattleAction[],
-): void {
-  const runtime = createLegacyCombatRuntime()
-  runtime.units.push(...units)
-  runtime.hazards.push(...hazards)
-  const spatial = new SpatialHash()
-  for (const candidate of units) spatial.insert(candidate)
-  runtime.runHazardPhase(actions, spatial, new PRNG(113))
-  hazards.splice(0, hazards.length, ...runtime.hazards)
 }
 
 describe('combat ECS hazard death', () => {
@@ -71,9 +56,6 @@ describe('combat ECS hazard death', () => {
       duration: 5,
       sourceUnitId: owner.id,
     }
-    const legacyUnits = structuredClone([owner, first, second])
-    const legacyHazards = structuredClone([mine])
-    const legacyActions: BattleAction[] = []
     const nativeActions: BattleAction[] = []
     const runtime = createEcsCombatRuntime()
     runtime.world.roster.push(owner, first, second)
@@ -81,12 +63,11 @@ describe('combat ECS hazard death', () => {
     runtime.world.flushStructuralCommands()
     runtime.world.resources.set('rng', new PRNG(113))
 
-    runLegacyHazards(legacyUnits, legacyHazards, legacyActions)
     runtime.runHazardPhase(nativeActions, new SpatialHash(), new PRNG(113))
 
-    expect(nativeActions).toEqual(legacyActions)
-    expect(runtime.hazards).toEqual(legacyHazards)
-    expect(runtime.world.snapshot()).toEqual(legacyUnits)
+    expect(nativeActions.filter(action => action.type === 'die')
+      .map(action => action.unitId)).toEqual(['a-target', 'b-target'])
+    expect(runtime.hazards).toEqual([])
     expect(runtime.world.stores.vitality.require(1).isDead).toBe(true)
     expect(runtime.world.stores.vitality.require(2).isDead).toBe(true)
   })
@@ -104,9 +85,6 @@ describe('combat ECS hazard death', () => {
       damagePerTick: 5,
       duration: 11,
     }
-    const legacyUnits = structuredClone([target])
-    const legacyHazards = structuredClone([hazard])
-    const legacyActions: BattleAction[] = []
     const nativeActions: BattleAction[] = []
     const runtime = createEcsCombatRuntime()
     runtime.world.roster.push(target)
@@ -114,10 +92,8 @@ describe('combat ECS hazard death', () => {
     runtime.world.flushStructuralCommands()
     runtime.world.resources.set('rng', new PRNG(127))
 
-    runLegacyHazards(legacyUnits, legacyHazards, legacyActions)
     runtime.runHazardPhase(nativeActions, new SpatialHash(), new PRNG(127))
 
-    expect(nativeActions).toEqual(legacyActions)
     expect(nativeActions).toContainEqual({
       unitId: 'irradiated',
       type: 'die',

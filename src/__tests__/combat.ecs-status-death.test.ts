@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
 import type { BattleAction } from '@/domains/combat/combat.actions'
-import { createLegacyCombatRuntime } from '@/domains/combat/combat.legacy-runtime'
 import type { SimUnit } from '@/domains/combat/combat.sim.types'
 import { normalizeStatusEffect } from '@/domains/combat/combat.status'
 import { createRuntimeUnitFromConfig } from '@/domains/combat/combat.unit-factory'
@@ -18,14 +17,8 @@ function unit(id: string, team: 'attacker' | 'defender'): SimUnit {
   })!
 }
 
-function runLegacyStatus(units: SimUnit[], actions: BattleAction[]): void {
-  const runtime = createLegacyCombatRuntime()
-  runtime.units.push(...units)
-  runtime.runStatusPhase(actions, new PRNG(107))
-}
-
 describe('combat ECS status death', () => {
-  it('matches sourced burn death and native death-trigger effects', () => {
+  it('resolves sourced burn death and native death-trigger effects', () => {
     const attacker = unit('burner', 'attacker')
     const target = unit('target', 'defender')
     target.hp = 5
@@ -46,19 +39,20 @@ describe('combat ECS status death', () => {
       counter: 0,
       cooldownRemaining: 0,
     }]
-    const legacyUnits = structuredClone([attacker, target])
-    const legacyActions: BattleAction[] = []
     const nativeActions: BattleAction[] = []
     const runtime = createEcsCombatRuntime()
     runtime.world.roster.push(attacker, target)
     runtime.world.flushStructuralCommands()
     runtime.world.resources.set('rng', new PRNG(107))
 
-    runLegacyStatus(legacyUnits, legacyActions)
     runtime.runStatusPhase(nativeActions, new PRNG(107))
 
-    expect(nativeActions).toEqual(legacyActions)
-    expect(runtime.world.snapshot()).toEqual(legacyUnits)
+    expect(nativeActions).toContainEqual({
+      unitId: 'target',
+      type: 'die',
+      sourceUnitId: 'burner',
+      cause: 'burn',
+    })
     expect(nativeActions.at(-1)).toEqual({
       unitId: 'target',
       type: 'status_expire',
@@ -67,7 +61,7 @@ describe('combat ECS status death', () => {
     expect(runtime.world.stores.vitality.require(0).shield).toBe(15)
   })
 
-  it('matches source-less degeneration without kill credit', () => {
+  it('resolves source-less degeneration without kill credit', () => {
     const target = unit('decaying', 'defender')
     target.hp = 3
     target.statusEffects = [
@@ -78,18 +72,14 @@ describe('combat ECS status death', () => {
         tickInterval: 1,
       }),
     ]
-    const legacyUnits = structuredClone([target])
-    const legacyActions: BattleAction[] = []
     const nativeActions: BattleAction[] = []
     const runtime = createEcsCombatRuntime()
     runtime.world.roster.push(target)
     runtime.world.flushStructuralCommands()
     runtime.world.resources.set('rng', new PRNG(109))
 
-    runLegacyStatus(legacyUnits, legacyActions)
     runtime.runStatusPhase(nativeActions, new PRNG(109))
 
-    expect(nativeActions).toEqual(legacyActions)
     expect(nativeActions).toContainEqual({
       unitId: 'decaying',
       type: 'die',

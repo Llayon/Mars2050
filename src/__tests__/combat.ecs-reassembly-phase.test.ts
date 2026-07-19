@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { BattleAction } from '@/domains/combat/combat.actions'
 import type { SimUnit } from '@/domains/combat/combat.sim.types'
-import { createLegacyCombatRuntime } from '@/domains/combat/combat.legacy-runtime'
 import { createRuntimeUnitFromConfig } from '@/domains/combat/combat.unit-factory'
 import { createEcsCombatRuntime } from '@/domains/combat/ecs/combat-ecs-runtime'
 
@@ -50,27 +49,24 @@ function preparePending(unit: SimUnit): void {
 }
 
 describe('combat ECS reassembly phase', () => {
-  it('matches legacy timing, reset state, and replay output', () => {
+  it('preserves timing, reset state, and replay output', () => {
     const pending = unit('pending', 'attacker', 100)
     preparePending(pending)
     const restoredHp = Math.max(1, Math.floor(pending.maxHp * 0.5))
     const enemy = unit('enemy', 'defender', 500)
-    const legacy = createLegacyCombatRuntime()
     const ecs = createEcsCombatRuntime()
-    legacy.units.push(structuredClone(pending), structuredClone(enemy))
     ecs.units.push(structuredClone(pending), structuredClone(enemy))
     ecs.flushStructuralCommands()
-    const legacyActions: BattleAction[] = []
     const ecsActions: BattleAction[] = []
 
-    legacy.runReassemblyPhase(legacyActions)
     ecs.runReassemblyPhase(ecsActions)
     expect(ecs.getTerminalOutcome()).toBeNull()
-    legacy.runReassemblyPhase(legacyActions)
     ecs.runReassemblyPhase(ecsActions)
 
-    expect(ecsActions).toEqual(legacyActions)
-    expect(ecs.snapshotUnits()).toEqual(legacy.snapshotUnits())
+    expect(ecsActions).toEqual([expect.objectContaining({
+      unitId: 'pending',
+      type: 'reassembly_complete',
+    })])
     expect(ecs.world.snapshotEntity(0)).toMatchObject({
       hp: restoredHp,
       isDead: false,

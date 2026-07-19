@@ -94,14 +94,14 @@ source attribution and their priority over smoke actions. Active spawn actions
 now enforce owner caps and create fully prepared summons through the runtime
 factory and ECS structural buffer.
 Upgrade-driven periodic spawners now decrement their lifecycle timer and issue
-seeded spawn commands through the selected runtime. The ECS path keeps the
+seeded spawn commands through the ECS runtime. The spawn path keeps the
 primary weapon and cooldown intact and no longer temporarily rewrites
-`attackType` through the legacy action pipeline.
+`attackType`.
 Configured on-kill cooldown resets, actual healing, and statuses now resolve
 natively after a confirmed enemy death across primary and secondary hits.
 Conditional air, ground, combat-tag, and rank ranges are target-aware in both
 ECS positioning and action setup, including sequential modifier stacking.
-Seeded on-death puddles now spawn after confirmed ECS weapon deaths with legacy
+Seeded on-death puddles now spawn after confirmed ECS weapon deaths with stable
 source attribution, damage payloads, replay order, and structural buffering.
 Replicate-on-kill clones are built from canonical ECS snapshots at the victim
 position and enter the same seeded structural lifecycle before death puddles.
@@ -126,9 +126,8 @@ harmful allied statuses, or buffer persistent hazards through EntityId stores.
 Trigger capability gates and their facade fallback have been removed now that
 every configured event and payload is native. The post-hazard HP-threshold phase
 always reads canonical vitality/lifecycle stores in stable external-ID order.
-The shared tick orchestrator no longer creates or passes a legacy
-`TriggerContext`: the legacy runtime owns that adapter internally, while the ECS
-runtime receives the tick, replay actions, and seeded RNG directly.
+The shared tick orchestrator passes tick, replay actions, and seeded RNG directly
+to the ECS runtime without constructing a facade `TriggerContext`.
 Terminal outcome resolution also owns its runtime state: ECS queries canonical
 unit and hazard components after flushing structural commands, so the engine no
 longer passes the runtime's hazard facade back into it.
@@ -148,10 +147,9 @@ building battle output.
 Periodic burn, acid, and degeneration deaths now resolve inside the ECS status
 phase, including source-less deaths, resurrection, reassembly, and death/kill
 triggers. Mine and periodic hazard deaths use the same resolver without
-round-tripping through unit or hazard facades. Environmental death ownership now
-belongs to the selected runtime: ECS uses component resolution, while the legacy
-shadow runtime invokes its array resolver internally. The engine no longer
-constructs or passes death callbacks across this boundary.
+round-tripping through unit or hazard facades. Environmental deaths always use
+component resolution; the engine no longer constructs or passes death callbacks
+across this boundary.
 Initial squads, action spawns, trigger clones, and hazards enter a deterministic
 structural command buffer. Target references and melee
 sectors use `EntityId`; string IDs are written only as a compatibility mirror

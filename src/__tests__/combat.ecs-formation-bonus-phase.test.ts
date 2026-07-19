@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { BattleAction } from '@/domains/combat/combat.actions'
 import type { SimUnit } from '@/domains/combat/combat.sim.types'
-import { createLegacyCombatRuntime } from '@/domains/combat/combat.legacy-runtime'
 import { createRuntimeUnitFromConfig } from '@/domains/combat/combat.unit-factory'
 import { createEcsCombatRuntime } from '@/domains/combat/ecs/combat-ecs-runtime'
 import { CombatWorld } from '@/domains/combat/ecs/combat-world'
@@ -20,7 +19,7 @@ function unit(id: string, x: number): SimUnit {
 }
 
 describe('combat ECS formation bonus phase', () => {
-  it('matches legacy adjacency status application and refresh', () => {
+  it('applies and refreshes adjacency statuses', () => {
     const source = unit('source', 100)
     source.formationModifiers = {
       adjacencyBonus: {
@@ -31,25 +30,21 @@ describe('combat ECS formation bonus phase', () => {
         attackBoostPerAlly: 0.3,
       },
     }
-    const legacy = createLegacyCombatRuntime()
     const ecs = createEcsCombatRuntime()
     for (const candidate of [source, unit('near-a', 140), unit('near-b', 180)]) {
-      legacy.units.push(structuredClone(candidate))
       ecs.units.push(structuredClone(candidate))
     }
     ecs.flushStructuralCommands()
-    const legacyActions: BattleAction[] = []
     const ecsActions: BattleAction[] = []
 
     for (const tick of [9, 10, 20]) {
-      legacy.runFormationBonusPhase(tick, legacyActions)
       ecs.runFormationBonusPhase(tick, ecsActions)
     }
 
-    expect(ecsActions).toEqual(legacyActions)
-    expect(ecs.snapshotUnits()).toEqual(legacy.snapshotUnits())
     expect(ecsActions.filter(action => action.type === 'adjacency_bonus'))
       .toHaveLength(2)
+    expect(ecs.world.stores.statusControl.require(0).statusEffects)
+      .toContainEqual(expect.objectContaining({ type: 'attack_boost', value: 0.6 }))
   })
 
   it('uses canonical components and local queries in external-ID order', () => {

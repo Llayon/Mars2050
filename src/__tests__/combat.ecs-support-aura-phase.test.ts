@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 import type { BattleAction } from '@/domains/combat/combat.actions'
 import type { SimUnit } from '@/domains/combat/combat.sim.types'
 import { applyStatus } from '@/domains/combat/combat.status'
-import { createLegacyCombatRuntime } from '@/domains/combat/combat.legacy-runtime'
 import { createRuntimeUnitFromConfig } from '@/domains/combat/combat.unit-factory'
 import { SpatialHash } from '@/domains/combat/spatial-hash'
 import { createEcsCombatRuntime } from '@/domains/combat/ecs/combat-ecs-runtime'
@@ -26,7 +25,7 @@ function unit(
 }
 
 describe('combat ECS support aura phase', () => {
-  it('matches legacy shields, cleanse, reveal, and support statuses', () => {
+  it('applies shields, cleanse, reveal, and support statuses', () => {
     const source = unit('source', 'attacker', 100)
     source.supportAuras = [
       { type: 'shield_repair', radius: 120, value: 10, interval: 10, target: 'allies' },
@@ -46,27 +45,25 @@ describe('combat ECS support aura phase', () => {
     applyStatus(ally, { type: 'burn', duration: 10 })
     const enemy = unit('enemy', 'defender', 220)
     enemy.stealthUntilAttack = true
-    const legacy = createLegacyCombatRuntime()
     const ecs = createEcsCombatRuntime()
     for (const candidate of [source, enemy, ally]) {
-      legacy.units.push(structuredClone(candidate))
       ecs.units.push(structuredClone(candidate))
     }
     ecs.flushStructuralCommands()
     const spatial = new SpatialHash()
-    for (const candidate of legacy.units) spatial.insert(candidate)
-    const legacyActions: BattleAction[] = []
+    for (const candidate of ecs.units) spatial.insert(candidate)
     const ecsActions: BattleAction[] = []
 
     for (const tick of [0, 1]) {
-      legacy.runSupportAuraPhase(tick, legacyActions, spatial)
       ecs.runSupportAuraPhase(tick, ecsActions, spatial)
     }
 
-    expect(ecsActions).toEqual(legacyActions)
-    expect(ecs.snapshotUnits()).toEqual(legacy.snapshotUnits())
     expect(ecsActions.filter(action => action.type === 'shield_apply'))
       .toHaveLength(2)
+    expect(ecs.world.stores.statusControl.require(1).statusEffects)
+      .toContainEqual(expect.objectContaining({ type: 'revealed' }))
+    expect(ecs.world.stores.statusControl.require(2).statusEffects)
+      .not.toContainEqual(expect.objectContaining({ type: 'burn' }))
   })
 
   it('reads canonical aura configuration and applies tag filters locally', () => {
