@@ -36,12 +36,6 @@ export function runEcsGlobalEffectPhase(
   rng: PRNG,
 ): void {
   if (!hasEcsGlobalEffectAtTick(tick, activeGlobals)) return
-  world.syncAllComponentsToStore([
-    'identity',
-    'transform',
-    'vitality',
-    'statusControl',
-  ])
   runEcsGlobalEffectSystem(world, tick, activeGlobals, actions, rng)
   world.syncAllComponentsFromStore(['vitality', 'statusControl'])
 }

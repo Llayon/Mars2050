@@ -3,6 +3,7 @@ import type { BattleAction } from '@/domains/combat/combat.actions'
 import type { SimUnit } from '@/domains/combat/combat.sim.types'
 import { GLOBAL_UPGRADES } from '@/domains/combat/combat.upgrades'
 import { createLegacyCombatRuntime } from '@/domains/combat/combat.legacy-runtime'
+import { normalizeStatusEffect } from '@/domains/combat/combat.status'
 import { createRuntimeUnitFromConfig } from '@/domains/combat/combat.unit-factory'
 import { PRNG } from '@/domains/combat/combat.utils'
 import { createEcsCombatRuntime } from '@/domains/combat/ecs/combat-ecs-runtime'
@@ -98,5 +99,45 @@ describe('combat ECS global effect phase', () => {
       .toContainEqual(expect.objectContaining({ type: 'emp' }))
     expect(world.roster[0].shield).toBe(0)
     expect(world.roster[1].statusEffects).toEqual([])
+  })
+
+  it('does not overwrite canonical global-effect inputs from facades', () => {
+    const ally = unit('canonical-ally', 'attacker', 100)
+    ally.hp = ally.maxHp - 20
+    const enemy = unit('canonical-enemy', 'defender', 300)
+    const runtime = createEcsCombatRuntime()
+    runtime.units.push(ally, enemy)
+    runtime.flushStructuralCommands()
+    ally.hp = ally.maxHp
+    enemy.x = 900
+    enemy.statusEffects = [normalizeStatusEffect({
+      type: 'burn',
+      duration: 20,
+      tickInterval: 10,
+    })]
+    const actions: BattleAction[] = []
+
+    runtime.runGlobalEffectPhase(50, activeGlobals, actions, new PRNG(23))
+    runtime.runGlobalEffectPhase(100, activeGlobals, actions, new PRNG(23))
+    runtime.runGlobalEffectPhase(150, activeGlobals, actions, new PRNG(23))
+
+    const allyId = runtime.world.getEntityId(ally.id)!
+    const enemyId = runtime.world.getEntityId(enemy.id)!
+    expect(actions).toContainEqual({
+      unitId: 'system',
+      type: 'heal',
+      targetId: 'canonical-ally',
+      damage: 20,
+    })
+    expect(actions).toContainEqual(expect.objectContaining({
+      unitId: 'system',
+      type: 'hazard_spawn',
+      toX: 300,
+    }))
+    expect(runtime.world.stores.vitality.require(allyId).hp).toBe(ally.maxHp)
+    expect(runtime.world.stores.statusControl.require(enemyId).statusEffects)
+      .toEqual([expect.objectContaining({ type: 'emp' })])
+    expect(runtime.units[1].statusEffects)
+      .toEqual([expect.objectContaining({ type: 'emp' })])
   })
 })
