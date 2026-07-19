@@ -1,6 +1,5 @@
 import type { BattleAction } from '../../combat.actions'
 import { UNIT_TYPES } from '../../combat.config'
-import { actionSystem } from '../../combat.systems'
 import { getEffectiveCombatTags } from '../../combat.targeting-score'
 import type { RuntimeActionContext, RuntimeActionResult } from '../../combat.runtime'
 import type { UnitTypeKey } from '../../combat.types'
@@ -42,7 +41,10 @@ export function runActionSystem(
   if (canUseEcsSpawnAction(world, entityId)) {
     return runEcsSpawnAction(world, entityId, targetId, actions, context)
   }
-  if (canUseSimpleSingleDamage(world, entityId, targetId)) {
+  if (weapon.attackType !== 'heal') {
+    if (!canUseSimpleSingleDamage(world, entityId, targetId)) {
+      throw new Error(`Unsupported ECS action configuration: ${weapon.attackType}`)
+    }
     return runSimpleSingleDamage(
       world,
       entityId,
@@ -52,7 +54,6 @@ export function runActionSystem(
       context.rng,
     )
   }
-  if (weapon.attackType !== 'heal') return runLegacyAction(world, entityId, targetId, actions, context)
   return runHealAction(world, entityId, targetId, actions)
 }
 
@@ -90,19 +91,6 @@ function runHealAction(
   syncActorView(world, entityId)
   world.syncComponentsFromStore(targetId, ['vitality'])
   return { acted: true, actorSynchronized: true }
-}
-
-function runLegacyAction(world: CombatWorld, entityId: EntityId, targetId: EntityId, actions: BattleAction[], context: RuntimeActionContext): RuntimeActionResult {
-  const unit = world.getEntity(entityId)
-  const target = world.getEntity(targetId)
-  if (!unit || !target) return notActed()
-  const acted = actionSystem(unit, target, world.roster, world.hazards, actions, context.rng, context.tick, context.spatialHash)
-  world.reconcileHazards()
-  world.syncHazardsToComponents()
-  return {
-    acted,
-    actorSynchronized: false,
-  }
 }
 
 function canHealTarget(sourceType: string, target: NonNullable<ReturnType<CombatWorld['getEntity']>>): boolean {

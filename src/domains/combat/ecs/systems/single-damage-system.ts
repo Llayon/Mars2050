@@ -1,4 +1,6 @@
 import type { BattleAction } from '../../combat.actions'
+import { chooseHackControlMode } from '../../combat.control'
+import type { HackControlMode, RuntimeStatusEffect } from '../../combat.primitives'
 import type { RuntimeActionResult } from '../../combat.runtime'
 import { getDistance, getSizeRadius, type PRNG } from '../../combat.utils'
 import type { CombatWorld } from '../combat-world'
@@ -26,10 +28,7 @@ const FACING_TOLERANCE = 0.26
 
 export function canUseSimpleSingleDamage(world: CombatWorld, entityId: EntityId, targetId: EntityId): boolean {
   const weapon = world.stores.weapon.require(entityId)
-  const status = world.stores.statusControl.require(entityId)
-  const targetStatus = world.stores.statusControl.require(targetId)
   if (!['single', 'aoe'].includes(weapon.attackType)) return false
-  if (hasUnsupportedStatuses(status.statusEffects, true) || hasUnsupportedStatuses(targetStatus.statusEffects, false)) return false
   return canUseEcsDirectionalGeometry(world, entityId, targetId) &&
     canUseEcsBarrageAttack(world, entityId, targetId) &&
     canUseEcsChainAttack(world, entityId, targetId) &&
@@ -52,12 +51,14 @@ export function runSimpleSingleDamage(
   const transform = world.stores.transform.require(entityId)
   const targetTransform = world.stores.transform.require(targetId)
   const combat = world.stores.combat.require(entityId)
+  const status = world.stores.statusControl.require(entityId)
   const edgeDistance = getDistance(transform.x, transform.y, targetTransform.x, targetTransform.y) -
     getSizeRadius(transform.size) - getSizeRadius(targetTransform.size)
   if (!isEcsWeaponActionInRange(world, entityId, targetId, edgeDistance)) return notActed()
   const targetAngle = Math.atan2(targetTransform.y - transform.y, targetTransform.x - transform.x)
   if (Math.abs(normalizeAngle(targetAngle - transform.currentAngle)) > FACING_TOLERANCE) return notActed()
   if (combat.actionCooldown > 0) return notActed()
+  if (isActionBlocked(status.statusEffects, combat.attack)) return notActed()
   if (!prepareEcsStanceForAction(world, entityId, actions)) {
     world.syncComponentsFromStore(entityId, ['movement'])
     return { acted: true, actorSynchronized: true }
@@ -83,12 +84,19 @@ export function runSimpleSingleDamage(
   return { acted: true, actorSynchronized: true }
 }
 
-function hasUnsupportedStatuses(
-  effects: ReturnType<CombatWorld['stores']['statusControl']['require']>['statusEffects'],
-  attacker: boolean,
-): boolean {
-  return effects.some(effect => effect.duration > 0 &&
-    (effect.type === 'hacked' || (attacker && effect.type === 'emp')))
+function isActionBlocked(effects: RuntimeStatusEffect[], attack: number): boolean {
+  let hackMode: HackControlMode | undefined
+  for (const effect of effects) {
+    if (effect.duration <= 0) continue
+    if (effect.type === 'emp') return true
+    if (effect.type === 'hacked') {
+      hackMode = chooseHackControlMode(
+        hackMode,
+        effect.controlMode ?? 'disable',
+      )
+    }
+  }
+  return hackMode === 'disable' || (hackMode !== undefined && attack <= 0)
 }
 
 function notActed(): RuntimeActionResult {

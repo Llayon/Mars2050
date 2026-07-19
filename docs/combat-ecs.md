@@ -32,14 +32,14 @@ typed component/resource stores, deterministic
 entity queries, and snapshot/survivor serialization. Legacy hooks remain frozen
 for shadow tests.
 
-Complex weapon actions, remaining general damage/death paths, and metrics still
-cross the temporary `SimUnit` facade. Trigger event selection and every trigger
-payload now use component stores and EntityId references.
+Metrics and tick orchestration still consume the temporary `SimUnit` facade.
+Trigger event selection and every trigger payload use component stores and
+EntityId references.
 Movement and healing read and write component stores directly through
 `EntityId`; after each move, only the changed movement components are written
-back to the facade for those unported consumers. Non-healing actions use the
-runtime action boundary but currently delegate to the frozen legacy weapon
-pipeline. A strict native single-shot fast path handles armor, supported combat
+back to the facade for those unported consumers. Every action family now stays
+inside the ECS runtime. Unsupported weapon configurations fail explicitly
+instead of delegating to the legacy weapon pipeline. The native damage path handles armor, supported combat
 statuses, rank modifiers, movement reduction, target marks, flat block, shields,
 reactive armor, execute, lifesteal, finite/reduction barriers, projectile
 interception, deterministic damage sharing, movement charge, same-target ramp,
@@ -93,9 +93,7 @@ hazards through a native ECS action path without primary damage or movement
 stealth break. Mine actions use the same structural path while preserving mine
 source attribution and their priority over smoke actions. Active spawn actions
 now enforce owner caps and create fully prepared summons through the runtime
-factory and ECS structural buffer. Remaining secondary
-weapon families and complex lifecycle primitives fall back
-before mutating state.
+factory and ECS structural buffer.
 Upgrade-driven periodic spawners now decrement their lifecycle timer and issue
 seeded spawn commands through the selected runtime. The ECS path keeps the
 primary weapon and cooldown intact and no longer temporarily rewrites
@@ -140,8 +138,8 @@ directly; it no longer performs a full facade import before periodic scheduling
 and death resolution.
 Native hazard processing rebuilds its spatial index from canonical transforms,
 vitality, and hazard components without importing unit or hazard facades at the
-end of each combat tick. Legacy action and cleanse adapters reconcile their
-facade changes locally before returning to ECS.
+end of each combat tick. Actor-turn completion no longer imports replay-linked
+facade objects into component stores.
 The targeting-phase boundary also flushes structural commands, resolves
 EntityId references, and rebuilds the spatial index directly from canonical
 components without a roster-facade import.

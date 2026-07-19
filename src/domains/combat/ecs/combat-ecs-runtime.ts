@@ -62,25 +62,7 @@ export function createEcsCombatRuntime(): EcsCombatRuntime {
       if (unitId === undefined || targetId === undefined) return
       runMovementSystem(world, unitId, targetId, actions, context)
     },
-    completeActorTurn: (unit, actions, actionStart, actorSynchronized = false) => {
-      const dirtyIds = new Set<number>()
-      const actorId = world.getEntityId(unit.id)
-      if (actorId !== undefined && !actorSynchronized) dirtyIds.add(actorId)
-      let hasSquadMark = false
-      for (let index = actionStart; index < actions.length; index++) {
-        const action = actions[index]
-        for (const externalId of [action.unitId, action.targetId, action.sourceUnitId]) {
-          const entityId = externalId ? world.getEntityId(externalId) : undefined
-          if (entityId !== undefined && (!actorSynchronized || entityId !== actorId)) dirtyIds.add(entityId)
-        }
-        if (action.type === 'target_mark') hasSquadMark = true
-      }
-      for (const entityId of dirtyIds) world.syncEntityToComponents(entityId)
-      if (hasSquadMark) {
-        world.syncAllComponentsToStore(['targeting', 'statusControl'])
-        syncEcsTargetRefs(world)
-      } else syncEcsTargetRefs(world, [...dirtyIds])
-    },
+    completeActorTurn: () => undefined,
     insertSpatialUnit: unit => {
       const entityId = world.getEntityId(unit.id)
       if (entityId !== undefined) world.resources.require('entitySpatial').insert(world, entityId)
