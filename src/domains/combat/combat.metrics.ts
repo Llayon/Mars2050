@@ -1,8 +1,8 @@
 import type { BattleAction } from './combat.actions'
-import type { SimUnit } from './combat.sim.types'
-import { isMeleeEngagementReady } from './combat.melee-engagement'
 import { collectOverlapMetrics } from './combat.metrics-overlap'
 import type { TimeoutPolicy } from './combat.result'
+import type { CombatWorld } from './ecs/combat-world'
+import { isEcsMeleeEngagementReady } from './ecs/movement-positioning'
 
 export interface BattleSimulationOptions {
   trackMetrics?: boolean
@@ -57,7 +57,7 @@ export interface CombatMetricsCollector {
   lastTargetByUnitId: Map<string, string>
 }
 
-export function createCombatMetrics(units: SimUnit[]): CombatMetricsCollector {
+export function createCombatMetrics(world: CombatWorld): CombatMetricsCollector {
   return {
     firstAttackTick: null,
     targetSwitches: 0,
@@ -77,7 +77,10 @@ export function createCombatMetrics(units: SimUnit[]): CombatMetricsCollector {
     meleeSlotWaitTicks: 0,
     engagementDistanceTotal: 0,
     engagementDistanceSamples: 0,
-    hpByUnitId: new Map(units.map(unit => [unit.id, unit.hp])),
+    hpByUnitId: new Map(world.query(['identity', 'vitality'], true).map(entityId => [
+      world.stores.identity.require(entityId).id,
+      world.stores.vitality.require(entityId).hp,
+    ])),
     firstEngageTickByUnitId: new Map(),
     lastTargetByUnitId: new Map(),
   }
@@ -87,22 +90,20 @@ export function recordCombatActions(
   metrics: CombatMetricsCollector,
   tick: number,
   actions: BattleAction[],
-  units: SimUnit[]
+  world: CombatWorld,
 ): void {
-  const unitById = new Map(units.map(unit => [unit.id, unit]))
-
   for (const action of actions) {
-    if (action.type === 'attack') recordAttackIntent(metrics, tick, action, unitById)
-    if (action.type === 'damage' || action.type === 'damage_share') recordDamageAction(metrics, action, unitById)
-    if (action.type === 'heal') recordHealAction(metrics, action, unitById)
-    if (action.type === 'die') recordDeathAction(metrics, action, unitById)
+    if (action.type === 'attack') recordAttackIntent(metrics, tick, action, world)
+    if (action.type === 'damage' || action.type === 'damage_share') recordDamageAction(metrics, action, world)
+    if (action.type === 'heal') recordHealAction(metrics, action, world)
+    if (action.type === 'die') recordDeathAction(metrics, action, world)
   }
 }
 
-export function recordCombatTick(metrics: CombatMetricsCollector, units: SimUnit[]): void {
-  recordTargetSwitches(metrics, units)
-  recordMovementStateMetrics(metrics, units)
-  recordOverlap(metrics, units)
+export function recordCombatTick(metrics: CombatMetricsCollector, world: CombatWorld): void {
+  recordTargetSwitches(metrics, world)
+  recordMovementStateMetrics(metrics, world)
+  recordOverlap(metrics, world)
 }
 
 export function finalizeCombatMetrics(
@@ -136,33 +137,33 @@ function recordAttackIntent(
   metrics: CombatMetricsCollector,
   tick: number,
   action: BattleAction,
-  unitById: Map<string, SimUnit>
+  world: CombatWorld,
 ): void {
   if (metrics.firstAttackTick === null) metrics.firstAttackTick = tick
   if (!metrics.firstEngageTickByUnitId.has(action.unitId)) metrics.firstEngageTickByUnitId.set(action.unitId, tick)
 
   if (!action.targetId) return
-  const target = unitById.get(action.targetId)
-  const attacker = unitById.get(action.unitId)
-  if (attacker && target) {
+  const targetId = world.getEntityId(action.targetId)
+  const attackerId = world.getEntityId(action.unitId)
+  if (attackerId !== undefined && targetId !== undefined) {
+    const attacker = world.stores.transform.require(attackerId)
+    const target = world.stores.transform.require(targetId)
     metrics.engagementDistanceTotal += Math.hypot(attacker.x - target.x, attacker.y - target.y)
     metrics.engagementDistanceSamples++
   }
 }
 
-function recordDamageAction(
-  metrics: CombatMetricsCollector,
-  action: BattleAction,
-  unitById: Map<string, SimUnit>
-): void {
+function recordDamageAction(metrics: CombatMetricsCollector, action: BattleAction, world: CombatWorld): void {
   const damage = Math.max(0, action.damage ?? 0)
-  const attackerType = unitById.get(action.sourceUnitId ?? action.unitId)?.type ?? 'unknown'
+  const attackerType = getUnitType(world, action.sourceUnitId ?? action.unitId)
   metrics.damageByUnitType[attackerType] = (metrics.damageByUnitType[attackerType] ?? 0) + damage
 
   if (!action.targetId || damage <= 0) return
-  const target = unitById.get(action.targetId)
-  if (target) metrics.damageTakenByUnitType[target.type] = (metrics.damageTakenByUnitType[target.type] ?? 0) + damage
-  const previousHp = metrics.hpByUnitId.get(action.targetId) ?? unitById.get(action.targetId)?.hp ?? 0
+  const targetType = getUnitType(world, action.targetId)
+  if (targetType !== 'unknown') metrics.damageTakenByUnitType[targetType] = (metrics.damageTakenByUnitType[targetType] ?? 0) + damage
+  const targetId = world.getEntityId(action.targetId)
+  const currentHp = targetId === undefined ? 0 : world.stores.vitality.require(targetId).hp
+  const previousHp = metrics.hpByUnitId.get(action.targetId) ?? currentHp
   metrics.overkillDamage += Math.max(0, damage - Math.max(0, previousHp))
   metrics.hpByUnitId.set(action.targetId, Math.max(0, previousHp - damage))
 }
@@ -170,53 +171,61 @@ function recordDamageAction(
 function recordHealAction(
   metrics: CombatMetricsCollector,
   action: BattleAction,
-  unitById: Map<string, SimUnit>
+  world: CombatWorld,
 ): void {
   if (!action.targetId) return
-  const healerType = unitById.get(action.sourceUnitId ?? action.unitId)?.type ?? 'unknown'
+  const healerType = getUnitType(world, action.sourceUnitId ?? action.unitId)
   metrics.healingDoneByUnitType[healerType] = (metrics.healingDoneByUnitType[healerType] ?? 0) + Math.max(0, action.damage ?? 0)
   const previousHp = metrics.hpByUnitId.get(action.targetId) ?? 0
   metrics.hpByUnitId.set(action.targetId, previousHp + Math.max(0, action.damage ?? 0))
 }
 
-function recordDeathAction(metrics: CombatMetricsCollector, action: BattleAction, unitById: Map<string, SimUnit>): void {
+function recordDeathAction(metrics: CombatMetricsCollector, action: BattleAction, world: CombatWorld): void {
   metrics.hpByUnitId.set(action.unitId, 0)
   if (!action.sourceUnitId) return
-  const killerType = unitById.get(action.sourceUnitId)?.type ?? 'unknown'
+  const killerType = getUnitType(world, action.sourceUnitId)
   metrics.killsByUnitType[killerType] = (metrics.killsByUnitType[killerType] ?? 0) + 1
 }
 
-function recordTargetSwitches(metrics: CombatMetricsCollector, units: SimUnit[]): void {
-  for (const unit of units) {
-    if (unit.isDead || !unit.attackTargetId) {
-      metrics.lastTargetByUnitId.delete(unit.id)
+function recordTargetSwitches(metrics: CombatMetricsCollector, world: CombatWorld): void {
+  for (const entityId of world.query(['identity', 'vitality', 'targeting'], true)) {
+    const identity = world.stores.identity.require(entityId)
+    const vitality = world.stores.vitality.require(entityId)
+    const targeting = world.stores.targeting.require(entityId)
+    if (vitality.isDead || !targeting.attackTargetId) {
+      metrics.lastTargetByUnitId.delete(identity.id)
       continue
     }
 
-    const previousTarget = metrics.lastTargetByUnitId.get(unit.id)
-    if (previousTarget && previousTarget !== unit.attackTargetId) {
+    const previousTarget = metrics.lastTargetByUnitId.get(identity.id)
+    if (previousTarget && previousTarget !== targeting.attackTargetId) {
       metrics.targetSwitches++
-      metrics.targetSwitchesByUnitType[unit.type] = (metrics.targetSwitchesByUnitType[unit.type] ?? 0) + 1
+      metrics.targetSwitchesByUnitType[identity.type] = (metrics.targetSwitchesByUnitType[identity.type] ?? 0) + 1
     }
-    metrics.lastTargetByUnitId.set(unit.id, unit.attackTargetId)
+    metrics.lastTargetByUnitId.set(identity.id, targeting.attackTargetId)
   }
 }
 
-function recordMovementStateMetrics(metrics: CombatMetricsCollector, units: SimUnit[]): void {
-  const unitById = new Map(units.map(unit => [unit.id, unit]))
-  for (const unit of units) {
-    if (unit.isDead) continue
-    if ((unit.stuckTicks ?? 0) > 0) {
-      metrics.stuckTicksByUnitType[unit.type] = (metrics.stuckTicksByUnitType[unit.type] ?? 0) + 1
-    }
+function recordMovementStateMetrics(metrics: CombatMetricsCollector, world: CombatWorld): void {
+  for (const entityId of world.query(['identity', 'vitality', 'movement', 'targeting', 'entityTargets'])) {
+    const identity = world.stores.identity.require(entityId)
+    const movement = world.stores.movement.require(entityId)
+    const targeting = world.stores.targeting.require(entityId)
+    if ((movement.stuckTicks ?? 0) > 0)
+      metrics.stuckTicksByUnitType[identity.type] = (metrics.stuckTicksByUnitType[identity.type] ?? 0) + 1
 
-    if (!unit.meleeSlotTargetId || unit.meleeSlotIndex === undefined) continue
-    const target = unitById.get(unit.meleeSlotTargetId)
-    if (target && !target.isDead && !isMeleeEngagementReady(unit, target)) metrics.meleeSlotWaitTicks++
+    const targetId = world.stores.entityTargets.require(entityId).meleeTarget
+    if (targetId === undefined || targeting.meleeSlotIndex === undefined) continue
+    if (!world.stores.vitality.require(targetId).isDead &&
+        !isEcsMeleeEngagementReady(world, entityId, targetId)) metrics.meleeSlotWaitTicks++
   }
 }
 
-function recordOverlap(metrics: CombatMetricsCollector, units: SimUnit[]): void {
+function recordOverlap(metrics: CombatMetricsCollector, world: CombatWorld): void {
+  const units = world.query(['transform', 'vitality'], true).map(entityId => ({
+    ...world.stores.transform.require(entityId),
+    isDead: world.stores.vitality.require(entityId).isDead,
+  }))
   const overlap = collectOverlapMetrics(units)
   metrics.totalOverlap += overlap.totalOverlap
   metrics.totalOverlapRatio += overlap.totalOverlapRatio
@@ -224,6 +233,11 @@ function recordOverlap(metrics: CombatMetricsCollector, units: SimUnit[]): void 
   metrics.maxOverlap = Math.max(metrics.maxOverlap, overlap.maxOverlap)
   metrics.maxOverlapRatio = Math.max(metrics.maxOverlapRatio, overlap.maxOverlapRatio)
   metrics.severeOverlapSamples += overlap.severeOverlapSamples
+}
+
+function getUnitType(world: CombatWorld, externalId: string): string {
+  const entityId = world.getEntityId(externalId)
+  return entityId === undefined ? 'unknown' : world.stores.identity.get(entityId)?.type ?? 'unknown'
 }
 
 function getAverageTimeToEngage(metrics: CombatMetricsCollector): number | null {

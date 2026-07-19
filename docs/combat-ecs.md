@@ -31,13 +31,15 @@ periodic spawner and reassembly ownership,
 typed component/resource stores, deterministic
 entity queries, and snapshot/survivor serialization.
 
-Metrics and tick orchestration still consume the temporary `SimUnit` facade.
+Combat metrics now read identity, vitality, targeting, movement, and transform
+components directly. Tick orchestration passes `EntityId` values and rebuilds
+only the canonical `EntitySpatialIndex`.
 Trigger event selection and every trigger payload use component stores and
 EntityId references.
 Turn order, modifier ticking, target selection, melee reservation, spawning,
 actions, and movement now pass only `EntityId` values between the tick
-orchestrator and ECS runtime. The remaining facade use is limited to legacy
-spatial metrics, replay-facing mirrors, and structural factory input.
+orchestrator and ECS runtime. The remaining facade use is limited to
+replay-facing mirrors and structural factory input.
 Movement and healing read and write component stores directly through
 `EntityId`; after each move, only the changed movement components are written
 back to the facade for those unported consumers. Every action family now stays
@@ -178,9 +180,9 @@ Simulation scale is applied once:
 
 The deterministic order is:
 
-1. Rebuild the spatial hash.
+1. Rebuild the EntityId spatial index.
 2. Process globals, auras, transforms, periodic abilities, reassembly, and spawns.
-3. Insert newly created entities into the spatial hash.
+3. Insert newly created entities into the EntityId spatial index.
 4. Tick all statuses in a separate global status phase.
 5. Resolve terminal elimination or stalemate.
 6. Build speed-first, team-interleaved initiative.
@@ -248,7 +250,7 @@ Deterministic scenario contracts cover winner, termination, replay actions,
 survivors, and metrics. Mirror gates swap teams and field coordinates to expose
 initiative or ID bias.
 
-With `{ profile: true }`, the result combines facade and EntityId spatial query
-counts, total local candidates, and maximum candidates in one query. Targeting, broad weapon shapes,
-auras, hazards, projectile interception, and damage sharing use local queries
-where a spatial hash is available.
+With `{ profile: true }`, the result reports EntityId spatial query counts,
+total local candidates, and maximum candidates in one query. Targeting, broad
+weapon shapes, auras, hazards, projectile interception, and damage sharing use
+local component queries.

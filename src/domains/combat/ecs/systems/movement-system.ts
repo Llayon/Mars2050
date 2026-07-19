@@ -25,9 +25,6 @@ export function runMovementSystem(
 ): void {
   runMovementMath(world, entityId, targetId, actions, context)
   world.syncComponentsFromStore(entityId, ['transform', 'targeting', 'movement', 'statusControl', 'weapon'])
-  const unit = world.getEntity(entityId)
-  if (!unit) return
-  context.spatialHash.update(unit)
   world.resources.require('entitySpatial').update(world, entityId)
 }
 

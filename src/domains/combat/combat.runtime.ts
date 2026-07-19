@@ -14,13 +14,13 @@ export interface RuntimeMovementContext {
   rng: PRNG
   flowField: FlowFieldMap
   obstacles: Obstacle[]
-  spatialHash: SpatialHash
+  spatialHash?: SpatialHash
 }
 
 export interface RuntimeActionContext {
   rng: PRNG
   tick: number
-  spatialHash: SpatialHash
+  spatialHash?: SpatialHash
 }
 
 export interface RuntimeActionResult {
@@ -33,7 +33,7 @@ export interface CombatRuntime {
   readonly hazards: SimHazard[]
   addSquad(row: UnitRow, team: Team, rng: PRNG): void
   flushStructuralCommands(): void
-  beginTargetingPhase(spatialHash: SpatialHash): void
+  beginTargetingPhase(spatialHash?: SpatialHash): void
   selectTarget(entityId: EntityId): EntityId | null
   reserveMeleeSlot(entityId: EntityId, targetId: EntityId): boolean
   processSpawner(entityId: EntityId, targetId: EntityId, actions: BattleAction[], context: RuntimeActionContext): void
@@ -56,7 +56,7 @@ export interface CombatRuntime {
   runSupportAuraPhase(
     tick: number,
     actions: BattleAction[],
-    spatialHash: SpatialHash,
+    spatialHash?: SpatialHash,
   ): void
   runGrowthAndChargePhase(tick: number, actions: BattleAction[]): void
   runBurrowRegenerationPhase(actions: BattleAction[]): void
@@ -66,7 +66,7 @@ export interface CombatRuntime {
   runControlBeamPhase(actions: BattleAction[]): void
   runPeriodicAbilityPhase(tick: number, actions: BattleAction[], rng: PRNG): void
   runStatusPhase(actions: BattleAction[], rng: PRNG): void
-  runHazardPhase(actions: BattleAction[], spatialHash: SpatialHash, rng: PRNG): void
+  runHazardPhase(actions: BattleAction[], rng: PRNG): void
   runPostHazardPhase(tick: number, actions: BattleAction[], rng: PRNG): void
   runDepenetration(actions: BattleAction[]): void
   getTerminalOutcome(): BattleOutcome | null

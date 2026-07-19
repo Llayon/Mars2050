@@ -6,7 +6,6 @@ import type { PRNG } from '../combat.utils'
 import type { Team } from '../combat.sim.types'
 import type { FlowFieldMap } from '../combat.pathfinding'
 import type { TimeoutPolicy } from '../combat.result'
-import type { SpatialHash } from '../spatial-hash'
 import type { EntitySpatialIndex } from './entity-spatial-index'
 
 export interface CombatClockResource {
@@ -22,7 +21,6 @@ export interface CombatResourceMap {
   actions: BattleAction[]
   obstacles: Obstacle[]
   flowField: FlowFieldMap
-  spatial: SpatialHash
   entitySpatial: EntitySpatialIndex
   globals: { team: Team; upg: GlobalUpgradeConfig }[]
   metrics: CombatMetricsCollector | undefined
