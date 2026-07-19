@@ -122,7 +122,5 @@ describe('combat ECS control beam phase', () => {
       damage: 10,
     })
     expect(runtime.world.stores.identity.require(targetId).team).toBe('attacker')
-    expect(runtime.world.roster[1].team).toBe('attacker')
-    expect(runtime.world.roster[1].hp).toBe(runtime.world.roster[1].maxHp)
   })
 })

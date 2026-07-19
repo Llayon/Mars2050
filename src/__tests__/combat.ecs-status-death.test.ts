@@ -119,7 +119,5 @@ describe('combat ECS status death', () => {
       cause: 'burn',
     })
     expect(runtime.world.stores.vitality.require(targetId).isDead).toBe(true)
-    expect(runtime.world.roster[1].isDead).toBe(true)
-    expect(runtime.world.roster[1].statusEffects).toEqual([])
   })
 })

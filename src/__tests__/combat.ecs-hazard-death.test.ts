@@ -137,6 +137,5 @@ describe('combat ECS hazard death', () => {
       damageKind: 'hazard',
     })
     expect(runtime.world.stores.vitality.require(targetId).isDead).toBe(true)
-    expect(runtime.world.roster[0].isDead).toBe(true)
   })
 })

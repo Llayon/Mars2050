@@ -83,11 +83,5 @@ describe('combat ECS expiration death', () => {
       isTemporary: true,
       temporaryDuration: 0,
     })
-    expect(unit).toMatchObject({
-      actionCooldown: 2,
-      isDead: true,
-      isTemporary: true,
-      temporaryDuration: 0,
-    })
   })
 })

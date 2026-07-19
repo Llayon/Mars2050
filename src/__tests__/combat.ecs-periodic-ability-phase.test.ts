@@ -240,8 +240,5 @@ describe('combat ECS periodic ability phase', () => {
       })
     expect(runtime.world.stores.statusControl.require(targetId).statusEffects)
       .toEqual([expect.objectContaining({ type: 'slow' })])
-    expect(runtime.world.roster[0].periodicAbilities?.[0].chargesRemaining).toBe(0)
-    expect(runtime.world.roster[1].statusEffects)
-      .toEqual([expect.objectContaining({ type: 'slow' })])
   })
 })

@@ -29,7 +29,6 @@ export function runEcsGlobalEffectPhase(
 ): void {
   if (!hasEcsGlobalEffectAtTick(tick, activeGlobals)) return
   runEcsGlobalEffectSystem(world, tick, activeGlobals, actions, rng)
-  world.syncAllComponentsFromStore(['vitality', 'statusControl'])
 }
 
 export function runEcsSupportAuraPhase(
@@ -41,7 +40,6 @@ export function runEcsSupportAuraPhase(
   if (!hasEcsSupportAuraAtTick(world, tick, entityIds)) return
   world.resources.require('entitySpatial').rebuild(world)
   runEcsSupportAuraSystem(world, tick, actions, entityIds)
-  world.syncAllFromComponents()
 }
 
 export function runEcsFieldEffectPhase(
@@ -53,10 +51,6 @@ export function runEcsFieldEffectPhase(
   if (entityIds.length === 0) return
   world.flushStructuralCommands()
   runEcsFieldEffectSystem(world, tick, actions, entityIds)
-  for (const entityId of entityIds) {
-    world.syncComponentsFromStore(entityId, ['support'])
-  }
-  world.syncAllComponentsFromStore(['statusControl', 'targeting'])
 }
 
 export function runEcsFormationBonusPhase(
@@ -69,9 +63,6 @@ export function runEcsFormationBonusPhase(
   if (entityIds.length === 0) return
   world.resources.require('entitySpatial').rebuild(world)
   runEcsFormationBonusSystem(world, tick, actions, entityIds)
-  for (const entityId of entityIds) {
-    world.syncComponentsFromStore(entityId, ['statusControl', 'movement'])
-  }
 }
 
 export function runEcsControlBeamPhase(
@@ -82,7 +73,6 @@ export function runEcsControlBeamPhase(
   if (entityIds.length === 0) return
   world.resources.require('entitySpatial').rebuild(world)
   runEcsControlBeamSystem(world, actions, entityIds)
-  world.syncAllComponentsFromStore(['identity', 'vitality', 'targeting'])
 }
 
 export function runEcsPeriodicAbilityPhase(
@@ -99,5 +89,4 @@ export function runEcsPeriodicAbilityPhase(
   world.resources.require('entitySpatial').rebuild(world)
   runEcsPeriodicAbilitySystem(world, tick, actions, entityIds)
   world.flushStructuralCommands()
-  world.syncAllFromComponents()
 }

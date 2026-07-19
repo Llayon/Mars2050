@@ -6,8 +6,6 @@ import { createSquadEntities } from './combat-entity-factory'
 import { EntitySpatialIndex } from './entity-spatial-index'
 import { runEcsControlBeamPhase, runEcsFieldEffectPhase, runEcsFormationBonusPhase, runEcsGlobalEffectPhase, runEcsPeriodicAbilityPhase, runEcsSupportAuraPhase } from './combat-ecs-phase-boundaries'
 
-const MODIFIER_COMPONENTS = ['vitality', 'combat', 'defense', 'statusControl', 'lifecycle'] as const
-
 export interface EcsCombatRuntime extends CombatRuntime {
   readonly world: CombatWorld
 }
@@ -26,19 +24,12 @@ export function createEcsCombatRuntime(): EcsCombatRuntime {
       world.resources.require('entitySpatial').rebuild(world)
       meleeEngagement = createEcsMeleeEngagementState()
     },
-    selectTarget: entityId => {
-      const targetId = runTargetingSystem(world, entityId, meleeEngagement)
-      world.syncComponentsFromStore(entityId, ['targeting'])
-      return targetId
-    },
-    reserveMeleeSlot: (entityId, targetId) => {
-      const reserved = reserveEcsMeleeSlot(world, entityId, targetId, meleeEngagement)
-      world.syncComponentsFromStore(entityId, ['targeting'])
-      return reserved
-    },
+    selectTarget: entityId =>
+      runTargetingSystem(world, entityId, meleeEngagement),
+    reserveMeleeSlot: (entityId, targetId) =>
+      reserveEcsMeleeSlot(world, entityId, targetId, meleeEngagement),
     processSpawner: (entityId, targetId, actions, context) => {
       runEcsPeriodicSpawnerSystem(world, entityId, targetId, actions, context)
-      world.syncComponentsFromStore(entityId, ['lifecycle', 'transform', 'combat', 'weapon', 'movement'])
     },
     actUnit: (entityId, targetId, actions, context) => {
       return runActionSystem(world, entityId, targetId, actions, context)
@@ -73,11 +64,9 @@ export function createEcsCombatRuntime(): EcsCombatRuntime {
       runModifierSystem(world, entityId, actions, expiredId => {
         resolveEcsDeath(world, expiredId, undefined, actions, 'expiration')
       })
-      world.syncComponentsFromStore(entityId, MODIFIER_COMPONENTS)
     },
     runReassemblyPhase(actions): void {
       runEcsReassemblySystem(world, actions)
-      world.syncAllComponentsFromStore(['vitality', 'combat', 'statusControl', 'targeting'])
     },
     runGlobalEffectPhase: (tick, activeGlobals, actions, rng) =>
       runEcsGlobalEffectPhase(world, tick, activeGlobals, actions, rng),
@@ -86,29 +75,14 @@ export function createEcsCombatRuntime(): EcsCombatRuntime {
     runGrowthAndChargePhase(tick, actions): void {
       const entityIds = getEcsGrowthAndChargeEntities(world)
       runEcsGrowthAndChargeSystem(world, tick, actions, entityIds)
-      for (const entityId of entityIds) {
-        world.syncComponentsFromStore(entityId, ['vitality', 'combat', 'lifecycle'])
-      }
     },
     runBurrowRegenerationPhase(actions): void {
       const entityIds = getEcsBurrowRegenerationEntities(world)
       runEcsBurrowRegenerationSystem(world, actions, entityIds)
-      for (const entityId of entityIds) {
-        world.syncComponentsFromStore(entityId, ['vitality'])
-      }
     },
     runTransformModePhase(tick, actions): void {
       const entityIds = getEcsTransformModeEntities(world)
       runEcsTransformModeSystem(world, tick, actions, entityIds)
-      for (const entityId of entityIds) {
-        world.syncComponentsFromStore(entityId, [
-          'transform',
-          'vitality',
-          'combat',
-          'weapon',
-          'statusControl',
-        ])
-      }
     },
     runFieldEffectPhase: (tick, actions) =>
       runEcsFieldEffectPhase(world, tick, actions),
@@ -126,7 +100,6 @@ export function createEcsCombatRuntime(): EcsCombatRuntime {
         resolveEcsDeath(world, entityId, sourceId, actions, cause)
         world.flushStructuralCommands()
       })
-      world.syncAllFromComponents()
     },
     runHazardPhase(actions, _rng): void {
       world.flushStructuralCommands()
@@ -138,8 +111,6 @@ export function createEcsCombatRuntime(): EcsCombatRuntime {
         resolveEcsDeath(world, entityId, sourceId, actions, cause)
         world.flushStructuralCommands()
       })
-      world.syncAllFromComponents()
-      world.syncHazardsFromComponents()
     },
     runPostHazardPhase(_tick, actions, _rng): void {
       const ordered = world.query(['identity', 'vitality', 'lifecycle'])
@@ -152,10 +123,7 @@ export function createEcsCombatRuntime(): EcsCombatRuntime {
         processEcsHpThresholdTriggers(world, entityId, actions)
       }
     },
-    runDepenetration: actions => {
-      runDepenetrationSystem(world, actions)
-      world.syncAllComponentsFromStore(['transform'])
-    },
+    runDepenetration: actions => runDepenetrationSystem(world, actions),
     getTerminalOutcome() {
       world.flushStructuralCommands()
       return getEcsTerminalOutcome(world)

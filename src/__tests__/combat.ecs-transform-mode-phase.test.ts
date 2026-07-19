@@ -110,8 +110,5 @@ describe('combat ECS transform mode phase', () => {
       type: 'transform_mode',
     })])
     expect(runtime.world.stores.combat.require(entityId).attack).toBeLessThan(999)
-    expect(transforming.attack)
-      .toBe(runtime.world.stores.combat.require(entityId).attack)
-    expect(runtime.world.roster[0].transformState?.appliedIds).toEqual(['canonical'])
   })
 })

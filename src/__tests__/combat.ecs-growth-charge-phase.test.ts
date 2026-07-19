@@ -110,8 +110,5 @@ describe('combat ECS growth and charge phase', () => {
       'attack_charge',
     ])
     expect(runtime.world.stores.combat.require(entityId).attack).toBeLessThan(999)
-    expect(growing.attack).toBe(runtime.world.stores.combat.require(entityId).attack)
-    expect(runtime.world.roster[0].statGrowth?.stacks).toBe(1)
-    expect(runtime.world.roster[0].attackCharge?.stacks).toBe(1)
   })
 })

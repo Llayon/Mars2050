@@ -127,7 +127,5 @@ describe('combat ECS global effect phase', () => {
     expect(runtime.world.stores.vitality.require(allyId).hp).toBe(ally.maxHp)
     expect(runtime.world.stores.statusControl.require(enemyId).statusEffects)
       .toEqual([expect.objectContaining({ type: 'emp' })])
-    expect(runtime.world.roster[1].statusEffects)
-      .toEqual([expect.objectContaining({ type: 'emp' })])
   })
 })

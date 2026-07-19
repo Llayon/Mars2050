@@ -153,6 +153,8 @@ Action, movement, targeting, and support-aura runtime contexts no longer expose
 the legacy object-based spatial hash.
 `CombatRuntime` no longer exposes mutable unit or hazard facade arrays. Tests
 that exercise structural creation use the explicit `CombatWorld` boundary.
+Runtime and phase boundaries no longer mirror component results into unit or
+hazard facade views.
 The targeting-phase boundary also flushes structural commands, resolves
 EntityId references, and rebuilds the spatial index directly from canonical
 components without a roster-facade import.

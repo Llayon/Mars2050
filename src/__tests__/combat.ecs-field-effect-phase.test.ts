@@ -136,6 +136,5 @@ describe('combat ECS field effect phase', () => {
     }))
     expect(runtime.world.stores.support.require(emitterId)
       .fieldEffect?.[0].nextTick).toBe(5)
-    expect(runtime.world.roster[0].fieldEffect?.[0].nextTick).toBe(5)
   })
 })

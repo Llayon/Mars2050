@@ -129,8 +129,5 @@ describe('combat ECS support aura phase', () => {
       shield: 30,
       maxShield: 30,
     })
-    expect(runtime.world.roster[0].supportAuras).toHaveLength(1)
-    expect(runtime.world.roster[0].x).toBe(100)
-    expect(runtime.world.roster[1].x).toBe(150)
   })
 })
