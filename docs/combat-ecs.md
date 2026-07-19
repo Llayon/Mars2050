@@ -119,6 +119,9 @@ always reads canonical vitality/lifecycle stores in stable external-ID order.
 The shared tick orchestrator no longer creates or passes a legacy
 `TriggerContext`: the legacy runtime owns that adapter internally, while the ECS
 runtime receives the tick, replay actions, and seeded RNG directly.
+Terminal outcome resolution also owns its runtime state: ECS queries canonical
+unit and hazard components after flushing structural commands, so the engine no
+longer passes the runtime's hazard facade back into it.
 Periodic burn, acid, and degeneration deaths now resolve inside the ECS status
 phase, including source-less deaths, resurrection, reassembly, and death/kill
 triggers. Mine and periodic hazard deaths use the same resolver without

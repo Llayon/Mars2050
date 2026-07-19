@@ -65,7 +65,7 @@ describe('combat ECS reassembly phase', () => {
 
     legacy.runReassemblyPhase(legacyActions)
     ecs.runReassemblyPhase(ecsActions)
-    expect(ecs.getTerminalOutcome([])).toBeNull()
+    expect(ecs.getTerminalOutcome()).toBeNull()
     legacy.runReassemblyPhase(legacyActions)
     ecs.runReassemblyPhase(ecsActions)
 
@@ -97,6 +97,6 @@ describe('combat ECS reassembly phase', () => {
     }
 
     expect(runtime.units[0].reassemblyState).toBeUndefined()
-    expect(runtime.getTerminalOutcome([])).toBeNull()
+    expect(runtime.getTerminalOutcome()).toBeNull()
   })
 })

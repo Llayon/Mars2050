@@ -1,11 +1,10 @@
-import type { SimHazard, Team } from '../../combat.sim.types'
+import type { Team } from '../../combat.sim.types'
 import type { BattleOutcome } from '../../combat.outcome'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
 
 export function getEcsTerminalOutcome(
   world: CombatWorld,
-  hazards: SimHazard[],
 ): BattleOutcome | null {
   const pendingAttackers = hasPendingReassembly(world, 'attacker')
   const pendingDefenders = hasPendingReassembly(world, 'defender')
@@ -15,7 +14,7 @@ export function getEcsTerminalOutcome(
   if (attackers.length === 0 && defenders.length === 0) return pendingAttackers || pendingDefenders ? null : { winner: 'draw', reason: 'mutual_elimination' }
   if (attackers.length === 0) return pendingAttackers ? null : { winner: 'defender', reason: 'elimination' }
   if (defenders.length === 0) return pendingDefenders ? null : { winner: 'attacker', reason: 'elimination' }
-  if (pendingAttackers || pendingDefenders || hasActiveDamageHazard(hazards)) return null
+  if (pendingAttackers || pendingDefenders || hasActiveDamageHazard(world)) return null
   if (canTeamDealDamage(world, attackers, defenders) || canTeamDealDamage(world, defenders, attackers)) return null
 
   const attackerPower = getOffensivePower(world, attackers)
@@ -66,6 +65,9 @@ function getOffensivePower(world: CombatWorld, entities: EntityId[]): number {
   }, 0)
 }
 
-function hasActiveDamageHazard(hazards: SimHazard[]): boolean {
-  return hazards.some(hazard => hazard.duration > 0 && hazard.damagePerTick > 0)
+function hasActiveDamageHazard(world: CombatWorld): boolean {
+  return world.query(['hazard']).some(entityId => {
+    const hazard = world.stores.hazard.require(entityId)
+    return hazard.duration > 0 && hazard.damagePerTick > 0
+  })
 }

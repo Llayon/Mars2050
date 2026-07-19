@@ -1,5 +1,4 @@
 import type { BattleAction } from '../combat.actions'
-import type { SimHazard } from '../combat.sim.types'
 import type { CombatRuntime } from '../combat.runtime'
 import { CombatWorld } from './combat-world'
 import { createEcsMeleeEngagementState, getEcsBurrowRegenerationEntities, getEcsGrowthAndChargeEntities, getEcsTerminalOutcome, getEcsTransformModeEntities, getEcsTurnOrder, processEcsHpThresholdTriggers, reserveEcsMeleeSlot, resolveEcsDeath, runActionSystem, runDepenetrationSystem, runEcsBurrowRegenerationSystem, runEcsGrowthAndChargeSystem, runEcsPeriodicSpawnerSystem, runEcsReassemblySystem, runEcsTransformModeSystem, runHazardSystem, runModifierSystem, runMovementSystem, runStatusSystem, runTargetingSystem, syncEcsTargetRefs } from './systems'
@@ -213,8 +212,9 @@ export function createEcsCombatRuntime(): EcsCombatRuntime {
       runDepenetrationSystem(world, actions)
       world.syncAllComponentsFromStore(['transform'])
     },
-    getTerminalOutcome(hazards: SimHazard[]) {
-      return getEcsTerminalOutcome(world, hazards)
+    getTerminalOutcome() {
+      world.flushStructuralCommands()
+      return getEcsTerminalOutcome(world)
     },
   }
 }

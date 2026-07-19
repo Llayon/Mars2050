@@ -123,7 +123,7 @@ export function createLegacyCombatRuntime(): CombatRuntime {
       })
     },
     runDepenetration: actions => applyDepenetration(units, actions),
-    getTerminalOutcome(hazards: SimHazard[]) {
+    getTerminalOutcome() {
       const pendingAttackers = units.some(unit =>
         unit.team === 'attacker' && hasPendingReassembly(unit),
       )

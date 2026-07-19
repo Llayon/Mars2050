@@ -67,5 +67,5 @@ export interface CombatRuntime {
   runHazardPhase(actions: BattleAction[], spatialHash: SpatialHash, rng: PRNG): void
   runPostHazardPhase(tick: number, actions: BattleAction[], rng: PRNG): void
   runDepenetration(actions: BattleAction[]): void
-  getTerminalOutcome(hazards: SimHazard[]): BattleOutcome | null
+  getTerminalOutcome(): BattleOutcome | null
 }

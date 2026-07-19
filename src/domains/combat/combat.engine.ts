@@ -84,7 +84,7 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
     }
     runtime.runStatusPhase(actions, rng)
 
-    const terminalOutcome = runtime.getTerminalOutcome(hazards)
+    const terminalOutcome = runtime.getTerminalOutcome()
     if (terminalOutcome) { resolvedOutcome = terminalOutcome; break }
 
     const turnOrder = runtime.getTurnOrder()
