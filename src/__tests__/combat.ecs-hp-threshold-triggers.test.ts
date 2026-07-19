@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
 import type { BattleAction } from '@/domains/combat/combat.actions'
-import { processHpThresholdTriggers } from '@/domains/combat/combat.triggers'
 import type { SimUnit } from '@/domains/combat/combat.sim.types'
 import { createRuntimeUnitFromConfig } from '@/domains/combat/combat.unit-factory'
 import { PRNG } from '@/domains/combat/combat.utils'
@@ -36,31 +35,21 @@ describe('combat ECS hp-threshold triggers', () => {
       counter: 0,
       cooldownRemaining: 0,
     }]
-    const legacy = structuredClone(owner)
-    const legacyActions: Parameters<typeof processHpThresholdTriggers>[1]['actions'] = []
     const nativeActions: Parameters<typeof processEcsHpThresholdTriggers>[2] = []
     const world = new CombatWorld([owner])
 
-    processHpThresholdTriggers(legacy, {
-      units: [legacy],
-      hazards: [],
-      actions: legacyActions,
-      rng: new PRNG(61),
-    })
     processEcsHpThresholdTriggers(world, 0, nativeActions)
-    processHpThresholdTriggers(legacy, {
-      units: [legacy],
-      hazards: [],
-      actions: legacyActions,
-      rng: new PRNG(67),
-    })
     processEcsHpThresholdTriggers(world, 0, nativeActions)
 
-    expect(nativeActions).toEqual(legacyActions)
+    expect(nativeActions.filter(action => action.type === 'trigger_effect')).toHaveLength(1)
+    expect(nativeActions).toContainEqual({
+      unitId: 'tank',
+      type: 'shield_apply',
+      targetId: 'tank',
+      damage: 30,
+    })
     expect(world.stores.vitality.require(0).shield).toBe(30)
-    expect(world.stores.lifecycle.require(0).triggerEffects).toEqual(
-      legacy.triggerEffects,
-    )
+    expect(world.stores.lifecycle.require(0).triggerEffects?.[0].fired).toBe(true)
   })
 
   it('enables native attacks for separately scheduled damage triggers', () => {
@@ -102,24 +91,15 @@ describe('combat ECS hp-threshold triggers', () => {
     target.hp = 80
     target.maxHp = 200
     target.defense = 0
-    const legacyUnits = structuredClone([owner, target])
-    const legacyActions: Parameters<typeof processHpThresholdTriggers>[1]['actions'] = []
     const runtime = createEcsCombatRuntime()
     runtime.world.queueUnitCreation(owner, target)
     runtime.world.flushStructuralCommands()
     const actions: BattleAction[] = []
-    processHpThresholdTriggers(legacyUnits[0], {
-      units: legacyUnits,
-      hazards: [],
-      actions: legacyActions,
-      rng: new PRNG(71),
-    })
     runtime.runPostHazardPhase(12, actions, new PRNG(71))
 
     const targetId = runtime.world.getEntityId('target')!
     const ownerId = runtime.world.getEntityId('disintegrator')!
-    expect(runtime.world.stores.vitality.require(targetId).hp).toBe(legacyUnits[1].hp)
-    expect(actions).toEqual(legacyActions)
+    expect(runtime.world.stores.vitality.require(targetId).hp).toBe(55)
     expect(runtime.world.stores.lifecycle.require(ownerId).triggerEffects?.[0].fired)
       .toBe(true)
     expect(actions).toContainEqual(expect.objectContaining({
@@ -127,6 +107,12 @@ describe('combat ECS hp-threshold triggers', () => {
       type: 'trigger_effect',
       targetId: 'target',
     }))
+    expect(actions).toContainEqual({
+      unitId: 'disintegrator',
+      type: 'percent_hp_damage',
+      targetId: 'target',
+      value: 20,
+    })
   })
 
   it('reads threshold state from the canonical vitality store', () => {

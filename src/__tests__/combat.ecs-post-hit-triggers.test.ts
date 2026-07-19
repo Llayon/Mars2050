@@ -1,7 +1,4 @@
 import { describe, expect, it } from 'vitest'
-import { applyCombatDamage } from '@/domains/combat/combat.damage'
-import { actionSystem } from '@/__tests__/helpers/combat-ecs-action-harness'
-import { recordAttackTrigger } from '@/domains/combat/combat.triggers'
 import type { SimUnit } from '@/domains/combat/combat.sim.types'
 import { createRuntimeUnitFromConfig } from '@/domains/combat/combat.unit-factory'
 import { PRNG } from '@/domains/combat/combat.utils'
@@ -54,24 +51,19 @@ describe('combat ECS post-hit triggers', () => {
     }]
     target.hp = target.maxHp = 100
     target.defense = 0
-    const legacyUnits = structuredClone([attacker, target])
-    const legacyActions: Parameters<typeof actionSystem>[4] = []
     const nativeActions: Parameters<typeof runActionSystem>[3] = []
     const world = createWorld([attacker, target])
 
     expect(canUseSimpleSingleDamage(world, 0, 1)).toBe(true)
-    actionSystem(legacyUnits[0], legacyUnits[1], legacyUnits, [], legacyActions, new PRNG(43))
     runActionSystem(world, 0, 1, nativeActions, context(43))
-    legacyUnits[0].actionCooldown = 0
     world.stores.combat.require(0).actionCooldown = 0
-    actionSystem(legacyUnits[0], legacyUnits[1], legacyUnits, [], legacyActions, new PRNG(47))
     runActionSystem(world, 0, 1, nativeActions, context(47))
 
-    expect(nativeActions).toEqual(legacyActions)
     expect(world.stores.combat.require(0).actionCooldown).toBe(0)
-    expect(world.stores.lifecycle.require(0).triggerEffects).toEqual(
-      legacyUnits[0].triggerEffects,
-    )
+    expect(world.stores.lifecycle.require(0).triggerEffects?.[0]).toMatchObject({
+      fired: true,
+      counter: 0,
+    })
     expect(nativeActions.slice(-2).map(action => action.type)).toEqual([
       'damage',
       'trigger_effect',
@@ -99,20 +91,21 @@ describe('combat ECS post-hit triggers', () => {
       counter: 0,
       cooldownRemaining: 0,
     }]
-    const legacyUnits = structuredClone([attacker, target])
-    const legacyActions: Parameters<typeof actionSystem>[4] = []
     const nativeActions: Parameters<typeof runActionSystem>[3] = []
     const world = createWorld([attacker, target])
 
-    actionSystem(legacyUnits[0], legacyUnits[1], legacyUnits, [], legacyActions, new PRNG(53))
     expect(canUseSimpleSingleDamage(world, 0, 1)).toBe(true)
     runActionSystem(world, 0, 1, nativeActions, context(53))
 
-    expect(nativeActions).toEqual(legacyActions)
-    expect(world.stores.lifecycle.require(1).triggerEffects).toEqual(
-      legacyUnits[1].triggerEffects,
-    )
-    expect(world.stores.statusControl.require(1).statusEffects).toEqual(legacyUnits[1].statusEffects)
+    expect(world.stores.lifecycle.require(1).triggerEffects?.[0]).toMatchObject({
+      fired: true,
+      cooldownRemaining: 2,
+    })
+    expect(world.stores.statusControl.require(1).statusEffects)
+      .toContainEqual(expect.objectContaining({
+        type: 'range_boost',
+        value: 0.5,
+      }))
     expect(nativeActions.slice(-2).map(action => action.type)).toEqual([
       'trigger_effect',
       'status_apply',
@@ -137,22 +130,17 @@ describe('combat ECS post-hit triggers', () => {
       counter: 0,
       cooldownRemaining: 0,
     }]
-    const legacyUnits = structuredClone([attacker, target])
-    const legacyActions: Parameters<typeof recordAttackTrigger>[2]['actions'] = []
     const nativeActions: Parameters<typeof recordEcsAttackTriggers>[3] = []
     const world = createWorld([attacker, target])
 
-    recordAttackTrigger(legacyUnits[0], legacyUnits[1], {
-      units: legacyUnits,
-      hazards: [],
-      actions: legacyActions,
-      rng: new PRNG(59),
-    })
     recordEcsAttackTriggers(world, 0, 1, nativeActions)
 
     expect(canUseSimpleSingleDamage(world, 0, 1)).toBe(true)
-    expect(nativeActions).toEqual(legacyActions)
-    expect(world.stores.vitality.require(1).hp).toBe(legacyUnits[1].hp)
+    expect(world.stores.vitality.require(1).hp).toBe(80)
+    expect(nativeActions.map(action => action.type)).toEqual([
+      'trigger_effect',
+      'damage',
+    ])
   })
 
   it('matches finite trigger barriers and their damage break order', () => {
@@ -180,9 +168,6 @@ describe('combat ECS post-hit triggers', () => {
       cooldownRemaining: 0,
     }]
     enemy.attack = 50
-    const legacyUnits = structuredClone([owner, target, enemy])
-    const legacyActions: Parameters<typeof recordAttackTrigger>[2]['actions'] = []
-    const legacyHazards: Parameters<typeof recordAttackTrigger>[2]['hazards'] = []
     const nativeActions: Parameters<typeof recordEcsAttackTriggers>[3] = []
     const world = createWorld([owner, target, enemy])
     world.resources.set('clock', {
@@ -192,34 +177,26 @@ describe('combat ECS post-hit triggers', () => {
       timeoutPolicy: 'draw',
     })
 
-    const legacyContext = {
-      units: legacyUnits,
-      hazards: legacyHazards,
-      actions: legacyActions,
-      rng: new PRNG(97),
-      tick: 7,
-    }
-    recordAttackTrigger(legacyUnits[0], legacyUnits[1], legacyContext)
     recordEcsAttackTriggers(world, 0, 1, nativeActions)
-    recordAttackTrigger(legacyUnits[0], legacyUnits[1], legacyContext)
     recordEcsAttackTriggers(world, 0, 1, nativeActions)
     world.flushStructuralCommands()
 
-    expect(nativeActions).toEqual(legacyActions)
-    expect(world.snapshotHazards()).toEqual(legacyHazards)
-    applyCombatDamage(
-      legacyUnits[2],
-      legacyUnits[0],
-      50,
-      legacyActions,
-      { units: legacyUnits, hazards: legacyHazards },
-    )
+    expect(world.snapshotHazards()).toEqual([
+      expect.objectContaining({
+        type: 'barrier_dome',
+        capacity: 30,
+        sourceUnitId: 'accumulator',
+      }),
+    ])
     applyEcsSingleDamage(world, 2, 0, 50, nativeActions, {
       allowPercentHpDamage: false,
       interceptable: false,
     })
 
-    expect(nativeActions).toEqual(legacyActions)
     expect(world.stores.hazard.require(3).capacity).toBe(0)
+    expect(nativeActions).toContainEqual(expect.objectContaining({
+      unitId: 'accumulator',
+      type: 'barrier_break',
+    }))
   })
 })

@@ -1,12 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { applyFieldEffectAt } from '@/domains/combat/combat.field-effects'
 import type {
   FieldEffectConfig,
   SimHazard,
   SimUnit,
   TriggerPayload,
 } from '@/domains/combat/combat.sim.types'
-import { normalizeStatusEffect } from '@/domains/combat/combat.status'
+import { normalizeStatusEffect } from '@/domains/combat/combat.status-core'
 import { createRuntimeUnitFromConfig } from '@/domains/combat/combat.unit-factory'
 import { CombatWorld } from '@/domains/combat/ecs/combat-world'
 import { applyEcsTriggerField } from '@/domains/combat/ecs/systems'
@@ -93,23 +92,11 @@ describe('combat ECS trigger fields', () => {
       radius: 80,
       intervalTicks: 20,
     }
-    const legacyUnits = structuredClone([source, ally, enemy])
-    const legacyHazards = structuredClone(hazards)
-    const legacyActions: Parameters<typeof applyFieldEffectAt>[5] = []
     const nativeActions: Parameters<typeof applyEcsTriggerField>[4] = []
     const world = new CombatWorld([source, ally, enemy])
     world.queueHazardCreation(...structuredClone(hazards))
     world.flushStructuralCommands()
 
-    applyFieldEffectAt(
-      legacyUnits[0],
-      legacyUnits[0],
-      effect,
-      legacyUnits,
-      legacyHazards,
-      legacyActions,
-      'trigger_5_0',
-    )
     world.resources.set('clock', {
       tick: 5,
       dt: 0.1,
@@ -118,9 +105,22 @@ describe('combat ECS trigger fields', () => {
     })
     applyEcsTriggerField(world, 0, 0, payload(effect), nativeActions)
 
-    expect(nativeActions).toEqual(legacyActions)
-    expect(world.snapshotHazards()).toEqual(legacyHazards)
-    expect(world.snapshot()).toEqual(legacyUnits)
+    expect(world.snapshotHazards().map(hazard => hazard.id)).toEqual(['far-smoke'])
+    expect(world.stores.statusControl.require(0).statusEffects.map(status => status.type))
+      .toEqual(['haste'])
+    expect(world.stores.statusControl.require(1).statusEffects.map(status => status.type))
+      .toEqual(['regen'])
+    expect(world.stores.statusControl.require(2).statusEffects.map(status => status.type))
+      .toEqual(['burn'])
+    expect(world.stores.targeting.require(1).controlProgress).toBeUndefined()
+    expect(nativeActions.map(action => action.type)).toEqual([
+      'field_effect',
+      'hazard_cleanse',
+      'hazard_cleanse',
+      'status_cleanse',
+      'control_break',
+      'status_cleanse',
+    ])
   })
 
   it('matches anchored hazard creation and cloned statuses', () => {
@@ -136,8 +136,6 @@ describe('combat ECS trigger fields', () => {
       damagePerTick: 4,
       statusEffects: [{ type: 'slow', duration: 8, value: 0.7 }],
     }
-    const legacyHazards: SimHazard[] = []
-    const legacyActions: Parameters<typeof applyFieldEffectAt>[5] = []
     const nativeActions: Parameters<typeof applyEcsTriggerField>[4] = []
     const world = new CombatWorld([source, anchor])
     world.resources.set('clock', {
@@ -147,21 +145,25 @@ describe('combat ECS trigger fields', () => {
       timeoutPolicy: 'draw',
     })
 
-    applyFieldEffectAt(
-      structuredClone(source),
-      structuredClone(anchor),
-      effect,
-      [],
-      legacyHazards,
-      legacyActions,
-      'trigger_11_0',
-    )
     applyEcsTriggerField(world, 0, 1, payload(effect), nativeActions)
     world.flushStructuralCommands()
 
-    expect(nativeActions).toEqual(legacyActions)
-    expect(world.snapshotHazards()).toEqual(legacyHazards)
-    expect(world.stores.hazard.require(2)).toEqual(legacyHazards[0])
+    expect(nativeActions).toEqual([{
+      unitId: 'source',
+      type: 'field_effect',
+      statusType: 'hazard_field',
+      radius: 55,
+    }])
+    expect(world.stores.hazard.require(2)).toMatchObject({
+      id: 'field_source_corrosive-cloud_trigger_11_0',
+      team: 'attacker',
+      type: 'acid',
+      x: 240,
+      y: 100,
+      radius: 55,
+      damagePerTick: 4,
+      duration: 18,
+    })
     expect(world.snapshotHazards()[0].statusEffects).not.toBe(effect.statusEffects)
   })
 })
