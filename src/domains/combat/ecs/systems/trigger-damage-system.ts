@@ -41,9 +41,7 @@ export function applyEcsTriggerDamage(
       },
     )
     resolveEcsDeath(world, hitId, ownerId, actions, 'trigger')
-    world.syncComponentsFromStore(hitId, ['vitality', 'defense'])
   }
-  world.syncComponentsFromStore(ownerId, ['vitality'])
 }
 
 function getTargets(

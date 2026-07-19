@@ -34,7 +34,6 @@ export function resolveEcsDeath(
   if (target.resurrectOnce) {
     target.resurrectOnce = false
     applyEcsHealing(world, targetId, targetId, target.maxHp, actions)
-    world.syncComponentsFromStore(targetId, ['vitality'])
     return false
   }
   startDeathReassembly(world, targetId, actions)

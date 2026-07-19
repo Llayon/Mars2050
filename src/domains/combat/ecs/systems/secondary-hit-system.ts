@@ -29,7 +29,6 @@ export function resolveEcsSecondaryHit(
     interceptable: options.interceptable ?? false,
   })
   if (result.intercepted) {
-    world.syncComponentsFromStore(targetId, ['vitality', 'defense'])
     return
   }
   if (options.applyOnHitEffects !== false) {
@@ -38,5 +37,4 @@ export function resolveEcsSecondaryHit(
     })
   }
   resolveEcsDeath(world, targetId, attackerId, actions)
-  world.syncComponentsFromStore(targetId, ['vitality', 'defense'])
 }

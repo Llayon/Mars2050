@@ -112,7 +112,7 @@ describe('combat ECS post-hit triggers', () => {
     expect(world.stores.lifecycle.require(1).triggerEffects).toEqual(
       legacyUnits[1].triggerEffects,
     )
-    expect(world.getEntity(1)?.statusEffects).toEqual(legacyUnits[1].statusEffects)
+    expect(world.stores.statusControl.require(1).statusEffects).toEqual(legacyUnits[1].statusEffects)
     expect(nativeActions.slice(-2).map(action => action.type)).toEqual([
       'trigger_effect',
       'status_apply',

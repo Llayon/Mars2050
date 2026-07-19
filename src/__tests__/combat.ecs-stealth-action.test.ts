@@ -66,7 +66,7 @@ describe('combat ECS movement stealth action', () => {
       type: 'stealth_change',
       modeState: 'movement_inactive',
     })
-    expect(world.getEntity(0)).toMatchObject({
+    expect(world.snapshotEntity(0)).toMatchObject({
       hasAttacked: true,
       movementStealthActive: false,
     })

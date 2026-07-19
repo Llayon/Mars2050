@@ -44,7 +44,6 @@ export function applyEcsDamageSharing(
     world.stores.vitality.require(recipientId).hp -= shared
     events.push({ targetId: world.stores.identity.require(recipientId).id, damage: shared })
     resolveEcsDeath(world, recipientId, attackerId, actions, deathCause)
-    world.syncComponentsFromStore(recipientId, ['vitality'])
   }
   const sharedDamage = events.reduce((sum, event) => sum + event.damage, 0)
   return { damage: damage - sharedDamage, sharedDamage, events }

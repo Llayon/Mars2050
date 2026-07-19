@@ -73,11 +73,11 @@ describe('combat ECS on-kill action', () => {
       'on_kill',
       'heal',
     ])
-    expect(world.getEntity(0)).toMatchObject({
+    expect(world.snapshotEntity(0)).toMatchObject({
       hp: legacyUnits[0].hp,
       actionCooldown: 0,
     })
-    expect(world.getEntity(1)).toMatchObject({
+    expect(world.snapshotEntity(1)).toMatchObject({
       hp: legacyUnits[1].hp,
       isDead: true,
     })

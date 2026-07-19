@@ -100,28 +100,6 @@ export class CombatWorld {
     return this.stores[componentName].get(entityId)
   }
 
-  syncEntityFromComponents(entityId: EntityId): void {
-    const view = this.views[entityId]
-    if (!view) return
-    for (const name of Object.keys(COMPONENT_FIELDS) as UnitComponentName[]) {
-      Object.assign(view, this.stores[name].get(entityId))
-    }
-  }
-
-  syncComponentsFromStore(entityId: EntityId, componentNames: readonly UnitComponentName[]): void {
-    const view = this.views[entityId]
-    if (!view) return
-    for (const componentName of componentNames) Object.assign(view, this.stores[componentName].get(entityId))
-  }
-
-  syncAllFromComponents(): void {
-    for (const entityId of this.entityIds) this.syncEntityFromComponents(entityId)
-  }
-
-  syncAllComponentsFromStore(componentNames: readonly UnitComponentName[]): void {
-    for (const entityId of this.entityIds) this.syncComponentsFromStore(entityId, componentNames)
-  }
-
   snapshotEntity(entityId: EntityId): SimUnit {
     const snapshot: Record<string, unknown> = {}
     for (const name of Object.keys(COMPONENT_FIELDS) as UnitComponentName[]) {
@@ -134,14 +112,6 @@ export class CombatWorld {
     return this.entityIds
       .filter(entityId => this.stores.entityMeta.get(entityId)?.kind === 'unit')
       .map(entityId => this.snapshotEntity(entityId))
-  }
-
-  syncHazardsFromComponents(): void {
-    for (const entityId of this.entityIds) {
-      const view = this.hazardViews[entityId]
-      const hazard = this.stores.hazard.get(entityId)
-      if (view && hazard) Object.assign(view, structuredClone(hazard))
-    }
   }
 
   private createRoster(): SimUnit[] {

@@ -9,23 +9,15 @@ import { createPathfindingMap } from '@/domains/combat/combat.pathfinding'
 import { PRNG } from '@/domains/combat/combat.utils'
 
 describe('combat ECS runtime', () => {
-  it('keeps component state canonical and mirrors it to runtime views', () => {
+  it('keeps component state canonical and serializes immutable snapshots', () => {
     const unit = createRuntimeUnitFromConfig({ id: 'marine', team: 'attacker', type: 'marine', x: 10, y: 20, currentAngle: 0 })
     expect(unit).not.toBeNull()
     const world = new CombatWorld([unit!])
-    const view = world.roster[0]
-
     world.stores.vitality.require(0).hp = 17
     world.stores.transform.require(0).x = 44
-    expect(view.hp).not.toBe(17)
-    expect(view.x).not.toBe(44)
-    world.stores.vitality.require(0).hp = 23
-    world.syncEntityFromComponents(0)
-    expect(view.hp).toBe(23)
-    expect(view.x).toBe(44)
-    expect(world.snapshotEntity(0)).toMatchObject({ id: 'marine', hp: 23, x: 44 })
+    expect(world.snapshotEntity(0)).toMatchObject({ id: 'marine', hp: 17, x: 44 })
     const snapshot = world.snapshotEntity(0)
-    view.velocity.x = 99
+    world.stores.transform.require(0).velocity.x = 99
     expect(snapshot.velocity.x).toBe(0)
   })
 
@@ -134,7 +126,6 @@ describe('combat ECS runtime', () => {
 
     const transform = world.stores.transform.require(0)
     expect(transform.x).toBeGreaterThan(10)
-    expect(transform.x).toBe(attacker.x)
     expect(entitySpatial.query(world, transform.x, transform.y, 1)).toContain(0)
   })
 

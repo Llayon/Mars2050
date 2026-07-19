@@ -123,7 +123,6 @@ function getTargets(
 }
 
 function syncTransform(world: CombatWorld, targetId: EntityId): void {
-  world.syncComponentsFromStore(targetId, ['transform'])
   world.resources.require('entitySpatial').update(world, targetId)
 }
 

@@ -43,7 +43,6 @@ export function runEcsSpawnAction(
   if ((!options.preserveCooldown && combat.actionCooldown > 0) ||
       isActionBlocked(status.statusEffects)) return notActed()
   if (!prepareEcsStanceForAction(world, entityId, actions)) {
-    syncActorView(world, entityId)
     return { acted: true, actorSynchronized: true }
   }
 
@@ -54,14 +53,12 @@ export function runEcsSpawnAction(
     combat.actionCooldown = Math.min(5, combat.actionCooldownMax)
     actions.push({ unitId: identity.id, type: 'spawn_blocked', value: weapon.spawnCap ?? 0 })
     if (options.preserveCooldown) combat.actionCooldown = previousCooldown
-    syncActorView(world, entityId)
     return { acted: false, actorSynchronized: true }
   }
 
   const spawn = createSpawnedUnit(world, entityId, targetId, context, options.spawnType)
   if (!spawn) {
     if (options.preserveCooldown) combat.actionCooldown = previousCooldown
-    syncActorView(world, entityId)
     return { acted: false, actorSynchronized: true }
   }
   world.roster.push(spawn.unit)
@@ -76,7 +73,6 @@ export function runEcsSpawnAction(
     targetId: spawn.unit.id,
   })
   if (options.preserveCooldown) combat.actionCooldown = previousCooldown
-  syncActorView(world, entityId)
   return { acted: true, actorSynchronized: true }
 }
 
@@ -152,10 +148,6 @@ function isActionBlocked(effects: StatusEffect[]): boolean {
   return effects.some(effect =>
     effect.duration > 0 && (effect.type === 'emp' || effect.type === 'hacked'),
   )
-}
-
-function syncActorView(world: CombatWorld, entityId: EntityId): void {
-  world.syncComponentsFromStore(entityId, ['transform', 'combat', 'weapon', 'movement'])
 }
 
 function notActed(): RuntimeActionResult {

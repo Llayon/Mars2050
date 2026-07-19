@@ -60,7 +60,6 @@ export function runSimpleSingleDamage(
   if (combat.actionCooldown > 0) return notActed()
   if (isActionBlocked(status.statusEffects, combat.attack)) return notActed()
   if (!prepareEcsStanceForAction(world, entityId, actions)) {
-    world.syncComponentsFromStore(entityId, ['movement'])
     return { acted: true, actorSynchronized: true }
   }
 
@@ -72,15 +71,6 @@ export function runSimpleSingleDamage(
     if (world.stores.vitality.require(targetId).isDead) break
     resolveEcsSingleShot(world, entityId, targetId, actions, tick, rng)
   }
-  world.syncComponentsFromStore(entityId, ['transform', 'vitality', 'combat', 'weapon', 'targeting', 'statusControl', 'movement', 'lifecycle'])
-  world.syncComponentsFromStore(targetId, [
-    'vitality',
-    'defense',
-    'combat',
-    'statusControl',
-    'movement',
-    'lifecycle',
-  ])
   return { acted: true, actorSynchronized: true }
 }
 

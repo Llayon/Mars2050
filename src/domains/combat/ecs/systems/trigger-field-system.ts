@@ -189,5 +189,4 @@ export function cleanseEcsStatuses(
       value: progress.progress,
     })
   }
-  world.syncComponentsFromStore(entityId, ['statusControl', 'targeting'])
 }

@@ -118,8 +118,7 @@ describe('combat ECS hp-threshold triggers', () => {
 
     const targetId = runtime.world.getEntityId('target')!
     const ownerId = runtime.world.getEntityId('disintegrator')!
-    expect(runtime.world.stores.vitality.require(targetId).hp).toBe(target.hp)
-    expect(target.hp).toBe(legacyUnits[1].hp)
+    expect(runtime.world.stores.vitality.require(targetId).hp).toBe(legacyUnits[1].hp)
     expect(actions).toEqual(legacyActions)
     expect(runtime.world.stores.lifecycle.require(ownerId).triggerEffects?.[0].fired)
       .toBe(true)
@@ -156,7 +155,6 @@ describe('combat ECS hp-threshold triggers', () => {
       hp: 40,
       shield: 25,
     })
-    expect(owner).toMatchObject({ hp: 40, shield: 25 })
     expect(actions.map(action => action.type)).toEqual([
       'trigger_effect',
       'shield_apply',

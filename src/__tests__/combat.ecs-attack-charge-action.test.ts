@@ -87,7 +87,7 @@ describe('combat ECS attack charge action', () => {
       nextTick: 14,
       stacks: 0,
     })
-    expect(world.getEntity(0)?.attackCharge).toEqual(
+    expect(world.stores.lifecycle.require(0).attackCharge).toEqual(
       legacyUnits[0].attackCharge,
     )
   })

@@ -41,7 +41,6 @@ export function runEcsSmokeAction(
   if (Math.abs(normalizeAngle(targetAngle - transform.currentAngle)) > FACING_TOLERANCE) return notActed()
   if (combat.actionCooldown > 0 || isActionBlocked(status.statusEffects)) return notActed()
   if (!prepareEcsStanceForAction(world, entityId, actions)) {
-    syncActorView(world, entityId)
     return { acted: true, actorSynchronized: true }
   }
 
@@ -49,7 +48,6 @@ export function runEcsSmokeAction(
   syncEcsBurrowForAction(world, entityId, actions)
   combat.actionCooldown = getEcsActionCooldown(world, entityId)
   deploySmoke(world, identity.id, entityId, targetId, config, statusEffects, actions, context)
-  syncActorView(world, entityId)
   return { acted: true, actorSynchronized: true }
 }
 
@@ -116,10 +114,6 @@ function isActionBlocked(effects: StatusEffect[]): boolean {
   return effects.some(effect =>
     effect.duration > 0 && (effect.type === 'emp' || effect.type === 'hacked'),
   )
-}
-
-function syncActorView(world: CombatWorld, entityId: EntityId): void {
-  world.syncComponentsFromStore(entityId, ['transform', 'combat', 'weapon', 'movement'])
 }
 
 function notActed(): RuntimeActionResult {

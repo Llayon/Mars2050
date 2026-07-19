@@ -37,7 +37,6 @@ describe('combat ECS primary damage modifiers', () => {
 
     expect(result).toEqual({ acted: true, actorSynchronized: true })
     expect(world.stores.targeting.require(0).chargeDistance).toBe(0)
-    expect(attacker.chargeDistance).toBe(0)
     expect(world.stores.vitality.require(1).hp).toBe(4)
     expect(actions).toEqual([
       { unitId: 'buggy', type: 'attack', targetId: 'target' },

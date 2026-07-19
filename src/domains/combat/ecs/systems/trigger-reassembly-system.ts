@@ -30,6 +30,5 @@ export function startEcsTriggerReassembly(
     targetId: target,
     value: vitality.reassemblyState.remainingTicks,
   })
-  world.syncComponentsFromStore(targetId, ['vitality'])
   return true
 }

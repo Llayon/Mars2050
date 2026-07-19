@@ -80,8 +80,8 @@ describe('combat ECS mine action', () => {
       duration: 90,
       sourceUnitId: 'minelayer',
     })
-    expect(world.getEntity(1)?.hp).toBe(legacyUnits[1].hp)
-    expect(world.getEntity(0)?.actionCooldown).toBe(legacyUnits[0].actionCooldown)
+    expect(world.stores.vitality.require(1).hp).toBe(legacyUnits[1].hp)
+    expect(world.stores.combat.require(0).actionCooldown).toBe(legacyUnits[0].actionCooldown)
     expect(nativeActions).toHaveLength(1)
     expect(nativeActions[0]).toMatchObject({
       unitId: 'minelayer',

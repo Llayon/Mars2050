@@ -77,7 +77,7 @@ describe('combat ECS emerge strike action', () => {
       { unitId: 'shock', type: 'burrow_change', value: 0 },
       { unitId: 'shock', type: 'attack', targetId: 'target' },
     ])
-    expect(world.getEntity(0)).toMatchObject({
+    expect(world.snapshotEntity(0)).toMatchObject({
       isBurrowed: false,
       emergeStrikePending: undefined,
     })

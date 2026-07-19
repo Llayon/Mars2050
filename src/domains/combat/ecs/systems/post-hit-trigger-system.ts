@@ -18,7 +18,6 @@ export function processEcsHpThresholdTriggers(
       fireEcsTrigger(world, entityId, trigger, entityId, entityId, actions)
     }
   }
-  world.syncComponentsFromStore(entityId, ['lifecycle'])
 }
 
 export function processEcsKillTriggers(
@@ -30,7 +29,6 @@ export function processEcsKillTriggers(
   for (const trigger of getTriggers(world, killerId, 'kill')) {
     fireEcsTrigger(world, killerId, trigger, victimId, killerId, actions)
   }
-  world.syncComponentsFromStore(killerId, ['lifecycle'])
 }
 
 export function recordEcsAttackTriggers(

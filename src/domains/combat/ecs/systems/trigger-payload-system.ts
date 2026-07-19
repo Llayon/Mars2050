@@ -52,12 +52,6 @@ export function applyEcsTriggerPayload(
   } else if (payload.kind === 'cooldown_reset') {
     world.stores.combat.require(targetId).actionCooldown = 0
   }
-  world.syncComponentsFromStore(targetId, [
-    'vitality',
-    'combat',
-    'statusControl',
-    'movement',
-  ])
 }
 
 function applyShield(

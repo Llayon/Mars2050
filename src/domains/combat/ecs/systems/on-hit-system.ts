@@ -38,7 +38,6 @@ export function applyEcsOnHitEffects(
       options.propagateSquadMark !== false,
     )
   }
-  world.syncComponentsFromStore(targetId, ['statusControl', 'movement'])
 }
 
 function applyEcsTargetMark(
@@ -64,7 +63,6 @@ function applyEcsTargetMark(
     const squadmate = world.stores.identity.require(squadmateId)
     if (squadmate.team !== target.team || squadmate.squadId !== target.squadId) continue
     world.stores.statusControl.require(squadmateId).targetMark = { ...mark, sourceUnitId: attacker.id }
-    world.syncComponentsFromStore(squadmateId, ['statusControl'])
   }
   if (!mark.sharedDamage || (mark.focusPriority ?? 0) <= 0) return
   for (const allyId of world.query(['identity', 'targeting', 'entityTargets'])) {
@@ -75,6 +73,5 @@ function applyEcsTargetMark(
     targeting.attackTargetId = undefined
     targeting.aggroLockTicks = 0
     world.stores.entityTargets.require(allyId).attackTarget = undefined
-    world.syncComponentsFromStore(allyId, ['targeting'])
   }
 }

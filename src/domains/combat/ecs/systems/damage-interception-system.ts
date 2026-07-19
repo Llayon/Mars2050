@@ -39,7 +39,6 @@ export function tryEcsProjectileInterception(
     damage: rawDamage,
     fromX: attacker.x, fromY: attacker.y, toX: target.x, toY: target.y,
   })
-  world.syncComponentsFromStore(interceptorId, ['defense'])
   return true
 }
 

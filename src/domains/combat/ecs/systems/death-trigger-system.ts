@@ -17,5 +17,4 @@ export function processEcsDeathTriggers(
       fireEcsTrigger(world, deadId, trigger, deadId, killerId, actions)
     }
   }
-  world.syncComponentsFromStore(deadId, ['lifecycle'])
 }

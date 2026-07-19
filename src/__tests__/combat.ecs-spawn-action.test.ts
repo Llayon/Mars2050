@@ -102,7 +102,7 @@ describe('combat ECS spawn action', () => {
     expect(nativeActions).toEqual([
       { unitId: 'carrier', type: 'spawn_blocked', value: 1 },
     ])
-    expect(world.getEntity(0)?.actionCooldown).toBe(5)
+    expect(world.stores.combat.require(0).actionCooldown).toBe(5)
     expect(world.roster).toHaveLength(3)
   })
 

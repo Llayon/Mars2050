@@ -78,10 +78,10 @@ describe('combat ECS smoke action', () => {
       { type: 'output_suppressed', duration: 12, value: 0.25 },
       { type: 'accuracy_reduced', duration: 12, value: 0.4 },
     ])
-    expect(world.getEntity(1)?.hp).toBe(legacyUnits[1].hp)
-    expect(world.getEntity(0)?.actionCooldown).toBe(legacyUnits[0].actionCooldown)
-    expect(world.getEntity(0)?.hasAttacked).toBe(legacyUnits[0].hasAttacked)
-    expect(world.getEntity(0)?.movementStealthActive).toBe(true)
+    expect(world.stores.vitality.require(1).hp).toBe(legacyUnits[1].hp)
+    expect(world.stores.combat.require(0).actionCooldown).toBe(legacyUnits[0].actionCooldown)
+    expect(world.stores.statusControl.require(0).hasAttacked).toBe(legacyUnits[0].hasAttacked)
+    expect(world.stores.movement.require(0).movementStealthActive).toBe(true)
     expect(nativeActions.some(action =>
       action.type === 'attack' || action.type === 'stealth_change',
     )).toBe(false)

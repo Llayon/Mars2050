@@ -44,7 +44,7 @@ function expectNativeGeometryParity(units: SimUnit[]): void {
   expect(nativeResult).toEqual({ acted: legacyActed, actorSynchronized: true })
   expect(nativeActions).toEqual(legacyActions)
   for (let index = 0; index < legacyUnits.length; index++) {
-    const nativeUnit = world.getEntity(index)
+    const nativeUnit = world.snapshotEntity(index)
     expect(nativeUnit?.hp).toBe(legacyUnits[index].hp)
     expect(nativeUnit?.isDead).toBe(legacyUnits[index].isDead)
     expect(nativeUnit?.statusEffects).toEqual(legacyUnits[index].statusEffects)

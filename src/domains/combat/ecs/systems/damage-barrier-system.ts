@@ -38,6 +38,5 @@ export function applyEcsBarriers(world: CombatWorld, targetId: EntityId, incomin
     if (barrier.duration > 0) reduction = Math.max(reduction, Math.max(0, Math.min(0.95, barrier.damageReduction ?? 0)))
   }
   if (reduction > 0) damage = Math.floor(damage * (1 - reduction))
-  world.syncHazardsFromComponents()
   return { damage, blockedDamage: incomingDamage - damage, breaks }
 }

@@ -58,7 +58,7 @@ describe('combat ECS action mode setup', () => {
     ])
     expect(world.stores.movement.require(0).mobilityMode).toBe('ground')
     expect(world.stores.transform.require(0).isFlying).toBe(false)
-    expect(world.getEntity(0)).toMatchObject({ mobilityMode: 'ground', isFlying: false })
+    expect(world.snapshotEntity(0)).toMatchObject({ mobilityMode: 'ground', isFlying: false })
   })
 
   it('keeps air mode when groundForAction is disabled', () => {
@@ -73,6 +73,6 @@ describe('combat ECS action mode setup', () => {
 
     expect(result.acted).toBe(true)
     expect(actions.some(action => action.type === 'mode_change')).toBe(false)
-    expect(world.getEntity(0)).toMatchObject({ mobilityMode: 'air', isFlying: true })
+    expect(world.snapshotEntity(0)).toMatchObject({ mobilityMode: 'air', isFlying: true })
   })
 })

@@ -1,12 +1,12 @@
 import type { BattleAction } from '../../combat.actions'
 import { UNIT_TYPES } from '../../combat.config'
-import { getEffectiveCombatTags } from '../../combat.targeting-score'
 import type { RuntimeActionContext, RuntimeActionResult } from '../../combat.runtime'
 import type { UnitTypeKey } from '../../combat.types'
 import { getDistance, getSizeRadius } from '../../combat.utils'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
 import { getEcsEffectiveActionRangeAgainst } from '../movement-positioning'
+import { getEcsCombatTags } from '../targeting-evaluation'
 import { applyEcsHealing } from './healing-system'
 import { canUseSimpleSingleDamage, runSimpleSingleDamage } from './single-damage-system'
 import { canUseEcsMineAction, runEcsMineAction } from './mine-action-system'
@@ -68,8 +68,7 @@ function runHealAction(
   const targetVitality = world.stores.vitality.require(targetId)
   const movement = world.stores.movement.require(entityId)
   const status = world.stores.statusControl.require(entityId)
-  const targetView = world.getEntity(targetId)
-  if (!targetView || !canHealTarget(identity.type, targetView)) return notActed()
+  if (!canHealTarget(world, identity.type, targetId)) return notActed()
   const distance = getDistance(transform.x, transform.y, targetTransform.x, targetTransform.y) -
     getSizeRadius(targetTransform.size) - getSizeRadius(transform.size)
   if (targetVitality.hp >= targetVitality.maxHp ||
@@ -78,7 +77,6 @@ function runHealAction(
   if (Math.abs(normalizeAngle(angle - transform.currentAngle)) > FACING_TOLERANCE) return notActed()
   if (combat.actionCooldown > 0 || isActionBlocked(status.statusEffects)) return notActed()
   if (!prepareEcsStanceForAction(world, entityId, actions)) {
-    syncActorView(world, entityId)
     return { acted: true, actorSynchronized: true }
   }
 
@@ -86,24 +84,18 @@ function runHealAction(
   syncEcsBurrowForAction(world, entityId, actions)
   combat.actionCooldown = getEcsActionCooldown(world, entityId)
   applyEcsHealing(world, entityId, targetId, combat.attack, actions)
-  syncActorView(world, entityId)
-  world.syncComponentsFromStore(targetId, ['vitality'])
   return { acted: true, actorSynchronized: true }
 }
 
-function canHealTarget(sourceType: string, target: NonNullable<ReturnType<CombatWorld['getEntity']>>): boolean {
+function canHealTarget(world: CombatWorld, sourceType: string, targetId: EntityId): boolean {
   const tags = UNIT_TYPES[sourceType as UnitTypeKey]?.baseStats.healTargetTags
   if (!tags?.length) return true
-  const targetTags = new Set(getEffectiveCombatTags(target))
+  const targetTags = new Set(getEcsCombatTags(world, targetId))
   return tags.some(tag => targetTags.has(tag))
 }
 
 function isActionBlocked(effects: { type: string; duration: number }[]): boolean {
   return effects.some(effect => effect.duration > 0 && (effect.type === 'emp' || effect.type === 'hacked'))
-}
-
-function syncActorView(world: CombatWorld, entityId: EntityId): void {
-  world.syncComponentsFromStore(entityId, ['transform', 'combat', 'weapon', 'movement'])
 }
 
 function notActed(): RuntimeActionResult {
