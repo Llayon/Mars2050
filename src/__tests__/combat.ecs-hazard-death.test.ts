@@ -126,7 +126,7 @@ describe('combat ECS hazard death', () => {
     expect(runtime.world.stores.vitality.require(0).isDead).toBe(true)
   })
 
-  it('does not overwrite canonical unit state from the facade', () => {
+  it('does not overwrite canonical unit or hazard state from facades', () => {
     const target = unit('canonical-target', 'defender', 200)
     target.hp = 3
     const mine: SimHazard = {
@@ -145,6 +145,9 @@ describe('combat ECS hazard death', () => {
     runtime.flushStructuralCommands()
     target.x = 900
     target.hp = target.maxHp
+    mine.x = 900
+    mine.damagePerTick = 0
+    mine.duration = 0
     const actions: BattleAction[] = []
 
     runtime.runHazardPhase(actions, new SpatialHash(), new PRNG(131))

@@ -127,8 +127,10 @@ longer passes the runtime's hazard facade back into it.
 The global status phase likewise consumes canonical vitality and status stores
 directly; it no longer performs a full facade import before periodic scheduling
 and death resolution.
-Native hazard processing rebuilds its spatial index from canonical transforms
-and vitality without importing the unit facade at the end of each combat tick.
+Native hazard processing rebuilds its spatial index from canonical transforms,
+vitality, and hazard components without importing unit or hazard facades at the
+end of each combat tick. Legacy action and cleanse adapters reconcile their
+facade changes locally before returning to ECS.
 Periodic burn, acid, and degeneration deaths now resolve inside the ECS status
 phase, including source-less deaths, resurrection, reassembly, and death/kill
 triggers. Mine and periodic hazard deaths use the same resolver without

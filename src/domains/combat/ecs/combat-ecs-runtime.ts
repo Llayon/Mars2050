@@ -166,8 +166,6 @@ export function createEcsCombatRuntime(): EcsCombatRuntime {
     runHazardPhase(actions, spatialHash, _rng): void {
       void spatialHash
       world.flushStructuralCommands()
-      world.reconcileHazards()
-      world.syncHazardsToComponents()
       world.resources.require('entitySpatial').rebuild(world)
       runHazardSystem(world, actions, (entityId, sourceUnitId, cause) => {
         const sourceId = sourceUnitId === undefined
