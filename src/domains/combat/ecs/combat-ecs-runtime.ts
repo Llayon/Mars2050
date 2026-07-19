@@ -85,10 +85,9 @@ export function createEcsCombatRuntime(): EcsCombatRuntime {
       const entityId = world.getEntityId(unit.id)
       if (entityId !== undefined) world.resources.require('entitySpatial').insert(world, entityId)
     },
-    snapshotUnits: () => { world.flushStructuralCommands(); world.syncAllToComponents(); return world.snapshot() },
+    snapshotUnits: () => { world.flushStructuralCommands(); return world.snapshot() },
     getSurvivors: () => {
       world.flushStructuralCommands()
-      world.syncAllToComponents()
       return world.query(['identity', 'vitality']).flatMap(entityId => {
         if (world.stores.vitality.require(entityId).isTemporary) return []
         return [world.snapshotEntity(entityId)]

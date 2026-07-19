@@ -145,6 +145,9 @@ facade changes locally before returning to ECS.
 The targeting-phase boundary also flushes structural commands, resolves
 EntityId references, and rebuilds the spatial index directly from canonical
 components without a roster-facade import.
+Replay snapshots and survivor serialization flush pending structural commands
+and clone canonical components directly; facade state is never imported before
+building battle output.
 Periodic burn, acid, and degeneration deaths now resolve inside the ECS status
 phase, including source-less deaths, resurrection, reassembly, and death/kill
 triggers. Mine and periodic hazard deaths use the same resolver without
