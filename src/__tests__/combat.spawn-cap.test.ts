@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
+import { actionSystem } from '@/__tests__/helpers/combat-ecs-action-harness'
 import type { BattleAction } from '@/domains/combat/combat.actions'
-import { processSpawnAction } from '@/domains/combat/combat.systems.utils'
 import type { SimUnit, Team } from '@/domains/combat/combat.types'
 import { PRNG } from '@/domains/combat/combat.utils'
 
@@ -40,7 +40,7 @@ describe('spawn caps', () => {
     const units = [carrier, target]
     const actions: BattleAction[] = []
 
-    expect(processSpawnAction(carrier, target, units, actions, new PRNG(1))).toBe(true)
+    expect(actionSystem(carrier, target, units, [], actions, new PRNG(1))).toBe(true)
 
     expect(units).toHaveLength(3)
     expect(units[2]).toMatchObject({
@@ -55,13 +55,13 @@ describe('spawn caps', () => {
   })
 
   it('blocks spawning when active owner summons reach cap', () => {
-    const carrier = makeUnit({ id: 'carrier', team: 'attacker', type: 'drone_carrier', attackType: 'spawn', spawnType: 'scout_drone', spawnCap: 1, actionCooldownMax: 60, actionCooldown: 60 })
+    const carrier = makeUnit({ id: 'carrier', team: 'attacker', type: 'drone_carrier', attackType: 'spawn', spawnType: 'scout_drone', spawnCap: 1, actionCooldownMax: 60 })
     const existing = makeUnit({ id: 'summon', team: 'attacker', summonOwnerId: 'carrier' })
     const target = makeUnit({ id: 'target', team: 'defender', x: 160, y: 100 })
     const units = [carrier, existing, target]
     const actions: BattleAction[] = []
 
-    expect(processSpawnAction(carrier, target, units, actions, new PRNG(1))).toBe(false)
+    expect(actionSystem(carrier, target, units, [], actions, new PRNG(1))).toBe(false)
 
     expect(units).toHaveLength(3)
     expect(carrier.actionCooldown).toBe(5)
@@ -74,7 +74,7 @@ describe('spawn caps', () => {
     const target = makeUnit({ id: 'target', team: 'defender', x: 160, y: 100 })
     const units = [carrier, deadSummon, target]
 
-    expect(processSpawnAction(carrier, target, units, [], new PRNG(1))).toBe(true)
+    expect(actionSystem(carrier, target, units, [], [], new PRNG(1))).toBe(true)
     expect(units).toHaveLength(4)
   })
 })

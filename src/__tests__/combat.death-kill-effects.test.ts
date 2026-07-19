@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
+import { resolveDeathInEcs } from '@/__tests__/helpers/combat-ecs-death-harness'
 import type { BattleAction } from '@/domains/combat/combat.actions'
 import { UNIT_TYPES } from '@/domains/combat/combat.config'
 import { prepareRuntimePrimitives } from '@/domains/combat/combat.runtime-primitives'
-import { handleDeath } from '@/domains/combat/combat.systems.utils'
 import type { UpgradeConfig } from '@/domains/combat/combat.upgrades'
 import { UPGRADES } from '@/domains/combat/combat.upgrades'
 import { getRuntimePrimitiveStats } from '@/domains/combat/combat.upgrade-primitives'
@@ -61,7 +61,7 @@ describe('death and kill effect primitives', () => {
     const actions: BattleAction[] = []
     const hazards: SimHazard[] = []
 
-    handleDeath(victim, killer, [victim, killer, bystander], actions, hazards, new PRNG(1))
+    resolveDeathInEcs(victim, killer, [victim, killer, bystander], actions, hazards, new PRNG(1))
 
     expect(killer.hp).toBe(70)
     expect(bystander.hp).toBe(70)
@@ -80,7 +80,7 @@ describe('death and kill effect primitives', () => {
     const actions: BattleAction[] = []
     const units = [victim, killer]
 
-    handleDeath(victim, killer, units, actions, [], new PRNG(2))
+    resolveDeathInEcs(victim, killer, units, actions, [], new PRNG(2))
 
     const spawned = units.filter(unit => unit.summonOwnerId === 'carrier-wreck')
     expect(spawned).toHaveLength(1)
@@ -97,7 +97,7 @@ describe('death and kill effect primitives', () => {
       const actions: BattleAction[] = []
       const units = [victim, killer]
 
-      handleDeath(victim, killer, units, actions, [], new PRNG(4))
+      resolveDeathInEcs(victim, killer, units, actions, [], new PRNG(4))
 
       const spawned = units.filter(unit => unit.summonOwnerId === 'legacy-wreck')
       expect(victim.triggerEffects?.[0]).toMatchObject({ id: 'test_death_spawn-on-death-spawn', event: 'death' })
@@ -118,7 +118,7 @@ describe('death and kill effect primitives', () => {
     const actions: BattleAction[] = []
     const hazards: SimHazard[] = []
 
-    handleDeath(victim, killer, [killer, victim], actions, hazards, new PRNG(3))
+    resolveDeathInEcs(victim, killer, [killer, victim], actions, hazards, new PRNG(3))
 
     expect(killer.hp).toBe(80)
     expect(hazards[0]).toMatchObject({ type: 'acid', team: 'defender' })

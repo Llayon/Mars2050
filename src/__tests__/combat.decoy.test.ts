@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
+import { actionSystem } from '@/__tests__/helpers/combat-ecs-action-harness'
 import type { BattleAction } from '@/domains/combat/combat.actions'
-import { processSpawnAction } from '@/domains/combat/combat.systems.utils'
 import type { SimHazard, SimUnit, Team } from '@/domains/combat/combat.types'
 import { PRNG } from '@/domains/combat/combat.utils'
 import { createEcsCombatRuntime } from '@/domains/combat/ecs/combat-ecs-runtime'
@@ -48,7 +48,7 @@ describe('combat decoys', () => {
     const actions: BattleAction[] = []
     const hazards: SimHazard[] = []
 
-    const spawned = processSpawnAction(projector, target, units, actions, new PRNG(1))
+    const spawned = actionSystem(projector, target, units, hazards, actions, new PRNG(1))
     const decoy = units.find(unit => unit.id.startsWith('spawn_'))
 
     expect(spawned).toBe(true)

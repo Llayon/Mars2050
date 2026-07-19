@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
+import { resolveDeathInEcs } from '@/__tests__/helpers/combat-ecs-death-harness'
 import type { BattleAction } from '@/domains/combat/combat.actions'
 import { processReassemblies } from '@/domains/combat/combat.reassembly'
-import { handleDeath } from '@/domains/combat/combat.systems.utils'
 import type { SimHazard, SimUnit, Team } from '@/domains/combat/combat.types'
 import { PRNG } from '@/domains/combat/combat.utils'
 
@@ -42,7 +42,7 @@ describe('delayed reassembly primitive', () => {
     const actions: BattleAction[] = []
     const hazards: SimHazard[] = []
 
-    handleDeath(victim, killer, units, actions, hazards, new PRNG(1))
+    resolveDeathInEcs(victim, killer, units, actions, hazards, new PRNG(1))
     processReassemblies(units, actions)
 
     expect(victim.isDead).toBe(true)
@@ -62,10 +62,10 @@ describe('delayed reassembly primitive', () => {
     const killer = makeUnit({ id: 'killer', team: 'attacker' })
     const actions: BattleAction[] = []
 
-    handleDeath(victim, killer, [victim, killer], actions, [], new PRNG(2))
+    resolveDeathInEcs(victim, killer, [victim, killer], actions, [], new PRNG(2))
     processReassemblies([victim, killer], actions)
     victim.hp = 0
-    handleDeath(victim, killer, [victim, killer], actions, [], new PRNG(3))
+    resolveDeathInEcs(victim, killer, [victim, killer], actions, [], new PRNG(3))
 
     expect(actions.filter(action => action.type === 'reassembly_start')).toHaveLength(1)
   })

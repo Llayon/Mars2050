@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
+import { resolveDeathInEcs } from '@/__tests__/helpers/combat-ecs-death-harness'
 import type { BattleAction } from '@/domains/combat/combat.actions'
 import type { SimHazard, SimUnit, Team } from '@/domains/combat/combat.types'
-import { handleDeath } from '@/domains/combat/combat.systems.utils'
 import { PRNG } from '@/domains/combat/combat.utils'
 
 function makeUnit(overrides: Partial<SimUnit> & { id: string; team: Team; type?: string }): SimUnit {
@@ -40,7 +40,7 @@ describe('combat on-kill effects', () => {
     const actions: BattleAction[] = []
     const hazards: SimHazard[] = []
 
-    handleDeath(victim, killer, [killer, victim], actions, hazards, new PRNG(1))
+    resolveDeathInEcs(victim, killer, [killer, victim], actions, hazards, new PRNG(1))
 
     expect(victim.isDead).toBe(true)
     expect(killer.actionCooldown).toBe(0)
@@ -55,7 +55,7 @@ describe('combat on-kill effects', () => {
     const actions: BattleAction[] = []
     const hazards: SimHazard[] = []
 
-    handleDeath(victim, killer, [killer, victim], actions, hazards, new PRNG(1))
+    resolveDeathInEcs(victim, killer, [killer, victim], actions, hazards, new PRNG(1))
 
     expect(victim.isDead).toBe(false)
     expect(victim.hp).toBe(80)
@@ -69,7 +69,7 @@ describe('combat on-kill effects', () => {
     const actions: BattleAction[] = []
     const hazards: SimHazard[] = []
 
-    handleDeath(victim, killer, [killer, victim], actions, hazards, new PRNG(1))
+    resolveDeathInEcs(victim, killer, [killer, victim], actions, hazards, new PRNG(1))
 
     expect(killer.actionCooldown).toBe(8)
     expect(killer.hp).toBe(50)

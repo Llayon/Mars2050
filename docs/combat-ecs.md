@@ -158,6 +158,9 @@ The production array-based action executor and periodic spawner have been
 deleted. Behavioral tests that still use their historical call shape execute
 the native ECS action system through a test-only harness; this preserves their
 scenario fixtures without retaining a second combat implementation.
+The legacy array death/spawn utilities and their unreachable conditional weapon
+handlers have also been removed. Death and spawn fixtures now invoke the native
+ECS resolvers.
 ECS action, damage, death, trigger, displacement, and movement systems likewise
 write only component stores; all component-to-facade synchronization APIs have
 been removed from `CombatWorld`.

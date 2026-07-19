@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
+import { actionSystem } from '@/__tests__/helpers/combat-ecs-action-harness'
 import type { BattleAction } from '@/domains/combat/combat.actions'
 import { createMeleeEngagementState } from '@/domains/combat/combat.melee-engagement'
 import { targetingSystem } from '@/domains/combat/combat.targeting'
-import { processSpawnAction } from '@/domains/combat/combat.systems.utils'
 import type { SimUnit, Team } from '@/domains/combat/combat.types'
 import { PRNG } from '@/domains/combat/combat.utils'
 import { SpatialHash } from '@/domains/combat/spatial-hash'
@@ -55,7 +55,7 @@ describe('combat barriers', () => {
     const units = [emitter, target]
     const actions: BattleAction[] = []
 
-    processSpawnAction(emitter, target, units, actions, new PRNG(3))
+    actionSystem(emitter, target, units, [], actions, new PRNG(3))
     const barrier = units.find(unit => unit.id.startsWith('spawn_'))
 
     expect(barrier).toMatchObject({
