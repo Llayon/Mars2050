@@ -61,7 +61,6 @@ describe('combat ECS on-kill action', () => {
     const nativeResult = runActionSystem(world, 0, 1, nativeActions, {
       rng: new PRNG(29),
       tick: 0,
-      spatialHash: new SpatialHash(),
     })
 
     expect(nativeResult).toEqual({ acted: legacyActed, actorSynchronized: true })
@@ -132,7 +131,6 @@ describe('combat ECS on-kill action', () => {
     runActionSystem(world, 0, 1, nativeActions, {
       rng: world.resources.require('rng'),
       tick: 0,
-      spatialHash: new SpatialHash(),
     })
 
     expect(nativeActions).toEqual(legacyActions)
@@ -182,7 +180,6 @@ describe('combat ECS on-kill action', () => {
     runActionSystem(world, 0, 1, nativeActions, {
       rng: new PRNG(101),
       tick: 0,
-      spatialHash: new SpatialHash(),
     })
 
     expect(canUseSimpleSingleDamage(world, 0, 1)).toBe(true)

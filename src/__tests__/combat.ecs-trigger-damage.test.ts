@@ -6,7 +6,6 @@ import { PRNG } from '@/domains/combat/combat.utils'
 import { CombatWorld } from '@/domains/combat/ecs/combat-world'
 import { EntitySpatialIndex } from '@/domains/combat/ecs/entity-spatial-index'
 import { runActionSystem } from '@/domains/combat/ecs/systems'
-import { SpatialHash } from '@/domains/combat/spatial-hash'
 
 function unit(id: string, team: 'attacker' | 'defender', x: number): SimUnit {
   return createRuntimeUnitFromConfig({
@@ -54,7 +53,6 @@ describe('combat ECS trigger damage', () => {
     runActionSystem(world, 0, 1, nativeActions, {
       rng: new PRNG(61),
       tick: 0,
-      spatialHash: new SpatialHash(),
     })
 
     expect(nativeActions).toEqual(legacyActions)
@@ -102,7 +100,6 @@ describe('combat ECS trigger damage', () => {
     runActionSystem(world, 0, 1, nativeActions, {
       rng: new PRNG(67),
       tick: 0,
-      spatialHash: new SpatialHash(),
     })
 
     expect(nativeActions).toEqual(legacyActions)
@@ -152,7 +149,6 @@ describe('combat ECS trigger damage', () => {
     runActionSystem(world, 0, 1, nativeActions, {
       rng: new PRNG(71),
       tick: 0,
-      spatialHash: new SpatialHash(),
     })
 
     expect(nativeActions).toEqual(legacyActions)

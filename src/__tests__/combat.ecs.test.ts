@@ -6,7 +6,6 @@ import { createEcsMeleeEngagementState, reserveEcsMeleeSlot, runActionSystem, ru
 import { EntitySpatialIndex } from '@/domains/combat/ecs/entity-spatial-index'
 import { getSimulatorPreset } from '@/app/simulator2/simulator.presets'
 import { createPathfindingMap } from '@/domains/combat/combat.pathfinding'
-import { SpatialHash } from '@/domains/combat/spatial-hash'
 import { PRNG } from '@/domains/combat/combat.utils'
 
 describe('combat ECS runtime', () => {
@@ -126,16 +125,11 @@ describe('combat ECS runtime', () => {
     const entitySpatial = new EntitySpatialIndex()
     entitySpatial.rebuild(world)
     world.resources.set('entitySpatial', entitySpatial)
-    const spatialHash = new SpatialHash()
-    spatialHash.insert(attacker)
-    spatialHash.insert(defender)
-
     runMovementSystem(world, 0, 1, [], {
       dt: 0.1,
       rng: new PRNG(1),
       flowField: createPathfindingMap([]),
       obstacles: [],
-      spatialHash,
     })
 
     const transform = world.stores.transform.require(0)
@@ -154,7 +148,6 @@ describe('combat ECS runtime', () => {
     const result = runActionSystem(world, 0, 1, actions, {
       rng: new PRNG(1),
       tick: 0,
-      spatialHash: new SpatialHash(),
     })
 
     expect(result).toEqual({ acted: true, actorSynchronized: true })
@@ -173,7 +166,6 @@ describe('combat ECS runtime', () => {
     const result = runActionSystem(world, 0, 1, actions, {
       rng: new PRNG(1),
       tick: 0,
-      spatialHash: new SpatialHash(),
     })
 
     expect(result).toEqual({ acted: true, actorSynchronized: true })
@@ -204,7 +196,6 @@ describe('combat ECS runtime', () => {
     const result = runActionSystem(world, 0, 1, actions, {
       rng: new PRNG(1),
       tick: 0,
-      spatialHash: new SpatialHash(),
     })
 
     expect(result).toEqual({ acted: true, actorSynchronized: true })

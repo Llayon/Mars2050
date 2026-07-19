@@ -2,7 +2,6 @@ import type { BattleAction } from './combat.actions'
 import type { BattleOutcome } from './combat.outcome'
 import type { SimHazard, SimUnit } from './combat.sim.types'
 import type { FlowFieldMap } from './combat.pathfinding'
-import type { SpatialHash } from './spatial-hash'
 import type { Obstacle, Team } from './combat.sim.types'
 import type { UnitRow } from './combat.types'
 import type { PRNG } from './combat.utils'
@@ -14,13 +13,11 @@ export interface RuntimeMovementContext {
   rng: PRNG
   flowField: FlowFieldMap
   obstacles: Obstacle[]
-  spatialHash?: SpatialHash
 }
 
 export interface RuntimeActionContext {
   rng: PRNG
   tick: number
-  spatialHash?: SpatialHash
 }
 
 export interface RuntimeActionResult {

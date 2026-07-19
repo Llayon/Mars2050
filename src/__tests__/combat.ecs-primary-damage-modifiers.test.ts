@@ -7,7 +7,6 @@ import {
   applyEcsSingleDamage,
   runActionSystem,
 } from '@/domains/combat/ecs/systems'
-import { SpatialHash } from '@/domains/combat/spatial-hash'
 
 describe('combat ECS primary damage modifiers', () => {
   it('spends movement charge through the native single-shot path', () => {
@@ -34,7 +33,6 @@ describe('combat ECS primary damage modifiers', () => {
     const result = runActionSystem(world, 0, 1, actions, {
       rng: new PRNG(1),
       tick: 0,
-      spatialHash: new SpatialHash(),
     })
 
     expect(result).toEqual({ acted: true, actorSynchronized: true })

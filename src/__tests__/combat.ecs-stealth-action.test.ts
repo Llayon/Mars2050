@@ -54,7 +54,6 @@ describe('combat ECS movement stealth action', () => {
     const nativeResult = runActionSystem(world, 0, 1, nativeActions, {
       rng: new PRNG(1),
       tick: 0,
-      spatialHash: new SpatialHash(),
     })
 
     expect(nativeResult).toEqual({
@@ -84,7 +83,6 @@ describe('combat ECS movement stealth action', () => {
     const result = runActionSystem(world, 0, 1, actions, {
       rng: new PRNG(1),
       tick: 0,
-      spatialHash: new SpatialHash(),
     })
 
     expect(result.acted).toBe(true)

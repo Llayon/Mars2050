@@ -5,7 +5,6 @@ import type { SimUnit } from '@/domains/combat/combat.sim.types'
 import { createRuntimeUnitFromConfig } from '@/domains/combat/combat.unit-factory'
 import { PRNG } from '@/domains/combat/combat.utils'
 import { createEcsCombatRuntime } from '@/domains/combat/ecs/combat-ecs-runtime'
-import { SpatialHash } from '@/domains/combat/spatial-hash'
 
 function unit(
   id: string,
@@ -24,7 +23,7 @@ function unit(
 }
 
 function context(seed: number) {
-  return { rng: new PRNG(seed), tick: 0, spatialHash: new SpatialHash() }
+  return { rng: new PRNG(seed), tick: 0 }
 }
 
 function runParity(units: SimUnit[], seed: number) {

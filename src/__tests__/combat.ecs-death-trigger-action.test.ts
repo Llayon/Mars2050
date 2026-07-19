@@ -9,7 +9,6 @@ import {
   canUseSimpleSingleDamage,
   runActionSystem,
 } from '@/domains/combat/ecs/systems'
-import { SpatialHash } from '@/domains/combat/spatial-hash'
 
 function unit(
   id: string,
@@ -68,7 +67,6 @@ describe('combat ECS death-trigger action', () => {
     runActionSystem(world, 0, 1, nativeActions, {
       rng: world.resources.require('rng'),
       tick: 0,
-      spatialHash: new SpatialHash(),
     })
 
     expect(nativeActions).toEqual(legacyActions)
@@ -127,7 +125,6 @@ describe('combat ECS death-trigger action', () => {
     runActionSystem(world, 0, 1, nativeActions, {
       rng: world.resources.require('rng'),
       tick: 0,
-      spatialHash: new SpatialHash(),
     })
     world.flushStructuralCommands()
 
@@ -178,7 +175,6 @@ describe('combat ECS death-trigger action', () => {
     runActionSystem(world, 0, 1, nativeActions, {
       rng: new PRNG(89),
       tick: 0,
-      spatialHash: new SpatialHash(),
     })
 
     expect(nativeActions).toEqual(legacyActions)
@@ -228,7 +224,6 @@ describe('combat ECS death-trigger action', () => {
     runActionSystem(world, 0, 1, nativeActions, {
       rng: new PRNG(97),
       tick: 0,
-      spatialHash: new SpatialHash(),
     })
 
     expect(canUseSimpleSingleDamage(world, 0, 1)).toBe(true)

@@ -61,7 +61,6 @@ describe('combat ECS attack charge action', () => {
     const nativeResult = runActionSystem(world, 0, 1, nativeActions, {
       rng: new PRNG(1),
       tick: 11,
-      spatialHash: new SpatialHash(),
     })
 
     expect(nativeResult).toEqual({

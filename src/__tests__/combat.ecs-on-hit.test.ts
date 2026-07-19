@@ -7,10 +7,9 @@ import {
   runActionSystem,
   syncEcsTargetRefs,
 } from '@/domains/combat/ecs/systems'
-import { SpatialHash } from '@/domains/combat/spatial-hash'
 
 function actionContext() {
-  return { rng: new PRNG(1), tick: 0, spatialHash: new SpatialHash() }
+  return { rng: new PRNG(1), tick: 0 }
 }
 
 describe('combat ECS on-hit effects', () => {

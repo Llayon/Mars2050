@@ -149,6 +149,8 @@ The tick orchestrator tracks the monotonic entity watermark around each action
 and inserts newly created live unit entities into the canonical spatial index.
 This also captures clones or summons created by nested trigger/death flushes
 without reading roster length or unit facade objects.
+Action, movement, targeting, and support-aura runtime contexts no longer expose
+the legacy object-based spatial hash.
 The targeting-phase boundary also flushes structural commands, resolves
 EntityId references, and rebuilds the spatial index directly from canonical
 components without a roster-facade import.

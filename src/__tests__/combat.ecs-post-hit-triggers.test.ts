@@ -13,7 +13,6 @@ import {
   runActionSystem,
 } from '@/domains/combat/ecs/systems'
 import { applyEcsSingleDamage } from '@/domains/combat/ecs/systems/damage-system'
-import { SpatialHash } from '@/domains/combat/spatial-hash'
 
 function unit(id: string, team: 'attacker' | 'defender', x: number): SimUnit {
   return createRuntimeUnitFromConfig({
@@ -35,7 +34,7 @@ function createWorld(units: SimUnit[]): CombatWorld {
 }
 
 function context(seed: number) {
-  return { rng: new PRNG(seed), tick: 0, spatialHash: new SpatialHash() }
+  return { rng: new PRNG(seed), tick: 0 }
 }
 
 describe('combat ECS post-hit triggers', () => {

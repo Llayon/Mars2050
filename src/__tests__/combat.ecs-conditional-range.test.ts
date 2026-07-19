@@ -11,7 +11,6 @@ import {
   getEcsPositioningDecision,
 } from '@/domains/combat/ecs/movement-positioning'
 import { canUseSimpleSingleDamage, runActionSystem } from '@/domains/combat/ecs/systems'
-import { SpatialHash } from '@/domains/combat/spatial-hash'
 
 function unit(id: string, team: 'attacker' | 'defender', x: number): SimUnit {
   return createRuntimeUnitFromConfig({
@@ -80,7 +79,6 @@ describe('combat ECS conditional range', () => {
     const nativeResult = runActionSystem(airWorld, 0, 1, nativeActions, {
       rng: new PRNG(31),
       tick: 0,
-      spatialHash: new SpatialHash(),
     })
     const airPositioning = getEcsPositioningDecision(
       airWorld,

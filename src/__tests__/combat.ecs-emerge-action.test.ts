@@ -39,7 +39,6 @@ function runNative(world: CombatWorld) {
   const result = runActionSystem(world, 0, 1, actions, {
     rng: new PRNG(2),
     tick: 0,
-    spatialHash: new SpatialHash(),
   })
   return { actions, result }
 }

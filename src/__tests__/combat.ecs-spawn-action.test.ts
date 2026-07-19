@@ -6,7 +6,6 @@ import { PRNG } from '@/domains/combat/combat.utils'
 import { CombatWorld } from '@/domains/combat/ecs/combat-world'
 import { EntitySpatialIndex } from '@/domains/combat/ecs/entity-spatial-index'
 import { canUseEcsSpawnAction, runActionSystem } from '@/domains/combat/ecs/systems'
-import { SpatialHash } from '@/domains/combat/spatial-hash'
 
 function unit(
   id: string,
@@ -33,7 +32,7 @@ function createWorld(units: SimUnit[]): CombatWorld {
 }
 
 function context(seed: number) {
-  return { rng: new PRNG(seed), tick: 0, spatialHash: new SpatialHash() }
+  return { rng: new PRNG(seed), tick: 0 }
 }
 
 describe('combat ECS spawn action', () => {

@@ -67,7 +67,6 @@ describe('combat ECS smoke action', () => {
     const nativeResult = runActionSystem(world, 0, 1, nativeActions, {
       rng: new PRNG(7),
       tick: 0,
-      spatialHash: new SpatialHash(),
     })
 
     expect(nativeResult).toEqual({ acted: legacyActed, actorSynchronized: true })

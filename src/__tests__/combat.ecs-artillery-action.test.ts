@@ -45,7 +45,6 @@ function runStep(world: CombatWorld, legacyUnits: SimUnit[]) {
   const nativeResult = runActionSystem(world, 0, 1, nativeActions, {
     rng: new PRNG(1),
     tick: 0,
-    spatialHash: new SpatialHash(),
   })
   expect(nativeResult).toEqual({
     acted: legacyActed,

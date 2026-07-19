@@ -10,7 +10,6 @@ import {
   reserveEcsMeleeSlot,
   runActionSystem,
 } from '@/domains/combat/ecs/systems'
-import { SpatialHash } from '@/domains/combat/spatial-hash'
 
 function unit(id: string, team: 'attacker' | 'defender', type: string, x: number): SimUnit {
   return createRuntimeUnitFromConfig({
@@ -37,7 +36,6 @@ function act(world: CombatWorld) {
   const result = runActionSystem(world, 0, 1, actions, {
     rng: new PRNG(1),
     tick: 0,
-    spatialHash: new SpatialHash(),
   })
   return { actions, result }
 }

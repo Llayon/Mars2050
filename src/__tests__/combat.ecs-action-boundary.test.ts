@@ -5,7 +5,6 @@ import { PRNG } from '@/domains/combat/combat.utils'
 import { CombatWorld } from '@/domains/combat/ecs/combat-world'
 import { EntitySpatialIndex } from '@/domains/combat/ecs/entity-spatial-index'
 import { runActionSystem } from '@/domains/combat/ecs/systems'
-import { SpatialHash } from '@/domains/combat/spatial-hash'
 
 describe('combat ECS action boundary', () => {
   it('uses canonical attack and hacked target state without a legacy fallback', () => {
@@ -37,7 +36,6 @@ describe('combat ECS action boundary', () => {
     const result = runActionSystem(world, 0, 1, actions, {
       rng: new PRNG(149),
       tick: 0,
-      spatialHash: new SpatialHash(),
     })
 
     expect(result).toEqual({ acted: true, actorSynchronized: true })
@@ -73,7 +71,6 @@ describe('combat ECS action boundary', () => {
     const result = runActionSystem(world, 0, 1, [], {
       rng: new PRNG(151),
       tick: 0,
-      spatialHash: new SpatialHash(),
     })
 
     expect(result).toEqual({ acted: false, actorSynchronized: false })

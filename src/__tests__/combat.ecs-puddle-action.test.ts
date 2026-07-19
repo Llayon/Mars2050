@@ -61,7 +61,6 @@ describe('combat ECS attack puddle action', () => {
     const nativeResult = runActionSystem(world, 0, 1, nativeActions, {
       rng: new PRNG(7),
       tick: 0,
-      spatialHash: new SpatialHash(),
     })
 
     expect(nativeResult).toEqual({

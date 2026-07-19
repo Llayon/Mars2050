@@ -6,7 +6,6 @@ import { PRNG } from '@/domains/combat/combat.utils'
 import { CombatWorld } from '@/domains/combat/ecs/combat-world'
 import { EntitySpatialIndex } from '@/domains/combat/ecs/entity-spatial-index'
 import { runActionSystem } from '@/domains/combat/ecs/systems'
-import { SpatialHash } from '@/domains/combat/spatial-hash'
 
 function unit(
   id: string,
@@ -28,7 +27,7 @@ function createWorld(units: SimUnit[]): CombatWorld {
 }
 
 function actionContext() {
-  return { rng: new PRNG(1), tick: 0, spatialHash: new SpatialHash() }
+  return { rng: new PRNG(1), tick: 0 }
 }
 
 describe('combat ECS side weapon', () => {
