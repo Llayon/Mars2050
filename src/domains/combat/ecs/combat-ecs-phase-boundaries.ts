@@ -20,14 +20,6 @@ import {
 import type { GlobalUpgradeConfig } from '../combat.upgrades'
 import type { Team } from '../combat.sim.types'
 
-const CONTROL_COMPONENTS = [
-  'identity',
-  'transform',
-  'vitality',
-  'combat',
-  'targeting',
-] as const
-
 export function runEcsGlobalEffectPhase(
   world: CombatWorld,
   tick: number,
@@ -89,7 +81,6 @@ export function runEcsControlBeamPhase(
 ): void {
   const entityIds = getEcsControlBeamEntities(world)
   if (entityIds.length === 0) return
-  world.syncAllComponentsToStore(CONTROL_COMPONENTS)
   world.resources.require('entitySpatial').rebuild(world)
   runEcsControlBeamSystem(world, actions, entityIds)
   world.syncAllComponentsFromStore(['identity', 'vitality', 'targeting'])

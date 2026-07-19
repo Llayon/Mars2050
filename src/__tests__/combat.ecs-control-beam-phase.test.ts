@@ -92,4 +92,42 @@ describe('combat ECS control beam phase', () => {
       .toMatchObject({ sourceUnitId: 'zeta', progress: 2 })
     expect(spatial.getProfile().queryCount).toBe(2)
   })
+
+  it('does not overwrite canonical control inputs from facades', () => {
+    const hacker = unit('canonical-hacker', 'attacker', 100)
+    hacker.controlBeam = {
+      range: 120,
+      progressPerTick: 10,
+      conversionThreshold: 10,
+      healConvertedToMax: true,
+    }
+    const target = unit('canonical-target', 'defender', 180)
+    target.hp = target.maxHp - 10
+    const runtime = createEcsCombatRuntime()
+    runtime.units.push(hacker, target)
+    runtime.flushStructuralCommands()
+    hacker.controlBeam = undefined
+    hacker.x = 800
+    target.x = 950
+    target.hp = target.maxHp
+    const actions: BattleAction[] = []
+
+    runtime.runControlBeamPhase(actions)
+
+    const targetId = runtime.world.getEntityId(target.id)!
+    expect(actions).toContainEqual({
+      unitId: 'canonical-hacker',
+      type: 'control_convert',
+      targetId: 'canonical-target',
+    })
+    expect(actions).toContainEqual({
+      unitId: 'canonical-hacker',
+      type: 'heal',
+      targetId: 'canonical-target',
+      damage: 10,
+    })
+    expect(runtime.world.stores.identity.require(targetId).team).toBe('attacker')
+    expect(runtime.units[1].team).toBe('attacker')
+    expect(runtime.units[1].hp).toBe(runtime.units[1].maxHp)
+  })
 })

@@ -73,7 +73,9 @@ local EntityId spatial queries and the shared ECS status kernel in stable
 external-ID order. Their runtime boundary reads canonical positions, formation
 configuration, and status state without importing the unit facade. Control beams now acquire locally and own progress, stale
 link breaks, conversion, target-reference clearing, and actual conversion
-healing in ECS. Periodic ability scheduling, target policies, charges, damage,
+healing in ECS. The control runtime boundary reads canonical beam configuration,
+positions, combat stats, vitality, and progress without a facade import.
+Periodic ability scheduling, target policies, charges, damage,
 status, hazard, shield, healing, spawn, and mark payloads now run through
 native ECS kernels. Global mass shields, EMP, orbital hazards, and actual mass
 healing now operate on canonical components at their contractual trigger ticks.
