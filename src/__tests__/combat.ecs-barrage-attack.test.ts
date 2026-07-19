@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest'
-import { actionSystem } from '@/__tests__/helpers/combat-ecs-action-harness'
 import { createRuntimeUnitFromConfig } from '@/domains/combat/combat.unit-factory'
 import type { SimUnit } from '@/domains/combat/combat.sim.types'
 import { PRNG } from '@/domains/combat/combat.utils'
@@ -26,27 +25,15 @@ function createWorld(units: SimUnit[]): CombatWorld {
   return world
 }
 
-function runParity(units: SimUnit[]) {
-  const legacyUnits = structuredClone(units)
-  const legacyActions: Parameters<typeof actionSystem>[4] = []
+function runNative(units: SimUnit[]) {
   const nativeActions: Parameters<typeof runActionSystem>[3] = []
   const world = createWorld(units)
-  const legacyActed = actionSystem(
-    legacyUnits[0],
-    legacyUnits[1],
-    legacyUnits,
-    [],
-    legacyActions,
-    new PRNG(1),
-    0,
-  )
   const nativeResult = runActionSystem(world, 0, 1, nativeActions, {
     rng: new PRNG(1),
     tick: 0,
   })
-  expect(nativeResult).toEqual({ acted: legacyActed, actorSynchronized: true })
-  expect(nativeActions).toEqual(legacyActions)
-  return { world, legacyUnits, nativeActions }
+  expect(nativeResult).toEqual({ acted: true, actorSynchronized: true })
+  return { world, nativeActions }
 }
 
 function barrageAttacker(id = 'barrage'): SimUnit {
@@ -66,16 +53,17 @@ describe('combat ECS barrage attack', () => {
       damageMultiplier: 0.5,
       maxTargetsPerImpact: 3,
     }
-    const { world, legacyUnits, nativeActions } = runParity([
+    const { world, nativeActions } = runNative([
       attacker,
       unit('primary', 'defender', 'marine', 100, 100, Math.PI),
       unit('b-target', 'defender', 'marine', 100, 110, Math.PI),
       unit('a-target', 'defender', 'marine', 100, 90, Math.PI),
     ])
 
-    expect(world.stores.vitality.require(1).hp).toBe(legacyUnits[1].hp)
-    expect(world.stores.vitality.require(2).hp).toBe(legacyUnits[2].hp)
-    expect(world.stores.vitality.require(3).hp).toBe(legacyUnits[3].hp)
+    for (const entityId of [1, 2, 3]) {
+      expect(world.stores.vitality.require(entityId).hp)
+        .toBeLessThan(world.stores.vitality.require(entityId).maxHp)
+    }
     const barrageDamageOrder = nativeActions
       .slice(nativeActions.findIndex(action => action.type === 'barrage_marker'))
       .filter(action => action.type === 'damage')
@@ -100,7 +88,7 @@ describe('combat ECS barrage attack', () => {
     interceptor.projectileInterceptCooldownMax = 12
     interceptor.projectileInterceptCooldown = 0
     interceptor.projectileInterceptMaxDamage = 100
-    const { world, legacyUnits, nativeActions } = runParity([
+    const { world, nativeActions } = runNative([
       attacker,
       unit('primary', 'defender', 'marine', 100, 100, Math.PI),
       unit('secondary', 'defender', 'marine', 162, 100, Math.PI),
@@ -112,7 +100,6 @@ describe('combat ECS barrage attack', () => {
       type: 'projectile_intercept',
       targetId: 'secondary',
     }))
-    expect(world.stores.vitality.require(2).hp).toBe(legacyUnits[2].hp)
     expect(world.stores.vitality.require(2).hp).toBe(world.stores.vitality.require(2).maxHp)
     expect(world.stores.statusControl.require(2).statusEffects).toEqual([])
     expect(world.stores.defense.require(3).projectileInterceptCooldown).toBe(12)

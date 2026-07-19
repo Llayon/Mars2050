@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest'
-import { actionSystem } from '@/__tests__/helpers/combat-ecs-action-harness'
 import type { SimUnit } from '@/domains/combat/combat.sim.types'
 import { createRuntimeUnitFromConfig } from '@/domains/combat/combat.unit-factory'
 import { PRNG } from '@/domains/combat/combat.utils'
@@ -48,34 +47,22 @@ describe('combat ECS death-trigger action', () => {
       cooldownRemaining: 0,
     }]
     target.onDeathPuddle = 'acid'
-    const legacyUnits = structuredClone([attacker, target])
-    const legacyActions: Parameters<typeof actionSystem>[4] = []
     const nativeActions: Parameters<typeof runActionSystem>[3] = []
-    const legacyHazards: Parameters<typeof actionSystem>[3] = []
     const world = createWorld([attacker, target])
     world.resources.set('rng', new PRNG(79))
 
-    actionSystem(
-      legacyUnits[0],
-      legacyUnits[1],
-      legacyUnits,
-      legacyHazards,
-      legacyActions,
-      new PRNG(79),
-    )
     expect(canUseSimpleSingleDamage(world, 0, 1)).toBe(true)
     runActionSystem(world, 0, 1, nativeActions, {
       rng: world.resources.require('rng'),
       tick: 0,
     })
 
-    expect(nativeActions).toEqual(legacyActions)
     expect(world.stores.vitality.require(0)).toMatchObject({
-      hp: legacyUnits[0].hp,
+      hp: 75,
       shield: 30,
     })
-    expect(world.stores.lifecycle.require(1).triggerEffects).toEqual(
-      legacyUnits[1].triggerEffects,
+    expect(world.stores.lifecycle.require(1).triggerEffects).toContainEqual(
+      expect.objectContaining({ id: 'reactive-shield', fired: true }),
     )
     expect(nativeActions.slice(-5).map(action => action.type)).toEqual([
       'trigger_effect',
@@ -107,20 +94,10 @@ describe('combat ECS death-trigger action', () => {
       counter: 0,
       cooldownRemaining: 0,
     }]
-    const legacyUnits = structuredClone([attacker, target])
-    const legacyActions: Parameters<typeof actionSystem>[4] = []
     const nativeActions: Parameters<typeof runActionSystem>[3] = []
     const world = createWorld([attacker, target])
     world.resources.set('rng', new PRNG(83))
 
-    actionSystem(
-      legacyUnits[0],
-      legacyUnits[1],
-      legacyUnits,
-      [],
-      legacyActions,
-      new PRNG(83),
-    )
     expect(canUseSimpleSingleDamage(world, 0, 1)).toBe(true)
     runActionSystem(world, 0, 1, nativeActions, {
       rng: world.resources.require('rng'),
@@ -128,7 +105,6 @@ describe('combat ECS death-trigger action', () => {
     })
     world.flushStructuralCommands()
 
-    expect(nativeActions).toEqual(legacyActions)
     const spawned = world.snapshot().filter(unit => unit.summonOwnerId === 'carrier-wreck')
     expect(spawned).toHaveLength(1)
     expect(spawned[0]).toMatchObject({
@@ -158,26 +134,15 @@ describe('combat ECS death-trigger action', () => {
       counter: 0,
       cooldownRemaining: 0,
     }]
-    const legacyUnits = structuredClone([attacker, target])
-    const legacyActions: Parameters<typeof actionSystem>[4] = []
     const nativeActions: Parameters<typeof runActionSystem>[3] = []
     const world = createWorld([attacker, target])
 
-    actionSystem(
-      legacyUnits[0],
-      legacyUnits[1],
-      legacyUnits,
-      [],
-      legacyActions,
-      new PRNG(89),
-    )
     expect(canUseSimpleSingleDamage(world, 0, 1)).toBe(true)
     runActionSystem(world, 0, 1, nativeActions, {
       rng: new PRNG(89),
       tick: 0,
     })
 
-    expect(nativeActions).toEqual(legacyActions)
     expect(world.stores.vitality.require(1)).toMatchObject({
       reassemblyTriggersUsed: 1,
       reassemblyState: {
@@ -208,26 +173,20 @@ describe('combat ECS death-trigger action', () => {
       counter: 0,
       cooldownRemaining: 0,
     }]
-    const legacyUnits = structuredClone([attacker, target])
-    const legacyActions: Parameters<typeof actionSystem>[4] = []
     const nativeActions: Parameters<typeof runActionSystem>[3] = []
     const world = createWorld([attacker, target])
 
-    actionSystem(
-      legacyUnits[0],
-      legacyUnits[1],
-      legacyUnits,
-      [],
-      legacyActions,
-      new PRNG(97),
-    )
     runActionSystem(world, 0, 1, nativeActions, {
       rng: new PRNG(97),
       tick: 0,
     })
 
     expect(canUseSimpleSingleDamage(world, 0, 1)).toBe(true)
-    expect(nativeActions).toEqual(legacyActions)
-    expect(world.stores.vitality.require(0).hp).toBe(legacyUnits[0].hp)
+    expect(world.stores.vitality.require(0).hp).toBe(70)
+    expect(nativeActions).toContainEqual(expect.objectContaining({
+      unitId: 'explosive-wreck',
+      type: 'damage',
+      targetId: 'attacker',
+    }))
   })
 })

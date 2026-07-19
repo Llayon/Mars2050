@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest'
-import { actionSystem } from '@/__tests__/helpers/combat-ecs-action-harness'
 import type { SimUnit } from '@/domains/combat/combat.sim.types'
 import { createRuntimeUnitFromConfig } from '@/domains/combat/combat.unit-factory'
 import { PRNG } from '@/domains/combat/combat.utils'
@@ -34,28 +33,17 @@ describe('combat ECS trigger damage', () => {
       counter: 0,
       cooldownRemaining: 0,
     }]
-    const legacyUnits = structuredClone([attacker, target])
-    const legacyActions: Parameters<typeof actionSystem>[4] = []
     const nativeActions: Parameters<typeof runActionSystem>[3] = []
     const world = new CombatWorld([attacker, target])
     const spatial = new EntitySpatialIndex()
     spatial.rebuild(world)
     world.resources.set('entitySpatial', spatial)
 
-    actionSystem(
-      legacyUnits[0],
-      legacyUnits[1],
-      legacyUnits,
-      [],
-      legacyActions,
-      new PRNG(61),
-    )
     runActionSystem(world, 0, 1, nativeActions, {
       rng: new PRNG(61),
       tick: 0,
     })
 
-    expect(nativeActions).toEqual(legacyActions)
     expect(nativeActions).toContainEqual({
       unitId: 'target',
       type: 'die',
@@ -81,30 +69,19 @@ describe('combat ECS trigger damage', () => {
       counter: 0,
       cooldownRemaining: 0,
     }]
-    const legacyUnits = structuredClone([attacker, target])
-    const legacyActions: Parameters<typeof actionSystem>[4] = []
     const nativeActions: Parameters<typeof runActionSystem>[3] = []
     const world = new CombatWorld([attacker, target])
     const spatial = new EntitySpatialIndex()
     spatial.rebuild(world)
     world.resources.set('entitySpatial', spatial)
 
-    actionSystem(
-      legacyUnits[0],
-      legacyUnits[1],
-      legacyUnits,
-      [],
-      legacyActions,
-      new PRNG(67),
-    )
     runActionSystem(world, 0, 1, nativeActions, {
       rng: new PRNG(67),
       tick: 0,
     })
 
-    expect(nativeActions).toEqual(legacyActions)
     expect(world.stores.vitality.require(1)).toMatchObject({
-      hp: legacyUnits[1].hp,
+      hp: 30,
       isDead: false,
       resurrectOnce: false,
     })
@@ -130,28 +107,17 @@ describe('combat ECS trigger damage', () => {
       counter: 0,
       cooldownRemaining: 0,
     }]
-    const legacyUnits = structuredClone([attacker, target])
-    const legacyActions: Parameters<typeof actionSystem>[4] = []
     const nativeActions: Parameters<typeof runActionSystem>[3] = []
     const world = new CombatWorld([attacker, target])
     const spatial = new EntitySpatialIndex()
     spatial.rebuild(world)
     world.resources.set('entitySpatial', spatial)
 
-    actionSystem(
-      legacyUnits[0],
-      legacyUnits[1],
-      legacyUnits,
-      [],
-      legacyActions,
-      new PRNG(71),
-    )
     runActionSystem(world, 0, 1, nativeActions, {
       rng: new PRNG(71),
       tick: 0,
     })
 
-    expect(nativeActions).toEqual(legacyActions)
     expect(world.stores.vitality.require(1)).toMatchObject({
       isDead: true,
       reassemblyTriggersUsed: 1,

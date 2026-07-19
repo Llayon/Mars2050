@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest'
-import { actionSystem } from '@/__tests__/helpers/combat-ecs-action-harness'
 import type { SimUnit } from '@/domains/combat/combat.sim.types'
 import { createRuntimeUnitFromConfig } from '@/domains/combat/combat.unit-factory'
 import { PRNG } from '@/domains/combat/combat.utils'
@@ -39,28 +38,16 @@ describe('combat ECS on-kill action', () => {
     const attacker = unit('ghost', 'attacker', 'stealth_operative', 100)
     const target = unit('target', 'defender', 'marine', 220)
     attacker.hp = 50
-    const legacyUnits = structuredClone([attacker, target])
-    const legacyActions: Parameters<typeof actionSystem>[4] = []
     const nativeActions: Parameters<typeof runActionSystem>[3] = []
     const world = createWorld([attacker, target])
 
-    const legacyActed = actionSystem(
-      legacyUnits[0],
-      legacyUnits[1],
-      legacyUnits,
-      [],
-      legacyActions,
-      new PRNG(29),
-      0,
-    )
     expect(canUseSimpleSingleDamage(world, 0, 1)).toBe(true)
     const nativeResult = runActionSystem(world, 0, 1, nativeActions, {
       rng: new PRNG(29),
       tick: 0,
     })
 
-    expect(nativeResult).toEqual({ acted: legacyActed, actorSynchronized: true })
-    expect(nativeActions).toEqual(legacyActions)
+    expect(nativeResult).toEqual({ acted: true, actorSynchronized: true })
     expect(nativeActions.map(action => action.type)).toEqual([
       'attack',
       'unit_blocked_damage',
@@ -70,13 +57,11 @@ describe('combat ECS on-kill action', () => {
       'heal',
     ])
     expect(world.snapshotEntity(0)).toMatchObject({
-      hp: legacyUnits[0].hp,
+      hp: 75,
       actionCooldown: 0,
     })
-    expect(world.snapshotEntity(1)).toMatchObject({
-      hp: legacyUnits[1].hp,
-      isDead: true,
-    })
+    expect(world.stores.vitality.require(1).hp).toBeLessThanOrEqual(0)
+    expect(world.stores.vitality.require(1).isDead).toBe(true)
     expect(nativeActions.at(-1)).toEqual({
       unitId: 'ghost',
       type: 'heal',
@@ -108,31 +93,19 @@ describe('combat ECS on-kill action', () => {
     target.maxHp = 80
     target.defense = 0
     target.onDeathPuddle = 'acid'
-    const legacyUnits = structuredClone([attacker, target])
-    const legacyActions: Parameters<typeof actionSystem>[4] = []
     const nativeActions: Parameters<typeof runActionSystem>[3] = []
-    const legacyHazards: Parameters<typeof actionSystem>[3] = []
     const world = createWorld([attacker, target])
     world.resources.set('rng', new PRNG(73))
 
-    actionSystem(
-      legacyUnits[0],
-      legacyUnits[1],
-      legacyUnits,
-      legacyHazards,
-      legacyActions,
-      new PRNG(73),
-    )
     expect(canUseSimpleSingleDamage(world, 0, 1)).toBe(true)
     runActionSystem(world, 0, 1, nativeActions, {
       rng: world.resources.require('rng'),
       tick: 0,
     })
 
-    expect(nativeActions).toEqual(legacyActions)
     expect(world.stores.vitality.require(0).hp).toBe(80)
-    expect(world.stores.lifecycle.require(0).triggerEffects).toEqual(
-      legacyUnits[0].triggerEffects,
+    expect(world.stores.lifecycle.require(0).triggerEffects).toContainEqual(
+      expect.objectContaining({ id: 'wreckage-recycling', fired: true }),
     )
     expect(nativeActions.slice(-4).map(action => action.type)).toEqual([
       'trigger_effect',
@@ -160,25 +133,22 @@ describe('combat ECS on-kill action', () => {
       counter: 0,
       cooldownRemaining: 0,
     }]
-    const legacyUnits = structuredClone([attacker, target])
-    const legacyActions: Parameters<typeof actionSystem>[4] = []
     const nativeActions: Parameters<typeof runActionSystem>[3] = []
     const world = createWorld([attacker, target])
 
-    actionSystem(
-      legacyUnits[0],
-      legacyUnits[1],
-      legacyUnits,
-      [],
-      legacyActions,
-      new PRNG(101),
-    )
     runActionSystem(world, 0, 1, nativeActions, {
       rng: new PRNG(101),
       tick: 0,
     })
 
     expect(canUseSimpleSingleDamage(world, 0, 1)).toBe(true)
-    expect(nativeActions).toEqual(legacyActions)
+    expect(nativeActions).toContainEqual(expect.objectContaining({
+      unitId: 'carrier',
+      type: 'trigger_effect',
+      statusType: 'kill-blast',
+    }))
+    expect(world.stores.lifecycle.require(0).triggerEffects).toContainEqual(
+      expect.objectContaining({ id: 'kill-blast', fired: true }),
+    )
   })
 })

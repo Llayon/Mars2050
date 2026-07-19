@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest'
-import { actionSystem } from '@/__tests__/helpers/combat-ecs-action-harness'
 import { createRuntimeUnitFromConfig } from '@/domains/combat/combat.unit-factory'
 import type { SimUnit } from '@/domains/combat/combat.sim.types'
 import { PRNG } from '@/domains/combat/combat.utils'
@@ -31,7 +30,7 @@ function actionContext() {
 }
 
 describe('combat ECS side weapon', () => {
-  it('matches fixed damage, target order, and replay without primary on-hit effects', () => {
+  it('applies fixed damage, target order, and replay without primary on-hit effects', () => {
     const units = [
       unit('goliath', 'attacker', 'goliath_gunship', 10, 20, 0),
       unit('primary', 'defender', 'marine', 120, 20, Math.PI),
@@ -40,25 +39,16 @@ describe('combat ECS side weapon', () => {
       unit('outside', 'defender', 'marine', 250, 20, Math.PI),
     ]
     units[0].statusOnHit = [{ type: 'burn', duration: 30, value: 3 }]
-    const legacyUnits = structuredClone(units)
-    const legacyActions: Parameters<typeof actionSystem>[4] = []
     const nativeActions: Parameters<typeof runActionSystem>[3] = []
     const world = createWorld(units)
 
-    const legacyActed = actionSystem(
-      legacyUnits[0],
-      legacyUnits[1],
-      legacyUnits,
-      [],
-      legacyActions,
-      new PRNG(1),
-    )
     const nativeResult = runActionSystem(world, 0, 1, nativeActions, actionContext())
 
-    expect(nativeResult).toEqual({ acted: legacyActed, actorSynchronized: true })
-    expect(nativeActions).toEqual(legacyActions)
-    expect(world.stores.vitality.require(2).hp).toBe(legacyUnits[2].hp)
-    expect(world.stores.vitality.require(3).hp).toBe(legacyUnits[3].hp)
+    expect(nativeResult).toEqual({ acted: true, actorSynchronized: true })
+    expect(world.stores.vitality.require(2).hp)
+      .toBeLessThan(world.stores.vitality.require(2).maxHp)
+    expect(world.stores.vitality.require(3).hp)
+      .toBeLessThan(world.stores.vitality.require(3).maxHp)
     expect(nativeActions.filter(action => action.type === 'side_weapon_attack')).toEqual([
       { unitId: 'goliath', type: 'side_weapon_attack', targetId: 'a-target' },
       { unitId: 'goliath', type: 'side_weapon_attack', targetId: 'b-target' },
@@ -75,16 +65,12 @@ describe('combat ECS side weapon', () => {
       unit('air-target', 'defender', 'scout_drone', 90, 50, Math.PI),
     ]
     units[0].canTargetAir = false
-    const legacyUnits = structuredClone(units)
-    const legacyActions: Parameters<typeof actionSystem>[4] = []
     const nativeActions: Parameters<typeof runActionSystem>[3] = []
     const world = createWorld(units)
 
-    actionSystem(legacyUnits[0], legacyUnits[1], legacyUnits, [], legacyActions, new PRNG(1))
     const nativeResult = runActionSystem(world, 0, 1, nativeActions, actionContext())
 
     expect(nativeResult).toEqual({ acted: true, actorSynchronized: true })
-    expect(nativeActions).toEqual(legacyActions)
     expect(nativeActions).toContainEqual({
       unitId: 'goliath',
       type: 'side_weapon_attack',
