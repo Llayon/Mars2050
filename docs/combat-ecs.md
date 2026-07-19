@@ -34,6 +34,10 @@ entity queries, and snapshot/survivor serialization.
 Metrics and tick orchestration still consume the temporary `SimUnit` facade.
 Trigger event selection and every trigger payload use component stores and
 EntityId references.
+Turn order, modifier ticking, target selection, melee reservation, spawning,
+actions, and movement now pass only `EntityId` values between the tick
+orchestrator and ECS runtime. The remaining facade use is limited to legacy
+spatial metrics, replay-facing mirrors, and structural factory input.
 Movement and healing read and write component stores directly through
 `EntityId`; after each move, only the changed movement components are written
 back to the facade for those unported consumers. Every action family now stays

@@ -33,11 +33,10 @@ describe('combat ECS targeting boundary', () => {
     far.x = 850
 
     runtime.beginTargetingPhase(new SpatialHash())
-    const target = runtime.selectTarget(attacker)
-
     const attackerId = runtime.world.getEntityId(attacker.id)!
     const nearId = runtime.world.getEntityId(near.id)!
-    expect(target?.id).toBe('canonical-near')
+    const targetId = runtime.selectTarget(attackerId)
+    expect(targetId).toBe(nearId)
     expect(runtime.world.stores.vitality.require(nearId).isDead).toBe(false)
     expect(runtime.world.stores.targeting.require(attackerId).attackTargetId)
       .toBe('canonical-near')

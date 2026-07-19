@@ -28,44 +28,39 @@ export function createEcsCombatRuntime(): EcsCombatRuntime {
       world.resources.require('entitySpatial').rebuild(world)
       meleeEngagement = createEcsMeleeEngagementState()
     },
-    selectTarget: unit => {
-      const entityId = world.getEntityId(unit.id)
-      if (entityId === undefined) return null
+    selectTarget: entityId => {
       const targetId = runTargetingSystem(world, entityId, meleeEngagement)
       world.syncComponentsFromStore(entityId, ['targeting'])
-      return targetId === null ? null : world.getEntity(targetId) ?? null
+      return targetId
     },
-    reserveMeleeSlot: (unit, target) => {
-      const unitId = world.getEntityId(unit.id)
-      const targetId = world.getEntityId(target.id)
-      if (unitId === undefined || targetId === undefined) return false
-      const reserved = reserveEcsMeleeSlot(world, unitId, targetId, meleeEngagement)
-      world.syncComponentsFromStore(unitId, ['targeting'])
+    reserveMeleeSlot: (entityId, targetId) => {
+      const reserved = reserveEcsMeleeSlot(world, entityId, targetId, meleeEngagement)
+      world.syncComponentsFromStore(entityId, ['targeting'])
       return reserved
     },
-    processSpawner: (unit, target, actions, context) => {
-      const unitId = world.getEntityId(unit.id)
-      const targetId = world.getEntityId(target.id)
-      if (unitId === undefined || targetId === undefined) return
-      runEcsPeriodicSpawnerSystem(world, unitId, targetId, actions, context)
-      world.syncComponentsFromStore(unitId, ['lifecycle', 'transform', 'combat', 'weapon', 'movement'])
+    processSpawner: (entityId, targetId, actions, context) => {
+      runEcsPeriodicSpawnerSystem(world, entityId, targetId, actions, context)
+      world.syncComponentsFromStore(entityId, ['lifecycle', 'transform', 'combat', 'weapon', 'movement'])
     },
-    actUnit: (unit, target, actions, context) => {
-      const unitId = world.getEntityId(unit.id)
-      const targetId = world.getEntityId(target.id)
-      if (unitId === undefined || targetId === undefined) return { acted: false, actorSynchronized: false }
-      return runActionSystem(world, unitId, targetId, actions, context)
+    actUnit: (entityId, targetId, actions, context) => {
+      return runActionSystem(world, entityId, targetId, actions, context)
     },
-    moveUnit: (unit, target, actions, context) => {
-      const unitId = world.getEntityId(unit.id)
-      const targetId = world.getEntityId(target.id)
-      if (unitId === undefined || targetId === undefined) return
-      runMovementSystem(world, unitId, targetId, actions, context)
+    moveUnit: (entityId, targetId, actions, context) => {
+      runMovementSystem(world, entityId, targetId, actions, context)
     },
-    completeActorTurn: () => undefined,
-    insertSpatialUnit: unit => {
-      const entityId = world.getEntityId(unit.id)
-      if (entityId !== undefined) world.resources.require('entitySpatial').insert(world, entityId)
+    insertSpatialUnit: entityId =>
+      world.resources.require('entitySpatial').insert(world, entityId),
+    isDead: entityId => world.stores.vitality.require(entityId).isDead,
+    canActOnTarget: (entityId, targetId) => {
+      const source = world.stores.identity.require(entityId)
+      const target = world.stores.identity.require(targetId)
+      if (source.team !== target.team) return true
+      if (world.stores.weapon.require(entityId).attackType === 'heal') return true
+      return world.stores.statusControl.require(entityId).statusEffects.some(effect =>
+        effect.type === 'hacked' &&
+        effect.duration > 0 &&
+        (effect.controlMode === 'redirect' || effect.controlMode === 'confuse'),
+      )
     },
     snapshotUnits: () => { world.flushStructuralCommands(); return world.snapshot() },
     getSurvivors: () => {
@@ -75,15 +70,8 @@ export function createEcsCombatRuntime(): EcsCombatRuntime {
         return [world.snapshotEntity(entityId)]
       })
     },
-    getTurnOrder: () => {
-      return getEcsTurnOrder(world).flatMap(entityId => {
-        const unit = world.getEntity(entityId)
-        return unit ? [unit] : []
-      })
-    },
-    tickModifiers(unit, _dt, actions, _rng): void {
-      const entityId = world.getEntityId(unit.id)
-      if (entityId === undefined) return
+    getTurnOrder: () => getEcsTurnOrder(world),
+    tickModifiers(entityId, _dt, actions, _rng): void {
       runModifierSystem(world, entityId, actions, expiredId => {
         resolveEcsDeath(world, expiredId, undefined, actions, 'expiration')
       })

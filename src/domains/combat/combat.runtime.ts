@@ -7,6 +7,7 @@ import type { Obstacle, Team } from './combat.sim.types'
 import type { UnitRow } from './combat.types'
 import type { PRNG } from './combat.utils'
 import type { GlobalUpgradeConfig } from './combat.upgrades'
+import type { EntityId } from './ecs/entity'
 
 export interface RuntimeMovementContext {
   dt: number
@@ -33,17 +34,18 @@ export interface CombatRuntime {
   addSquad(row: UnitRow, team: Team, rng: PRNG): void
   flushStructuralCommands(): void
   beginTargetingPhase(spatialHash: SpatialHash): void
-  selectTarget(unit: SimUnit): SimUnit | null
-  reserveMeleeSlot(unit: SimUnit, target: SimUnit): boolean
-  processSpawner(unit: SimUnit, target: SimUnit, actions: BattleAction[], context: RuntimeActionContext): void
-  actUnit(unit: SimUnit, target: SimUnit, actions: BattleAction[], context: RuntimeActionContext): RuntimeActionResult
-  moveUnit(unit: SimUnit, target: SimUnit, actions: BattleAction[], context: RuntimeMovementContext): void
-  completeActorTurn(unit: SimUnit, actions: readonly BattleAction[], actionStart: number, actorSynchronized?: boolean): void
-  insertSpatialUnit(unit: SimUnit): void
+  selectTarget(entityId: EntityId): EntityId | null
+  reserveMeleeSlot(entityId: EntityId, targetId: EntityId): boolean
+  processSpawner(entityId: EntityId, targetId: EntityId, actions: BattleAction[], context: RuntimeActionContext): void
+  actUnit(entityId: EntityId, targetId: EntityId, actions: BattleAction[], context: RuntimeActionContext): RuntimeActionResult
+  moveUnit(entityId: EntityId, targetId: EntityId, actions: BattleAction[], context: RuntimeMovementContext): void
+  insertSpatialUnit(entityId: EntityId): void
+  isDead(entityId: EntityId): boolean
+  canActOnTarget(entityId: EntityId, targetId: EntityId): boolean
   snapshotUnits(): SimUnit[]
   getSurvivors(): SimUnit[]
-  getTurnOrder(): SimUnit[]
-  tickModifiers(unit: SimUnit, dt: number, actions: BattleAction[], rng: PRNG): void
+  getTurnOrder(): EntityId[]
+  tickModifiers(entityId: EntityId, dt: number, actions: BattleAction[], rng: PRNG): void
   runReassemblyPhase(actions: BattleAction[]): void
   runGlobalEffectPhase(
     tick: number,

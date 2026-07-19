@@ -8,7 +8,6 @@ import { PRNG, generateObstacles } from './combat.utils'
 import { createPathfindingMap } from './combat.pathfinding'
 import { SpatialHash } from './spatial-hash'
 import type { SpatialQueryProfile } from './spatial-hash'
-import { canAttackControlledTarget } from './combat.control'
 import { getTimeoutOutcome, type BattleOutcome } from './combat.outcome'
 import { CURRENT_SIMULATION_VERSION } from './combat.version'
 import { createEcsCombatRuntime } from './ecs/combat-ecs-runtime'
@@ -84,34 +83,36 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
     const turnOrder = runtime.getTurnOrder()
     runtime.beginTargetingPhase(spatialHash)
 
-    for (const unit of turnOrder) {
-      if (unit.isDead) continue;
-      runtime.tickModifiers(unit, dt, actions, rng); if (unit.isDead) continue;
+    for (const entityId of turnOrder) {
+      if (runtime.isDead(entityId)) continue;
+      runtime.tickModifiers(entityId, dt, actions, rng); if (runtime.isDead(entityId)) continue;
 
-      const target = runtime.selectTarget(unit);
-      if (!target) continue;
+      const targetId = runtime.selectTarget(entityId);
+      if (targetId === null) continue;
 
       const unitCountBeforeActions = units.length;
-      const actionStart = actions.length;
-      runtime.processSpawner(unit, target, actions, { rng, tick, spatialHash });
+      runtime.processSpawner(entityId, targetId, actions, { rng, tick, spatialHash });
 
-      const canActOnTarget = target.team !== unit.team || unit.attackType === 'heal' || canAttackControlledTarget(unit, target);
-      const hasEngagement = canActOnTarget ? runtime.reserveMeleeSlot(unit, target) : true;
+      const canActOnTarget = runtime.canActOnTarget(entityId, targetId);
+      const hasEngagement = canActOnTarget ? runtime.reserveMeleeSlot(entityId, targetId) : true;
 
       const actionResult = canActOnTarget && hasEngagement
-        ? runtime.actUnit(unit, target, actions, { rng, tick, spatialHash })
+        ? runtime.actUnit(entityId, targetId, actions, { rng, tick, spatialHash })
         : { acted: false, actorSynchronized: false }
       const acted = actionResult.acted
 
       runtime.flushStructuralCommands()
 
       for (let i = unitCountBeforeActions; i < units.length; i++) {
-        if (!units[i].isDead) { spatialHash.insert(units[i]); runtime.insertSpatialUnit(units[i]) }
+        const newEntityId = runtime.world.getEntityId(units[i].id)
+        if (!units[i].isDead && newEntityId !== undefined) {
+          spatialHash.insert(units[i])
+          runtime.insertSpatialUnit(newEntityId)
+        }
       }
       if (!acted) {
-        runtime.moveUnit(unit, target, actions, movementContext);
+        runtime.moveUnit(entityId, targetId, actions, movementContext);
       }
-      runtime.completeActorTurn(unit, actions, actionStart, !acted || actionResult.actorSynchronized)
     }
 
     runtime.runHazardPhase(actions, spatialHash, rng);

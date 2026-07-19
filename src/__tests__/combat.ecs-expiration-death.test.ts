@@ -38,7 +38,7 @@ describe('combat ECS expiration death', () => {
     runtime.world.roster.push(unit)
     runtime.world.flushStructuralCommands()
 
-    runtime.tickModifiers(unit, 0.1, nativeActions, new PRNG(131))
+    runtime.tickModifiers(0, 0.1, nativeActions, new PRNG(131))
 
     expect(nativeActions).toEqual([{
       unitId: 'temporary',
@@ -69,7 +69,7 @@ describe('combat ECS expiration death', () => {
     unit.isTemporary = false
     unit.temporaryDuration = 99
 
-    runtime.tickModifiers(unit, 0.1, actions, new PRNG(137))
+    runtime.tickModifiers(0, 0.1, actions, new PRNG(137))
 
     expect(actions).toEqual([{
       unitId: 'temporary',

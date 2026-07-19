@@ -45,8 +45,8 @@ function runParity(units: SimUnit[], seed: number) {
     new PRNG(seed),
   )
   runtime.processSpawner(
-    runtime.units[0],
-    runtime.units[units.length - 1],
+    0,
+    units.length - 1,
     nativeActions,
     context(seed),
   )
