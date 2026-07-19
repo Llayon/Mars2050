@@ -25,6 +25,7 @@ import { processFormationBonuses } from './combat.formation'
 import { processControlBeams } from './combat.control'
 import { processPeriodicAbilities } from './combat.periodic-abilities'
 import { processGlobals } from './combat.globals'
+import { processSupportAuras } from './combat.auras'
 import type { PRNG } from './combat.utils'
 
 export function createLegacyCombatRuntime(): CombatRuntime {
@@ -65,6 +66,8 @@ export function createLegacyCombatRuntime(): CombatRuntime {
     runReassemblyPhase: actions => processReassemblies(units, actions),
     runGlobalEffectPhase: (tick, activeGlobals, actions, rng) =>
       processGlobals(tick, activeGlobals, units, hazards, actions, rng),
+    runSupportAuraPhase: (tick, actions, spatialHash) =>
+      processSupportAuras(tick, units, actions, spatialHash),
     runGrowthAndChargePhase: (tick, actions) =>
       processGrowthAndCharge(tick, units, actions),
     runBurrowRegenerationPhase: actions => processBurrowRegeneration(units, actions),

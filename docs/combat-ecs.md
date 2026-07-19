@@ -72,7 +72,8 @@ healing in ECS. Periodic ability scheduling, target policies, charges, damage,
 status, hazard, shield, healing, spawn, and mark payloads now run through
 native ECS kernels. Global mass shields, EMP, orbital hazards, and actual mass
 healing now operate on canonical components at their contractual trigger ticks.
-Successful incendiary hits create seeded napalm hazards
+Support auras now use local EntityId queries, ECS combat-tag filters, actual
+shield deltas, and shared status/cleanse kernels. Successful incendiary hits create seeded napalm hazards
 through the ECS structural buffer after primary on-hit effects; multishot creates
 one puddle per non-intercepted shot. Smoke actions now deploy seeded suppression
 hazards through a native ECS action path without primary damage or movement

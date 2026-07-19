@@ -67,6 +67,8 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
       {
         runGlobals: () =>
           runtime.runGlobalEffectPhase(tick, activeGlobals, actions, rng),
+        runSupportAuras: () =>
+          runtime.runSupportAuraPhase(tick, actions, spatialHash),
         runGrowthAndCharge: () =>
           runtime.runGrowthAndChargePhase(tick, actions),
         runBurrowRegeneration: () =>
@@ -82,7 +84,6 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
         runPeriodicAbilities: () =>
           runtime.runPeriodicAbilityPhase(tick, actions, rng),
       },
-      spatialHash,
     );
     runtime.flushStructuralCommands()
     for (let index = unitCountBeforePrimitives; index < units.length; index++) {

@@ -2,10 +2,10 @@ import type { BattleAction } from '../combat.actions'
 import type { SimHazard } from '../combat.sim.types'
 import type { CombatRuntime } from '../combat.runtime'
 import { CombatWorld } from './combat-world'
-import { createEcsMeleeEngagementState, getEcsBurrowRegenerationEntities, getEcsFieldEffectEntities, getEcsFormationBonusEntities, getEcsGrowthAndChargeEntities, getEcsTerminalOutcome, getEcsTransformModeEntities, getEcsTurnOrder, processEcsHpThresholdTriggers, reserveEcsMeleeSlot, resolveEcsDeath, runActionSystem, runDepenetrationSystem, runEcsBurrowRegenerationSystem, runEcsFieldEffectSystem, runEcsFormationBonusSystem, runEcsGrowthAndChargeSystem, runEcsPeriodicSpawnerSystem, runEcsReassemblySystem, runEcsTransformModeSystem, runHazardSystem, runModifierSystem, runMovementSystem, runStatusSystem, runTargetingSystem, syncEcsTargetRefs } from './systems'
+import { createEcsMeleeEngagementState, getEcsBurrowRegenerationEntities, getEcsGrowthAndChargeEntities, getEcsTerminalOutcome, getEcsTransformModeEntities, getEcsTurnOrder, processEcsHpThresholdTriggers, reserveEcsMeleeSlot, resolveEcsDeath, runActionSystem, runDepenetrationSystem, runEcsBurrowRegenerationSystem, runEcsGrowthAndChargeSystem, runEcsPeriodicSpawnerSystem, runEcsReassemblySystem, runEcsTransformModeSystem, runHazardSystem, runModifierSystem, runMovementSystem, runStatusSystem, runTargetingSystem, syncEcsTargetRefs } from './systems'
 import { createSquadEntities } from './combat-entity-factory'
 import { EntitySpatialIndex } from './entity-spatial-index'
-import { runEcsControlBeamPhase, runEcsGlobalEffectPhase, runEcsPeriodicAbilityPhase } from './combat-ecs-phase-boundaries'
+import { runEcsControlBeamPhase, runEcsFieldEffectPhase, runEcsFormationBonusPhase, runEcsGlobalEffectPhase, runEcsPeriodicAbilityPhase, runEcsSupportAuraPhase } from './combat-ecs-phase-boundaries'
 
 const MODIFIER_COMPONENTS = ['vitality', 'combat', 'defense', 'statusControl', 'lifecycle'] as const
 const TICK_READ_COMPONENTS = ['identity', 'transform', 'vitality', 'combat', 'weapon', 'targeting', 'statusControl', 'support', 'lifecycle'] as const
@@ -118,6 +118,8 @@ export function createEcsCombatRuntime(): EcsCombatRuntime {
     },
     runGlobalEffectPhase: (tick, activeGlobals, actions, rng) =>
       runEcsGlobalEffectPhase(world, tick, activeGlobals, actions, rng),
+    runSupportAuraPhase: (tick, actions) =>
+      runEcsSupportAuraPhase(world, tick, actions),
     runGrowthAndChargePhase(tick, actions): void {
       const entityIds = getEcsGrowthAndChargeEntities(world)
       for (const entityId of entityIds) {
@@ -160,41 +162,10 @@ export function createEcsCombatRuntime(): EcsCombatRuntime {
         ])
       }
     },
-    runFieldEffectPhase(tick, actions): void {
-      const entityIds = getEcsFieldEffectEntities(world)
-      if (entityIds.length === 0) return
-      world.flushStructuralCommands()
-      world.reconcileHazards()
-      world.syncAllComponentsToStore([
-        'transform',
-        'vitality',
-        'support',
-        'statusControl',
-        'targeting',
-      ])
-      runEcsFieldEffectSystem(world, tick, actions, entityIds)
-      for (const entityId of entityIds) {
-        world.syncComponentsFromStore(entityId, ['support'])
-      }
-      world.syncAllComponentsFromStore(['statusControl', 'targeting'])
-    },
-    runFormationBonusPhase(tick, actions): void {
-      if (tick % 10 !== 0) return
-      const entityIds = getEcsFormationBonusEntities(world)
-      if (entityIds.length === 0) return
-      world.syncAllComponentsToStore([
-        'transform',
-        'vitality',
-        'support',
-        'statusControl',
-        'movement',
-      ])
-      world.resources.require('entitySpatial').rebuild(world)
-      runEcsFormationBonusSystem(world, tick, actions, entityIds)
-      for (const entityId of entityIds) {
-        world.syncComponentsFromStore(entityId, ['statusControl', 'movement'])
-      }
-    },
+    runFieldEffectPhase: (tick, actions) =>
+      runEcsFieldEffectPhase(world, tick, actions),
+    runFormationBonusPhase: (tick, actions) =>
+      runEcsFormationBonusPhase(world, tick, actions),
     runControlBeamPhase: actions => runEcsControlBeamPhase(world, actions),
     runPeriodicAbilityPhase: (tick, actions, rng) =>
       runEcsPeriodicAbilityPhase(world, tick, actions, rng),

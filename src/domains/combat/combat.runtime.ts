@@ -52,6 +52,11 @@ export interface CombatRuntime {
     actions: BattleAction[],
     rng: PRNG,
   ): void
+  runSupportAuraPhase(
+    tick: number,
+    actions: BattleAction[],
+    spatialHash: SpatialHash,
+  ): void
   runGrowthAndChargePhase(tick: number, actions: BattleAction[]): void
   runBurrowRegenerationPhase(actions: BattleAction[]): void
   runTransformModePhase(tick: number, actions: BattleAction[]): void
