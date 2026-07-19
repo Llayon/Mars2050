@@ -95,7 +95,6 @@ export function runEcsPeriodicAbilityPhase(
   const entityIds = getEcsPeriodicAbilityEntities(world)
   if (entityIds.length === 0) return
   world.flushStructuralCommands()
-  world.syncAllToComponents()
   syncEcsTargetRefs(world)
   world.resources.set('rng', rng)
   world.resources.require('entitySpatial').rebuild(world)

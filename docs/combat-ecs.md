@@ -77,7 +77,9 @@ healing in ECS. The control runtime boundary reads canonical beam configuration,
 positions, combat stats, vitality, and progress without a facade import.
 Periodic ability scheduling, target policies, charges, damage,
 status, hazard, shield, healing, spawn, and mark payloads now run through
-native ECS kernels. Global mass shields, EMP, orbital hazards, and actual mass
+native ECS kernels. The periodic runtime boundary preserves structural flush,
+EntityId target references, seeded RNG, and local spatial queries without
+importing the unit facade. Global mass shields, EMP, orbital hazards, and actual mass
 healing now operate on canonical components at their contractual trigger ticks.
 Their runtime boundary no longer imports facade identity, position, vitality, or
 status before execution and only mirrors changed vitality/status results back.

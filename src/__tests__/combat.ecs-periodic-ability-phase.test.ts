@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { BattleAction } from '@/domains/combat/combat.actions'
 import type { SimUnit } from '@/domains/combat/combat.sim.types'
-import { applyStatus } from '@/domains/combat/combat.status'
+import { applyStatus, normalizeStatusEffect } from '@/domains/combat/combat.status'
 import { createLegacyCombatRuntime } from '@/domains/combat/combat.legacy-runtime'
 import { createRuntimeUnitFromConfig } from '@/domains/combat/combat.unit-factory'
 import { PRNG } from '@/domains/combat/combat.utils'
@@ -199,5 +199,50 @@ describe('combat ECS periodic ability phase', () => {
     expect(actions).toEqual([])
     expect(world.stores.support.require(0).periodicAbilities?.[0])
       .toMatchObject({ nextTick: 0, chargesRemaining: 1 })
+  })
+
+  it('does not overwrite canonical periodic inputs from facades', () => {
+    const source = unit('canonical-source', 'attacker', 100)
+    source.periodicAbilities = [{
+      id: 'canonical-pulse',
+      intervalTicks: 4,
+      nextTick: 0,
+      chargesRemaining: 1,
+      targetPolicy: 'nearest_enemy',
+      maxRange: 100,
+      payload: { kind: 'status', effects: [{ type: 'slow', duration: 3 }] },
+    }]
+    const target = unit('canonical-target', 'defender', 160)
+    const runtime = createEcsCombatRuntime()
+    runtime.units.push(source, target)
+    runtime.flushStructuralCommands()
+    source.periodicAbilities = undefined
+    source.x = 700
+    target.x = 950
+    target.statusEffects = [normalizeStatusEffect({
+      type: 'burn',
+      duration: 20,
+    })]
+    const actions: BattleAction[] = []
+
+    runtime.runPeriodicAbilityPhase(0, actions, new PRNG(11))
+
+    const sourceId = runtime.world.getEntityId(source.id)!
+    const targetId = runtime.world.getEntityId(target.id)!
+    expect(actions).toContainEqual(expect.objectContaining({
+      unitId: 'canonical-source',
+      type: 'periodic_ability',
+      targetId: 'canonical-target',
+    }))
+    expect(runtime.world.stores.support.require(sourceId)
+      .periodicAbilities?.[0]).toMatchObject({
+        nextTick: 4,
+        chargesRemaining: 0,
+      })
+    expect(runtime.world.stores.statusControl.require(targetId).statusEffects)
+      .toEqual([expect.objectContaining({ type: 'slow' })])
+    expect(runtime.units[0].periodicAbilities?.[0].chargesRemaining).toBe(0)
+    expect(runtime.units[1].statusEffects)
+      .toEqual([expect.objectContaining({ type: 'slow' })])
   })
 })
