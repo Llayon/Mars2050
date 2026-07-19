@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { MAX_TICKS } from '@/domains/combat/combat.config'
 import { simulateBattle } from '@/domains/combat/combat.engine'
-import { getTerminalBattleWinner } from '@/domains/combat/combat.outcome'
-import { getCombatTurnOrder } from '@/domains/combat/combat.turn-order'
 import type { SimUnit, Team, UnitRow } from '@/domains/combat/combat.types'
+import { CombatWorld } from '@/domains/combat/ecs/combat-world'
+import { getEcsTurnOrder } from '@/domains/combat/ecs/systems'
 
 function makeUnit(id: string, team: Team, speed: number): SimUnit {
   return {
@@ -48,7 +48,9 @@ describe('combat turn order', () => {
       makeUnit('d-slow', 'defender', 10),
     ]
 
-    expect(getCombatTurnOrder(units).map(unit => unit.id)).toEqual([
+    const world = new CombatWorld(units)
+    expect(getEcsTurnOrder(world).map(entityId =>
+      world.stores.identity.require(entityId).id)).toEqual([
       'a0', 'd0', 'd1', 'a1', 'a2', 'd2', 'a-slow', 'd-slow',
     ])
   })
@@ -60,21 +62,6 @@ describe('combat turn order', () => {
 
     expect(attackerSurvivors + defenderSurvivors).toBeLessThanOrEqual(4)
     expect(result.metrics?.battleDurationTicks ?? MAX_TICKS).toBeLessThan(MAX_TICKS)
-  })
-
-  it('resolves an unreachable zero-damage support stalemate by offensive power', () => {
-    const marine = makeUnit('marine', 'attacker', 10)
-    const scout = makeUnit('scout', 'defender', 20)
-    scout.attack = 0
-    scout.isFlying = true
-    scout.markOnHit = { duration: 20, damageMultiplier: 1.25, sharedDamage: true }
-
-    expect(getTerminalBattleWinner([marine, scout], [], false, false)).toBe('attacker')
-    marine.canTargetAir = true
-    expect(getTerminalBattleWinner([marine, scout], [], false, false)).toBeNull()
-
-    const alliedScout = { ...scout, id: 'allied-scout', team: 'attacker' as const }
-    expect(getTerminalBattleWinner([alliedScout, scout], [], false, false)).toBe('draw')
   })
 })
 

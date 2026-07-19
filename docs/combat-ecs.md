@@ -160,6 +160,9 @@ scenario fixtures without retaining a second combat implementation.
 The legacy array death/spawn utilities and their unreachable conditional weapon
 handlers have also been removed. Death and spawn fixtures now invoke the native
 ECS resolvers.
+Unreachable array phase implementations for global effects, growth/charge,
+periodic abilities, transforms, turn order, and depenetration have been deleted.
+Their regression contracts now target the corresponding ECS systems directly.
 The compatibility roster and hazard arrays, their proxy storage, and entity
 object-view getters have been removed from `CombatWorld`. Unit creation, hazard
 creation, cloning, and summon cap checks use component-native world APIs.
