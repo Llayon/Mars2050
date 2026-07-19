@@ -198,7 +198,7 @@ export function createEcsCombatRuntime(): EcsCombatRuntime {
       world.syncAllFromComponents()
       world.syncHazardsFromComponents()
     },
-    runPostHazardPhase(triggerContext): void {
+    runPostHazardPhase(_tick, actions, _rng): void {
       const ordered = world.query(['identity', 'vitality', 'lifecycle'])
         .sort((left, right) =>
           world.stores.identity.require(left).id.localeCompare(
@@ -206,7 +206,7 @@ export function createEcsCombatRuntime(): EcsCombatRuntime {
           ),
         )
       for (const entityId of ordered) {
-        processEcsHpThresholdTriggers(world, entityId, triggerContext.actions)
+        processEcsHpThresholdTriggers(world, entityId, actions)
       }
     },
     runDepenetration: actions => {

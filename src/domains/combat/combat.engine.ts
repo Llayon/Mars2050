@@ -58,33 +58,26 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
     }
     const unitCountBeforePrimitives = units.length
     runtime.runReassemblyPhase(actions)
-    const triggerContext = processPreActionPrimitives(
-      tick,
-      units,
-      hazards,
-      actions,
-      rng,
-      {
-        runGlobals: () =>
-          runtime.runGlobalEffectPhase(tick, activeGlobals, actions, rng),
-        runSupportAuras: () =>
-          runtime.runSupportAuraPhase(tick, actions, spatialHash),
-        runGrowthAndCharge: () =>
-          runtime.runGrowthAndChargePhase(tick, actions),
-        runBurrowRegeneration: () =>
-          runtime.runBurrowRegenerationPhase(actions),
-        runTransformModes: () =>
-          runtime.runTransformModePhase(tick, actions),
-        runFieldEffects: () =>
-          runtime.runFieldEffectPhase(tick, actions),
-        runFormationBonuses: () =>
-          runtime.runFormationBonusPhase(tick, actions),
-        runControlBeams: () =>
-          runtime.runControlBeamPhase(actions),
-        runPeriodicAbilities: () =>
-          runtime.runPeriodicAbilityPhase(tick, actions, rng),
-      },
-    );
+    processPreActionPrimitives({
+      runGlobals: () =>
+        runtime.runGlobalEffectPhase(tick, activeGlobals, actions, rng),
+      runSupportAuras: () =>
+        runtime.runSupportAuraPhase(tick, actions, spatialHash),
+      runGrowthAndCharge: () =>
+        runtime.runGrowthAndChargePhase(tick, actions),
+      runBurrowRegeneration: () =>
+        runtime.runBurrowRegenerationPhase(actions),
+      runTransformModes: () =>
+        runtime.runTransformModePhase(tick, actions),
+      runFieldEffects: () =>
+        runtime.runFieldEffectPhase(tick, actions),
+      runFormationBonuses: () =>
+        runtime.runFormationBonusPhase(tick, actions),
+      runControlBeams: () =>
+        runtime.runControlBeamPhase(actions),
+      runPeriodicAbilities: () =>
+        runtime.runPeriodicAbilityPhase(tick, actions, rng),
+    })
     runtime.flushStructuralCommands()
     for (let index = unitCountBeforePrimitives; index < units.length; index++) {
       if (!units[index].isDead) spatialHash.insert(units[index])
@@ -128,7 +121,7 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
     }
 
     runtime.runHazardPhase(actions, spatialHash, rng);
-    runtime.runPostHazardPhase(triggerContext);
+    runtime.runPostHazardPhase(tick, actions, rng);
     runtime.runDepenetration(actions);
     if (metrics) { recordCombatActions(metrics, tick, actions, units); recordCombatTick(metrics, units) }
     

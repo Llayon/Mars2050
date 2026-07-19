@@ -1,8 +1,5 @@
-import type { BattleAction } from './combat.actions'
-import { handleDeath } from './combat.systems.utils'
 import { processHpThresholdTriggers, type TriggerContext } from './combat.triggers'
-import type { SimHazard, SimUnit } from './combat.sim.types'
-import type { PRNG } from './combat.utils'
+import type { SimUnit } from './combat.sim.types'
 
 export interface PreActionRuntimePhases {
   runGlobals(): void
@@ -17,14 +14,8 @@ export interface PreActionRuntimePhases {
 }
 
 export function processPreActionPrimitives(
-  tick: number,
-  units: SimUnit[],
-  hazards: SimHazard[],
-  actions: BattleAction[],
-  rng: PRNG,
   runtimePhases: PreActionRuntimePhases,
-): TriggerContext {
-  const triggerContext = { units, hazards, actions, rng, tick, onUnitDeath: (target: SimUnit, source: SimUnit) => handleDeath(target, source, units, actions, hazards, rng) }
+): void {
   runtimePhases.runGlobals()
   runtimePhases.runSupportAuras()
   runtimePhases.runGrowthAndCharge()
@@ -34,7 +25,6 @@ export function processPreActionPrimitives(
   runtimePhases.runFormationBonuses()
   runtimePhases.runControlBeams()
   runtimePhases.runPeriodicAbilities()
-  return triggerContext
 }
 
 export function processPostHazardPrimitives(units: SimUnit[], triggerContext: TriggerContext): void {

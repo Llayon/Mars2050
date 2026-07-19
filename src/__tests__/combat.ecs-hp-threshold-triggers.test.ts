@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import type { BattleAction } from '@/domains/combat/combat.actions'
 import { processHpThresholdTriggers } from '@/domains/combat/combat.triggers'
 import type { SimUnit } from '@/domains/combat/combat.sim.types'
 import { createRuntimeUnitFromConfig } from '@/domains/combat/combat.unit-factory'
@@ -106,20 +107,14 @@ describe('combat ECS hp-threshold triggers', () => {
     const runtime = createEcsCombatRuntime()
     runtime.world.roster.push(owner, target)
     runtime.world.flushStructuralCommands()
-    const actions: Parameters<typeof runtime.runPostHazardPhase>[0]['actions'] = []
-
-    const triggerContext = {
-      units: runtime.units,
-      hazards: runtime.hazards,
-      actions,
-      rng: new PRNG(71),
-    }
+    const actions: BattleAction[] = []
     processHpThresholdTriggers(legacyUnits[0], {
-      ...triggerContext,
       units: legacyUnits,
+      hazards: [],
       actions: legacyActions,
+      rng: new PRNG(71),
     })
-    runtime.runPostHazardPhase(triggerContext)
+    runtime.runPostHazardPhase(12, actions, new PRNG(71))
 
     const targetId = runtime.world.getEntityId('target')!
     const ownerId = runtime.world.getEntityId('disintegrator')!
@@ -152,15 +147,10 @@ describe('combat ECS hp-threshold triggers', () => {
     runtime.world.flushStructuralCommands()
     const ownerId = runtime.world.getEntityId(owner.id)!
     runtime.world.stores.vitality.require(ownerId).hp = 40
-    const actions: Parameters<typeof runtime.runPostHazardPhase>[0]['actions'] = []
+    const actions: BattleAction[] = []
 
     expect(owner.hp).toBe(100)
-    runtime.runPostHazardPhase({
-      units: runtime.units,
-      hazards: runtime.hazards,
-      actions,
-      rng: new PRNG(73),
-    })
+    runtime.runPostHazardPhase(14, actions, new PRNG(73))
 
     expect(runtime.world.stores.vitality.require(ownerId)).toMatchObject({
       hp: 40,

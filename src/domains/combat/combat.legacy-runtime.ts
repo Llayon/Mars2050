@@ -111,7 +111,17 @@ export function createLegacyCombatRuntime(): CombatRuntime {
         spatialHash,
       )
     },
-    runPostHazardPhase: triggerContext => processPostHazardPrimitives(units, triggerContext),
+    runPostHazardPhase(tick, actions, rng): void {
+      processPostHazardPrimitives(units, {
+        units,
+        hazards,
+        actions,
+        rng,
+        tick,
+        onUnitDeath: (dead, source) =>
+          resolveEnvironmentalDeath(dead, source.id, 'weapon', actions, rng),
+      })
+    },
     runDepenetration: actions => applyDepenetration(units, actions),
     getTerminalOutcome(hazards: SimHazard[]) {
       const pendingAttackers = units.some(unit =>
