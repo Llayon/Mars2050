@@ -4,6 +4,7 @@ import { CombatResourceStore } from './combat-resources'
 import type { EntityId } from './entity'
 import { CombatInvariantError } from './combat-invariant-error'
 import { ExternalIdAllocator } from './external-id-allocator'
+import { getQueryMask, isQuerySpec, type QuerySpec } from './query-spec'
 import { StructuralCommandBuffer } from './structural-command-buffer'
 
 export interface ComponentQueryProfile {
@@ -13,6 +14,12 @@ export interface ComponentQueryProfile {
   cacheHitCount: number
 }
 
+interface QueryCacheEntry {
+  structureRevision: number
+  aliveRevision: number
+  entityIds: EntityId[]
+}
+
 export class CombatWorld {
   readonly stores = createComponentStores()
   readonly resources = new CombatResourceStore()
@@ -20,6 +27,7 @@ export class CombatWorld {
   readonly externalIds = new ExternalIdAllocator()
   readonly externalIdToEntity = new Map<string, EntityId>()
   private readonly entityIds: EntityId[] = []
+  private readonly queryCache = new Map<string, QueryCacheEntry>()
   private readonly queryProfile: ComponentQueryProfile = {
     queryCount: 0,
     candidateCount: 0,
@@ -27,6 +35,8 @@ export class CombatWorld {
     cacheHitCount: 0,
   }
   private nextEntityId = 0
+  private structureRevision = 0
+  private aliveRevision = 0
 
   constructor(initialUnits: SimUnit[] = []) {
     this.queueUnitCreation(...initialUnits)
@@ -58,6 +68,8 @@ export class CombatWorld {
     this.assertKnownFields(unit)
     this.entityIds.push(entityId)
     this.externalIdToEntity.set(unit.id, entityId)
+    this.structureRevision++
+    this.resources.get('entitySpatial')?.insert(this, entityId)
     return entityId
   }
 
@@ -68,6 +80,7 @@ export class CombatWorld {
     this.stores.hazard.set(entityId, structuredClone(hazard))
     this.entityIds.push(entityId)
     this.externalIdToEntity.set(hazard.id, entityId)
+    this.structureRevision++
     return entityId
   }
 
@@ -90,7 +103,10 @@ export class CombatWorld {
   removeHazardEntity(entityId: EntityId): void {
     const hazard = this.stores.hazard.get(entityId)
     if (hazard) this.externalIdToEntity.delete(hazard.id)
-    this.stores.hazard.delete(entityId)
+    if (this.stores.hazard.delete(entityId)) {
+      this.stores.hazard.compactIfNeeded()
+      this.structureRevision++
+    }
   }
 
   getEntityId(externalId: string): EntityId | undefined {
@@ -105,16 +121,53 @@ export class CombatWorld {
     return this.externalIds.prefer(externalId)
   }
 
-  query(componentNames: readonly ComponentName[], includeDead = false): EntityId[] {
+  query(query: readonly ComponentName[] | QuerySpec, includeDead = false): EntityId[] {
     this.queryProfile.queryCount++
-    this.queryProfile.candidateCount += this.entityIds.length
-    const result = this.entityIds.filter(entityId => {
+    const componentNames = isQuerySpec(query) ? query.components : query
+    const mask = isQuerySpec(query) ? query.mask : getQueryMask(query)
+    const key = `${mask}:${includeDead ? 1 : 0}`
+    const cached = this.queryCache.get(key)
+    if (cached && cached.structureRevision === this.structureRevision &&
+        (includeDead || cached.aliveRevision === this.aliveRevision)) {
+      this.queryProfile.cacheHitCount++
+      this.queryProfile.resultCount += cached.entityIds.length
+      return [...cached.entityIds]
+    }
+    const candidates = this.getSmallestComponentStore(componentNames).getEntityIds()
+    this.queryProfile.candidateCount += candidates.length
+    const result = candidates.filter(entityId => {
       if (!componentNames.every(name => this.stores[name].has(entityId))) return false
       if (includeDead) return true
       return this.stores.vitality.get(entityId)?.isDead !== true
-    })
+    }).sort((left, right) => left - right)
     this.queryProfile.resultCount += result.length
-    return result
+    this.queryCache.set(key, {
+      structureRevision: this.structureRevision,
+      aliveRevision: this.aliveRevision,
+      entityIds: result,
+    })
+    return [...result]
+  }
+
+  setEntityDead(entityId: EntityId, isDead: boolean): void {
+    const vitality = this.stores.vitality.require(entityId)
+    if (vitality.isDead === isDead) return
+    vitality.isDead = isDead
+    this.aliveRevision++
+    const spatial = this.resources.get('entitySpatial')
+    if (isDead) spatial?.remove(entityId)
+    else spatial?.insert(this, entityId)
+  }
+
+  syncEntitySpatialPosition(entityId: EntityId): void {
+    this.resources.get('entitySpatial')?.update(this, entityId)
+  }
+
+  setEntityTeam(entityId: EntityId, team: SimUnit['team']): void {
+    const identity = this.stores.identity.require(entityId)
+    if (identity.team === team) return
+    identity.team = team
+    this.resources.get('entitySpatial')?.updateTeam(this, entityId)
   }
 
   getQueryProfile(): ComponentQueryProfile {
@@ -171,5 +224,16 @@ export class CombatWorld {
     if (this.externalIdToEntity.has(externalId)) {
       throw new CombatInvariantError(`Duplicate committed entity id: ${externalId}`)
     }
+  }
+
+  private getSmallestComponentStore(componentNames: readonly ComponentName[]) {
+    const first = componentNames[0]
+    if (!first) return this.stores.entityMeta
+    let smallest = this.stores[first]
+    for (const name of componentNames.slice(1)) {
+      const candidate = this.stores[name]
+      if (candidate.getActiveCount() < smallest.getActiveCount()) smallest = candidate
+    }
+    return smallest
   }
 }

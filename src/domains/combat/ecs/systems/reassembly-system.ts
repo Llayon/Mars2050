@@ -26,7 +26,7 @@ export function runEcsReassemblySystem(
     const status = world.stores.statusControl.require(entityId)
     const targeting = world.stores.targeting.require(entityId)
     vitality.hp = hp
-    vitality.isDead = false
+    world.setEntityDead(entityId, false)
     vitality.reassemblyState = undefined
     combat.actionCooldown = 0
     status.statusEffects = []

@@ -5,7 +5,7 @@ import { FIELD_HEIGHT, FIELD_WIDTH, getDistance, getSizeRadius } from '../../com
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
 import { getEcsPositioningDecision } from '../movement-positioning'
-import { getEcsFormationForce, getEcsObstacleCorrection, getEcsSteeringContext, ECS_MOVEMENT_NEIGHBOR_RADIUS } from '../movement-steering'
+import { getEcsFormationForce, getEcsObstacleCorrection, getEcsSteeringContext, ECS_MOVEMENT_DENSE_NEIGHBOR_RADIUS, ECS_MOVEMENT_MAX_NEIGHBORS, ECS_MOVEMENT_NEIGHBOR_RADIUS } from '../movement-steering'
 import { getEcsMovementSpeed, getEcsRecoveryForce, recordEcsChargeMovement, syncEcsMovementActivity, syncEcsMovementIntentModes, updateEcsStuckRecovery } from '../movement-state'
 
 /**
@@ -24,7 +24,7 @@ export function runMovementSystem(
   context: RuntimeMovementContext,
 ): void {
   runMovementMath(world, entityId, targetId, actions, context)
-  world.resources.require('entitySpatial').update(world, entityId)
+  world.syncEntitySpatialPosition(entityId)
 }
 
 function runMovementMath(world: CombatWorld, entityId: EntityId, targetId: EntityId, actions: BattleAction[], context: RuntimeMovementContext): void {
@@ -34,7 +34,20 @@ function runMovementMath(world: CombatWorld, entityId: EntityId, targetId: Entit
   const movement = world.stores.movement.require(entityId)
   const targetIdentity = world.stores.identity.require(targetId)
   const target = world.stores.transform.require(targetId)
-  const neighbors = world.resources.require('entitySpatial').query(world, transform.x, transform.y, ECS_MOVEMENT_NEIGHBOR_RADIUS)
+  const spatial = world.resources.require('entitySpatial')
+  const neighborRadius = spatial.getTeamEntityCount(identity.team) >
+    ECS_MOVEMENT_MAX_NEIGHBORS
+    ? ECS_MOVEMENT_DENSE_NEIGHBOR_RADIUS
+    : ECS_MOVEMENT_NEIGHBOR_RADIUS
+  const neighbors = spatial.queryTeamNearest(
+    world,
+    transform.x,
+    transform.y,
+    neighborRadius,
+    identity.team,
+    ECS_MOVEMENT_MAX_NEIGHBORS,
+    'movement',
+  )
   const distance = getDistance(transform.x, transform.y, target.x, target.y)
   const targetRadius = getSizeRadius(target.size)
   const myRadius = getSizeRadius(transform.size)

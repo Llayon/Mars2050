@@ -26,12 +26,20 @@ export function syncEcsTargetRefs(world: CombatWorld, entityIds = world.query(['
 }
 
 export function runTargetingSystem(world: CombatWorld, unitId: EntityId, melee: EcsMeleeEngagementState): EntityId | null {
-  const candidates = getAcquisitionCandidates(world, unitId)
-  const controlled = selectHackTarget(world, unitId, candidates, melee)
-  if (controlled.handled) return controlled.target
+  const mode = getHackMode(world, unitId)
   const weapon = world.stores.weapon.require(unitId)
-  if (weapon.attackType === 'heal') return selectEcsHealTarget(world, unitId)
-  if (isEcsPassiveSupport(world, unitId)) return selectEcsPassiveSupportTarget(world, unitId)
+  const combat = world.stores.combat.require(unitId)
+  if (mode === null) {
+    if (weapon.attackType === 'heal') return selectEcsHealTarget(world, unitId)
+    if (isEcsPassiveSupport(world, unitId)) return selectEcsPassiveSupportTarget(world, unitId)
+  } else if (mode === 'disable' || combat.attack <= 0 ||
+      weapon.attackType === 'heal' || weapon.attackType === 'spawn') {
+    clearTarget(world, unitId)
+    return null
+  }
+  const candidates = getAcquisitionCandidates(world, unitId, mode)
+  const controlled = selectHackTarget(world, unitId, candidates, melee, mode)
+  if (controlled.handled) return controlled.target
   const locked = getLockedTarget(world, unitId, melee)
   if (locked !== null) {
     const targeting = world.stores.targeting.require(unitId)
@@ -63,10 +71,21 @@ export function runTargetingSystem(world: CombatWorld, unitId: EntityId, melee: 
   return target
 }
 
-function getAcquisitionCandidates(world: CombatWorld, unitId: EntityId): EntityId[] {
+function getAcquisitionCandidates(
+  world: CombatWorld,
+  unitId: EntityId,
+  mode: HackControlMode | null,
+): EntityId[] {
   if (getEcsTargetingProfile(world, unitId).acquisition === 'global') return getUnits(world)
   const transform = world.stores.transform.require(unitId)
-  return world.resources.require('entitySpatial').query(world, transform.x, transform.y, getAcquisitionRadius(world, unitId))
+  const spatial = world.resources.require('entitySpatial')
+  const radius = getAcquisitionRadius(world, unitId)
+  if (mode === 'confuse') return spatial.query(world, transform.x, transform.y, radius, 'targeting')
+  const ownTeam = world.stores.identity.require(unitId).team
+  const targetTeam = mode === 'redirect'
+    ? ownTeam
+    : ownTeam === 'attacker' ? 'defender' : 'attacker'
+  return spatial.queryTeam(world, transform.x, transform.y, radius, targetTeam, 'targeting')
 }
 
 
@@ -104,8 +123,7 @@ function selectAggroTarget(world: CombatWorld, unitId: EntityId, enemies: Entity
   return target
 }
 
-function selectHackTarget(world: CombatWorld, unitId: EntityId, candidates: EntityId[], melee: EcsMeleeEngagementState): { handled: boolean; target: EntityId | null } {
-  const mode = getHackMode(world, unitId)
+function selectHackTarget(world: CombatWorld, unitId: EntityId, candidates: EntityId[], melee: EcsMeleeEngagementState, mode: HackControlMode | null): { handled: boolean; target: EntityId | null } {
   if (mode === null) return { handled: false, target: null }
   const combat = world.stores.combat.require(unitId)
   const weapon = world.stores.weapon.require(unitId)

@@ -85,6 +85,7 @@ function applyCorrection(world: CombatWorld, entityId: EntityId, correction: { x
   const fromY = transform.y
   transform.x = clamp(transform.x + correction.x, 0, FIELD_WIDTH)
   transform.y = clamp(transform.y + correction.y, 0, FIELD_HEIGHT)
+  world.syncEntitySpatialPosition(entityId)
   if (Math.hypot(transform.x - fromX, transform.y - fromY) <= MIN_EMIT_DISTANCE) return
   actions.push({
     unitId: world.stores.entityMeta.require(entityId).externalId,

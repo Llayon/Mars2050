@@ -38,7 +38,7 @@ export function runEcsSupportAuraPhase(
 ): void {
   const entityIds = getEcsSupportAuraEntities(world)
   if (!hasEcsSupportAuraAtTick(world, tick, entityIds)) return
-  world.resources.require('entitySpatial').rebuild(world)
+  world.resources.require('entitySpatial').ensureCurrent(world)
   runEcsSupportAuraSystem(world, tick, actions, entityIds)
 }
 
@@ -61,7 +61,7 @@ export function runEcsFormationBonusPhase(
   if (tick % 10 !== 0) return
   const entityIds = getEcsFormationBonusEntities(world)
   if (entityIds.length === 0) return
-  world.resources.require('entitySpatial').rebuild(world)
+  world.resources.require('entitySpatial').ensureCurrent(world)
   runEcsFormationBonusSystem(world, tick, actions, entityIds)
 }
 
@@ -71,7 +71,7 @@ export function runEcsControlBeamPhase(
 ): void {
   const entityIds = getEcsControlBeamEntities(world)
   if (entityIds.length === 0) return
-  world.resources.require('entitySpatial').rebuild(world)
+  world.resources.require('entitySpatial').ensureCurrent(world)
   runEcsControlBeamSystem(world, actions, entityIds)
 }
 
@@ -86,7 +86,7 @@ export function runEcsPeriodicAbilityPhase(
   world.flushStructuralCommands()
   syncEcsTargetRefs(world)
   world.resources.set('rng', rng)
-  world.resources.require('entitySpatial').rebuild(world)
+  world.resources.require('entitySpatial').ensureCurrent(world)
   runEcsPeriodicAbilitySystem(world, tick, actions, entityIds)
   world.flushStructuralCommands()
 }

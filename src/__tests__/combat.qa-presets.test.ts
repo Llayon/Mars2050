@@ -102,11 +102,21 @@ describe('combat QA simulator presets', () => {
 
   for (const gate of MOVEMENT_QA_GATES) {
     it(`keeps ${gate.presetId} movement metrics inside QA bounds`, () => {
-      const result = simulateScenario(gate.presetId, { trackMetrics: true })
+      const result = simulateScenario(gate.presetId, { trackMetrics: true, profile: true })
 
       expectBattleTerminates(result, gate.presetId)
       expectMetricBounds(result, gate.bounds, gate.presetId)
       expectReplayMetricsAligned(result, gate.presetId)
+      const baselineCandidates = ({
+        massive_clash: 1_490_721,
+        zerg_rush: 75_830_013,
+      } as Record<string, number>)[gate.presetId]
+      if (baselineCandidates !== undefined) {
+        const currentCandidates = (result.profile?.componentCandidateCount ?? Infinity) +
+          (result.profile?.bucketCandidateCount ?? Infinity)
+        expect(currentCandidates, `${gate.presetId}: ECS candidate reduction`)
+          .toBeLessThanOrEqual(baselineCandidates * 0.3)
+      }
     }, gate.presetId === 'zerg_rush' ? 150000 : 30000)
   }
 

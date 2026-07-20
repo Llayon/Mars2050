@@ -8,6 +8,7 @@ import { buildBattleReplayMetrics } from '@/components/game/battle-replay-metric
 
 interface ScenarioOptions {
   trackMetrics?: boolean
+  profile?: boolean
 }
 
 interface MetricBounds {
@@ -35,7 +36,10 @@ export function simulateScenario(presetId: string, options: ScenarioOptions = {}
     [],
     [],
     [],
-    { trackMetrics: options.trackMetrics ?? false }
+    {
+      trackMetrics: options.trackMetrics ?? false,
+      profile: options.profile ?? false,
+    }
   )
 }
 

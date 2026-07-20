@@ -123,7 +123,7 @@ function getTargets(
 }
 
 function syncTransform(world: CombatWorld, targetId: EntityId): void {
-  world.resources.require('entitySpatial').update(world, targetId)
+  world.syncEntitySpatialPosition(targetId)
 }
 
 function compareIds(world: CombatWorld, leftId: EntityId, rightId: EntityId): number {

@@ -133,7 +133,7 @@ function applyControlProgress(
   if (targeting.controlProgress.progress <
       targeting.controlProgress.threshold) return
 
-  target.team = source.team
+  world.setEntityTeam(targetId, source.team)
   targeting.controlProgress = undefined
   clearTargeting(world, targetId)
   actions.push({

@@ -19,7 +19,7 @@ export function resolveEcsDeath(
   const target = world.stores.vitality.require(targetId)
   if (target.isDead) return false
   if (cause === 'expiration') {
-    target.isDead = true
+    world.setEntityDead(targetId, true)
     actions.push({
       unitId: world.stores.identity.require(targetId).id,
       type: 'die',
@@ -37,7 +37,7 @@ export function resolveEcsDeath(
     return false
   }
   startDeathReassembly(world, targetId, actions)
-  target.isDead = true
+  world.setEntityDead(targetId, true)
   const actorId = sourceId ?? targetId
   actions.push({
     unitId: world.stores.identity.require(targetId).id,

@@ -98,6 +98,7 @@ function applyTransformMode(
       0,
       Math.min(FIELD_HEIGHT, transform.y + direction * mode.jumpDistance),
     )
+    world.syncEntitySpatialPosition(entityId)
   }
 
   actions.push({

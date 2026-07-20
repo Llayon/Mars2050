@@ -5,6 +5,8 @@ import type { EntityId } from './entity'
 import { getEcsEffectiveActionRange } from './movement-positioning'
 
 export const ECS_MOVEMENT_NEIGHBOR_RADIUS = 220
+export const ECS_MOVEMENT_DENSE_NEIGHBOR_RADIUS = 120
+export const ECS_MOVEMENT_MAX_NEIGHBORS = 64
 const SEPARATION_RADIUS_MULT = 1.2
 const SEPARATION_WEIGHT = 0.25
 const ALIGNMENT_RADIUS = 120

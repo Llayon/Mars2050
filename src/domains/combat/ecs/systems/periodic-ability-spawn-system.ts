@@ -68,7 +68,7 @@ export function spawnEcsPeriodicUnits(
     actions.push({ unitId: source.id, type: 'spawn_blocked', value: cap })
   }
   world.flushStructuralCommands()
-  world.resources.require('entitySpatial').rebuild(world)
+  world.resources.require('entitySpatial').ensureCurrent(world)
 }
 
 function getSpawnPosition(

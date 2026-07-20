@@ -229,7 +229,7 @@ function getPercentDamage(
 
 function flushStructuralChanges(world: CombatWorld): void {
   world.flushStructuralCommands()
-  world.resources.require('entitySpatial').rebuild(world)
+  world.resources.require('entitySpatial').ensureCurrent(world)
 }
 
 function getExternalId(world: CombatWorld, entityId: EntityId): string {

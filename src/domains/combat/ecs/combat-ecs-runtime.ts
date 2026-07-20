@@ -21,7 +21,7 @@ export function createEcsCombatRuntime(): EcsCombatRuntime {
     beginTargetingPhase: () => {
       world.flushStructuralCommands()
       syncEcsTargetRefs(world)
-      world.resources.require('entitySpatial').rebuild(world)
+      world.resources.require('entitySpatial').ensureCurrent(world)
       meleeEngagement = createEcsMeleeEngagementState()
     },
     selectTarget: entityId =>
@@ -103,7 +103,7 @@ export function createEcsCombatRuntime(): EcsCombatRuntime {
     },
     runHazardPhase(actions, _rng): void {
       world.flushStructuralCommands()
-      world.resources.require('entitySpatial').rebuild(world)
+      world.resources.require('entitySpatial').ensureCurrent(world)
       runHazardSystem(world, actions, (entityId, sourceUnitId, cause) => {
         const sourceId = sourceUnitId === undefined
           ? undefined

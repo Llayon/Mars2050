@@ -14,19 +14,19 @@ interface BenchmarkRow extends SpatialQueryProfile {
 }
 
 const DEFAULT_PRESETS = ['massive_clash', 'zerg_rush']
-const RUNS = 5
+const DEFAULT_RUNS = 5
 
 function cloneRows(rows: UnitRow[]): UnitRow[] {
   return rows.map(row => ({ ...row, upgrade_path: [...(row.upgrade_path ?? [])] }))
 }
 
-function runPreset(presetId: string): BenchmarkRow {
+function runPreset(presetId: string, runs: number): BenchmarkRow {
   const preset = getSimulatorPreset(presetId)
   if (!preset) throw new Error(`Missing simulator preset: ${presetId}`)
   simulate(preset.attackers, preset.defenders)
   const durations: number[] = []
   let latest = simulate(preset.attackers, preset.defenders)
-  for (let run = 0; run < RUNS; run++) {
+  for (let run = 0; run < runs; run++) {
     const startedAt = performance.now()
     latest = simulate(preset.attackers, preset.defenders)
     durations.push(performance.now() - startedAt)
@@ -61,7 +61,10 @@ function ratio(current: number, baseline: number): number {
 function main(): void {
   const args = process.argv.slice(2)
   const presetArg = args.find(arg => arg.startsWith('--preset='))?.slice('--preset='.length)
-  const rows = (presetArg?.split(',').filter(Boolean) ?? DEFAULT_PRESETS).map(runPreset)
+  const runsArg = args.find(arg => arg.startsWith('--runs='))?.slice('--runs='.length)
+  const runs = Math.max(1, Number(runsArg ?? DEFAULT_RUNS))
+  const rows = (presetArg?.split(',').filter(Boolean) ?? DEFAULT_PRESETS)
+    .map(preset => runPreset(preset, runs))
   const outputPath = args.find(arg => arg.startsWith('--write='))?.slice('--write='.length)
   const comparePath = args.find(arg => arg.startsWith('--compare='))?.slice('--compare='.length)
   if (outputPath) {

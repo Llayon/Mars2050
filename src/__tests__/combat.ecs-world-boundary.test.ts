@@ -4,7 +4,9 @@ import { createRuntimeUnitFromConfig } from '@/domains/combat/combat.unit-factor
 import { CombatInvariantError } from '@/domains/combat/ecs/combat-invariant-error'
 import { CombatWorld } from '@/domains/combat/ecs/combat-world'
 import { ExternalIdAllocator } from '@/domains/combat/ecs/external-id-allocator'
+import { defineQuery } from '@/domains/combat/ecs/query-spec'
 import { PRNG } from '@/domains/combat/combat.utils'
+import { EntitySpatialIndex } from '@/domains/combat/ecs/entity-spatial-index'
 
 function unit(id: string) {
   return createRuntimeUnitFromConfig({
@@ -65,5 +67,66 @@ describe('combat ECS world boundary', () => {
 
   it('publishes the new deterministic simulation version', () => {
     expect(CURRENT_SIMULATION_VERSION).toBe(3)
+  })
+
+  it('invalidates registered query caches on death and revival', () => {
+    const world = new CombatWorld([unit('first'), unit('second')])
+    const activeUnits = defineQuery(['identity', 'vitality'])
+
+    expect(world.query(activeUnits)).toEqual([0, 1])
+    expect(world.query(activeUnits)).toEqual([0, 1])
+    expect(world.getQueryProfile().cacheHitCount).toBe(1)
+
+    world.setEntityDead(0, true)
+    expect(world.query(activeUnits)).toEqual([1])
+    world.setEntityDead(0, false)
+    expect(world.query(activeUnits)).toEqual([0, 1])
+  })
+
+  it('keeps component query order stable after hazard compaction', () => {
+    const world = new CombatWorld([unit('unit')])
+    for (let index = 0; index < 8; index++) {
+      world.queueHazardCreation({
+        id: `hazard-${index}`,
+        team: 'attacker',
+        type: 'mine',
+        x: index,
+        y: index,
+        radius: 1,
+        damagePerTick: 1,
+        duration: 1,
+      })
+    }
+    world.flushStructuralCommands()
+    for (const entityId of world.query(['hazard'], true).slice(0, 6)) {
+      world.removeHazardEntity(entityId)
+    }
+
+    expect(world.query(['hazard'], true)).toEqual([7, 8])
+  })
+
+  it('returns the nearest deterministic team-limited spatial candidates', () => {
+    const attackers = Array.from({ length: 70 }, (_, index) => {
+      const candidate = unit(`attacker-${index}`)
+      candidate.x = index
+      candidate.y = 0
+      return candidate
+    })
+    const defender = unit('defender')
+    defender.team = 'defender'
+    defender.x = 0.5
+    defender.y = 0
+    const world = new CombatWorld([...attackers, defender])
+    const spatial = new EntitySpatialIndex()
+    world.resources.set('entitySpatial', spatial)
+
+    expect(spatial.queryTeamNearest(
+      world, 0, 0, 100, 'attacker', 4, 'test',
+    )).toEqual([0, 1, 2, 3])
+    expect(spatial.getProfile(world).rebuildCount).toBe(1)
+    expect(spatial.getProfile(world).purposes.test).toMatchObject({
+      queryCount: 1,
+      candidateCount: 4,
+    })
   })
 })
