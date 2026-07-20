@@ -125,7 +125,7 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
     elapsedTicks: tick,
     simulationVersion: CURRENT_SIMULATION_VERSION,
     profile: options.profile
-      ? runtime.world.resources.require('entitySpatial').getProfile()
+      ? runtime.world.resources.require('entitySpatial').getProfile(runtime.world)
       : undefined,
   }
 }

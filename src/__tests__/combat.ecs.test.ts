@@ -218,5 +218,8 @@ describe('combat ECS runtime', () => {
 
     expect(result.profile?.queryCount).toBeGreaterThan(0)
     expect(result.profile?.candidateCount).toBeGreaterThanOrEqual(result.profile?.maxCandidates ?? 0)
+    expect(result.profile?.componentQueryCount).toBeGreaterThan(0)
+    expect(result.profile?.componentCandidateCount).toBeGreaterThanOrEqual(result.profile?.componentResultCount ?? 0)
+    expect(result.profile?.rebuildCount).toBeGreaterThan(0)
   }, 30000)
 })

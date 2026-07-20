@@ -4,12 +4,25 @@ import { CombatResourceStore } from './combat-resources'
 import type { EntityId } from './entity'
 import { StructuralCommandBuffer } from './structural-command-buffer'
 
+export interface ComponentQueryProfile {
+  queryCount: number
+  candidateCount: number
+  resultCount: number
+  cacheHitCount: number
+}
+
 export class CombatWorld {
   readonly stores = createComponentStores()
   readonly resources = new CombatResourceStore()
   readonly structuralCommands = new StructuralCommandBuffer()
   readonly externalIdToEntity = new Map<string, EntityId>()
   private readonly entityIds: EntityId[] = []
+  private readonly queryProfile: ComponentQueryProfile = {
+    queryCount: 0,
+    candidateCount: 0,
+    resultCount: 0,
+    cacheHitCount: 0,
+  }
   private nextEntityId = 0
 
   constructor(initialUnits: SimUnit[] = []) {
@@ -78,11 +91,19 @@ export class CombatWorld {
   }
 
   query(componentNames: readonly ComponentName[], includeDead = false): EntityId[] {
-    return this.entityIds.filter(entityId => {
+    this.queryProfile.queryCount++
+    this.queryProfile.candidateCount += this.entityIds.length
+    const result = this.entityIds.filter(entityId => {
       if (!componentNames.every(name => this.stores[name].has(entityId))) return false
       if (includeDead) return true
       return this.stores.vitality.get(entityId)?.isDead !== true
     })
+    this.queryProfile.resultCount += result.length
+    return result
+  }
+
+  getQueryProfile(): ComponentQueryProfile {
+    return { ...this.queryProfile }
   }
 
   getComponent<Name extends ComponentName>(componentName: Name, entityId: EntityId): CombatComponentMap[Name] | undefined {

@@ -1,0 +1,34 @@
+[
+  {
+    "preset": "massive_clash",
+    "units": 100,
+    "ticks": 77,
+    "medianMs": 360.18,
+    "queryCount": 10704,
+    "candidateCount": 672662,
+    "maxCandidates": 100,
+    "bucketCandidateCount": 688921,
+    "rebuildCount": 154,
+    "incrementalUpdateCount": 5258,
+    "componentQueryCount": 8018,
+    "componentCandidateCount": 801800,
+    "componentResultCount": 603807,
+    "componentCacheHitCount": 0
+  },
+  {
+    "preset": "zerg_rush",
+    "units": 605,
+    "ticks": 135,
+    "medianMs": 11614.29,
+    "queryCount": 99661,
+    "candidateCount": 34448626,
+    "maxCandidates": 551,
+    "bucketCandidateCount": 37120903,
+    "rebuildCount": 270,
+    "incrementalUpdateCount": 49019,
+    "componentQueryCount": 63982,
+    "componentCandidateCount": 38709110,
+    "componentResultCount": 27804984,
+    "componentCacheHitCount": 0
+  }
+]

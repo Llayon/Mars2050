@@ -6,11 +6,23 @@ import type { EntityId } from './entity'
 export class EntitySpatialIndex {
   private readonly cells = new Map<string, EntityId[]>()
   private readonly entityCells = new Map<EntityId, string>()
-  private readonly profile: SpatialQueryProfile = { queryCount: 0, candidateCount: 0, maxCandidates: 0 }
+  private readonly profile: SpatialQueryProfile = {
+    queryCount: 0,
+    candidateCount: 0,
+    maxCandidates: 0,
+    bucketCandidateCount: 0,
+    rebuildCount: 0,
+    incrementalUpdateCount: 0,
+    componentQueryCount: 0,
+    componentCandidateCount: 0,
+    componentResultCount: 0,
+    componentCacheHitCount: 0,
+  }
 
   constructor(private readonly cellSize = TILE_SIZE) {}
 
   rebuild(world: CombatWorld): void {
+    this.profile.rebuildCount++
     this.cells.clear()
     this.entityCells.clear()
     for (const entityId of world.query(['transform', 'vitality'])) {
@@ -28,6 +40,7 @@ export class EntitySpatialIndex {
   }
 
   update(world: CombatWorld, entityId: EntityId): void {
+    this.profile.incrementalUpdateCount++
     const transform = world.stores.transform.require(entityId)
     const oldKey = this.entityCells.get(entityId)
     const nextKey = this.getCellKey(transform.x, transform.y)
@@ -51,6 +64,7 @@ export class EntitySpatialIndex {
     for (let cellY = minCellY; cellY <= maxCellY; cellY++) {
       for (let cellX = minCellX; cellX <= maxCellX; cellX++) {
         for (const entityId of this.cells.get(`${cellX}:${cellY}`) ?? []) {
+          this.profile.bucketCandidateCount++
           const transform = world.stores.transform.require(entityId)
           const dx = transform.x - x
           const dy = transform.y - y
@@ -64,8 +78,15 @@ export class EntitySpatialIndex {
     return found.sort((left, right) => left - right)
   }
 
-  getProfile(): SpatialQueryProfile {
-    return { ...this.profile }
+  getProfile(world?: CombatWorld): SpatialQueryProfile {
+    const component = world?.getQueryProfile()
+    return {
+      ...this.profile,
+      componentQueryCount: component?.queryCount ?? 0,
+      componentCandidateCount: component?.candidateCount ?? 0,
+      componentResultCount: component?.resultCount ?? 0,
+      componentCacheHitCount: component?.cacheHitCount ?? 0,
+    }
   }
 
   private getCellKey(x: number, y: number): string {

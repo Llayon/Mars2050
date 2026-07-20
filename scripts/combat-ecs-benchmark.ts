@@ -1,0 +1,90 @@
+import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { resolve } from 'node:path'
+import { performance } from 'node:perf_hooks'
+import { getSimulatorPreset } from '@/app/simulator2/simulator.presets'
+import { simulateBattle } from '@/domains/combat/combat.engine'
+import type { SpatialQueryProfile } from '@/domains/combat/combat.spatial-profile'
+import type { UnitRow } from '@/domains/combat/combat.types'
+
+interface BenchmarkRow extends SpatialQueryProfile {
+  preset: string
+  units: number
+  ticks: number
+  medianMs: number
+}
+
+const DEFAULT_PRESETS = ['massive_clash', 'zerg_rush']
+const RUNS = 5
+
+function cloneRows(rows: UnitRow[]): UnitRow[] {
+  return rows.map(row => ({ ...row, upgrade_path: [...(row.upgrade_path ?? [])] }))
+}
+
+function runPreset(presetId: string): BenchmarkRow {
+  const preset = getSimulatorPreset(presetId)
+  if (!preset) throw new Error(`Missing simulator preset: ${presetId}`)
+  simulate(preset.attackers, preset.defenders)
+  const durations: number[] = []
+  let latest = simulate(preset.attackers, preset.defenders)
+  for (let run = 0; run < RUNS; run++) {
+    const startedAt = performance.now()
+    latest = simulate(preset.attackers, preset.defenders)
+    durations.push(performance.now() - startedAt)
+  }
+  durations.sort((left, right) => left - right)
+  if (!latest.profile) throw new Error(`Missing ECS profile: ${presetId}`)
+  return {
+    preset: presetId,
+    units: latest.initialState.length,
+    ticks: latest.elapsedTicks,
+    medianMs: Math.round(durations[Math.floor(durations.length / 2)] * 100) / 100,
+    ...latest.profile,
+  }
+}
+
+function simulate(attackers: UnitRow[], defenders: UnitRow[]) {
+  return simulateBattle(
+    cloneRows(attackers),
+    cloneRows(defenders),
+    24680,
+    [],
+    [],
+    [],
+    { profile: true },
+  )
+}
+
+function ratio(current: number, baseline: number): number {
+  return Math.round((current / baseline) * 1000) / 1000
+}
+
+function main(): void {
+  const args = process.argv.slice(2)
+  const presetArg = args.find(arg => arg.startsWith('--preset='))?.slice('--preset='.length)
+  const rows = (presetArg?.split(',').filter(Boolean) ?? DEFAULT_PRESETS).map(runPreset)
+  const outputPath = args.find(arg => arg.startsWith('--write='))?.slice('--write='.length)
+  const comparePath = args.find(arg => arg.startsWith('--compare='))?.slice('--compare='.length)
+  if (outputPath) {
+    writeFileSync(resolve(outputPath), `${JSON.stringify(rows, null, 2)}\n`)
+  }
+  if (comparePath) {
+    const path = resolve(comparePath)
+    if (!existsSync(path)) throw new Error(`Missing benchmark baseline: ${path}`)
+    const baseline = JSON.parse(readFileSync(path, 'utf8')) as BenchmarkRow[]
+    const byPreset = new Map(baseline.map(row => [row.preset, row]))
+    console.table(rows.map(row => {
+      const previous = byPreset.get(row.preset)
+      return {
+        preset: row.preset,
+        medianMs: row.medianMs,
+        speedRatio: previous ? ratio(row.medianMs, previous.medianMs) : null,
+        componentScanRatio: previous ? ratio(row.componentCandidateCount, previous.componentCandidateCount) : null,
+        spatialCandidateRatio: previous ? ratio(row.bucketCandidateCount, previous.bucketCandidateCount) : null,
+      }
+    }))
+    return
+  }
+  console.table(rows)
+}
+
+main()
