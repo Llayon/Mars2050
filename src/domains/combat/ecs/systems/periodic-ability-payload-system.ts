@@ -107,7 +107,7 @@ function createHazard(
   const source = world.stores.identity.require(sourceId)
   const target = world.stores.transform.require(targetId)
   world.queueHazardCreation({
-    id: `periodic_${source.id}_${abilityId}_${tick}`,
+    id: world.preferExternalId(`periodic_${source.id}_${abilityId}_${tick}`),
     team: source.team,
     type: payload.hazardType,
     x: target.x,

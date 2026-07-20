@@ -37,9 +37,7 @@ export function spawnEcsPeriodicUnits(
       count,
     )
     const unit = createRuntimeUnitFromConfig({
-      id: `periodic_${source.id}_${abilityId}_${Math.floor(
-        world.resources.require('rng').next() * 1000000,
-      )}`,
+      id: world.allocateExternalId(`periodic_${source.id}_${abilityId}`),
       team: source.team,
       type: payload.unitType,
       x: position.x,

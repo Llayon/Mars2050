@@ -72,7 +72,7 @@ function deployMine(
   const placementDistance = Math.min(range, Math.max(24, distance * 0.65))
   const x = clamp(transform.x + (dx / distance) * placementDistance, 0, FIELD_WIDTH)
   const y = clamp(transform.y + (dy / distance) * placementDistance, 0, FIELD_HEIGHT)
-  const id = `mine_${Math.floor(context.rng.next() * 1000000)}`
+  const id = world.allocateExternalId('mine')
 
   world.queueHazardCreation({
     id,

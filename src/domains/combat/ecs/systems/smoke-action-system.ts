@@ -72,7 +72,7 @@ function deploySmoke(
   const placementDistance = Math.min(range, Math.max(24, distance * 0.75))
   const x = clamp(transform.x + (dx / distance) * placementDistance, 0, FIELD_WIDTH)
   const y = clamp(transform.y + (dy / distance) * placementDistance, 0, FIELD_HEIGHT)
-  const id = `smoke_${Math.floor(context.rng.next() * 1000000)}`
+  const id = world.allocateExternalId('smoke')
 
   world.queueHazardCreation({
     id,

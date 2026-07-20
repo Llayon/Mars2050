@@ -1,2 +1,1 @@
-export const CURRENT_SIMULATION_VERSION = 2
-
+export const CURRENT_SIMULATION_VERSION = 3

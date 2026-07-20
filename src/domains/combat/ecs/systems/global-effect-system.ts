@@ -33,7 +33,7 @@ export function runEcsGlobalEffectSystem(
   for (const { team, upg } of activeGlobals) {
     if (tick !== getTriggerTick(upg.type)) continue
     if (upg.type === 'orbital_strike') {
-      createOrbitalStrike(world, team, upg.value, actions, rng)
+      createOrbitalStrike(world, team, upg.value, actions)
     } else if (upg.type === 'global_emp') {
       for (const targetId of getTeamEntities(world, oppositeTeam(team))) {
         applyEcsStatus(world, targetId, {
@@ -75,7 +75,6 @@ function createOrbitalStrike(
   team: Team,
   damage: number,
   actions: BattleAction[],
-  rng: PRNG,
 ): void {
   const enemies = getTeamEntities(world, oppositeTeam(team))
   let x = FIELD_WIDTH / 2
@@ -92,7 +91,7 @@ function createOrbitalStrike(
     y /= enemies.length
   }
   world.queueHazardCreation({
-    id: `orb_strike_${Math.floor(rng.next() * 1000000)}`,
+    id: world.allocateExternalId('orb_strike'),
     team,
     type: 'napalm',
     x,

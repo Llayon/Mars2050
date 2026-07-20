@@ -57,7 +57,7 @@ export function applyEcsFieldEffectAt(
     cleanseAllies(world, ownerId, effect.radius, actions)
   } else {
     world.queueHazardCreation({
-      id: `field_${owner.id}_${effect.id}_${suffix}`,
+      id: world.preferExternalId(`field_${owner.id}_${effect.id}_${suffix}`),
       team: owner.team,
       type: effect.hazardType ?? 'smoke',
       x: anchor.x,
@@ -82,7 +82,7 @@ function createBarrier(
   const capacity = effect.capacity === undefined
     ? undefined
     : Math.max(1, Math.floor(effect.capacity))
-  const hazardId = `barrier_${owner.id}_${effect.id}_${suffix}`
+  const hazardId = world.preferExternalId(`barrier_${owner.id}_${effect.id}_${suffix}`)
   world.queueHazardCreation({
     id: hazardId,
     team: owner.team,

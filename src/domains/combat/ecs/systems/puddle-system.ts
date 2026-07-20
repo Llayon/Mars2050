@@ -14,7 +14,7 @@ export function spawnEcsAttackPuddle(
   const combat = world.stores.combat.require(entityId)
   const target = world.stores.transform.require(targetId)
   world.queueHazardCreation({
-    id: `hazard_${Math.floor(rng.next() * 1000000)}`,
+    id: world.allocateExternalId('hazard'),
     team: identity.team,
     type: 'napalm',
     x: target.x,

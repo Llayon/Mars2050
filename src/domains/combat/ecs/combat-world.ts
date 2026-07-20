@@ -2,6 +2,8 @@ import type { SimHazard, SimUnit } from '../combat.sim.types'
 import { COMPONENT_FIELDS, FIELD_COMPONENT, createComponentStores, type CombatComponentMap, type ComponentName, type UnitComponentName } from './combat-components'
 import { CombatResourceStore } from './combat-resources'
 import type { EntityId } from './entity'
+import { CombatInvariantError } from './combat-invariant-error'
+import { ExternalIdAllocator } from './external-id-allocator'
 import { StructuralCommandBuffer } from './structural-command-buffer'
 
 export interface ComponentQueryProfile {
@@ -15,6 +17,7 @@ export class CombatWorld {
   readonly stores = createComponentStores()
   readonly resources = new CombatResourceStore()
   readonly structuralCommands = new StructuralCommandBuffer()
+  readonly externalIds = new ExternalIdAllocator()
   readonly externalIdToEntity = new Map<string, EntityId>()
   private readonly entityIds: EntityId[] = []
   private readonly queryProfile: ComponentQueryProfile = {
@@ -32,17 +35,20 @@ export class CombatWorld {
 
   queueUnitCreation(...units: SimUnit[]): void {
     for (const unit of units) {
+      this.externalIds.reserve(unit.id)
       this.structuralCommands.queueUnit(unit)
     }
   }
 
   queueHazardCreation(...hazards: SimHazard[]): void {
     for (const hazard of hazards) {
+      this.externalIds.reserve(hazard.id)
       this.structuralCommands.queueHazard(hazard)
     }
   }
 
   createUnitEntity(unit: SimUnit): EntityId {
+    this.assertPendingExternalId(unit.id)
     const entityId = this.nextEntityId++
     this.stores.entityMeta.set(entityId, { kind: 'unit', externalId: unit.id })
     this.stores.entityTargets.set(entityId, {})
@@ -56,6 +62,7 @@ export class CombatWorld {
   }
 
   createHazardEntity(hazard: SimHazard): EntityId {
+    this.assertPendingExternalId(hazard.id)
     const entityId = this.nextEntityId++
     this.stores.entityMeta.set(entityId, { kind: 'hazard', externalId: hazard.id })
     this.stores.hazard.set(entityId, structuredClone(hazard))
@@ -88,6 +95,14 @@ export class CombatWorld {
 
   getEntityId(externalId: string): EntityId | undefined {
     return this.externalIdToEntity.get(externalId)
+  }
+
+  allocateExternalId(namespace: string): string {
+    return this.externalIds.allocate(namespace)
+  }
+
+  preferExternalId(externalId: string): string {
+    return this.externalIds.prefer(externalId)
   }
 
   query(componentNames: readonly ComponentName[], includeDead = false): EntityId[] {
@@ -137,12 +152,24 @@ export class CombatWorld {
     for (const field of COMPONENT_FIELDS[name]) {
       if (field in unit) component[field] = unit[field]
     }
-    this.stores[name].set(entityId, component as unknown as CombatComponentMap[Name])
+    this.stores[name].set(
+      entityId,
+      structuredClone(component) as unknown as CombatComponentMap[Name],
+    )
   }
 
   private assertKnownFields(unit: SimUnit): void {
     for (const field of Object.keys(unit) as (keyof SimUnit)[]) {
       if (!FIELD_COMPONENT.has(field)) throw new Error(`Unmapped SimUnit field: ${String(field)}`)
+    }
+  }
+
+  private assertPendingExternalId(externalId: string): void {
+    if (!this.externalIds.isReserved(externalId)) {
+      throw new CombatInvariantError(`Unreserved external entity id: ${externalId}`)
+    }
+    if (this.externalIdToEntity.has(externalId)) {
+      throw new CombatInvariantError(`Duplicate committed entity id: ${externalId}`)
     }
   }
 }

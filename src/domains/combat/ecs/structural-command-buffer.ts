@@ -9,11 +9,11 @@ export class StructuralCommandBuffer {
   private commands: StructuralCommand[] = []
 
   queueUnit(unit: SimUnit): void {
-    this.commands.push({ type: 'create_unit', unit })
+    this.commands.push({ type: 'create_unit', unit: structuredClone(unit) })
   }
 
   queueHazard(hazard: SimHazard): void {
-    this.commands.push({ type: 'create_hazard', hazard })
+    this.commands.push({ type: 'create_hazard', hazard: structuredClone(hazard) })
   }
 
   drain(): StructuralCommand[] {
@@ -25,14 +25,10 @@ export class StructuralCommandBuffer {
   flush(world: CombatWorld): void {
     for (const command of this.drain()) {
       if (command.type === 'create_unit') {
-        if (world.getEntityId(command.unit.id) === undefined) {
-          world.createUnitEntity(command.unit)
-        }
+        world.createUnitEntity(command.unit)
         continue
       }
-      if (world.getEntityId(command.hazard.id) === undefined) {
-        world.createHazardEntity(command.hazard)
-      }
+      world.createHazardEntity(command.hazard)
     }
   }
 }

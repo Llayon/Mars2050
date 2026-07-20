@@ -31,9 +31,7 @@ export function spawnEcsTriggerUnits(
   for (let index = 0; index < count && existing + spawned < cap; index++) {
     const position = getSpawnPosition(anchor)
     const unit = createRuntimeUnitFromConfig({
-      id: `trigger_${owner.id}_${sourceKey}_${Math.floor(
-        world.resources.require('rng').next() * 1000000,
-      )}`,
+      id: world.allocateExternalId(`trigger_${owner.id}_${sourceKey}`),
       team: owner.team,
       type: payload.unitType,
       x: position.x,

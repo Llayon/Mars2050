@@ -114,7 +114,7 @@ function createSpawnedUnit(
     x = transform.x
     y = transform.y
   }
-  const id = `spawn_${Math.floor(context.rng.next() * 1000000)}`
+  const id = world.allocateExternalId('spawn')
   if (!spawnConfig) return null
   const overrides = sourceConfig?.baseStats.spawnOverrides
   const hp = overrides?.hp ?? spawnConfig.baseStats.hp

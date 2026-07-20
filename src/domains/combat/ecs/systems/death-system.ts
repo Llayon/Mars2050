@@ -72,7 +72,7 @@ function replicateEcsKiller(
   const target = world.stores.transform.require(targetId)
   const clone = cloneRuntimeUnit(
     world.snapshotEntity(sourceId),
-    `clone_${Math.floor(world.resources.require('rng').next() * 1000000)}`,
+    world.allocateExternalId('clone'),
     target.x,
     target.y,
   )
@@ -126,7 +126,7 @@ function spawnEcsDeathHazard(
   const transform = world.stores.transform.require(targetId)
   const vitality = world.stores.vitality.require(targetId)
   const hazard: SimHazard = {
-    id: `hazard_${Math.floor(world.resources.require('rng').next() * 1000000)}`,
+    id: world.allocateExternalId('hazard'),
     team: identity.team,
     type: lifecycle.onDeathPuddle,
     x: transform.x,
