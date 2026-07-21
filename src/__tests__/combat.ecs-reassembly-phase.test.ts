@@ -59,9 +59,9 @@ describe('combat ECS reassembly phase', () => {
     ecs.flushStructuralCommands()
     const ecsActions: BattleAction[] = []
 
-    ecs.runReassemblyPhase(ecsActions)
+    ecs.runPhase('reassembly', { tick: 0, actions: ecsActions })
     expect(ecs.getTerminalOutcome()).toBeNull()
-    ecs.runReassemblyPhase(ecsActions)
+    ecs.runPhase('reassembly', { tick: 1, actions: ecsActions })
 
     expect(ecsActions).toEqual([expect.objectContaining({
       unitId: 'pending',

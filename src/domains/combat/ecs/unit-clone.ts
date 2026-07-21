@@ -67,9 +67,11 @@ export function captureUnitClone(
     targetMark: undefined,
     hasAttacked: false,
   })
+  const capabilities = captureCapabilityNames(world.stores, sourceId)
+    .filter(capability => capability !== 'reassemblyCapability' || components.vitality.reassemblyConfig !== undefined)
   return {
     externalId,
     components,
-    capabilities: captureCapabilityNames(world.stores, sourceId),
+    capabilities,
   }
 }

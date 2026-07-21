@@ -5,8 +5,8 @@ import type { FlowFieldMap } from './combat.pathfinding'
 import type { Obstacle, Team } from './combat.sim.types'
 import type { UnitRow } from './combat.types'
 import type { PRNG } from './combat.utils'
-import type { GlobalUpgradeConfig } from './combat.upgrades'
 import type { EntityId } from './ecs/entity'
+import type { CombatPhaseId, CombatPhaseStage, RuntimePhaseContext } from './combat.phase'
 
 export interface RuntimeMovementContext {
   dt: number
@@ -41,24 +41,7 @@ export interface CombatRuntime {
   getSurvivors(): SimUnit[]
   getTurnOrder(): EntityId[]
   tickModifiers(entityId: EntityId, dt: number, actions: BattleAction[], rng: PRNG): void
-  runReassemblyPhase(actions: BattleAction[]): void
-  runGlobalEffectPhase(
-    tick: number,
-    activeGlobals: { team: Team, upg: GlobalUpgradeConfig }[],
-    actions: BattleAction[],
-    rng: PRNG,
-  ): void
-  runSupportAuraPhase(tick: number, actions: BattleAction[]): void
-  runGrowthAndChargePhase(tick: number, actions: BattleAction[]): void
-  runBurrowRegenerationPhase(actions: BattleAction[]): void
-  runTransformModePhase(tick: number, actions: BattleAction[]): void
-  runFieldEffectPhase(tick: number, actions: BattleAction[]): void
-  runFormationBonusPhase(tick: number, actions: BattleAction[]): void
-  runControlBeamPhase(actions: BattleAction[]): void
-  runPeriodicAbilityPhase(tick: number, actions: BattleAction[], rng: PRNG): void
-  runStatusPhase(actions: BattleAction[], rng: PRNG): void
-  runHazardPhase(actions: BattleAction[], rng: PRNG): void
-  runPostHazardPhase(tick: number, actions: BattleAction[], rng: PRNG): void
-  runDepenetration(actions: BattleAction[]): void
+  runPhase(id: CombatPhaseId, context: RuntimePhaseContext): void
+  runStage(stage: CombatPhaseStage, context: RuntimePhaseContext): void
   getTerminalOutcome(): BattleOutcome | null
 }

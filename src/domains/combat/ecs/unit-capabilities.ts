@@ -11,7 +11,14 @@ export const UNIT_CAPABILITY_NAMES = [
   'transformModeCapability',
   'growthChargeCapability',
   'burrowRegenerationCapability',
+  'triggerCapability',
+  'reassemblyCapability',
+  'periodicSpawnerCapability',
 ] as const satisfies readonly UnitCapabilityName[]
+
+type MissingUnitCapability = Exclude<UnitCapabilityName, typeof UNIT_CAPABILITY_NAMES[number]>
+export const UNIT_CAPABILITY_NAMES_ARE_EXHAUSTIVE:
+  MissingUnitCapability extends never ? true : never = true
 
 export function installUnitCapabilities(
   stores: CombatComponentStores,
@@ -64,5 +71,8 @@ function hasCapability(unit: SimUnit, capability: UnitCapabilityName): boolean {
     case 'transformModeCapability': return (unit.transformMode?.length ?? 0) > 0
     case 'growthChargeCapability': return unit.statGrowth !== undefined || unit.attackCharge !== undefined
     case 'burrowRegenerationCapability': return (unit.burrowConfig?.regenPercentPerTick ?? 0) > 0
+    case 'triggerCapability': return (unit.triggerEffects?.length ?? 0) > 0
+    case 'reassemblyCapability': return unit.reassemblyConfig !== undefined || unit.reassemblyState !== undefined
+    case 'periodicSpawnerCapability': return unit.spawnerConfig !== undefined
   }
 }

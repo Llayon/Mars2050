@@ -62,7 +62,7 @@ describe('combat ECS hazard death', () => {
     runtime.world.flushStructuralCommands()
     runtime.world.resources.set('rng', new PRNG(113))
 
-    runtime.runHazardPhase(nativeActions, new PRNG(113))
+    runtime.runPhase('hazard', { tick: 0, actions: nativeActions, rng: new PRNG(113) })
 
     expect(nativeActions.filter(action => action.type === 'die')
       .map(action => action.unitId)).toEqual(['a-target', 'b-target'])
@@ -91,7 +91,7 @@ describe('combat ECS hazard death', () => {
     runtime.world.flushStructuralCommands()
     runtime.world.resources.set('rng', new PRNG(127))
 
-    runtime.runHazardPhase(nativeActions, new PRNG(127))
+    runtime.runPhase('hazard', { tick: 0, actions: nativeActions, rng: new PRNG(127) })
 
     expect(nativeActions).toContainEqual({
       unitId: 'irradiated',
@@ -125,7 +125,7 @@ describe('combat ECS hazard death', () => {
     mine.duration = 0
     const actions: BattleAction[] = []
 
-    runtime.runHazardPhase(actions, new PRNG(131))
+    runtime.runPhase('hazard', { tick: 0, actions, rng: new PRNG(131) })
 
     const targetId = runtime.world.getEntityId(target.id)!
     expect(actions).toContainEqual({

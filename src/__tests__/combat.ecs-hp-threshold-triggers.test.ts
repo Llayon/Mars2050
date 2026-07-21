@@ -95,7 +95,7 @@ describe('combat ECS hp-threshold triggers', () => {
     runtime.world.queueUnitCreation(owner, target)
     runtime.world.flushStructuralCommands()
     const actions: BattleAction[] = []
-    runtime.runPostHazardPhase(12, actions, new PRNG(71))
+    runtime.runPhase('hp_threshold_trigger', { tick: 12, actions, rng: new PRNG(71) })
 
     const targetId = runtime.world.getEntityId('target')!
     const ownerId = runtime.world.getEntityId('disintegrator')!
@@ -135,7 +135,7 @@ describe('combat ECS hp-threshold triggers', () => {
     const actions: BattleAction[] = []
 
     expect(owner.hp).toBe(100)
-    runtime.runPostHazardPhase(14, actions, new PRNG(73))
+    runtime.runPhase('hp_threshold_trigger', { tick: 14, actions, rng: new PRNG(73) })
 
     expect(runtime.world.stores.vitality.require(ownerId)).toMatchObject({
       hp: 40,

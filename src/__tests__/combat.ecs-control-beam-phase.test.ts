@@ -49,8 +49,8 @@ describe('combat ECS control beam phase', () => {
     ecs.flushStructuralCommands()
     const ecsActions: BattleAction[] = []
 
-    ecs.runControlBeamPhase(ecsActions)
-    ecs.runControlBeamPhase(ecsActions)
+    ecs.runPhase('control_beam', { tick: 0, actions: ecsActions })
+    ecs.runPhase('control_beam', { tick: 1, actions: ecsActions })
 
     expect(ecsActions.filter(action => action.type === 'control_convert')
       .map(action => action.targetId)).toEqual(['first', 'second'])
@@ -106,7 +106,7 @@ describe('combat ECS control beam phase', () => {
     target.hp = target.maxHp
     const actions: BattleAction[] = []
 
-    runtime.runControlBeamPhase(actions)
+    runtime.runPhase('control_beam', { tick: 0, actions })
 
     const targetId = runtime.world.getEntityId(target.id)!
     expect(actions).toContainEqual({

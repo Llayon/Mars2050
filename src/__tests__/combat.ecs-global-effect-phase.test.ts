@@ -46,7 +46,7 @@ describe('combat ECS global effect phase', () => {
     const ecsRng = new PRNG(17)
 
     for (const tick of [0, 50, 100, 150]) {
-      ecs.runGlobalEffectPhase(tick, activeGlobals, ecsActions, ecsRng)
+      ecs.runPhase('global_effect', { tick, activeGlobals, actions: ecsActions, rng: ecsRng })
     }
 
     expect(ecsActions).toContainEqual({
@@ -105,9 +105,9 @@ describe('combat ECS global effect phase', () => {
     })]
     const actions: BattleAction[] = []
 
-    runtime.runGlobalEffectPhase(50, activeGlobals, actions, new PRNG(23))
-    runtime.runGlobalEffectPhase(100, activeGlobals, actions, new PRNG(23))
-    runtime.runGlobalEffectPhase(150, activeGlobals, actions, new PRNG(23))
+    runtime.runPhase('global_effect', { tick: 50, activeGlobals, actions, rng: new PRNG(23) })
+    runtime.runPhase('global_effect', { tick: 100, activeGlobals, actions, rng: new PRNG(23) })
+    runtime.runPhase('global_effect', { tick: 150, activeGlobals, actions, rng: new PRNG(23) })
 
     const allyId = runtime.world.getEntityId(ally.id)!
     const enemyId = runtime.world.getEntityId(enemy.id)!

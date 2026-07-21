@@ -100,6 +100,7 @@ function startDeathReassembly(
     hpPercent: Math.max(0.01, Math.min(1, config.hpPercent ?? 1)),
     sourceUnitId: world.stores.identity.require(targetId).id,
   }
+  world.setUnitCapability(targetId, 'reassemblyCapability', true)
   const target = world.stores.identity.require(targetId).id
   actions.push({
     unitId: target,

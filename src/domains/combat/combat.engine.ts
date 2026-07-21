@@ -1,6 +1,5 @@
 import { MAX_TICKS } from './combat.config'
 import { GLOBAL_UPGRADES, type GlobalUpgradeConfig } from './combat.upgrades'
-import { processPreActionPrimitives } from './combat.tick-primitives'
 import type { UnitRow, BattleAction, BattleTick, BattleResult } from './combat.types'
 import type { Team, Obstacle } from './combat.sim.types'
 import { createCombatMetrics, finalizeCombatMetrics, recordCombatActions, recordCombatTick, type BattleSimulationOptions } from './combat.metrics'
@@ -42,29 +41,7 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
     const actions: BattleAction[] = []
     runtime.world.resources.require('clock').tick = tick
     runtime.world.resources.set('actions', actions)
-    runtime.runReassemblyPhase(actions)
-    processPreActionPrimitives({
-      runGlobals: () =>
-        runtime.runGlobalEffectPhase(tick, activeGlobals, actions, rng),
-      runSupportAuras: () =>
-        runtime.runSupportAuraPhase(tick, actions),
-      runGrowthAndCharge: () =>
-        runtime.runGrowthAndChargePhase(tick, actions),
-      runBurrowRegeneration: () =>
-        runtime.runBurrowRegenerationPhase(actions),
-      runTransformModes: () =>
-        runtime.runTransformModePhase(tick, actions),
-      runFieldEffects: () =>
-        runtime.runFieldEffectPhase(tick, actions),
-      runFormationBonuses: () =>
-        runtime.runFormationBonusPhase(tick, actions),
-      runControlBeams: () =>
-        runtime.runControlBeamPhase(actions),
-      runPeriodicAbilities: () =>
-        runtime.runPeriodicAbilityPhase(tick, actions, rng),
-    })
-    runtime.flushStructuralCommands()
-    runtime.runStatusPhase(actions, rng)
+    runtime.runStage('pre_action', { tick, actions, rng, activeGlobals })
 
     const terminalOutcome = runtime.getTerminalOutcome()
     if (terminalOutcome) { resolvedOutcome = terminalOutcome; break }
@@ -98,9 +75,7 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
       }
     }
 
-    runtime.runHazardPhase(actions, rng);
-    runtime.runPostHazardPhase(tick, actions, rng);
-    runtime.runDepenetration(actions);
+    runtime.runStage('post_action', { tick, actions, rng, activeGlobals });
     if (metrics) {
       recordCombatActions(metrics, tick, actions, runtime.world)
       recordCombatTick(metrics, runtime.world)

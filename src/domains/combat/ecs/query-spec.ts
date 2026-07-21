@@ -23,6 +23,9 @@ const COMPONENT_INDEX: Record<ComponentName, number> = {
   transformModeCapability: 19,
   growthChargeCapability: 20,
   burrowRegenerationCapability: 21,
+  triggerCapability: 22,
+  reassemblyCapability: 23,
+  periodicSpawnerCapability: 24,
 }
 
 export interface QuerySpec {

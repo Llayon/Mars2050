@@ -45,7 +45,7 @@ describe('combat ECS status death', () => {
     runtime.world.flushStructuralCommands()
     runtime.world.resources.set('rng', new PRNG(107))
 
-    runtime.runStatusPhase(nativeActions, new PRNG(107))
+    runtime.runPhase('status', { tick: 0, actions: nativeActions, rng: new PRNG(107) })
 
     expect(nativeActions).toContainEqual({
       unitId: 'target',
@@ -78,7 +78,7 @@ describe('combat ECS status death', () => {
     runtime.world.flushStructuralCommands()
     runtime.world.resources.set('rng', new PRNG(109))
 
-    runtime.runStatusPhase(nativeActions, new PRNG(109))
+    runtime.runPhase('status', { tick: 0, actions: nativeActions, rng: new PRNG(109) })
 
     expect(nativeActions).toContainEqual({
       unitId: 'decaying',
@@ -109,7 +109,7 @@ describe('combat ECS status death', () => {
     target.statusEffects = []
     const actions: BattleAction[] = []
 
-    runtime.runStatusPhase(actions, new PRNG(113))
+    runtime.runPhase('status', { tick: 0, actions, rng: new PRNG(113) })
 
     const targetId = runtime.world.getEntityId(target.id)!
     expect(actions).toContainEqual({

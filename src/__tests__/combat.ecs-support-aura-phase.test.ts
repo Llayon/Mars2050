@@ -52,7 +52,7 @@ describe('combat ECS support aura phase', () => {
     const ecsActions: BattleAction[] = []
 
     for (const tick of [0, 1]) {
-      ecs.runSupportAuraPhase(tick, ecsActions)
+      ecs.runPhase('support_aura', { tick, actions: ecsActions })
     }
 
     expect(ecsActions.filter(action => action.type === 'shield_apply'))
@@ -116,7 +116,7 @@ describe('combat ECS support aura phase', () => {
     ally.maxShield = 30
     const actions: BattleAction[] = []
 
-    runtime.runSupportAuraPhase(0, actions)
+    runtime.runPhase('support_aura', { tick: 0, actions })
 
     const allyId = runtime.world.getEntityId(ally.id)!
     expect(actions).toEqual([{

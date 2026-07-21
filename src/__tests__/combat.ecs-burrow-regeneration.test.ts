@@ -31,7 +31,7 @@ describe('combat ECS burrow regeneration', () => {
     ecs.flushStructuralCommands()
     const ecsActions: BattleAction[] = []
 
-    ecs.runBurrowRegenerationPhase(ecsActions)
+    ecs.runPhase('burrow_regeneration', { tick: 0, actions: ecsActions })
 
     expect(ecsActions).toEqual([{
       unitId: 'burrowed',
@@ -82,7 +82,7 @@ describe('combat ECS burrow regeneration', () => {
     burrowed.burrowConfig = undefined
     const actions: BattleAction[] = []
 
-    runtime.runBurrowRegenerationPhase(actions)
+    runtime.runPhase('burrow_regeneration', { tick: 0, actions })
 
     expect(actions).toEqual([{
       unitId: 'canonical-burrow',

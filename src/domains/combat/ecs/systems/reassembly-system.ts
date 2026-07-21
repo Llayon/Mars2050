@@ -5,7 +5,7 @@ export function runEcsReassemblySystem(
   world: CombatWorld,
   actions: BattleAction[],
 ): void {
-  const waiting = world.query(['identity', 'vitality'], true)
+  const waiting = world.query(['identity', 'vitality', 'reassemblyCapability'], true)
     .filter(entityId => world.stores.vitality.require(entityId).reassemblyState)
     .sort((left, right) =>
       world.stores.identity.require(left).id.localeCompare(
@@ -28,6 +28,7 @@ export function runEcsReassemblySystem(
     vitality.hp = hp
     world.setEntityDead(entityId, false)
     vitality.reassemblyState = undefined
+    world.setUnitCapability(entityId, 'reassemblyCapability', false)
     combat.actionCooldown = 0
     status.statusEffects = []
     status.targetMark = undefined

@@ -128,7 +128,7 @@ describe('combat ECS periodic ability phase', () => {
     ecs.flushStructuralCommands()
     const ecsActions: BattleAction[] = []
 
-    ecs.runPeriodicAbilityPhase(0, ecsActions, new PRNG(7))
+    ecs.runPhase('periodic_ability', { tick: 0, actions: ecsActions, rng: new PRNG(7) })
 
     expect(ecsActions.filter(action => action.type === 'periodic_ability'))
       .toHaveLength(7)
@@ -224,7 +224,7 @@ describe('combat ECS periodic ability phase', () => {
     })]
     const actions: BattleAction[] = []
 
-    runtime.runPeriodicAbilityPhase(0, actions, new PRNG(11))
+    runtime.runPhase('periodic_ability', { tick: 0, actions, rng: new PRNG(11) })
 
     const sourceId = runtime.world.getEntityId(source.id)!
     const targetId = runtime.world.getEntityId(target.id)!

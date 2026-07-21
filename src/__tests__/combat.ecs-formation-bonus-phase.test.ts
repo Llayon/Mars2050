@@ -38,7 +38,7 @@ describe('combat ECS formation bonus phase', () => {
     const ecsActions: BattleAction[] = []
 
     for (const tick of [9, 10, 20]) {
-      ecs.runFormationBonusPhase(tick, ecsActions)
+      ecs.runPhase('formation_bonus', { tick, actions: ecsActions })
     }
 
     expect(ecsActions.filter(action => action.type === 'adjacency_bonus'))
@@ -99,7 +99,7 @@ describe('combat ECS formation bonus phase', () => {
     neighbor.x = 950
     const actions: BattleAction[] = []
 
-    runtime.runFormationBonusPhase(10, actions)
+    runtime.runPhase('formation_bonus', { tick: 10, actions })
 
     const sourceId = runtime.world.getEntityId(source.id)!
     expect(actions).toContainEqual({

@@ -52,8 +52,8 @@ describe('combat ECS transform mode phase', () => {
     ecs.flushStructuralCommands()
     const ecsActions: BattleAction[] = []
 
-    ecs.runTransformModePhase(0, ecsActions)
-    ecs.runTransformModePhase(1, ecsActions)
+    ecs.runPhase('transform_mode', { tick: 0, actions: ecsActions })
+    ecs.runPhase('transform_mode', { tick: 1, actions: ecsActions })
 
     expect(ecsActions.map(action => action.unitId)).toEqual(['assault', 'jumper'])
     expect(ecs.world.stores.transform.require(0).isFlying).toBe(true)
@@ -102,7 +102,7 @@ describe('combat ECS transform mode phase', () => {
     transforming.transformState = undefined
     const actions: BattleAction[] = []
 
-    runtime.runTransformModePhase(0, actions)
+    runtime.runPhase('transform_mode', { tick: 0, actions })
 
     const entityId = runtime.world.getEntityId(transforming.id)!
     expect(actions).toEqual([expect.objectContaining({

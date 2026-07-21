@@ -1,10 +1,9 @@
-import type { BattleAction } from '../combat.actions'
 import type { CombatRuntime } from '../combat.runtime'
 import { CombatWorld } from './combat-world'
-import { createEcsMeleeEngagementState, getEcsBurrowRegenerationEntities, getEcsGrowthAndChargeEntities, getEcsTerminalOutcome, getEcsTransformModeEntities, getEcsTurnOrder, processEcsHpThresholdTriggers, reserveEcsMeleeSlot, resolveEcsDeath, runActionSystem, runDepenetrationSystem, runEcsBurrowRegenerationSystem, runEcsGrowthAndChargeSystem, runEcsPeriodicSpawnerSystem, runEcsReassemblySystem, runEcsTransformModeSystem, runHazardSystem, runModifierSystem, runMovementSystem, runStatusSystem, runTargetingSystem } from './systems'
+import { createEcsMeleeEngagementState, getEcsTerminalOutcome, getEcsTurnOrder, reserveEcsMeleeSlot, resolveEcsDeath, runActionSystem, runEcsPeriodicSpawnerSystem, runModifierSystem, runMovementSystem, runTargetingSystem } from './systems'
 import { createSquadEntities } from './combat-entity-factory'
 import { EntitySpatialIndex } from './entity-spatial-index'
-import { runEcsControlBeamPhase, runEcsFieldEffectPhase, runEcsFormationBonusPhase, runEcsGlobalEffectPhase, runEcsPeriodicAbilityPhase, runEcsSupportAuraPhase } from './combat-ecs-phase-boundaries'
+import { EcsCombatPhaseScheduler } from './combat-phase-scheduler'
 
 export interface EcsCombatRuntime extends CombatRuntime {
   readonly world: CombatWorld
@@ -12,6 +11,7 @@ export interface EcsCombatRuntime extends CombatRuntime {
 
 export function createEcsCombatRuntime(): EcsCombatRuntime {
   const world = new CombatWorld()
+  const scheduler = new EcsCombatPhaseScheduler(world)
   let meleeEngagement = createEcsMeleeEngagementState()
   world.resources.set('entitySpatial', new EntitySpatialIndex())
   return {
@@ -28,6 +28,7 @@ export function createEcsCombatRuntime(): EcsCombatRuntime {
     reserveMeleeSlot: (entityId, targetId) =>
       reserveEcsMeleeSlot(world, entityId, targetId, meleeEngagement),
     processSpawner: (entityId, targetId, actions, context) => {
+      if (!world.stores.periodicSpawnerCapability.has(entityId)) return
       runEcsPeriodicSpawnerSystem(world, entityId, targetId, actions, context)
     },
     actUnit: (entityId, targetId, actions, context) => {
@@ -64,65 +65,8 @@ export function createEcsCombatRuntime(): EcsCombatRuntime {
         resolveEcsDeath(world, expiredId, undefined, actions, 'expiration')
       })
     },
-    runReassemblyPhase(actions): void {
-      runEcsReassemblySystem(world, actions)
-    },
-    runGlobalEffectPhase: (tick, activeGlobals, actions, rng) =>
-      runEcsGlobalEffectPhase(world, tick, activeGlobals, actions, rng),
-    runSupportAuraPhase: (tick, actions) =>
-      runEcsSupportAuraPhase(world, tick, actions),
-    runGrowthAndChargePhase(tick, actions): void {
-      const entityIds = getEcsGrowthAndChargeEntities(world)
-      runEcsGrowthAndChargeSystem(world, tick, actions, entityIds)
-    },
-    runBurrowRegenerationPhase(actions): void {
-      const entityIds = getEcsBurrowRegenerationEntities(world)
-      runEcsBurrowRegenerationSystem(world, actions, entityIds)
-    },
-    runTransformModePhase(tick, actions): void {
-      const entityIds = getEcsTransformModeEntities(world)
-      runEcsTransformModeSystem(world, tick, actions, entityIds)
-    },
-    runFieldEffectPhase: (tick, actions) =>
-      runEcsFieldEffectPhase(world, tick, actions),
-    runFormationBonusPhase: (tick, actions) =>
-      runEcsFormationBonusPhase(world, tick, actions),
-    runControlBeamPhase: actions => runEcsControlBeamPhase(world, actions),
-    runPeriodicAbilityPhase: (tick, actions, rng) =>
-      runEcsPeriodicAbilityPhase(world, tick, actions, rng),
-    runStatusPhase(actions: BattleAction[], _rng): void {
-      world.flushStructuralCommands()
-      runStatusSystem(world, actions, (entityId, sourceUnitId, cause) => {
-        const sourceId = sourceUnitId === undefined
-          ? undefined
-          : world.getEntityId(sourceUnitId)
-        resolveEcsDeath(world, entityId, sourceId, actions, cause)
-        world.flushStructuralCommands()
-      })
-    },
-    runHazardPhase(actions, _rng): void {
-      world.flushStructuralCommands()
-      world.resources.require('entitySpatial').ensureCurrent(world)
-      runHazardSystem(world, actions, (entityId, sourceUnitId, cause) => {
-        const sourceId = sourceUnitId === undefined
-          ? undefined
-          : world.getEntityId(sourceUnitId)
-        resolveEcsDeath(world, entityId, sourceId, actions, cause)
-        world.flushStructuralCommands()
-      })
-    },
-    runPostHazardPhase(_tick, actions, _rng): void {
-      const ordered = world.query(['identity', 'vitality', 'lifecycle'])
-        .sort((left, right) =>
-          world.stores.identity.require(left).id.localeCompare(
-            world.stores.identity.require(right).id,
-          ),
-        )
-      for (const entityId of ordered) {
-        processEcsHpThresholdTriggers(world, entityId, actions)
-      }
-    },
-    runDepenetration: actions => runDepenetrationSystem(world, actions),
+    runPhase: (id, context) => scheduler.runPhase(id, context),
+    runStage: (stage, context) => scheduler.runStage(stage, context),
     getTerminalOutcome() {
       world.flushStructuralCommands()
       return getEcsTerminalOutcome(world)

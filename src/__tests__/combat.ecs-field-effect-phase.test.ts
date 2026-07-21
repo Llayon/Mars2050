@@ -69,8 +69,8 @@ describe('combat ECS field effect phase', () => {
     ecs.flushStructuralCommands()
     const ecsActions: BattleAction[] = []
 
-    ecs.runFieldEffectPhase(0, ecsActions)
-    ecs.runFieldEffectPhase(1, ecsActions)
+    ecs.runPhase('field_effect', { tick: 0, actions: ecsActions })
+    ecs.runPhase('field_effect', { tick: 1, actions: ecsActions })
 
     expect(ecsActions.filter(action => action.type === 'field_effect')).toHaveLength(3)
     expect(ecs.world.stores.statusControl.require(1).statusEffects).toEqual([])
@@ -123,7 +123,7 @@ describe('combat ECS field effect phase', () => {
     emitter.fieldEffect = undefined
     const actions: BattleAction[] = []
 
-    runtime.runFieldEffectPhase(0, actions)
+    runtime.runPhase('field_effect', { tick: 0, actions })
     runtime.flushStructuralCommands()
 
     const emitterId = runtime.world.getEntityId(emitter.id)!

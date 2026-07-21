@@ -46,7 +46,7 @@ describe('combat ECS growth and charge phase', () => {
     const ecsActions: BattleAction[] = []
 
     for (let tick = 0; tick <= 6; tick++) {
-      ecs.runGrowthAndChargePhase(tick, ecsActions)
+      ecs.runPhase('growth_charge', { tick, actions: ecsActions })
     }
 
     expect(ecs.world.stores.lifecycle.require(0)).toMatchObject({
@@ -102,7 +102,7 @@ describe('combat ECS growth and charge phase', () => {
     growing.attackCharge = undefined
     const actions: BattleAction[] = []
 
-    runtime.runGrowthAndChargePhase(2, actions)
+    runtime.runPhase('growth_charge', { tick: 2, actions })
 
     const entityId = runtime.world.getEntityId(growing.id)!
     expect(actions.map(action => action.type)).toEqual([
