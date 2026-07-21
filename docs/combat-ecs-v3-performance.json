@@ -1,0 +1,63 @@
+[
+  {
+    "preset": "massive_clash",
+    "units": 100,
+    "ticks": 77,
+    "medianMs": 302.1,
+    "queryCount": 10704,
+    "candidateCount": 334367,
+    "maxCandidates": 50,
+    "bucketCandidateCount": 342399,
+    "rebuildCount": 1,
+    "incrementalUpdateCount": 9686,
+    "componentQueryCount": 7788,
+    "componentCandidateCount": 17000,
+    "componentResultCount": 533024,
+    "componentCacheHitCount": 7349,
+    "purposes": {
+      "targeting": {
+        "queryCount": 5446,
+        "bucketCandidateCount": 115423,
+        "candidateCount": 109930
+      },
+      "movement": {
+        "queryCount": 5258,
+        "bucketCandidateCount": 226976,
+        "candidateCount": 224437
+      }
+    }
+  },
+  {
+    "preset": "zerg_rush",
+    "units": 605,
+    "ticks": 138,
+    "medianMs": 5880.63,
+    "queryCount": 100836,
+    "candidateCount": 6631792,
+    "maxCandidates": 552,
+    "bucketCandidateCount": 8898041,
+    "rebuildCount": 1,
+    "incrementalUpdateCount": 97633,
+    "componentQueryCount": 64349,
+    "componentCandidateCount": 571725,
+    "componentResultCount": 27294126,
+    "componentCacheHitCount": 62426,
+    "purposes": {
+      "targeting": {
+        "queryCount": 50802,
+        "bucketCandidateCount": 3819668,
+        "candidateCount": 3498926
+      },
+      "movement": {
+        "queryCount": 49543,
+        "bucketCandidateCount": 4930421,
+        "candidateCount": 2988525
+      },
+      "other": {
+        "queryCount": 491,
+        "bucketCandidateCount": 147952,
+        "candidateCount": 144341
+      }
+    }
+  }
+]

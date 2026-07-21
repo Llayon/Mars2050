@@ -1,7 +1,9 @@
 # Combat ECS Runtime
 
-Simulation version 2 uses the in-repository ECS runtime exclusively. The public
+Simulation version 3 uses the in-repository ECS runtime exclusively. The public
 simulation API no longer exposes an engine selector or legacy array runtime.
+Version 3 makes entity relations, capability queries, spatial updates, and tick
+phase scheduling canonical ECS concerns rather than orchestration conventions.
 
 ## World Model
 
@@ -18,11 +20,30 @@ Component stores are canonical while ECS phases execute. No facade-to-component
 or component-to-facade synchronization API remains. Production systems create
 units and hazards through explicit structural commands so they receive
 monotonic entity IDs at deterministic flush points.
+External string IDs are allocated by a battle-scoped monotonic allocator and
+reserved before structural creation. Component data and hazards are deep-copied
+at the world boundary, so later mutations of factory input cannot alter a running
+battle. Runtime target, owner, ramp, melee, and movement relations use
+`EntityId`; the snapshot codec is the only place that converts them to or from
+external string IDs.
 Component schemas are declared explicitly in `combat.unit-*-components.ts`.
 `SimUnit` is a flat `UnitSnapshot` alias used only for factory input, initial
 state, survivors, and replay serialization. It is not runtime storage.
 `COMPONENT_FIELDS_ARE_EXHAUSTIVE` makes missing component-to-snapshot mappings a
 compile-time error.
+
+Registered component queries start from the smallest participating store and
+cache stable result sets until structure or alive-state revisions change.
+Optional mechanics are represented by capability marker components, including
+support auras, periodic abilities, fields, formation bonuses, control beams,
+transforms, growth/charge, burrow regeneration, triggers, reassembly, and
+periodic spawning. Systems therefore do not scan every unit merely to discover
+whether an optional configuration exists.
+
+`EntitySpatialIndex` is team-aware and maintained incrementally for movement,
+team changes, deaths, summons, clones, and hazards. Dense nearest-target queries
+apply a deterministic candidate cap before ranking; broad local mechanics query
+only intersecting buckets and preserve stable external-ID tie-breaking.
 
 ## Migration Status: Complete
 
@@ -111,8 +132,9 @@ Conditional air, ground, combat-tag, and rank ranges are target-aware in both
 ECS positioning and action setup, including sequential modifier stacking.
 Seeded on-death puddles now spawn after confirmed ECS weapon deaths with stable
 source attribution, damage payloads, replay order, and structural buffering.
-Replicate-on-kill clones are built from canonical ECS snapshots at the victim
-position and enter the same seeded structural lifecycle before death puddles.
+Replicate-on-kill clones capture component-native clone data and capability
+markers at the victim position. They enter the same seeded structural lifecycle
+before death puddles without serializing through a `SimUnit` snapshot.
 Attack-count and damage-taken triggers with status, shield, heal, damage, spawn,
 field, delayed-reassembly, or cooldown payloads now run natively after primary
 damage. Direct damage supports configured percent HP, deterministic radial
@@ -206,16 +228,24 @@ directly. There is no alternate object-runtime execution path.
 - `SimUnit` aliases `UnitSnapshot` and is restricted to factories, structural
   input, initial state, survivors, and replay output.
 - All structural mutations pass through `StructuralCommandBuffer`.
+- Runtime relations use `EntityId`; string references exist only at factory and
+  replay/snapshot boundaries.
+- Optional mechanics are selected through capability components and registered
+  cached queries.
+- `EcsCombatPhaseScheduler` is the single ordered registry for pre-action and
+  post-action phases.
 - All behavioral tests invoke `CombatWorld` or the public simulator directly;
   no compatibility executor or object-runtime oracle exists.
 - CI must pass the full Vitest suite, TypeScript, and architecture limits.
 
 ## Runtime Creation
 
-All units use `createRuntimeUnitFromConfig()` for scale normalization and
-primitive preparation. Initial configuration rows are expanded by
-`createRuntimeSquad()`. Spawn attacks, periodic spawns, trigger spawns, clones,
-decoys, resurrection/reassembly, and initial squads share the same factory path.
+Configuration-backed units use `createRuntimeUnitFromConfig()` for scale
+normalization and primitive preparation. Initial configuration rows are expanded
+by `createRuntimeSquad()`. Spawn attacks, periodic spawns, trigger spawns,
+decoys, and initial squads share the factory path. Replication clones copy
+canonical components and capability markers directly; resurrection and
+reassembly mutate their existing entity instead of creating a replacement.
 
 Simulation scale is applied once:
 
@@ -225,20 +255,32 @@ Simulation scale is applied once:
 
 ## Tick Phases
 
-The deterministic order is:
+`EcsCombatPhaseScheduler` owns the deterministic order. `runStage()` executes the
+registered list; `runPhase()` exposes the same definition for focused tests.
 
-1. Rebuild the EntityId spatial index.
-2. Process globals, auras, transforms, periodic abilities, reassembly, and spawns.
-3. Insert newly created entities into the EntityId spatial index.
-4. Tick all statuses in a separate global status phase.
-5. Resolve terminal elimination or stalemate.
-6. Build speed-first, team-interleaved initiative.
-7. Tick unit modifiers, target, reserve melee sectors, act, or move.
-8. Resolve hazards, post-hazard mechanics, and depenetration.
-9. Record replay actions and metrics.
+Pre-action phases are:
+
+1. Reassembly.
+2. Global effects.
+3. Support auras.
+4. Growth and attack charge.
+5. Burrow regeneration.
+6. Transform modes.
+7. Field effects.
+8. Formation bonuses.
+9. Control beams.
+10. Periodic abilities.
+11. Structural flush.
+12. Status scheduling and periodic ticks.
+
+The engine then resolves terminal state, builds speed-first team-interleaved
+initiative, and runs modifier, targeting, melee-sector, action, spawn, and
+movement systems for each actor. Post-action phases are hazard resolution,
+HP-threshold triggers, and depenetration, followed by replay and metric capture.
+Phases requiring randomness fail without the battle's seeded PRNG.
 
 Periodic statuses own `tickInterval` and `nextTickIn`. A duration-30 effect with
-interval 10 ticks exactly at 10, 20, and 30 before it expires.
+interval 10 ticks executes exactly at 10, 20, and 30 before it expires.
 
 ## Health And Death
 
@@ -290,6 +332,21 @@ runtime creation instead of stacking accidental primary attacks.
 Elimination, mutual elimination, and detected no-damage stalemates terminate
 before the timeout limit.
 
+## Replay Compatibility
+
+New snapshots are written with simulation version 3. Stored replay responses are
+validated with Zod before reaching the renderer:
+
+- version 3 is current and rendered normally;
+- version 2 remains playable through the stable replay log/snapshot boundary and
+  is visibly labelled as an approximate historical visualization;
+- version 1, invalid versions, and versions newer than the current engine are
+  rejected as unsupported instead of being silently re-simulated;
+- malformed payloads for otherwise playable versions never reach the renderer.
+
+Compatibility is a presentation guarantee, not a promise that a v2 battle would
+produce identical results if re-simulated by the v3 engine.
+
 ## Verification And Profiling
 
 Deterministic scenario contracts cover winner, termination, replay actions,
@@ -300,3 +357,14 @@ With `{ profile: true }`, the result reports EntityId spatial query counts,
 total local candidates, and maximum candidates in one query. Targeting, broad
 weapon shapes, auras, hazards, projectile interception, and damage sharing use
 local component queries.
+
+The checked-in benchmark uses seed `24680`, three measured runs, and compares
+`docs/combat-ecs-v3-performance.json` with the v2 baseline:
+
+| Preset | Units | v2 median | v3 median | Time ratio | Component candidates | Spatial bucket candidates |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| `massive_clash` | 100 | 360.18 ms | 302.10 ms | 0.839 | 2.1% of v2 | 49.7% of v2 |
+| `zerg_rush` | 605 | 11614.29 ms | 5880.63 ms | 0.506 | 1.5% of v2 | 24.0% of v2 |
+
+Wall-clock timing is environment-sensitive; candidate counts, cache hits, and
+deterministic replay/scenario contracts are the primary regression signals.
