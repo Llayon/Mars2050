@@ -1,5 +1,5 @@
 import type { SimHazard, SimUnit } from '../combat.sim.types'
-import { COMPONENT_FIELDS, FIELD_COMPONENT, createComponentStores, type CombatComponentMap, type ComponentName, type UnitComponentName } from './combat-components'
+import { COMPONENT_FIELDS, FIELD_COMPONENT, createComponentStores, type CombatComponentMap, type ComponentName, type UnitCapabilityName, type UnitComponentName } from './combat-components'
 import { ComponentQueryRegistry, type ComponentQueryProfile } from './component-query-registry'
 import { CombatResourceStore } from './combat-resources'
 import type { EntityId } from './entity'
@@ -8,6 +8,7 @@ import { ExternalIdAllocator } from './external-id-allocator'
 import type { QuerySpec } from './query-spec'
 import { StructuralCommandBuffer } from './structural-command-buffer'
 import { captureUnitClone, type UnitCloneData } from './unit-clone'
+import { installCapabilityNames, installUnitCapabilities, setUnitCapabilityPresence } from './unit-capabilities'
 import { createHazardSnapshots, createUnitSnapshot, createUnitSnapshots } from './combat-world-snapshot'
 import { captureUnitRelations, resolveUnitRelations, type PendingUnitRelations } from './unit-relation-codec'
 
@@ -50,11 +51,13 @@ export class CombatWorld {
 
   createUnitEntity(unit: SimUnit): EntityId {
     this.assertKnownFields(unit)
-    return this.createUnitRecord(
+    const entityId = this.createUnitRecord(
       unit.id,
       (name, entityId) => { this.setComponentFromUnit(name, entityId, unit) },
       captureUnitRelations(unit),
     )
+    installUnitCapabilities(this.stores, entityId, unit)
+    return entityId
   }
 
   createHazardEntity(hazard: SimHazard): EntityId {
@@ -69,10 +72,12 @@ export class CombatWorld {
   }
 
   createClonedUnitEntity(clone: UnitCloneData): EntityId {
-    return this.createUnitRecord(
+    const entityId = this.createUnitRecord(
       clone.externalId,
       (name, entityId) => { this.setClonedComponent(name, entityId, clone) },
     )
+    installCapabilityNames(this.stores, entityId, clone.capabilities)
+    return entityId
   }
 
   flushStructuralCommands(): void {
@@ -140,6 +145,12 @@ export class CombatWorld {
     if (identity.team === team) return
     identity.team = team
     this.resources.get('entitySpatial')?.updateTeam(this, entityId)
+  }
+
+  setUnitCapability(entityId: EntityId, capability: UnitCapabilityName, present: boolean): void {
+    if (setUnitCapabilityPresence(this.stores, entityId, capability, present)) {
+      this.queries.touchStructure()
+    }
   }
 
   getQueryProfile(): ComponentQueryProfile {

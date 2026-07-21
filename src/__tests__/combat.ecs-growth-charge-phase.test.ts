@@ -75,6 +75,7 @@ describe('combat ECS growth and charge phase', () => {
         nextTick: 1,
         stacks: 0,
       }
+      world.setUnitCapability(entityId, 'growthChargeCapability', true)
     }
     const actions: BattleAction[] = []
 

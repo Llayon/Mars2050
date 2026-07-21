@@ -15,6 +15,14 @@ const COMPONENT_INDEX: Record<ComponentName, number> = {
   lifecycle: 11,
   entityTargets: 12,
   hazard: 13,
+  supportAuraCapability: 14,
+  periodicAbilityCapability: 15,
+  fieldEffectCapability: 16,
+  formationBonusCapability: 17,
+  controlBeamCapability: 18,
+  transformModeCapability: 19,
+  growthChargeCapability: 20,
+  burrowRegenerationCapability: 21,
 }
 
 export interface QuerySpec {

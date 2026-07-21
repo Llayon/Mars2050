@@ -5,13 +5,7 @@ import type { EntityId } from '../entity'
 import { applyEcsStatus } from './status-application-system'
 
 export function getEcsFormationBonusEntities(world: CombatWorld): EntityId[] {
-  return world.query(['identity', 'transform', 'vitality', 'support'])
-    .filter(entityId =>
-      Boolean(
-        world.stores.support.require(entityId)
-          .formationModifiers?.adjacencyBonus,
-      ),
-    )
+  return world.query(['identity', 'transform', 'vitality', 'support', 'formationBonusCapability'])
 }
 
 export function runEcsFormationBonusSystem(

@@ -55,6 +55,7 @@ describe('combat ECS burrow regeneration', () => {
         damageReduction: 0.4,
         regenPercentPerTick: 0.1,
       }
+      world.setUnitCapability(entityId, 'burrowRegenerationCapability', true)
     }
     const actions: BattleAction[] = []
 

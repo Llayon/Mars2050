@@ -108,6 +108,7 @@ describe('combat ECS world boundary', () => {
     expect(world.stores.statusControl.require(cloneId).statusEffects).toEqual([])
     expect(world.stores.entityTargets.require(cloneId)).toEqual({})
     expect(world.stores.support.require(cloneId).supportAuras![0].value).toBe(0.35)
+    expect(world.stores.supportAuraCapability.has(cloneId)).toBe(true)
   })
 
   it('rejects duplicate pending and committed external ids', () => {

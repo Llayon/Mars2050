@@ -23,11 +23,7 @@ export function runEcsGrowthAndChargeSystem(
 export function getEcsGrowthAndChargeEntities(
   world: CombatWorld,
 ): EntityId[] {
-  return world.query(['identity', 'vitality', 'combat', 'lifecycle'])
-    .filter(entityId => {
-      const lifecycle = world.stores.lifecycle.require(entityId)
-      return Boolean(lifecycle.statGrowth || lifecycle.attackCharge)
-    })
+  return world.query(['identity', 'vitality', 'combat', 'lifecycle', 'growthChargeCapability'])
 }
 
 function processStatGrowth(

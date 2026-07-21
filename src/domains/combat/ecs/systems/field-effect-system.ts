@@ -4,10 +4,7 @@ import type { EntityId } from '../entity'
 import { applyEcsFieldEffectAt } from './trigger-field-system'
 
 export function getEcsFieldEffectEntities(world: CombatWorld): EntityId[] {
-  return world.query(['identity', 'transform', 'vitality', 'support'])
-    .filter(entityId =>
-      (world.stores.support.require(entityId).fieldEffect?.length ?? 0) > 0,
-    )
+  return world.query(['identity', 'transform', 'vitality', 'support', 'fieldEffectCapability'])
 }
 
 export function runEcsFieldEffectSystem(

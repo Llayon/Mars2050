@@ -157,6 +157,7 @@ describe('combat ECS periodic ability phase', () => {
       targetPolicy: 'nearest_enemy',
       payload: { kind: 'status', effects: [{ type: 'slow', duration: 3 }] },
     }]
+    world.setUnitCapability(0, 'periodicAbilityCapability', true)
     spatial.rebuild(world)
     const actions: BattleAction[] = []
 

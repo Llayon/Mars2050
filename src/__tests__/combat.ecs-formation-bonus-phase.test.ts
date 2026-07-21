@@ -64,6 +64,7 @@ describe('combat ECS formation bonus phase', () => {
           attackBoostPerAlly: 0.25,
         },
       }
+      world.setUnitCapability(entityId, 'formationBonusCapability', true)
     }
     spatial.rebuild(world)
     const actions: BattleAction[] = []

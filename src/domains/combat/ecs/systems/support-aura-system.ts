@@ -16,9 +16,8 @@ export function getEcsSupportAuraEntities(world: CombatWorld): EntityId[] {
     'transform',
     'vitality',
     'support',
-  ]).filter(entityId =>
-    (world.stores.support.require(entityId).supportAuras?.length ?? 0) > 0,
-  )
+    'supportAuraCapability',
+  ])
 }
 
 export function hasEcsSupportAuraAtTick(

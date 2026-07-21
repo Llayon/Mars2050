@@ -78,6 +78,7 @@ describe('combat ECS support aura phase', () => {
       target: 'allies',
       targetTags: ['infantry'],
     }]
+    world.setUnitCapability(0, 'supportAuraCapability', true)
     world.stores.statusControl.require(1).statusEffects = []
     spatial.rebuild(world)
     const actions: BattleAction[] = []

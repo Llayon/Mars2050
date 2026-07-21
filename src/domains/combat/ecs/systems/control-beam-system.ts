@@ -13,9 +13,8 @@ export function getEcsControlBeamEntities(world: CombatWorld): EntityId[] {
     'vitality',
     'combat',
     'targeting',
-  ]).filter(entityId =>
-    Boolean(world.stores.targeting.require(entityId).controlBeam),
-  )
+    'controlBeamCapability',
+  ])
 }
 
 export function runEcsControlBeamSystem(

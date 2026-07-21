@@ -73,6 +73,7 @@ describe('combat ECS control beam phase', () => {
         progressPerTick: 2,
         conversionThreshold: 20,
       }
+      world.setUnitCapability(entityId, 'controlBeamCapability', true)
     }
     spatial.rebuild(world)
     const actions: BattleAction[] = []

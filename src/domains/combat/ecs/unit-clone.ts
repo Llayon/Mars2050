@@ -1,10 +1,13 @@
 import type { UnitComponentDataMap } from '../combat.unit-components'
+import type { UnitCapabilityName } from './combat-components'
 import type { CombatWorld } from './combat-world'
 import type { EntityId } from './entity'
+import { captureCapabilityNames } from './unit-capabilities'
 
 export interface UnitCloneData {
   externalId: string
   components: UnitComponentDataMap
+  capabilities: UnitCapabilityName[]
 }
 
 export function captureUnitClone(
@@ -64,5 +67,9 @@ export function captureUnitClone(
     targetMark: undefined,
     hasAttacked: false,
   })
-  return { externalId, components }
+  return {
+    externalId,
+    components,
+    capabilities: captureCapabilityNames(world.stores, sourceId),
+  }
 }

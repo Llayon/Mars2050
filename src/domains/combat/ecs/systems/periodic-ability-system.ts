@@ -13,9 +13,8 @@ export function getEcsPeriodicAbilityEntities(world: CombatWorld): EntityId[] {
     'combat',
     'targeting',
     'support',
-  ]).filter(entityId =>
-    (world.stores.support.require(entityId).periodicAbilities?.length ?? 0) > 0,
-  )
+    'periodicAbilityCapability',
+  ])
 }
 
 export function runEcsPeriodicAbilitySystem(

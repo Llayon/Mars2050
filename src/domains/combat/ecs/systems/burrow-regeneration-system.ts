@@ -45,11 +45,5 @@ export function runEcsBurrowRegenerationSystem(
 export function getEcsBurrowRegenerationEntities(
   world: CombatWorld,
 ): EntityId[] {
-  return world.query(['identity', 'vitality', 'movement'])
-    .filter(entityId =>
-      Boolean(
-        world.stores.movement.require(entityId)
-          .burrowConfig?.regenPercentPerTick,
-      ),
-    )
+  return world.query(['identity', 'vitality', 'movement', 'burrowRegenerationCapability'])
 }

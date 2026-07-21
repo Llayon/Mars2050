@@ -12,9 +12,8 @@ export function getEcsTransformModeEntities(world: CombatWorld): EntityId[] {
     'combat',
     'weapon',
     'statusControl',
-  ]).filter(entityId =>
-    Boolean(world.stores.statusControl.require(entityId).transformMode),
-  )
+    'transformModeCapability',
+  ])
 }
 
 export function runEcsTransformModeSystem(

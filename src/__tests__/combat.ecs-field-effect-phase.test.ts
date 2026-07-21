@@ -89,6 +89,7 @@ describe('combat ECS field effect phase', () => {
         duration: 5,
         capacity: 20,
       }]
+      world.setUnitCapability(entityId, 'fieldEffectCapability', true)
     }
     const actions: BattleAction[] = []
 

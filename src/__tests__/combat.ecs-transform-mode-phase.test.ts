@@ -72,6 +72,7 @@ describe('combat ECS transform mode phase', () => {
         attackMult: 2,
       }]
       status.transformState = { appliedIds: [] }
+      world.setUnitCapability(entityId, 'transformModeCapability', true)
     }
     const actions: BattleAction[] = []
 

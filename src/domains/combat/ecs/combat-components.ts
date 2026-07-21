@@ -8,7 +8,15 @@ export type UnitComponentName =
   | 'targeting' | 'movement' | 'statusControl' | 'defense'
   | 'support' | 'lifecycle'
 
-export type ComponentName = 'entityMeta' | UnitComponentName | 'entityTargets' | 'hazard'
+export type UnitCapabilityName =
+  | 'supportAuraCapability' | 'periodicAbilityCapability'
+  | 'fieldEffectCapability' | 'formationBonusCapability'
+  | 'controlBeamCapability' | 'transformModeCapability'
+  | 'growthChargeCapability' | 'burrowRegenerationCapability'
+
+export type ComponentName =
+  | 'entityMeta' | UnitComponentName | UnitCapabilityName
+  | 'entityTargets' | 'hazard'
 
 export const COMPONENT_FIELDS = {
   identity: ['id', 'team', 'type', 'rank', 'squadId', 'summonSourceId'],
@@ -46,6 +54,10 @@ export interface EntityTargetRefsComponent {
   summonOwner?: EntityId
 }
 
+export interface UnitCapabilityComponent {
+  readonly present: true
+}
+
 export interface CombatComponentMap {
   entityMeta: EntityMetaComponent
   identity: UnitComponentDataMap['identity']
@@ -59,6 +71,14 @@ export interface CombatComponentMap {
   defense: UnitComponentDataMap['defense']
   support: UnitComponentDataMap['support']
   lifecycle: UnitComponentDataMap['lifecycle']
+  supportAuraCapability: UnitCapabilityComponent
+  periodicAbilityCapability: UnitCapabilityComponent
+  fieldEffectCapability: UnitCapabilityComponent
+  formationBonusCapability: UnitCapabilityComponent
+  controlBeamCapability: UnitCapabilityComponent
+  transformModeCapability: UnitCapabilityComponent
+  growthChargeCapability: UnitCapabilityComponent
+  burrowRegenerationCapability: UnitCapabilityComponent
   entityTargets: EntityTargetRefsComponent
   hazard: SimHazard
 }
@@ -93,6 +113,14 @@ export function createComponentStores(): CombatComponentStores {
     defense: new ComponentStore<CombatComponentMap['defense']>(),
     support: new ComponentStore<CombatComponentMap['support']>(),
     lifecycle: new ComponentStore<CombatComponentMap['lifecycle']>(),
+    supportAuraCapability: new ComponentStore<CombatComponentMap['supportAuraCapability']>(),
+    periodicAbilityCapability: new ComponentStore<CombatComponentMap['periodicAbilityCapability']>(),
+    fieldEffectCapability: new ComponentStore<CombatComponentMap['fieldEffectCapability']>(),
+    formationBonusCapability: new ComponentStore<CombatComponentMap['formationBonusCapability']>(),
+    controlBeamCapability: new ComponentStore<CombatComponentMap['controlBeamCapability']>(),
+    transformModeCapability: new ComponentStore<CombatComponentMap['transformModeCapability']>(),
+    growthChargeCapability: new ComponentStore<CombatComponentMap['growthChargeCapability']>(),
+    burrowRegenerationCapability: new ComponentStore<CombatComponentMap['burrowRegenerationCapability']>(),
     entityTargets: new ComponentStore<CombatComponentMap['entityTargets']>(),
     hazard: new ComponentStore<CombatComponentMap['hazard']>(),
   }
