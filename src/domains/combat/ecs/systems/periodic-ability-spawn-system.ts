@@ -19,11 +19,11 @@ export function spawnEcsPeriodicUnits(
   const sourceTransform = world.stores.transform.require(sourceId)
   const target = world.stores.transform.require(targetId)
   const cap = payload.cap ?? Number.MAX_SAFE_INTEGER
-  const existing = world.query(['identity', 'vitality'], true)
+  const existing = world.query(['identity', 'vitality', 'entityTargets'], true)
     .filter(entityId => {
       const identity = world.stores.identity.require(entityId)
       return !world.stores.vitality.require(entityId).isDead &&
-        identity.summonOwnerId === source.id &&
+        world.stores.entityTargets.require(entityId).summonOwner === sourceId &&
         identity.summonSourceId === abilityId
     })
     .length

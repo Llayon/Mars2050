@@ -187,11 +187,8 @@ function breakControlProgress(
 
 function clearTargeting(world: CombatWorld, entityId: EntityId): void {
   const targeting = world.stores.targeting.require(entityId)
-  targeting.attackTargetId = undefined
   targeting.aggroLockTicks = 0
-  targeting.meleeSlotTargetId = undefined
   targeting.meleeSlotIndex = undefined
-  targeting.meleeWaitingTargetId = undefined
   const refs = world.stores.entityTargets.require(entityId)
   refs.attackTarget = undefined
   refs.meleeTarget = undefined

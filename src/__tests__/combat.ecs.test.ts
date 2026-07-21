@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { simulateBattle } from '@/domains/combat/combat.engine'
 import { cloneRuntimeUnit, createRuntimeUnitFromConfig } from '@/domains/combat/combat.unit-factory'
 import { CombatWorld } from '@/domains/combat/ecs/combat-world'
-import { createEcsMeleeEngagementState, reserveEcsMeleeSlot, runActionSystem, runHazardSystem, runMovementSystem, runTargetingSystem, syncEcsTargetRefs } from '@/domains/combat/ecs/systems'
+import { createEcsMeleeEngagementState, reserveEcsMeleeSlot, runActionSystem, runHazardSystem, runMovementSystem, runTargetingSystem } from '@/domains/combat/ecs/systems'
 import { EntitySpatialIndex } from '@/domains/combat/ecs/entity-spatial-index'
 import { getSimulatorPreset } from '@/app/simulator2/simulator.presets'
 import { createPathfindingMap } from '@/domains/combat/combat.pathfinding'
@@ -97,17 +97,18 @@ describe('combat ECS runtime', () => {
     const spatial = new EntitySpatialIndex()
     spatial.rebuild(world)
     world.resources.set('entitySpatial', spatial)
-    syncEcsTargetRefs(world)
     const melee = createEcsMeleeEngagementState()
 
     expect(runTargetingSystem(world, 0, melee)).toBe(1)
     expect(reserveEcsMeleeSlot(world, 0, 1, melee)).toBe(true)
     expect(world.stores.entityTargets.require(0)).toMatchObject({ attackTarget: 1, meleeTarget: 1 })
-    expect(world.stores.targeting.require(0).attackTargetId).toBe('defender')
+    expect(world.snapshotEntity(0)).toMatchObject({
+      attackTargetId: 'defender',
+      meleeSlotTargetId: 'defender',
+    })
 
-    world.stores.targeting.require(0).attackTargetId = undefined
-    syncEcsTargetRefs(world)
-    expect(world.stores.entityTargets.require(0).attackTarget).toBeUndefined()
+    world.stores.entityTargets.require(0).attackTarget = undefined
+    expect(world.snapshotEntity(0).attackTargetId).toBeUndefined()
   })
 
   it('writes movement results to ECS components and spatial indexes', () => {

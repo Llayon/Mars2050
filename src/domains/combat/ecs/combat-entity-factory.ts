@@ -1,5 +1,5 @@
 import { createRuntimeSquad } from '../combat.squad-factory'
-import { cloneRuntimeUnit, createRuntimeUnitFromConfig, type RuntimeUnitFactoryInput } from '../combat.unit-factory'
+import { createRuntimeUnitFromConfig, type RuntimeUnitFactoryInput } from '../combat.unit-factory'
 import type { Team } from '../combat.sim.types'
 import type { UnitRow } from '../combat.types'
 import type { PRNG } from '../combat.utils'
@@ -25,9 +25,7 @@ export function createSquadEntities(world: CombatWorld, row: UnitRow, team: Team
 }
 
 export function cloneUnitEntity(world: CombatWorld, sourceId: EntityId, id: string, x: number, y: number): EntityId | null {
-  const source = world.snapshotEntity(sourceId)
-  const clone = cloneRuntimeUnit(source, id, x, y)
-  world.queueUnitCreation(clone)
+  world.queueUnitClone(sourceId, id, x, y)
   world.flushStructuralCommands()
-  return world.getEntityId(clone.id) ?? null
+  return world.getEntityId(id) ?? null
 }

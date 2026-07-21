@@ -53,7 +53,7 @@ export function getEcsCombatTags(world: CombatWorld, entityId: EntityId): Combat
   if (vitality.shield > 0) tags.add('shielded')
   if (weapon.attackType === 'heal') tags.add('healer')
   if (weapon.attackType === 'spawn') tags.add('summoner')
-  if (identity.summonOwnerId || vitality.isTemporary) tags.add('summoned')
+  if (world.stores.entityTargets.require(entityId).summonOwner !== undefined || vitality.isTemporary) tags.add('summoned')
   return [...tags].sort()
 }
 

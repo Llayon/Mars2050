@@ -1,7 +1,6 @@
 import type { BattleAction } from '../../combat.actions'
 import type { DeathCause } from '../../combat.death.types'
 import type { SimHazard } from '../../combat.sim.types'
-import { cloneRuntimeUnit } from '../../combat.unit-factory'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
 import { applyEcsOnKillEffects } from './on-kill-system'
@@ -70,13 +69,8 @@ function replicateEcsKiller(
   if (sourceIdentity.team === targetIdentity.team ||
       !world.stores.lifecycle.require(sourceId).replicateOnKill) return
   const target = world.stores.transform.require(targetId)
-  const clone = cloneRuntimeUnit(
-    world.snapshotEntity(sourceId),
-    world.allocateExternalId('clone'),
-    target.x,
-    target.y,
-  )
-  world.queueUnitCreation(clone)
+  const cloneExternalId = world.allocateExternalId('clone')
+  world.queueUnitClone(sourceId, cloneExternalId, target.x, target.y)
   actions.push({
     unitId: sourceIdentity.id,
     type: 'spawn',
@@ -85,7 +79,7 @@ function replicateEcsKiller(
     spawnType: sourceIdentity.type,
     spawnTeam: sourceIdentity.team,
     spawnMaxHp: world.stores.vitality.require(sourceId).maxHp,
-    targetId: clone.id,
+    targetId: cloneExternalId,
   })
 }
 

@@ -15,7 +15,6 @@ import {
   runEcsGlobalEffectSystem,
   runEcsPeriodicAbilitySystem,
   runEcsSupportAuraSystem,
-  syncEcsTargetRefs,
 } from './systems'
 import type { GlobalUpgradeConfig } from '../combat.upgrades'
 import type { Team } from '../combat.sim.types'
@@ -84,7 +83,6 @@ export function runEcsPeriodicAbilityPhase(
   const entityIds = getEcsPeriodicAbilityEntities(world)
   if (entityIds.length === 0) return
   world.flushStructuralCommands()
-  syncEcsTargetRefs(world)
   world.resources.set('rng', rng)
   world.resources.require('entitySpatial').ensureCurrent(world)
   runEcsPeriodicAbilitySystem(world, tick, actions, entityIds)

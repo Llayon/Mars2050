@@ -80,6 +80,9 @@ describe('combat ECS primary damage modifiers', () => {
 
     expect(world.stores.entityTargets.require(0).rampTarget).toBe(2)
     expect(world.stores.targeting.require(0)).toMatchObject({
+      rampMultiplier: 1,
+    })
+    expect(world.snapshotEntity(0)).toMatchObject({
       rampTargetId: 'second',
       rampMultiplier: 1,
     })

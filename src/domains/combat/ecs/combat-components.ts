@@ -11,13 +11,13 @@ export type UnitComponentName =
 export type ComponentName = 'entityMeta' | UnitComponentName | 'entityTargets' | 'hazard'
 
 export const COMPONENT_FIELDS = {
-  identity: ['id', 'team', 'type', 'rank', 'squadId', 'summonOwnerId', 'summonSourceId'],
+  identity: ['id', 'team', 'type', 'rank', 'squadId', 'summonSourceId'],
   transform: ['x', 'y', 'velocity', 'currentAngle', 'initialAngle', 'offsetX', 'offsetY', 'size', 'isFlying'],
   vitality: ['hp', 'maxHp', 'shield', 'maxShield', 'isDead', 'resurrectOnce', 'isTemporary', 'temporaryDuration', 'reassemblyConfig', 'reassemblyState', 'reassemblyTriggersUsed'],
   combat: ['attack', 'defense', 'speed', 'range', 'actionCooldownMax', 'actionCooldown', 'canTargetAir', 'multishot', 'antiAirDamageMult', 'executeThreshold', 'lifestealMult', 'groundDamageMult', 'shieldDamageMult', 'armorPierceRatio', 'summonCounterDamageMult', 'accuracyPenaltyResist', 'rankScaling'],
   weapon: ['attackType', 'aoeRadius', 'spawnType', 'spawnCap', 'statusOnHit', 'markOnHit', 'linePierce', 'coneAttack', 'beamAttack', 'barrageAttack', 'chainAttack', 'splitFire', 'sideWeapon', 'conditionalAttackMode', 'sweepAttack', 'emergeStrikePending', 'appliesEmp', 'leavesPuddle', 'smokeOnAction', 'pullOnHit', 'knockbackOnHit'],
-  targeting: ['attackTargetId', 'rampTargetId', 'rampMultiplier', 'chargeDistance', 'aggroLockTicks', 'meleeSlotTargetId', 'meleeSlotIndex', 'meleeWaitingTargetId', 'targetPriorityProfile', 'conditionalRange', 'controlBeam', 'controlProgress'],
-  movement: ['turnSpeed', 'isMoving', 'isNavigatingObstacle', 'lastProgressX', 'lastProgressY', 'lastTargetDistance', 'lastProgressTargetId', 'stuckTicks', 'avoidanceSide', 'avoidanceTicks', 'damageReductionWhileMoving', 'burrowConfig', 'isBurrowed', 'modeSwitchConfig', 'mobilityMode', 'stanceConfig', 'stanceMode', 'stanceTicks', 'stealthWhileMoving', 'movementStealthActive'],
+  targeting: ['rampMultiplier', 'chargeDistance', 'aggroLockTicks', 'meleeSlotIndex', 'targetPriorityProfile', 'conditionalRange', 'controlBeam', 'controlProgress'],
+  movement: ['turnSpeed', 'isMoving', 'isNavigatingObstacle', 'lastProgressX', 'lastProgressY', 'lastTargetDistance', 'stuckTicks', 'avoidanceSide', 'avoidanceTicks', 'damageReductionWhileMoving', 'burrowConfig', 'isBurrowed', 'modeSwitchConfig', 'mobilityMode', 'stanceConfig', 'stanceMode', 'stanceTicks', 'stealthWhileMoving', 'movementStealthActive'],
   statusControl: ['statusEffects', 'targetMark', 'stealthUntilAttack', 'hasAttacked', 'transformMode', 'transformState'],
   defense: ['flatDamageBlock', 'shieldHitBlock', 'shieldHitBlockCharges', 'reactiveArmorCharges', 'reactiveArmorBlock', 'damageShareRadius', 'damageShareRatio', 'damageShareMaxTargets', 'projectileInterceptRadius', 'projectileInterceptCooldownMax', 'projectileInterceptCooldown', 'projectileInterceptMaxDamage'],
   support: ['supportAuras', 'periodicAbilities', 'fieldEffect', 'formationModifiers'],
@@ -42,6 +42,8 @@ export interface EntityTargetRefsComponent {
   rampTarget?: EntityId
   meleeTarget?: EntityId
   meleeWaitingTarget?: EntityId
+  progressTarget?: EntityId
+  summonOwner?: EntityId
 }
 
 export interface CombatComponentMap {
@@ -66,9 +68,15 @@ export type CombatComponentStores = {
 }
 
 export const FIELD_COMPONENT = new Map<UnitField, ComponentName>(
-  Object.entries(COMPONENT_FIELDS).flatMap(([name, fields]) =>
+  [
+    ...Object.entries(COMPONENT_FIELDS).flatMap(([name, fields]) =>
     fields.map(field => [field, name as ComponentName] as const),
-  ),
+    ),
+    ...([
+      'attackTargetId', 'rampTargetId', 'meleeSlotTargetId',
+      'meleeWaitingTargetId', 'lastProgressTargetId', 'summonOwnerId',
+    ] as const).map(field => [field, 'entityTargets'] as const),
+  ],
 )
 
 export function createComponentStores(): CombatComponentStores {

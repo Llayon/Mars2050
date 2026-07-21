@@ -69,9 +69,7 @@ function applyEcsTargetMark(
     if (allyId === attackerId) continue
     const ally = world.stores.identity.require(allyId)
     if (ally.team !== attacker.team) continue
-    const targeting = world.stores.targeting.require(allyId)
-    targeting.attackTargetId = undefined
-    targeting.aggroLockTicks = 0
+    world.stores.targeting.require(allyId).aggroLockTicks = 0
     world.stores.entityTargets.require(allyId).attackTarget = undefined
   }
 }

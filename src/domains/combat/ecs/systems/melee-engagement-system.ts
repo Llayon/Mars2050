@@ -33,24 +33,19 @@ export function reserveEcsMeleeSlot(world: CombatWorld, unitId: EntityId, target
   const targeting = world.stores.targeting.require(unitId)
   refs.meleeTarget = targetId
   refs.meleeWaitingTarget = undefined
-  targeting.meleeSlotTargetId = getExternalId(world, targetId)
   targeting.meleeSlotIndex = slot
-  targeting.meleeWaitingTargetId = undefined
   return true
 }
 
 export function clearEcsMeleeSlot(world: CombatWorld, unitId: EntityId): void {
   clearAssigned(world, unitId)
-  const refs = world.stores.entityTargets.require(unitId)
-  refs.meleeWaitingTarget = undefined
-  world.stores.targeting.require(unitId).meleeWaitingTargetId = undefined
+  world.stores.entityTargets.require(unitId).meleeWaitingTarget = undefined
 }
 
 export function setEcsMeleeWaitingTarget(world: CombatWorld, unitId: EntityId, targetId: EntityId): void {
   if (!isMelee(world, unitId)) return
   clearAssigned(world, unitId)
   world.stores.entityTargets.require(unitId).meleeWaitingTarget = targetId
-  world.stores.targeting.require(unitId).meleeWaitingTargetId = getExternalId(world, targetId)
 }
 
 function findSlot(world: CombatWorld, unitId: EntityId, targetId: EntityId, state: EcsMeleeEngagementState): number | null {
@@ -103,14 +98,9 @@ function clearAssigned(world: CombatWorld, unitId: EntityId): void {
   const refs = world.stores.entityTargets.require(unitId)
   const targeting = world.stores.targeting.require(unitId)
   refs.meleeTarget = undefined
-  targeting.meleeSlotTargetId = undefined
   targeting.meleeSlotIndex = undefined
 }
 
 function isMelee(world: CombatWorld, entityId: EntityId): boolean {
   return world.stores.combat.require(entityId).range <= 60
-}
-
-function getExternalId(world: CombatWorld, entityId: EntityId): string {
-  return world.stores.entityMeta.require(entityId).externalId
 }

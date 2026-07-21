@@ -1,24 +1,17 @@
 import type { SimHazard, SimUnit } from '../combat.sim.types'
 import { COMPONENT_FIELDS, FIELD_COMPONENT, createComponentStores, type CombatComponentMap, type ComponentName, type UnitComponentName } from './combat-components'
+import { ComponentQueryRegistry, type ComponentQueryProfile } from './component-query-registry'
 import { CombatResourceStore } from './combat-resources'
 import type { EntityId } from './entity'
 import { CombatInvariantError } from './combat-invariant-error'
 import { ExternalIdAllocator } from './external-id-allocator'
-import { getQueryMask, isQuerySpec, type QuerySpec } from './query-spec'
+import type { QuerySpec } from './query-spec'
 import { StructuralCommandBuffer } from './structural-command-buffer'
+import { captureUnitClone, type UnitCloneData } from './unit-clone'
+import { createHazardSnapshots, createUnitSnapshot, createUnitSnapshots } from './combat-world-snapshot'
+import { captureUnitRelations, resolveUnitRelations, type PendingUnitRelations } from './unit-relation-codec'
 
-export interface ComponentQueryProfile {
-  queryCount: number
-  candidateCount: number
-  resultCount: number
-  cacheHitCount: number
-}
-
-interface QueryCacheEntry {
-  structureRevision: number
-  aliveRevision: number
-  entityIds: EntityId[]
-}
+export type { ComponentQueryProfile } from './component-query-registry'
 
 export class CombatWorld {
   readonly stores = createComponentStores()
@@ -27,16 +20,9 @@ export class CombatWorld {
   readonly externalIds = new ExternalIdAllocator()
   readonly externalIdToEntity = new Map<string, EntityId>()
   private readonly entityIds: EntityId[] = []
-  private readonly queryCache = new Map<string, QueryCacheEntry>()
-  private readonly queryProfile: ComponentQueryProfile = {
-    queryCount: 0,
-    candidateCount: 0,
-    resultCount: 0,
-    cacheHitCount: 0,
-  }
+  private readonly queries = new ComponentQueryRegistry()
+  private readonly pendingRelations = new Map<EntityId, PendingUnitRelations>()
   private nextEntityId = 0
-  private structureRevision = 0
-  private aliveRevision = 0
 
   constructor(initialUnits: SimUnit[] = []) {
     this.queueUnitCreation(...initialUnits)
@@ -57,20 +43,18 @@ export class CombatWorld {
     }
   }
 
+  queueUnitClone(sourceId: EntityId, externalId: string, x: number, y: number): void {
+    this.externalIds.reserve(externalId)
+    this.structuralCommands.queueUnitClone(captureUnitClone(this, sourceId, externalId, x, y))
+  }
+
   createUnitEntity(unit: SimUnit): EntityId {
-    this.assertPendingExternalId(unit.id)
-    const entityId = this.nextEntityId++
-    this.stores.entityMeta.set(entityId, { kind: 'unit', externalId: unit.id })
-    this.stores.entityTargets.set(entityId, {})
-    for (const name of Object.keys(COMPONENT_FIELDS) as UnitComponentName[]) {
-      this.setComponentFromUnit(name, entityId, unit)
-    }
     this.assertKnownFields(unit)
-    this.entityIds.push(entityId)
-    this.externalIdToEntity.set(unit.id, entityId)
-    this.structureRevision++
-    this.resources.get('entitySpatial')?.insert(this, entityId)
-    return entityId
+    return this.createUnitRecord(
+      unit.id,
+      (name, entityId) => { this.setComponentFromUnit(name, entityId, unit) },
+      captureUnitRelations(unit),
+    )
   }
 
   createHazardEntity(hazard: SimHazard): EntityId {
@@ -80,12 +64,24 @@ export class CombatWorld {
     this.stores.hazard.set(entityId, structuredClone(hazard))
     this.entityIds.push(entityId)
     this.externalIdToEntity.set(hazard.id, entityId)
-    this.structureRevision++
+    this.queries.touchStructure()
     return entityId
+  }
+
+  createClonedUnitEntity(clone: UnitCloneData): EntityId {
+    return this.createUnitRecord(
+      clone.externalId,
+      (name, entityId) => { this.setClonedComponent(name, entityId, clone) },
+    )
   }
 
   flushStructuralCommands(): void {
     this.structuralCommands.flush(this)
+    for (const [entityId, pending] of this.pendingRelations) {
+      if (resolveUnitRelations(this, entityId, pending)) {
+        this.pendingRelations.delete(entityId)
+      }
+    }
   }
 
   captureEntityWatermark(): number {
@@ -105,7 +101,7 @@ export class CombatWorld {
     if (hazard) this.externalIdToEntity.delete(hazard.id)
     if (this.stores.hazard.delete(entityId)) {
       this.stores.hazard.compactIfNeeded()
-      this.structureRevision++
+      this.queries.touchStructure()
     }
   }
 
@@ -122,38 +118,14 @@ export class CombatWorld {
   }
 
   query(query: readonly ComponentName[] | QuerySpec, includeDead = false): EntityId[] {
-    this.queryProfile.queryCount++
-    const componentNames = isQuerySpec(query) ? query.components : query
-    const mask = isQuerySpec(query) ? query.mask : getQueryMask(query)
-    const key = `${mask}:${includeDead ? 1 : 0}`
-    const cached = this.queryCache.get(key)
-    if (cached && cached.structureRevision === this.structureRevision &&
-        (includeDead || cached.aliveRevision === this.aliveRevision)) {
-      this.queryProfile.cacheHitCount++
-      this.queryProfile.resultCount += cached.entityIds.length
-      return [...cached.entityIds]
-    }
-    const candidates = this.getSmallestComponentStore(componentNames).getEntityIds()
-    this.queryProfile.candidateCount += candidates.length
-    const result = candidates.filter(entityId => {
-      if (!componentNames.every(name => this.stores[name].has(entityId))) return false
-      if (includeDead) return true
-      return this.stores.vitality.get(entityId)?.isDead !== true
-    }).sort((left, right) => left - right)
-    this.queryProfile.resultCount += result.length
-    this.queryCache.set(key, {
-      structureRevision: this.structureRevision,
-      aliveRevision: this.aliveRevision,
-      entityIds: result,
-    })
-    return [...result]
+    return this.queries.query(this.stores, query, includeDead)
   }
 
   setEntityDead(entityId: EntityId, isDead: boolean): void {
     const vitality = this.stores.vitality.require(entityId)
     if (vitality.isDead === isDead) return
     vitality.isDead = isDead
-    this.aliveRevision++
+    this.queries.touchAlive()
     const spatial = this.resources.get('entitySpatial')
     if (isDead) spatial?.remove(entityId)
     else spatial?.insert(this, entityId)
@@ -171,7 +143,7 @@ export class CombatWorld {
   }
 
   getQueryProfile(): ComponentQueryProfile {
-    return { ...this.queryProfile }
+    return this.queries.getProfile()
   }
 
   getComponent<Name extends ComponentName>(componentName: Name, entityId: EntityId): CombatComponentMap[Name] | undefined {
@@ -179,25 +151,15 @@ export class CombatWorld {
   }
 
   snapshotEntity(entityId: EntityId): SimUnit {
-    const snapshot: Record<string, unknown> = {}
-    for (const name of Object.keys(COMPONENT_FIELDS) as UnitComponentName[]) {
-      Object.assign(snapshot, this.stores[name].get(entityId))
-    }
-    return structuredClone(snapshot) as unknown as SimUnit
+    return createUnitSnapshot(this, entityId, this.pendingRelations.get(entityId))
   }
 
   snapshot(): SimUnit[] {
-    return this.entityIds
-      .filter(entityId => this.stores.entityMeta.get(entityId)?.kind === 'unit')
-      .map(entityId => this.snapshotEntity(entityId))
+    return createUnitSnapshots(this, this.entityIds, entityId => this.pendingRelations.get(entityId))
   }
 
   snapshotHazards(): SimHazard[] {
-    return this.query(['hazard'], true)
-      .flatMap(entityId => {
-        const hazard = this.stores.hazard.get(entityId)
-        return hazard ? [structuredClone(hazard)] : []
-      })
+    return createHazardSnapshots(this)
   }
 
   private setComponentFromUnit<Name extends UnitComponentName>(name: Name, entityId: EntityId, unit: SimUnit): void {
@@ -208,6 +170,31 @@ export class CombatWorld {
     this.stores[name].set(
       entityId,
       structuredClone(component) as unknown as CombatComponentMap[Name],
+    )
+  }
+
+  private createUnitRecord(
+    externalId: string,
+    setComponents: (name: UnitComponentName, entityId: EntityId) => void,
+    pendingRelations?: PendingUnitRelations,
+  ): EntityId {
+    this.assertPendingExternalId(externalId)
+    const entityId = this.nextEntityId++
+    this.stores.entityMeta.set(entityId, { kind: 'unit', externalId })
+    this.stores.entityTargets.set(entityId, {})
+    if (pendingRelations) this.pendingRelations.set(entityId, pendingRelations)
+    for (const name of Object.keys(COMPONENT_FIELDS) as UnitComponentName[]) setComponents(name, entityId)
+    this.entityIds.push(entityId)
+    this.externalIdToEntity.set(externalId, entityId)
+    this.queries.touchStructure()
+    this.resources.get('entitySpatial')?.insert(this, entityId)
+    return entityId
+  }
+
+  private setClonedComponent<Name extends UnitComponentName>(name: Name, entityId: EntityId, clone: UnitCloneData): void {
+    this.stores[name].set(
+      entityId,
+      structuredClone(clone.components[name]) as CombatComponentMap[Name],
     )
   }
 
@@ -226,14 +213,4 @@ export class CombatWorld {
     }
   }
 
-  private getSmallestComponentStore(componentNames: readonly ComponentName[]) {
-    const first = componentNames[0]
-    if (!first) return this.stores.entityMeta
-    let smallest = this.stores[first]
-    for (const name of componentNames.slice(1)) {
-      const candidate = this.stores[name]
-      if (candidate.getActiveCount() < smallest.getActiveCount()) smallest = candidate
-    }
-    return smallest
-  }
 }

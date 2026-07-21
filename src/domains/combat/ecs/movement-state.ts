@@ -102,15 +102,16 @@ export function updateEcsStuckRecovery(world: CombatWorld, entityId: EntityId, t
   const transform = world.stores.transform.require(entityId)
   const combat = world.stores.combat.require(entityId)
   const movement = world.stores.movement.require(entityId)
+  const refs = world.stores.entityTargets.require(entityId)
   if (transform.isFlying || inRange || combat.speed <= 0) {
     movement.stuckTicks = 0
     movement.avoidanceTicks = 0
     movement.lastTargetDistance = undefined
-    movement.lastProgressTargetId = undefined
+    refs.progressTarget = undefined
     return
   }
-  if (movement.lastProgressTargetId !== targetIdentity.id) {
-    movement.lastProgressTargetId = targetIdentity.id
+  if (refs.progressTarget !== targetId) {
+    refs.progressTarget = targetId
     movement.lastTargetDistance = distance
     movement.stuckTicks = 0
     movement.avoidanceTicks = 0

@@ -15,13 +15,14 @@ import type {
 } from './combat.unit-ability-components'
 
 export interface UnitComponentDataMap {
-  identity: UnitIdentityComponent
+  identity: Omit<UnitIdentityComponent, 'summonOwnerId'>
   transform: UnitTransformComponent
   vitality: UnitVitalityComponent
   combat: UnitCombatComponent
   weapon: UnitWeaponComponent
-  targeting: UnitTargetingComponent
-  movement: UnitMovementComponent
+  targeting: Omit<UnitTargetingComponent,
+    'attackTargetId' | 'rampTargetId' | 'meleeSlotTargetId' | 'meleeWaitingTargetId'>
+  movement: Omit<UnitMovementComponent, 'lastProgressTargetId'>
   statusControl: UnitStatusControlComponent
   defense: UnitDefenseComponent
   support: UnitSupportComponent

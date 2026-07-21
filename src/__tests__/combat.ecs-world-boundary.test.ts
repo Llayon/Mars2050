@@ -42,6 +42,74 @@ describe('combat ECS world boundary', () => {
     expect(world.stores.statusControl.require(1).statusEffects).toEqual([])
   })
 
+  it('hydrates forward relations once without overwriting canonical refs', () => {
+    const target = unit('target')
+    const summon = unit('summon')
+    summon.summonOwnerId = 'owner'
+    const world = new CombatWorld([target, summon])
+
+    expect(world.stores.entityTargets.require(1).summonOwner).toBeUndefined()
+    expect(world.snapshotEntity(1).summonOwnerId).toBe('owner')
+    world.stores.entityTargets.require(1).attackTarget = 0
+
+    world.queueUnitCreation(unit('owner'))
+    world.flushStructuralCommands()
+
+    expect(world.stores.entityTargets.require(1)).toMatchObject({
+      attackTarget: 0,
+      summonOwner: 2,
+    })
+    expect(world.snapshotEntity(1)).toMatchObject({
+      attackTargetId: 'target',
+      summonOwnerId: 'owner',
+    })
+  })
+
+  it('captures component-native clones and resets transient state', () => {
+    const source = createRuntimeUnitFromConfig({
+      id: 'source', team: 'attacker', type: 'officer', x: 10, y: 20, currentAngle: 0,
+    })!
+    const world = new CombatWorld([source])
+    world.stores.identity.require(0).squadId = 'squad'
+    Object.assign(world.stores.vitality.require(0), {
+      hp: 1,
+      maxShield: 20,
+      shield: 2,
+      reassemblyState: { remainingTicks: 4, hpPercent: 0.5, sourceUnitId: 'source' },
+      reassemblyTriggersUsed: 1,
+    })
+    world.stores.combat.require(0).actionCooldown = 8
+    Object.assign(world.stores.targeting.require(0), {
+      rampMultiplier: 2,
+      chargeDistance: 100,
+      aggroLockTicks: 5,
+      meleeSlotIndex: 3,
+    })
+    world.stores.statusControl.require(0).statusEffects.push({
+      type: 'burn', duration: 10, tickInterval: 10, nextTickIn: 10,
+    })
+    world.stores.entityTargets.require(0).attackTarget = 0
+
+    world.queueUnitClone(0, 'clone', 30, 40)
+    world.stores.support.require(0).supportAuras![0].value = 0.9
+    world.flushStructuralCommands()
+
+    const cloneId = world.getEntityId('clone')!
+    expect(world.stores.identity.require(cloneId)).toMatchObject({ id: 'clone', squadId: undefined })
+    expect(world.stores.transform.require(cloneId)).toMatchObject({ x: 30, y: 40, velocity: { x: 0, y: 0 } })
+    expect(world.stores.vitality.require(cloneId)).toMatchObject({
+      hp: source.maxHp, shield: 20, isDead: false,
+      reassemblyState: undefined, reassemblyTriggersUsed: 0,
+    })
+    expect(world.stores.targeting.require(cloneId)).toMatchObject({
+      rampMultiplier: undefined, chargeDistance: 0, aggroLockTicks: 0,
+      meleeSlotIndex: undefined,
+    })
+    expect(world.stores.statusControl.require(cloneId).statusEffects).toEqual([])
+    expect(world.stores.entityTargets.require(cloneId)).toEqual({})
+    expect(world.stores.support.require(cloneId).supportAuras![0].value).toBe(0.35)
+  })
+
   it('rejects duplicate pending and committed external ids', () => {
     expect(() => new CombatWorld([unit('duplicate'), unit('duplicate')]))
       .toThrow(CombatInvariantError)

@@ -13,18 +13,6 @@ const MELEE_ACQUISITION_RADIUS = 240
 const RANGED_ACQUISITION_BUFFER = 120
 const HACK_CONTROL_LOCK_TICKS = 6
 
-export function syncEcsTargetRefs(world: CombatWorld, entityIds = world.query(['targeting', 'entityTargets'], true)): void {
-  for (const entityId of entityIds) {
-    if (!world.stores.targeting.has(entityId) || !world.stores.entityTargets.has(entityId)) continue
-    const targeting = world.stores.targeting.require(entityId)
-    const refs = world.stores.entityTargets.require(entityId)
-    refs.attackTarget = resolveExternalId(world, targeting.attackTargetId)
-    refs.rampTarget = resolveExternalId(world, targeting.rampTargetId)
-    refs.meleeTarget = resolveExternalId(world, targeting.meleeSlotTargetId)
-    refs.meleeWaitingTarget = resolveExternalId(world, targeting.meleeWaitingTargetId)
-  }
-}
-
 export function runTargetingSystem(world: CombatWorld, unitId: EntityId, melee: EcsMeleeEngagementState): EntityId | null {
   const mode = getHackMode(world, unitId)
   const weapon = world.stores.weapon.require(unitId)
@@ -192,15 +180,12 @@ function isBetterTie(world: CombatWorld, unitId: EntityId, candidate: EntityId, 
 
 function setTarget(world: CombatWorld, unitId: EntityId, targetId: EntityId, lockTicks: number): void {
   world.stores.entityTargets.require(unitId).attackTarget = targetId
-  const targeting = world.stores.targeting.require(unitId)
-  targeting.attackTargetId = getExternalId(world, targetId)
-  targeting.aggroLockTicks = lockTicks
+  world.stores.targeting.require(unitId).aggroLockTicks = lockTicks
 }
 
 function clearTarget(world: CombatWorld, unitId: EntityId, clearMelee = true): void {
   world.stores.entityTargets.require(unitId).attackTarget = undefined
   const targeting = world.stores.targeting.require(unitId)
-  targeting.attackTargetId = undefined
   targeting.aggroLockTicks = 0
   if (clearMelee) clearEcsMeleeSlot(world, unitId)
 }
@@ -211,10 +196,6 @@ function isMelee(world: CombatWorld, unitId: EntityId): boolean {
 
 function getUnits(world: CombatWorld): EntityId[] {
   return world.query(['identity', 'transform', 'vitality', 'combat', 'weapon', 'targeting', 'entityTargets'])
-}
-
-function resolveExternalId(world: CombatWorld, externalId: string | undefined): EntityId | undefined {
-  return externalId === undefined ? undefined : world.getEntityId(externalId)
 }
 
 function getExternalId(world: CombatWorld, entityId: EntityId): string {

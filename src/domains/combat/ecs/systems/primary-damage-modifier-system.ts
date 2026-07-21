@@ -32,12 +32,11 @@ function applyRampDamage(
     ? Math.min(config.maxMultiplier, previousMultiplier + config.step)
     : 1
   refs.rampTarget = targetId
-  targeting.rampTargetId = world.stores.identity.require(targetId).id
   targeting.rampMultiplier = multiplier
   actions.push({
     unitId: identity.id,
     type: 'ramp_charge',
-    targetId: targeting.rampTargetId,
+    targetId: world.stores.identity.require(targetId).id,
     value: multiplier,
   })
   return Math.floor(damage * multiplier)

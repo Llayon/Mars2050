@@ -214,10 +214,10 @@ function applySummonCounter(world: CombatWorld, attackerId: EntityId, targetId: 
   const identity = world.stores.identity.require(targetId)
   const vitality = world.stores.vitality.require(targetId)
   const tags = UNIT_TYPES[identity.type as UnitTypeKey]?.baseStats.combatTags ?? []
-  const summon = world.stores.weapon.require(targetId).attackType === 'spawn' || identity.summonOwnerId !== undefined || vitality.isTemporary || tags.includes('summoner')
+  const summon = world.stores.weapon.require(targetId).attackType === 'spawn' || world.stores.entityTargets.require(targetId).summonOwner !== undefined ||
+    vitality.isTemporary || tags.includes('summoner')
   return summon ? Math.floor(damage * multiplier) : damage
 }
-
 function getMarkDamageMultiplier(attackerId: string, mark: ReturnType<CombatWorld['stores']['statusControl']['require']>['targetMark']): number {
   if (!mark || mark.duration <= 0 || !mark.sharedDamage && mark.sourceUnitId !== attackerId) return 0
   return Math.max(0, mark.damageMultiplier ?? 0)

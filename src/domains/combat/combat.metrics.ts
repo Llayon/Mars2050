@@ -188,21 +188,22 @@ function recordDeathAction(metrics: CombatMetricsCollector, action: BattleAction
 }
 
 function recordTargetSwitches(metrics: CombatMetricsCollector, world: CombatWorld): void {
-  for (const entityId of world.query(['identity', 'vitality', 'targeting'], true)) {
+  for (const entityId of world.query(['identity', 'vitality', 'targeting', 'entityTargets'], true)) {
     const identity = world.stores.identity.require(entityId)
     const vitality = world.stores.vitality.require(entityId)
-    const targeting = world.stores.targeting.require(entityId)
-    if (vitality.isDead || !targeting.attackTargetId) {
+    const targetEntityId = world.stores.entityTargets.require(entityId).attackTarget
+    const targetExternalId = targetEntityId === undefined ? undefined : world.stores.entityMeta.get(targetEntityId)?.externalId
+    if (vitality.isDead || targetExternalId === undefined) {
       metrics.lastTargetByUnitId.delete(identity.id)
       continue
     }
 
     const previousTarget = metrics.lastTargetByUnitId.get(identity.id)
-    if (previousTarget && previousTarget !== targeting.attackTargetId) {
+    if (previousTarget && previousTarget !== targetExternalId) {
       metrics.targetSwitches++
       metrics.targetSwitchesByUnitType[identity.type] = (metrics.targetSwitchesByUnitType[identity.type] ?? 0) + 1
     }
-    metrics.lastTargetByUnitId.set(identity.id, targeting.attackTargetId)
+    metrics.lastTargetByUnitId.set(identity.id, targetExternalId)
   }
 }
 

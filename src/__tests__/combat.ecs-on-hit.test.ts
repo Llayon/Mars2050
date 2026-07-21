@@ -5,7 +5,6 @@ import { CombatWorld } from '@/domains/combat/ecs/combat-world'
 import {
   applyEcsStatus,
   runActionSystem,
-  syncEcsTargetRefs,
 } from '@/domains/combat/ecs/systems'
 
 function actionContext() {
@@ -51,7 +50,6 @@ describe('combat ECS on-hit effects', () => {
     ally.attackTargetId = target.id
     ally.aggroLockTicks = 8
     const world = new CombatWorld([scout, ally, target, squadmate])
-    syncEcsTargetRefs(world)
     const actions: Parameters<typeof runActionSystem>[3] = []
 
     const result = runActionSystem(world, 0, 2, actions, actionContext())
@@ -65,11 +63,9 @@ describe('combat ECS on-hit effects', () => {
     expect(world.stores.statusControl.require(3).targetMark).toEqual(
       world.stores.statusControl.require(2).targetMark,
     )
-    expect(world.stores.targeting.require(1)).toMatchObject({
-      attackTargetId: undefined,
-      aggroLockTicks: 0,
-    })
+    expect(world.stores.targeting.require(1).aggroLockTicks).toBe(0)
     expect(world.stores.entityTargets.require(1).attackTarget).toBeUndefined()
+    expect(world.snapshotEntity(1).attackTargetId).toBeUndefined()
     expect(actions).toEqual([
       { unitId: 'scout', type: 'attack', targetId: 'target' },
       { unitId: 'scout', type: 'target_mark', targetId: 'target', value: 1.25 },
