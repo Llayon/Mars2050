@@ -1,0 +1,54 @@
+{
+  "battle": {
+    "id": "legacy-v2-battle"
+  },
+  "snapshot": {
+    "version": 2,
+    "initial_state": [
+      {
+        "id": "marine_0",
+        "team": "attacker",
+        "type": "marine",
+        "x": 100,
+        "y": 800,
+        "velocity": { "x": 0, "y": 0 },
+        "currentAngle": -1.5707963267948966,
+        "size": "S",
+        "isFlying": false,
+        "hp": 100,
+        "maxHp": 100,
+        "shield": 0,
+        "maxShield": 0,
+        "isDead": false,
+        "attack": 10,
+        "defense": 2,
+        "speed": 30,
+        "range": 120,
+        "actionCooldownMax": 10,
+        "actionCooldown": 0,
+        "canTargetAir": false,
+        "attackType": "single",
+        "aggroLockTicks": 0,
+        "turnSpeed": 20,
+        "statusEffects": []
+      }
+    ],
+    "log": [
+      {
+        "tick": 0,
+        "actions": [
+          {
+            "unitId": "marine_0",
+            "type": "move",
+            "fromX": 100,
+            "fromY": 800,
+            "toX": 100,
+            "toY": 798
+          }
+        ]
+      }
+    ],
+    "termination_reason": "elimination",
+    "elapsed_ticks": 1
+  }
+}

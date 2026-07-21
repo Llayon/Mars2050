@@ -27,3 +27,24 @@ export interface TradeResult {
   error?: string
   message?: string
 }
+
+export type ReplayCompatibilityStatus = 'current' | 'legacy_approximate' | 'unsupported'
+export type ReplayCompatibilityReason = 'older_engine' | 'newer_engine' | 'invalid_version'
+
+export interface ReplayCompatibility {
+  snapshotVersion: number
+  currentVersion: number
+  status: ReplayCompatibilityStatus
+  canPlay: boolean
+  visuallyApproximate: boolean
+  reason?: ReplayCompatibilityReason
+}
+
+export interface StoredBattleReplay {
+  initialState: SimUnit[]
+  logs: BattleTick[]
+  simulationVersion: number
+  terminationReason?: TerminationReason
+  elapsedTicks?: number
+  compatibility: ReplayCompatibility
+}

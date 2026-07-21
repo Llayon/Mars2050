@@ -5,7 +5,18 @@ import { startBattleReplayEngine } from './battle-replay-engine'
 import type { ReplayControls, ReplayRendererMode } from './battle-replay-engine'
 import { buildBattleReplayMetrics } from './battle-replay-metrics'
 
-export const BattleReplayModal = memo(function BattleReplayModal({ attackerUnits, defenderUnits, initialState, logs, obstacles, rendererMode, onClose }: { attackerUnits: UnitRow[], defenderUnits: UnitRow[], initialState?: SimUnit[], logs: BattleTick[], obstacles?: Obstacle[], rendererMode?: ReplayRendererMode, onClose: () => void }) {
+interface BattleReplayModalProps {
+  attackerUnits: UnitRow[]
+  defenderUnits: UnitRow[]
+  initialState?: SimUnit[]
+  logs: BattleTick[]
+  obstacles?: Obstacle[]
+  rendererMode?: ReplayRendererMode
+  replayWarning?: string
+  onClose: () => void
+}
+
+export const BattleReplayModal = memo(function BattleReplayModal({ attackerUnits, defenderUnits, initialState, logs, obstacles, rendererMode, replayWarning, onClose }: BattleReplayModalProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const controlsRef = useRef<ReplayControls | null>(null)
 
@@ -151,7 +162,14 @@ export const BattleReplayModal = memo(function BattleReplayModal({ attackerUnits
         ✕
       </button>
       <div className="flex-1 min-h-0 flex flex-col items-center justify-center p-0 sm:p-4">
-        <div ref={containerRef} className="rounded-lg overflow-hidden border border-gray-700 shadow-[0_0_30px_rgba(0,0,0,0.8)]" style={{ height: 'min(100%, 200vw)', maxHeight: '100%', maxWidth: '100%', aspectRatio: '1/2' }} />
+        <div className="flex-1 min-h-0 flex w-full items-center justify-center">
+          <div ref={containerRef} className="rounded-lg overflow-hidden border border-gray-700 shadow-[0_0_30px_rgba(0,0,0,0.8)]" style={{ height: 'min(100%, 200vw)', maxHeight: '100%', maxWidth: '100%', aspectRatio: '1/2' }} />
+        </div>
+        {replayWarning && (
+          <div role="status" className="w-full shrink-0 border-t border-amber-500/60 bg-amber-950/90 px-4 py-2 text-center text-xs text-amber-100">
+            {replayWarning}
+          </div>
+        )}
       </div>
     </div>
   )

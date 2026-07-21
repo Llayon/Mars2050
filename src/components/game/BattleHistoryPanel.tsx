@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { simulateBattle } from '@/domains/combat/combat.engine'
 import type { UnitRow, BattleTick, SimUnit, Obstacle } from '@/domains/combat/combat.types'
-import type { AttackResult } from '@/domains/pvp/pvp.types'
 import { usePvp } from '@/hooks/usePvp'
 import { useToast } from '@/components/ui/toast'
 import { BattleReplayModal } from './BattleReplayModal'
@@ -17,6 +16,7 @@ export interface BattleReplayPayload {
   logs: BattleTick[]
   obstacles?: Obstacle[]
   message: string
+  replayWarning?: string
 }
 
 interface BattleHistoryPanelProps {
@@ -38,7 +38,7 @@ interface BattleRow {
 export function BattleHistoryPanel({ colonyId, onReplay }: BattleHistoryPanelProps) {
   const [battles, setBattles] = useState<BattleRow[]>([])
   const [loading, setLoading] = useState(true)
-  const [replayData, setReplayData] = useState<Record<string, unknown> | null>(null)
+  const [replayData, setReplayData] = useState<BattleReplayPayload | null>(null)
   const { fetchBattle } = usePvp(colonyId)
   const { toast } = useToast()
 
@@ -61,16 +61,24 @@ export function BattleHistoryPanel({ colonyId, onReplay }: BattleHistoryPanelPro
     let payload: BattleReplayPayload
 
     try {
-      const data = await fetchBattle(battle.id) as AttackResult
+      const data = await fetchBattle(battle.id)
+      if (!data.compatibility.canPlay) {
+        toast(`Реплей v${data.simulationVersion} несовместим с симулятором v${data.compatibility.currentVersion}`, 'error')
+        return
+      }
+      const replayWarning = data.compatibility.visuallyApproximate
+        ? `Исторический реплей v${data.simulationVersion}: визуализация приблизительная для симулятора v${data.compatibility.currentVersion}.`
+        : undefined
+      if (replayWarning) toast(replayWarning, 'info')
       payload = {
-        attackerUnits: data.attackerUnits || battle.attacker_units,
-        defenderUnits: data.defenderUnits || battle.defender_units,
+        attackerUnits: battle.attacker_units,
+        defenderUnits: battle.defender_units,
         initialState: data.initialState,
-        logs: data.logs || [],
-        obstacles: data.obstacles,
+        logs: data.logs,
+        replayWarning,
         message: `Победитель: ${battle.winner === 'attacker' ? 'Атакующий' : battle.winner === 'defender' ? 'Защитник' : 'Ничья'}`
       }
-    } catch (e) {
+    } catch {
       toast('Серверный реплей недоступен, симулируем локально', 'error')
       // Fallback: reconstruct deterministically if API fails
       const result = simulateBattle(battle.attacker_units as UnitRow[], battle.defender_units as UnitRow[])
@@ -88,7 +96,7 @@ export function BattleHistoryPanel({ colonyId, onReplay }: BattleHistoryPanelPro
       onReplay(payload)
       return
     }
-    setReplayData(payload as unknown as Record<string, unknown>)
+    setReplayData(payload)
   }
 
   if (loading) return <div className="text-center py-4 text-gray-400">Загрузка...</div>
@@ -157,11 +165,12 @@ export function BattleHistoryPanel({ colonyId, onReplay }: BattleHistoryPanelPro
 
       {replayData && (
         <BattleReplayModal
-          attackerUnits={replayData.attackerUnits as UnitRow[]}
-          defenderUnits={replayData.defenderUnits as UnitRow[]}
-          initialState={replayData.initialState as SimUnit[]}
-          obstacles={replayData.obstacles as Obstacle[]}
-          logs={replayData.logs as BattleTick[]}
+          attackerUnits={replayData.attackerUnits}
+          defenderUnits={replayData.defenderUnits}
+          initialState={replayData.initialState}
+          obstacles={replayData.obstacles}
+          logs={replayData.logs}
+          replayWarning={replayData.replayWarning}
           onClose={() => setReplayData(null)}
         />
       )}

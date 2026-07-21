@@ -44,6 +44,11 @@ describe('pvp.replay — snapshot version contract', () => {
     expect(r).not.toBeNull()
     expect(r?.snapshot.version).toBe(7)
     expect(r?.snapshot.metrics).toEqual({ firstAttackTick: 3 })
+    expect(r?.compatibility).toMatchObject({
+      status: 'unsupported',
+      canPlay: false,
+      reason: 'newer_engine',
+    })
   })
 
   it('persistBattleWithSnapshot returns the inserted battle id', async () => {

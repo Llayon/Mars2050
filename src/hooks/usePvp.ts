@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import type { AttackResult, TradeResult } from '@/domains/pvp/pvp.types'
+import type { AttackResult, StoredBattleReplay, TradeResult } from '@/domains/pvp/pvp.types'
+import { parseBattleReplayResponse } from '@/domains/pvp/pvp.replay-compat'
 import type { DeploymentPoint } from '@/domains/combat/combat.deployment'
 
 export function usePvp(colonyId: string | null) {
@@ -74,11 +75,13 @@ export function usePvp(colonyId: string | null) {
     }
   }
 
-  async function fetchBattle(battleId: string): Promise<unknown> {
+  async function fetchBattle(battleId: string): Promise<StoredBattleReplay> {
     const res = await fetch(`/api/pvp/battle/${battleId}`)
     const data = await res.json()
     if (!res.ok) throw new Error(data.error?.message || data.error || 'Fetch failed')
-    return data
+    const replay = parseBattleReplayResponse(data)
+    if (!replay) throw new Error('Invalid replay payload')
+    return replay
   }
 
   return {
