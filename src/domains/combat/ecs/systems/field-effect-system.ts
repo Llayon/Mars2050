@@ -3,7 +3,7 @@ import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
 import { applyEcsFieldEffectAt } from './trigger-field-system'
 
-export function getEcsFieldEffectEntities(world: CombatWorld): EntityId[] {
+export function getEcsFieldEffectEntities(world: CombatWorld): readonly EntityId[] {
   return world.query(['identity', 'transform', 'vitality', 'support', 'fieldEffectCapability'])
 }
 

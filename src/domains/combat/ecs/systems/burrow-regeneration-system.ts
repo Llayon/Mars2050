@@ -44,6 +44,6 @@ export function runEcsBurrowRegenerationSystem(
 
 export function getEcsBurrowRegenerationEntities(
   world: CombatWorld,
-): EntityId[] {
+): readonly EntityId[] {
   return world.query(['identity', 'vitality', 'movement', 'burrowRegenerationCapability'])
 }

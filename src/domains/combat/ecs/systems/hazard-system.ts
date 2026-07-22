@@ -15,7 +15,7 @@ export function runHazardSystem(
   actions: BattleAction[],
   onUnitDeath: EcsHazardDeathHandler,
 ): void {
-  const hazardIds = world.query(['entityMeta', 'hazard'], true).reverse()
+  const hazardIds = [...world.query(['entityMeta', 'hazard'], true)].reverse()
   for (const hazardId of hazardIds) {
     const hazard = world.stores.hazard.get(hazardId)
     if (!hazard) continue

@@ -21,11 +21,12 @@ export class CombatWorld {
   readonly externalIds = new ExternalIdAllocator()
   readonly externalIdToEntity = new Map<string, EntityId>()
   private readonly entityIds: EntityId[] = []
-  private readonly queries = new ComponentQueryRegistry()
+  private readonly queries: ComponentQueryRegistry
   private readonly pendingRelations = new Map<EntityId, PendingUnitRelations>()
   private nextEntityId = 0
 
-  constructor(initialUnits: SimUnit[] = []) {
+  constructor(initialUnits: SimUnit[] = [], options: { profile?: boolean } = {}) {
+    this.queries = new ComponentQueryRegistry(options.profile === true)
     this.queueUnitCreation(...initialUnits)
     this.flushStructuralCommands()
   }
@@ -122,7 +123,7 @@ export class CombatWorld {
     return this.externalIds.prefer(externalId)
   }
 
-  query(query: readonly ComponentName[] | QuerySpec, includeDead = false): EntityId[] {
+  query(query: readonly ComponentName[] | QuerySpec, includeDead = false): readonly EntityId[] {
     return this.queries.query(this.stores, query, includeDead)
   }
 

@@ -22,7 +22,7 @@ export function runEcsGrowthAndChargeSystem(
 
 export function getEcsGrowthAndChargeEntities(
   world: CombatWorld,
-): EntityId[] {
+): readonly EntityId[] {
   return world.query(['identity', 'vitality', 'combat', 'lifecycle', 'growthChargeCapability'])
 }
 

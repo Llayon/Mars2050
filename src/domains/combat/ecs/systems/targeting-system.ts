@@ -63,7 +63,7 @@ function getAcquisitionCandidates(
   world: CombatWorld,
   unitId: EntityId,
   mode: HackControlMode | null,
-): EntityId[] {
+): readonly EntityId[] {
   if (getEcsTargetingProfile(world, unitId).acquisition === 'global') return getUnits(world)
   const transform = world.stores.transform.require(unitId)
   const spatial = world.resources.require('entitySpatial')
@@ -97,7 +97,7 @@ function selectMovementFallback(world: CombatWorld, unitId: EntityId, melee: Ecs
   return waiting
 }
 
-function selectAggroTarget(world: CombatWorld, unitId: EntityId, enemies: EntityId[], profile: TargetingProfileConfig): EntityId | null {
+function selectAggroTarget(world: CombatWorld, unitId: EntityId, enemies: readonly EntityId[], profile: TargetingProfileConfig): EntityId | null {
   let target: EntityId | null = null
   let bestScore = -Infinity
   const nearestDistance = getNearestDistance(world, unitId, enemies)
@@ -111,7 +111,7 @@ function selectAggroTarget(world: CombatWorld, unitId: EntityId, enemies: Entity
   return target
 }
 
-function selectHackTarget(world: CombatWorld, unitId: EntityId, candidates: EntityId[], melee: EcsMeleeEngagementState, mode: HackControlMode | null): { handled: boolean; target: EntityId | null } {
+function selectHackTarget(world: CombatWorld, unitId: EntityId, candidates: readonly EntityId[], melee: EcsMeleeEngagementState, mode: HackControlMode | null): { handled: boolean; target: EntityId | null } {
   if (mode === null) return { handled: false, target: null }
   const combat = world.stores.combat.require(unitId)
   const weapon = world.stores.weapon.require(unitId)
@@ -157,13 +157,13 @@ function getAcquisitionRadius(world: CombatWorld, unitId: EntityId): number {
   return range <= 60 ? MELEE_ACQUISITION_RADIUS : Math.max(MELEE_ACQUISITION_RADIUS, range + RANGED_ACQUISITION_BUFFER)
 }
 
-function getNearestDistance(world: CombatWorld, unitId: EntityId, targets: EntityId[]): number {
+function getNearestDistance(world: CombatWorld, unitId: EntityId, targets: readonly EntityId[]): number {
   let nearest = Infinity
   for (const targetId of targets) nearest = Math.min(nearest, getEntityDistance(world, unitId, targetId))
   return nearest
 }
 
-function selectNearest(world: CombatWorld, unitId: EntityId, targets: EntityId[]): EntityId | null {
+function selectNearest(world: CombatWorld, unitId: EntityId, targets: readonly EntityId[]): EntityId | null {
   let target: EntityId | null = null
   for (const candidate of targets) if (target === null || isBetterTie(world, unitId, candidate, target)) target = candidate
   return target
@@ -194,7 +194,7 @@ function isMelee(world: CombatWorld, unitId: EntityId): boolean {
   return getEcsMaxActionRange(world, unitId) <= 60
 }
 
-function getUnits(world: CombatWorld): EntityId[] {
+function getUnits(world: CombatWorld): readonly EntityId[] {
   return world.query(['identity', 'transform', 'vitality', 'combat', 'weapon', 'targeting', 'entityTargets'])
 }
 

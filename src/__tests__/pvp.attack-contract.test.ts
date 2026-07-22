@@ -143,19 +143,18 @@ describe('executeAttack — contract: simulationVersion in snapshot', () => {
     expect(result.elapsedTicks).toBe(2)
   })
 
-  it('persists and returns combat metrics with the battle snapshot', async () => {
+  it('does not persist diagnostic metrics in production battle snapshots', async () => {
     mockPersist.mockResolvedValue('battle-1')
     const result = await executeAttack(
       makeAuthClient('user-1'), 'user-1', UUID, '550e8400-e29b-41d4-a716-446655440001', 42
     )
 
-    const snapshotArg = mockPersist.mock.calls[0]![1] as { metrics: Record<string, unknown> }
-    expect(snapshotArg.metrics.firstAttackTick).toBe(1)
-    expect(snapshotArg.metrics.damageByUnitType).toEqual({ marine: 10 })
-    expect(result.metrics?.firstAttackTick).toBe(1)
+    const snapshotArg = mockPersist.mock.calls[0]![1] as { metrics?: Record<string, unknown> }
+    expect(snapshotArg.metrics).toBeUndefined()
+    expect(result.metrics).toBeUndefined()
   })
 
-  it('runs PvP simulation with metrics tracking enabled', async () => {
+  it('runs PvP simulation without diagnostic profiling', async () => {
     mockPersist.mockResolvedValue('battle-1')
     await executeAttack(
       makeAuthClient('user-1'), 'user-1', UUID, '550e8400-e29b-41d4-a716-446655440001', 42
@@ -168,12 +167,10 @@ describe('executeAttack — contract: simulationVersion in snapshot', () => {
       [],
       [],
       [],
-      expect.objectContaining({
+      {
         maxTicks: 1000,
-        profile: true,
         timeoutPolicy: 'defender_holds',
-        trackMetrics: true,
-      })
+      }
     )
   })
 })

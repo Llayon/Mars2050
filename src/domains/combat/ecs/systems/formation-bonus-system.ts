@@ -4,7 +4,7 @@ import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
 import { applyEcsStatus } from './status-application-system'
 
-export function getEcsFormationBonusEntities(world: CombatWorld): EntityId[] {
+export function getEcsFormationBonusEntities(world: CombatWorld): readonly EntityId[] {
   return world.query(['identity', 'transform', 'vitality', 'support', 'formationBonusCapability'])
 }
 

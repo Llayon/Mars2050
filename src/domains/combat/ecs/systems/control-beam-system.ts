@@ -6,7 +6,7 @@ import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
 import { applyEcsHealing } from './healing-system'
 
-export function getEcsControlBeamEntities(world: CombatWorld): EntityId[] {
+export function getEcsControlBeamEntities(world: CombatWorld): readonly EntityId[] {
   return world.query([
     'identity',
     'transform',

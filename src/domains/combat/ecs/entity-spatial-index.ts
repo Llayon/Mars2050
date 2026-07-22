@@ -29,10 +29,13 @@ export class EntitySpatialIndex {
   }
   private dirty = true
 
-  constructor(private readonly cellSize = TILE_SIZE) {}
+  constructor(
+    private readonly cellSize = TILE_SIZE,
+    private readonly profilingEnabled = false,
+  ) {}
 
   rebuild(world: CombatWorld): void {
-    this.profile.rebuildCount++
+    if (this.profilingEnabled) this.profile.rebuildCount++
     this.cells.clear()
     this.teamCells.attacker.clear()
     this.teamCells.defender.clear()
@@ -63,7 +66,7 @@ export class EntitySpatialIndex {
   }
 
   update(world: CombatWorld, entityId: EntityId): void {
-    this.profile.incrementalUpdateCount++
+    if (this.profilingEnabled) this.profile.incrementalUpdateCount++
     if (this.dirty) return
     if (world.stores.vitality.get(entityId)?.isDead === true) {
       this.remove(entityId)
@@ -149,6 +152,7 @@ export class EntitySpatialIndex {
   }
 
   private recordQuery(purpose: string, bucketCandidates: number, candidates: number): void {
+    if (!this.profilingEnabled) return
     this.profile.queryCount++
     this.profile.bucketCandidateCount += bucketCandidates
     this.profile.candidateCount += candidates

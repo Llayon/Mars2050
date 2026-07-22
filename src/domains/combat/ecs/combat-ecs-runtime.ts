@@ -9,11 +9,12 @@ export interface EcsCombatRuntime extends CombatRuntime {
   readonly world: CombatWorld
 }
 
-export function createEcsCombatRuntime(): EcsCombatRuntime {
-  const world = new CombatWorld()
+export function createEcsCombatRuntime(options: { profile?: boolean } = {}): EcsCombatRuntime {
+  const profilingEnabled = options.profile === true
+  const world = new CombatWorld([], { profile: profilingEnabled })
   const scheduler = new EcsCombatPhaseScheduler(world)
   let meleeEngagement = createEcsMeleeEngagementState()
-  world.resources.set('entitySpatial', new EntitySpatialIndex())
+  world.resources.set('entitySpatial', new EntitySpatialIndex(undefined, profilingEnabled))
   return {
     world,
     addSquad: (row, team, rng) => { createSquadEntities(world, row, team, rng) },

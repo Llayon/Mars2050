@@ -5,7 +5,7 @@ import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
 import { applyEcsPeriodicAbilityPayload } from './periodic-ability-payload-system'
 
-export function getEcsPeriodicAbilityEntities(world: CombatWorld): EntityId[] {
+export function getEcsPeriodicAbilityEntities(world: CombatWorld): readonly EntityId[] {
   return world.query([
     'identity',
     'transform',

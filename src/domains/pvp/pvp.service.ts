@@ -142,7 +142,7 @@ export async function executeAttack(
     [],
     [],
     [],
-    { trackMetrics: true, maxTicks: 1000, timeoutPolicy: 'defender_holds', profile: true }
+    { maxTicks: 1000, timeoutPolicy: 'defender_holds' }
   )
 
   let stolen: Record<string, number> = {}
@@ -180,7 +180,6 @@ export async function executeAttack(
         seed: battleResult.seed ?? clientSeed ?? 0,
         initial_state: battleResult.initialState as unknown as Record<string, unknown>,
         log: battleResult.logs as unknown as Record<string, unknown>,
-        metrics: (battleResult.metrics ?? {}) as unknown as Record<string, unknown>,
         simulationVersion: battleResult.simulationVersion,
         terminationReason: battleResult.terminationReason,
         elapsedTicks: battleResult.elapsedTicks,
@@ -211,7 +210,7 @@ export async function executeAttack(
     defenderUnits: defenderUnits || [],
     battleId: battleId ?? undefined,
     seed: battleResult.seed,
-    metrics: battleResult.metrics,
+    metrics: undefined,
     simulationVersion: battleResult.simulationVersion,
     terminationReason: battleResult.terminationReason,
     elapsedTicks: battleResult.elapsedTicks,

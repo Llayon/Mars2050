@@ -147,7 +147,7 @@ function runHazardPhase(world: CombatWorld, context: RuntimePhaseContext): void 
 }
 
 function runHpThresholdPhase(world: CombatWorld, context: RuntimePhaseContext): void {
-  const ordered = world.query(['identity', 'vitality', 'lifecycle', 'triggerCapability'])
+  const ordered = [...world.query(['identity', 'vitality', 'lifecycle', 'triggerCapability'])]
     .sort((left, right) => world.stores.identity.require(left).id.localeCompare(world.stores.identity.require(right).id))
   for (const entityId of ordered) processEcsHpThresholdTriggers(world, entityId, context.actions)
 }

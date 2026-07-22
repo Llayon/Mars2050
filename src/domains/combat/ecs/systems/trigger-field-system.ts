@@ -119,7 +119,7 @@ function cleanseHazards(
   const owner = world.stores.identity.require(ownerId)
   const source = world.stores.transform.require(ownerId)
   const removable = new Set(effect.hazardTypes ?? CLEANSE_HAZARDS)
-  const hazardIds = world.query(['hazard'], true).reverse()
+  const hazardIds = [...world.query(['hazard'], true)].reverse()
   for (const hazardId of hazardIds) {
     const hazard = world.stores.hazard.require(hazardId)
     if (!removable.has(hazard.type) ||

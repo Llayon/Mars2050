@@ -1,5 +1,8 @@
 # Combat ECS Runtime
 
+The active optimization sequence is tracked in
+`docs/combat-ecs-v3-optimization-plan.md`.
+
 Simulation version 3 uses the in-repository ECS runtime exclusively. The public
 simulation API no longer exposes an engine selector or legacy array runtime.
 Version 3 makes entity relations, capability queries, spatial updates, and tick

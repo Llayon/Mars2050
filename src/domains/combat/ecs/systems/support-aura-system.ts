@@ -10,7 +10,7 @@ import { cleanseEcsStatuses } from './trigger-field-system'
 
 const DEFAULT_AURA_INTERVAL = 10
 
-export function getEcsSupportAuraEntities(world: CombatWorld): EntityId[] {
+export function getEcsSupportAuraEntities(world: CombatWorld): readonly EntityId[] {
   return world.query([
     'identity',
     'transform',

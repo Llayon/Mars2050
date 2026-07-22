@@ -12,7 +12,7 @@ export interface ComponentQueryProfile {
 interface QueryCacheEntry {
   structureRevision: number
   aliveRevision: number
-  entityIds: EntityId[]
+  entityIds: readonly EntityId[]
 }
 
 export class ComponentQueryRegistry {
@@ -26,6 +26,8 @@ export class ComponentQueryRegistry {
   private structureRevision = 0
   private aliveRevision = 0
 
+  constructor(private readonly profilingEnabled = false) {}
+
   touchStructure(): void {
     this.structureRevision++
   }
@@ -38,31 +40,33 @@ export class ComponentQueryRegistry {
     stores: CombatComponentStores,
     query: readonly ComponentName[] | QuerySpec,
     includeDead: boolean,
-  ): EntityId[] {
-    this.profile.queryCount++
+  ): readonly EntityId[] {
+    if (this.profilingEnabled) this.profile.queryCount++
     const componentNames = isQuerySpec(query) ? query.components : query
     const mask = isQuerySpec(query) ? query.mask : getQueryMask(query)
     const key = `${mask}:${includeDead ? 1 : 0}`
     const cached = this.cache.get(key)
     if (cached && cached.structureRevision === this.structureRevision &&
         (includeDead || cached.aliveRevision === this.aliveRevision)) {
-      this.profile.cacheHitCount++
-      this.profile.resultCount += cached.entityIds.length
-      return [...cached.entityIds]
+      if (this.profilingEnabled) {
+        this.profile.cacheHitCount++
+        this.profile.resultCount += cached.entityIds.length
+      }
+      return cached.entityIds
     }
     const candidates = getSmallestComponentStore(stores, componentNames).getEntityIds()
-    this.profile.candidateCount += candidates.length
+    if (this.profilingEnabled) this.profile.candidateCount += candidates.length
     const result = candidates.filter(entityId => {
       if (!componentNames.every(name => stores[name].has(entityId))) return false
       return includeDead || stores.vitality.get(entityId)?.isDead !== true
     }).sort((left, right) => left - right)
-    this.profile.resultCount += result.length
+    if (this.profilingEnabled) this.profile.resultCount += result.length
     this.cache.set(key, {
       structureRevision: this.structureRevision,
       aliveRevision: this.aliveRevision,
       entityIds: result,
     })
-    return [...result]
+    return result
   }
 
   getProfile(): ComponentQueryProfile {

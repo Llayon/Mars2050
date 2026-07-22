@@ -27,14 +27,14 @@ export function isEcsPassiveSupport(world: CombatWorld, unitId: EntityId): boole
   return weapon.attackType !== 'spawn' && world.stores.combat.require(unitId).attack <= 0 && (world.stores.support.require(unitId).supportAuras?.length ?? 0) > 0
 }
 
-function getSupportCandidates(world: CombatWorld, unitId: EntityId): EntityId[] {
+function getSupportCandidates(world: CombatWorld, unitId: EntityId): readonly EntityId[] {
   const transform = world.stores.transform.require(unitId)
   const candidates = world.resources.require('entitySpatial').query(world, transform.x, transform.y, SUPPORT_ACQUISITION_RADIUS)
   const team = world.stores.identity.require(unitId).team
   return candidates.some(entityId => entityId !== unitId && world.stores.identity.require(entityId).team === team) ? candidates : getUnits(world)
 }
 
-function selectSupportAnchor(world: CombatWorld, unitId: EntityId, candidates: EntityId[]): EntityId | null {
+function selectSupportAnchor(world: CombatWorld, unitId: EntityId, candidates: readonly EntityId[]): EntityId | null {
   const team = world.stores.identity.require(unitId).team
   const allies = candidates.filter(entityId => !world.stores.vitality.require(entityId).isDead && entityId !== unitId && world.stores.identity.require(entityId).team === team)
   if (allies.length === 0) return null
@@ -51,7 +51,7 @@ function selectSupportAnchor(world: CombatWorld, unitId: EntityId, candidates: E
   return target
 }
 
-function isBetterAnchor(world: CombatWorld, unitId: EntityId, candidate: EntityId, current: EntityId, enemies: EntityId[]): boolean {
+function isBetterAnchor(world: CombatWorld, unitId: EntityId, candidate: EntityId, current: EntityId, enemies: readonly EntityId[]): boolean {
   const candidateEnemyDistance = nearestDistance(world, candidate, enemies)
   const currentEnemyDistance = nearestDistance(world, current, enemies)
   return candidateEnemyDistance !== currentEnemyDistance
@@ -59,13 +59,13 @@ function isBetterAnchor(world: CombatWorld, unitId: EntityId, candidate: EntityI
     : isBetterTie(world, unitId, candidate, current)
 }
 
-function selectNearest(world: CombatWorld, unitId: EntityId, targets: EntityId[]): EntityId | null {
+function selectNearest(world: CombatWorld, unitId: EntityId, targets: readonly EntityId[]): EntityId | null {
   let target: EntityId | null = null
   for (const candidate of targets) if (target === null || isBetterTie(world, unitId, candidate, target)) target = candidate
   return target
 }
 
-function nearestDistance(world: CombatWorld, unitId: EntityId, targets: EntityId[]): number {
+function nearestDistance(world: CombatWorld, unitId: EntityId, targets: readonly EntityId[]): number {
   let nearest = Infinity
   for (const targetId of targets) nearest = Math.min(nearest, getEntityDistance(world, unitId, targetId))
   return nearest
@@ -80,7 +80,7 @@ function isBetterTie(world: CombatWorld, unitId: EntityId, candidate: EntityId, 
   return candidateHp !== currentHp ? candidateHp < currentHp : getExternalId(world, candidate) < getExternalId(world, current)
 }
 
-function getUnits(world: CombatWorld): EntityId[] {
+function getUnits(world: CombatWorld): readonly EntityId[] {
   return world.query(['identity', 'transform', 'vitality', 'combat', 'weapon', 'targeting', 'entityTargets'])
 }
 

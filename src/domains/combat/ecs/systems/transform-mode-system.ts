@@ -4,7 +4,7 @@ import { FIELD_HEIGHT } from '../../combat.utils'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
 
-export function getEcsTransformModeEntities(world: CombatWorld): EntityId[] {
+export function getEcsTransformModeEntities(world: CombatWorld): readonly EntityId[] {
   return world.query([
     'identity',
     'transform',
