@@ -34,7 +34,9 @@ export function resolveUnitRelations(
   complete = resolvePending(world, pending, 'meleeSlotTargetId', value => { refs.meleeTarget = value }) && complete
   complete = resolvePending(world, pending, 'meleeWaitingTargetId', value => { refs.meleeWaitingTarget = value }) && complete
   complete = resolvePending(world, pending, 'lastProgressTargetId', value => { refs.progressTarget = value }) && complete
-  complete = resolvePending(world, pending, 'summonOwnerId', value => { refs.summonOwner = value }) && complete
+  complete = resolvePending(world, pending, 'summonOwnerId', value => {
+    world.linkSummonOwner(entityId, value)
+  }) && complete
   return complete
 }
 

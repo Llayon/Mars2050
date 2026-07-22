@@ -178,10 +178,14 @@ export function cleanseEcsStatuses(
       statusType: effect.type,
     })
   }
+  if (status.statusEffects.length === 0) {
+    world.setUnitCapability(entityId, 'activeStatusCapability', false)
+  }
   const targeting = world.stores.targeting.require(entityId)
   if (targeting.controlProgress?.breakOnCleanse) {
     const progress = targeting.controlProgress
     targeting.controlProgress = undefined
+    world.setUnitCapability(entityId, 'activeControlProgressCapability', false)
     actions.push({
       unitId: progress.sourceUnitId,
       type: 'control_break',

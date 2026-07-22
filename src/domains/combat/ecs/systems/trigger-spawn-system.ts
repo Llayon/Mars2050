@@ -19,11 +19,9 @@ export function spawnEcsTriggerUnits(
   const ownerTransform = world.stores.transform.require(ownerId)
   const sourceKey = payload.unitType
   const cap = payload.cap ?? Number.MAX_SAFE_INTEGER
-  const existing = world.query(['identity', 'vitality', 'entityTargets'], true).filter(entityId => {
+  const existing = world.getActiveSummons(ownerId).filter(entityId => {
     const identity = world.stores.identity.require(entityId)
-    return !world.stores.vitality.require(entityId).isDead &&
-      world.stores.entityTargets.require(entityId).summonOwner === ownerId &&
-      identity.summonSourceId === sourceKey
+    return identity.summonSourceId === sourceKey
   }).length
   const count = Math.max(1, payload.count ?? 1)
   let spawned = 0

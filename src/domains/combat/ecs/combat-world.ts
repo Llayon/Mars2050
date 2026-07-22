@@ -11,6 +11,7 @@ import { captureUnitClone, type UnitCloneData } from './unit-clone'
 import { installCapabilityNames, installUnitCapabilities, setUnitCapabilityPresence } from './unit-capabilities'
 import { createHazardSnapshots, createUnitSnapshot, createUnitSnapshots } from './combat-world-snapshot'
 import { captureUnitRelations, resolveUnitRelations, type PendingUnitRelations } from './unit-relation-codec'
+import { CombatEntityIndexes } from './combat-entity-indexes'
 
 export type { ComponentQueryProfile } from './component-query-registry'
 
@@ -23,6 +24,7 @@ export class CombatWorld {
   private readonly entityIds: EntityId[] = []
   private readonly queries: ComponentQueryRegistry
   private readonly pendingRelations = new Map<EntityId, PendingUnitRelations>()
+  private readonly indexes = new CombatEntityIndexes(this.stores)
   private nextEntityId = 0
 
   constructor(initialUnits: SimUnit[] = [], options: { profile?: boolean } = {}) {
@@ -124,11 +126,17 @@ export class CombatWorld {
   preferExternalId(externalId: string): string {
     return this.externalIds.prefer(externalId)
   }
-
   query(query: readonly ComponentName[] | QuerySpec, includeDead = false): readonly EntityId[] {
     return this.queries.query(this.stores, query, includeDead)
   }
 
+  queryTeam(
+    team: SimUnit['team'],
+    query: readonly ComponentName[] | QuerySpec,
+    includeDead = false,
+  ): readonly EntityId[] {
+    return this.indexes.queryTeam(team, query, includeDead)
+  }
   setEntityDead(entityId: EntityId, isDead: boolean): void {
     const vitality = this.stores.vitality.require(entityId)
     if (vitality.isDead === isDead) return
@@ -138,7 +146,6 @@ export class CombatWorld {
     if (isDead) spatial?.remove(entityId)
     else spatial?.insert(this, entityId)
   }
-
   syncEntitySpatialPosition(entityId: EntityId): void {
     this.resources.get('entitySpatial')?.update(this, entityId)
   }
@@ -146,8 +153,18 @@ export class CombatWorld {
   setEntityTeam(entityId: EntityId, team: SimUnit['team']): void {
     const identity = this.stores.identity.require(entityId)
     if (identity.team === team) return
+    this.indexes.moveTeamEntity(entityId, identity.team, team)
     identity.team = team
     this.resources.get('entitySpatial')?.updateTeam(this, entityId)
+  }
+
+  linkSummonOwner(entityId: EntityId, ownerId: EntityId): void {
+    this.stores.entityTargets.require(entityId).summonOwner = ownerId
+    this.indexes.linkSummon(entityId, ownerId)
+  }
+
+  getActiveSummons(ownerId: EntityId): readonly EntityId[] {
+    return this.indexes.getActiveSummons(ownerId)
   }
 
   setUnitCapability(entityId: EntityId, capability: UnitCapabilityName, present: boolean): void {
@@ -198,6 +215,7 @@ export class CombatWorld {
     this.stores.entityTargets.set(entityId, {})
     if (pendingRelations) this.pendingRelations.set(entityId, pendingRelations)
     for (const name of Object.keys(COMPONENT_FIELDS) as UnitComponentName[]) setComponents(name, entityId)
+    this.indexes.addTeamEntity(entityId, this.stores.identity.require(entityId).team)
     this.entityIds.push(entityId)
     this.externalIdToEntity.set(externalId, entityId)
     this.queries.touchStructure()

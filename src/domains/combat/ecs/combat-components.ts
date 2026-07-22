@@ -14,7 +14,8 @@ export type UnitCapabilityName =
   | 'controlBeamCapability' | 'transformModeCapability'
   | 'growthChargeCapability' | 'burrowRegenerationCapability'
   | 'triggerCapability' | 'reassemblyCapability'
-  | 'periodicSpawnerCapability'
+  | 'periodicSpawnerCapability' | 'activeStatusCapability'
+  | 'activeControlProgressCapability'
 
 export type ComponentName =
   | 'entityMeta' | UnitComponentName | UnitCapabilityName
@@ -84,6 +85,8 @@ export interface CombatComponentMap {
   triggerCapability: UnitCapabilityComponent
   reassemblyCapability: UnitCapabilityComponent
   periodicSpawnerCapability: UnitCapabilityComponent
+  activeStatusCapability: UnitCapabilityComponent
+  activeControlProgressCapability: UnitCapabilityComponent
   entityTargets: EntityTargetRefsComponent
   hazard: SimHazard
 }
@@ -129,6 +132,8 @@ export function createComponentStores(): CombatComponentStores {
     triggerCapability: new ComponentStore<CombatComponentMap['triggerCapability']>(),
     reassemblyCapability: new ComponentStore<CombatComponentMap['reassemblyCapability']>(),
     periodicSpawnerCapability: new ComponentStore<CombatComponentMap['periodicSpawnerCapability']>(),
+    activeStatusCapability: new ComponentStore<CombatComponentMap['activeStatusCapability']>(),
+    activeControlProgressCapability: new ComponentStore<CombatComponentMap['activeControlProgressCapability']>(),
     entityTargets: new ComponentStore<CombatComponentMap['entityTargets']>(),
     hazard: new ComponentStore<CombatComponentMap['hazard']>(),
   }

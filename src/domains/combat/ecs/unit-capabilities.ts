@@ -14,6 +14,8 @@ export const UNIT_CAPABILITY_NAMES = [
   'triggerCapability',
   'reassemblyCapability',
   'periodicSpawnerCapability',
+  'activeStatusCapability',
+  'activeControlProgressCapability',
 ] as const satisfies readonly UnitCapabilityName[]
 
 type MissingUnitCapability = Exclude<UnitCapabilityName, typeof UNIT_CAPABILITY_NAMES[number]>
@@ -74,5 +76,7 @@ function hasCapability(unit: SimUnit, capability: UnitCapabilityName): boolean {
     case 'triggerCapability': return (unit.triggerEffects?.length ?? 0) > 0
     case 'reassemblyCapability': return unit.reassemblyConfig !== undefined || unit.reassemblyState !== undefined
     case 'periodicSpawnerCapability': return unit.spawnerConfig !== undefined
+    case 'activeStatusCapability': return (unit.statusEffects?.length ?? 0) > 0
+    case 'activeControlProgressCapability': return unit.controlProgress !== undefined
   }
 }

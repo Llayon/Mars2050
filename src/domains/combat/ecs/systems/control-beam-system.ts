@@ -83,7 +83,7 @@ function breakStaleLinks(
   if (config.breakOnRange === false) return
   const sourceExternalId = getExternalId(world, sourceId)
   const activeTargets = new Set(targets)
-  for (const entityId of world.query(['identity', 'targeting'], true)) {
+  for (const entityId of world.query(['identity', 'targeting', 'activeControlProgressCapability'], true)) {
     const progress = world.stores.targeting.require(entityId).controlProgress
     if (progress?.sourceUnitId === sourceExternalId &&
         !activeTargets.has(entityId)) breakControlProgress(world, entityId, actions)
@@ -109,6 +109,7 @@ function applyControlProgress(
       threshold: config.conversionThreshold,
       breakOnCleanse: config.breakOnCleanse !== false,
     }
+    world.setUnitCapability(targetId, 'activeControlProgressCapability', true)
     actions.push({
       unitId: source.id,
       type: 'control_link',
@@ -134,6 +135,7 @@ function applyControlProgress(
 
   world.setEntityTeam(targetId, source.team)
   targeting.controlProgress = undefined
+  world.setUnitCapability(targetId, 'activeControlProgressCapability', false)
   clearTargeting(world, targetId)
   actions.push({
     unitId: source.id,
@@ -156,7 +158,7 @@ function breakOrphanedLinks(
   world: CombatWorld,
   actions: BattleAction[],
 ): void {
-  for (const entityId of world.query(['identity', 'vitality', 'targeting'], true)) {
+  for (const entityId of world.query(['identity', 'vitality', 'targeting', 'activeControlProgressCapability'], true)) {
     const vitality = world.stores.vitality.require(entityId)
     const progress = world.stores.targeting.require(entityId).controlProgress
     if (!progress) continue
@@ -176,6 +178,7 @@ function breakControlProgress(
   const progress = targeting.controlProgress
   if (!progress) return
   targeting.controlProgress = undefined
+  world.setUnitCapability(entityId, 'activeControlProgressCapability', false)
   actions.push({
     unitId: progress.sourceUnitId,
     type: 'control_break',

@@ -59,5 +59,11 @@ fingerprints and structural counters rather than machine-dependent durations.
   overlap math. Golden fingerprints remain unchanged.
 - Intermediate three-run production medians: `massive_clash` 288.41 ms and
   `zerg_rush` 5106.66 ms. These are progress measurements, not final gates.
-- Pending: full component-native source refs, team/status/summon indexes,
+- Pending: full component-native source refs, deeper spatial traversal work,
   component-native structural bundles, and scheduler-owned actor turns.
+- Status and control-progress phases now use structural active-state markers.
+  Summon caps use a canonical ownership index, and outcome checks use a team
+  membership index that stays synchronized through control conversion.
+- After the index slice, diagnostic component candidate scans are 65.9% of the
+  original baseline for `massive_clash` and 79.1% for `zerg_rush`. Three-run
+  production medians were 291.33 ms and 5261.22 ms respectively.

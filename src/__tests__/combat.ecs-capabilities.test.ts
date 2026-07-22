@@ -25,11 +25,20 @@ describe('combat ECS capability indexes', () => {
       nextTick: 0,
       payload: { kind: 'heal', amount: 1 },
     }]
+    aura.statusEffects = [{
+      type: 'haste', duration: 5, tickInterval: 0, nextTickIn: 0,
+    }]
+    periodic.controlProgress = {
+      sourceUnitId: 'plain', sourceTeam: 'attacker', progress: 1,
+      threshold: 10, breakOnCleanse: true,
+    }
     const world = new CombatWorld([plain, aura, periodic])
 
     expect(world.query(['identity', 'supportAuraCapability'])).toEqual([1])
     expect(world.query(['identity', 'periodicAbilityCapability'])).toEqual([2])
-    expect(world.getQueryProfile().candidateCount).toBe(2)
+    expect(world.query(['activeStatusCapability'])).toEqual([1])
+    expect(world.query(['activeControlProgressCapability'])).toEqual([2])
+    expect(world.getQueryProfile().candidateCount).toBe(4)
     expect(world.snapshotEntity(1)).not.toHaveProperty('present')
   })
 

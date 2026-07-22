@@ -138,11 +138,7 @@ function isSpawnCapReached(world: CombatWorld, entityId: EntityId): boolean {
   const identity = world.stores.identity.require(entityId)
   const cap = world.stores.weapon.require(entityId).spawnCap
   if (cap === undefined) return false
-  let activeSummons = 0
-  for (const candidateId of world.query(['identity', 'vitality', 'entityTargets'])) {
-    if (world.stores.entityTargets.require(candidateId).summonOwner === entityId) activeSummons++
-  }
-  return activeSummons >= cap
+  return world.getActiveSummons(entityId).length >= cap
 }
 
 function isActionBlocked(effects: StatusEffect[]): boolean {

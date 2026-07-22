@@ -59,10 +59,28 @@ describe('combat ECS world boundary', () => {
       attackTarget: 0,
       summonOwner: 2,
     })
+    expect(world.getActiveSummons(2)).toEqual([1])
+    world.setEntityDead(1, true)
+    expect(world.getActiveSummons(2)).toEqual([])
     expect(world.snapshotEntity(1)).toMatchObject({
       attackTargetId: 'target',
       summonOwnerId: 'owner',
     })
+  })
+
+  it('keeps team queries synchronized with runtime conversion', () => {
+    const attacker = unit('attacker')
+    const defender = unit('defender')
+    defender.team = 'defender'
+    const world = new CombatWorld([attacker, defender])
+
+    expect(world.queryTeam('attacker', ['identity', 'vitality'])).toEqual([0])
+    expect(world.queryTeam('defender', ['identity', 'vitality'])).toEqual([1])
+
+    world.setEntityTeam(1, 'attacker')
+
+    expect(world.queryTeam('attacker', ['identity', 'vitality'])).toEqual([0, 1])
+    expect(world.queryTeam('defender', ['identity', 'vitality'])).toEqual([])
   })
 
   it('captures component-native clones and resets transient state', () => {

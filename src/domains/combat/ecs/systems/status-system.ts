@@ -15,7 +15,7 @@ export function runStatusSystem(
   actions: BattleAction[],
   onUnitDeath: EcsStatusDeathHandler,
 ): void {
-  for (const entityId of world.query(['identity', 'vitality', 'statusControl'])) {
+  for (const entityId of world.query(['identity', 'vitality', 'statusControl', 'activeStatusCapability'])) {
     const identity = world.stores.identity.require(entityId)
     const vitality = world.stores.vitality.require(entityId)
     const statusControl = world.stores.statusControl.require(entityId)
@@ -34,6 +34,9 @@ export function runStatusSystem(
       if (effect.duration > 0) continue
       statusControl.statusEffects.splice(index, 1)
       actions.push({ unitId: identity.id, type: 'status_expire', statusType: effect.type })
+    }
+    if (statusControl.statusEffects.length === 0) {
+      world.setUnitCapability(entityId, 'activeStatusCapability', false)
     }
   }
 }

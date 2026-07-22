@@ -28,7 +28,10 @@ export function applyEcsStatus(
     getStatusStackIdentity(status) === getStatusStackIdentity(normalized),
   )
   if (existing) refreshStatus(existing, normalized)
-  else statuses.push(normalized)
+  else {
+    statuses.push(normalized)
+    world.setUnitCapability(targetId, 'activeStatusCapability', true)
+  }
   const action: BattleAction = {
     unitId: identity.id,
     type: 'status_apply',

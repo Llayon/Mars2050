@@ -8,9 +8,8 @@ export function getEcsTerminalOutcome(
 ): BattleOutcome | null {
   const pendingAttackers = hasPendingReassembly(world, 'attacker')
   const pendingDefenders = hasPendingReassembly(world, 'defender')
-  const active = world.query(['identity', 'vitality'])
-  const attackers = active.filter(entityId => getTeam(world, entityId) === 'attacker')
-  const defenders = active.filter(entityId => getTeam(world, entityId) === 'defender')
+  const attackers = [...world.queryTeam('attacker', ['identity', 'vitality'])]
+  const defenders = [...world.queryTeam('defender', ['identity', 'vitality'])]
   if (attackers.length === 0 && defenders.length === 0) return pendingAttackers || pendingDefenders ? null : { winner: 'draw', reason: 'mutual_elimination' }
   if (attackers.length === 0) return pendingAttackers ? null : { winner: 'defender', reason: 'elimination' }
   if (defenders.length === 0) return pendingDefenders ? null : { winner: 'attacker', reason: 'elimination' }
@@ -24,14 +23,9 @@ export function getEcsTerminalOutcome(
 }
 
 function hasPendingReassembly(world: CombatWorld, team: Team): boolean {
-  return world.query(['identity', 'vitality'], true).some(entityId =>
-    world.stores.identity.require(entityId).team === team &&
+  return world.queryTeam(team, ['identity', 'vitality'], true).some(entityId =>
     world.stores.vitality.require(entityId).reassemblyState !== undefined,
   )
-}
-
-function getTeam(world: CombatWorld, entityId: EntityId): Team | undefined {
-  return world.stores.identity.get(entityId)?.team
 }
 
 function canTeamDealDamage(world: CombatWorld, allies: EntityId[], enemies: EntityId[]): boolean {
