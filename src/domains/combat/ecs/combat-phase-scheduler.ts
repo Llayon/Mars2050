@@ -159,7 +159,10 @@ function resolveEnvironmentalDeath(
   context: RuntimePhaseContext,
   cause: Parameters<typeof resolveEcsDeath>[4],
 ): void {
-  const sourceId = sourceUnitId === undefined ? undefined : world.getEntityId(sourceUnitId)
+  const candidateSourceId = sourceUnitId === undefined ? undefined : world.getEntityId(sourceUnitId)
+  const sourceId = candidateSourceId !== undefined && world.stores.identity.has(candidateSourceId)
+    ? candidateSourceId
+    : undefined
   resolveEcsDeath(world, entityId, sourceId, context.actions, cause)
   world.flushStructuralCommands()
 }

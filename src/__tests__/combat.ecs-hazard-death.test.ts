@@ -67,6 +67,8 @@ describe('combat ECS hazard death', () => {
     expect(nativeActions.filter(action => action.type === 'die')
       .map(action => action.unitId)).toEqual(['a-target', 'b-target'])
     expect(runtime.world.snapshotHazards()).toEqual([])
+    expect(runtime.world.getEntityId(mine.id)).toBeUndefined()
+    expect(runtime.world.stores.entityMeta.has(3)).toBe(false)
     expect(runtime.world.stores.vitality.require(1).isDead).toBe(true)
     expect(runtime.world.stores.vitality.require(2).isDead).toBe(true)
   })
@@ -99,6 +101,40 @@ describe('combat ECS hazard death', () => {
       cause: 'hazard',
     })
     expect(runtime.world.stores.vitality.require(0).isDead).toBe(true)
+  })
+
+  it('credits periodic status death from a hazard to its unit owner', () => {
+    const owner = unit('smoke-owner', 'attacker', 100)
+    const target = unit('burning-target', 'defender', 200)
+    target.hp = 3
+    const hazard: SimHazard = {
+      id: 'burning-smoke',
+      team: 'attacker',
+      type: 'smoke',
+      x: 200,
+      y: 100,
+      radius: 40,
+      damagePerTick: 0,
+      duration: 21,
+      sourceUnitId: owner.id,
+      statusEffects: [{ type: 'burn', duration: 10, value: 5, tickInterval: 1 }],
+    }
+    const actions: BattleAction[] = []
+    const runtime = createEcsCombatRuntime()
+    runtime.world.queueUnitCreation(owner, target)
+    runtime.world.queueHazardCreation(hazard)
+    runtime.flushStructuralCommands()
+    const rng = new PRNG(129)
+
+    runtime.runPhase('hazard', { tick: 0, actions, rng })
+    runtime.runPhase('status', { tick: 0, actions, rng })
+
+    expect(actions).toContainEqual({
+      unitId: 'burning-target',
+      type: 'die',
+      sourceUnitId: 'smoke-owner',
+      cause: 'burn',
+    })
   })
 
   it('does not overwrite canonical unit or hazard state from facades', () => {

@@ -26,7 +26,7 @@ export class CombatWorld {
   private nextEntityId = 0
 
   constructor(initialUnits: SimUnit[] = [], options: { profile?: boolean } = {}) {
-    this.queries = new ComponentQueryRegistry(options.profile === true)
+    this.queries = new ComponentQueryRegistry(options.profile !== false)
     this.queueUnitCreation(...initialUnits)
     this.flushStructuralCommands()
   }
@@ -107,6 +107,8 @@ export class CombatWorld {
     if (hazard) this.externalIdToEntity.delete(hazard.id)
     if (this.stores.hazard.delete(entityId)) {
       this.stores.hazard.compactIfNeeded()
+      this.stores.entityMeta.delete(entityId)
+      this.stores.entityMeta.compactIfNeeded()
       this.queries.touchStructure()
     }
   }

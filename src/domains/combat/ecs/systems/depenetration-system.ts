@@ -21,9 +21,10 @@ export function runDepenetrationSystem(world: CombatWorld, actions: BattleAction
     const minDistance = (getSizeRadius(first.size) + getSizeRadius(second.size)) * 0.95
     const dx = second.x - first.x
     const dy = second.y - first.y
+    const distanceSquared = dx * dx + dy * dy
+    if (distanceSquared >= minDistance * minDistance) continue
     const distance = Math.hypot(dx, dy)
-    const overlap = Math.max(0, minDistance - distance)
-    if (overlap <= 0) continue
+    const overlap = minDistance - distance
     const direction = distance > 0
       ? { x: dx / distance, y: dy / distance }
       : getPairVector(world, firstId, secondId)
@@ -110,11 +111,21 @@ function getCollisionPairs(world: CombatWorld): [EntityId, EntityId][] {
   for (const bucket of buckets.values()) {
     for (const firstId of bucket) {
       for (const secondId of getNearby(world, firstId, buckets)) {
-        if (secondId > firstId) pairs.push([firstId, secondId])
+        if (secondId > firstId && isPotentialCollision(world, firstId, secondId)) {
+          pairs.push([firstId, secondId])
+        }
       }
     }
   }
   return pairs.sort((left, right) => left[0] - right[0] || left[1] - right[1])
+}
+
+function isPotentialCollision(world: CombatWorld, firstId: EntityId, secondId: EntityId): boolean {
+  const first = world.stores.transform.require(firstId)
+  const second = world.stores.transform.require(secondId)
+  const dx = second.x - first.x
+  const dy = second.y - first.y
+  return dx * dx + dy * dy < MAX_PAIR_DISTANCE * MAX_PAIR_DISTANCE
 }
 
 function getNearby(world: CombatWorld, entityId: EntityId, buckets: Map<string, EntityId[]>): EntityId[] {

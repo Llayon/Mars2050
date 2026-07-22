@@ -8,6 +8,7 @@ import type { UnitRow } from '@/domains/combat/combat.types'
 
 interface BenchmarkRow extends SpatialQueryProfile {
   preset: string
+  mode: BenchmarkMode
   units: number
   ticks: number
   medianMs: number
@@ -15,34 +16,36 @@ interface BenchmarkRow extends SpatialQueryProfile {
 
 const DEFAULT_PRESETS = ['massive_clash', 'zerg_rush']
 const DEFAULT_RUNS = 5
+type BenchmarkMode = 'production' | 'profile'
 
 function cloneRows(rows: UnitRow[]): UnitRow[] {
   return rows.map(row => ({ ...row, upgrade_path: [...(row.upgrade_path ?? [])] }))
 }
 
-function runPreset(presetId: string, runs: number): BenchmarkRow {
+function runPreset(presetId: string, runs: number, mode: BenchmarkMode): BenchmarkRow {
   const preset = getSimulatorPreset(presetId)
   if (!preset) throw new Error(`Missing simulator preset: ${presetId}`)
-  simulate(preset.attackers, preset.defenders)
+  simulate(preset.attackers, preset.defenders, mode)
   const durations: number[] = []
-  let latest = simulate(preset.attackers, preset.defenders)
+  let latest = simulate(preset.attackers, preset.defenders, mode)
   for (let run = 0; run < runs; run++) {
     const startedAt = performance.now()
-    latest = simulate(preset.attackers, preset.defenders)
+    latest = simulate(preset.attackers, preset.defenders, mode)
     durations.push(performance.now() - startedAt)
   }
   durations.sort((left, right) => left - right)
-  if (!latest.profile) throw new Error(`Missing ECS profile: ${presetId}`)
+  const profile = latest.profile ?? emptyProfile()
   return {
     preset: presetId,
+    mode,
     units: latest.initialState.length,
     ticks: latest.elapsedTicks,
     medianMs: Math.round(durations[Math.floor(durations.length / 2)] * 100) / 100,
-    ...latest.profile,
+    ...profile,
   }
 }
 
-function simulate(attackers: UnitRow[], defenders: UnitRow[]) {
+function simulate(attackers: UnitRow[], defenders: UnitRow[], mode: BenchmarkMode) {
   return simulateBattle(
     cloneRows(attackers),
     cloneRows(defenders),
@@ -50,8 +53,17 @@ function simulate(attackers: UnitRow[], defenders: UnitRow[]) {
     [],
     [],
     [],
-    { profile: true },
+    { profile: mode === 'profile' },
   )
+}
+
+function emptyProfile(): SpatialQueryProfile {
+  return {
+    queryCount: 0, candidateCount: 0, maxCandidates: 0,
+    bucketCandidateCount: 0, rebuildCount: 0, incrementalUpdateCount: 0,
+    componentQueryCount: 0, componentCandidateCount: 0,
+    componentResultCount: 0, componentCacheHitCount: 0, purposes: {},
+  }
 }
 
 function ratio(current: number, baseline: number): number {
@@ -62,9 +74,11 @@ function main(): void {
   const args = process.argv.slice(2)
   const presetArg = args.find(arg => arg.startsWith('--preset='))?.slice('--preset='.length)
   const runsArg = args.find(arg => arg.startsWith('--runs='))?.slice('--runs='.length)
+  const modeArg = args.find(arg => arg.startsWith('--mode='))?.slice('--mode='.length)
+  const mode: BenchmarkMode = modeArg === 'production' ? 'production' : 'profile'
   const runs = Math.max(1, Number(runsArg ?? DEFAULT_RUNS))
   const rows = (presetArg?.split(',').filter(Boolean) ?? DEFAULT_PRESETS)
-    .map(preset => runPreset(preset, runs))
+    .map(preset => runPreset(preset, runs, mode))
   const outputPath = args.find(arg => arg.startsWith('--write='))?.slice('--write='.length)
   const comparePath = args.find(arg => arg.startsWith('--compare='))?.slice('--compare='.length)
   if (outputPath) {

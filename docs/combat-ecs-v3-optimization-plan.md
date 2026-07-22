@@ -46,3 +46,18 @@ Target medians on the v3 baseline machine:
 
 Wall-clock budgets are evaluated on the baseline machine. CI gates deterministic
 fingerprints and structural counters rather than machine-dependent durations.
+
+## Progress
+
+- Slice 1 complete: five golden replay fingerprints, readonly component-query
+  cache views, explicit production/profile benchmark modes, and production PvP
+  diagnostics disabled.
+- Source safety complete: periodic hazards retain their unit owner, hazard
+  statuses propagate that owner, and environmental deaths reject non-unit
+  source entities. Expired hazards now retire metadata and external-ID indexes.
+- Collision broad phase now rejects impossible pairs before narrow-phase
+  overlap math. Golden fingerprints remain unchanged.
+- Intermediate three-run production medians: `massive_clash` 288.41 ms and
+  `zerg_rush` 5106.66 ms. These are progress measurements, not final gates.
+- Pending: full component-native source refs, team/status/summon indexes,
+  component-native structural bundles, and scheduler-owned actor turns.

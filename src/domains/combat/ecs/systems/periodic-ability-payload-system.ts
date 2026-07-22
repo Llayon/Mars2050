@@ -116,6 +116,7 @@ function createHazard(
     damagePerTick: payload.damagePerTick ?? 0,
     duration: payload.duration,
     statusEffects: payload.statusEffects?.map(status => ({ ...status })),
+    sourceUnitId: source.id,
   })
   actions.push({
     unitId: source.id,

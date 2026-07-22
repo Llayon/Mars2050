@@ -26,7 +26,7 @@ export class ComponentQueryRegistry {
   private structureRevision = 0
   private aliveRevision = 0
 
-  constructor(private readonly profilingEnabled = false) {}
+  constructor(private readonly profilingEnabled = true) {}
 
   touchStructure(): void {
     this.structureRevision++

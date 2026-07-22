@@ -31,7 +31,7 @@ export class EntitySpatialIndex {
 
   constructor(
     private readonly cellSize = TILE_SIZE,
-    private readonly profilingEnabled = false,
+    private readonly profilingEnabled = true,
   ) {}
 
   rebuild(world: CombatWorld): void {

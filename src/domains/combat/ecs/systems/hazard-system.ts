@@ -67,7 +67,11 @@ function processSmoke(world: CombatWorld, hazardId: EntityId, actions: BattleAct
   const targets = getTargetsInRadius(world, hazardId)
     .sort((left, right) => getExternalId(world, left).localeCompare(getExternalId(world, right)))
   for (const targetId of targets) {
-    for (const effect of hazard.statusEffects) applyEcsStatus(world, targetId, { ...effect, sourceUnitId: hazard.id, stackKey: hazard.id }, actions)
+    for (const effect of hazard.statusEffects) applyEcsStatus(world, targetId, {
+      ...effect,
+      sourceUnitId: hazard.sourceUnitId ?? hazard.id,
+      stackKey: hazard.id,
+    }, actions)
   }
 }
 
