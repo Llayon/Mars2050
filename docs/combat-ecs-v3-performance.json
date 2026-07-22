@@ -4,11 +4,11 @@
     "mode": "profile",
     "units": 100,
     "ticks": 77,
-    "medianMs": 246.03,
+    "medianMs": 245.04,
     "queryCount": 7895,
     "candidateCount": 238174,
     "maxCandidates": 50,
-    "bucketCandidateCount": 242926,
+    "bucketCandidateCount": 240944,
     "rebuildCount": 1,
     "incrementalUpdateCount": 9635,
     "componentQueryCount": 2156,
@@ -18,12 +18,12 @@
     "purposes": {
       "targeting": {
         "queryCount": 2637,
-        "bucketCandidateCount": 15950,
+        "bucketCandidateCount": 15264,
         "candidateCount": 13737
       },
       "movement": {
         "queryCount": 5258,
-        "bucketCandidateCount": 226976,
+        "bucketCandidateCount": 225680,
         "candidateCount": 224437
       }
     }
@@ -33,11 +33,11 @@
     "mode": "profile",
     "units": 605,
     "ticks": 138,
-    "medianMs": 4821.18,
+    "medianMs": 4677.95,
     "queryCount": 73055,
     "candidateCount": 3832636,
     "maxCandidates": 552,
-    "bucketCandidateCount": 5916110,
+    "bucketCandidateCount": 5827560,
     "rebuildCount": 1,
     "incrementalUpdateCount": 96638,
     "componentQueryCount": 12397,
@@ -47,17 +47,17 @@
     "purposes": {
       "targeting": {
         "queryCount": 23021,
-        "bucketCandidateCount": 837737,
+        "bucketCandidateCount": 790393,
         "candidateCount": 699770
       },
       "movement": {
         "queryCount": 49543,
-        "bucketCandidateCount": 4930421,
+        "bucketCandidateCount": 4889890,
         "candidateCount": 2988525
       },
       "other": {
         "queryCount": 491,
-        "bucketCandidateCount": 147952,
+        "bucketCandidateCount": 147277,
         "candidateCount": 144341
       }
     }

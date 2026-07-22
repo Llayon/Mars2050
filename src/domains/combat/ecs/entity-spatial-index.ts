@@ -92,12 +92,10 @@ export class EntitySpatialIndex {
     }
     this.insert(world, entityId)
   }
-
   query(world: CombatWorld, x: number, y: number, radius: number, purpose = 'other'): EntityId[] {
     this.ensureCurrent(world)
     return this.queryCells(world, this.cells, x, y, radius, purpose)
   }
-
   queryTeam(world: CombatWorld, x: number, y: number, radius: number, team: Team, purpose = 'other'): EntityId[] {
     this.ensureCurrent(world)
     return this.queryCells(world, this.teamCells[team], x, y, radius, purpose)
@@ -148,6 +146,11 @@ export class EntitySpatialIndex {
     let bucketCandidates = 0
     for (let cellY = minCellY; cellY <= maxCellY; cellY++) {
       for (let cellX = minCellX; cellX <= maxCellX; cellX++) {
+        const left = cellX * this.cellSize
+        const top = cellY * this.cellSize
+        const dxToCell = x < left ? left - x : x > left + this.cellSize ? x - left - this.cellSize : 0
+        const dyToCell = y < top ? top - y : y > top + this.cellSize ? y - top - this.cellSize : 0
+        if (dxToCell * dxToCell + dyToCell * dyToCell > radiusSq) continue
         for (const entityId of cells.get(`${cellX}:${cellY}`) ?? []) {
           bucketCandidates++
           const transform = world.stores.transform.require(entityId)
@@ -188,15 +191,12 @@ export class EntitySpatialIndex {
       componentCacheHitCount: component?.cacheHitCount ?? 0,
     }
   }
-
   ensureCurrent(world: CombatWorld): void {
     if (this.dirty) this.rebuild(world)
   }
-
   markDirty(): void {
     this.dirty = true
   }
-
   getTeamEntityCount(team: Team): number {
     return this.teamCounts[team]
   }

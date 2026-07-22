@@ -99,3 +99,7 @@ fingerprints and structural counters rather than machine-dependent durations.
 - The `massive_clash` target is now met. The remaining `zerg_rush` work is
   concentrated in 4,930,421 movement bucket candidates and dense-neighbor
   steering; the 3 second target remains open.
+- Spatial queries now skip grid cells whose bounds do not intersect the query
+  circle. This preserves candidate ordering and golden replays while reducing
+  `zerg_rush` traversal to 5,827,560 bucket candidates. Five-run production
+  medians are now 243.04 ms for `massive_clash` and 4481.19 ms for `zerg_rush`.

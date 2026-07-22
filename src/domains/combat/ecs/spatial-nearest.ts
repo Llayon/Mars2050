@@ -18,6 +18,7 @@ export function queryNearestSpatialCells(
   const heap: Candidate[] = []
   let bucketCandidates = 0
   for (const cell of getOrderedCells(cellSize, x, y, radius)) {
+    if (cell.minDistanceSq > radiusSq) break
     if (heap.length >= maxResults && cell.minDistanceSq > heap[0].distanceSq) break
     for (const entityId of cells.get(cell.key) ?? []) {
       bucketCandidates++
