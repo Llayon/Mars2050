@@ -1,4 +1,5 @@
 import type { EntityId } from './entity'
+import { encodeSpatialCellKey, type SpatialCellKey } from './spatial-cell-key'
 
 interface Candidate {
   entityId: EntityId
@@ -6,7 +7,7 @@ interface Candidate {
 }
 
 export function queryNearestSpatialCells(
-  cells: Map<string, EntityId[]>,
+  cells: Map<SpatialCellKey, EntityId[]>,
   cellSize: number,
   x: number,
   y: number,
@@ -44,7 +45,7 @@ function getOrderedCells(cellSize: number, x: number, y: number, radius: number)
   const minCellY = Math.floor((y - radius) / cellSize)
   const maxCellY = Math.floor((y + radius) / cellSize)
   const radiusSq = radius * radius
-  const cells: { key: string; cellX: number; cellY: number; minDistanceSq: number }[] = []
+  const cells: { key: SpatialCellKey; cellX: number; cellY: number; minDistanceSq: number }[] = []
   for (let cellY = minCellY; cellY <= maxCellY; cellY++) {
     for (let cellX = minCellX; cellX <= maxCellX; cellX++) {
       const left = cellX * cellSize
@@ -53,7 +54,7 @@ function getOrderedCells(cellSize: number, x: number, y: number, radius: number)
       const dy = y < top ? top - y : y > top + cellSize ? y - top - cellSize : 0
       const minDistanceSq = dx * dx + dy * dy
       if (minDistanceSq <= radiusSq) {
-        cells.push({ key: `${cellX}:${cellY}`, cellX, cellY, minDistanceSq })
+        cells.push({ key: encodeSpatialCellKey(cellX, cellY), cellX, cellY, minDistanceSq })
       }
     }
   }

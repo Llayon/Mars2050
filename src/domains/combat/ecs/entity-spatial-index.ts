@@ -5,14 +5,14 @@ import type { EntityId } from './entity'
 import type { Team } from '../combat.sim.types'
 import { queryNearestSpatialCells } from './spatial-nearest'
 import { querySpatialPairs } from './spatial-pairs'
-
+import { encodeSpatialCellKey, type SpatialCellKey } from './spatial-cell-key'
 export class EntitySpatialIndex {
-  private readonly cells = new Map<string, EntityId[]>()
-  private readonly teamCells: Record<Team, Map<string, EntityId[]>> = {
+  private readonly cells = new Map<SpatialCellKey, EntityId[]>()
+  private readonly teamCells: Record<Team, Map<SpatialCellKey, EntityId[]>> = {
     attacker: new Map(),
     defender: new Map(),
   }
-  private readonly entityCells = new Map<EntityId, string>()
+  private readonly entityCells = new Map<EntityId, SpatialCellKey>()
   private readonly entityTeams = new Map<EntityId, Team>()
   private readonly teamCounts: Record<Team, number> = { attacker: 0, defender: 0 }
   private readonly profile: SpatialQueryProfile = {
@@ -136,7 +136,7 @@ export class EntitySpatialIndex {
     return querySpatialPairs(world, this.cells, this.cellSize, entityIds, maxDistance)
   }
 
-  private queryCells(world: CombatWorld, cells: Map<string, EntityId[]>, x: number, y: number, radius: number, purpose: string): EntityId[] {
+  private queryCells(world: CombatWorld, cells: Map<SpatialCellKey, EntityId[]>, x: number, y: number, radius: number, purpose: string): EntityId[] {
     const minCellX = Math.floor((x - radius) / this.cellSize)
     const maxCellX = Math.floor((x + radius) / this.cellSize)
     const minCellY = Math.floor((y - radius) / this.cellSize)
@@ -151,7 +151,7 @@ export class EntitySpatialIndex {
         const dxToCell = x < left ? left - x : x > left + this.cellSize ? x - left - this.cellSize : 0
         const dyToCell = y < top ? top - y : y > top + this.cellSize ? y - top - this.cellSize : 0
         if (dxToCell * dxToCell + dyToCell * dyToCell > radiusSq) continue
-        for (const entityId of cells.get(`${cellX}:${cellY}`) ?? []) {
+        for (const entityId of cells.get(encodeSpatialCellKey(cellX, cellY)) ?? []) {
           bucketCandidates++
           const transform = world.stores.transform.require(entityId)
           const dx = transform.x - x
@@ -230,20 +230,20 @@ export class EntitySpatialIndex {
     this.entityTeams.delete(entityId)
   }
 
-  private addToCell(cells: Map<string, EntityId[]>, key: string, entityId: EntityId): void {
+  private addToCell(cells: Map<SpatialCellKey, EntityId[]>, key: SpatialCellKey, entityId: EntityId): void {
     const bucket = cells.get(key)
     if (bucket) bucket.push(entityId)
     else cells.set(key, [entityId])
   }
 
-  private removeFromCell(cells: Map<string, EntityId[]>, key: string, entityId: EntityId): void {
+  private removeFromCell(cells: Map<SpatialCellKey, EntityId[]>, key: SpatialCellKey, entityId: EntityId): void {
     const bucket = cells.get(key)
     const index = bucket?.indexOf(entityId) ?? -1
     if (bucket && index !== -1) bucket.splice(index, 1)
     if (bucket?.length === 0) cells.delete(key)
   }
 
-  private getCellKey(x: number, y: number): string {
-    return `${Math.floor(x / this.cellSize)}:${Math.floor(y / this.cellSize)}`
+  private getCellKey(x: number, y: number): SpatialCellKey {
+    return encodeSpatialCellKey(Math.floor(x / this.cellSize), Math.floor(y / this.cellSize))
   }
 }

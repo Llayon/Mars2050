@@ -107,3 +107,7 @@ fingerprints and structural counters rather than machine-dependent durations.
   and sorting their ordered traversal list. Structural counters and replay
   fingerprints remain unchanged; five-run production medians improved to
   242.71 ms for `massive_clash` and 4215.08 ms for `zerg_rush`.
+- Spatial buckets now use a collision-free numeric signed-16-bit coordinate
+  codec instead of allocating string keys in every lookup and position update.
+  A seven-run production median reached 213.07 ms for `massive_clash` and
+  3963.68 ms for `zerg_rush`; all replay and spatial counters remain unchanged.
