@@ -43,7 +43,7 @@ export function getEcsSteeringContext(
   let alignmentCount = 0
 
   for (const otherId of neighbors) {
-    if (otherId === entityId || world.stores.vitality.require(otherId).isDead) continue
+    if (otherId === entityId) continue
     const otherIdentity = world.stores.identity.require(otherId)
     const other = world.stores.transform.require(otherId)
     if (identity.squadId && otherIdentity.squadId === identity.squadId) {
@@ -53,10 +53,13 @@ export function getEcsSteeringContext(
     }
     if (transform.isFlying !== other.isFlying) continue
     const otherRadius = getSizeRadius(other.size)
-    const dist = getDistance(transform.x, transform.y, other.x, other.y)
+    const dx = transform.x - other.x
+    const dy = transform.y - other.y
+    const distanceSq = dx * dx + dy * dy
     const minDist = (myRadius + otherRadius) * 0.95
     const separateRadius = Math.max(minDist * SEPARATION_RADIUS_MULT, 45)
-    if (!transform.isFlying && otherIdentity.team === identity.team && dist < separateRadius) {
+    if (!transform.isFlying && distanceSq < separateRadius * separateRadius) {
+      const dist = getDistance(transform.x, transform.y, other.x, other.y)
       const direction = getAwayVector(identity.id, otherIdentity.id, transform, other, dist)
       const soft = Math.max(0, (separateRadius - dist) / separateRadius)
       const emergency = dist < minDist
@@ -68,7 +71,7 @@ export function getEcsSteeringContext(
       separationX += direction.x * force
       separationY += direction.y * force
     }
-    if (!isInRange && otherIdentity.team === identity.team && dist > 0 && dist <= ALIGNMENT_RADIUS) {
+    if (!isInRange && distanceSq > 0 && distanceSq <= ALIGNMENT_RADIUS * ALIGNMENT_RADIUS) {
       const speed = Math.hypot(other.velocity.x, other.velocity.y)
       if (speed > 0.1) {
         alignmentX += other.velocity.x / speed

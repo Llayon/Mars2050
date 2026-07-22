@@ -111,3 +111,7 @@ fingerprints and structural counters rather than machine-dependent durations.
   codec instead of allocating string keys in every lookup and position update.
   A seven-run production median reached 213.07 ms for `massive_clash` and
   3963.68 ms for `zerg_rush`; all replay and spatial counters remain unchanged.
+- Steering now trusts the alive/team invariants of team spatial queries and
+  computes `Math.hypot` only for neighbors that actually contribute separation;
+  alignment radius checks stay squared. Seven-run production medians improved
+  to 179.38 ms for `massive_clash` and 3843.80 ms for `zerg_rush`.
