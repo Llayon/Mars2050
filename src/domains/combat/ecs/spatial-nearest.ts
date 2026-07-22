@@ -43,6 +43,7 @@ function getOrderedCells(cellSize: number, x: number, y: number, radius: number)
   const maxCellX = Math.floor((x + radius) / cellSize)
   const minCellY = Math.floor((y - radius) / cellSize)
   const maxCellY = Math.floor((y + radius) / cellSize)
+  const radiusSq = radius * radius
   const cells: { key: string; cellX: number; cellY: number; minDistanceSq: number }[] = []
   for (let cellY = minCellY; cellY <= maxCellY; cellY++) {
     for (let cellX = minCellX; cellX <= maxCellX; cellX++) {
@@ -50,7 +51,10 @@ function getOrderedCells(cellSize: number, x: number, y: number, radius: number)
       const top = cellY * cellSize
       const dx = x < left ? left - x : x > left + cellSize ? x - left - cellSize : 0
       const dy = y < top ? top - y : y > top + cellSize ? y - top - cellSize : 0
-      cells.push({ key: `${cellX}:${cellY}`, cellX, cellY, minDistanceSq: dx * dx + dy * dy })
+      const minDistanceSq = dx * dx + dy * dy
+      if (minDistanceSq <= radiusSq) {
+        cells.push({ key: `${cellX}:${cellY}`, cellX, cellY, minDistanceSq })
+      }
     }
   }
   return cells.sort((left, right) =>

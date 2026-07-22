@@ -103,3 +103,7 @@ fingerprints and structural counters rather than machine-dependent durations.
   circle. This preserves candidate ordering and golden replays while reducing
   `zerg_rush` traversal to 5,827,560 bucket candidates. Five-run production
   medians are now 243.04 ms for `massive_clash` and 4481.19 ms for `zerg_rush`.
+- Nearest-neighbor queries now exclude non-intersecting cells before allocating
+  and sorting their ordered traversal list. Structural counters and replay
+  fingerprints remain unchanged; five-run production medians improved to
+  242.71 ms for `massive_clash` and 4215.08 ms for `zerg_rush`.
