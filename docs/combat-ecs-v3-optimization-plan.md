@@ -84,5 +84,11 @@ fingerprints and structural counters rather than machine-dependent durations.
 - Legacy per-actor methods were removed from `CombatRuntime`; focused tests now
   invoke ECS systems directly. `RuntimeActionResult` contains only `acted`, and
   the unused `actorSynchronized` compatibility flag has been retired.
-- Slices 2-5 are complete. Remaining work is the final five-run benchmark,
-  production build, Chromium simulator QA, and documentation of final results.
+- Slices 2-5 and the functional final gates are complete. The production build
+  passes, as do all 10 Chromium simulator QA scenarios. Five-run production
+  medians are 285.61 ms for `massive_clash` and 5387.50 ms for `zerg_rush`;
+  diagnostic medians are 352.00 ms and 5362.67 ms respectively.
+- The 250 ms / 3 second targets remain open performance work. `zerg_rush`
+  still traverses 8,898,041 spatial bucket candidates, so the next optimization
+  should reduce targeting and movement spatial candidates without changing
+  deterministic query order or replay fingerprints.

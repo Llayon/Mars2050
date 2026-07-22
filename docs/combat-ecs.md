@@ -361,13 +361,15 @@ total local candidates, and maximum candidates in one query. Targeting, broad
 weapon shapes, auras, hazards, projectile interception, and damage sharing use
 local component queries.
 
-The checked-in benchmark uses seed `24680`, three measured runs, and compares
-`docs/combat-ecs-v3-performance.json` with the v2 baseline:
+The checked-in diagnostic benchmark uses seed `24680`, five measured runs, and
+compares `docs/combat-ecs-v3-performance.json` with the v2 baseline. Production
+mode disables profiling and is listed separately because it is the player-facing
+runtime measurement:
 
-| Preset | Units | v2 median | v3 median | Time ratio | Component candidates | Spatial bucket candidates |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| `massive_clash` | 100 | 360.18 ms | 302.10 ms | 0.839 | 2.1% of v2 | 49.7% of v2 |
-| `zerg_rush` | 605 | 11614.29 ms | 5880.63 ms | 0.506 | 1.5% of v2 | 24.0% of v2 |
+| Preset | Units | Production | Profile | v2 median | Production/v2 | Component candidates | Spatial bucket candidates |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| `massive_clash` | 100 | 285.61 ms | 352.00 ms | 360.18 ms | 0.793 | 0.8% of v2 | 49.7% of v2 |
+| `zerg_rush` | 605 | 5387.50 ms | 5362.67 ms | 11614.29 ms | 0.464 | 0.5% of v2 | 24.0% of v2 |
 
 Wall-clock timing is environment-sensitive; candidate counts, cache hits, and
 deterministic replay/scenario contracts are the primary regression signals.
