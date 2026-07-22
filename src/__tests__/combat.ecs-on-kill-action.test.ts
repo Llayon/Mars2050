@@ -47,7 +47,7 @@ describe('combat ECS on-kill action', () => {
       tick: 0,
     })
 
-    expect(nativeResult).toEqual({ acted: true, actorSynchronized: true })
+    expect(nativeResult).toEqual({ acted: true })
     expect(nativeActions.map(action => action.type)).toEqual([
       'attack',
       'unit_blocked_damage',

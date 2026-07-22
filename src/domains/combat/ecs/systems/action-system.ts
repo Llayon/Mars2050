@@ -77,14 +77,14 @@ function runHealAction(
   if (Math.abs(normalizeAngle(angle - transform.currentAngle)) > FACING_TOLERANCE) return notActed()
   if (combat.actionCooldown > 0 || isActionBlocked(status.statusEffects)) return notActed()
   if (!prepareEcsStanceForAction(world, entityId, actions)) {
-    return { acted: true, actorSynchronized: true }
+    return { acted: true }
   }
 
   syncEcsModeForAction(world, entityId, actions)
   syncEcsBurrowForAction(world, entityId, actions)
   combat.actionCooldown = getEcsActionCooldown(world, entityId)
   applyEcsHealing(world, entityId, targetId, combat.attack, actions)
-  return { acted: true, actorSynchronized: true }
+  return { acted: true }
 }
 
 function canHealTarget(world: CombatWorld, sourceType: string, targetId: EntityId): boolean {
@@ -99,7 +99,7 @@ function isActionBlocked(effects: { type: string; duration: number }[]): boolean
 }
 
 function notActed(): RuntimeActionResult {
-  return { acted: false, actorSynchronized: false }
+  return { acted: false }
 }
 
 function normalizeAngle(value: number): number {

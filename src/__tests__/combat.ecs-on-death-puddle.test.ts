@@ -40,7 +40,7 @@ describe('combat ECS on-death puddle', () => {
       tick: 0,
     })
 
-    expect(nativeResult).toEqual({ acted: true, actorSynchronized: true })
+    expect(nativeResult).toEqual({ acted: true })
     world.flushStructuralCommands()
     expect(world.snapshotHazards()).toHaveLength(1)
     expect(world.snapshotHazards()[0]).toMatchObject({

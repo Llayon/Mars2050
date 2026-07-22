@@ -38,7 +38,7 @@ describe('combat ECS action boundary', () => {
       tick: 0,
     })
 
-    expect(result).toEqual({ acted: true, actorSynchronized: true })
+    expect(result).toEqual({ acted: true })
     expect(world.stores.combat.require(0).attack).toBe(canonicalAttack)
     expect(world.stores.statusControl.require(1).statusEffects)
       .toContainEqual(expect.objectContaining({ type: 'hacked', controlMode: 'redirect' }))
@@ -73,7 +73,7 @@ describe('combat ECS action boundary', () => {
       tick: 0,
     })
 
-    expect(result).toEqual({ acted: false, actorSynchronized: false })
+    expect(result).toEqual({ acted: false })
     expect(world.stores.vitality.require(1).hp).toBe(target.maxHp)
   })
 })

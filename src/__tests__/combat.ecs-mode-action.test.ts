@@ -51,7 +51,7 @@ describe('combat ECS action mode setup', () => {
     expect(canUseSimpleSingleDamage(world, 0, 1)).toBe(true)
     const { actions, result } = act(world)
 
-    expect(result).toEqual({ acted: true, actorSynchronized: true })
+    expect(result).toEqual({ acted: true })
     expect(actions.slice(0, 2)).toEqual([
       { unitId: 'jetpack', type: 'mode_change', modeState: 'ground' },
       { unitId: 'jetpack', type: 'attack', targetId: 'target' },

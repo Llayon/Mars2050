@@ -60,7 +60,7 @@ export function runSimpleSingleDamage(
   if (combat.actionCooldown > 0) return notActed()
   if (isActionBlocked(status.statusEffects, combat.attack)) return notActed()
   if (!prepareEcsStanceForAction(world, entityId, actions)) {
-    return { acted: true, actorSynchronized: true }
+    return { acted: true }
   }
 
   syncEcsModeForAction(world, entityId, actions)
@@ -71,7 +71,7 @@ export function runSimpleSingleDamage(
     if (world.stores.vitality.require(targetId).isDead) break
     resolveEcsSingleShot(world, entityId, targetId, actions, tick, rng)
   }
-  return { acted: true, actorSynchronized: true }
+  return { acted: true }
 }
 
 function isActionBlocked(effects: RuntimeStatusEffect[], attack: number): boolean {
@@ -90,7 +90,7 @@ function isActionBlocked(effects: RuntimeStatusEffect[], attack: number): boolea
 }
 
 function notActed(): RuntimeActionResult {
-  return { acted: false, actorSynchronized: false }
+  return { acted: false }
 }
 
 function normalizeAngle(value: number): number {

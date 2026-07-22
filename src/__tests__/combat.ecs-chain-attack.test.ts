@@ -43,7 +43,7 @@ describe('combat ECS chain attack', () => {
 
     const nativeResult = runActionSystem(world, 0, 1, nativeActions, actionContext())
 
-    expect(nativeResult).toEqual({ acted: true, actorSynchronized: true })
+    expect(nativeResult).toEqual({ acted: true })
     for (const entityId of [1, 2, 3]) {
       expect(world.stores.vitality.require(entityId).hp)
         .toBeLessThan(world.stores.vitality.require(entityId).maxHp)
@@ -66,7 +66,7 @@ describe('combat ECS chain attack', () => {
 
     const nativeResult = runActionSystem(world, 0, 1, nativeActions, actionContext())
 
-    expect(nativeResult).toEqual({ acted: true, actorSynchronized: true })
+    expect(nativeResult).toEqual({ acted: true })
     expect(nativeActions.some(action =>
       action.type === 'chain_jump' && action.targetId === 'air-target',
     )).toBe(false)

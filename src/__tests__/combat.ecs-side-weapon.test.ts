@@ -44,7 +44,7 @@ describe('combat ECS side weapon', () => {
 
     const nativeResult = runActionSystem(world, 0, 1, nativeActions, actionContext())
 
-    expect(nativeResult).toEqual({ acted: true, actorSynchronized: true })
+    expect(nativeResult).toEqual({ acted: true })
     expect(world.stores.vitality.require(2).hp)
       .toBeLessThan(world.stores.vitality.require(2).maxHp)
     expect(world.stores.vitality.require(3).hp)
@@ -70,7 +70,7 @@ describe('combat ECS side weapon', () => {
 
     const nativeResult = runActionSystem(world, 0, 1, nativeActions, actionContext())
 
-    expect(nativeResult).toEqual({ acted: true, actorSynchronized: true })
+    expect(nativeResult).toEqual({ acted: true })
     expect(nativeActions).toContainEqual({
       unitId: 'goliath',
       type: 'side_weapon_attack',

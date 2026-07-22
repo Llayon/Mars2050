@@ -41,7 +41,7 @@ describe('combat ECS replicate on kill', () => {
       tick: 0,
     })
 
-    expect(nativeResult).toEqual({ acted: true, actorSynchronized: true })
+    expect(nativeResult).toEqual({ acted: true })
     world.flushStructuralCommands()
     expect(world.snapshot()).toHaveLength(3)
     expect(world.snapshot()[2]).toMatchObject({

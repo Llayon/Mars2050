@@ -70,7 +70,7 @@ describe('combat ECS emerge strike action', () => {
     expect(isEcsWeaponActionInRange(world, 0, 1, edgeDistance)).toBe(true)
     const { actions, result } = runNative(world)
 
-    expect(result).toEqual({ acted: true, actorSynchronized: true })
+    expect(result).toEqual({ acted: true })
     expect(actions.slice(0, 2)).toEqual([
       { unitId: 'shock', type: 'burrow_change', value: 0 },
       { unitId: 'shock', type: 'attack', targetId: 'target' },
@@ -98,7 +98,7 @@ describe('combat ECS emerge strike action', () => {
     expect(canUseSimpleSingleDamage(world, 0, 1)).toBe(true)
     const { actions, result } = runNative(world)
 
-    expect(result).toEqual({ acted: true, actorSynchronized: true })
+    expect(result).toEqual({ acted: true })
     expect(actions.slice(0, 3)).toEqual([
       { unitId: 'grenadier', type: 'emerge_strike', value: 1.3 },
       { unitId: 'grenadier', type: 'burrow_change', value: 0 },

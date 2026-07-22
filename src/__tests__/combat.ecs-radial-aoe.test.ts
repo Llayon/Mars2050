@@ -42,7 +42,7 @@ describe('combat ECS radial AoE', () => {
 
     const nativeResult = runActionSystem(world, 0, 1, nativeActions, actionContext())
 
-    expect(nativeResult).toEqual({ acted: true, actorSynchronized: true })
+    expect(nativeResult).toEqual({ acted: true })
     expect(world.stores.vitality.require(1).hp)
       .toBeLessThan(world.stores.vitality.require(1).maxHp)
     expect(world.stores.vitality.require(2).hp)
@@ -71,7 +71,7 @@ describe('combat ECS radial AoE', () => {
 
     const result = runActionSystem(world, 0, 1, actions, actionContext())
 
-    expect(result).toEqual({ acted: true, actorSynchronized: true })
+    expect(result).toEqual({ acted: true })
     expect(world.stores.statusControl.require(2).targetMark).toMatchObject({
       sourceUnitId: 'scout',
       squadWide: true,

@@ -142,7 +142,7 @@ describe('combat ECS runtime', () => {
       tick: 0,
     })
 
-    expect(result).toEqual({ acted: true, actorSynchronized: true })
+    expect(result).toEqual({ acted: true })
     expect(world.stores.vitality.require(1).hp).toBe(marine.maxHp)
     expect(world.stores.combat.require(0).actionCooldown).toBe(medic.actionCooldownMax)
     expect(actions).toContainEqual({ unitId: 'medic', type: 'heal', targetId: 'marine', damage: 20 })
@@ -160,7 +160,7 @@ describe('combat ECS runtime', () => {
       tick: 0,
     })
 
-    expect(result).toEqual({ acted: true, actorSynchronized: true })
+    expect(result).toEqual({ acted: true })
     expect(world.stores.vitality.require(1).isDead).toBe(true)
     expect(actions.map(action => action.type)).toEqual(['attack', 'unit_blocked_damage', 'damage', 'die'])
     expect(actions.at(-1)).toMatchObject({ unitId: 'defender', sourceUnitId: 'attacker', cause: 'weapon' })
@@ -190,7 +190,7 @@ describe('combat ECS runtime', () => {
       tick: 0,
     })
 
-    expect(result).toEqual({ acted: true, actorSynchronized: true })
+    expect(result).toEqual({ acted: true })
     expect(world.stores.vitality.require(1)).toMatchObject({ hp: defender.maxHp, shield: 0 })
     expect(world.stores.defense.require(1).shieldHitBlockCharges).toBe(0)
     expect(actions.slice(1)).toEqual([

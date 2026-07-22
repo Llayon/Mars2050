@@ -44,7 +44,7 @@ describe('combat ECS spawn action', () => {
     expect(canUseEcsSpawnAction(world, 0)).toBe(true)
     const nativeResult = runActionSystem(world, 0, 1, nativeActions, context(17))
 
-    expect(nativeResult).toEqual({ acted: true, actorSynchronized: true })
+    expect(nativeResult).toEqual({ acted: true })
     world.flushStructuralCommands()
     expect(world.snapshot()).toHaveLength(3)
     expect(world.snapshot()[2]).toMatchObject({
@@ -71,7 +71,7 @@ describe('combat ECS spawn action', () => {
 
     const nativeResult = runActionSystem(world, 0, 2, nativeActions, context(19))
 
-    expect(nativeResult).toEqual({ acted: false, actorSynchronized: true })
+    expect(nativeResult).toEqual({ acted: false })
     expect(nativeResult.acted).toBe(false)
     expect(nativeActions).toEqual([
       { unitId: 'carrier', type: 'spawn_blocked', value: 1 },

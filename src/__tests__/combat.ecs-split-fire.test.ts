@@ -43,7 +43,7 @@ describe('combat ECS split fire', () => {
 
     const nativeResult = runActionSystem(world, 0, 1, nativeActions, actionContext())
 
-    expect(nativeResult).toEqual({ acted: true, actorSynchronized: true })
+    expect(nativeResult).toEqual({ acted: true })
     for (const entityId of [1, 2, 3]) {
       expect(world.stores.vitality.require(entityId).hp)
         .toBeLessThan(world.stores.vitality.require(entityId).maxHp)
@@ -66,7 +66,7 @@ describe('combat ECS split fire', () => {
 
     const nativeResult = runActionSystem(world, 0, 1, nativeActions, actionContext())
 
-    expect(nativeResult).toEqual({ acted: true, actorSynchronized: true })
+    expect(nativeResult).toEqual({ acted: true })
     expect(world.stores.vitality.require(2).hp).toBe(world.stores.vitality.require(2).maxHp)
     expect(world.stores.statusControl.require(2).statusEffects)
       .toContainEqual(expect.objectContaining({ type: 'output_suppressed', value: 0.18 }))
@@ -90,7 +90,7 @@ describe('combat ECS split fire', () => {
 
     const nativeResult = runActionSystem(world, 0, 1, nativeActions, actionContext())
 
-    expect(nativeResult).toEqual({ acted: true, actorSynchronized: true })
+    expect(nativeResult).toEqual({ acted: true })
     expect(nativeActions).toContainEqual({
       unitId: 'gatling',
       type: 'split_fire',

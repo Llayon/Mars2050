@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest'
 import type { BattleAction } from '@/domains/combat/combat.actions'
 import type { SimUnit } from '@/domains/combat/combat.sim.types'
 import { createRuntimeUnitFromConfig } from '@/domains/combat/combat.unit-factory'
-import { PRNG } from '@/domains/combat/combat.utils'
 import { createEcsCombatRuntime } from '@/domains/combat/ecs/combat-ecs-runtime'
+import { resolveEcsDeath, runModifierSystem } from '@/domains/combat/ecs/systems'
 
 function temporaryUnit(): SimUnit {
   const unit = createRuntimeUnitFromConfig({
@@ -38,7 +38,9 @@ describe('combat ECS expiration death', () => {
     runtime.world.queueUnitCreation(unit)
     runtime.world.flushStructuralCommands()
 
-    runtime.tickModifiers(0, 0.1, nativeActions, new PRNG(131))
+    runModifierSystem(runtime.world, 0, nativeActions, entityId => {
+      resolveEcsDeath(runtime.world, entityId, undefined, nativeActions, 'expiration')
+    })
 
     expect(nativeActions).toEqual([{
       unitId: 'temporary',
@@ -69,7 +71,9 @@ describe('combat ECS expiration death', () => {
     unit.isTemporary = false
     unit.temporaryDuration = 99
 
-    runtime.tickModifiers(0, 0.1, actions, new PRNG(137))
+    runModifierSystem(runtime.world, 0, actions, entityId => {
+      resolveEcsDeath(runtime.world, entityId, undefined, actions, 'expiration')
+    })
 
     expect(actions).toEqual([{
       unitId: 'temporary',

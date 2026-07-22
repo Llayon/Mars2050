@@ -54,7 +54,7 @@ describe('combat ECS on-hit effects', () => {
 
     const result = runActionSystem(world, 0, 2, actions, actionContext())
 
-    expect(result).toEqual({ acted: true, actorSynchronized: true })
+    expect(result).toEqual({ acted: true })
     expect(world.stores.statusControl.require(2).targetMark).toMatchObject({
       sourceUnitId: 'scout',
       damageMultiplier: 1.25,
@@ -94,7 +94,7 @@ describe('combat ECS on-hit effects', () => {
 
     const result = runActionSystem(world, 0, 1, actions, actionContext())
 
-    expect(result).toEqual({ acted: true, actorSynchronized: true })
+    expect(result).toEqual({ acted: true })
     expect(world.stores.statusControl.require(1).statusEffects).toContainEqual(
       expect.objectContaining({ type: 'hacked', duration: 20, controlMode: 'redirect' }),
     )

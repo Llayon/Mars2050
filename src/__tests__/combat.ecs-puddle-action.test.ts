@@ -46,7 +46,7 @@ describe('combat ECS attack puddle action', () => {
       tick: 0,
     })
 
-    expect(nativeResult).toEqual({ acted: true, actorSynchronized: true })
+    expect(nativeResult).toEqual({ acted: true })
     expect(nativeActions.some(action => action.type === 'hazard_spawn')).toBe(false)
     world.flushStructuralCommands()
     expect(world.snapshotHazards()).toHaveLength(2)

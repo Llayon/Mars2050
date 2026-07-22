@@ -40,7 +40,7 @@ describe('combat ECS movement stealth action', () => {
       tick: 0,
     })
 
-    expect(nativeResult).toEqual({ acted: true, actorSynchronized: true })
+    expect(nativeResult).toEqual({ acted: true })
     expect(nativeActions.at(-1)).toEqual({
       unitId: 'ghost',
       type: 'stealth_change',

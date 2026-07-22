@@ -38,7 +38,7 @@ function compareAction(units: SimUnit[]) {
     rng: new PRNG(1),
     tick: 0,
   })
-  expect(nativeResult).toEqual({ acted: true, actorSynchronized: true })
+  expect(nativeResult).toEqual({ acted: true })
   expect(world.stores.combat.require(0).actionCooldown).toBeGreaterThan(0)
   return { actions: nativeActions, world }
 }

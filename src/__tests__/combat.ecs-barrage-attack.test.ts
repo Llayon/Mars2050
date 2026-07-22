@@ -32,7 +32,7 @@ function runNative(units: SimUnit[]) {
     rng: new PRNG(1),
     tick: 0,
   })
-  expect(nativeResult).toEqual({ acted: true, actorSynchronized: true })
+  expect(nativeResult).toEqual({ acted: true })
   return { world, nativeActions }
 }
 

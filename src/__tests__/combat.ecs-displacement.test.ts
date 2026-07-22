@@ -36,7 +36,7 @@ function runNative(units: SimUnit[]): {
   const nativeActions: Parameters<typeof runActionSystem>[3] = []
   const world = createWorld(units)
   const nativeResult = runActionSystem(world, 0, 1, nativeActions, actionContext())
-  expect(nativeResult).toEqual({ acted: true, actorSynchronized: true })
+  expect(nativeResult).toEqual({ acted: true })
   return { world, nativeActions }
 }
 

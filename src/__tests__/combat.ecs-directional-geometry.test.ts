@@ -29,7 +29,7 @@ function runNativeGeometry(units: SimUnit[]) {
     tick: 0,
   })
 
-  expect(nativeResult).toEqual({ acted: true, actorSynchronized: true })
+  expect(nativeResult).toEqual({ acted: true })
   return { world, nativeActions }
 }
 

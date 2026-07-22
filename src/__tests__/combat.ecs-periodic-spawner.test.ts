@@ -4,6 +4,7 @@ import type { SimUnit } from '@/domains/combat/combat.sim.types'
 import { createRuntimeUnitFromConfig } from '@/domains/combat/combat.unit-factory'
 import { PRNG } from '@/domains/combat/combat.utils'
 import { createEcsCombatRuntime } from '@/domains/combat/ecs/combat-ecs-runtime'
+import { runEcsPeriodicSpawnerSystem } from '@/domains/combat/ecs/systems'
 
 function unit(
   id: string,
@@ -32,7 +33,8 @@ function runSpawner(units: SimUnit[], seed: number) {
   const world = runtime.world
   const nativeActions: BattleAction[] = []
 
-  runtime.processSpawner(
+  runEcsPeriodicSpawnerSystem(
+    world,
     0,
     units.length - 1,
     nativeActions,

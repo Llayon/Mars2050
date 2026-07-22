@@ -79,3 +79,6 @@ fingerprints and structural counters rather than machine-dependent durations.
   action phase. `combat.engine.ts` only advances pre-action, action and
   post-action stages; targeting, modifiers, spawning, melee reservation,
   action resolution, structural flush and movement stay inside ECS orchestration.
+- Legacy per-actor methods were removed from `CombatRuntime`; focused tests now
+  invoke ECS systems directly. `RuntimeActionResult` contains only `acted`, and
+  the unused `actorSynchronized` compatibility flag has been retired.

@@ -6,7 +6,7 @@ import { createRuntimeUnitFromConfig } from '@/domains/combat/combat.unit-factor
 import { UPGRADES } from '@/domains/combat/combat.upgrades'
 import { createEcsCombatRuntime } from '@/domains/combat/ecs/combat-ecs-runtime'
 import { CombatWorld } from '@/domains/combat/ecs/combat-world'
-import { applyEcsSingleDamage } from '@/domains/combat/ecs/systems'
+import { applyEcsSingleDamage, createEcsMeleeEngagementState, runTargetingSystem } from '@/domains/combat/ecs/systems'
 
 const BASELINE_ANTI_AIR_UNITS = new Set([
   'aa_turret', 'rocketeer', 'heavy_gunner', 'gatling_rover',
@@ -58,13 +58,12 @@ describe('combat ECS anti-air contract', () => {
     const runtime = createEcsCombatRuntime()
     runtime.world.queueUnitCreation(marine, aircraft, ground)
     runtime.flushStructuralCommands()
-    runtime.beginTargetingPhase()
+    runtime.world.resources.require('entitySpatial').ensureCurrent(runtime.world)
 
-    expect(runtime.selectTarget(0)).toBe(2)
+    expect(runTargetingSystem(runtime.world, 0, createEcsMeleeEngagementState())).toBe(2)
 
     runtime.world.stores.vitality.require(2).isDead = true
-    runtime.beginTargetingPhase()
-    expect(runtime.selectTarget(0)).toBeNull()
+    expect(runTargetingSystem(runtime.world, 0, createEcsMeleeEngagementState())).toBeNull()
   })
 
   it('applies anti-air damage multipliers only to flying targets', () => {

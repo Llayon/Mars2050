@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { SimUnit } from '@/domains/combat/combat.sim.types'
 import { createRuntimeUnitFromConfig } from '@/domains/combat/combat.unit-factory'
 import { createEcsCombatRuntime } from '@/domains/combat/ecs/combat-ecs-runtime'
+import { createEcsMeleeEngagementState, runTargetingSystem } from '@/domains/combat/ecs/systems'
 
 function unit(
   id: string,
@@ -31,10 +32,12 @@ describe('combat ECS targeting boundary', () => {
     near.isDead = true
     far.x = 850
 
-    runtime.beginTargetingPhase()
+    runtime.world.resources.require('entitySpatial').ensureCurrent(runtime.world)
     const attackerId = runtime.world.getEntityId(attacker.id)!
     const nearId = runtime.world.getEntityId(near.id)!
-    const targetId = runtime.selectTarget(attackerId)
+    const targetId = runTargetingSystem(
+      runtime.world, attackerId, createEcsMeleeEngagementState(),
+    )
     expect(targetId).toBe(nearId)
     expect(runtime.world.stores.vitality.require(nearId).isDead).toBe(false)
     expect(runtime.world.stores.entityTargets.require(attackerId).attackTarget).toBe(nearId)

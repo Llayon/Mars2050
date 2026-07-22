@@ -42,14 +42,14 @@ export function runEcsSmokeAction(
   if (Math.abs(normalizeAngle(targetAngle - transform.currentAngle)) > FACING_TOLERANCE) return notActed()
   if (combat.actionCooldown > 0 || isActionBlocked(status.statusEffects)) return notActed()
   if (!prepareEcsStanceForAction(world, entityId, actions)) {
-    return { acted: true, actorSynchronized: true }
+    return { acted: true }
   }
 
   syncEcsModeForAction(world, entityId, actions)
   syncEcsBurrowForAction(world, entityId, actions)
   combat.actionCooldown = getEcsActionCooldown(world, entityId)
   deploySmoke(world, identity.id, entityId, targetId, config, statusEffects, actions, context)
-  return { acted: true, actorSynchronized: true }
+  return { acted: true }
 }
 
 function deploySmoke(
@@ -118,7 +118,7 @@ function isActionBlocked(effects: StatusEffect[]): boolean {
 }
 
 function notActed(): RuntimeActionResult {
-  return { acted: false, actorSynchronized: false }
+  return { acted: false }
 }
 
 function normalizeAngle(value: number): number {

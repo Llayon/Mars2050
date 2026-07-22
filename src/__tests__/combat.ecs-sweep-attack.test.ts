@@ -51,7 +51,7 @@ describe('combat ECS sweep attack', () => {
       tick: 0,
     })
 
-    expect(nativeResult).toEqual({ acted: true, actorSynchronized: true })
+    expect(nativeResult).toEqual({ acted: true })
     expect(world.stores.vitality.require(2).hp)
       .toBeLessThan(world.stores.vitality.require(2).maxHp)
     expect(world.stores.vitality.require(3).hp)

@@ -52,7 +52,7 @@ describe('combat ECS smoke action', () => {
       tick: 0,
     })
 
-    expect(nativeResult).toEqual({ acted: true, actorSynchronized: true })
+    expect(nativeResult).toEqual({ acted: true })
     world.flushStructuralCommands()
     expect(world.snapshotHazards()).toHaveLength(1)
     expect(world.snapshotHazards()[0].statusEffects).toEqual([

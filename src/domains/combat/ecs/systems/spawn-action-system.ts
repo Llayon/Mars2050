@@ -44,7 +44,7 @@ export function runEcsSpawnAction(
   if ((!options.preserveCooldown && combat.actionCooldown > 0) ||
       isActionBlocked(status.statusEffects)) return notActed()
   if (!prepareEcsStanceForAction(world, entityId, actions)) {
-    return { acted: true, actorSynchronized: true }
+    return { acted: true }
   }
 
   syncEcsModeForAction(world, entityId, actions)
@@ -54,13 +54,13 @@ export function runEcsSpawnAction(
     combat.actionCooldown = Math.min(5, combat.actionCooldownMax)
     actions.push({ unitId: identity.id, type: 'spawn_blocked', value: weapon.spawnCap ?? 0 })
     if (options.preserveCooldown) combat.actionCooldown = previousCooldown
-    return { acted: false, actorSynchronized: true }
+    return { acted: false }
   }
 
   const spawn = createSpawnedUnit(world, entityId, targetId, context, options.spawnType)
   if (!spawn) {
     if (options.preserveCooldown) combat.actionCooldown = previousCooldown
-    return { acted: false, actorSynchronized: true }
+    return { acted: false }
   }
   world.queueUnitCreation(spawn.unit)
   actions.push({
@@ -74,7 +74,7 @@ export function runEcsSpawnAction(
     targetId: spawn.unit.id,
   })
   if (options.preserveCooldown) combat.actionCooldown = previousCooldown
-  return { acted: true, actorSynchronized: true }
+  return { acted: true }
 }
 
 export function runEcsPeriodicSpawnAction(
@@ -148,7 +148,7 @@ function isActionBlocked(effects: StatusEffect[]): boolean {
 }
 
 function notActed(): RuntimeActionResult {
-  return { acted: false, actorSynchronized: false }
+  return { acted: false }
 }
 
 function normalizeAngle(value: number): number {

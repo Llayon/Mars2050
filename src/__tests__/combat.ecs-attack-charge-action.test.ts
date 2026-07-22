@@ -47,7 +47,7 @@ describe('combat ECS attack charge action', () => {
       tick: 11,
     })
 
-    expect(nativeResult).toEqual({ acted: true, actorSynchronized: true })
+    expect(nativeResult).toEqual({ acted: true })
     expect(nativeActions.filter(action =>
       action.type === 'attack_charge_release',
     )).toEqual([

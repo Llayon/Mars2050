@@ -74,7 +74,7 @@ describe('combat ECS conditional range', () => {
       attackerRadius,
     )
 
-    expect(nativeResult).toEqual({ acted: true, actorSynchronized: true })
+    expect(nativeResult).toEqual({ acted: true })
     expect(nativeActions[0]).toEqual({
       unitId: 'aa-air',
       type: 'attack',

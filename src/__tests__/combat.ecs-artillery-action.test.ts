@@ -31,7 +31,7 @@ function runStep(world: CombatWorld, acted = true) {
     rng: new PRNG(1),
     tick: 0,
   })
-  expect(nativeResult).toEqual({ acted, actorSynchronized: acted })
+  expect(nativeResult).toEqual({ acted })
   return nativeActions
 }
 
