@@ -27,6 +27,7 @@ import {
   runEcsTransformModeSystem,
   runHazardSystem,
   runStatusSystem,
+  runEcsActorTurnSystem,
 } from './systems'
 
 interface EcsPhaseDefinition {
@@ -48,6 +49,7 @@ const ECS_PHASES = [
   phase('periodic_ability', 'pre_action', runPeriodicAbilityPhase),
   phase('structural_flush', 'pre_action', world => world.flushStructuralCommands()),
   phase('status', 'pre_action', runStatusPhase),
+  phase('actor_turn', 'action', (world, context) => runEcsActorTurnSystem(world, context)),
   phase('hazard', 'post_action', runHazardPhase),
   phase('hp_threshold_trigger', 'post_action', runHpThresholdPhase),
   phase('depenetration', 'post_action', (world, context) => runDepenetrationSystem(world, context.actions)),

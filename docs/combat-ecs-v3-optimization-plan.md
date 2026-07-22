@@ -75,3 +75,7 @@ fingerprints and structural counters rather than machine-dependent durations.
   and capability markers once before the command enters the queue.
 - Post-structural three-run medians were 290.88 ms for `massive_clash` and
   5271.42 ms for `zerg_rush`; tick traversal remains the next performance limit.
+- The complete entity turn loop now runs as the scheduler-owned `actor_turn`
+  action phase. `combat.engine.ts` only advances pre-action, action and
+  post-action stages; targeting, modifiers, spawning, melee reservation,
+  action resolution, structural flush and movement stay inside ECS orchestration.

@@ -18,7 +18,6 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
   defenderGlobals.forEach(id => { if (GLOBAL_UPGRADES[id]) activeGlobals.push({ team: 'defender', upg: GLOBAL_UPGRADES[id] }) })
   const obstacles: Obstacle[] = providedObstacles || generateObstacles(seed);
   const flowFieldMap = createPathfindingMap(obstacles)
-  const movementContext = { dt, rng, flowField: flowFieldMap, obstacles }
   attackerUnits.forEach(row => runtime.addSquad(row, 'attacker', rng))
   defenderUnits.forEach(row => runtime.addSquad(row, 'defender', rng))
 
@@ -46,34 +45,7 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
     const terminalOutcome = runtime.getTerminalOutcome()
     if (terminalOutcome) { resolvedOutcome = terminalOutcome; break }
 
-    const turnOrder = runtime.getTurnOrder()
-    runtime.beginTargetingPhase()
-
-    for (const entityId of turnOrder) {
-      if (runtime.isDead(entityId)) continue;
-      runtime.tickModifiers(entityId, dt, actions, rng); if (runtime.isDead(entityId)) continue;
-
-      const targetId = runtime.selectTarget(entityId);
-      if (targetId === null) continue;
-
-      const entityWatermark = runtime.world.captureEntityWatermark()
-      runtime.processSpawner(entityId, targetId, actions, { rng, tick });
-
-      const canActOnTarget = runtime.canActOnTarget(entityId, targetId);
-      const hasEngagement = canActOnTarget ? runtime.reserveMeleeSlot(entityId, targetId) : true;
-
-      const actionResult = canActOnTarget && hasEngagement
-        ? runtime.actUnit(entityId, targetId, actions, { rng, tick })
-        : { acted: false, actorSynchronized: false }
-      const acted = actionResult.acted
-
-      runtime.flushStructuralCommands()
-      for (const createdId of runtime.world.getUnitsCreatedSince(entityWatermark))
-        runtime.insertSpatialUnit(createdId)
-      if (!acted) {
-        runtime.moveUnit(entityId, targetId, actions, movementContext);
-      }
-    }
+    runtime.runStage('action', { tick, actions, rng, activeGlobals })
 
     runtime.runStage('post_action', { tick, actions, rng, activeGlobals });
     if (metrics) {

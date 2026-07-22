@@ -16,13 +16,14 @@ export const COMBAT_PHASE_IDS = [
   'periodic_ability',
   'structural_flush',
   'status',
+  'actor_turn',
   'hazard',
   'hp_threshold_trigger',
   'depenetration',
 ] as const
 
 export type CombatPhaseId = typeof COMBAT_PHASE_IDS[number]
-export type CombatPhaseStage = 'pre_action' | 'post_action'
+export type CombatPhaseStage = 'pre_action' | 'action' | 'post_action'
 
 export interface RuntimePhaseContext {
   tick: number

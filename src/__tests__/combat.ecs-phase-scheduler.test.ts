@@ -30,6 +30,10 @@ describe('combat ECS phase scheduler', () => {
     ])
   })
 
+  it('owns the complete actor-turn stage', () => {
+    expect(getEcsPhaseOrder('action')).toEqual(['actor_turn'])
+  })
+
   it('matches explicit phase execution and stage execution', () => {
     const staged = createEcsCombatRuntime()
     const explicit = createEcsCombatRuntime()
