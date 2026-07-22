@@ -4,6 +4,7 @@ import type { CombatWorld } from './combat-world'
 import type { EntityId } from './entity'
 import type { Team } from '../combat.sim.types'
 import { queryNearestSpatialCells } from './spatial-nearest'
+import { querySpatialPairs } from './spatial-pairs'
 
 export class EntitySpatialIndex {
   private readonly cells = new Map<string, EntityId[]>()
@@ -126,6 +127,15 @@ export class EntitySpatialIndex {
     )
     this.recordQuery(purpose, result.bucketCandidates, result.entityIds.length)
     return result.entityIds
+  }
+
+  queryPairs(
+    world: CombatWorld,
+    entityIds: readonly EntityId[],
+    maxDistance: number,
+  ): [EntityId, EntityId][] {
+    this.ensureCurrent(world)
+    return querySpatialPairs(world, this.cells, this.cellSize, entityIds, maxDistance)
   }
 
   private queryCells(world: CombatWorld, cells: Map<string, EntityId[]>, x: number, y: number, radius: number, purpose: string): EntityId[] {

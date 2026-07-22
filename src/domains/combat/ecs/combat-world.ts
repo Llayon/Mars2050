@@ -12,6 +12,7 @@ import { installCapabilityNames, installUnitCapabilities, setUnitCapabilityPrese
 import { createHazardSnapshots, createUnitSnapshot, createUnitSnapshots } from './combat-world-snapshot'
 import { captureUnitRelations, resolveUnitRelations, type PendingUnitRelations } from './unit-relation-codec'
 import { CombatEntityIndexes } from './combat-entity-indexes'
+import { captureUnitEntityBundle, type UnitEntityBundle } from './unit-entity-bundle'
 
 export type { ComponentQueryProfile } from './component-query-registry'
 
@@ -36,7 +37,8 @@ export class CombatWorld {
   queueUnitCreation(...units: SimUnit[]): void {
     for (const unit of units) {
       this.externalIds.reserve(unit.id)
-      this.structuralCommands.queueUnit(unit)
+      this.assertKnownFields(unit)
+      this.structuralCommands.queueUnit(captureUnitEntityBundle(unit))
     }
   }
 
@@ -52,14 +54,13 @@ export class CombatWorld {
     this.structuralCommands.queueUnitClone(captureUnitClone(this, sourceId, externalId, x, y))
   }
 
-  createUnitEntity(unit: SimUnit): EntityId {
-    this.assertKnownFields(unit)
+  createUnitEntity(bundle: UnitEntityBundle): EntityId {
     const entityId = this.createUnitRecord(
-      unit.id,
-      (name, entityId) => { this.setComponentFromUnit(name, entityId, unit) },
-      captureUnitRelations(unit),
+      bundle.externalId,
+      (name, entityId) => { this.setBundledComponent(name, entityId, bundle) },
+      bundle.relations,
     )
-    installUnitCapabilities(this.stores, entityId, unit)
+    installCapabilityNames(this.stores, entityId, bundle.capabilities)
     return entityId
   }
 
@@ -146,7 +147,10 @@ export class CombatWorld {
     if (isDead) spatial?.remove(entityId)
     else spatial?.insert(this, entityId)
   }
-  syncEntitySpatialPosition(entityId: EntityId): void {
+  setEntityPosition(entityId: EntityId, x: number, y: number): void {
+    const transform = this.stores.transform.require(entityId)
+    transform.x = x
+    transform.y = y
     this.resources.get('entitySpatial')?.update(this, entityId)
   }
 
@@ -176,7 +180,6 @@ export class CombatWorld {
   getQueryProfile(): ComponentQueryProfile {
     return this.queries.getProfile()
   }
-
   getComponent<Name extends ComponentName>(componentName: Name, entityId: EntityId): CombatComponentMap[Name] | undefined {
     return this.stores[componentName].get(entityId)
   }
@@ -192,18 +195,6 @@ export class CombatWorld {
   snapshotHazards(): SimHazard[] {
     return createHazardSnapshots(this)
   }
-
-  private setComponentFromUnit<Name extends UnitComponentName>(name: Name, entityId: EntityId, unit: SimUnit): void {
-    const component: Record<string, unknown> = {}
-    for (const field of COMPONENT_FIELDS[name]) {
-      if (field in unit) component[field] = unit[field]
-    }
-    this.stores[name].set(
-      entityId,
-      structuredClone(component) as unknown as CombatComponentMap[Name],
-    )
-  }
-
   private createUnitRecord(
     externalId: string,
     setComponents: (name: UnitComponentName, entityId: EntityId) => void,
@@ -228,6 +219,10 @@ export class CombatWorld {
       entityId,
       structuredClone(clone.components[name]) as CombatComponentMap[Name],
     )
+  }
+
+  private setBundledComponent<Name extends UnitComponentName>(name: Name, entityId: EntityId, bundle: UnitEntityBundle): void {
+    this.stores[name].set(entityId, bundle.components[name] as CombatComponentMap[Name])
   }
 
   private assertKnownFields(unit: SimUnit): void {

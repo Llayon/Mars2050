@@ -83,6 +83,34 @@ describe('combat ECS world boundary', () => {
     expect(world.queryTeam('defender', ['identity', 'vitality'])).toEqual([])
   })
 
+  it('matches brute-force collision pairs and tracks committed positions', () => {
+    const units = ['a', 'b', 'c', 'd'].map((id, index) => {
+      const candidate = unit(id)
+      candidate.x = index * 35
+      candidate.y = index % 2 === 0 ? 20 : 45
+      return candidate
+    })
+    const world = new CombatWorld(units)
+    const spatial = new EntitySpatialIndex()
+    world.resources.set('entitySpatial', spatial)
+    const entityIds = world.query(['identity', 'transform', 'vitality'])
+    const maxDistance = 60
+    const expected: [number, number][] = []
+    for (let left = 0; left < entityIds.length; left++) {
+      for (let right = left + 1; right < entityIds.length; right++) {
+        const first = world.stores.transform.require(entityIds[left])
+        const second = world.stores.transform.require(entityIds[right])
+        if (Math.hypot(second.x - first.x, second.y - first.y) < maxDistance) {
+          expected.push([entityIds[left], entityIds[right]])
+        }
+      }
+    }
+
+    expect(spatial.queryPairs(world, entityIds, maxDistance)).toEqual(expected)
+    world.setEntityPosition(3, 36, 44)
+    expect(spatial.queryPairs(world, entityIds, maxDistance)).toContainEqual([1, 3])
+  })
+
   it('captures component-native clones and resets transient state', () => {
     const source = createRuntimeUnitFromConfig({
       id: 'source', team: 'attacker', type: 'officer', x: 10, y: 20, currentAngle: 0,

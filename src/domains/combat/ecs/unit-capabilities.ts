@@ -32,6 +32,10 @@ export function installUnitCapabilities(
   }
 }
 
+export function getUnitCapabilityNames(unit: SimUnit): UnitCapabilityName[] {
+  return UNIT_CAPABILITY_NAMES.filter(capability => hasCapability(unit, capability))
+}
+
 export function installCapabilityNames(
   stores: CombatComponentStores,
   entityId: EntityId,

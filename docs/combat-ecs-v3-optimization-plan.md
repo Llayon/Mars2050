@@ -67,3 +67,11 @@ fingerprints and structural counters rather than machine-dependent durations.
 - After the index slice, diagnostic component candidate scans are 65.9% of the
   original baseline for `massive_clash` and 79.1% for `zerg_rush`. Three-run
   production medians were 291.33 ms and 5261.22 ms respectively.
+- Depenetration now reuses the canonical spatial cells and is covered by a
+  seeded brute-force pair oracle. Coordinate writes go through
+  `CombatWorld.setEntityPosition()`, including movement, displacement and jump.
+- Structural unit commands now carry owned component-native `UnitEntityBundle`
+  payloads. The `SimUnit` compatibility adapter captures components, relations
+  and capability markers once before the command enters the queue.
+- Post-structural three-run medians were 290.88 ms for `massive_clash` and
+  5271.42 ms for `zerg_rush`; tick traversal remains the next performance limit.

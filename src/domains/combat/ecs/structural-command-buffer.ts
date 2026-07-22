@@ -1,17 +1,18 @@
-import type { SimHazard, SimUnit } from '../combat.sim.types'
+import type { SimHazard } from '../combat.sim.types'
 import type { CombatWorld } from './combat-world'
 import type { UnitCloneData } from './unit-clone'
+import type { UnitEntityBundle } from './unit-entity-bundle'
 
 export type StructuralCommand =
-  | { type: 'create_unit'; unit: SimUnit }
+  | { type: 'create_unit'; bundle: UnitEntityBundle }
   | { type: 'create_unit_clone'; clone: UnitCloneData }
   | { type: 'create_hazard'; hazard: SimHazard }
 
 export class StructuralCommandBuffer {
   private commands: StructuralCommand[] = []
 
-  queueUnit(unit: SimUnit): void {
-    this.commands.push({ type: 'create_unit', unit: structuredClone(unit) })
+  queueUnit(bundle: UnitEntityBundle): void {
+    this.commands.push({ type: 'create_unit', bundle })
   }
 
   queueHazard(hazard: SimHazard): void {
@@ -31,7 +32,7 @@ export class StructuralCommandBuffer {
   flush(world: CombatWorld): void {
     for (const command of this.drain()) {
       if (command.type === 'create_unit') {
-        world.createUnitEntity(command.unit)
+        world.createUnitEntity(command.bundle)
         continue
       }
       if (command.type === 'create_unit_clone') {

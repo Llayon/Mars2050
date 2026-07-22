@@ -36,8 +36,11 @@ function applyPull(
     if (step <= 0) continue
     const fromX = target.x
     const fromY = target.y
-    target.x = clamp(target.x + ((center.x - target.x) / distance) * step, 0, FIELD_WIDTH)
-    target.y = clamp(target.y + ((center.y - target.y) / distance) * step, 0, FIELD_HEIGHT)
+    world.setEntityPosition(
+      targetId,
+      clamp(target.x + ((center.x - target.x) / distance) * step, 0, FIELD_WIDTH),
+      clamp(target.y + ((center.y - target.y) / distance) * step, 0, FIELD_HEIGHT),
+    )
     target.velocity = { x: 0, y: 0 }
     actions.push({
       unitId: world.stores.identity.require(targetId).id,
@@ -48,7 +51,6 @@ function applyPull(
       toY: target.y,
       facingAngle: target.currentAngle,
     })
-    syncTransform(world, targetId)
   }
 }
 
@@ -76,8 +78,7 @@ function applyKnockback(
     const toX = clamp(target.x + (dx / distance) * config.strength, 0, FIELD_WIDTH)
     const toY = clamp(target.y + (dy / distance) * config.strength, 0, FIELD_HEIGHT)
     if (toX === fromX && toY === fromY) continue
-    target.x = toX
-    target.y = toY
+    world.setEntityPosition(targetId, toX, toY)
     target.velocity = { x: 0, y: 0 }
     actions.push({
       unitId: world.stores.identity.require(targetId).id,
@@ -88,7 +89,6 @@ function applyKnockback(
       toY,
       facingAngle: target.currentAngle,
     })
-    syncTransform(world, targetId)
   }
 }
 
@@ -120,10 +120,6 @@ function getTargets(
     .sort((left, right) => left.distance - right.distance || compareIds(world, left.targetId, right.targetId))
     .slice(0, maxTargets ?? Number.MAX_SAFE_INTEGER)
     .map(hit => hit.targetId)
-}
-
-function syncTransform(world: CombatWorld, targetId: EntityId): void {
-  world.syncEntitySpatialPosition(targetId)
 }
 
 function compareIds(world: CombatWorld, leftId: EntityId, rightId: EntityId): number {

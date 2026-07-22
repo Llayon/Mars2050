@@ -4,7 +4,6 @@ import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
 
 const MAX_PAIR_DISTANCE = (getSizeRadius('XL') + getSizeRadius('XL')) * 0.95
-const NEIGHBOR_OFFSETS = [-1, 0, 1] as const
 const SAME_TEAM_CORRECTION = 0.64
 const ENEMY_CORRECTION = 0.28
 const MAX_CORRECTION = 4.8
@@ -84,9 +83,11 @@ function applyCorrection(world: CombatWorld, entityId: EntityId, correction: { x
   const transform = world.stores.transform.require(entityId)
   const fromX = transform.x
   const fromY = transform.y
-  transform.x = clamp(transform.x + correction.x, 0, FIELD_WIDTH)
-  transform.y = clamp(transform.y + correction.y, 0, FIELD_HEIGHT)
-  world.syncEntitySpatialPosition(entityId)
+  world.setEntityPosition(
+    entityId,
+    clamp(transform.x + correction.x, 0, FIELD_WIDTH),
+    clamp(transform.y + correction.y, 0, FIELD_HEIGHT),
+  )
   if (Math.hypot(transform.x - fromX, transform.y - fromY) <= MIN_EMIT_DISTANCE) return
   actions.push({
     unitId: world.stores.entityMeta.require(entityId).externalId,
@@ -99,44 +100,7 @@ function applyCorrection(world: CombatWorld, entityId: EntityId, correction: { x
 
 function getCollisionPairs(world: CombatWorld): [EntityId, EntityId][] {
   const entities = world.query(['identity', 'transform', 'vitality', 'combat', 'movement'])
-  const buckets = new Map<string, EntityId[]>()
-  for (const entityId of entities) {
-    const transform = world.stores.transform.require(entityId)
-    const key = getBucketKey(transform.x, transform.y)
-    const bucket = buckets.get(key)
-    if (bucket) bucket.push(entityId)
-    else buckets.set(key, [entityId])
-  }
-  const pairs: [EntityId, EntityId][] = []
-  for (const bucket of buckets.values()) {
-    for (const firstId of bucket) {
-      for (const secondId of getNearby(world, firstId, buckets)) {
-        if (secondId > firstId && isPotentialCollision(world, firstId, secondId)) {
-          pairs.push([firstId, secondId])
-        }
-      }
-    }
-  }
-  return pairs.sort((left, right) => left[0] - right[0] || left[1] - right[1])
-}
-
-function isPotentialCollision(world: CombatWorld, firstId: EntityId, secondId: EntityId): boolean {
-  const first = world.stores.transform.require(firstId)
-  const second = world.stores.transform.require(secondId)
-  const dx = second.x - first.x
-  const dy = second.y - first.y
-  return dx * dx + dy * dy < MAX_PAIR_DISTANCE * MAX_PAIR_DISTANCE
-}
-
-function getNearby(world: CombatWorld, entityId: EntityId, buckets: Map<string, EntityId[]>): EntityId[] {
-  const transform = world.stores.transform.require(entityId)
-  const cellX = getCellCoordinate(transform.x)
-  const cellY = getCellCoordinate(transform.y)
-  const entities: EntityId[] = []
-  for (const offsetY of NEIGHBOR_OFFSETS) {
-    for (const offsetX of NEIGHBOR_OFFSETS) entities.push(...(buckets.get(`${cellX + offsetX}:${cellY + offsetY}`) ?? []))
-  }
-  return entities
+  return world.resources.require('entitySpatial').queryPairs(world, entities, MAX_PAIR_DISTANCE)
 }
 
 function getPairVector(world: CombatWorld, firstId: EntityId, secondId: EntityId): { x: number; y: number } {
@@ -152,8 +116,6 @@ function getPairVector(world: CombatWorld, firstId: EntityId, secondId: EntityId
   return { x: Math.cos(angle), y: Math.sin(angle) }
 }
 
-function getBucketKey(x: number, y: number): string { return `${getCellCoordinate(x)}:${getCellCoordinate(y)}` }
-function getCellCoordinate(value: number): number { return Math.floor(value / MAX_PAIR_DISTANCE) }
 function clamp(value: number, min: number, max: number): number { return Math.max(min, Math.min(max, value)) }
 function round(value: number): number { return Math.round(value * 100) / 100 }
 function clampVector(vector: { x: number; y: number }, max: number): { x: number; y: number } {

@@ -24,7 +24,6 @@ export function runMovementSystem(
   context: RuntimeMovementContext,
 ): void {
   runMovementMath(world, entityId, targetId, actions, context)
-  world.syncEntitySpatialPosition(entityId)
 }
 
 function runMovementMath(world: CombatWorld, entityId: EntityId, targetId: EntityId, actions: BattleAction[], context: RuntimeMovementContext): void {
@@ -140,8 +139,11 @@ function runMovementMath(world: CombatWorld, entityId: EntityId, targetId: Entit
     }
     const fromX = transform.x
     const fromY = transform.y
-    transform.x = clamp(transform.x + transform.velocity.x * context.dt, 0, FIELD_WIDTH)
-    transform.y = clamp(transform.y + transform.velocity.y * context.dt, 0, FIELD_HEIGHT)
+    world.setEntityPosition(
+      entityId,
+      clamp(transform.x + transform.velocity.x * context.dt, 0, FIELD_WIDTH),
+      clamp(transform.y + transform.velocity.y * context.dt, 0, FIELD_HEIGHT),
+    )
     emitMove(world, entityId, targetId, actions, fromX, fromY, angleDiff, false)
     return
   }
@@ -188,8 +190,7 @@ function runMovementMath(world: CombatWorld, entityId: EntityId, targetId: Entit
   if (Math.hypot(nextX - transform.x, nextY - transform.y) > 0.1 || Math.abs(angleDiff) > 0.2) {
     const fromX = transform.x
     const fromY = transform.y
-    transform.x = nextX
-    transform.y = nextY
+    world.setEntityPosition(entityId, nextX, nextY)
     recordEcsChargeMovement(world, entityId, Math.hypot(nextX - fromX, nextY - fromY))
     emitMove(world, entityId, targetId, actions, fromX, fromY, angleDiff, movement.isMoving ?? false)
   }

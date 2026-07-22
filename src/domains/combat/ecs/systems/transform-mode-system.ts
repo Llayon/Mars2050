@@ -93,11 +93,11 @@ function applyTransformMode(
   if (mode.mode === 'jump' && mode.jumpDistance) {
     const team = world.stores.identity.require(entityId).team
     const direction = team === 'attacker' ? -1 : 1
-    transform.y = Math.max(
-      0,
-      Math.min(FIELD_HEIGHT, transform.y + direction * mode.jumpDistance),
+    world.setEntityPosition(
+      entityId,
+      transform.x,
+      Math.max(0, Math.min(FIELD_HEIGHT, transform.y + direction * mode.jumpDistance)),
     )
-    world.syncEntitySpatialPosition(entityId)
   }
 
   actions.push({
