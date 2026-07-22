@@ -9,6 +9,7 @@ import type {
 import { getDistance } from '../../combat.utils'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
+import { getStatusStackIdentity } from '../../combat.status-core'
 
 const CLEANSE_HAZARDS: HazardKind[] = [
   'napalm',
@@ -172,6 +173,7 @@ export function cleanseEcsStatuses(
     const effect = status.statusEffects[index]
     if (!allowed.has(effect.type)) continue
     status.statusEffects.splice(index, 1)
+    world.sourceRefs.clear(world, entityId, getStatusStackIdentity(effect))
     actions.push({
       unitId: identity.id,
       type: 'status_cleanse',
@@ -185,6 +187,7 @@ export function cleanseEcsStatuses(
   if (targeting.controlProgress?.breakOnCleanse) {
     const progress = targeting.controlProgress
     targeting.controlProgress = undefined
+    world.stores.entitySources.require(entityId).controlProgressSource = undefined
     world.setUnitCapability(entityId, 'activeControlProgressCapability', false)
     actions.push({
       unitId: progress.sourceUnitId,

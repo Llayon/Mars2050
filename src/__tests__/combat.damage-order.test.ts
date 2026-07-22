@@ -24,6 +24,7 @@ describe('combat damage-order contract', () => {
     targetStatus.targetMark = {
       sourceUnitId: 'attacker', duration: 10, damageMultiplier: 0.5,
     }
+    world.stores.entitySources.require(1).targetMarkSource = 0
     targetStatus.statusEffects.push({
       type: 'vulnerable', duration: 10, value: 0.5, tickInterval: 0, nextTickIn: 0,
     })

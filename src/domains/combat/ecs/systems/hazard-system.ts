@@ -6,7 +6,7 @@ import { applyEcsStatus } from './status-application-system'
 
 export type EcsHazardDeathHandler = (
   entityId: EntityId,
-  sourceUnitId: string | undefined,
+  sourceId: EntityId | undefined,
   cause: DeathCause,
 ) => void
 
@@ -40,7 +40,11 @@ export function runHazardSystem(
         const vitality = world.stores.vitality.require(targetId)
         vitality.hp -= hazard.damagePerTick
         actions.push(createDamageAction(world, hazard, targetId))
-        if (vitality.hp <= 0 && !vitality.isDead) onUnitDeath(targetId, hazard.sourceUnitId, 'hazard')
+        if (vitality.hp <= 0 && !vitality.isDead) onUnitDeath(
+          targetId,
+          world.stores.entitySources.require(hazardId).hazardSource,
+          'hazard',
+        )
       }
     }
   }
@@ -56,7 +60,11 @@ function processMine(world: CombatWorld, hazardId: EntityId, actions: BattleActi
     const vitality = world.stores.vitality.require(targetId)
     vitality.hp -= hazard.damagePerTick
     actions.push(createDamageAction(world, hazard, targetId))
-    if (vitality.hp <= 0 && !vitality.isDead) onDeath(targetId, hazard.sourceUnitId, 'mine')
+    if (vitality.hp <= 0 && !vitality.isDead) onDeath(
+      targetId,
+      world.stores.entitySources.require(hazardId).hazardSource,
+      'mine',
+    )
   }
   return true
 }

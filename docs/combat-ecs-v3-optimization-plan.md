@@ -59,8 +59,10 @@ fingerprints and structural counters rather than machine-dependent durations.
   overlap math. Golden fingerprints remain unchanged.
 - Intermediate three-run production medians: `massive_clash` 288.41 ms and
   `zerg_rush` 5106.66 ms. These are progress measurements, not final gates.
-- Pending: full component-native source refs, deeper spatial traversal work,
-  component-native structural bundles, and scheduler-owned actor turns.
+- Runtime provenance now uses canonical `EntityId` references for status damage,
+  target marks, control progress, and hazard ownership. External strings remain
+  only in configuration, snapshots, and replay actions; synthetic sources do
+  not enter ECS relation storage.
 - Status and control-progress phases now use structural active-state markers.
   Summon caps use a canonical ownership index, and outcome checks use a team
   membership index that stays synchronized through control conversion.
@@ -82,3 +84,5 @@ fingerprints and structural counters rather than machine-dependent durations.
 - Legacy per-actor methods were removed from `CombatRuntime`; focused tests now
   invoke ECS systems directly. `RuntimeActionResult` contains only `acted`, and
   the unused `actorSynchronized` compatibility flag has been retired.
+- Slices 2-5 are complete. Remaining work is the final five-run benchmark,
+  production build, Chromium simulator QA, and documentation of final results.

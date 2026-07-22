@@ -78,7 +78,7 @@ export function applyEcsSingleDamage(
   const barrier = applyEcsBarriers(world, targetId, damage)
   damage = barrier.damage
   damage = applyTargetStatuses(targetStatus.statusEffects, damage)
-  const markMultiplier = getMarkDamageMultiplier(attackerIdentity.id, targetStatus.targetMark)
+  const markMultiplier = getMarkDamageMultiplier(world, attackerId, targetId, targetStatus.targetMark)
   if (markMultiplier > 0) damage = Math.max(0, Math.floor(damage * (1 + markMultiplier)))
   damage = applyFlatBlock(world, targetId, damage)
   const blockedBeforeShield = Math.max(0, raw - damage)
@@ -92,7 +92,7 @@ export function applyEcsSingleDamage(
   }
   const sharing = applyEcsDamageSharing(world, targetId, attackerId, damage, actions, options.deathCause)
   damage = sharing.damage
-  const markedExecute = getMarkExecuteThreshold(attackerIdentity.id, targetStatus.targetMark)
+  const markedExecute = getMarkExecuteThreshold(world, attackerId, targetId, targetStatus.targetMark)
   const execute = Math.max(attacker.executeThreshold ?? 0, markedExecute)
   if (execute > 0 && targetVitality.hp <= execute) damage = targetVitality.hp
   let lifesteal = 0
@@ -218,16 +218,16 @@ function applySummonCounter(world: CombatWorld, attackerId: EntityId, targetId: 
     vitality.isTemporary || tags.includes('summoner')
   return summon ? Math.floor(damage * multiplier) : damage
 }
-function getMarkDamageMultiplier(attackerId: string, mark: ReturnType<CombatWorld['stores']['statusControl']['require']>['targetMark']): number {
-  if (!mark || mark.duration <= 0 || !mark.sharedDamage && mark.sourceUnitId !== attackerId) return 0
+function getMarkDamageMultiplier(world: CombatWorld, attackerId: EntityId, targetId: EntityId, mark: ReturnType<CombatWorld['stores']['statusControl']['require']>['targetMark']): number {
+  const sourceId = world.stores.entitySources.require(targetId).targetMarkSource
+  if (!mark || mark.duration <= 0 || !mark.sharedDamage && sourceId !== attackerId) return 0
   return Math.max(0, mark.damageMultiplier ?? 0)
 }
-
-function getMarkExecuteThreshold(attackerId: string, mark: ReturnType<CombatWorld['stores']['statusControl']['require']>['targetMark']): number {
-  if (!mark || mark.duration <= 0 || mark.sourceUnitId !== attackerId) return 0
+function getMarkExecuteThreshold(world: CombatWorld, attackerId: EntityId, targetId: EntityId, mark: ReturnType<CombatWorld['stores']['statusControl']['require']>['targetMark']): number {
+  const sourceId = world.stores.entitySources.require(targetId).targetMarkSource
+  if (!mark || mark.duration <= 0 || sourceId !== attackerId) return 0
   return Math.max(0, Math.floor(mark.executeThreshold ?? 0))
 }
-
 function getStatusValue(effects: RuntimeStatusEffect[], type: RuntimeStatusEffect['type']): number | undefined {
   let value: number | undefined
   for (const effect of effects) {

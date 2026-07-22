@@ -31,9 +31,12 @@ export function runEcsReassemblySystem(
     world.setUnitCapability(entityId, 'reassemblyCapability', false)
     combat.actionCooldown = 0
     status.statusEffects = []
+    world.sourceRefs.clearAll(world, entityId)
     world.setUnitCapability(entityId, 'activeStatusCapability', false)
     status.targetMark = undefined
+    world.stores.entitySources.require(entityId).targetMarkSource = undefined
     targeting.controlProgress = undefined
+    world.stores.entitySources.require(entityId).controlProgressSource = undefined
     actions.push({
       unitId: identity.id,
       type: 'reassembly_complete',

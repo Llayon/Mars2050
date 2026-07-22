@@ -32,6 +32,12 @@ export function applyEcsStatus(
     statuses.push(normalized)
     world.setUnitCapability(targetId, 'activeStatusCapability', true)
   }
+  world.sourceRefs.setExternal(
+    world,
+    targetId,
+    getStatusStackIdentity(existing ?? normalized),
+    normalized.sourceUnitId,
+  )
   const action: BattleAction = {
     unitId: identity.id,
     type: 'status_apply',

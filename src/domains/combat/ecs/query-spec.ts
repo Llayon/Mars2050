@@ -28,6 +28,7 @@ const COMPONENT_INDEX: Record<ComponentName, number> = {
   periodicSpawnerCapability: 24,
   activeStatusCapability: 25,
   activeControlProgressCapability: 26,
+  entitySources: 27,
 }
 
 export interface QuerySpec {

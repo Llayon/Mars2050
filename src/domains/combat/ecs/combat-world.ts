@@ -13,6 +13,7 @@ import { createHazardSnapshots, createUnitSnapshot, createUnitSnapshots } from '
 import { captureUnitRelations, resolveUnitRelations, type PendingUnitRelations } from './unit-relation-codec'
 import { CombatEntityIndexes } from './combat-entity-indexes'
 import { captureUnitEntityBundle, type UnitEntityBundle } from './unit-entity-bundle'
+import { CombatSourceIndex } from './combat-source-index'
 
 export type { ComponentQueryProfile } from './component-query-registry'
 
@@ -26,6 +27,7 @@ export class CombatWorld {
   private readonly queries: ComponentQueryRegistry
   private readonly pendingRelations = new Map<EntityId, PendingUnitRelations>()
   private readonly indexes = new CombatEntityIndexes(this.stores)
+  readonly sourceRefs = new CombatSourceIndex()
   private nextEntityId = 0
 
   constructor(initialUnits: SimUnit[] = [], options: { profile?: boolean } = {}) {
@@ -61,6 +63,11 @@ export class CombatWorld {
       bundle.relations,
     )
     installCapabilityNames(this.stores, entityId, bundle.capabilities)
+    this.sourceRefs.queueStatusSources(entityId, bundle.statusSources)
+    this.sourceRefs.queueEntitySources(entityId, {
+      targetMarkSource: bundle.targetMarkSource,
+      controlProgressSource: bundle.controlProgressSource,
+    })
     return entityId
   }
 
@@ -69,6 +76,8 @@ export class CombatWorld {
     const entityId = this.nextEntityId++
     this.stores.entityMeta.set(entityId, { kind: 'hazard', externalId: hazard.id })
     this.stores.hazard.set(entityId, structuredClone(hazard))
+    this.stores.entitySources.set(entityId, { statusSources: {} })
+    this.sourceRefs.queueEntitySources(entityId, { hazardSource: hazard.sourceUnitId })
     this.entityIds.push(entityId)
     this.externalIdToEntity.set(hazard.id, entityId)
     this.queries.touchStructure()
@@ -91,12 +100,11 @@ export class CombatWorld {
         this.pendingRelations.delete(entityId)
       }
     }
+    this.sourceRefs.resolvePending(this)
   }
-
   captureEntityWatermark(): number {
     return this.nextEntityId
   }
-
   getUnitsCreatedSince(watermark: number): EntityId[] {
     return this.query(['transform', 'vitality']).filter(entityId => entityId >= watermark)
   }
@@ -130,7 +138,6 @@ export class CombatWorld {
   query(query: readonly ComponentName[] | QuerySpec, includeDead = false): readonly EntityId[] {
     return this.queries.query(this.stores, query, includeDead)
   }
-
   queryTeam(
     team: SimUnit['team'],
     query: readonly ComponentName[] | QuerySpec,
@@ -153,7 +160,6 @@ export class CombatWorld {
     transform.y = y
     this.resources.get('entitySpatial')?.update(this, entityId)
   }
-
   setEntityTeam(entityId: EntityId, team: SimUnit['team']): void {
     const identity = this.stores.identity.require(entityId)
     if (identity.team === team) return
@@ -170,7 +176,6 @@ export class CombatWorld {
   getActiveSummons(ownerId: EntityId): readonly EntityId[] {
     return this.indexes.getActiveSummons(ownerId)
   }
-
   setUnitCapability(entityId: EntityId, capability: UnitCapabilityName, present: boolean): void {
     if (setUnitCapabilityPresence(this.stores, entityId, capability, present)) {
       this.queries.touchStructure()
@@ -204,6 +209,7 @@ export class CombatWorld {
     const entityId = this.nextEntityId++
     this.stores.entityMeta.set(entityId, { kind: 'unit', externalId })
     this.stores.entityTargets.set(entityId, {})
+    this.stores.entitySources.set(entityId, { statusSources: {} })
     if (pendingRelations) this.pendingRelations.set(entityId, pendingRelations)
     for (const name of Object.keys(COMPONENT_FIELDS) as UnitComponentName[]) setComponents(name, entityId)
     this.indexes.addTeamEntity(entityId, this.stores.identity.require(entityId).team)

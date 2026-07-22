@@ -135,16 +135,18 @@ function runPeriodicAbilityPhase(world: CombatWorld, context: RuntimePhaseContex
 
 function runStatusPhase(world: CombatWorld, context: RuntimePhaseContext): void {
   world.flushStructuralCommands()
-  runStatusSystem(world, context.actions, (entityId, sourceUnitId, cause) => {
-    resolveEnvironmentalDeath(world, entityId, sourceUnitId, context, cause)
+  runStatusSystem(world, context.actions, (entityId, sourceId, cause) => {
+    resolveEcsDeath(world, entityId, sourceId, context.actions, cause)
+    world.flushStructuralCommands()
   })
 }
 
 function runHazardPhase(world: CombatWorld, context: RuntimePhaseContext): void {
   world.flushStructuralCommands()
   ensureSpatial(world)
-  runHazardSystem(world, context.actions, (entityId, sourceUnitId, cause) => {
-    resolveEnvironmentalDeath(world, entityId, sourceUnitId, context, cause)
+  runHazardSystem(world, context.actions, (entityId, sourceId, cause) => {
+    resolveEcsDeath(world, entityId, sourceId, context.actions, cause)
+    world.flushStructuralCommands()
   })
 }
 
@@ -152,21 +154,6 @@ function runHpThresholdPhase(world: CombatWorld, context: RuntimePhaseContext): 
   const ordered = [...world.query(['identity', 'vitality', 'lifecycle', 'triggerCapability'])]
     .sort((left, right) => world.stores.identity.require(left).id.localeCompare(world.stores.identity.require(right).id))
   for (const entityId of ordered) processEcsHpThresholdTriggers(world, entityId, context.actions)
-}
-
-function resolveEnvironmentalDeath(
-  world: CombatWorld,
-  entityId: number,
-  sourceUnitId: string | undefined,
-  context: RuntimePhaseContext,
-  cause: Parameters<typeof resolveEcsDeath>[4],
-): void {
-  const candidateSourceId = sourceUnitId === undefined ? undefined : world.getEntityId(sourceUnitId)
-  const sourceId = candidateSourceId !== undefined && world.stores.identity.has(candidateSourceId)
-    ? candidateSourceId
-    : undefined
-  resolveEcsDeath(world, entityId, sourceId, context.actions, cause)
-  world.flushStructuralCommands()
 }
 
 function prepareResources(world: CombatWorld, context: RuntimePhaseContext): void {

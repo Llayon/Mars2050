@@ -3,10 +3,11 @@ import type { DeathCause } from '../../combat.death.types'
 import type { RuntimeStatusEffect, StatusEffect } from '../../combat.primitives'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
+import { getStatusStackIdentity } from '../../combat.status-core'
 
 export type EcsStatusDeathHandler = (
   entityId: EntityId,
-  sourceUnitId: string | undefined,
+  sourceId: EntityId | undefined,
   cause: DeathCause,
 ) => void
 
@@ -27,12 +28,13 @@ export function runStatusSystem(
       if (effect.tickInterval > 0) {
         effect.nextTickIn--
         if (effect.nextTickIn <= 0) {
-          applyPeriodicEffect(entityId, identity.id, vitality, effect, actions, onUnitDeath)
+          applyPeriodicEffect(world, entityId, identity.id, vitality, effect, actions, onUnitDeath)
           effect.nextTickIn = effect.tickInterval
         }
       }
       if (effect.duration > 0) continue
       statusControl.statusEffects.splice(index, 1)
+      world.sourceRefs.clear(world, entityId, getStatusStackIdentity(effect))
       actions.push({ unitId: identity.id, type: 'status_expire', statusType: effect.type })
     }
     if (statusControl.statusEffects.length === 0) {
@@ -42,6 +44,7 @@ export function runStatusSystem(
 }
 
 function applyPeriodicEffect(
+  world: CombatWorld,
   entityId: EntityId,
   externalId: string,
   vitality: { hp?: number; maxHp?: number; isDead?: boolean },
@@ -70,7 +73,7 @@ function applyPeriodicEffect(
   actions.push({ unitId: sourceId, type: 'damage', targetId: externalId, damage, statusType: effect.type, damageKind: 'dot' })
   if (vitality.hp <= 0 && !vitality.isDead) {
     const cause = effect.type === 'burn' || effect.type === 'acid' ? effect.type : 'degeneration'
-    onUnitDeath(entityId, effect.sourceUnitId, cause)
+    onUnitDeath(entityId, world.sourceRefs.get(world, entityId, getStatusStackIdentity(effect)), cause)
   }
 }
 

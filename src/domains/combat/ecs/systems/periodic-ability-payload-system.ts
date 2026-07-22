@@ -176,6 +176,7 @@ function applyMark(
     ...mark,
     sourceUnitId: sourceExternalId,
   }
+  world.stores.entitySources.require(targetId).targetMarkSource = sourceId
   actions.push({
     unitId: sourceExternalId,
     type: 'target_mark',

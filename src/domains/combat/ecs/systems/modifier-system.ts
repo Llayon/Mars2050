@@ -32,6 +32,7 @@ export function runModifierSystem(
     if (statusControl.targetMark.duration <= 0) {
       const sourceUnitId = statusControl.targetMark.sourceUnitId
       statusControl.targetMark = undefined
+      world.stores.entitySources.require(entityId).targetMarkSource = undefined
       actions.push({ unitId: sourceUnitId, type: 'target_mark_expire', targetId: identity.id })
     }
   }

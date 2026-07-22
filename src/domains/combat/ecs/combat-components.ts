@@ -19,7 +19,7 @@ export type UnitCapabilityName =
 
 export type ComponentName =
   | 'entityMeta' | UnitComponentName | UnitCapabilityName
-  | 'entityTargets' | 'hazard'
+  | 'entityTargets' | 'entitySources' | 'hazard'
 
 export const COMPONENT_FIELDS = {
   identity: ['id', 'team', 'type', 'rank', 'squadId', 'summonSourceId'],
@@ -61,6 +61,13 @@ export interface UnitCapabilityComponent {
   readonly present: true
 }
 
+export interface EntitySourceRefsComponent {
+  statusSources: Record<string, EntityId>
+  targetMarkSource?: EntityId
+  controlProgressSource?: EntityId
+  hazardSource?: EntityId
+}
+
 export interface CombatComponentMap {
   entityMeta: EntityMetaComponent
   identity: UnitComponentDataMap['identity']
@@ -88,6 +95,7 @@ export interface CombatComponentMap {
   activeStatusCapability: UnitCapabilityComponent
   activeControlProgressCapability: UnitCapabilityComponent
   entityTargets: EntityTargetRefsComponent
+  entitySources: EntitySourceRefsComponent
   hazard: SimHazard
 }
 
@@ -135,6 +143,7 @@ export function createComponentStores(): CombatComponentStores {
     activeStatusCapability: new ComponentStore<CombatComponentMap['activeStatusCapability']>(),
     activeControlProgressCapability: new ComponentStore<CombatComponentMap['activeControlProgressCapability']>(),
     entityTargets: new ComponentStore<CombatComponentMap['entityTargets']>(),
+    entitySources: new ComponentStore<CombatComponentMap['entitySources']>(),
     hazard: new ComponentStore<CombatComponentMap['hazard']>(),
   }
 }

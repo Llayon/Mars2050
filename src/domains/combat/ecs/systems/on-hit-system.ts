@@ -51,6 +51,7 @@ function applyEcsTargetMark(
   const attacker = world.stores.identity.require(attackerId)
   const target = world.stores.identity.require(targetId)
   world.stores.statusControl.require(targetId).targetMark = { ...mark, sourceUnitId: attacker.id }
+  world.stores.entitySources.require(targetId).targetMarkSource = attackerId
   actions.push({
     unitId: attacker.id,
     type: 'target_mark',
@@ -63,6 +64,7 @@ function applyEcsTargetMark(
     const squadmate = world.stores.identity.require(squadmateId)
     if (squadmate.team !== target.team || squadmate.squadId !== target.squadId) continue
     world.stores.statusControl.require(squadmateId).targetMark = { ...mark, sourceUnitId: attacker.id }
+    world.stores.entitySources.require(squadmateId).targetMarkSource = attackerId
   }
   if (!mark.sharedDamage || (mark.focusPriority ?? 0) <= 0) return
   for (const allyId of world.query(['identity', 'targeting', 'entityTargets'])) {

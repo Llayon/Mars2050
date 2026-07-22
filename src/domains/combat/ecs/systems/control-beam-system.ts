@@ -81,11 +81,10 @@ function breakStaleLinks(
   actions: BattleAction[],
 ): void {
   if (config.breakOnRange === false) return
-  const sourceExternalId = getExternalId(world, sourceId)
   const activeTargets = new Set(targets)
   for (const entityId of world.query(['identity', 'targeting', 'activeControlProgressCapability'], true)) {
     const progress = world.stores.targeting.require(entityId).controlProgress
-    if (progress?.sourceUnitId === sourceExternalId &&
+    if (progress && world.stores.entitySources.require(entityId).controlProgressSource === sourceId &&
         !activeTargets.has(entityId)) breakControlProgress(world, entityId, actions)
   }
 }
@@ -101,7 +100,7 @@ function applyControlProgress(
   const source = world.stores.identity.require(sourceId)
   const target = world.stores.identity.require(targetId)
   const targeting = world.stores.targeting.require(targetId)
-  if (targeting.controlProgress?.sourceUnitId !== source.id) {
+  if (world.stores.entitySources.require(targetId).controlProgressSource !== sourceId) {
     targeting.controlProgress = {
       sourceUnitId: source.id,
       sourceTeam: source.team,
@@ -109,6 +108,7 @@ function applyControlProgress(
       threshold: config.conversionThreshold,
       breakOnCleanse: config.breakOnCleanse !== false,
     }
+    world.stores.entitySources.require(targetId).controlProgressSource = sourceId
     world.setUnitCapability(targetId, 'activeControlProgressCapability', true)
     actions.push({
       unitId: source.id,
@@ -117,10 +117,11 @@ function applyControlProgress(
       value: 0,
     })
   }
+  const progress = targeting.controlProgress!
   const multiplier = targetCount > 1
     ? config.multiTargetProgressMultiplier ?? 1
     : 1
-  targeting.controlProgress.progress += Math.max(
+  progress.progress += Math.max(
     0,
     config.progressPerTick * multiplier,
   )
@@ -128,13 +129,13 @@ function applyControlProgress(
     unitId: source.id,
     type: 'control_progress',
     targetId: target.id,
-    value: Math.round(targeting.controlProgress.progress * 100) / 100,
+    value: Math.round(progress.progress * 100) / 100,
   })
-  if (targeting.controlProgress.progress <
-      targeting.controlProgress.threshold) return
+  if (progress.progress < progress.threshold) return
 
   world.setEntityTeam(targetId, source.team)
   targeting.controlProgress = undefined
+  world.stores.entitySources.require(targetId).controlProgressSource = undefined
   world.setUnitCapability(targetId, 'activeControlProgressCapability', false)
   clearTargeting(world, targetId)
   actions.push({
@@ -162,7 +163,7 @@ function breakOrphanedLinks(
     const vitality = world.stores.vitality.require(entityId)
     const progress = world.stores.targeting.require(entityId).controlProgress
     if (!progress) continue
-    const sourceId = world.getEntityId(progress.sourceUnitId)
+    const sourceId = world.stores.entitySources.require(entityId).controlProgressSource
     if (sourceId === undefined ||
         world.stores.vitality.require(sourceId).isDead ||
         vitality.isDead) breakControlProgress(world, entityId, actions)
@@ -178,6 +179,7 @@ function breakControlProgress(
   const progress = targeting.controlProgress
   if (!progress) return
   targeting.controlProgress = undefined
+  world.stores.entitySources.require(entityId).controlProgressSource = undefined
   world.setUnitCapability(entityId, 'activeControlProgressCapability', false)
   actions.push({
     unitId: progress.sourceUnitId,
