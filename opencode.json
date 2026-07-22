@@ -53,7 +53,7 @@
         "VOX_DIR": "D:/Programms/MagicaVoxel-0.99.7.2-win64/MagicaVoxel-0.99.7.2-win64/vox",
         "EXPORT_DIR": "D:/Programms/MagicaVoxel-0.99.7.2-win64/MagicaVoxel-0.99.7.2-win64/export"
       },
-      "enabled": true
+      "enabled": false
     }
   },
 
