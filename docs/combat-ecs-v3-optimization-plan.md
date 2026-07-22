@@ -92,3 +92,10 @@ fingerprints and structural counters rather than machine-dependent durations.
   still traverses 8,898,041 spatial bucket candidates, so the next optimization
   should reduce targeting and movement spatial candidates without changing
   deterministic query order or replay fingerprints.
+- Sticky targets are now validated before local acquisition, avoiding spatial
+  queries whose results were discarded during the target lock. Five-run
+  production medians improved to 243.36 ms for `massive_clash` and 4604.90 ms
+  for `zerg_rush`; total `zerg_rush` bucket traversal fell to 5,916,110.
+- The `massive_clash` target is now met. The remaining `zerg_rush` work is
+  concentrated in 4,930,421 movement bucket candidates and dense-neighbor
+  steering; the 3 second target remains open.

@@ -25,15 +25,17 @@ export function runTargetingSystem(world: CombatWorld, unitId: EntityId, melee: 
     clearTarget(world, unitId)
     return null
   }
+  if (mode === null) {
+    const locked = getLockedTarget(world, unitId, melee)
+    if (locked !== null) {
+      const targeting = world.stores.targeting.require(unitId)
+      targeting.aggroLockTicks = Math.max(0, targeting.aggroLockTicks - 1)
+      return locked
+    }
+  }
   const candidates = getAcquisitionCandidates(world, unitId, mode)
   const controlled = selectHackTarget(world, unitId, candidates, melee, mode)
   if (controlled.handled) return controlled.target
-  const locked = getLockedTarget(world, unitId, melee)
-  if (locked !== null) {
-    const targeting = world.stores.targeting.require(unitId)
-    targeting.aggroLockTicks = Math.max(0, targeting.aggroLockTicks - 1)
-    return locked
-  }
   const enemies = candidates.filter(entityId => isReachableEnemy(world, unitId, entityId))
   if (enemies.length === 0) {
     clearTarget(world, unitId)

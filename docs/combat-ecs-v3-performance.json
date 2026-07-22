@@ -4,11 +4,11 @@
     "mode": "profile",
     "units": 100,
     "ticks": 77,
-    "medianMs": 352,
-    "queryCount": 10704,
-    "candidateCount": 334367,
+    "medianMs": 246.03,
+    "queryCount": 7895,
+    "candidateCount": 238174,
     "maxCandidates": 50,
-    "bucketCandidateCount": 342399,
+    "bucketCandidateCount": 242926,
     "rebuildCount": 1,
     "incrementalUpdateCount": 9635,
     "componentQueryCount": 2156,
@@ -17,9 +17,9 @@
     "componentCacheHitCount": 1796,
     "purposes": {
       "targeting": {
-        "queryCount": 5446,
-        "bucketCandidateCount": 115423,
-        "candidateCount": 109930
+        "queryCount": 2637,
+        "bucketCandidateCount": 15950,
+        "candidateCount": 13737
       },
       "movement": {
         "queryCount": 5258,
@@ -33,22 +33,22 @@
     "mode": "profile",
     "units": 605,
     "ticks": 138,
-    "medianMs": 5362.67,
-    "queryCount": 100836,
-    "candidateCount": 6631792,
+    "medianMs": 4821.18,
+    "queryCount": 73055,
+    "candidateCount": 3832636,
     "maxCandidates": 552,
-    "bucketCandidateCount": 8898041,
+    "bucketCandidateCount": 5916110,
     "rebuildCount": 1,
     "incrementalUpdateCount": 96638,
-    "componentQueryCount": 12703,
-    "componentCandidateCount": 210222,
-    "componentResultCount": 5329085,
-    "componentCacheHitCount": 11199,
+    "componentQueryCount": 12397,
+    "componentCandidateCount": 175132,
+    "componentResultCount": 5212097,
+    "componentCacheHitCount": 10951,
     "purposes": {
       "targeting": {
-        "queryCount": 50802,
-        "bucketCandidateCount": 3819668,
-        "candidateCount": 3498926
+        "queryCount": 23021,
+        "bucketCandidateCount": 837737,
+        "candidateCount": 699770
       },
       "movement": {
         "queryCount": 49543,
