@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { encodeSpatialCellKey } from '@/domains/combat/ecs/spatial-cell-key'
+import { encodeSpatialCellKey, getSpatialCellColumnBase } from '@/domains/combat/ecs/spatial-cell-key'
 
 describe('combat spatial cell key', () => {
   it('keeps signed 16-bit cell coordinates collision-free', () => {
@@ -11,5 +11,6 @@ describe('combat spatial cell key', () => {
     }
 
     expect(keys.size).toBe(25)
+    expect(getSpatialCellColumnBase(-4) + 9).toBe(encodeSpatialCellKey(-4, 9))
   })
 })

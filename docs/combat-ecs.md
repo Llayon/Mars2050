@@ -368,8 +368,8 @@ runtime measurement:
 
 | Preset | Units | Production | Profile | v2 median | Production/v2 | Component candidates | Spatial bucket candidates |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| `massive_clash` | 100 | 184.86 ms | 188.22 ms | 360.18 ms | 0.513 | 0.8% of v2 | 35.0% of v2 |
-| `zerg_rush` | 605 | 3630.55 ms | 3623.23 ms | 11614.29 ms | 0.313 | 0.5% of v2 | 15.7% of v2 |
+| `massive_clash` | 100 | 174.75 ms | 189.93 ms | 360.18 ms | 0.485 | 0.8% of v2 | 35.0% of v2 |
+| `zerg_rush` | 605 | 3770.80 ms | 3806.49 ms | 11614.29 ms | 0.325 | 0.5% of v2 | 15.7% of v2 |
 
 Wall-clock timing is environment-sensitive; candidate counts, cache hits, and
 deterministic replay/scenario contracts are the primary regression signals.

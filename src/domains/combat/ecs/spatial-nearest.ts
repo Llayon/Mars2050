@@ -1,5 +1,5 @@
 import type { EntityId } from './entity'
-import { encodeSpatialCellKey, type SpatialCellKey } from './spatial-cell-key'
+import { getSpatialCellColumnBase, type SpatialCellKey } from './spatial-cell-key'
 
 interface Candidate {
   entityId: EntityId
@@ -46,15 +46,16 @@ function getOrderedCells(cellSize: number, x: number, y: number, radius: number)
   const maxCellY = Math.floor((y + radius) / cellSize)
   const radiusSq = radius * radius
   const cells: { key: SpatialCellKey; cellX: number; cellY: number; minDistanceSq: number }[] = []
-  for (let cellY = minCellY; cellY <= maxCellY; cellY++) {
-    for (let cellX = minCellX; cellX <= maxCellX; cellX++) {
+  for (let cellX = minCellX; cellX <= maxCellX; cellX++) {
+    const columnBase = getSpatialCellColumnBase(cellX)
+    for (let cellY = minCellY; cellY <= maxCellY; cellY++) {
       const left = cellX * cellSize
       const top = cellY * cellSize
       const dx = x < left ? left - x : x > left + cellSize ? x - left - cellSize : 0
       const dy = y < top ? top - y : y > top + cellSize ? y - top - cellSize : 0
       const minDistanceSq = dx * dx + dy * dy
       if (minDistanceSq <= radiusSq) {
-        cells.push({ key: encodeSpatialCellKey(cellX, cellY), cellX, cellY, minDistanceSq })
+        cells.push({ key: columnBase + cellY, cellX, cellY, minDistanceSq })
       }
     }
   }

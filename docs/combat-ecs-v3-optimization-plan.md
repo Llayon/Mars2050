@@ -119,3 +119,6 @@ fingerprints and structural counters rather than machine-dependent durations.
   directly instead of repeating `require()` validation for every candidate.
   Replay and structural counters remain unchanged; warmed seven-run production
   medians are 184.86 ms for `massive_clash` and 3630.55 ms for `zerg_rush`.
+- Circle traversal now computes the numeric spatial column base once per cell
+  column and derives row keys by addition. A same-machine immediate A/B measured
+  3770.80 ms versus 3886.47 ms for `zerg_rush`; replay and counters are stable.

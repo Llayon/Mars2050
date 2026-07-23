@@ -5,7 +5,7 @@ import type { EntityId } from './entity'
 import type { Team } from '../combat.sim.types'
 import { queryNearestSpatialCells } from './spatial-nearest'
 import { querySpatialPairs } from './spatial-pairs'
-import { encodeSpatialCellKey, type SpatialCellKey } from './spatial-cell-key'
+import { encodeSpatialCellKey, getSpatialCellColumnBase, type SpatialCellKey } from './spatial-cell-key'
 export class EntitySpatialIndex {
   private readonly cells = new Map<SpatialCellKey, EntityId[]>()
   private readonly teamCells: Record<Team, Map<SpatialCellKey, EntityId[]>> = {
@@ -100,7 +100,6 @@ export class EntitySpatialIndex {
     this.ensureCurrent(world)
     return this.queryCells(world, this.teamCells[team], x, y, radius, purpose)
   }
-
   queryTeamNearest(
     world: CombatWorld,
     x: number,
@@ -144,14 +143,15 @@ export class EntitySpatialIndex {
     const radiusSq = radius * radius
     const found: EntityId[] = []
     let bucketCandidates = 0
-    for (let cellY = minCellY; cellY <= maxCellY; cellY++) {
-      for (let cellX = minCellX; cellX <= maxCellX; cellX++) {
+    for (let cellX = minCellX; cellX <= maxCellX; cellX++) {
+      const columnBase = getSpatialCellColumnBase(cellX)
+      for (let cellY = minCellY; cellY <= maxCellY; cellY++) {
         const left = cellX * this.cellSize
         const top = cellY * this.cellSize
         const dxToCell = x < left ? left - x : x > left + this.cellSize ? x - left - this.cellSize : 0
         const dyToCell = y < top ? top - y : y > top + this.cellSize ? y - top - this.cellSize : 0
         if (dxToCell * dxToCell + dyToCell * dyToCell > radiusSq) continue
-        for (const entityId of cells.get(encodeSpatialCellKey(cellX, cellY)) ?? []) {
+        for (const entityId of cells.get(columnBase + cellY) ?? []) {
           bucketCandidates++
           const transform = world.stores.transform.get(entityId)!
           const dx = transform.x - x
