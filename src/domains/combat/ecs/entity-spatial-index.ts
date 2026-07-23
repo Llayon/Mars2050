@@ -121,7 +121,7 @@ export class EntitySpatialIndex {
       y,
       radius,
       maxResults,
-      entityId => world.stores.transform.require(entityId),
+      entityId => world.stores.transform.get(entityId)!,
     )
     this.recordQuery(purpose, result.bucketCandidates, result.entityIds.length)
     return result.entityIds
@@ -153,7 +153,7 @@ export class EntitySpatialIndex {
         if (dxToCell * dxToCell + dyToCell * dyToCell > radiusSq) continue
         for (const entityId of cells.get(encodeSpatialCellKey(cellX, cellY)) ?? []) {
           bucketCandidates++
-          const transform = world.stores.transform.require(entityId)
+          const transform = world.stores.transform.get(entityId)!
           const dx = transform.x - x
           const dy = transform.y - y
           if (dx * dx + dy * dy <= radiusSq) found.push(entityId)

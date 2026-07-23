@@ -13,7 +13,7 @@ export function querySpatialPairs(
   const maxDistanceSquared = maxDistance * maxDistance
   const pairs: [EntityId, EntityId][] = []
   for (const firstId of entityIds) {
-    const first = world.stores.transform.require(firstId)
+    const first = world.stores.transform.get(firstId)!
     const cellX = Math.floor(first.x / cellSize)
     const cellY = Math.floor(first.y / cellSize)
     for (let offsetY = -cellReach; offsetY <= cellReach; offsetY++) {
@@ -21,7 +21,7 @@ export function querySpatialPairs(
         const key = encodeSpatialCellKey(cellX + offsetX, cellY + offsetY)
         for (const secondId of cells.get(key) ?? []) {
           if (secondId <= firstId) continue
-          const second = world.stores.transform.require(secondId)
+          const second = world.stores.transform.get(secondId)!
           const dx = second.x - first.x
           const dy = second.y - first.y
           if (dx * dx + dy * dy < maxDistanceSquared) pairs.push([firstId, secondId])

@@ -41,11 +41,13 @@ export function getEcsSteeringContext(
   let alignmentX = 0
   let alignmentY = 0
   let alignmentCount = 0
+  const identityStore = world.stores.identity
+  const transformStore = world.stores.transform
 
   for (const otherId of neighbors) {
     if (otherId === entityId) continue
-    const otherIdentity = world.stores.identity.require(otherId)
-    const other = world.stores.transform.require(otherId)
+    const otherIdentity = identityStore.get(otherId)!
+    const other = transformStore.get(otherId)!
     if (identity.squadId && otherIdentity.squadId === identity.squadId) {
       squadCx += other.x
       squadCy += other.y

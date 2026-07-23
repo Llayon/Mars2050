@@ -115,3 +115,7 @@ fingerprints and structural counters rather than machine-dependent durations.
   computes `Math.hypot` only for neighbors that actually contribute separation;
   alignment radius checks stay squared. Seven-run production medians improved
   to 179.38 ms for `massive_clash` and 3843.80 ms for `zerg_rush`.
+- Spatial-index hot loops now read guaranteed transform and identity components
+  directly instead of repeating `require()` validation for every candidate.
+  Replay and structural counters remain unchanged; warmed seven-run production
+  medians are 184.86 ms for `massive_clash` and 3630.55 ms for `zerg_rush`.
