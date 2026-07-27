@@ -359,7 +359,8 @@ initiative or ID bias.
 With `{ profile: true }`, the result reports EntityId spatial query counts,
 total local candidates, and maximum candidates in one query. Targeting, broad
 weapon shapes, auras, hazards, projectile interception, and damage sharing use
-local component queries.
+local component queries. Collision broad phase is reported separately through
+pair query, bucket-candidate, and accepted-pair counters.
 
 The checked-in diagnostic benchmark uses seed `24680`, five measured runs, and
 compares `docs/combat-ecs-v3-performance.json` with the v2 baseline. Production
@@ -368,8 +369,8 @@ runtime measurement:
 
 | Preset | Units | Production | Profile | v2 median | Production/v2 | Component candidates | Spatial bucket candidates |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| `massive_clash` | 100 | 174.75 ms | 189.93 ms | 360.18 ms | 0.485 | 0.8% of v2 | 35.0% of v2 |
-| `zerg_rush` | 605 | 3770.80 ms | 3806.49 ms | 11614.29 ms | 0.325 | 0.5% of v2 | 15.7% of v2 |
+| `massive_clash` | 100 | 174.75 ms | 198.41 ms | 360.18 ms | 0.485 | 0.8% of v2 | 35.0% of v2 |
+| `zerg_rush` | 605 | 3770.80 ms | 3953.78 ms | 11614.29 ms | 0.325 | 0.5% of v2 | 15.7% of v2 |
 
 Wall-clock timing is environment-sensitive; candidate counts, cache hits, and
 deterministic replay/scenario contracts are the primary regression signals.

@@ -8,10 +8,12 @@ export function querySpatialPairs(
   cellSize: number,
   entityIds: readonly EntityId[],
   maxDistance: number,
-): [EntityId, EntityId][] {
+  profile: boolean,
+): { pairs: [EntityId, EntityId][]; bucketCandidates: number } {
   const cellReach = Math.ceil(maxDistance / cellSize)
   const maxDistanceSquared = maxDistance * maxDistance
   const pairs: [EntityId, EntityId][] = []
+  let bucketCandidates = 0
   for (const firstId of entityIds) {
     const first = world.stores.transform.get(firstId)!
     const cellX = Math.floor(first.x / cellSize)
@@ -19,7 +21,9 @@ export function querySpatialPairs(
     for (let offsetY = -cellReach; offsetY <= cellReach; offsetY++) {
       for (let offsetX = -cellReach; offsetX <= cellReach; offsetX++) {
         const key = encodeSpatialCellKey(cellX + offsetX, cellY + offsetY)
-        for (const secondId of cells.get(key) ?? []) {
+        const bucket = cells.get(key) ?? []
+        if (profile) bucketCandidates += bucket.length
+        for (const secondId of bucket) {
           if (secondId <= firstId) continue
           const second = world.stores.transform.get(secondId)!
           const dx = second.x - first.x
@@ -29,5 +33,8 @@ export function querySpatialPairs(
       }
     }
   }
-  return pairs.sort((left, right) => left[0] - right[0] || left[1] - right[1])
+  return {
+    pairs: pairs.sort((left, right) => left[0] - right[0] || left[1] - right[1]),
+    bucketCandidates,
+  }
 }

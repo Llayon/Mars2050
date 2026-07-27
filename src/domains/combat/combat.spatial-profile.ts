@@ -9,6 +9,9 @@ export interface SpatialQueryProfile {
   componentCandidateCount: number
   componentResultCount: number
   componentCacheHitCount: number
+  pairQueryCount: number
+  pairBucketCandidateCount: number
+  pairResultCount: number
   purposes: Record<string, SpatialPurposeProfile>
 }
 

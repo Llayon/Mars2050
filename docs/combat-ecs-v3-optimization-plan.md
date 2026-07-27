@@ -122,3 +122,7 @@ fingerprints and structural counters rather than machine-dependent durations.
 - Circle traversal now computes the numeric spatial column base once per cell
   column and derives row keys by addition. A same-machine immediate A/B measured
   3770.80 ms versus 3886.47 ms for `zerg_rush`; replay and counters are stable.
+- Collision broad phase now exposes stable pair-query counters separately from
+  local spatial queries. `zerg_rush` performs 12,312,706 pair bucket visits and
+  accepts 2,724,712 pairs over 138 phases, identifying repeated depenetration
+  pair generation as the next structural optimization target.

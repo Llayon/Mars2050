@@ -4,7 +4,7 @@
     "mode": "profile",
     "units": 100,
     "ticks": 77,
-    "medianMs": 189.93,
+    "medianMs": 198.41,
     "queryCount": 7895,
     "candidateCount": 238174,
     "maxCandidates": 50,
@@ -15,6 +15,9 @@
     "componentCandidateCount": 6200,
     "componentResultCount": 93062,
     "componentCacheHitCount": 1796,
+    "pairQueryCount": 77,
+    "pairBucketCandidateCount": 299851,
+    "pairResultCount": 91814,
     "purposes": {
       "targeting": {
         "queryCount": 2637,
@@ -33,7 +36,7 @@
     "mode": "profile",
     "units": 605,
     "ticks": 138,
-    "medianMs": 3806.49,
+    "medianMs": 3953.78,
     "queryCount": 73055,
     "candidateCount": 3832636,
     "maxCandidates": 552,
@@ -44,6 +47,9 @@
     "componentCandidateCount": 175132,
     "componentResultCount": 5212097,
     "componentCacheHitCount": 10951,
+    "pairQueryCount": 138,
+    "pairBucketCandidateCount": 12312706,
+    "pairResultCount": 2724712,
     "purposes": {
       "targeting": {
         "queryCount": 23021,

@@ -6,6 +6,7 @@ import type { Team } from '../combat.sim.types'
 import { queryNearestSpatialCells } from './spatial-nearest'
 import { querySpatialPairs } from './spatial-pairs'
 import { encodeSpatialCellKey, getSpatialCellColumnBase, type SpatialCellKey } from './spatial-cell-key'
+import { createSpatialQueryProfile } from './spatial-query-profile'
 export class EntitySpatialIndex {
   private readonly cells = new Map<SpatialCellKey, EntityId[]>()
   private readonly teamCells: Record<Team, Map<SpatialCellKey, EntityId[]>> = {
@@ -15,19 +16,7 @@ export class EntitySpatialIndex {
   private readonly entityCells = new Map<EntityId, SpatialCellKey>()
   private readonly entityTeams = new Map<EntityId, Team>()
   private readonly teamCounts: Record<Team, number> = { attacker: 0, defender: 0 }
-  private readonly profile: SpatialQueryProfile = {
-    queryCount: 0,
-    candidateCount: 0,
-    maxCandidates: 0,
-    bucketCandidateCount: 0,
-    rebuildCount: 0,
-    incrementalUpdateCount: 0,
-    componentQueryCount: 0,
-    componentCandidateCount: 0,
-    componentResultCount: 0,
-    componentCacheHitCount: 0,
-    purposes: {},
-  }
+  private readonly profile: SpatialQueryProfile = createSpatialQueryProfile()
   private dirty = true
 
   constructor(
@@ -132,7 +121,15 @@ export class EntitySpatialIndex {
     maxDistance: number,
   ): [EntityId, EntityId][] {
     this.ensureCurrent(world)
-    return querySpatialPairs(world, this.cells, this.cellSize, entityIds, maxDistance)
+    const result = querySpatialPairs(
+      world, this.cells, this.cellSize, entityIds, maxDistance, this.profilingEnabled,
+    )
+    if (this.profilingEnabled) {
+      this.profile.pairQueryCount++
+      this.profile.pairBucketCandidateCount += result.bucketCandidates
+      this.profile.pairResultCount += result.pairs.length
+    }
+    return result.pairs
   }
 
   private queryCells(world: CombatWorld, cells: Map<SpatialCellKey, EntityId[]>, x: number, y: number, radius: number, purpose: string): EntityId[] {

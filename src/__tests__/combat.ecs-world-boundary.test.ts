@@ -106,7 +106,9 @@ describe('combat ECS world boundary', () => {
       }
     }
 
-    expect(spatial.queryPairs(world, entityIds, maxDistance)).toEqual(expected)
+    const pairs = spatial.queryPairs(world, entityIds, maxDistance)
+    expect(pairs).toEqual(expected)
+    expect(spatial.getProfile(world)).toMatchObject({ pairQueryCount: 1, pairResultCount: pairs.length })
     world.setEntityPosition(3, 36, 44)
     expect(spatial.queryPairs(world, entityIds, maxDistance)).toContainEqual([1, 3])
   })
