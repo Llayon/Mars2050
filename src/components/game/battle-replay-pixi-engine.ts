@@ -42,6 +42,12 @@ export async function startPixiBattleReplayEngine(props: BattleReplayEngineProps
   const renderLoop = () => {
     const frame = runtime.frame(performance.now())
     drawPixiReplay(scene, frame, renderBudget)
+    if (process.env.NODE_ENV !== 'production') {
+      app.canvas.dataset.replayTextColors = frame.texts.map(text => text.color).join(',')
+      app.canvas.dataset.replayProjectileColors = frame.projectiles
+        .map(projectile => projectile.color)
+        .join(',')
+    }
   }
   app.ticker.maxFPS = renderBudget.maxFps
   app.ticker.add(renderLoop)

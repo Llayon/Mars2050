@@ -87,9 +87,6 @@ jobs:
       - name: Replay visual baseline
         run: npm run test:e2e:replay-baseline
 
-      - name: Replay primitive label pixels
-        run: npx playwright test tests/e2e/simulator2-replay.spec.ts --project=chromium --grep "high-signal primitive event labels"
-
       - name: Upload Playwright report
         if: failure()
         uses: actions/upload-artifact@v4

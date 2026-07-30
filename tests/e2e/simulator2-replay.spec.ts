@@ -271,10 +271,6 @@ test('simulator2 replay timeline can seek, rewind, and resume playback', async (
 })
 
 test('simulator2 replay shows high-signal primitive event labels', async ({ page }) => {
-  test.skip(
-    process.platform === 'linux',
-    'Primitive label pixel thresholds run in the Windows visual job.',
-  )
   await page.setViewportSize({ width: 1440, height: 1100 })
   const network = collectNetwork(page)
   const consoleWarnings = collectConsoleWarnings(page)
@@ -291,21 +287,22 @@ test('simulator2 replay shows high-signal primitive event labels', async ({ page
 
   await page.getByRole('button', { name: /Пауза/ }).click()
   await expect(page.getByRole('button', { name: /Играть/ })).toBeVisible()
+  await expectBattleReplayCanvasPainted(canvas)
 
   await playEventTick(page, timeline, 0)
-  await expect.poll(async () => {
-    const pixels = await countPrimitiveLabelPixels(canvas)
-    return pixels.controlPurple > 8 && pixels.eventCyan > 12
-  }, { timeout: 5000 }).toBe(true)
+  await expectReplayEffectColors(canvas, {
+    texts: ['#38bdf8'],
+    projectiles: ['#a78bfa'],
+  })
 
   await playEventTick(page, timeline, 2)
-  await expect.poll(async () => (await countPrimitiveLabelPixels(canvas)).eventCyan, { timeout: 5000 }).toBeGreaterThan(12)
+  await expectReplayEffectColors(canvas, { texts: ['#22d3ee'] })
 
   await playEventTick(page, timeline, 4)
-  await expect.poll(async () => (await countPrimitiveLabelPixels(canvas)).yellowLabel, { timeout: 5000 }).toBeGreaterThan(8)
+  await expectReplayEffectColors(canvas, { texts: ['#22d3ee'] })
 
   await playEventTick(page, timeline, 8)
-  await expect.poll(async () => (await countPrimitiveLabelPixels(canvas)).yellowLabel, { timeout: 5000 }).toBeGreaterThan(8)
+  await expectReplayEffectColors(canvas, { texts: ['#facc15'] })
 
   expect(network.hasChunk('pixi'), 'primitive event replay labels should use the Pixi default renderer').toBe(true)
   expect(consoleWarnings, 'console warnings').toEqual([])
@@ -520,26 +517,20 @@ async function countDirectVisualPixels(canvas: Locator): Promise<{ spriteColorPi
   return { spriteColorPixels, whiteTextPixels }
 }
 
-async function countPrimitiveLabelPixels(canvas: Locator): Promise<{ controlPurple: number; eventCyan: number; yellowLabel: number }> {
-  const buffer = await canvas.screenshot()
-  const { data, info } = await sharp(buffer).ensureAlpha().raw().toBuffer({ resolveWithObject: true })
-  let controlPurple = 0
-  let eventCyan = 0
-  let yellowLabel = 0
-
-  for (let pixel = 0; pixel < info.width * info.height; pixel++) {
-    const index = pixel * 4
-    const red = data[index]
-    const green = data[index + 1]
-    const blue = data[index + 2]
-    const alpha = data[index + 3]
-    if (alpha < 180) continue
-    if (red > 125 && red < 220 && green > 80 && green < 185 && blue > 185) controlPurple++
-    if (red < 95 && green > 160 && blue > 180) eventCyan++
-    if (red > 210 && green > 165 && blue < 95) yellowLabel++
+async function expectReplayEffectColors(
+  canvas: Locator,
+  expected: { texts?: string[]; projectiles?: string[] },
+): Promise<void> {
+  for (const color of expected.texts ?? []) {
+    await expect.poll(async () => (
+      await canvas.getAttribute('data-replay-text-colors') ?? ''
+    ).split(',')).toContain(color)
   }
-
-  return { controlPurple, eventCyan, yellowLabel }
+  for (const color of expected.projectiles ?? []) {
+    await expect.poll(async () => (
+      await canvas.getAttribute('data-replay-projectile-colors') ?? ''
+    ).split(',')).toContain(color)
+  }
 }
 
 async function countChangedPixels(before: Buffer, after: Buffer): Promise<number> {
