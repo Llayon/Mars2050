@@ -61,6 +61,7 @@ test('simulator2 Pixi replay fits and renders on a mobile viewport', async ({ pa
   await page.waitForTimeout(900)
   await expectCanvasPainted(canvas)
   await expect(page.getByRole('button', { name: /Пауза|Играть/ })).toBeVisible()
+  await expect(page.getByText('Управление')).toHaveCount(0)
   await expect(page.getByText(/Метрики/)).toHaveCount(0)
   await expect(page.getByText('Оверлеи (Debug)')).toHaveCount(0)
 

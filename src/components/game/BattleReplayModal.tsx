@@ -43,9 +43,13 @@ export const BattleReplayModal = memo(function BattleReplayModal({ attackerUnits
   const formatMetric = (value: number, digits: number) => value.toFixed(digits)
 
   useEffect(() => {
-    const media = window.matchMedia?.('(min-width: 1024px)')
+    const media = window.matchMedia?.(
+      '(min-width: 1024px) and (hover: hover) and (pointer: fine)',
+    )
     if (!media) return
-    const syncDebugVisibility = () => setShowDesktopDebug(media.matches)
+    const syncDebugVisibility = () => {
+      setShowDesktopDebug(media.matches && navigator.maxTouchPoints === 0)
+    }
     syncDebugVisibility()
     media.addEventListener('change', syncDebugVisibility)
     return () => media.removeEventListener('change', syncDebugVisibility)
@@ -125,7 +129,10 @@ export const BattleReplayModal = memo(function BattleReplayModal({ attackerUnits
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-black/95">
-      <div className={`absolute inset-x-2 z-[60] flex flex-col gap-2 lg:inset-x-auto lg:bottom-auto lg:top-4 lg:left-4 ${replayWarning ? 'bottom-14' : 'bottom-2'}`}>
+      <div className={showDesktopDebug
+        ? 'absolute top-4 left-4 z-[60] flex w-64 flex-col gap-2'
+        : `absolute inset-x-2 z-[60] flex flex-col gap-2 ${replayWarning ? 'bottom-14' : 'bottom-2'}`}
+      >
         {showDesktopDebug && (
           <div className="w-64 border border-gray-600 bg-gray-800/95 p-3 text-sm shadow-lg flex flex-col gap-2 rounded-lg">
             <div className="font-bold text-gray-200 border-b border-gray-700 pb-1 mb-1">Метрики (Tick {metrics.totalTicks})</div>
@@ -142,8 +149,15 @@ export const BattleReplayModal = memo(function BattleReplayModal({ attackerUnits
           </div>
         )}
 
-        <div data-testid="replay-controls" className="w-full border border-gray-600 bg-gray-800/95 p-2 text-xs shadow-lg flex flex-col gap-2 rounded-lg lg:w-64 lg:p-3 lg:text-sm lg:gap-3">
-          <div className="hidden font-bold text-gray-200 border-b border-gray-700 pb-1 lg:block">Управление</div>
+        <div
+          data-testid="replay-controls"
+          className={showDesktopDebug
+            ? 'flex w-full flex-col gap-3 rounded-lg border border-gray-600 bg-gray-800/95 p-3 text-sm shadow-lg'
+            : 'flex w-full flex-col gap-2 border-t border-white/15 bg-black/70 px-2 py-2 text-xs shadow-lg'}
+        >
+          {showDesktopDebug && (
+            <div className="border-b border-gray-700 pb-1 font-bold text-gray-200">Управление</div>
+          )}
 
           <div className="flex items-center gap-2">
             <button onClick={() => setIsPlaying(!isPlaying)} className="flex-1 bg-blue-600 hover:bg-blue-500 rounded py-1 font-bold transition-colors">

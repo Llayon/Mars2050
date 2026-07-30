@@ -32,6 +32,10 @@ describe('BattleReplayModal UI', () => {
   beforeEach(() => {
     startBattleReplayEngineMock.mockClear()
     installMatchMedia(false)
+    Object.defineProperty(navigator, 'maxTouchPoints', {
+      configurable: true,
+      value: 0,
+    })
   })
 
   it('keeps the approximation warning visible while replay is open', async () => {
@@ -60,6 +64,30 @@ describe('BattleReplayModal UI', () => {
     )
 
     expect(screen.getByText('Таймлайн')).toBeTruthy()
+    expect(screen.queryByText('Управление')).toBeNull()
+    expect(screen.queryByText(/Метрики/)).toBeNull()
+    expect(screen.queryByText('Оверлеи (Debug)')).toBeNull()
+  })
+
+  it('keeps diagnostics hidden for a touch device with a desktop-sized viewport', async () => {
+    installMatchMedia(true)
+    Object.defineProperty(navigator, 'maxTouchPoints', {
+      configurable: true,
+      value: 5,
+    })
+    render(
+      <BattleReplayModal
+        attackerUnits={[]}
+        defenderUnits={[]}
+        logs={[]}
+        onClose={() => undefined}
+      />
+    )
+
+    await waitFor(() => expect(window.matchMedia).toHaveBeenCalledWith(
+      '(min-width: 1024px) and (hover: hover) and (pointer: fine)',
+    ))
+    expect(screen.queryByText('Управление')).toBeNull()
     expect(screen.queryByText(/Метрики/)).toBeNull()
     expect(screen.queryByText('Оверлеи (Debug)')).toBeNull()
   })

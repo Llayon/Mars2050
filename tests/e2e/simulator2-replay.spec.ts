@@ -45,6 +45,7 @@ test('simulator2 replay fits and renders on a mobile viewport', async ({ page })
   await expectBattleReplayCanvasPainted(canvas, { requireHp: false })
   expect((await countDirectVisualPixels(canvas)).spriteColorPixels, 'mobile replay canvas should contain unit sprites').toBeGreaterThan(50)
   await expect(page.getByRole('button', { name: /Пауза|Играть/ })).toBeVisible()
+  await expect(page.getByText('Управление')).toHaveCount(0)
   await expect(page.getByText(/Метрики/)).toHaveCount(0)
   await expect(page.getByText('Оверлеи (Debug)')).toHaveCount(0)
 
