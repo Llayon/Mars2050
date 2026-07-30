@@ -1,6 +1,8 @@
 import type { BattleTick, SimUnit } from '@/domains/combat/combat.types'
 import { collectOverlapMetrics } from '@/domains/combat/combat.metrics-overlap'
 
+export const INLINE_REPLAY_OVERLAP_WORK_LIMIT = 12_000
+
 export interface BattleReplayMetrics {
   totalTicks: number
   firstAttack: number
@@ -77,4 +79,11 @@ export function buildBattleReplayMetrics(logs: BattleTick[], initialState?: SimU
   metrics.averageOverlap = metrics.overlapSamples > 0 ? totalOverlap / metrics.overlapSamples : 0
   metrics.averageOverlapRatio = metrics.overlapSamples > 0 ? totalOverlapRatio / metrics.overlapSamples : 0
   return metrics
+}
+
+export function shouldCollectInlineReplayOverlapMetrics(
+  tickCount: number,
+  unitCount: number,
+): boolean {
+  return tickCount * unitCount <= INLINE_REPLAY_OVERLAP_WORK_LIMIT
 }

@@ -3,6 +3,7 @@ import { FIELD_HEIGHT, FIELD_WIDTH } from '@/domains/combat/combat.utils'
 import type { BattleReplayEngineProps, ReplayAppHandle } from './battle-replay-canvas-types'
 import { createBattleReplayRuntime } from './battle-replay-runtime'
 import { drawPixiReplay } from './battle-replay-pixi-draw'
+import { getBrowserReplayRenderBudget } from './battle-replay-quality'
 import { createPixiReplayScene } from './battle-replay-pixi-scene'
 import { resolveReplaySprite } from './battle-replay-sprites'
 import { SPRITE_DIRS } from './battle-replay-visual-registry'
@@ -12,14 +13,16 @@ export type { BattleReplayEngineProps, ReplayAppHandle, ReplayControls } from '.
 export async function startPixiBattleReplayEngine(props: BattleReplayEngineProps) {
   const { container, logs, obstacles } = props
   const runtime = createBattleReplayRuntime(props)
-  await preloadReplayAssets(Object.values(runtime.snapshot().units).map(unit => unit.type), logs)
+  const initialUnits = Object.values(runtime.snapshot().units)
+  const renderBudget = getBrowserReplayRenderBudget(initialUnits.length)
+  await preloadReplayAssets(initialUnits.map(unit => unit.type), logs)
 
   const app = new Application()
   await app.init({
     width: FIELD_WIDTH,
     height: FIELD_HEIGHT,
     backgroundColor: 0x1a1a2e,
-    resolution: window.devicePixelRatio || 1,
+    resolution: renderBudget.resolution,
     autoDensity: true,
   })
 
@@ -38,8 +41,9 @@ export async function startPixiBattleReplayEngine(props: BattleReplayEngineProps
 
   const renderLoop = () => {
     const frame = runtime.frame(performance.now())
-    drawPixiReplay(scene, frame)
+    drawPixiReplay(scene, frame, renderBudget)
   }
+  app.ticker.maxFPS = renderBudget.maxFps
   app.ticker.add(renderLoop)
   renderLoop()
 

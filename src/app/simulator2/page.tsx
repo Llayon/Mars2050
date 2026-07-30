@@ -5,10 +5,10 @@ import { TIER1_COMMAND_RULES, TIER1_UNIT_TYPES } from '@/domains/combat/combat.t
 import type { UnitRow, UnitTypeKey } from '@/domains/combat/combat.types'
 import { generateObstacles } from '@/domains/combat/combat.utils'
 import { UnitUpgradesPanel, SimulatorGrid } from './simulator.components'
-import { LazyBattleReplayModal } from './simulator.lazy'
-import type { SimulatorReplayData } from './simulator.lazy'
+import { LazyBattleReplayModal, type SimulatorReplayData } from './simulator.lazy'
 import { SimulatorTeamPanel } from './simulator-team-panel'
 import { SimulatorToolbar } from './simulator-toolbar'
+import { simulateBattleOffThread } from './simulator-battle-client'
 import {
   createSimulatorUnit,
   getTier1CommandPoints,
@@ -22,12 +22,10 @@ export default function SimulatorPage() {
   const [seedInput, setSeedInput] = useState<string>('12345')
   const seed = Number(seedInput) || 0
   const [obstacles, setObstacles] = useState(() => generateObstacles(12345))
-
   function handleSeedChange(value: string) {
     setSeedInput(value)
     setObstacles(generateObstacles(Number(value) || 0))
   }
-
   const [attackerUnits, setAttackerUnits] = useState<UnitRow[]>([])
   const [defenderUnits, setDefenderUnits] = useState<UnitRow[]>([])
   const [replayData, setReplayData] = useState<SimulatorReplayData | null>(null)
@@ -114,10 +112,12 @@ export default function SimulatorPage() {
     }
     setIsSimulating(true); setSimulatorError(null)
     try {
-      const { simulateBattle } = await import('@/domains/combat/combat.engine')
       const aClone = structuredClone(attackerUnits) as UnitRow[]
       const dClone = structuredClone(defenderUnits) as UnitRow[]
-      const result = simulateBattle(aClone, dClone, seed, obstacles, mode === 'qa' ? attackerGlobals : [], mode === 'qa' ? defenderGlobals : [], { maxTicks: 400, timeoutPolicy: 'draw' })
+      const result = await simulateBattleOffThread({
+        attackerUnits: aClone, defenderUnits: dClone, seed, obstacles,
+        attackerGlobals: mode === 'qa' ? attackerGlobals : [], defenderGlobals: mode === 'qa' ? defenderGlobals : [],
+      })
       setReplayData({ attackerUnits: aClone, defenderUnits: dClone, logs: result.logs, winner: result.winner, initialState: result.initialState, obstacles: result.obstacles })
     } catch (err) {
       setSimulatorError(err instanceof Error ? err.message : 'Не удалось запустить симуляцию.')

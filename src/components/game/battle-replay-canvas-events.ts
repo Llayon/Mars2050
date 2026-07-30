@@ -34,6 +34,7 @@ export function createReplayUnit(unit: SimUnit | UnitRow, team: ReplayTeam, isSi
     emp: false,
     stealth: sim?.movementStealthActive ?? false,
     flash: 0,
+    deathAgeMs: sim?.isDead ? 0 : undefined,
   }
 }
 
@@ -59,6 +60,7 @@ export function createSpawnedUnit(action: BattleAction): ReplayUnit {
     emp: false,
     stealth: false,
     flash: 1,
+    deathAgeMs: undefined,
   }
 }
 
@@ -95,7 +97,10 @@ export function handleStatusAction(
 
 export function applyHpDelta(unit: ReplayUnit, delta: number) {
   unit.hp = Math.max(0, Math.min(unit.maxHp, unit.hp + delta))
-  if (unit.hp <= 0) unit.isDead = true
+  if (unit.hp <= 0) {
+    unit.isDead = true
+    unit.deathAgeMs ??= 0
+  }
 }
 
 export function updateAged<T extends { age: number }>(items: T[], dt: number, maxAge: number) {
@@ -103,6 +108,13 @@ export function updateAged<T extends { age: number }>(items: T[], dt: number, ma
     items[i].age += dt
     if (items[i].age >= maxAge) items.splice(i, 1)
   }
+}
+
+export function updateReplayUnitAges(units: ReplayUnit[], dt: number) {
+  units.forEach(unit => {
+    unit.flash = Math.max(0, unit.flash - dt / 220)
+    if (unit.isDead) unit.deathAgeMs = (unit.deathAgeMs ?? 0) + dt
+  })
 }
 
 export function hazardColor(statusType?: string): string {

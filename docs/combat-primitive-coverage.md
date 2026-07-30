@@ -23,13 +23,14 @@ listed in `REPLAY_ACTION_LABEL_EXEMPTIONS`; `battle-replay-labels.test.ts`
 enforces that contract.
 
 Visual replay smoke coverage lives in `tests/e2e/simulator2-replay.spec.ts`.
-It covers preset replay startup, mobile rendering, debug overlays for hitboxes,
-velocity vectors and target lines, and guards that the default `/simulator2`
-replay path loads Pixi only after replay opens. Pixi parity/stress coverage
+It covers preset replay startup, compact mobile rendering without QA panels,
+desktop debug overlays for hitboxes, velocity vectors and target lines, and
+guards that the default `/simulator2` replay path loads Pixi only after replay
+opens. Pixi parity/stress coverage
 lives in `tests/e2e/simulator2-replay-pixi.spec.ts`; it covers lazy Pixi
-loading, mobile fit, overlay parity, seek/rewind stability, dense movement
-readability, and zerg Crowd LOD. Canvas remains covered by the screenshot
-baseline suite as the fallback renderer.
+loading, mobile fit and render budgets, desktop overlay parity, seek/rewind
+stability, dense movement readability, and zerg Crowd LOD. Canvas remains
+covered by the screenshot baseline suite as the fallback renderer.
 
 | Mechabellum effect family | Mars2050 primitive | Runtime status/state | Regression tests | Status |
 | --- | --- | --- | --- | --- |

@@ -1,8 +1,20 @@
 import { FIELD_HEIGHT, FIELD_WIDTH } from '@/domains/combat/combat.utils'
 import type { Obstacle } from '@/domains/combat/combat.types'
-import type { FloatingText, HazardFx, OverlayState, Projectile, ReplayUnit } from './battle-replay-canvas-types'
+import type {
+  FloatingText,
+  HazardFx,
+  OverlayState,
+  Projectile,
+  ReplayUnit,
+} from './battle-replay-canvas-types'
 import { FLOAT_MS, HAZARD_MS, PROJECTILE_MS } from './battle-replay-canvas-types'
 import { buildReplayCrowdRenderPlan, type ReplayCrowdClusterView, type ReplayCrowdUnitView } from './battle-replay-density'
+import {
+  selectReplayFloatingTexts,
+  shouldRenderReplayUnit,
+  type ReplayRenderBudget,
+} from './battle-replay-quality'
+import type { ReplayFrameState } from './battle-replay-runtime'
 import { drawReplayUnitSprite } from './battle-replay-sprites'
 
 const OVERLAY_HITBOX_ATTACKER = '#22d3ee'
@@ -13,29 +25,30 @@ const OVERLAY_TARGET_LINE = '#ff1f1f'
 export function drawReplay(
   ctx: CanvasRenderingContext2D,
   dpr: number,
-  units: Record<string, ReplayUnit>,
+  state: ReplayFrameState,
   obstacles: Obstacle[],
-  hazards: HazardFx[],
-  projectiles: Projectile[],
-  texts: FloatingText[],
-  overlays: OverlayState,
-  progress: number
+  renderBudget: ReplayRenderBudget,
 ) {
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
   ctx.clearRect(0, 0, FIELD_WIDTH, FIELD_HEIGHT)
-  const easedProgress = ease(progress)
-  const unitList = Object.values(units)
+  const easedProgress = ease(state.progress)
+  const unitList = Object.values(state.units)
   const crowdPlan = buildReplayCrowdRenderPlan(unitList, easedProgress)
   const unitViews = new Map(crowdPlan.units.map(unit => [unit.id, unit]))
-  drawBattlefield(ctx, obstacles, hazards)
+  drawBattlefield(ctx, obstacles, state.hazards)
   crowdPlan.clusters.forEach(cluster => drawCrowdCluster(ctx, cluster))
-  projectiles.forEach(projectile => drawProjectile(ctx, projectile))
+  state.projectiles.forEach(projectile => drawProjectile(ctx, projectile))
   unitList.forEach(unit => {
     const view = unitViews.get(unit.id)
-    if (view) drawUnit(ctx, unit, view, overlays)
+    if (view && shouldRenderReplayUnit(unit, view, renderBudget)) {
+      drawUnit(ctx, unit, view, state.overlays)
+    }
   })
-  if (overlays.targets) projectiles.forEach(projectile => drawTargetLine(ctx, projectile))
-  texts.forEach(text => drawFloatingText(ctx, text))
+  if (state.overlays.targets) {
+    state.projectiles.forEach(projectile => drawTargetLine(ctx, projectile))
+  }
+  selectReplayFloatingTexts(state.texts, renderBudget)
+    .forEach(text => drawFloatingText(ctx, text))
 }
 
 function drawBattlefield(ctx: CanvasRenderingContext2D, obstacles: Obstacle[], hazards: HazardFx[]) {

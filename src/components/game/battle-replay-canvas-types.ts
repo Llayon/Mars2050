@@ -54,6 +54,7 @@ export type ReplayUnit = {
   emp: boolean
   stealth: boolean
   flash: number
+  deathAgeMs?: number
 }
 
 export type FloatingText = { text: string; x: number; y: number; color: string; age: number }

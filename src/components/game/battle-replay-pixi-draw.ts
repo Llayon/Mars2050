@@ -2,13 +2,22 @@ import { Graphics } from 'pixi.js'
 import type { ReplayFrameState } from './battle-replay-runtime'
 import { FLOAT_MS, HAZARD_MS, PROJECTILE_MS } from './battle-replay-canvas-types'
 import { buildReplayCrowdRenderPlan, type ReplayCrowdClusterView } from './battle-replay-density'
+import {
+  selectReplayFloatingTexts,
+  shouldRenderReplayUnit,
+  type ReplayRenderBudget,
+} from './battle-replay-quality'
 import type { PixiReplayScene } from './battle-replay-pixi-scene-types'
 import { getSceneGraphic, getSceneText, hideSceneGraphics, hideSceneTexts, setSceneText } from './battle-replay-pixi-scene'
 import { syncPixiReplayUnits } from './battle-replay-pixi-units'
 
 const OVERLAY_TARGET_LINE = 0xff1f1f
 
-export function drawPixiReplay(scene: PixiReplayScene, state: ReplayFrameState) {
+export function drawPixiReplay(
+  scene: PixiReplayScene,
+  state: ReplayFrameState,
+  renderBudget: ReplayRenderBudget,
+) {
   const progress = ease(state.progress)
   const unitList = Object.values(state.units)
   const crowdPlan = buildReplayCrowdRenderPlan(unitList, progress)
@@ -17,9 +26,13 @@ export function drawPixiReplay(scene: PixiReplayScene, state: ReplayFrameState) 
   syncHazards(scene, state.hazards)
   syncCrowdClusters(scene, crowdPlan.clusters)
   syncProjectiles(scene, state.projectiles)
-  syncPixiReplayUnits(scene, unitList, unitViews, state.overlays)
+  const visibleUnits = unitList.filter(unit => {
+    const view = unitViews.get(unit.id)
+    return view && shouldRenderReplayUnit(unit, view, renderBudget)
+  })
+  syncPixiReplayUnits(scene, visibleUnits, unitViews, state.overlays)
   syncTargetLines(scene, state.overlays.targets ? state.projectiles : [])
-  syncFloatingTexts(scene, state.texts)
+  syncFloatingTexts(scene, selectReplayFloatingTexts(state.texts, renderBudget))
 }
 
 function syncHazards(scene: PixiReplayScene, hazards: ReplayFrameState['hazards']): void {

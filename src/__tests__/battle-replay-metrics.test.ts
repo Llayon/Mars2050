@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { buildBattleReplayMetrics } from '@/components/game/battle-replay-metrics'
+import {
+  buildBattleReplayMetrics,
+  shouldCollectInlineReplayOverlapMetrics,
+} from '@/components/game/battle-replay-metrics'
 import type { BattleTick, SimUnit, Team } from '@/domains/combat/combat.types'
 
 function simUnit(id: string, team: Team, x: number, y: number, overrides: Partial<SimUnit> = {}): SimUnit {
@@ -91,5 +94,10 @@ describe('battle replay metrics', () => {
 
     expect(metrics.overlapSamples).toBe(1)
     expect(metrics.severeOverlapSamples).toBe(1)
+  })
+
+  it('skips synchronous overlap analysis for large replay workloads', () => {
+    expect(shouldCollectInlineReplayOverlapMetrics(82, 100)).toBe(true)
+    expect(shouldCollectInlineReplayOverlapMetrics(205, 605)).toBe(false)
   })
 })

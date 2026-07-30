@@ -3,7 +3,10 @@ import { useEffect, useRef, memo, useState, useMemo } from 'react'
 import type { BattleTick, UnitRow, SimUnit, Obstacle } from '@/domains/combat/combat.types'
 import { startBattleReplayEngine } from './battle-replay-engine'
 import type { ReplayControls, ReplayRendererMode } from './battle-replay-engine'
-import { buildBattleReplayMetrics } from './battle-replay-metrics'
+import {
+  buildBattleReplayMetrics,
+  shouldCollectInlineReplayOverlapMetrics,
+} from './battle-replay-metrics'
 
 interface BattleReplayModalProps {
   attackerUnits: UnitRow[]
@@ -23,10 +26,37 @@ export const BattleReplayModal = memo(function BattleReplayModal({ attackerUnits
   const [isPlaying, setIsPlaying] = useState(true)
   const [speed, setSpeed] = useState(1)
   const [currentTick, setCurrentTick] = useState(0)
+  const [showDesktopDebug, setShowDesktopDebug] = useState(false)
   const [overlays, setOverlays] = useState({ radius: false, velocity: false, targets: false })
 
-  const metrics = useMemo(() => buildBattleReplayMetrics(logs, initialState), [logs, initialState])
+  const collectOverlapMetrics = showDesktopDebug && shouldCollectInlineReplayOverlapMetrics(
+    logs.length,
+    initialState?.length ?? 0,
+  )
+  const metrics = useMemo(
+    () => buildBattleReplayMetrics(
+      logs,
+      collectOverlapMetrics ? initialState : undefined,
+    ),
+    [collectOverlapMetrics, logs, initialState],
+  )
   const formatMetric = (value: number, digits: number) => value.toFixed(digits)
+
+  useEffect(() => {
+    const media = window.matchMedia?.('(min-width: 1024px)')
+    if (!media) return
+    const syncDebugVisibility = () => setShowDesktopDebug(media.matches)
+    syncDebugVisibility()
+    media.addEventListener('change', syncDebugVisibility)
+    return () => media.removeEventListener('change', syncDebugVisibility)
+  }, [])
+
+  useEffect(() => {
+    if (showDesktopDebug) return
+    setOverlays(current => current.radius || current.velocity || current.targets
+      ? { radius: false, velocity: false, targets: false }
+      : current)
+  }, [showDesktopDebug])
 
   useEffect(() => {
     let isDestroyed = false
@@ -94,20 +124,26 @@ export const BattleReplayModal = memo(function BattleReplayModal({ attackerUnits
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-black/95 backdrop-blur-md">
-      <div className="absolute top-2 left-2 z-[60] flex flex-col gap-2 sm:top-4 sm:left-4">
-        <div className="bg-gray-800/80 border border-gray-600 rounded-lg p-2 text-xs flex flex-col gap-2 shadow-lg w-56 backdrop-blur-md sm:w-64 sm:p-3 sm:text-sm">
-          <div className="font-bold text-gray-200 border-b border-gray-700 pb-1 mb-1">Метрики (Tick {metrics.totalTicks})</div>
-          <div className="flex justify-between text-gray-300"><span>Первая атака:</span> <span>{metrics.firstAttack >= 0 ? `Tick ${metrics.firstAttack}` : 'Нет'}</span></div>
-          <div className="flex justify-between text-gray-300"><span>Avg Overlap:</span> <span>{formatMetric(metrics.averageOverlap, 1)}px</span></div>
-          <div className="flex justify-between text-gray-300"><span>Max Overlap:</span> <span>{formatMetric(metrics.maxOverlap, 1)}px</span></div>
-          <div className="flex justify-between text-gray-300"><span>Avg Ratio:</span> <span>{formatMetric(metrics.averageOverlapRatio, 2)}</span></div>
-          <div className="flex justify-between text-gray-300"><span>Max Ratio:</span> <span>{formatMetric(metrics.maxOverlapRatio, 2)}</span></div>
-          <div className="flex justify-between text-gray-300"><span>Severe Samples:</span> <span>{metrics.severeOverlapSamples}/{metrics.overlapSamples}</span></div>
-        </div>
+    <div className="fixed inset-0 z-50 flex flex-col bg-black/95">
+      <div className={`absolute inset-x-2 z-[60] flex flex-col gap-2 lg:inset-x-auto lg:bottom-auto lg:top-4 lg:left-4 ${replayWarning ? 'bottom-14' : 'bottom-2'}`}>
+        {showDesktopDebug && (
+          <div className="w-64 border border-gray-600 bg-gray-800/95 p-3 text-sm shadow-lg flex flex-col gap-2 rounded-lg">
+            <div className="font-bold text-gray-200 border-b border-gray-700 pb-1 mb-1">Метрики (Tick {metrics.totalTicks})</div>
+            <div className="flex justify-between text-gray-300"><span>Первая атака:</span> <span>{metrics.firstAttack >= 0 ? `Tick ${metrics.firstAttack}` : 'Нет'}</span></div>
+            {collectOverlapMetrics && (
+              <>
+                <div className="flex justify-between text-gray-300"><span>Avg Overlap:</span> <span>{formatMetric(metrics.averageOverlap, 1)}px</span></div>
+                <div className="flex justify-between text-gray-300"><span>Max Overlap:</span> <span>{formatMetric(metrics.maxOverlap, 1)}px</span></div>
+                <div className="flex justify-between text-gray-300"><span>Avg Ratio:</span> <span>{formatMetric(metrics.averageOverlapRatio, 2)}</span></div>
+                <div className="flex justify-between text-gray-300"><span>Max Ratio:</span> <span>{formatMetric(metrics.maxOverlapRatio, 2)}</span></div>
+                <div className="flex justify-between text-gray-300"><span>Severe Samples:</span> <span>{metrics.severeOverlapSamples}/{metrics.overlapSamples}</span></div>
+              </>
+            )}
+          </div>
+        )}
 
-        <div className="bg-gray-800/80 border border-gray-600 rounded-lg p-2 text-xs flex flex-col gap-2 shadow-lg w-56 backdrop-blur-md sm:w-64 sm:p-3 sm:text-sm sm:gap-3">
-          <div className="font-bold text-gray-200 border-b border-gray-700 pb-1">Управление</div>
+        <div data-testid="replay-controls" className="w-full border border-gray-600 bg-gray-800/95 p-2 text-xs shadow-lg flex flex-col gap-2 rounded-lg lg:w-64 lg:p-3 lg:text-sm lg:gap-3">
+          <div className="hidden font-bold text-gray-200 border-b border-gray-700 pb-1 lg:block">Управление</div>
 
           <div className="flex items-center gap-2">
             <button onClick={() => setIsPlaying(!isPlaying)} className="flex-1 bg-blue-600 hover:bg-blue-500 rounded py-1 font-bold transition-colors">
@@ -139,19 +175,23 @@ export const BattleReplayModal = memo(function BattleReplayModal({ attackerUnits
             />
           </div>
 
-          <div className="font-bold text-gray-200 border-b border-gray-700 pb-1 mt-1">Оверлеи (Debug)</div>
-          <label className="flex items-center gap-2 cursor-pointer hover:text-white text-gray-300">
-            <input type="checkbox" checked={overlays.radius} onChange={e => setOverlays({...overlays, radius: e.target.checked})} />
-            Хитбоксы (Радиус)
-          </label>
-          <label className="flex items-center gap-2 cursor-pointer hover:text-white text-gray-300">
-            <input type="checkbox" checked={overlays.velocity} onChange={e => setOverlays({...overlays, velocity: e.target.checked})} />
-            Векторы движения
-          </label>
-          <label className="flex items-center gap-2 cursor-pointer hover:text-white text-gray-300">
-            <input type="checkbox" checked={overlays.targets} onChange={e => setOverlays({...overlays, targets: e.target.checked})} />
-            Линии атак (Снаряды)
-          </label>
+          {showDesktopDebug && (
+            <>
+              <div className="font-bold text-gray-200 border-b border-gray-700 pb-1 mt-1">Оверлеи (Debug)</div>
+              <label className="flex items-center gap-2 cursor-pointer hover:text-white text-gray-300">
+                <input type="checkbox" checked={overlays.radius} onChange={e => setOverlays({...overlays, radius: e.target.checked})} />
+                Хитбоксы (Радиус)
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer hover:text-white text-gray-300">
+                <input type="checkbox" checked={overlays.velocity} onChange={e => setOverlays({...overlays, velocity: e.target.checked})} />
+                Векторы движения
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer hover:text-white text-gray-300">
+                <input type="checkbox" checked={overlays.targets} onChange={e => setOverlays({...overlays, targets: e.target.checked})} />
+                Линии атак (Снаряды)
+              </label>
+            </>
+          )}
         </div>
       </div>
 

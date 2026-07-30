@@ -1,6 +1,7 @@
 import { FIELD_HEIGHT, FIELD_WIDTH } from '@/domains/combat/combat.utils'
 import { drawReplay } from './battle-replay-canvas-draw'
 import type { BattleReplayEngineProps, ReplayAppHandle } from './battle-replay-canvas-types'
+import { getBrowserReplayRenderBudget } from './battle-replay-quality'
 import { createBattleReplayRuntime } from './battle-replay-runtime'
 
 export type { BattleReplayEngineProps, ReplayAppHandle, ReplayControls } from './battle-replay-canvas-types'
@@ -11,9 +12,13 @@ export async function startCanvasBattleReplayEngine(props: BattleReplayEnginePro
   const ctx = canvas.getContext('2d')
   if (!ctx) throw new Error('2D canvas context is unavailable')
 
-  const dpr = window.devicePixelRatio || 1
-  canvas.width = FIELD_WIDTH * dpr
-  canvas.height = FIELD_HEIGHT * dpr
+  const runtime = createBattleReplayRuntime(props)
+  const renderBudget = getBrowserReplayRenderBudget(
+    Object.keys(runtime.snapshot().units).length,
+  )
+  const dpr = renderBudget.resolution
+  canvas.width = Math.round(FIELD_WIDTH * dpr)
+  canvas.height = Math.round(FIELD_HEIGHT * dpr)
   canvas.style.width = '100%'
   canvas.style.height = '100%'
   canvas.style.display = 'block'
@@ -22,12 +27,16 @@ export async function startCanvasBattleReplayEngine(props: BattleReplayEnginePro
   canvas.dataset.replayRenderer = 'canvas'
   container.appendChild(canvas)
 
-  const runtime = createBattleReplayRuntime(props)
   let animationFrame = 0
+  let lastRender = Number.NEGATIVE_INFINITY
+  const frameInterval = 1000 / renderBudget.maxFps
 
   const renderLoop = (now: number) => {
-    const frame = runtime.frame(now)
-    drawReplay(ctx, dpr, frame.units, obstacles ?? [], frame.hazards, frame.projectiles, frame.texts, frame.overlays, frame.progress)
+    if (now - lastRender >= frameInterval) {
+      const frame = runtime.frame(now)
+      drawReplay(ctx, dpr, frame, obstacles ?? [], renderBudget)
+      lastRender = now
+    }
     animationFrame = requestAnimationFrame(renderLoop)
   }
 

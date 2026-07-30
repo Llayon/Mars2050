@@ -110,7 +110,7 @@ marine squads. Use it when checking whether ranged infantry collapses into a
 single shaking cluster after movement or depenetration changes.
 
 `zerg_rush` is the canonical visual stress repro for renderer-side Crowd LOD.
-It intentionally keeps the underlying replay positions unchanged, but the canvas
+It intentionally keeps the underlying replay positions unchanged, but the replay
 renderer suppresses per-unit labels/HP bars in dense buckets and draws compact
 unit sprites without persistent team rings so 100+ unit fights stay readable
 without field counter badges. In normal density, attacker HP bars are green and
@@ -145,6 +145,37 @@ frame. `test:e2e:replay-pixi` covers mobile fit, pause/seek/rewind stability,
 debug overlays, the `marine_crowd_qa` repro, and the `zerg_rush` stress state.
 Pixi is the default `/simulator2` replay renderer; Canvas remains selectable as
 fallback and is still used by the canvas screenshot baseline suite.
+
+### Mobile Replay Performance Contract
+
+`/simulator2` runs combat calculation in a dedicated Web Worker. The worker uses
+the same deterministic `simulateBattle` entry point and returns the normal v4
+result; only the execution thread changes. The simulator shell therefore stays
+responsive while large presets are calculated. Browsers without Worker support
+retain the synchronous fallback.
+
+Replay rendering uses an adaptive budget based on expanded runtime-unit count
+and device capability:
+
+| Device class | Runtime units | Max FPS | Max resolution |
+| --- | ---: | ---: | ---: |
+| Coarse pointer / <=4 GB memory | <240 | 45 | 1.25x |
+| Coarse pointer / <=4 GB memory | >=240 | 30 | 1x |
+| Desktop | <240 | 60 | 2x |
+| Desktop | >=240 | 45 | 1.5x |
+
+Resolution controls the backing HTML canvas used by Pixi WebGL and by the
+Canvas 2D fallback; it does not switch the renderer away from Pixi. Dense
+constrained replays draw one of every three clustered unit sprites, retain the
+aggregate cluster shape, expire corpses after 700 ms, and spatially limit
+floating combat text to 12 entries. These are renderer-only policies and do not
+change ticks, positions, damage, winners, or replay ordering.
+
+Below the `1024px` desktop breakpoint, replay metrics and debug overlay controls
+are absent from the DOM. Mobile keeps only play/pause, speed, and timeline in a
+compact bottom panel. Desktop retains overlap metrics and hitbox, velocity, and
+target-line overlays. Inline overlap analysis also requires a desktop viewport
+and a workload no larger than 12,000 tick-unit samples.
 
 Production smoke uses `playwright.production.config.ts` and does not start a
 local dev server. By default it targets `https://mars2050.vercel.app`; override
@@ -233,7 +264,8 @@ unit upgrade panel.
 ## Known Limitations
 - Анимации выстрелов интерполируются и могут не всегда точно совпадать с физическим тиком попадания на скорости 4.0x.
 - Оверлеи векторов рисуются только если юнит перемещается (deltaX/deltaY > 0).
-- Симулятор работает полностью на клиенте, поэтому при симуляции 200+ юнитов может быть небольшая задержка перед началом воспроизведения.
+- Большие пресеты всё ещё требуют времени на расчёт и передачу replay из Worker, но главный UI-поток при этом не блокируется.
+- Мобильный dense-режим сознательно предпочитает стабильные 30 FPS и меньший backing buffer максимальной резкости и 60 FPS.
 
 ---
 

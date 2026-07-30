@@ -178,11 +178,19 @@ Verification for this slice:
 
 - The first screen renders only the simulator shell, unit selectors, and grid.
 - Battle replay code loads through `LazyBattleReplayModal` only after simulation data exists; `/simulator2` defaults to the Pixi replay engine, with Canvas still selectable as fallback and baseline renderer.
-- The deterministic combat engine imports only when the player starts a simulation.
+- The deterministic combat engine imports only when the player starts a
+  simulation and runs in a dedicated Web Worker, keeping the simulator shell
+  responsive during large presets.
 - Preset data imports only after a preset is selected.
 - Hidden unit tooltip DOM was removed from the prerendered shell; compact button `title` text keeps unit stats available without duplicating large hidden markup.
 - `tests/e2e/simulator2-load.spec.ts` guards that replay chunks, Pixi chunks, and API requests are absent from the initial simulator screen. `test:e2e:replay` verifies the default Pixi replay path, while `test:e2e:replay-pixi` keeps focused Pixi parity/stress coverage.
-- Pixi replay rendering uses a persistent scene with reusable unit/effect objects. Canvas remains available for fallback diagnostics and stable screenshot baselines.
+- Pixi replay rendering uses a persistent scene with reusable unit/effect
+  objects. An adaptive unit-count/device budget caps dense constrained devices
+  at 30 FPS and 1x backing resolution; sparse desktop replay remains at 60 FPS
+  and up to 2x. Canvas remains available for fallback diagnostics and stable
+  screenshot baselines and follows the same render budget.
+- Replay metrics and debug overlays are desktop-only at `1024px+`; mobile keeps
+  compact playback controls and does not execute inline overlap diagnostics.
 - `npm run test:e2e:prod:simulator2` runs the same production-facing contract
   against Vercel without starting a local dev server. It verifies that the live
   route keeps replay/Pixi deferred on first paint, the default Pixi replay

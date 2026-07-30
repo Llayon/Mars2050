@@ -9,6 +9,7 @@ import {
   hazardColor,
   hazardLabel,
   updateAged,
+  updateReplayUnitAges,
 } from './battle-replay-canvas-events'
 import type { BattleReplayEngineProps, FloatingText, HazardFx, OverlayState, Projectile, ReplayControls, ReplayUnit } from './battle-replay-canvas-types'
 import { FLOAT_MS, HAZARD_MS, PROJECTILE_MS, TICK_MS } from './battle-replay-canvas-types'
@@ -162,6 +163,7 @@ export function createBattleReplayRuntime(props: BattleReplayEngineProps): Battl
       if (action.type === 'die' && source) {
         source.isDead = true
         source.hp = 0
+        source.deathAgeMs ??= 0
         emitText('ВЫВЕДЕН', source.tX, source.tY, '#cbd5e1')
         return
       }
@@ -188,6 +190,7 @@ export function createBattleReplayRuntime(props: BattleReplayEngineProps): Battl
       processTick(logs[tick], false)
       tick++
     }
+    Object.values(units).forEach(unit => { if (unit.isDead) unit.deathAgeMs = Number.POSITIVE_INFINITY })
     clearUnitFlashes()
     renderProgressOverride = targetTick > 0 ? 1 : 0
     lastFrame = nowMs()
@@ -209,7 +212,7 @@ export function createBattleReplayRuntime(props: BattleReplayEngineProps): Battl
     updateAged(floatingTexts, dt, FLOAT_MS)
     updateAged(projectiles, dt, PROJECTILE_MS)
     updateAged(hazards, dt, HAZARD_MS)
-    Object.values(units).forEach(unit => { unit.flash = Math.max(0, unit.flash - dt / 220) })
+    updateReplayUnitAges(Object.values(units), dt)
   }
 }
 
