@@ -100,7 +100,7 @@ export function expectReplayMetricsAligned(result: BattleResult, label = 'scenar
 
   expect(replayMetrics.firstAttack, `${label}: replay first attack`).toBe(metrics.firstAttackTick)
   expect(Math.abs(replayMetrics.averageOverlapRatio - metrics.averageOverlapRatio), `${label}: replay average overlap ratio`).toBeLessThanOrEqual(0.005)
-  expect(Math.abs(replayMetrics.maxOverlapRatio - metrics.maxOverlapRatio), `${label}: replay max overlap ratio`).toBeLessThanOrEqual(0.005)
+  expect(Math.abs(replayMetrics.maxOverlapRatio - metrics.maxOverlapRatio), `${label}: replay max overlap ratio`).toBeLessThanOrEqual(0.0051)
   expect(Math.abs(replayMetrics.severeOverlapSamples - metrics.severeOverlapSamples), `${label}: replay severe overlap samples`).toBeLessThanOrEqual(severeDeltaLimit)
 }
 

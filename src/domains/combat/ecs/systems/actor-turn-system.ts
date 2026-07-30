@@ -1,6 +1,7 @@
 import type { RuntimePhaseContext } from '../../combat.phase'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
+import type { MovementRequest } from '../movement-batch.types'
 import {
   createEcsMeleeEngagementState,
   reserveEcsMeleeSlot,
@@ -9,7 +10,6 @@ import { getEcsTurnOrder } from './initiative-system'
 import { runActionSystem } from './action-system'
 import { resolveEcsDeath } from './death-system'
 import { runModifierSystem } from './modifier-system'
-import { runMovementSystem } from './movement-system'
 import { runEcsPeriodicSpawnerSystem } from './periodic-spawner-system'
 import { runTargetingSystem } from './targeting-system'
 
@@ -18,19 +18,15 @@ export function runEcsActorTurnSystem(
   context: RuntimePhaseContext,
 ): void {
   const rng = context.rng ?? world.resources.require('rng')
-  const turnOrder = getEcsTurnOrder(world)
+  const turnOrder = getEcsTurnOrder(world, context.tick)
+  const movementRequests: MovementRequest[] = []
+  world.resources.set('movementRequests', movementRequests)
   world.flushStructuralCommands()
   world.resources.require('entitySpatial').ensureCurrent(world)
   const melee = createEcsMeleeEngagementState()
-  const clock = world.resources.require('clock')
-  const movementContext = {
-    dt: clock.dt,
-    rng,
-    flowField: world.resources.require('flowField'),
-    obstacles: world.resources.require('obstacles'),
-  }
 
-  for (const entityId of turnOrder) {
+  for (let initiativeIndex = 0; initiativeIndex < turnOrder.length; initiativeIndex++) {
+    const entityId = turnOrder[initiativeIndex]
     if (world.stores.vitality.require(entityId).isDead) continue
     runModifierSystem(world, entityId, context.actions, expiredId => {
       resolveEcsDeath(world, expiredId, undefined, context.actions, 'expiration')
@@ -49,7 +45,7 @@ export function runEcsActorTurnSystem(
       ? runActionSystem(world, entityId, targetId, context.actions, { rng, tick: context.tick }).acted
       : false
     world.flushStructuralCommands()
-    if (!acted) runMovementSystem(world, entityId, targetId, context.actions, movementContext)
+    if (!acted) movementRequests.push({ entityId, targetId, initiativeIndex })
   }
 }
 

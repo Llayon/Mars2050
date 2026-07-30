@@ -24,10 +24,17 @@ export function getEcsMaxActionRange(world: CombatWorld, entityId: EntityId): nu
   return Math.max(0, range)
 }
 
-export function getEcsTargetScore(world: CombatWorld, unitId: EntityId, enemyId: EntityId, profile: TargetingProfileConfig, nearestDistance: number): number {
+export function getEcsTargetScore(
+  world: CombatWorld,
+  unitId: EntityId,
+  enemyId: EntityId,
+  profile: TargetingProfileConfig,
+  nearestDistance: number,
+  knownDistance?: number,
+): number {
   const unitTargeting = world.stores.targeting.require(unitId)
   const enemyVitality = world.stores.vitality.require(enemyId)
-  const distance = Math.max(1, getEntityDistance(world, unitId, enemyId))
+  const distance = Math.max(1, knownDistance ?? getEntityDistance(world, unitId, enemyId))
   const hpRatio = enemyVitality.maxHp > 0 ? Math.max(0, enemyVitality.hp / enemyVitality.maxHp) : 1
   let tagScore = 0
   for (const tag of getEcsCombatTags(world, enemyId)) {
@@ -47,14 +54,34 @@ export function getEcsCombatTags(world: CombatWorld, entityId: EntityId): Combat
   const vitality = world.stores.vitality.require(entityId)
   const weapon = world.stores.weapon.require(entityId)
   const movement = world.stores.movement.require(entityId)
-  const tags = new Set<CombatTag>(UNIT_TYPES[identity.type as UnitTypeKey]?.baseStats.combatTags ?? [])
+  const refs = world.stores.entityTargets.require(entityId)
+  const signature =
+    (transform.isFlying ? 1 : 0) |
+    (vitality.shield > 0 ? 2 : 0) |
+    (weapon.attackType === 'heal' ? 4 : 0) |
+    (weapon.attackType === 'spawn' ? 8 : 0) |
+    (refs.summonOwner !== undefined ? 16 : 0) |
+    (vitality.isTemporary ? 32 : 0) |
+    (movement.modeSwitchConfig && !transform.isFlying ? 64 : 0)
+  let cache = world.resources.get('combatTagCache')
+  if (!cache) {
+    cache = new Map()
+    world.resources.set('combatTagCache', cache)
+  }
+  const cached = cache.get(entityId)
+  if (cached?.signature === signature) return cached.tags
+  const tags = new Set<CombatTag>(
+    UNIT_TYPES[identity.type as UnitTypeKey]?.baseStats.combatTags ?? [],
+  )
   if (movement.modeSwitchConfig && !transform.isFlying) tags.delete('aircraft')
   if (transform.isFlying) tags.add('aircraft')
   if (vitality.shield > 0) tags.add('shielded')
   if (weapon.attackType === 'heal') tags.add('healer')
   if (weapon.attackType === 'spawn') tags.add('summoner')
-  if (world.stores.entityTargets.require(entityId).summonOwner !== undefined || vitality.isTemporary) tags.add('summoned')
-  return [...tags].sort()
+  if (refs.summonOwner !== undefined || vitality.isTemporary) tags.add('summoned')
+  const result = [...tags].sort()
+  cache.set(entityId, { signature, tags: result })
+  return result
 }
 
 export function canEcsTarget(world: CombatWorld, attackerId: EntityId, targetId: EntityId): boolean {

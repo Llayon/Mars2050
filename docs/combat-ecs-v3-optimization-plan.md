@@ -1,5 +1,8 @@
 # Combat ECS v3 Optimization Plan
 
+> Historical plan. All v3 slices are complete; active work moved to
+> `docs/combat-ecs-v4-batch-movement.md`.
+
 ## Goal
 
 Optimize deterministic battles with 100-600 units without changing balance,

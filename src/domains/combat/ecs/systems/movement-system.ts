@@ -5,7 +5,7 @@ import { FIELD_HEIGHT, FIELD_WIDTH, getDistance, getSizeRadius } from '../../com
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
 import { getEcsPositioningDecision } from '../movement-positioning'
-import { getEcsFormationForce, getEcsObstacleCorrection, getEcsSteeringContext, ECS_MOVEMENT_DENSE_NEIGHBOR_RADIUS, ECS_MOVEMENT_MAX_NEIGHBORS, ECS_MOVEMENT_NEIGHBOR_RADIUS } from '../movement-steering'
+import { getEcsFormationForce, getEcsObstacleCorrection, getEcsSteeringContext, ECS_MOVEMENT_DENSE_NEIGHBOR_RADIUS, ECS_MOVEMENT_DENSE_TEAM_THRESHOLD, ECS_MOVEMENT_MAX_NEIGHBORS, ECS_MOVEMENT_NEIGHBOR_RADIUS } from '../movement-steering'
 import { getEcsMovementSpeed, getEcsRecoveryForce, recordEcsChargeMovement, syncEcsMovementActivity, syncEcsMovementIntentModes, updateEcsStuckRecovery } from '../movement-state'
 
 /**
@@ -35,7 +35,7 @@ function runMovementMath(world: CombatWorld, entityId: EntityId, targetId: Entit
   const target = world.stores.transform.require(targetId)
   const spatial = world.resources.require('entitySpatial')
   const neighborRadius = spatial.getTeamEntityCount(identity.team) >
-    ECS_MOVEMENT_MAX_NEIGHBORS
+    ECS_MOVEMENT_DENSE_TEAM_THRESHOLD
     ? ECS_MOVEMENT_DENSE_NEIGHBOR_RADIUS
     : ECS_MOVEMENT_NEIGHBOR_RADIUS
   const neighbors = spatial.queryTeamNearest(

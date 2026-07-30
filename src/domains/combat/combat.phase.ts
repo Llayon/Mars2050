@@ -17,9 +17,9 @@ export const COMBAT_PHASE_IDS = [
   'structural_flush',
   'status',
   'actor_turn',
+  'batch_movement',
   'hazard',
   'hp_threshold_trigger',
-  'depenetration',
 ] as const
 
 export type CombatPhaseId = typeof COMBAT_PHASE_IDS[number]

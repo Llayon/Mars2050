@@ -218,7 +218,9 @@ unit upgrade panel.
 
 ## ECS, Timeout, And Spatial Diagnostics
 
-- Simulation version 3 runs only the custom ECS. Deterministic scenario and
+- Simulation version 4 runs only the custom ECS. Sequential actions enqueue
+  movement requests that resolve from one immutable frame in `batch_movement`.
+  Deterministic scenario and
   replay contracts guard action order, survivors, termination, and metrics.
 - `/simulator2` keeps the 400-tick `draw` policy. PvP uses 1000 ticks and
   `defender_holds`; every result includes `terminationReason` and `elapsedTicks`.

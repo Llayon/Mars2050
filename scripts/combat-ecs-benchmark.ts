@@ -64,6 +64,10 @@ function emptyProfile(): SpatialQueryProfile {
     componentQueryCount: 0, componentCandidateCount: 0,
     componentResultCount: 0, componentCacheHitCount: 0,
     pairQueryCount: 0, pairBucketCandidateCount: 0, pairResultCount: 0, purposes: {},
+    movementBatchCount: 0, movementIntentCount: 0,
+    neighborCandidatePairCount: 0, neighborEdgeCount: 0,
+    collisionCandidatePairCount: 0, collisionOverlapPairCount: 0,
+    dirtyCellCount: 0,
   }
 }
 

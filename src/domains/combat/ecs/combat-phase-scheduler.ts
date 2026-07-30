@@ -14,7 +14,7 @@ import {
   hasEcsSupportAuraAtTick,
   processEcsHpThresholdTriggers,
   resolveEcsDeath,
-  runDepenetrationSystem,
+  runBatchMovementSystem,
   runEcsBurrowRegenerationSystem,
   runEcsControlBeamSystem,
   runEcsFieldEffectSystem,
@@ -50,9 +50,9 @@ const ECS_PHASES = [
   phase('structural_flush', 'pre_action', world => world.flushStructuralCommands()),
   phase('status', 'pre_action', runStatusPhase),
   phase('actor_turn', 'action', (world, context) => runEcsActorTurnSystem(world, context)),
+  phase('batch_movement', 'post_action', runBatchMovementSystem),
   phase('hazard', 'post_action', runHazardPhase),
   phase('hp_threshold_trigger', 'post_action', runHpThresholdPhase),
-  phase('depenetration', 'post_action', (world, context) => runDepenetrationSystem(world, context.actions)),
 ] as const satisfies readonly EcsPhaseDefinition[]
 
 const PHASE_BY_ID = new Map(ECS_PHASES.map(definition => [definition.id, definition]))

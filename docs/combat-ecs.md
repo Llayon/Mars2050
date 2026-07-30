@@ -1,12 +1,13 @@
 # Combat ECS Runtime
 
-The active optimization sequence is tracked in
-`docs/combat-ecs-v3-optimization-plan.md`.
+The active batch-movement sequence is tracked in
+`docs/combat-ecs-v4-batch-movement.md`. The v3 plan remains as historical
+optimization context.
 
-Simulation version 3 uses the in-repository ECS runtime exclusively. The public
+Simulation version 4 uses the in-repository ECS runtime exclusively. The public
 simulation API no longer exposes an engine selector or legacy array runtime.
-Version 3 makes entity relations, capability queries, spatial updates, and tick
-phase scheduling canonical ECS concerns rather than orchestration conventions.
+Version 4 adds immutable movement frames and a deterministic batch commit while
+keeping action resolution and seeded replay ordering canonical ECS concerns.
 
 ## World Model
 
@@ -52,7 +53,7 @@ only intersecting buckets and preserve stable external-ID tie-breaking.
 
 The ECS implementations currently own status scheduling, hazards, targeting,
 mixed-size melee reservation, positioning, steering, formation cohesion,
-movement state, burrow regeneration, and spatial updates, direct healing actions, depenetration,
+movement state, burrow regeneration, spatial updates, direct healing actions, batch collision resolution,
 single-shot local damage modifiers and simple weapon deaths, terminal outcome, initiative,
 modifier/lifetime ticking, stat-growth and attack-charge accumulation,
 periodic spawner and reassembly ownership,
@@ -277,9 +278,16 @@ Pre-action phases are:
 12. Status scheduling and periodic ticks.
 
 The engine then resolves terminal state, builds speed-first team-interleaved
-initiative, and runs modifier, targeting, melee-sector, action, spawn, and
-movement systems for each actor. Post-action phases are hazard resolution,
-HP-threshold triggers, and depenetration, followed by replay and metric capture.
+initiative, alternating the starting team of equal-speed groups by tick, and
+runs modifier, targeting, melee-sector, action, and spawn systems for each
+actor. Actors enqueue movement requests against the same
+immutable frame. The `batch_movement` phase builds one bounded same-team
+neighbor graph, derives all intents, runs one deterministic Jacobi collision
+pass, and commits changed transforms and spatial cells together. Forced
+displacement from attacks remains immediate. Post-action phases are hazard
+resolution and HP-threshold triggers, followed by replay and metric capture.
+One primary collision pass is intentional: a second unconditional pass changed
+the Tier 1 role matrix and delayed contact without a proportional overlap gain.
 Phases requiring randomness fail without the battle's seeded PRNG.
 
 Periodic statuses own `tickInterval` and `nextTickIn`. A duration-30 effect with
@@ -337,18 +345,18 @@ before the timeout limit.
 
 ## Replay Compatibility
 
-New snapshots are written with simulation version 3. Stored replay responses are
+New snapshots are written with simulation version 4. Stored replay responses are
 validated with Zod before reaching the renderer:
 
-- version 3 is current and rendered normally;
-- version 2 remains playable through the stable replay log/snapshot boundary and
-  is visibly labelled as an approximate historical visualization;
+- version 4 is current and rendered normally;
+- versions 2 and 3 remain playable through the stable replay log/snapshot
+  boundary and are visibly labelled as approximate historical visualizations;
 - version 1, invalid versions, and versions newer than the current engine are
   rejected as unsupported instead of being silently re-simulated;
 - malformed payloads for otherwise playable versions never reach the renderer.
 
-Compatibility is a presentation guarantee, not a promise that a v2 battle would
-produce identical results if re-simulated by the v3 engine.
+Compatibility is a presentation guarantee, not a promise that a v2 or v3 battle
+would produce identical results if re-simulated by the v4 engine.
 
 ## Verification And Profiling
 
@@ -359,18 +367,24 @@ initiative or ID bias.
 With `{ profile: true }`, the result reports EntityId spatial query counts,
 total local candidates, and maximum candidates in one query. Targeting, broad
 weapon shapes, auras, hazards, projectile interception, and damage sharing use
-local component queries. Collision broad phase is reported separately through
-pair query, bucket-candidate, and accepted-pair counters.
+local component queries. Batch movement reports movement requests, bounded
+neighbor candidates/edges, collision candidates/overlaps, and dirty cells.
 
-The checked-in diagnostic benchmark uses seed `24680`, five measured runs, and
-compares `docs/combat-ecs-v3-performance.json` with the v2 baseline. Production
-mode disables profiling and is listed separately because it is the player-facing
-runtime measurement:
+The checked-in v4 benchmark uses seed `24680`, eleven production runs for
+`massive_clash`, seven for `zerg_rush`, and five diagnostic runs. Production
+mode disables counters and is the player-facing measurement:
 
-| Preset | Units | Production | Profile | v2 median | Production/v2 | Component candidates | Spatial bucket candidates |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| `massive_clash` | 100 | 174.75 ms | 198.41 ms | 360.18 ms | 0.485 | 0.8% of v2 | 35.0% of v2 |
-| `zerg_rush` | 605 | 3770.80 ms | 3953.78 ms | 11614.29 ms | 0.325 | 0.5% of v2 | 15.7% of v2 |
+| Preset | Units | v4 ticks | v4 production | v3 production | Total change | Time/tick change |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| `massive_clash` | 100 | 82 | 117.74 ms | 174.75 ms | -32.6% | -36.7% |
+| `zerg_rush` | 605 | 205 | 3009.14 ms | 3770.80 ms | -20.2% | -46.3% |
+
+The simultaneous movement contract can change contact timing and therefore
+elapsed ticks. The 605-unit battle uses 48.6% more ticks than v3, so per-tick
+cost is the cleaner engine signal. Neighbor plus collision candidates per tick
+fell by about 60% in that preset. Packed fixed-grid buckets and flat top-32
+neighbor heaps remove the remaining `Map` and per-edge object cost. The original
+three-second target is now within normal benchmark noise without changing roles.
 
 Wall-clock timing is environment-sensitive; candidate counts, cache hits, and
 deterministic replay/scenario contracts are the primary regression signals.

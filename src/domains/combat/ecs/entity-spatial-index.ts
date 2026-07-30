@@ -6,7 +6,11 @@ import type { Team } from '../combat.sim.types'
 import { queryNearestSpatialCells } from './spatial-nearest'
 import { querySpatialPairs } from './spatial-pairs'
 import { encodeSpatialCellKey, getSpatialCellColumnBase, type SpatialCellKey } from './spatial-cell-key'
-import { createSpatialQueryProfile } from './spatial-query-profile'
+import {
+  createSpatialQueryProfile,
+  recordBatchMovementProfile,
+  type BatchMovementProfileInput,
+} from './spatial-query-profile'
 export class EntitySpatialIndex {
   private readonly cells = new Map<SpatialCellKey, EntityId[]>()
   private readonly teamCells: Record<Team, Map<SpatialCellKey, EntityId[]>> = {
@@ -23,7 +27,6 @@ export class EntitySpatialIndex {
     private readonly cellSize = TILE_SIZE,
     private readonly profilingEnabled = true,
   ) {}
-
   rebuild(world: CombatWorld): void {
     if (this.profilingEnabled) this.profile.rebuildCount++
     this.cells.clear()
@@ -81,6 +84,9 @@ export class EntitySpatialIndex {
     }
     this.insert(world, entityId)
   }
+  updateBatch(world: CombatWorld, entityIds: readonly EntityId[]): void {
+    for (const entityId of entityIds) this.update(world, entityId)
+  }
   query(world: CombatWorld, x: number, y: number, radius: number, purpose = 'other'): EntityId[] {
     this.ensureCurrent(world)
     return this.queryCells(world, this.cells, x, y, radius, purpose)
@@ -131,6 +137,10 @@ export class EntitySpatialIndex {
     }
     return result.pairs
   }
+  recordBatchMovement(stats: BatchMovementProfileInput): void {
+    if (!this.profilingEnabled) return
+    recordBatchMovementProfile(this.profile, stats)
+  }
 
   private queryCells(world: CombatWorld, cells: Map<SpatialCellKey, EntityId[]>, x: number, y: number, radius: number, purpose: string): EntityId[] {
     const minCellX = Math.floor((x - radius) / this.cellSize)
@@ -158,7 +168,9 @@ export class EntitySpatialIndex {
       }
     }
     this.recordQuery(purpose, bucketCandidates, found.length)
-    return found.sort((left, right) => left - right)
+    return purpose === 'targeting'
+      ? found
+      : found.sort((left, right) => left - right)
   }
 
   private recordQuery(purpose: string, bucketCandidates: number, candidates: number): void {
@@ -188,16 +200,9 @@ export class EntitySpatialIndex {
       componentCacheHitCount: component?.cacheHitCount ?? 0,
     }
   }
-  ensureCurrent(world: CombatWorld): void {
-    if (this.dirty) this.rebuild(world)
-  }
-  markDirty(): void {
-    this.dirty = true
-  }
-  getTeamEntityCount(team: Team): number {
-    return this.teamCounts[team]
-  }
-
+  ensureCurrent(world: CombatWorld): void { if (this.dirty) this.rebuild(world) }
+  markDirty(): void { this.dirty = true }
+  getTeamEntityCount(team: Team): number { return this.teamCounts[team] }
   updateTeam(world: CombatWorld, entityId: EntityId): void {
     if (this.dirty) return
     const previous = this.entityTeams.get(entityId)
@@ -232,14 +237,12 @@ export class EntitySpatialIndex {
     if (bucket) bucket.push(entityId)
     else cells.set(key, [entityId])
   }
-
   private removeFromCell(cells: Map<SpatialCellKey, EntityId[]>, key: SpatialCellKey, entityId: EntityId): void {
     const bucket = cells.get(key)
     const index = bucket?.indexOf(entityId) ?? -1
     if (bucket && index !== -1) bucket.splice(index, 1)
     if (bucket?.length === 0) cells.delete(key)
   }
-
   private getCellKey(x: number, y: number): SpatialCellKey {
     return encodeSpatialCellKey(Math.floor(x / this.cellSize), Math.floor(y / this.cellSize))
   }

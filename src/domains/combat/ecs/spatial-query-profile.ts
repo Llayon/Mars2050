@@ -15,6 +15,35 @@ export function createSpatialQueryProfile(): SpatialQueryProfile {
     pairQueryCount: 0,
     pairBucketCandidateCount: 0,
     pairResultCount: 0,
+    movementBatchCount: 0,
+    movementIntentCount: 0,
+    neighborCandidatePairCount: 0,
+    neighborEdgeCount: 0,
+    collisionCandidatePairCount: 0,
+    collisionOverlapPairCount: 0,
+    dirtyCellCount: 0,
     purposes: {},
   }
+}
+
+export interface BatchMovementProfileInput {
+  intents: number
+  neighborCandidates: number
+  neighborEdges: number
+  collisionCandidates: number
+  collisionOverlaps: number
+  dirtyCells: number
+}
+
+export function recordBatchMovementProfile(
+  profile: SpatialQueryProfile,
+  stats: BatchMovementProfileInput,
+): void {
+  profile.movementBatchCount++
+  profile.movementIntentCount += stats.intents
+  profile.neighborCandidatePairCount += stats.neighborCandidates
+  profile.neighborEdgeCount += stats.neighborEdges
+  profile.collisionCandidatePairCount += stats.collisionCandidates
+  profile.collisionOverlapPairCount += stats.collisionOverlaps
+  profile.dirtyCellCount += stats.dirtyCells
 }

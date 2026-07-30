@@ -3,10 +3,12 @@ import { getDistance, getSizeMass, getSizeRadius } from '../combat.utils'
 import type { CombatWorld } from './combat-world'
 import type { EntityId } from './entity'
 import { getEcsEffectiveActionRange } from './movement-positioning'
+import type { FrozenMovementTransform, MovementFrame } from './movement-batch.types'
 
 export const ECS_MOVEMENT_NEIGHBOR_RADIUS = 220
 export const ECS_MOVEMENT_DENSE_NEIGHBOR_RADIUS = 120
-export const ECS_MOVEMENT_MAX_NEIGHBORS = 64
+export const ECS_MOVEMENT_DENSE_TEAM_THRESHOLD = 64
+export const ECS_MOVEMENT_MAX_NEIGHBORS = 32
 const SEPARATION_RADIUS_MULT = 1.2
 const SEPARATION_WEIGHT = 0.25
 const ALIGNMENT_RADIUS = 120
@@ -25,12 +27,13 @@ export interface EcsSteeringContext {
 export function getEcsSteeringContext(
   world: CombatWorld,
   entityId: EntityId,
-  neighbors: EntityId[],
+  neighbors: ArrayLike<EntityId>,
   myRadius: number,
   isInRange: boolean,
+  frame?: MovementFrame,
 ): EcsSteeringContext {
   const identity = world.stores.identity.require(entityId)
-  const transform = world.stores.transform.require(entityId)
+  const transform = getMovementTransform(world, entityId, frame)
   const combat = world.stores.combat.require(entityId)
   const isBug = identity.type.startsWith('alien_')
   let squadCx = identity.squadId ? transform.x : 0
@@ -44,10 +47,11 @@ export function getEcsSteeringContext(
   const identityStore = world.stores.identity
   const transformStore = world.stores.transform
 
-  for (const otherId of neighbors) {
+  for (let neighborIndex = 0; neighborIndex < neighbors.length; neighborIndex++) {
+    const otherId = neighbors[neighborIndex]
     if (otherId === entityId) continue
     const otherIdentity = identityStore.get(otherId)!
-    const other = transformStore.get(otherId)!
+    const other = frame?.transforms[otherId] ?? transformStore.get(otherId)!
     if (identity.squadId && otherIdentity.squadId === identity.squadId) {
       squadCx += other.x
       squadCy += other.y
@@ -74,10 +78,12 @@ export function getEcsSteeringContext(
       separationY += direction.y * force
     }
     if (!isInRange && distanceSq > 0 && distanceSq <= ALIGNMENT_RADIUS * ALIGNMENT_RADIUS) {
-      const speed = Math.hypot(other.velocity.x, other.velocity.y)
+      const velocityX = 'velocityX' in other ? other.velocityX : other.velocity.x
+      const velocityY = 'velocityY' in other ? other.velocityY : other.velocity.y
+      const speed = Math.hypot(velocityX, velocityY)
       if (speed > 0.1) {
-        alignmentX += other.velocity.x / speed
-        alignmentY += other.velocity.y / speed
+        alignmentX += velocityX / speed
+        alignmentY += velocityY / speed
         alignmentCount++
       } else if (isBug && otherIdentity.type.startsWith('alien_')) {
         alignmentX += Math.cos(other.currentAngle)
@@ -106,10 +112,11 @@ export function getEcsFormationForce(
   squadCount: number,
   distEdge: number,
   navigating: boolean,
+  frame?: MovementFrame,
 ): { x: number; y: number } {
   if (squadCount <= 1) return { x: 0, y: 0 }
   const identity = world.stores.identity.require(entityId)
-  const transform = world.stores.transform.require(entityId)
+  const transform = getMovementTransform(world, entityId, frame)
   const combat = world.stores.combat.require(entityId)
   const isBug = identity.type.startsWith('alien_')
   const near = distEdge <= getEcsEffectiveActionRange(world, entityId) + Math.max(70, getSizeRadius(transform.size) * 2)
@@ -129,8 +136,9 @@ export function getEcsObstacleCorrection(
   obstacles: Obstacle[],
   myRadius: number,
   effectiveSpeed: number,
+  frame?: MovementFrame,
 ): { x: number; y: number } {
-  const transform = world.stores.transform.require(entityId)
+  const transform = getMovementTransform(world, entityId, frame)
   let x = 0
   let y = 0
   for (const obstacle of obstacles) {
@@ -194,4 +202,12 @@ function getEmergencyPush(
   const overlap = Math.max(0, (myRadius + otherRadius) * 0.95 - distance)
   const ratio = getSizeMass(otherSize) / (getSizeMass(unitSize) + getSizeMass(otherSize))
   return Math.min(overlap * 1.2, speed * 0.9) * ratio * (isInRange ? 0.45 : 0.65)
+}
+
+function getMovementTransform(
+  world: CombatWorld,
+  entityId: EntityId,
+  frame?: MovementFrame,
+): FrozenMovementTransform | ReturnType<CombatWorld['stores']['transform']['require']> {
+  return frame?.transforms[entityId] ?? world.stores.transform.require(entityId)
 }

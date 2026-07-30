@@ -68,6 +68,7 @@ export class CombatWorld {
       targetMarkSource: bundle.targetMarkSource,
       controlProgressSource: bundle.controlProgressSource,
     })
+    this.resources.get('dirtySpatialEntities')?.add(entityId)
     return entityId
   }
 
@@ -90,6 +91,7 @@ export class CombatWorld {
       (name, entityId) => { this.setClonedComponent(name, entityId, clone) },
     )
     installCapabilityNames(this.stores, entityId, clone.capabilities)
+    this.resources.get('dirtySpatialEntities')?.add(entityId)
     return entityId
   }
 
@@ -102,16 +104,12 @@ export class CombatWorld {
     }
     this.sourceRefs.resolvePending(this)
   }
-  captureEntityWatermark(): number {
-    return this.nextEntityId
-  }
+  captureEntityWatermark(): number { return this.nextEntityId }
   getUnitsCreatedSince(watermark: number): EntityId[] {
     return this.query(['transform', 'vitality']).filter(entityId => entityId >= watermark)
   }
 
-  getHazard(entityId: EntityId): SimHazard | undefined {
-    return this.stores.hazard.get(entityId)
-  }
+  getHazard(entityId: EntityId): SimHazard | undefined { return this.stores.hazard.get(entityId) }
 
   removeHazardEntity(entityId: EntityId): void {
     const hazard = this.stores.hazard.get(entityId)
@@ -124,17 +122,11 @@ export class CombatWorld {
     }
   }
 
-  getEntityId(externalId: string): EntityId | undefined {
-    return this.externalIdToEntity.get(externalId)
-  }
+  getEntityId(externalId: string): EntityId | undefined { return this.externalIdToEntity.get(externalId) }
 
-  allocateExternalId(namespace: string): string {
-    return this.externalIds.allocate(namespace)
-  }
+  allocateExternalId(namespace: string): string { return this.externalIds.allocate(namespace) }
 
-  preferExternalId(externalId: string): string {
-    return this.externalIds.prefer(externalId)
-  }
+  preferExternalId(externalId: string): string { return this.externalIds.prefer(externalId) }
   query(query: readonly ComponentName[] | QuerySpec, includeDead = false): readonly EntityId[] {
     return this.queries.query(this.stores, query, includeDead)
   }
@@ -158,7 +150,19 @@ export class CombatWorld {
     const transform = this.stores.transform.require(entityId)
     transform.x = x
     transform.y = y
+    this.resources.get('dirtySpatialEntities')?.add(entityId)
     this.resources.get('entitySpatial')?.update(this, entityId)
+  }
+  setEntityPositionsBatch(
+    positions: readonly { entityId: EntityId; x: number; y: number }[],
+  ): void {
+    for (const position of positions) {
+      const transform = this.stores.transform.require(position.entityId)
+      transform.x = position.x
+      transform.y = position.y
+      this.resources.get('dirtySpatialEntities')?.add(position.entityId)
+    }
+    this.resources.get('entitySpatial')?.updateBatch(this, positions.map(position => position.entityId))
   }
   setEntityTeam(entityId: EntityId, team: SimUnit['team']): void {
     const identity = this.stores.identity.require(entityId)
@@ -173,18 +177,14 @@ export class CombatWorld {
     this.indexes.linkSummon(entityId, ownerId)
   }
 
-  getActiveSummons(ownerId: EntityId): readonly EntityId[] {
-    return this.indexes.getActiveSummons(ownerId)
-  }
+  getActiveSummons(ownerId: EntityId): readonly EntityId[] { return this.indexes.getActiveSummons(ownerId) }
   setUnitCapability(entityId: EntityId, capability: UnitCapabilityName, present: boolean): void {
     if (setUnitCapabilityPresence(this.stores, entityId, capability, present)) {
       this.queries.touchStructure()
     }
   }
 
-  getQueryProfile(): ComponentQueryProfile {
-    return this.queries.getProfile()
-  }
+  getQueryProfile(): ComponentQueryProfile { return this.queries.getProfile() }
   getComponent<Name extends ComponentName>(componentName: Name, entityId: EntityId): CombatComponentMap[Name] | undefined {
     return this.stores[componentName].get(entityId)
   }

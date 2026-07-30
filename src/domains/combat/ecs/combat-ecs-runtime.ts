@@ -14,6 +14,8 @@ export function createEcsCombatRuntime(options: { profile?: boolean } = {}): Ecs
   const world = new CombatWorld([], { profile: profilingEnabled })
   const scheduler = new EcsCombatPhaseScheduler(world)
   world.resources.set('entitySpatial', new EntitySpatialIndex(undefined, profilingEnabled))
+  world.resources.set('combatTagCache', new Map())
+  world.resources.set('dirtySpatialEntities', new Set())
   return {
     world,
     addSquad: (row, team, rng) => { createSquadEntities(world, row, team, rng) },

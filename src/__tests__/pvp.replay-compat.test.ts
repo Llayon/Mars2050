@@ -21,6 +21,17 @@ describe('stored battle replay compatibility', () => {
     expect(renderUnits.map(unit => unit.unit.id)).toEqual(['marine_0'])
   })
 
+  it('classifies a v3 snapshot as a visually approximate replay', () => {
+    expect(getReplayCompatibility(3)).toMatchObject({
+      snapshotVersion: 3,
+      currentVersion: CURRENT_SIMULATION_VERSION,
+      status: 'legacy_approximate',
+      canPlay: true,
+      visuallyApproximate: true,
+      reason: 'older_engine',
+    })
+  })
+
   it('classifies the current replay version without approximation', () => {
     expect(getReplayCompatibility(CURRENT_SIMULATION_VERSION)).toEqual({
       snapshotVersion: CURRENT_SIMULATION_VERSION,

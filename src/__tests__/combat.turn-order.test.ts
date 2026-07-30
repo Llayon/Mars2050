@@ -53,6 +53,10 @@ describe('combat turn order', () => {
       world.stores.identity.require(entityId).id)).toEqual([
       'a0', 'd0', 'd1', 'a1', 'a2', 'd2', 'a-slow', 'd-slow',
     ])
+    expect(getEcsTurnOrder(world, 1).map(entityId =>
+      world.stores.identity.require(entityId).id)).toEqual([
+      'd0', 'a0', 'a1', 'd1', 'd2', 'a2', 'd-slow', 'a-slow',
+    ])
   })
 
   it('bounds first-strike residue in a mirrored six-squad rifle battle', () => {

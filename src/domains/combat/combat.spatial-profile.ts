@@ -12,6 +12,13 @@ export interface SpatialQueryProfile {
   pairQueryCount: number
   pairBucketCandidateCount: number
   pairResultCount: number
+  movementBatchCount: number
+  movementIntentCount: number
+  neighborCandidatePairCount: number
+  neighborEdgeCount: number
+  collisionCandidatePairCount: number
+  collisionOverlapPairCount: number
+  dirtyCellCount: number
   purposes: Record<string, SpatialPurposeProfile>
 }
 

@@ -6,7 +6,10 @@ import type { PRNG } from '../combat.utils'
 import type { Team } from '../combat.sim.types'
 import type { FlowFieldMap } from '../combat.pathfinding'
 import type { TimeoutPolicy } from '../combat.result'
+import type { CombatTag } from '../combat.primitives'
 import type { EntitySpatialIndex } from './entity-spatial-index'
+import type { MovementRequest } from './movement-batch.types'
+import type { EntityId } from './entity'
 
 export interface CombatClockResource {
   tick: number
@@ -24,6 +27,9 @@ export interface CombatResourceMap {
   entitySpatial: EntitySpatialIndex
   globals: { team: Team; upg: GlobalUpgradeConfig }[]
   metrics: CombatMetricsCollector | undefined
+  movementRequests: MovementRequest[]
+  combatTagCache: Map<EntityId, { signature: number; tags: CombatTag[] }>
+  dirtySpatialEntities: Set<EntityId>
 }
 
 export class CombatResourceStore {
