@@ -192,7 +192,10 @@ require baseline image updates.
 `tests/e2e/simulator2-replay.spec.ts` also checks high-signal primitive event
 labels against the `qa_primitive_events` preset. This is not a screenshot
 baseline: the test seeks to deterministic ticks, plays the event tick, and
-asserts that the expected label color appears on the canvas.
+asserts that the expected label color appears on the canvas. The pixel-color
+gate runs in the Windows `Replay Visual Baselines` job because Chromium text
+antialiasing is platform-dependent; Linux CI still runs the action/label unit
+contracts and the remaining replay E2E suite.
 
 Use this command for the default canvas primitive event and replay overlay smoke suite:
 

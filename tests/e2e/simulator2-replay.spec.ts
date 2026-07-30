@@ -271,6 +271,10 @@ test('simulator2 replay timeline can seek, rewind, and resume playback', async (
 })
 
 test('simulator2 replay shows high-signal primitive event labels', async ({ page }) => {
+  test.skip(
+    process.platform === 'linux',
+    'Primitive label pixel thresholds run in the Windows visual job.',
+  )
   await page.setViewportSize({ width: 1440, height: 1100 })
   const network = collectNetwork(page)
   const consoleWarnings = collectConsoleWarnings(page)
