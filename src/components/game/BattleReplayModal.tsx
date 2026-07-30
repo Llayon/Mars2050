@@ -24,6 +24,7 @@ export const BattleReplayModal = memo(function BattleReplayModal({ attackerUnits
   const controlsRef = useRef<ReplayControls | null>(null)
 
   const [isPlaying, setIsPlaying] = useState(true)
+  const isPlayingRef = useRef(true)
   const [speed, setSpeed] = useState(1)
   const [currentTick, setCurrentTick] = useState(0)
   const [showDesktopDebug, setShowDesktopDebug] = useState(false)
@@ -92,7 +93,7 @@ export const BattleReplayModal = memo(function BattleReplayModal({ attackerUnits
          controlsRef.current.setSpeed(speed)
          controlsRef.current.setOverlays(overlays)
          setCurrentTick(controlsRef.current.getCurrentTick())
-         if (!isPlaying) controlsRef.current.pause()
+         if (!isPlayingRef.current) controlsRef.current.pause()
       }
     }
 
@@ -102,12 +103,6 @@ export const BattleReplayModal = memo(function BattleReplayModal({ attackerUnits
       if (cleanupEvents) cleanupEvents()
     }
   }, [attackerUnits, defenderUnits, initialState, logs, obstacles, rendererMode])
-
-  useEffect(() => {
-    if (!controlsRef.current) return
-    if (isPlaying) controlsRef.current.play()
-    else controlsRef.current.pause()
-  }, [isPlaying])
 
   useEffect(() => {
     if (!controlsRef.current) return
@@ -123,8 +118,17 @@ export const BattleReplayModal = memo(function BattleReplayModal({ attackerUnits
     const clampedTick = Math.max(0, Math.min(metrics.totalTicks, Math.round(nextTick)))
     controlsRef.current?.pause()
     controlsRef.current?.seekToTick(clampedTick)
+    isPlayingRef.current = false
     setCurrentTick(clampedTick)
     setIsPlaying(false)
+  }
+
+  const handlePlaybackToggle = () => {
+    const nextIsPlaying = !isPlayingRef.current
+    isPlayingRef.current = nextIsPlaying
+    if (nextIsPlaying) controlsRef.current?.play()
+    else controlsRef.current?.pause()
+    setIsPlaying(nextIsPlaying)
   }
 
   return (
@@ -160,7 +164,7 @@ export const BattleReplayModal = memo(function BattleReplayModal({ attackerUnits
           )}
 
           <div className="flex items-center gap-2">
-            <button onClick={() => setIsPlaying(!isPlaying)} className="flex-1 bg-blue-600 hover:bg-blue-500 rounded py-1 font-bold transition-colors">
+            <button onClick={handlePlaybackToggle} className="flex-1 bg-blue-600 hover:bg-blue-500 rounded py-1 font-bold transition-colors">
               {isPlaying ? '⏸ Пауза' : '▶ Играть'}
             </button>
             <select value={speed} onChange={e => setSpeed(Number(e.target.value))} className="bg-gray-700 rounded px-2 py-1 outline-none text-white w-20">

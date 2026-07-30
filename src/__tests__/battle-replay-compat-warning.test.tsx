@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const startBattleReplayEngineMock = vi.fn().mockResolvedValue({
@@ -90,6 +90,34 @@ describe('BattleReplayModal UI', () => {
     expect(screen.queryByText('Управление')).toBeNull()
     expect(screen.queryByText(/Метрики/)).toBeNull()
     expect(screen.queryByText('Оверлеи (Debug)')).toBeNull()
+  })
+
+  it('pauses the replay runtime synchronously from the playback control', async () => {
+    const pause = vi.fn()
+    startBattleReplayEngineMock.mockResolvedValueOnce({
+      controls: {
+        play: vi.fn(),
+        pause,
+        seekToTick: vi.fn(),
+        getCurrentTick: vi.fn().mockReturnValue(0),
+        getTotalTicks: vi.fn().mockReturnValue(0),
+        setSpeed: vi.fn(),
+        setOverlays: vi.fn(),
+      },
+      cleanupEvents: null,
+    })
+    render(
+      <BattleReplayModal
+        attackerUnits={[]}
+        defenderUnits={[]}
+        logs={[]}
+        onClose={() => undefined}
+      />
+    )
+
+    await waitFor(() => expect(startBattleReplayEngineMock).toHaveBeenCalledOnce())
+    fireEvent.click(screen.getByRole('button', { name: /Пауза/ }))
+    expect(pause).toHaveBeenCalledOnce()
   })
 
   it('shows metrics and debug overlays on desktop', async () => {
