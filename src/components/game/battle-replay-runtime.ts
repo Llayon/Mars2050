@@ -2,9 +2,11 @@ import { FIELD_HEIGHT, FIELD_WIDTH } from '@/domains/combat/combat.utils'
 import type { BattleAction, BattleTick } from '@/domains/combat/combat.types'
 import { buildReplayRenderUnits } from './battle-replay-state'
 import {
-  applyHpDelta,
   createReplayUnit,
   createSpawnedUnit,
+  handleAttackAction,
+  handleDamageAction,
+  handleLifestealAction,
   handleStatusAction,
   hazardColor,
   hazardLabel,
@@ -65,6 +67,7 @@ export function createBattleReplayRuntime(props: BattleReplayEngineProps): Battl
     },
     pause: () => { isPlaying = false },
     seekToTick: nextTick => { seekToTick(nextTick) },
+    stepTick: () => { stepTick() },
     getCurrentTick: () => tick,
     getTotalTicks: () => logs.length,
     setSpeed: speed => { playbackSpeed = speed },
@@ -197,6 +200,19 @@ export function createBattleReplayRuntime(props: BattleReplayEngineProps): Battl
     notifyTickChange()
   }
 
+  function stepTick() {
+    isPlaying = false
+    settleUnits()
+    clearTransientVisuals()
+    tickTime = 0
+    renderProgressOverride = null
+    if (tick >= logs.length) return
+    processTick(logs[tick])
+    tick++
+    renderProgressOverride = 1
+    notifyTickChange()
+  }
+
   function step(dt: number) {
     if (renderProgressOverride !== null) {
       settleUnits()
@@ -214,34 +230,6 @@ export function createBattleReplayRuntime(props: BattleReplayEngineProps): Battl
     updateAged(hazards, dt, HAZARD_MS)
     updateReplayUnitAges(Object.values(units), dt)
   }
-}
-
-function handleAttackAction(
-  action: BattleAction,
-  source: ReplayUnit | undefined,
-  target: ReplayUnit | undefined,
-  spawnText: (text: string, x: number, y: number, color: string) => void,
-  spawnProjectile: (x1: number, y1: number, x2: number, y2: number, color: string) => void
-) {
-  if (!source || !target) return
-  const color = action.type === 'heal' ? '#4ade80' : action.isShieldHit ? '#60a5fa' : '#f59e0b'
-  spawnProjectile(source.tX, source.tY, target.tX, target.tY, color)
-  source.flash = 1
-  if (action.damage === undefined) return
-  applyHpDelta(target, action.type === 'heal' ? action.damage : -action.damage)
-  spawnText(action.type === 'heal' ? `+${action.damage}` : `-${action.damage}`, target.tX, target.tY, color)
-}
-
-function handleDamageAction(action: BattleAction, target: ReplayUnit | undefined, spawnText: (text: string, x: number, y: number, color: string) => void) {
-  if (!target || action.damage === undefined) return
-  applyHpDelta(target, -action.damage)
-  spawnText(action.type === 'damage_share' ? `РАЗДЕЛ -${action.damage}` : `-${action.damage}`, target.tX, target.tY, '#f59e0b')
-}
-
-function handleLifestealAction(action: BattleAction, target: ReplayUnit | undefined, spawnText: (text: string, x: number, y: number, color: string) => void) {
-  if (!target || action.damage === undefined) return
-  applyHpDelta(target, action.damage)
-  spawnText(`+${action.damage}`, target.tX, target.tY, '#4ade80')
 }
 
 function nowMs(): number {

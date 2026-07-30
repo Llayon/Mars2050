@@ -289,19 +289,19 @@ test('simulator2 replay shows high-signal primitive event labels', async ({ page
   await expect(page.getByRole('button', { name: /Играть/ })).toBeVisible()
   await expectBattleReplayCanvasPainted(canvas)
 
-  await playEventTick(page, timeline, 0)
+  await stepEventTick(page, timeline, 0)
   await expectReplayEffectColors(canvas, {
     texts: ['#38bdf8'],
     projectiles: ['#a78bfa'],
   })
 
-  await playEventTick(page, timeline, 2)
+  await stepEventTick(page, timeline, 2)
   await expectReplayEffectColors(canvas, { texts: ['#22d3ee'] })
 
-  await playEventTick(page, timeline, 4)
-  await expectReplayEffectColors(canvas, { texts: ['#22d3ee'] })
+  await stepEventTick(page, timeline, 4)
+  await expectReplayEffectColors(canvas, { texts: ['#facc15'] })
 
-  await playEventTick(page, timeline, 8)
+  await stepEventTick(page, timeline, 8)
   await expectReplayEffectColors(canvas, { texts: ['#facc15'] })
 
   expect(network.hasChunk('pixi'), 'primitive event replay labels should use the Pixi default renderer').toBe(true)
@@ -388,16 +388,14 @@ async function startSelectedSimulation(page: Page): Promise<void> {
   await startButton.click()
 }
 
-async function playEventTick(page: Page, timeline: Locator, tick: number): Promise<void> {
+async function stepEventTick(page: Page, timeline: Locator, tick: number): Promise<void> {
   const pauseButton = page.getByRole('button', { name: /Пауза/ })
   if (await pauseButton.isVisible()) await pauseButton.click()
   await expect(page.getByRole('button', { name: /Играть/ })).toBeVisible()
   await setTimelineTick(timeline, tick)
   await expect(timeline).toHaveValue(String(tick))
-  await expect(page.getByRole('button', { name: /Играть/ })).toBeVisible()
-  await page.getByRole('button', { name: /Играть/ }).click()
-  await expect.poll(async () => Number(await timeline.inputValue())).toBeGreaterThan(tick)
-  await page.getByRole('button', { name: /Пауза/ }).click()
+  await page.getByRole('button', { name: 'Следующий тик' }).click()
+  await expect(timeline).toHaveValue(String(tick + 1))
   await expect(page.getByRole('button', { name: /Играть/ })).toBeVisible()
 }
 

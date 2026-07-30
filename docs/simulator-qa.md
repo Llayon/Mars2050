@@ -192,6 +192,7 @@ require baseline image updates.
 `tests/e2e/simulator2-replay.spec.ts` also checks high-signal primitive event
 labels against the `qa_primitive_events` preset. This is not a screenshot
 baseline: the test seeks to deterministic ticks, plays the event tick, and
+steps exactly one event tick with the desktop `Следующий тик` control, then
 asserts that the expected text and projectile colors reach the Pixi renderer.
 The dev renderer exposes active effect colors through canvas `data-*`
 attributes, avoiding platform-dependent font antialiasing thresholds. Generic

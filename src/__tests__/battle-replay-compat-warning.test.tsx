@@ -99,6 +99,7 @@ describe('BattleReplayModal UI', () => {
         play: vi.fn(),
         pause,
         seekToTick: vi.fn(),
+        stepTick: vi.fn(),
         getCurrentTick: vi.fn().mockReturnValue(0),
         getTotalTicks: vi.fn().mockReturnValue(0),
         setSpeed: vi.fn(),

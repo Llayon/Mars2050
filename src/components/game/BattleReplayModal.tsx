@@ -131,6 +131,14 @@ export const BattleReplayModal = memo(function BattleReplayModal({ attackerUnits
     setIsPlaying(nextIsPlaying)
   }
 
+  const handleStepTick = () => {
+    if (!controlsRef.current) return
+    isPlayingRef.current = false
+    controlsRef.current.stepTick()
+    setCurrentTick(controlsRef.current.getCurrentTick())
+    setIsPlaying(false)
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-black/95">
       <div className={showDesktopDebug
@@ -167,6 +175,12 @@ export const BattleReplayModal = memo(function BattleReplayModal({ attackerUnits
             <button onClick={handlePlaybackToggle} className="flex-1 bg-blue-600 hover:bg-blue-500 rounded py-1 font-bold transition-colors">
               {isPlaying ? '⏸ Пауза' : '▶ Играть'}
             </button>
+            {showDesktopDebug && (
+              <button type="button" aria-label="Следующий тик" title="Следующий тик"
+                onClick={handleStepTick} className="flex h-8 w-8 shrink-0 items-center justify-center rounded bg-gray-700 text-base hover:bg-gray-600">
+                ⏭
+              </button>
+            )}
             <select value={speed} onChange={e => setSpeed(Number(e.target.value))} className="bg-gray-700 rounded px-2 py-1 outline-none text-white w-20">
               <option value={0.5}>0.5x</option>
               <option value={1}>1.0x</option>

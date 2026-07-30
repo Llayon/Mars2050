@@ -95,6 +95,34 @@ export function handleStatusAction(
   }
 }
 
+export function handleAttackAction(
+  action: BattleAction,
+  source: ReplayUnit | undefined,
+  target: ReplayUnit | undefined,
+  spawnText: SpawnText,
+  spawnProjectile: SpawnProjectile,
+) {
+  if (!source || !target) return
+  const color = action.type === 'heal' ? '#4ade80' : action.isShieldHit ? '#60a5fa' : '#f59e0b'
+  spawnProjectile(source.tX, source.tY, target.tX, target.tY, color)
+  source.flash = 1
+  if (action.damage === undefined) return
+  applyHpDelta(target, action.type === 'heal' ? action.damage : -action.damage)
+  spawnText(action.type === 'heal' ? `+${action.damage}` : `-${action.damage}`, target.tX, target.tY, color)
+}
+
+export function handleDamageAction(action: BattleAction, target: ReplayUnit | undefined, spawnText: SpawnText) {
+  if (!target || action.damage === undefined) return
+  applyHpDelta(target, -action.damage)
+  spawnText(action.type === 'damage_share' ? `РАЗДЕЛ -${action.damage}` : `-${action.damage}`, target.tX, target.tY, '#f59e0b')
+}
+
+export function handleLifestealAction(action: BattleAction, target: ReplayUnit | undefined, spawnText: SpawnText) {
+  if (!target || action.damage === undefined) return
+  applyHpDelta(target, action.damage)
+  spawnText(`+${action.damage}`, target.tX, target.tY, '#4ade80')
+}
+
 export function applyHpDelta(unit: ReplayUnit, delta: number) {
   unit.hp = Math.max(0, Math.min(unit.maxHp, unit.hp + delta))
   if (unit.hp <= 0) {

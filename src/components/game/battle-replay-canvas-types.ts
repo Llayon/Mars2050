@@ -4,6 +4,7 @@ export interface ReplayControls {
   play: () => void
   pause: () => void
   seekToTick: (tick: number) => void
+  stepTick: () => void
   getCurrentTick: () => number
   getTotalTicks: () => number
   setSpeed: (s: number) => void
