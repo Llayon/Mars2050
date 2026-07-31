@@ -139,8 +139,11 @@ overlays remain suitable for movement diagnostics.
 
 Pixi uses the same Crowd LOD plan, but the renderer keeps a persistent scene:
 static battlefield layers are created once, unit displays are keyed by `unit.id`,
-and transient hazards/projectiles/texts use reusable pools. This prevents the
-renderer from destroying and recreating the whole display tree every
+transient hazards/projectiles/texts use reusable pools, and Crowd LOD reuses
+fixed buckets plus unit/cluster views. Unit/cluster visibility uses frame stamps
+instead of temporary sets; the replay roster and frame snapshot also keep
+stable containers through spawn and seek. This prevents the renderer from
+destroying the display tree or rebuilding JavaScript work collections every
 frame. `test:e2e:replay-pixi` covers mobile fit, pause/seek/rewind stability,
 debug overlays, the `marine_crowd_qa` repro, and the `zerg_rush` stress state.
 Pixi is the default `/simulator2` replay renderer; Canvas remains selectable as

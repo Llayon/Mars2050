@@ -14,7 +14,7 @@ export async function startCanvasBattleReplayEngine(props: BattleReplayEnginePro
 
   const runtime = createBattleReplayRuntime(props)
   const renderBudget = getBrowserReplayRenderBudget(
-    Object.keys(runtime.snapshot().units).length,
+    runtime.snapshot().unitList.length,
   )
   const dpr = renderBudget.resolution
   canvas.width = Math.round(FIELD_WIDTH * dpr)

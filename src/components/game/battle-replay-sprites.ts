@@ -28,12 +28,30 @@ const ATLAS_IDLE_FRAME_ORDER = [
 ]
 
 const imageCache = new Map<string, HTMLImageElement | 'missing'>()
+const spriteFrameCache =
+  new Map<string, Map<string, ReplaySpriteFrame | null>>()
 
 export function resolveReplaySprite(type: string, direction: string): ReplaySpriteFrame | null {
+  const dir = normalizeDirection(direction)
+  let directionCache = spriteFrameCache.get(type)
+  if (!directionCache) {
+    directionCache = new Map()
+    spriteFrameCache.set(type, directionCache)
+  } else if (directionCache.has(dir)) {
+    return directionCache.get(dir) ?? null
+  }
+  const frame = createReplaySpriteFrame(type, dir)
+  directionCache.set(dir, frame)
+  return frame
+}
+
+function createReplaySpriteFrame(
+  type: string,
+  dir: string,
+): ReplaySpriteFrame | null {
   const resolved = getReplayVisualAsset(type)
   if (!resolved) return null
   const { assetType, asset } = resolved
-  const dir = normalizeDirection(direction)
   if (asset.kind === 'png') {
     return {
       src: `${asset.path}/${dir}.png`,

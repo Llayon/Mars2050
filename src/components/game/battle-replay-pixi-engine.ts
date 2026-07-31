@@ -13,7 +13,7 @@ export type { BattleReplayEngineProps, ReplayAppHandle, ReplayControls } from '.
 export async function startPixiBattleReplayEngine(props: BattleReplayEngineProps) {
   const { container, logs, obstacles } = props
   const runtime = createBattleReplayRuntime(props)
-  const initialUnits = Object.values(runtime.snapshot().units)
+  const initialUnits = runtime.snapshot().unitList
   const renderBudget = getBrowserReplayRenderBudget(initialUnits.length)
   await preloadReplayAssets(initialUnits.map(unit => unit.type), logs)
 

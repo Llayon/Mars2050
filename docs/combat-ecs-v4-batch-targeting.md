@@ -91,8 +91,9 @@ outside this slice.
 Raw benchmark data is stored in
 `docs/combat-ecs-v4-targeting-performance.json`.
 
-## Next Slice
+## Completed Follow-Up
 
-Remove per-frame Pixi replay allocations by keeping persistent unit lists,
-entity lookup maps, and reusable render/text work buffers. This does not change
-simulation output; its primary gate is mobile frame-time and GC stability.
+Per-frame Pixi replay allocation removal is documented in
+`docs/combat-replay-pixi-frame-workspace.md`. It adds persistent roster,
+Crowd LOD, display-visibility, sprite, and text workspaces without changing
+simulation output.

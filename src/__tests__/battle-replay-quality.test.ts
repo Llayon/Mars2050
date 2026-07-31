@@ -4,6 +4,7 @@ import type { ReplayCrowdUnitView } from '@/components/game/battle-replay-densit
 import {
   resolveReplayRenderBudget,
   selectReplayFloatingTexts,
+  selectReplayFloatingTextsInto,
   shouldRenderReplayUnit,
 } from '@/components/game/battle-replay-quality'
 
@@ -116,5 +117,39 @@ describe('battle replay render budget', () => {
 
     expect(selected).toHaveLength(1)
     expect(selected[0].text).toBe('-59')
+  })
+
+  it('reuses caller-owned buffers while thinning floating text', () => {
+    const budget = resolveReplayRenderBudget({
+      devicePixelRatio: 3,
+      unitCount: 600,
+      coarsePointer: true,
+    })
+    const texts = Array.from({ length: 60 }, (_, index) => ({
+      text: `-${index}`,
+      x: 100 + index * 90,
+      y: 100,
+      color: '#ffffff',
+      age: 0,
+    }))
+    const selected: typeof texts = []
+    const buckets = new Set<number>()
+
+    const first = selectReplayFloatingTextsInto(
+      texts,
+      budget,
+      selected,
+      buckets,
+    )
+    const second = selectReplayFloatingTextsInto(
+      texts.slice().reverse(),
+      budget,
+      selected,
+      buckets,
+    )
+
+    expect(first).toBe(selected)
+    expect(second).toBe(selected)
+    expect(second).toHaveLength(budget.maxFloatingTexts)
   })
 })

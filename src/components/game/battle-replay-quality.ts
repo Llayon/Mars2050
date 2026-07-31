@@ -73,12 +73,22 @@ export function selectReplayFloatingTexts(
   texts: FloatingText[],
   budget: ReplayRenderBudget,
 ): FloatingText[] {
+  return selectReplayFloatingTextsInto(texts, budget, [], new Set<number>())
+}
+
+export function selectReplayFloatingTextsInto(
+  texts: FloatingText[],
+  budget: ReplayRenderBudget,
+  selected: FloatingText[],
+  occupiedBuckets: Set<number>,
+): FloatingText[] {
   if (texts.length <= budget.maxFloatingTexts) return texts
-  const selected: FloatingText[] = []
-  const occupiedBuckets = new Set<string>()
+  selected.length = 0
+  occupiedBuckets.clear()
   for (let index = texts.length - 1; index >= 0; index--) {
     const item = texts[index]
-    const key = `${Math.floor(item.x / 80)}:${Math.floor(item.y / 44)}`
+    const key = (Math.floor(item.x / 80) & 0xffff) * 0x10000 +
+      (Math.floor(item.y / 44) & 0xffff)
     if (occupiedBuckets.has(key)) continue
     occupiedBuckets.add(key)
     selected.push(item)

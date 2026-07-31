@@ -1,53 +1,35 @@
-import { Container, Graphics, Rectangle, Sprite, Texture } from 'pixi.js'
+import { Rectangle, Sprite, Texture } from 'pixi.js'
 import type { ReplayUnit } from './battle-replay-canvas-types'
 import type { ReplayCrowdRenderMode, ReplayCrowdUnitView } from './battle-replay-density'
 import { getReplaySpriteDirection, resolveReplaySprite, type ReplaySpriteFrame } from './battle-replay-sprites'
 import { UNIT_VISUALS } from './battle-replay-visuals'
 
-export interface PixiReplaySpriteDraw {
-  texture: Texture
-  x: number
-  y: number
-  size: number
-}
-
-export function drawPixiUnitSprite(layer: Container, unit: ReplayUnit, view: ReplayCrowdUnitView): boolean {
-  const spriteDraw = getPixiReplaySpriteDraw(unit, view)
-  if (!spriteDraw) return false
-
-  if (unit.flash > 0) layer.addChild(drawFlashRing(view.x, view.y, view.radius, unit.flash))
-  const sprite = new Sprite(spriteDraw.texture)
-  sprite.anchor.set(0.5)
-  sprite.x = spriteDraw.x
-  sprite.y = spriteDraw.y
-  sprite.width = spriteDraw.size
-  sprite.height = spriteDraw.size
-  layer.addChild(sprite)
+export function syncPixiReplaySprite(
+  sprite: Sprite,
+  unit: ReplayUnit,
+  view: ReplayCrowdUnitView,
+): boolean {
+  const frame = resolveReplaySprite(unit.type, getReplaySpriteDirection(unit))
+  if (!frame) return false
+  const texture = getReplayTexture(frame)
+  if (!texture) return false
+  const size = getSpriteDrawSize(unit.type, frame.assetType, view.radius, view.mode)
+  sprite.visible = true
+  sprite.texture = texture
+  sprite.x = view.x
+  sprite.y = view.y + getSpriteOffsetY(frame.assetType, view.mode)
+  sprite.width = size
+  sprite.height = size
   return true
 }
 
-export function getPixiReplaySpriteDraw(unit: ReplayUnit, view: ReplayCrowdUnitView): PixiReplaySpriteDraw | null {
-  const frame = resolveReplaySprite(unit.type, getReplaySpriteDirection(unit))
-  if (!frame) return null
-  const texture = getReplayTexture(frame)
-  if (!texture) return null
-  const size = getSpriteDrawSize(unit.type, frame.assetType, view.radius, view.mode)
-  return {
-    texture,
-    x: view.x,
-    y: view.y + getSpriteOffsetY(frame.assetType, view.mode),
-    size,
-  }
-}
-
-const textureCache = new Map<string, Texture | null>()
+const textureCache = new WeakMap<ReplaySpriteFrame, Texture | null>()
 
 function getReplayTexture(frame: ReplaySpriteFrame): Texture | null {
-  const key = `${frame.src}:${frame.kind}:${frame.frameIndex}:${frame.frameCount}`
-  if (textureCache.has(key)) return textureCache.get(key) ?? null
+  if (textureCache.has(frame)) return textureCache.get(frame) ?? null
   const base = Texture.from(frame.src)
   if (frame.kind === 'png') {
-    textureCache.set(key, base)
+    textureCache.set(frame, base)
     return base
   }
   const source = base.source
@@ -56,14 +38,8 @@ function getReplayTexture(frame: ReplaySpriteFrame): Texture | null {
   const texture = source.width < frameWidth * (frame.frameIndex + 1) || source.height < frameHeight
     ? base
     : new Texture({ source, frame: new Rectangle(frame.frameIndex * frameWidth, 0, frameWidth, frameHeight) })
-  textureCache.set(key, texture)
+  textureCache.set(frame, texture)
   return texture
-}
-
-function drawFlashRing(x: number, y: number, radius: number, flash: number): Graphics {
-  const graphic = new Graphics()
-  graphic.circle(x, y, Math.max(5, radius * 1.1)).stroke({ width: 2, color: 0xfacc15, alpha: Math.max(0, Math.min(1, flash)) })
-  return graphic
 }
 
 function getSpriteDrawSize(type: string, assetType: string, radius: number, mode: ReplayCrowdRenderMode): number {

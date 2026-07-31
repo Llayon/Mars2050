@@ -32,7 +32,7 @@ export function drawReplay(
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
   ctx.clearRect(0, 0, FIELD_WIDTH, FIELD_HEIGHT)
   const easedProgress = ease(state.progress)
-  const unitList = Object.values(state.units)
+  const unitList = state.unitList
   const crowdPlan = buildReplayCrowdRenderPlan(unitList, easedProgress)
   const unitViews = new Map(crowdPlan.units.map(unit => [unit.id, unit]))
   drawBattlefield(ctx, obstacles, state.hazards)

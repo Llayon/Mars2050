@@ -139,10 +139,11 @@ export function updateAged<T extends { age: number }>(items: T[], dt: number, ma
 }
 
 export function updateReplayUnitAges(units: ReplayUnit[], dt: number) {
-  units.forEach(unit => {
+  for (let index = 0; index < units.length; index++) {
+    const unit = units[index]
     unit.flash = Math.max(0, unit.flash - dt / 220)
     if (unit.isDead) unit.deathAgeMs = (unit.deathAgeMs ?? 0) + dt
-  })
+  }
 }
 
 export function hazardColor(statusType?: string): string {

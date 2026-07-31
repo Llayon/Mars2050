@@ -41,4 +41,90 @@ describe('battle replay runtime controls', () => {
     }))
     expect(runtime.frame(performance.now() + 1000).texts).toHaveLength(1)
   })
+
+  it('reuses its frame state and roster containers through spawn and seek', () => {
+    const logs: BattleTick[] = [{
+      tick: 0,
+      actions: [{
+        unitId: 'source',
+        type: 'spawn',
+        targetId: 'spawn-1',
+        spawnType: 'marine',
+        spawnTeam: 'attacker',
+        toX: 220,
+        toY: 680,
+      }],
+    }]
+    const runtime = createBattleReplayRuntime({
+      container: document.createElement('div'),
+      attackerUnits: [unit],
+      defenderUnits: [],
+      logs,
+    })
+    const initialFrame = runtime.snapshot()
+    const unitList = initialFrame.unitList
+    const unitIndex = initialFrame.units
+
+    runtime.controls.pause()
+    runtime.controls.stepTick()
+
+    expect(runtime.snapshot()).toBe(initialFrame)
+    expect(runtime.snapshot().unitList).toBe(unitList)
+    expect(runtime.snapshot().units).toBe(unitIndex)
+    expect(unitList.map(item => item.id)).toEqual(['source', 'spawn-1'])
+    expect(unitIndex['spawn-1']).toBe(unitList[1])
+
+    runtime.controls.seekToTick(0)
+
+    expect(runtime.frame(performance.now())).toBe(initialFrame)
+    expect(unitList.map(item => item.id)).toEqual(['source'])
+    expect(unitIndex['spawn-1']).toBeUndefined()
+  })
+
+  it('processes every action in a replay tick', () => {
+    const secondUnit = {
+      ...unit,
+      id: 'second',
+      grid_x: '300',
+    }
+    const logs: BattleTick[] = [{
+      tick: 0,
+      actions: [
+        {
+          unitId: 'source',
+          type: 'move',
+          fromX: 200,
+          fromY: 700,
+          toX: 205,
+          toY: 695,
+        },
+        {
+          unitId: 'second',
+          type: 'move',
+          fromX: 300,
+          fromY: 700,
+          toX: 295,
+          toY: 705,
+        },
+      ],
+    }]
+    const runtime = createBattleReplayRuntime({
+      container: document.createElement('div'),
+      attackerUnits: [unit, secondUnit],
+      defenderUnits: [],
+      logs,
+    })
+
+    runtime.controls.pause()
+    runtime.controls.seekToTick(1)
+
+    expect(runtime.snapshot().units.source).toMatchObject({
+      tX: 205,
+      tY: 695,
+    })
+    expect(runtime.snapshot().units.second).toMatchObject({
+      tX: 295,
+      tY: 705,
+    })
+  })
 })

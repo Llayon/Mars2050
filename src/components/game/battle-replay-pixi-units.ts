@@ -2,28 +2,48 @@ import { Container, Graphics, Sprite, Text, Texture } from 'pixi.js'
 import type { OverlayState, ReplayUnit } from './battle-replay-canvas-types'
 import type { ReplayCrowdUnitView } from './battle-replay-density'
 import type { PixiReplayScene, PixiUnitDisplay } from './battle-replay-pixi-scene-types'
-import { getPixiReplaySpriteDraw } from './battle-replay-pixi-sprites'
+import { syncPixiReplaySprite } from './battle-replay-pixi-sprites'
+import {
+  shouldRenderReplayUnit,
+  type ReplayRenderBudget,
+} from './battle-replay-quality'
 
 const OVERLAY_HITBOX_ATTACKER = 0x22d3ee
 const OVERLAY_HITBOX_DEFENDER = 0xfb7185
 const OVERLAY_VELOCITY = 0xfef08a
+const FALLBACK_GROUND_STROKE = { width: 2, color: 0x0f172a }
+const FALLBACK_AIR_STROKE = { width: 3, color: 0xe0f2fe }
+const HITBOX_ATTACKER_STROKE = {
+  width: 1,
+  color: OVERLAY_HITBOX_ATTACKER,
+}
+const HITBOX_DEFENDER_STROKE = {
+  width: 1,
+  color: OVERLAY_HITBOX_DEFENDER,
+}
+const VELOCITY_STROKE = { width: 2, color: OVERLAY_VELOCITY, alpha: 1 }
+const FLASH_STROKE = { width: 2, color: 0xfacc15 }
+const unitLabelCache = new Map<string, string>()
 
 export function syncPixiReplayUnits(
   scene: PixiReplayScene,
   units: ReplayUnit[],
-  unitViews: Map<string, ReplayCrowdUnitView>,
-  overlays: OverlayState
+  unitViews: ReplayCrowdUnitView[],
+  overlays: OverlayState,
+  renderBudget: ReplayRenderBudget,
 ): void {
-  const seen = new Set<string>()
-  units.forEach(unit => {
-    const view = unitViews.get(unit.id)
-    if (!view) return
-    seen.add(unit.id)
-    updateUnitDisplay(getUnitDisplay(scene, unit.id), unit, view, overlays)
-  })
-  scene.units.forEach((display, id) => {
-    if (!seen.has(id)) display.layer.visible = false
-  })
+  for (let index = 0; index < units.length; index++) {
+    const unit = units[index]
+    const view = unitViews[index]
+    if (!view || !shouldRenderReplayUnit(unit, view, renderBudget)) continue
+    const display = getUnitDisplay(scene, unit.id)
+    display.renderFrame = scene.renderFrame
+    updateUnitDisplay(display, unit, view, overlays)
+  }
+  for (let index = 0; index < scene.unitDisplays.length; index++) {
+    const display = scene.unitDisplays[index]
+    if (display.renderFrame !== scene.renderFrame) display.layer.visible = false
+  }
 }
 
 function getUnitDisplay(scene: PixiReplayScene, id: string): PixiUnitDisplay {
@@ -31,6 +51,7 @@ function getUnitDisplay(scene: PixiReplayScene, id: string): PixiUnitDisplay {
   if (cached) return cached
   const display = createUnitDisplay()
   scene.units.set(id, display)
+  scene.unitDisplays.push(display)
   scene.unitLayer.addChild(display.layer)
   return display
 }
@@ -38,6 +59,7 @@ function getUnitDisplay(scene: PixiReplayScene, id: string): PixiUnitDisplay {
 function createUnitDisplay(): PixiUnitDisplay {
   const layer = new Container()
   const display: PixiUnitDisplay = {
+    renderFrame: 0,
     layer,
     flash: new Graphics(),
     fallback: new Graphics(),
@@ -70,15 +92,8 @@ function updateUnitDisplay(display: PixiUnitDisplay, unit: ReplayUnit, view: Rep
   display.layer.zIndex = view.y
   clearDisplay(display)
 
-  const sprite = getPixiReplaySpriteDraw(unit, view)
-  if (sprite) {
+  if (syncPixiReplaySprite(display.sprite, unit, view)) {
     if (unit.flash > 0) drawFlashRing(display.flash, view.x, view.y, view.radius, unit.flash)
-    display.sprite.visible = true
-    display.sprite.texture = sprite.texture
-    display.sprite.x = sprite.x
-    display.sprite.y = sprite.y
-    display.sprite.width = sprite.size
-    display.sprite.height = sprite.size
   } else {
     drawFallback(display, unit, view)
   }
@@ -111,7 +126,7 @@ function drawFallback(display: PixiUnitDisplay, unit: ReplayUnit, view: ReplayCr
   const airTarget = unit.isFlying || unit.mobilityMode === 'air'
   display.fallback.circle(view.x, view.y, view.radius)
     .fill(color)
-    .stroke({ width: airTarget ? 3 : 2, color: airTarget ? 0xe0f2fe : 0x0f172a })
+    .stroke(airTarget ? FALLBACK_AIR_STROKE : FALLBACK_GROUND_STROKE)
   if (view.mode === 'full') {
     display.label.visible = true
     display.label.text = unitLabel(unit.type)
@@ -137,15 +152,24 @@ function syncStatusLabels(display: PixiUnitDisplay, unit: ReplayUnit, view: Repl
 function drawUnitOverlays(display: PixiUnitDisplay, unit: ReplayUnit, view: ReplayCrowdUnitView, overlays: OverlayState) {
   if (overlays.radius) {
     display.hitbox.circle(view.x, view.y, view.radius)
-      .stroke({ width: 1, color: unit.team === 'attacker' ? OVERLAY_HITBOX_ATTACKER : OVERLAY_HITBOX_DEFENDER })
+      .stroke(unit.team === 'attacker'
+        ? HITBOX_ATTACKER_STROKE
+        : HITBOX_DEFENDER_STROKE)
   }
   if (overlays.velocity && (unit.tX !== unit.sX || unit.tY !== unit.sY)) {
-    drawLine(display.velocity, view.x, view.y, view.x + (unit.tX - unit.sX) * 0.4, view.y + (unit.tY - unit.sY) * 0.4, OVERLAY_VELOCITY, 2)
+    drawLine(
+      display.velocity,
+      view.x,
+      view.y,
+      view.x + (unit.tX - unit.sX) * 0.4,
+      view.y + (unit.tY - unit.sY) * 0.4,
+    )
   }
 }
 
 function drawFlashRing(graphic: Graphics, x: number, y: number, radius: number, flash: number) {
-  graphic.circle(x, y, Math.max(5, radius * 1.1)).stroke({ width: 2, color: 0xfacc15, alpha: Math.max(0, Math.min(1, flash)) })
+  graphic.alpha = Math.max(0, Math.min(1, flash))
+  graphic.circle(x, y, Math.max(5, radius * 1.1)).stroke(FLASH_STROKE)
 }
 
 function drawHpBar(graphic: Graphics, x: number, y: number, hp: number, maxHp: number, team: ReplayUnit['team']) {
@@ -170,11 +194,22 @@ function shouldShowPriorityHp(unit: ReplayUnit): boolean {
 }
 
 function unitLabel(type: string): string {
-  return type.split('_').map(part => part.charAt(0)).join('').slice(0, 3).toUpperCase()
+  const cached = unitLabelCache.get(type)
+  if (cached) return cached
+  const label = type.split('_').map(part => part.charAt(0))
+    .join('').slice(0, 3).toUpperCase()
+  unitLabelCache.set(type, label)
+  return label
 }
 
-function drawLine(graphic: Graphics, x1: number, y1: number, x2: number, y2: number, color: number, width: number, alpha = 1) {
+function drawLine(
+  graphic: Graphics,
+  x1: number,
+  y1: number,
+  x2: number,
+  y2: number,
+) {
   graphic.moveTo(x1, y1)
   graphic.lineTo(x2, y2)
-  graphic.stroke({ width, color, alpha })
+  graphic.stroke(VELOCITY_STROKE)
 }

@@ -1,6 +1,7 @@
 import { Container, Graphics, Text } from 'pixi.js'
 import { FIELD_HEIGHT, FIELD_WIDTH } from '@/domains/combat/combat.utils'
 import type { Obstacle } from '@/domains/combat/combat.types'
+import { ReplayCrowdRenderWorkspace } from './battle-replay-density-workspace'
 import type { PixiReplayScene } from './battle-replay-pixi-scene-types'
 
 export function createPixiReplayScene(root: Container, obstacles: Obstacle[]): PixiReplayScene {
@@ -16,6 +17,7 @@ export function createPixiReplayScene(root: Container, obstacles: Obstacle[]): P
   drawStaticBattlefield(fieldLayer, obstacles)
 
   return {
+    renderFrame: 0,
     root,
     fieldLayer,
     hazardLayer,
@@ -26,10 +28,15 @@ export function createPixiReplayScene(root: Container, obstacles: Obstacle[]): P
     textLayer,
     hazards: [],
     clusters: new Map(),
+    clusterDisplays: [],
     projectiles: [],
     targetLines: [],
     texts: [],
     units: new Map(),
+    unitDisplays: [],
+    crowdWorkspace: new ReplayCrowdRenderWorkspace(),
+    selectedTexts: [],
+    floatingTextBuckets: new Set(),
   }
 }
 
@@ -81,12 +88,9 @@ export function setSceneText(
   label.y = y
   label.alpha = alpha
   label.zIndex = 5000
-  label.style = {
-    fill: color,
-    fontSize: size,
-    fontWeight: bold ? '700' : '400',
-    stroke: { color: '#0f172a', width: 3 },
-  }
+  label.style.fill = color
+  label.style.fontSize = size
+  label.style.fontWeight = bold ? '700' : '400'
 }
 
 function drawStaticBattlefield(layer: Container, obstacles: Obstacle[]) {
