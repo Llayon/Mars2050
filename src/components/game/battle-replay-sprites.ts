@@ -1,8 +1,17 @@
 import { getDir } from '@/domains/combat/combat.utils'
 import { UNIT_VISUALS } from './battle-replay-visuals'
-import type { ReplayUnit } from './battle-replay-canvas-types'
+import type {
+  ReplayUnit,
+  ReplayVisualClip,
+  ReplayVisualDirection,
+} from './battle-replay-canvas-types'
 import type { ReplayCrowdRenderMode, ReplayCrowdUnitView } from './battle-replay-density'
 import { REPLAY_SPRITE_DIRECTIONS, SPRITE_DIRS, getReplayVisualAsset } from './battle-replay-visual-registry'
+import {
+  normalizeReplayVisualDirection,
+  resolveReplayVisualClipFrame,
+} from './battle-replay-visual-clips'
+import { resolveReplayUnitVisualState } from './battle-replay-visual-state'
 
 type ReplaySpriteKind = 'png' | 'svg-strip' | 'atlas'
 
@@ -14,6 +23,8 @@ export interface ReplaySpriteFrame {
   frameCount: number
   sourceWidth: number
   sourceHeight: number
+  clip: ReplayVisualClip
+  animationFrame: number
 }
 
 const ATLAS_IDLE_FRAME_ORDER = [
@@ -31,23 +42,37 @@ const imageCache = new Map<string, HTMLImageElement | 'missing'>()
 const spriteFrameCache =
   new Map<string, Map<string, ReplaySpriteFrame | null>>()
 
-export function resolveReplaySprite(type: string, direction: string): ReplaySpriteFrame | null {
-  const dir = normalizeDirection(direction)
+export function resolveReplaySprite(
+  type: string,
+  direction: string,
+  clip: ReplayVisualClip = 'idle',
+  elapsedMs = 0,
+): ReplaySpriteFrame | null {
+  const dir = normalizeReplayVisualDirection(direction)
+  const clipFrame = resolveReplayVisualClipFrame(
+    type,
+    clip,
+    dir,
+    elapsedMs,
+  )
+  const cacheKey =
+    `${dir}:${clipFrame.clip}:${clipFrame.animationFrame}`
   let directionCache = spriteFrameCache.get(type)
   if (!directionCache) {
     directionCache = new Map()
     spriteFrameCache.set(type, directionCache)
-  } else if (directionCache.has(dir)) {
-    return directionCache.get(dir) ?? null
+  } else if (directionCache.has(cacheKey)) {
+    return directionCache.get(cacheKey) ?? null
   }
-  const frame = createReplaySpriteFrame(type, dir)
-  directionCache.set(dir, frame)
+  const frame = createReplaySpriteFrame(type, dir, clipFrame)
+  directionCache.set(cacheKey, frame)
   return frame
 }
 
 function createReplaySpriteFrame(
   type: string,
-  dir: string,
+  dir: ReplayVisualDirection,
+  clipFrame: ReturnType<typeof resolveReplayVisualClipFrame>,
 ): ReplaySpriteFrame | null {
   const resolved = getReplayVisualAsset(type)
   if (!resolved) return null
@@ -61,6 +86,8 @@ function createReplaySpriteFrame(
       frameCount: 1,
       sourceWidth: 128,
       sourceHeight: 128,
+      clip: clipFrame.clip,
+      animationFrame: clipFrame.animationFrame,
     }
   }
 
@@ -73,6 +100,8 @@ function createReplaySpriteFrame(
       frameCount: asset.frameCount ?? REPLAY_SPRITE_DIRECTIONS.length,
       sourceWidth: asset.sourceWidth ?? 100,
       sourceHeight: asset.sourceHeight ?? 100,
+      clip: clipFrame.clip,
+      animationFrame: clipFrame.animationFrame,
     }
   }
 
@@ -81,10 +110,14 @@ function createReplaySpriteFrame(
       src: asset.path.replace(/\.json$/, '.png'),
       assetType,
       kind: 'atlas',
-      frameIndex: Math.max(0, ATLAS_IDLE_FRAME_ORDER.indexOf(dir)),
+      frameIndex: asset.clips
+        ? clipFrame.atlasFrame
+        : Math.max(0, ATLAS_IDLE_FRAME_ORDER.indexOf(dir)),
       frameCount: ATLAS_IDLE_FRAME_ORDER.length,
       sourceWidth: asset.sourceWidth ?? 128,
       sourceHeight: asset.sourceHeight ?? 128,
+      clip: clipFrame.clip,
+      animationFrame: clipFrame.animationFrame,
     }
   }
 
@@ -94,16 +127,25 @@ function createReplaySpriteFrame(
 export function getReplaySpriteDirection(unit: ReplayUnit): string {
   const dx = unit.tX - unit.sX
   const dy = unit.tY - unit.sY
-  if (Math.hypot(dx, dy) > 0.1) return normalizeDirection(getDir(dx, dy))
-  return unit.team === 'attacker' ? 'north' : 'south'
+  if (Math.hypot(dx, dy) > 0.1) {
+    return normalizeReplayVisualDirection(getDir(dx, dy))
+  }
+  return unit.visual.facing
 }
 
 export function drawReplayUnitSprite(
   ctx: CanvasRenderingContext2D,
   unit: ReplayUnit,
-  view: ReplayCrowdUnitView
+  view: ReplayCrowdUnitView,
+  replayTimeMs: number,
 ): boolean {
-  const sprite = resolveReplaySprite(unit.type, getReplaySpriteDirection(unit))
+  const visualState = resolveReplayUnitVisualState(unit, replayTimeMs)
+  const sprite = resolveReplaySprite(
+    unit.type,
+    visualState.direction,
+    visualState.clip,
+    visualState.elapsedMs,
+  )
   if (!sprite) return false
   const image = loadReplayImage(sprite.src)
   if (!image) return false
@@ -136,10 +178,6 @@ export function drawReplayUnitSprite(
     size
   )
   return true
-}
-
-function normalizeDirection(direction: string): string {
-  return SPRITE_DIRS.includes(direction) || ATLAS_IDLE_FRAME_ORDER.includes(direction) ? direction : 'south'
 }
 
 function loadReplayImage(src: string): HTMLImageElement | null {

@@ -4,7 +4,10 @@ import type { BattleReplayEngineProps, ReplayAppHandle } from './battle-replay-c
 import { createBattleReplayRuntime } from './battle-replay-runtime'
 import { drawPixiReplay } from './battle-replay-pixi-draw'
 import { getBrowserReplayRenderBudget } from './battle-replay-quality'
-import { createPixiReplayScene } from './battle-replay-pixi-scene'
+import {
+  createPixiReplayScene,
+  getPixiReplaySceneProfile,
+} from './battle-replay-pixi-scene'
 import { resolveReplaySprite } from './battle-replay-sprites'
 import { SPRITE_DIRS } from './battle-replay-visual-registry'
 import {
@@ -67,6 +70,7 @@ export async function startPixiBattleReplayEngine(props: BattleReplayEngineProps
       profiler.setUnitCount(frame.unitList.length)
     }
     drawPixiReplay(scene, frame, renderBudget, profiler)
+    profiler?.setSceneProfile(getPixiReplaySceneProfile(scene))
     if (process.env.NODE_ENV !== 'production') {
       app.canvas.dataset.replayTextColors = frame.texts.map(text => text.color).join(',')
       app.canvas.dataset.replayProjectileColors = frame.projectiles

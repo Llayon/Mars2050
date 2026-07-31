@@ -39,6 +39,24 @@ export type OverlayState = {
 
 export type ReplayTeam = 'attacker' | 'defender'
 export type UnitSize = 'S' | 'M' | 'L' | 'XL'
+export type ReplayVisualClip = 'idle' | 'walk' | 'attack' | 'death'
+export type ReplayVisualDirection =
+  | 'north'
+  | 'south'
+  | 'east'
+  | 'west'
+  | 'north-east'
+  | 'north-west'
+  | 'south-east'
+  | 'south-west'
+
+export interface ReplayUnitVisualState {
+  facing: ReplayVisualDirection
+  clipStartedAtMs: number
+  attackStartedAtMs: number | null
+  deathStartedAtMs: number | null
+  lastMovementAtMs: number | null
+}
 
 export type ReplayUnit = {
   id: string
@@ -58,6 +76,7 @@ export type ReplayUnit = {
   stealth: boolean
   flash: number
   deathAgeMs?: number
+  visual: ReplayUnitVisualState
 }
 
 export type FloatingText = { text: string; x: number; y: number; color: string; age: number }

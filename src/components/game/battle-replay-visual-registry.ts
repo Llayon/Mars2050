@@ -1,6 +1,18 @@
 import type { UnitTypeKey } from '@/domains/combat/combat.types'
+import type {
+  ReplayVisualClip,
+  ReplayVisualDirection,
+} from './battle-replay-canvas-types'
 
 export type ReplayVisualAssetKind = 'png' | 'svg-strip' | 'atlas'
+
+export interface ReplayVisualClipConfig {
+  startFrame: number
+  frameCount: number
+  fps: number
+  loop?: boolean
+  directionStride?: number
+}
 
 export interface ReplayVisualAsset {
   kind: ReplayVisualAssetKind
@@ -8,6 +20,9 @@ export interface ReplayVisualAsset {
   frameCount?: number
   sourceWidth?: number
   sourceHeight?: number
+  atlasFrameCount?: number
+  directionOrder?: readonly ReplayVisualDirection[]
+  clips?: Partial<Record<ReplayVisualClip, ReplayVisualClipConfig>>
 }
 
 export const REPLAY_SPRITE_ALIASES = {} as const satisfies Partial<Record<UnitTypeKey, UnitTypeKey>>

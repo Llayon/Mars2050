@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { ReplayUnit } from '@/components/game/battle-replay-canvas-types'
+import { createReplayUnitVisualState } from '@/components/game/battle-replay-visual-state'
 import type { ReplayCrowdUnitView } from '@/components/game/battle-replay-density'
 import {
   resolveReplayRenderBudget,
@@ -24,6 +25,7 @@ const unit: ReplayUnit = {
   emp: false,
   stealth: false,
   flash: 0,
+  visual: createReplayUnitVisualState('attacker'),
 }
 
 const view: ReplayCrowdUnitView = {

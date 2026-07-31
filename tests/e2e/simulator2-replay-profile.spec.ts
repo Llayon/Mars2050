@@ -15,6 +15,7 @@ interface ProfileSnapshot {
     flashRebuilds: number
     hitboxRebuilds: number
     velocityRebuilds: number
+    animationFrameChanges: number
   }
   lastFrameCounters: {
     fallbackRebuilds: number
@@ -22,6 +23,15 @@ interface ProfileSnapshot {
     flashRebuilds: number
     hitboxRebuilds: number
     velocityRebuilds: number
+  }
+  scene: {
+    unitContainers: number
+    visibleUnitContainers: number
+    activeUnitChildren: number
+    activeOptionalGraphics: number
+    activeOptionalTexts: number
+    pooledGraphics: number
+    pooledTexts: number
   }
 }
 
@@ -35,7 +45,12 @@ const cases = [
 ]
 
 test('hidden Pixi profiler exports bounded render measurements', async ({ browser }) => {
-  for (const profileCase of cases) {
+  const caseFilter = process.env.REPLAY_PROFILE_CASE
+  const selectedCases = caseFilter
+    ? cases.filter(profileCase => profileCase.name === caseFilter)
+    : cases
+  expect(selectedCases.length, 'profile case filter should match').toBeGreaterThan(0)
+  for (const profileCase of selectedCases) {
     const context = await browser.newContext({
       viewport: { width: profileCase.width, height: profileCase.height },
       hasTouch: profileCase.mobile,
@@ -52,12 +67,23 @@ test('hidden Pixi profiler exports bounded render measurements', async ({ browse
 
       const canvas = page.locator('canvas').last()
       await expect(canvas).toHaveAttribute('data-replay-renderer', 'pixi')
-      await page.waitForTimeout(3000)
+      const profileDurationMs = Number(
+        process.env.REPLAY_PROFILE_DURATION_MS ?? 3000,
+      )
+      await page.waitForTimeout(profileDurationMs)
       const snapshot = await requestProfile(page)
 
       expect(snapshot).toMatchObject({ version: 1, renderer: 'pixi' })
       expect(snapshot.sampling.sampleCount).toBeGreaterThan(0)
       expect(snapshot.counters.visibleUnitUpdates).toBeGreaterThan(0)
+      expect(snapshot.scene.unitContainers).toBeGreaterThan(0)
+      expect(snapshot.scene.visibleUnitContainers).toBeGreaterThan(0)
+      expect(snapshot.scene.activeUnitChildren).toBeGreaterThanOrEqual(
+        snapshot.scene.visibleUnitContainers * 3,
+      )
+      expect(snapshot.scene.activeUnitChildren).toBeLessThanOrEqual(
+        snapshot.scene.visibleUnitContainers * 6,
+      )
       if (process.env.REPLAY_PROFILE_LOG === '1') {
         console.log(
           `REPLAY_PROFILE ${profileCase.name} ${JSON.stringify(snapshot)}`,

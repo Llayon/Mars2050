@@ -127,4 +127,43 @@ describe('battle replay runtime controls', () => {
       tY: 705,
     })
   })
+
+  it('reconstructs attack facing and replay time through seek', () => {
+    const target = {
+      ...unit,
+      id: 'target',
+      colony_id: 'defender',
+      grid_x: '400',
+    }
+    const logs: BattleTick[] = [{
+      tick: 0,
+      actions: [{
+        unitId: 'source',
+        targetId: 'target',
+        type: 'attack',
+        damage: 5,
+      }],
+    }]
+    const runtime = createBattleReplayRuntime({
+      container: document.createElement('div'),
+      attackerUnits: [unit],
+      defenderUnits: [target],
+      logs,
+    })
+
+    runtime.controls.pause()
+    runtime.controls.seekToTick(1)
+    const sought = runtime.snapshot()
+
+    expect(sought.replayTimeMs).toBe(150)
+    expect(sought.units.source.visual.facing).toBe('east')
+    expect(sought.units.source.visual.attackStartedAtMs).toBe(0)
+
+    runtime.controls.seekToTick(0)
+    expect(runtime.snapshot().replayTimeMs).toBe(0)
+    expect(runtime.snapshot().units.source.visual).toMatchObject({
+      facing: 'north',
+      attackStartedAtMs: null,
+    })
+  })
 })

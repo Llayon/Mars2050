@@ -4,9 +4,11 @@ import { join } from 'path'
 import { UNIT_TYPES } from '@/domains/combat/combat.config'
 import { getReplaySpriteDirection, resolveReplaySprite } from '@/components/game/battle-replay-sprites'
 import type { ReplayUnit } from '@/components/game/battle-replay-canvas-types'
+import { createReplayUnitVisualState } from '@/components/game/battle-replay-visual-state'
 import {
   getReplayVisualCoverageIssues,
   getReplayVisualCoverageSummary,
+  getReplayVisualClipConfigIssue,
 } from '@/components/game/battle-replay-visual-contract'
 import {
   FORMER_REPLAY_ALIAS_UNITS,
@@ -16,10 +18,11 @@ import {
 } from '@/components/game/battle-replay-visual-registry'
 
 function unit(overrides: Partial<ReplayUnit> = {}): ReplayUnit {
+  const team = overrides.team ?? 'attacker'
   return {
     id: 'unit',
     type: 'marine',
-    team: 'attacker',
+    team,
     hp: 10,
     maxHp: 10,
     size: 'S',
@@ -33,6 +36,7 @@ function unit(overrides: Partial<ReplayUnit> = {}): ReplayUnit {
     stealth: false,
     flash: 0,
     ...overrides,
+    visual: overrides.visual ?? createReplayUnitVisualState(team),
   }
 }
 
@@ -137,6 +141,34 @@ describe('battle replay sprites', () => {
       exemptionCount: 1,
       aliasCount: 0,
     })
+  })
+
+  it('validates configured animation frame ranges', () => {
+    const valid = {
+      kind: 'atlas' as const,
+      path: '/sprites/test.png',
+      sourceWidth: 64,
+      sourceHeight: 64,
+      atlasFrameCount: 32,
+      clips: {
+        walk: {
+          startFrame: 0,
+          frameCount: 4,
+          fps: 8,
+        },
+      },
+    }
+    expect(getReplayVisualClipConfigIssue(valid)).toBeNull()
+    expect(getReplayVisualClipConfigIssue({
+      ...valid,
+      atlasFrameCount: 31,
+    })).toBe('walk exceeds atlasFrameCount')
+    expect(getReplayVisualClipConfigIssue({
+      ...valid,
+      sourceWidth: -64,
+    })).toBe(
+      'animated atlas requires frame dimensions and atlasFrameCount',
+    )
   })
 
   it('uses movement direction before stationary team defaults', () => {

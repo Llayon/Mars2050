@@ -3,6 +3,8 @@ import { FIELD_HEIGHT, FIELD_WIDTH } from '@/domains/combat/combat.utils'
 import type { Obstacle } from '@/domains/combat/combat.types'
 import { ReplayCrowdRenderWorkspace } from './battle-replay-density-workspace'
 import type { PixiReplayScene } from './battle-replay-pixi-scene-types'
+import { createPixiUnitOptionalPool } from './battle-replay-pixi-unit-pool'
+import type { ReplaySceneProfile } from './battle-replay-profile'
 
 export function createPixiReplayScene(root: Container, obstacles: Obstacle[]): PixiReplayScene {
   const fieldLayer = new Container()
@@ -12,8 +14,19 @@ export function createPixiReplayScene(root: Container, obstacles: Obstacle[]): P
   const unitLayer = new Container()
   const targetLayer = new Container()
   const textLayer = new Container()
+  const unitPoolLayer = new Container()
+  unitPoolLayer.visible = false
   unitLayer.sortableChildren = true
-  root.addChild(fieldLayer, hazardLayer, clusterLayer, projectileLayer, unitLayer, targetLayer, textLayer)
+  root.addChild(
+    fieldLayer,
+    hazardLayer,
+    clusterLayer,
+    projectileLayer,
+    unitLayer,
+    targetLayer,
+    textLayer,
+    unitPoolLayer,
+  )
   drawStaticBattlefield(fieldLayer, obstacles)
 
   return {
@@ -26,6 +39,7 @@ export function createPixiReplayScene(root: Container, obstacles: Obstacle[]): P
     unitLayer,
     targetLayer,
     textLayer,
+    unitPoolLayer,
     hazards: [],
     clusters: new Map(),
     clusterDisplays: [],
@@ -34,6 +48,7 @@ export function createPixiReplayScene(root: Container, obstacles: Obstacle[]): P
     texts: [],
     units: new Map(),
     unitDisplays: [],
+    unitOptionalPool: createPixiUnitOptionalPool(unitPoolLayer),
     crowdWorkspace: new ReplayCrowdRenderWorkspace(),
     selectedTexts: [],
     floatingTextBuckets: new Set(),
@@ -70,6 +85,29 @@ export function getSceneText(pool: Text[], layer: Container, index: number): Tex
 export function hideSceneTexts(pool: Text[], usedCount: number): void {
   for (let index = usedCount; index < pool.length; index++) {
     pool[index].visible = false
+  }
+}
+
+export function getPixiReplaySceneProfile(
+  scene: PixiReplayScene,
+): ReplaySceneProfile {
+  let visibleUnitContainers = 0
+  let activeUnitChildren = 0
+  for (let index = 0; index < scene.unitDisplays.length; index++) {
+    const display = scene.unitDisplays[index]
+    if (!display.layer.visible) continue
+    visibleUnitContainers++
+    activeUnitChildren += display.layer.children.length
+  }
+  const pool = scene.unitOptionalPool
+  return {
+    unitContainers: scene.unitDisplays.length,
+    visibleUnitContainers,
+    activeUnitChildren,
+    activeOptionalGraphics: pool.activeGraphics,
+    activeOptionalTexts: pool.activeTexts,
+    pooledGraphics: pool.graphics.length,
+    pooledTexts: pool.texts.length,
   }
 }
 

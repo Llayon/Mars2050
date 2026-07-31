@@ -1,6 +1,11 @@
-import { Container, Graphics, Sprite, Text, Texture } from 'pixi.js'
+import { Container, Sprite, Texture } from 'pixi.js'
 import type { PixiUnitDisplay } from './battle-replay-pixi-scene-types'
 import { createPixiUnitRenderState } from './battle-replay-pixi-unit-state'
+import {
+  releasePixiUnitGraphic,
+  releasePixiUnitText,
+  type PixiUnitOptionalPool,
+} from './battle-replay-pixi-unit-pool'
 
 export function createPixiUnitDisplay(): PixiUnitDisplay {
   const layer = new Container()
@@ -9,36 +14,46 @@ export function createPixiUnitDisplay(): PixiUnitDisplay {
   const display: PixiUnitDisplay = {
     renderFrame: 0,
     layer,
-    flash: new Graphics(),
-    fallback: new Graphics(),
+    flash: null,
+    fallback: null,
     sprite: new Sprite(Texture.EMPTY),
-    label: createUnitText('', '#ffffff', 12, true),
-    emp: createUnitText('', '#67e8f9', 10, true),
-    air: createUnitText('', '#bae6fd', 10, true),
+    label: null,
+    emp: null,
+    air: null,
     hpBackground,
     hpFill,
-    hitbox: new Graphics(),
-    velocity: new Graphics(),
+    hitbox: null,
+    velocity: null,
     state: createPixiUnitRenderState(),
   }
   display.sprite.anchor.set(0.5)
-  display.flash.visible = false
-  display.hitbox.visible = false
-  display.velocity.visible = false
-  display.label.position.set(0, 4)
   layer.addChild(
-    display.flash,
-    display.fallback,
     display.sprite,
-    display.label,
-    display.emp,
-    display.air,
     display.hpBackground,
     display.hpFill,
-    display.hitbox,
-    display.velocity,
   )
   return display
+}
+
+export function releasePixiUnitDisplayOptionals(
+  display: PixiUnitDisplay,
+  pool: PixiUnitOptionalPool,
+): void {
+  if (display.flash) releasePixiUnitGraphic(pool, display.flash)
+  if (display.fallback) releasePixiUnitGraphic(pool, display.fallback)
+  if (display.hitbox) releasePixiUnitGraphic(pool, display.hitbox)
+  if (display.velocity) releasePixiUnitGraphic(pool, display.velocity)
+  if (display.label) releasePixiUnitText(pool, display.label)
+  if (display.emp) releasePixiUnitText(pool, display.emp)
+  if (display.air) releasePixiUnitText(pool, display.air)
+  display.flash = null
+  display.fallback = null
+  display.hitbox = null
+  display.velocity = null
+  display.label = null
+  display.emp = null
+  display.air = null
+  resetOptionalState(display)
 }
 
 function createHpSprite(tint: number): Sprite {
@@ -51,22 +66,18 @@ function createHpSprite(tint: number): Sprite {
   return sprite
 }
 
-function createUnitText(
-  text: string,
-  color: string,
-  size: number,
-  bold = false,
-): Text {
-  const label = new Text({
-    text,
-    style: {
-      fill: color,
-      fontSize: size,
-      fontWeight: bold ? '700' : '400',
-      stroke: { color: '#0f172a', width: 3 },
-    },
-  })
-  label.anchor.set(0.5)
-  label.visible = false
-  return label
+function resetOptionalState(display: PixiUnitDisplay): void {
+  display.state.fallback.hasGeometry = false
+  display.state.flash.hasGeometry = false
+  display.state.flash.visible = false
+  display.state.flash.alpha = -1
+  display.state.hitbox.hasGeometry = false
+  display.state.hitbox.visible = false
+  display.state.velocity.hasGeometry = false
+  display.state.velocity.visible = false
+  display.state.status.labelVisible = false
+  display.state.status.labelType = ''
+  display.state.status.empVisible = false
+  display.state.status.airVisible = false
+  display.state.status.radius = -1
 }

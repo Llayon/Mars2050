@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-07-31",
+  "renderer": "pixi",
+  "browser": "Chromium 149 headless",
+  "server": "Next.js development server",
+  "notes": [
+    "The capture uses the hidden replay profiler after deterministic visual state and sparse optional pooling.",
+    "Timing samples are host-sensitive and are recorded as diagnostics, not as a phone FPS claim.",
+    "The prior retained capture did not record renderSubmitMs, so this artifact does not claim a timing percentage against it."
+  ],
+  "profiles": {
+    "desktop-zerg": {
+      "viewport": "1440x1100",
+      "rosterUnits": 605,
+      "visibleUnitContainers": 365,
+      "activeUnitChildren": 1136,
+      "activeOptionalGraphics": 41,
+      "pooledGraphics": 0,
+      "sampleCount": 128,
+      "unitSyncMs": { "p50": 1.1, "p95": 2.4 },
+      "renderSubmitMs": { "p50": 5.2, "p95": 9.1 },
+      "totalCpuMs": { "p50": 7.6, "p95": 13.7 }
+    },
+    "mobile-zerg": {
+      "viewport": "390x844",
+      "rosterUnits": 605,
+      "visibleUnitContainers": 155,
+      "activeUnitChildren": 483,
+      "activeOptionalGraphics": 18,
+      "pooledGraphics": 5,
+      "sampleCount": 135,
+      "renderBudget": { "maxFps": 30, "clusterUnitStride": 3 },
+      "unitSyncMs": { "p50": 0.8, "p95": 1.7 },
+      "renderSubmitMs": { "p50": 3.0, "p95": 6.4 },
+      "totalCpuMs": { "p50": 5.1, "p95": 10.4 }
+    }
+  },
+  "structuralGate": {
+    "ordinaryUnitPermanentChildren": 3,
+    "previousPermanentChildren": 10,
+    "reductionPercent": 70,
+    "desktopZergExpectedChildren": 1808,
+    "desktopZergObservedChildren": 1808,
+    "status": "passed"
+  }
+}

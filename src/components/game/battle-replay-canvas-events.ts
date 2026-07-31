@@ -3,6 +3,11 @@ import { FIELD_HEIGHT, FIELD_WIDTH } from '@/domains/combat/combat.utils'
 import type { BattleAction, SimUnit, UnitRow, UnitTypeKey } from '@/domains/combat/combat.types'
 import { getReplayActionColor, getReplayActionLabel } from './battle-replay-labels'
 import type { ReplayTeam, ReplayUnit } from './battle-replay-canvas-types'
+import {
+  createReplayUnitVisualState,
+  markReplayUnitAttack,
+  markReplayUnitDeath,
+} from './battle-replay-visual-state'
 
 type SpawnText = (text: string, x: number, y: number, color: string) => void
 type SpawnProjectile = (x1: number, y1: number, x2: number, y2: number, color: string) => void
@@ -35,10 +40,14 @@ export function createReplayUnit(unit: SimUnit | UnitRow, team: ReplayTeam, isSi
     stealth: sim?.movementStealthActive ?? false,
     flash: 0,
     deathAgeMs: sim?.isDead ? 0 : undefined,
+    visual: createReplayUnitVisualState(team, sim?.isDead ?? false),
   }
 }
 
-export function createSpawnedUnit(action: BattleAction): ReplayUnit {
+export function createSpawnedUnit(
+  action: BattleAction,
+  replayTimeMs: number,
+): ReplayUnit {
   const type = action.spawnType ?? 'marine'
   const config = UNIT_TYPES[type as UnitTypeKey]?.baseStats
   const x = action.toX ?? FIELD_WIDTH / 2
@@ -61,6 +70,12 @@ export function createSpawnedUnit(action: BattleAction): ReplayUnit {
     stealth: false,
     flash: 1,
     deathAgeMs: undefined,
+    visual: {
+      ...createReplayUnitVisualState(
+        action.spawnTeam === 'defender' ? 'defender' : 'attacker',
+      ),
+      clipStartedAtMs: replayTimeMs,
+    },
   }
 }
 
@@ -101,33 +116,54 @@ export function handleAttackAction(
   target: ReplayUnit | undefined,
   spawnText: SpawnText,
   spawnProjectile: SpawnProjectile,
+  replayTimeMs: number,
 ) {
   if (!source || !target) return
+  markReplayUnitAttack(source, target.tX, target.tY, replayTimeMs)
   const color = action.type === 'heal' ? '#4ade80' : action.isShieldHit ? '#60a5fa' : '#f59e0b'
   spawnProjectile(source.tX, source.tY, target.tX, target.tY, color)
   source.flash = 1
   if (action.damage === undefined) return
-  applyHpDelta(target, action.type === 'heal' ? action.damage : -action.damage)
+  applyHpDelta(
+    target,
+    action.type === 'heal' ? action.damage : -action.damage,
+    replayTimeMs,
+  )
   spawnText(action.type === 'heal' ? `+${action.damage}` : `-${action.damage}`, target.tX, target.tY, color)
 }
 
-export function handleDamageAction(action: BattleAction, target: ReplayUnit | undefined, spawnText: SpawnText) {
+export function handleDamageAction(
+  action: BattleAction,
+  target: ReplayUnit | undefined,
+  spawnText: SpawnText,
+  replayTimeMs: number,
+) {
   if (!target || action.damage === undefined) return
-  applyHpDelta(target, -action.damage)
+  applyHpDelta(target, -action.damage, replayTimeMs)
   spawnText(action.type === 'damage_share' ? `РАЗДЕЛ -${action.damage}` : `-${action.damage}`, target.tX, target.tY, '#f59e0b')
 }
 
-export function handleLifestealAction(action: BattleAction, target: ReplayUnit | undefined, spawnText: SpawnText) {
+export function handleLifestealAction(
+  action: BattleAction,
+  target: ReplayUnit | undefined,
+  spawnText: SpawnText,
+  replayTimeMs: number,
+) {
   if (!target || action.damage === undefined) return
-  applyHpDelta(target, action.damage)
+  applyHpDelta(target, action.damage, replayTimeMs)
   spawnText(`+${action.damage}`, target.tX, target.tY, '#4ade80')
 }
 
-export function applyHpDelta(unit: ReplayUnit, delta: number) {
+export function applyHpDelta(
+  unit: ReplayUnit,
+  delta: number,
+  replayTimeMs: number,
+) {
   unit.hp = Math.max(0, Math.min(unit.maxHp, unit.hp + delta))
   if (unit.hp <= 0) {
     unit.isDead = true
     unit.deathAgeMs ??= 0
+    markReplayUnitDeath(unit, replayTimeMs)
   }
 }
 

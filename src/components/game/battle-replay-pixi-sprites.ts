@@ -1,20 +1,19 @@
 import { Rectangle, Sprite, Texture } from 'pixi.js'
 import type { ReplayUnit } from './battle-replay-canvas-types'
 import type { ReplayCrowdRenderMode, ReplayCrowdUnitView } from './battle-replay-density'
-import { getReplaySpriteDirection, resolveReplaySprite, type ReplaySpriteFrame } from './battle-replay-sprites'
+import { resolveReplaySprite, type ReplaySpriteFrame } from './battle-replay-sprites'
 import { UNIT_VISUALS } from './battle-replay-visuals'
 import type { ReplayRenderCounters } from './battle-replay-profile'
+import { resolveReplayUnitVisualState } from './battle-replay-visual-state'
+import { hasReplayVisualClips } from './battle-replay-visual-clips'
 
 export interface PixiReplaySpriteState {
   type: string
-  team: ReplayUnit['team'] | null
   direction: string
+  clip: string
+  animationFrame: number
   frame: ReplaySpriteFrame | null
   texture: Texture | null
-  sX: number
-  sY: number
-  tX: number
-  tY: number
   radius: number
   mode: ReplayCrowdRenderMode | null
 }
@@ -22,14 +21,11 @@ export interface PixiReplaySpriteState {
 export function createPixiReplaySpriteState(): PixiReplaySpriteState {
   return {
     type: '',
-    team: null,
     direction: '',
+    clip: '',
+    animationFrame: -1,
     frame: null,
     texture: null,
-    sX: Number.NaN,
-    sY: Number.NaN,
-    tX: Number.NaN,
-    tY: Number.NaN,
     radius: -1,
     mode: null,
   }
@@ -40,34 +36,48 @@ export function syncPixiReplaySprite(
   unit: ReplayUnit,
   view: ReplayCrowdUnitView,
   state: PixiReplaySpriteState,
+  replayTimeMs: number,
   counters?: ReplayRenderCounters,
 ): boolean {
-  const movementChanged =
-    state.sX !== unit.sX ||
-    state.sY !== unit.sY ||
-    state.tX !== unit.tX ||
-    state.tY !== unit.tY ||
-    state.team !== unit.team
-  const direction = movementChanged
-    ? getReplaySpriteDirection(unit)
-    : state.direction
+  const animated = hasReplayVisualClips(unit.type)
+  const visualState = animated
+    ? resolveReplayUnitVisualState(unit, replayTimeMs)
+    : null
+  const direction = visualState?.direction ?? unit.visual.facing
+  const clip = visualState?.clip ?? 'idle'
   let frame = state.frame
+  const frameNeedsResolution =
+    state.type !== unit.type ||
+    state.direction !== direction ||
+    animated
+  const resolvedFrame = frameNeedsResolution
+    ? resolveReplaySprite(
+        unit.type,
+        direction,
+        clip,
+        visualState?.elapsedMs ?? 0,
+      )
+    : frame
   let changed = false
-  if (state.type !== unit.type || state.direction !== direction) {
-    frame = resolveReplaySprite(unit.type, direction)
+  if (
+    state.type !== unit.type ||
+    state.direction !== direction ||
+    frame !== resolvedFrame
+  ) {
+    frame = resolvedFrame
+    const animationChanged =
+      state.frame?.clip !== frame?.clip ||
+      state.animationFrame !== (frame?.animationFrame ?? -1)
     state.type = unit.type
     state.direction = direction
+    state.clip = clip
+    state.animationFrame = frame?.animationFrame ?? -1
     state.frame = frame
     state.texture = frame ? getReplayTexture(frame) : null
     changed = true
+    if (animationChanged && counters) counters.animationFrameChanges++
   }
-  if (movementChanged) {
-    state.team = unit.team
-    state.sX = unit.sX
-    state.sY = unit.sY
-    state.tX = unit.tX
-    state.tY = unit.tY
-  }
+  state.clip = clip
   if (!frame) {
     if (sprite.visible) {
       sprite.visible = false

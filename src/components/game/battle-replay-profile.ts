@@ -1,5 +1,11 @@
 import type { ReplayRenderBudget } from './battle-replay-quality'
 import {
+  createReplayRenderCounters,
+  createReplaySceneProfile,
+  type ReplayRenderProfileSnapshot,
+  type ReplaySceneProfile,
+} from './battle-replay-profile-types'
+import {
   addCounters,
   buildTimingStats,
   copyCounters,
@@ -9,53 +15,21 @@ import {
   resetFrameTimings,
   resetReplayRenderCounters,
   type ReplayProfileTiming,
-  type ReplayTimingStats,
 } from './battle-replay-profile-stats'
 
 export const REPLAY_PROFILE_REQUEST_EVENT =
   'mars2050:replay-profile-request'
 export const REPLAY_PROFILE_READY_EVENT =
   'mars2050:replay-profile-ready'
+export { createReplayRenderCounters } from './battle-replay-profile-types'
+export type {
+  ReplayRenderCounters,
+  ReplayRenderProfileSnapshot,
+  ReplaySceneProfile,
+} from './battle-replay-profile-types'
 
 const DEFAULT_WARMUP_FRAMES = 30
 const DEFAULT_SAMPLE_CAPACITY = 600
-export interface ReplayRenderCounters {
-  visibleUnitUpdates: number
-  positionChanges: number
-  depthChanges: number
-  spriteChanges: number
-  fallbackRebuilds: number
-  hpRebuilds: number
-  flashRebuilds: number
-  hitboxRebuilds: number
-  velocityRebuilds: number
-  statusChanges: number
-}
-
-export interface ReplayRenderProfileSnapshot {
-  version: 1
-  renderer: 'pixi'
-  environment: {
-    initialUnitCount: number
-    latestUnitCount: number
-    peakUnitCount: number
-    viewportWidth: number
-    viewportHeight: number
-    devicePixelRatio: number
-    userAgent: string
-  }
-  renderBudget: ReplayRenderBudget
-  sampling: {
-    warmupFrames: number
-    capacity: number
-    sampleCount: number
-  }
-  timings: Record<ReplayProfileTiming, ReplayTimingStats>
-  longFrameCount: number
-  droppedFrameEstimate: number
-  counters: ReplayRenderCounters
-  lastFrameCounters: ReplayRenderCounters
-}
 
 interface ReplayProfilerOptions {
   unitCount: number
@@ -79,6 +53,7 @@ export class ReplayRenderProfiler {
   private readonly frameTimings = createFrameTimings()
   private readonly counters = createReplayRenderCounters()
   private readonly lastFrameCounters = createReplayRenderCounters()
+  private scene = createReplaySceneProfile()
   private sampleCount = 0
   private sampleCursor = 0
   private completedFrames = 0
@@ -125,6 +100,10 @@ export class ReplayRenderProfiler {
     this.environment.latestUnitCount = unitCount
     this.environment.peakUnitCount =
       Math.max(this.environment.peakUnitCount, unitCount)
+  }
+
+  setSceneProfile(scene: ReplaySceneProfile): void {
+    this.scene = { ...scene }
   }
 
   recordRuntime(duration: number): void {
@@ -176,6 +155,7 @@ export class ReplayRenderProfiler {
       droppedFrameEstimate: this.droppedFrameEstimate,
       counters: { ...this.counters },
       lastFrameCounters: { ...this.lastFrameCounters },
+      scene: { ...this.scene },
     }
   }
 
@@ -215,20 +195,5 @@ export function installReplayProfileExport(
   return () => {
     canvas.removeEventListener(REPLAY_PROFILE_REQUEST_EVENT, handleRequest)
     delete canvas.dataset.replayProfileJson
-  }
-}
-
-export function createReplayRenderCounters(): ReplayRenderCounters {
-  return {
-    visibleUnitUpdates: 0,
-    positionChanges: 0,
-    depthChanges: 0,
-    spriteChanges: 0,
-    fallbackRebuilds: 0,
-    hpRebuilds: 0,
-    flashRebuilds: 0,
-    hitboxRebuilds: 0,
-    velocityRebuilds: 0,
-    statusChanges: 0,
   }
 }

@@ -1,13 +1,5 @@
 import type { UnitTypeKey } from '@/domains/combat/combat.types'
 
-export type UnitVisualAnimationKey = 'walk'
-
-export interface UnitVisualAnimationConfig {
-  path: string
-  frameCount: number
-  fps?: number
-}
-
 export interface UnitVisualConfig {
   scale?: number
   sourceCanvas?: number
@@ -21,7 +13,6 @@ export interface UnitVisualConfig {
   locomotion?: 'wheels' | 'tracks' | 'legs' | 'hover'
   recoilPx?: number
   trailColor?: number
-  animations?: Partial<Record<UnitVisualAnimationKey, UnitVisualAnimationConfig>>
 }
 
 export const UNIT_VISUALS: Partial<Record<UnitTypeKey, UnitVisualConfig>> = {

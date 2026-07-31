@@ -2,12 +2,14 @@
 
 ## Goal
 
-Remove per-frame reconstruction of unit graphics from the Pixi replay path.
-Keep simulation data, replay timing, Crowd LOD, seek behavior, interpolated
-positions, and exact `zIndex = interpolatedY` ordering unchanged.
+Remove per-frame reconstruction and permanent optional primitives from the
+Pixi replay path. Keep simulation data, Crowd LOD, seek behavior,
+interpolated positions, and exact `zIndex = interpolatedY` ordering
+unchanged.
 
-This slice does not change combat ECS ticks, replay actions, movement,
-targeting, damage, winner resolution, or the Canvas fallback.
+This slice does not change combat ECS ticks, movement, targeting, damage, or
+winner resolution. Replay actions now also reconstruct a deterministic visual
+timeline shared by Pixi and the Canvas fallback.
 
 ## Hidden Profiler
 
@@ -21,7 +23,9 @@ buffers. It records:
   and total ticker CPU time;
 - frame intervals and estimated delayed frames;
 - position, depth, sprite, HP, fallback, flash, hitbox, velocity, and status
-  update counters.
+  update counters;
+- animation frame changes and the latest sparse scene profile: visible unit
+  containers, active child count, active optional objects, and pool capacity.
 
 To export a snapshot without exposing debug UI:
 
@@ -40,27 +44,57 @@ does not measure GPU completion or browser compositing.
 
 ## Retained Unit Contract
 
-Each unit owns one persistent container and render-state cache:
+Each unit owns one persistent container and render-state cache. A regular
+sprite-backed unit has exactly three permanent renderables:
+
+- one primary sprite whose texture represents direction and animation frame;
+- one HP background sprite;
+- one HP fill sprite.
+
+The retained behavior is:
 
 - movement updates the container position instead of every child coordinate;
 - depth remains the exact interpolated Y value;
-- sprite direction and texture are resolved only when movement endpoints,
-  team, or type change;
-- fallback, flash, hitbox, and velocity geometry rebuild only when their
-  signatures change;
+- fallback, flash, status text, hitbox, and velocity objects are acquired
+  lazily from a scene-owned pool and detached when inactive;
 - HP background and fill use persistent white sprites; HP changes update tint,
   position, or width;
-- labels and status visibility update independently;
 - hidden Crowd LOD units retain their display objects for reuse.
 
 Hazards, projectiles, clusters, and floating text remain transient render
 systems because their counts and lifetimes are small.
 
+## Deterministic Animation Contract
+
+`ReplayFrameState.replayTimeMs` is the only animation clock. Unit visual state
+tracks facing, movement continuity, attack start, and death start. The
+renderer resolves clips in this order:
+
+1. `death`
+2. `attack`
+3. `walk`
+4. `idle`
+
+Pixi does not use an autonomous `AnimatedSprite` ticker. Pausing freezes the
+resolved frame, while seek and rewind rebuild it from replay actions. A
+stationary attacker faces the target recorded by the attack action.
+
+Visual registry entries may declare a single horizontal atlas with optional
+`idle`, `walk`, `attack`, and `death` clip ranges. Each range declares start
+frame, frames per direction, FPS, loop behavior, and direction stride. The
+asset validator rejects invalid dimensions or ranges outside
+`atlasFrameCount`.
+
+Current directional PNG and SVG assets remain one-frame `idle` fallbacks:
+missing `walk` or `attack` clips retain the directional sprite and existing
+VFX, while a missing `death` clip retains corpse fading.
+
 ## Measurements
 
-The detailed capture is stored in
+The retained-renderer baseline capture is stored in
 [`combat-replay-retained-performance.json`](./combat-replay-retained-performance.json).
-The main same-policy `zerg_rush` comparison was:
+It predates sparse optional pooling. The main same-policy `zerg_rush`
+comparison was:
 
 | Metric | Before | Retained | Change |
 | --- | ---: | ---: | ---: |
@@ -79,19 +113,36 @@ percentiles for the complete frame include Pixi submission, Next.js
 development work, and host scheduling. They are not claims about a specific
 phone's frame rate.
 
+The sparse slice has a deterministic structural gate: 605 ordinary visible
+units use 1,815 permanent child renderables instead of 6,050. A new timing
+claim must come from the same profile environment before and after the slice;
+no percentage is inferred from node count alone.
+
+The post-slice diagnostic capture is stored in
+[`combat-replay-sparse-performance.json`](./combat-replay-sparse-performance.json).
+An early dense desktop frame had 599 visible units with 1,797 core children
+plus 11 active flash graphics, exactly 1,808 children. The longer timing
+capture ended later in the fight: desktop had 365 visible units and 1,136
+children; constrained mobile had 155 visible units and 483 children.
+
 ## Verification
 
-- Unit tests cover stable geometry, container-only movement, isolated HP
-  updates, and retained debug overlays.
+- Unit tests cover the three-child regular unit, optional object reuse,
+  stable geometry, isolated HP updates, and retained debug overlays.
+- Visual tests cover clip priority, stationary attack facing, atlas timing,
+  fallback behavior, and atlas range validation.
+- Runtime tests cover replay-time and visual-state reconstruction through
+  seek and rewind.
 - Profiler tests cover warm-up exclusion, bounded samples, JSON versioning,
-  and explicit query activation.
+  scene graph metrics, and explicit query activation.
 - Pixi E2E covers desktop/mobile rendering, overlays, seek/rewind, dense LOD,
   direct sprite assets, hidden profile export, and zero rebuilds while paused.
 - Production smoke verifies that the profile request has no effect without
   the query flag.
 
-## Next Decision
+## Next Step
 
-The remaining dense-fight cost is primarily Pixi render submission and exact
-Y sorting, not unit geometry construction. Depth quantization or tick-level
-sorting would change visual ordering and remains intentionally out of scope.
+Capture the same desktop and constrained-mobile profile after sparse pooling
+and compare `renderSubmitMs`. The next content slice is an animated marine
+atlas pilot; the runtime and fallback contract no longer need renderer
+changes for that rollout. Exact Y ordering remains intentionally unchanged.

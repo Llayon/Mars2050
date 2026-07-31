@@ -41,7 +41,13 @@ export function drawReplay(
   unitList.forEach(unit => {
     const view = unitViews.get(unit.id)
     if (view && shouldRenderReplayUnit(unit, view, renderBudget)) {
-      drawUnit(ctx, unit, view, state.overlays)
+      drawUnit(
+        ctx,
+        unit,
+        view,
+        state.overlays,
+        state.replayTimeMs,
+      )
     }
   })
   if (state.overlays.targets) {
@@ -76,7 +82,13 @@ function drawBattlefield(ctx: CanvasRenderingContext2D, obstacles: Obstacle[], h
   })
 }
 
-function drawUnit(ctx: CanvasRenderingContext2D, unit: ReplayUnit, view: ReplayCrowdUnitView, overlays: OverlayState) {
+function drawUnit(
+  ctx: CanvasRenderingContext2D,
+  unit: ReplayUnit,
+  view: ReplayCrowdUnitView,
+  overlays: OverlayState,
+  replayTimeMs: number,
+) {
   const { x, y, radius, mode } = view
   const color = unit.team === 'attacker' ? '#3b82f6' : '#ef4444'
   ctx.save()
@@ -84,7 +96,12 @@ function drawUnit(ctx: CanvasRenderingContext2D, unit: ReplayUnit, view: ReplayC
   ctx.fillStyle = unit.flash > 0 ? '#facc15' : color
   ctx.strokeStyle = unit.isFlying || unit.mobilityMode === 'air' ? '#e0f2fe' : '#0f172a'
   ctx.lineWidth = unit.isFlying || unit.mobilityMode === 'air' ? 3 : 2
-  const spriteDrawn = drawReplayUnitSprite(ctx, unit, view)
+  const spriteDrawn = drawReplayUnitSprite(
+    ctx,
+    unit,
+    view,
+    replayTimeMs,
+  )
   if (!spriteDrawn) {
     if (mode === 'cluster') {
       drawCircle(ctx, x, y, Math.max(3, radius * 0.34), true, false)

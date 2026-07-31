@@ -2,24 +2,34 @@ import type { ReplayUnit } from './battle-replay-canvas-types'
 import type { ReplayCrowdUnitView } from './battle-replay-density'
 import type { ReplayRenderCounters } from './battle-replay-profile'
 import type { PixiUnitDisplay } from './battle-replay-pixi-scene-types'
+import {
+  acquirePixiUnitGraphic,
+  releasePixiUnitGraphic,
+  type PixiUnitOptionalPool,
+} from './battle-replay-pixi-unit-pool'
 
 const FALLBACK_GROUND_STROKE = { width: 2, color: 0x0f172a }
 const FALLBACK_AIR_STROKE = { width: 3, color: 0xe0f2fe }
 const FLASH_STROKE = { width: 2, color: 0xfacc15 }
-const unitLabelCache = new Map<string, string>()
 
 export function syncPixiFallback(
   display: PixiUnitDisplay,
   unit: ReplayUnit,
   view: ReplayCrowdUnitView,
   hasSprite: boolean,
+  pool: PixiUnitOptionalPool,
   counters?: ReplayRenderCounters,
 ): void {
-  if (display.fallback.visible === hasSprite) {
-    display.fallback.visible = !hasSprite
-  }
   const state = display.state.fallback
-  if (hasSprite) return
+  if (hasSprite) {
+    if (display.fallback) {
+      releasePixiUnitGraphic(pool, display.fallback)
+      display.fallback = null
+      state.hasGeometry = false
+    }
+    return
+  }
+  const fallback = display.fallback ?? acquireFallback(display, pool)
 
   const airTarget = unit.isFlying || unit.mobilityMode === 'air'
   const flashing = unit.flash > 0
@@ -34,12 +44,12 @@ export function syncPixiFallback(
     const color = flashing
       ? 0xfacc15
       : unit.team === 'attacker' ? 0x3b82f6 : 0xef4444
-    display.fallback.clear()
+    fallback.clear()
     if (view.mode === 'cluster') {
-      display.fallback.circle(0, 0, Math.max(3, view.radius * 0.34))
+      fallback.circle(0, 0, Math.max(3, view.radius * 0.34))
         .fill(color)
     } else {
-      display.fallback.circle(0, 0, view.radius)
+      fallback.circle(0, 0, view.radius)
         .fill(color)
         .stroke(
           airTarget ? FALLBACK_AIR_STROKE : FALLBACK_GROUND_STROKE,
@@ -60,19 +70,27 @@ export function syncPixiFlash(
   unit: ReplayUnit,
   view: ReplayCrowdUnitView,
   hasSprite: boolean,
+  pool: PixiUnitOptionalPool,
   counters?: ReplayRenderCounters,
 ): void {
   const state = display.state.flash
   const visible = hasSprite && unit.flash > 0
-  if (state.visible !== visible) {
-    state.visible = visible
-    display.flash.visible = visible
+  if (!visible) {
+    if (display.flash) {
+      releasePixiUnitGraphic(pool, display.flash)
+      display.flash = null
+      state.hasGeometry = false
+      state.alpha = -1
+    }
+    state.visible = false
+    return
   }
-  if (!visible) return
+  const flash = display.flash ?? acquireFlash(display, pool)
+  state.visible = true
 
   if (!state.hasGeometry || state.radius !== view.radius) {
-    display.flash.clear()
-    display.flash.circle(0, 0, Math.max(5, view.radius * 1.1))
+    flash.clear()
+    flash.circle(0, 0, Math.max(5, view.radius * 1.1))
       .stroke(FLASH_STROKE)
     state.hasGeometry = true
     state.radius = view.radius
@@ -81,51 +99,8 @@ export function syncPixiFlash(
   const alpha = Math.max(0, Math.min(1, unit.flash))
   if (state.alpha !== alpha) {
     state.alpha = alpha
-    display.flash.alpha = alpha
+    flash.alpha = alpha
   }
-}
-
-export function syncPixiStatusLabels(
-  display: PixiUnitDisplay,
-  unit: ReplayUnit,
-  view: ReplayCrowdUnitView,
-  hasSprite: boolean,
-  counters?: ReplayRenderCounters,
-): void {
-  const state = display.state.status
-  const labelVisible = !hasSprite && view.mode === 'full'
-  const empVisible = view.mode !== 'cluster' && unit.emp
-  const airVisible =
-    view.mode !== 'cluster' && unit.mobilityMode === 'air'
-  let changed = false
-
-  if (state.labelVisible !== labelVisible) {
-    state.labelVisible = labelVisible
-    display.label.visible = labelVisible
-    changed = true
-  }
-  if (labelVisible && state.labelType !== unit.type) {
-    state.labelType = unit.type
-    display.label.text = unitLabel(unit.type)
-    changed = true
-  }
-  if (state.empVisible !== empVisible) {
-    state.empVisible = empVisible
-    display.emp.visible = empVisible
-    changed = true
-  }
-  if (state.airVisible !== airVisible) {
-    state.airVisible = airVisible
-    display.air.visible = airVisible
-    changed = true
-  }
-  if (state.radius !== view.radius) {
-    state.radius = view.radius
-    display.emp.position.set(0, -view.radius - 12)
-    display.air.position.set(0, view.radius + 12)
-    changed = true
-  }
-  if (changed && counters) counters.statusChanges++
 }
 
 export function syncPixiHp(
@@ -180,11 +155,25 @@ function shouldShowPriorityHp(unit: ReplayUnit): boolean {
     unit.mobilityMode === 'air'
 }
 
-function unitLabel(type: string): string {
-  const cached = unitLabelCache.get(type)
-  if (cached) return cached
-  const label = type.split('_').map(part => part.charAt(0))
-    .join('').slice(0, 3).toUpperCase()
-  unitLabelCache.set(type, label)
-  return label
+function acquireFallback(
+  display: PixiUnitDisplay,
+  pool: PixiUnitOptionalPool,
+) {
+  const graphic = acquirePixiUnitGraphic(pool)
+  display.layer.addChildAt(
+    graphic,
+    display.layer.getChildIndex(display.sprite),
+  )
+  display.fallback = graphic
+  return graphic
+}
+
+function acquireFlash(
+  display: PixiUnitDisplay,
+  pool: PixiUnitOptionalPool,
+) {
+  const graphic = acquirePixiUnitGraphic(pool)
+  display.layer.addChildAt(graphic, 0)
+  display.flash = graphic
+  return graphic
 }

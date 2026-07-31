@@ -7,14 +7,17 @@ import {
   type ReplayRenderBudget,
 } from './battle-replay-quality'
 import type { ReplayRenderCounters } from './battle-replay-profile'
-import { createPixiUnitDisplay } from './battle-replay-pixi-unit-display'
+import {
+  createPixiUnitDisplay,
+  releasePixiUnitDisplayOptionals,
+} from './battle-replay-pixi-unit-display'
 import {
   syncPixiFallback,
   syncPixiFlash,
   syncPixiHp,
-  syncPixiStatusLabels,
 } from './battle-replay-pixi-unit-primitives'
 import { syncPixiUnitOverlays } from './battle-replay-pixi-unit-overlays'
+import { syncPixiStatusLabels } from './battle-replay-pixi-unit-status'
 
 export function syncPixiReplayUnits(
   scene: PixiReplayScene,
@@ -22,6 +25,7 @@ export function syncPixiReplayUnits(
   unitViews: ReplayCrowdUnitView[],
   overlays: OverlayState,
   renderBudget: ReplayRenderBudget,
+  replayTimeMs: number,
   counters?: ReplayRenderCounters,
 ): void {
   for (let index = 0; index < units.length; index++) {
@@ -31,7 +35,15 @@ export function syncPixiReplayUnits(
     const display = getUnitDisplay(scene, unit.id)
     display.renderFrame = scene.renderFrame
     if (counters) counters.visibleUnitUpdates++
-    updateUnitDisplay(display, unit, view, overlays, counters)
+    updateUnitDisplay(
+      scene,
+      display,
+      unit,
+      view,
+      overlays,
+      replayTimeMs,
+      counters,
+    )
   }
   for (let index = 0; index < scene.unitDisplays.length; index++) {
     const display = scene.unitDisplays[index]
@@ -40,6 +52,10 @@ export function syncPixiReplayUnits(
       display.layer.visible
     ) {
       display.layer.visible = false
+      releasePixiUnitDisplayOptionals(
+        display,
+        scene.unitOptionalPool,
+      )
     }
   }
 }
@@ -55,10 +71,12 @@ function getUnitDisplay(scene: PixiReplayScene, id: string): PixiUnitDisplay {
 }
 
 function updateUnitDisplay(
+  scene: PixiReplayScene,
   display: PixiUnitDisplay,
   unit: ReplayUnit,
   view: ReplayCrowdUnitView,
   overlays: OverlayState,
+  replayTimeMs: number,
   counters?: ReplayRenderCounters,
 ): void {
   if (!display.layer.visible) display.layer.visible = true
@@ -78,11 +96,40 @@ function updateUnitDisplay(
     unit,
     view,
     display.state.sprite,
+    replayTimeMs,
     counters,
   )
-  syncPixiFallback(display, unit, view, hasSprite, counters)
-  syncPixiFlash(display, unit, view, hasSprite, counters)
-  syncPixiStatusLabels(display, unit, view, hasSprite, counters)
+  syncPixiFallback(
+    display,
+    unit,
+    view,
+    hasSprite,
+    scene.unitOptionalPool,
+    counters,
+  )
+  syncPixiFlash(
+    display,
+    unit,
+    view,
+    hasSprite,
+    scene.unitOptionalPool,
+    counters,
+  )
+  syncPixiStatusLabels(
+    display,
+    unit,
+    view,
+    hasSprite,
+    scene.unitOptionalPool,
+    counters,
+  )
   syncPixiHp(display, unit, view, counters)
-  syncPixiUnitOverlays(display, unit, view, overlays, counters)
+  syncPixiUnitOverlays(
+    display,
+    unit,
+    view,
+    overlays,
+    scene.unitOptionalPool,
+    counters,
+  )
 }

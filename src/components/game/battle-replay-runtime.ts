@@ -1,13 +1,8 @@
 import { FIELD_HEIGHT, FIELD_WIDTH } from '@/domains/combat/combat.utils'
-import type { BattleAction, BattleTick } from '@/domains/combat/combat.types'
+import type { BattleAction } from '@/domains/combat/combat.types'
 import { buildReplayRenderUnits } from './battle-replay-state'
 import {
   createReplayUnit,
-  createSpawnedUnit,
-  handleAttackAction,
-  handleDamageAction,
-  handleLifestealAction,
-  handleStatusAction,
   hazardColor,
   hazardLabel,
   updateAged,
@@ -15,12 +10,12 @@ import {
 } from './battle-replay-canvas-events'
 import type { BattleReplayEngineProps, FloatingText, HazardFx, Projectile, ReplayControls } from './battle-replay-canvas-types'
 import { FLOAT_MS, HAZARD_MS, PROJECTILE_MS, TICK_MS } from './battle-replay-canvas-types'
-import { applyReplayMovement } from './battle-replay-movement'
 import {
   clearReplayRuntimeRoster,
   createReplayRuntimeRoster,
   setReplayRuntimeUnit,
 } from './battle-replay-runtime-roster'
+import { createReplayTickProcessor } from './battle-replay-runtime-actions'
 import type { BattleReplayRuntime, ReplayFrameState } from './battle-replay-runtime-state'
 export type { BattleReplayRuntime, ReplayFrameState } from './battle-replay-runtime-state'
 
@@ -42,7 +37,6 @@ export function createBattleReplayRuntime(props: BattleReplayEngineProps): Battl
   const floatingTexts: FloatingText[] = []
   const projectiles: Projectile[] = []
   const hazards: HazardFx[] = []
-  const movedUnitIds = new Set<string>()
   const frameState: ReplayFrameState = {
     units,
     unitList,
@@ -51,7 +45,14 @@ export function createBattleReplayRuntime(props: BattleReplayEngineProps): Battl
     texts: floatingTexts,
     overlays,
     progress: 0,
+    replayTimeMs: 0,
   }
+  const processTick = createReplayTickProcessor({
+    roster,
+    spawnText,
+    spawnProjectile,
+    spawnHazard,
+  })
 
   const controls: ReplayControls = {
     play: () => {
@@ -81,6 +82,7 @@ export function createBattleReplayRuntime(props: BattleReplayEngineProps): Battl
     frameState.overlays = overlays
     frameState.progress =
       renderProgressOverride ?? Math.min(1, tickTime / TICK_MS)
+    frameState.replayTimeMs = getReplayTimeMs(tick, frameState.progress)
     return frameState
   }
 
@@ -142,55 +144,6 @@ export function createBattleReplayRuntime(props: BattleReplayEngineProps): Battl
     onTickChange?.(tick)
   }
 
-  function processTick(battleTick: BattleTick, emitVisuals = true) {
-    const emitText = emitVisuals ? spawnText : ignoreReplayVisual
-    const emitProjectile = emitVisuals ? spawnProjectile : ignoreReplayVisual
-    for (let index = 0; index < unitList.length; index++) {
-      const unit = unitList[index]
-      unit.sX = unit.tX
-      unit.sY = unit.tY
-    }
-    movedUnitIds.clear()
-    for (let actionIndex = 0; actionIndex < battleTick.actions.length; actionIndex++) {
-      const action = battleTick.actions[actionIndex]
-      const source = units[action.unitId]
-      const target = action.targetId ? units[action.targetId] : undefined
-      if (action.type === 'move' || action.type === 'knockback') {
-        if (source) applyReplayMovement(source, action, movedUnitIds)
-        continue
-      }
-      if (action.type === 'attack' || action.type === 'heal') {
-        handleAttackAction(action, source, target, emitText, emitProjectile)
-        continue
-      }
-      if (action.type === 'damage' || action.type === 'damage_share') {
-        handleDamageAction(action, target, emitText)
-        continue
-      }
-      if (action.type === 'lifesteal') {
-        handleLifestealAction(action, target ?? source, emitText)
-        continue
-      }
-      if (action.type === 'die' && source) {
-        source.isDead = true
-        source.hp = 0
-        source.deathAgeMs ??= 0
-        emitText('ВЫВЕДЕН', source.tX, source.tY, '#cbd5e1')
-        continue
-      }
-      if (action.type === 'spawn' && action.targetId) {
-        setReplayRuntimeUnit(roster, createSpawnedUnit(action))
-        emitText('СПАВН', action.toX ?? FIELD_WIDTH / 2, action.toY ?? FIELD_HEIGHT / 2, '#86efac')
-        continue
-      }
-      if (action.type === 'hazard_spawn') {
-        if (emitVisuals) spawnHazard(action)
-        continue
-      }
-      handleStatusAction(action, source, target, emitText, emitProjectile)
-    }
-  }
-
   function seekToTick(nextTick: number) {
     const targetTick = Math.max(0, Math.min(logs.length, Math.round(nextTick)))
     resetInitialUnits()
@@ -198,7 +151,7 @@ export function createBattleReplayRuntime(props: BattleReplayEngineProps): Battl
     tick = 0
     tickTime = 0
     while (tick < targetTick) {
-      processTick(logs[tick], false)
+      processTick(logs[tick], tick * TICK_MS, false)
       tick++
     }
     for (let index = 0; index < unitList.length; index++) {
@@ -219,7 +172,7 @@ export function createBattleReplayRuntime(props: BattleReplayEngineProps): Battl
     tickTime = 0
     renderProgressOverride = null
     if (tick >= logs.length) return
-    processTick(logs[tick])
+    processTick(logs[tick], tick * TICK_MS)
     tick++
     renderProgressOverride = 1
     notifyTickChange()
@@ -233,7 +186,7 @@ export function createBattleReplayRuntime(props: BattleReplayEngineProps): Battl
     tickTime += dt
     while (tickTime >= TICK_MS && tick < logs.length) {
       tickTime -= TICK_MS
-      processTick(logs[tick])
+      processTick(logs[tick], tick * TICK_MS)
       tick++
     }
     notifyTickChange()
@@ -244,6 +197,9 @@ export function createBattleReplayRuntime(props: BattleReplayEngineProps): Battl
   }
 }
 
-const ignoreReplayVisual = () => {}
-
 function nowMs(): number { return typeof performance === 'undefined' ? Date.now() : performance.now() }
+
+function getReplayTimeMs(tick: number, progress: number): number {
+  if (tick === 0) return 0
+  return Math.max(0, (tick - 1 + progress) * TICK_MS)
+}

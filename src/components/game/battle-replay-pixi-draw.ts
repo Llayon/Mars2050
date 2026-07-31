@@ -61,6 +61,7 @@ export function drawPixiReplay(
     crowdPlan.units,
     state.overlays,
     renderBudget,
+    state.replayTimeMs,
     profiler?.frameCounters,
   )
   if (profiler) {

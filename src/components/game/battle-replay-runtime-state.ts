@@ -15,6 +15,7 @@ export interface ReplayFrameState {
   texts: FloatingText[]
   overlays: OverlayState
   progress: number
+  replayTimeMs: number
 }
 
 export interface BattleReplayRuntime {

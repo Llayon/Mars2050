@@ -91,4 +91,27 @@ describe('ReplayRenderProfiler', () => {
     expect(isReplayRenderProfilingEnabled('?replayProfile=0')).toBe(false)
     expect(isReplayRenderProfilingEnabled('')).toBe(false)
   })
+
+  it('exports the latest sparse scene graph profile', () => {
+    const profiler = createProfiler(0)
+    profiler.setSceneProfile({
+      unitContainers: 605,
+      visibleUnitContainers: 605,
+      activeUnitChildren: 1815,
+      activeOptionalGraphics: 0,
+      activeOptionalTexts: 0,
+      pooledGraphics: 24,
+      pooledTexts: 4,
+    })
+
+    expect(profiler.snapshot().scene).toEqual({
+      unitContainers: 605,
+      visibleUnitContainers: 605,
+      activeUnitChildren: 1815,
+      activeOptionalGraphics: 0,
+      activeOptionalTexts: 0,
+      pooledGraphics: 24,
+      pooledTexts: 4,
+    })
+  })
 })

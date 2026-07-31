@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { Container } from 'pixi.js'
+import { Cache, Container, Texture } from 'pixi.js'
 import type {
   OverlayState,
   ReplayUnit,
@@ -8,6 +8,7 @@ import type { ReplayCrowdUnitView } from '@/components/game/battle-replay-densit
 import { createReplayRenderCounters } from '@/components/game/battle-replay-profile'
 import { createPixiReplayScene } from '@/components/game/battle-replay-pixi-scene'
 import { syncPixiReplayUnits } from '@/components/game/battle-replay-pixi-units'
+import { createReplayUnitVisualState } from '@/components/game/battle-replay-visual-state'
 
 const budget = {
   resolution: 1,
@@ -39,6 +40,7 @@ function createUnit(): ReplayUnit {
     emp: false,
     stealth: false,
     flash: 0,
+    visual: createReplayUnitVisualState('attacker'),
   }
 }
 
@@ -58,13 +60,14 @@ describe('retained Pixi replay units', () => {
       [createView()],
       overlays,
       budget,
+      0,
       first,
     )
 
     const display = scene.unitDisplays[0]
     expect(display.layer.position).toMatchObject({ x: 10, y: 100 })
     expect(display.layer.zIndex).toBe(100)
-    expect(display.fallback.position).toMatchObject({ x: 0, y: 0 })
+    expect(display.fallback?.position).toMatchObject({ x: 0, y: 0 })
     expect(first.fallbackRebuilds).toBe(1)
     expect(first.hpRebuilds).toBe(1)
 
@@ -76,6 +79,7 @@ describe('retained Pixi replay units', () => {
       [createView(30, 145)],
       overlays,
       budget,
+      0,
       moved,
     )
 
@@ -98,6 +102,7 @@ describe('retained Pixi replay units', () => {
       [createView()],
       overlays,
       budget,
+      0,
     )
 
     unit.hp = 40
@@ -109,6 +114,7 @@ describe('retained Pixi replay units', () => {
       [createView()],
       overlays,
       budget,
+      0,
       damaged,
     )
     expect(damaged.hpRebuilds).toBe(1)
@@ -124,6 +130,7 @@ describe('retained Pixi replay units', () => {
       [createView()],
       { ...overlays, radius: true, velocity: true },
       budget,
+      0,
       overlayChange,
     )
     expect(overlayChange.hitboxRebuilds).toBe(1)
@@ -137,10 +144,78 @@ describe('retained Pixi replay units', () => {
       [createView()],
       { ...overlays, radius: true, velocity: true },
       budget,
+      0,
       stable,
     )
     expect(stable.hitboxRebuilds).toBe(0)
     expect(stable.velocityRebuilds).toBe(0)
     expect(stable.hpRebuilds).toBe(0)
+  })
+
+  it('keeps only sprite and HP sprites for a regular visual unit', () => {
+    const assetPath = '/sprites/marine/rotations/north.png'
+    Cache.set(assetPath, Texture.WHITE)
+    const scene = createPixiReplayScene(new Container(), [])
+    const unit = {
+      ...createUnit(),
+      type: 'marine',
+    }
+    scene.renderFrame = 1
+    syncPixiReplayUnits(
+      scene,
+      [unit],
+      [createView()],
+      overlays,
+      budget,
+      0,
+    )
+
+    const display = scene.unitDisplays[0]
+    expect(display.layer.children).toHaveLength(3)
+    expect(display.fallback).toBeNull()
+    expect(display.flash).toBeNull()
+    expect(display.label).toBeNull()
+    expect(scene.unitOptionalPool.activeGraphics).toBe(0)
+    expect(scene.unitOptionalPool.activeTexts).toBe(0)
+
+    unit.flash = 1
+    scene.renderFrame = 2
+    syncPixiReplayUnits(
+      scene,
+      [unit],
+      [createView()],
+      overlays,
+      budget,
+      0,
+    )
+    expect(display.layer.children).toHaveLength(4)
+    expect(scene.unitOptionalPool.activeGraphics).toBe(1)
+
+    unit.flash = 0
+    scene.renderFrame = 3
+    syncPixiReplayUnits(
+      scene,
+      [unit],
+      [createView()],
+      overlays,
+      budget,
+      0,
+    )
+    expect(display.layer.children).toHaveLength(3)
+    expect(scene.unitOptionalPool.activeGraphics).toBe(0)
+    expect(scene.unitOptionalPool.graphics).toHaveLength(1)
+
+    unit.flash = 1
+    scene.renderFrame = 4
+    syncPixiReplayUnits(
+      scene,
+      [unit],
+      [createView()],
+      overlays,
+      budget,
+      0,
+    )
+    expect(scene.unitOptionalPool.allocatedGraphics).toBe(1)
+    Cache.remove(assetPath)
   })
 })
