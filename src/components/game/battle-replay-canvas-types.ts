@@ -1,4 +1,5 @@
 import type { BattleTick, Obstacle, SimUnit, UnitRow } from '@/domains/combat/combat.types'
+import type { ReplayRenderProfileSnapshot } from './battle-replay-profile'
 
 export interface ReplayControls {
   play: () => void
@@ -27,6 +28,7 @@ export type BattleReplayEngineProps = {
 export type ReplayAppHandle = {
   canvas: HTMLCanvasElement
   destroy: () => void
+  getPerformanceProfile: () => ReplayRenderProfileSnapshot | null
 }
 
 export type OverlayState = {

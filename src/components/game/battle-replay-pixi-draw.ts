@@ -12,6 +12,7 @@ import type {
 } from './battle-replay-pixi-scene-types'
 import { getSceneGraphic, getSceneText, hideSceneGraphics, hideSceneTexts, setSceneText } from './battle-replay-pixi-scene'
 import { syncPixiReplayUnits } from './battle-replay-pixi-units'
+import type { ReplayRenderProfiler } from './battle-replay-profile'
 
 const OVERLAY_TARGET_LINE = 0xff1f1f
 const EMPTY_PROJECTILES: ReplayFrameState['projectiles'] = []
@@ -36,21 +37,36 @@ export function drawPixiReplay(
   scene: PixiReplayScene,
   state: ReplayFrameState,
   renderBudget: ReplayRenderBudget,
+  profiler?: ReplayRenderProfiler,
 ) {
   scene.renderFrame++
   const progress = ease(state.progress)
+  const crowdStartedAt = profiler?.now() ?? 0
   const crowdPlan = scene.crowdWorkspace.update(state.unitList, progress)
+  if (profiler) {
+    profiler.recordCrowdPlan(profiler.now() - crowdStartedAt)
+  }
 
+  let effectsStartedAt = profiler?.now() ?? 0
   syncHazards(scene, state.hazards)
   syncCrowdClusters(scene, crowdPlan.clusters)
   syncProjectiles(scene, state.projectiles)
+  if (profiler) {
+    profiler.recordEffects(profiler.now() - effectsStartedAt)
+  }
+  const unitsStartedAt = profiler?.now() ?? 0
   syncPixiReplayUnits(
     scene,
     state.unitList,
     crowdPlan.units,
     state.overlays,
     renderBudget,
+    profiler?.frameCounters,
   )
+  if (profiler) {
+    profiler.recordUnitSync(profiler.now() - unitsStartedAt)
+    effectsStartedAt = profiler.now()
+  }
   syncTargetLines(
     scene,
     state.overlays.targets ? state.projectiles : EMPTY_PROJECTILES,
@@ -61,6 +77,9 @@ export function drawPixiReplay(
     scene.selectedTexts,
     scene.floatingTextBuckets,
   ))
+  if (profiler) {
+    profiler.recordEffects(profiler.now() - effectsStartedAt)
+  }
 }
 
 function syncHazards(scene: PixiReplayScene, hazards: ReplayFrameState['hazards']): void {

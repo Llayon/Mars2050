@@ -97,3 +97,7 @@ Per-frame Pixi replay allocation removal is documented in
 `docs/combat-replay-pixi-frame-workspace.md`. It adds persistent roster,
 Crowd LOD, display-visibility, sprite, and text workspaces without changing
 simulation output.
+
+Retained unit geometry and the opt-in browser profiler are documented in
+`docs/combat-replay-retained-units.md`; reproducible baseline/after aggregates
+are stored in `docs/combat-replay-retained-performance.json`.

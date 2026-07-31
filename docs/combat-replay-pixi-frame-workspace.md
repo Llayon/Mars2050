@@ -72,9 +72,9 @@ bucket, or cluster view objects for an unchanged roster/layout.
   checks, including debug vectors, seek/rewind stability, direct sprites, and
   dense `zerg_rush` Crowd LOD.
 
-## Next Measurement
+## Next Slice
 
-Capture a production browser performance trace on a constrained phone after
-deployment. Use it to separate JavaScript/GC time from Pixi graphics rebuild,
-WebGL submission, texture upload, and compositing before selecting another
-render optimization.
+Unit display objects now use retained geometry and hidden browser profiling.
+See
+[`combat-replay-retained-units.md`](./combat-replay-retained-units.md)
+for the runtime contract, measurements, and remaining render bottlenecks.

@@ -1,0 +1,105 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-07-31",
+  "renderer": "pixi",
+  "browser": "Chromium 149 headless",
+  "server": "Next.js development server",
+  "sampling": {
+    "warmupFrames": 30,
+    "capacity": 600,
+    "speed": 1
+  },
+  "notes": [
+    "Desktop before/after profiles use the same viewport and pointer policy.",
+    "The retained mobile profiles use coarse pointer emulation and therefore the real constrained render budget.",
+    "The earlier mobile viewport baseline used a desktop pointer and is included only as a historical reference.",
+    "CPU timings include Pixi render submission but do not wait for GPU completion."
+  ],
+  "profiles": {
+    "desktop-ranged": {
+      "viewport": "1440x1100",
+      "unitCount": 128,
+      "before": {
+        "sampleCount": 20,
+        "unitSyncMs": { "p50": 0.9, "p95": 1.0 },
+        "totalCpuMs": { "p50": 3.3, "p95": 4.1 },
+        "primitiveUpdatesPerVisibleUnit": 5
+      },
+      "retained": {
+        "sampleCount": 49,
+        "unitSyncMs": { "p50": 0.2, "p95": 0.8 },
+        "totalCpuMs": { "p50": 2.0, "p95": 7.6 },
+        "primitiveUpdatesPerVisibleUnit": 0.0105
+      }
+    },
+    "desktop-crowd": {
+      "viewport": "1440x1100",
+      "unitCount": 32,
+      "before": {
+        "sampleCount": 19,
+        "unitSyncMs": { "p50": 0.4, "p95": 0.5 },
+        "totalCpuMs": { "p50": 1.5, "p95": 1.7 },
+        "primitiveUpdatesPerVisibleUnit": 5
+      },
+      "retained": {
+        "sampleCount": 45,
+        "unitSyncMs": { "p50": 0.1, "p95": 0.4 },
+        "totalCpuMs": { "p50": 0.9, "p95": 5.0 },
+        "primitiveUpdatesPerVisibleUnit": 0.0729
+      }
+    },
+    "desktop-zerg": {
+      "viewport": "1440x1100",
+      "unitCount": 605,
+      "before": {
+        "sampleCount": 11,
+        "unitSyncMs": { "p50": 3.8, "p95": 5.4 },
+        "totalCpuMs": { "p50": 14.6, "p95": 17.4 },
+        "primitiveUpdatesPerVisibleUnit": 5
+      },
+      "retained": {
+        "sampleCount": 31,
+        "unitSyncMs": { "p50": 1.1, "p95": 2.4 },
+        "totalCpuMs": { "p50": 7.7, "p95": 15.7 },
+        "primitiveUpdatesPerVisibleUnit": 0.0141
+      }
+    },
+    "mobile-ranged-retained": {
+      "viewport": "390x844",
+      "unitCount": 128,
+      "renderBudget": { "maxFps": 45, "clusterUnitStride": 1 },
+      "sampleCount": 44,
+      "unitSyncMs": { "p50": 0.2, "p95": 0.5 },
+      "totalCpuMs": { "p50": 1.8, "p95": 4.3 },
+      "primitiveUpdatesPerVisibleUnit": 0.008
+    },
+    "mobile-crowd-retained": {
+      "viewport": "390x844",
+      "unitCount": 32,
+      "renderBudget": { "maxFps": 45, "clusterUnitStride": 1 },
+      "sampleCount": 47,
+      "unitSyncMs": { "p50": 0.1, "p95": 0.3 },
+      "totalCpuMs": { "p50": 0.8, "p95": 5.0 },
+      "primitiveUpdatesPerVisibleUnit": 0.0758
+    },
+    "mobile-zerg-retained": {
+      "viewport": "390x844",
+      "unitCount": 605,
+      "renderBudget": { "maxFps": 30, "clusterUnitStride": 3 },
+      "sampleCount": 38,
+      "unitSyncMs": { "p50": 0.8, "p95": 2.0 },
+      "totalCpuMs": { "p50": 4.3, "p95": 9.7 },
+      "primitiveUpdatesPerVisibleUnit": 0.0175
+    },
+    "mobile-viewport-zerg-before": {
+      "comparable": false,
+      "reason": "Desktop pointer did not activate the constrained budget",
+      "viewport": "390x844",
+      "unitCount": 605,
+      "renderBudget": { "maxFps": 45, "clusterUnitStride": 1 },
+      "sampleCount": 11,
+      "unitSyncMs": { "p50": 4.1, "p95": 5.3 },
+      "totalCpuMs": { "p50": 15.1, "p95": 19.6 }
+    }
+  }
+}

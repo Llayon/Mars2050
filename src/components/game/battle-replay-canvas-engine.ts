@@ -46,7 +46,11 @@ export async function startCanvasBattleReplayEngine(props: BattleReplayEnginePro
     cancelAnimationFrame(animationFrame)
     canvas.remove()
   }
-  const app: ReplayAppHandle = { canvas, destroy: cleanupEvents }
+  const app: ReplayAppHandle = {
+    canvas,
+    destroy: cleanupEvents,
+    getPerformanceProfile: () => null,
+  }
   return { app, cleanupEvents, controls: runtime.controls }
 }
 

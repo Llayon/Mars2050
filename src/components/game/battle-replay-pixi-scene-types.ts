@@ -1,6 +1,7 @@
 import type { Container, Graphics, Sprite, Text } from 'pixi.js'
 import type { FloatingText } from './battle-replay-canvas-types'
 import type { ReplayCrowdRenderWorkspace } from './battle-replay-density-workspace'
+import type { PixiUnitRenderState } from './battle-replay-pixi-unit-state'
 
 export interface PixiUnitDisplay {
   renderFrame: number
@@ -11,9 +12,11 @@ export interface PixiUnitDisplay {
   label: Text
   emp: Text
   air: Text
-  hp: Graphics
+  hpBackground: Sprite
+  hpFill: Sprite
   hitbox: Graphics
   velocity: Graphics
+  state: PixiUnitRenderState
 }
 
 export interface PixiClusterDisplay {

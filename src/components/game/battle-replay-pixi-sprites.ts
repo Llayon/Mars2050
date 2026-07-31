@@ -3,23 +3,103 @@ import type { ReplayUnit } from './battle-replay-canvas-types'
 import type { ReplayCrowdRenderMode, ReplayCrowdUnitView } from './battle-replay-density'
 import { getReplaySpriteDirection, resolveReplaySprite, type ReplaySpriteFrame } from './battle-replay-sprites'
 import { UNIT_VISUALS } from './battle-replay-visuals'
+import type { ReplayRenderCounters } from './battle-replay-profile'
+
+export interface PixiReplaySpriteState {
+  type: string
+  team: ReplayUnit['team'] | null
+  direction: string
+  frame: ReplaySpriteFrame | null
+  texture: Texture | null
+  sX: number
+  sY: number
+  tX: number
+  tY: number
+  radius: number
+  mode: ReplayCrowdRenderMode | null
+}
+
+export function createPixiReplaySpriteState(): PixiReplaySpriteState {
+  return {
+    type: '',
+    team: null,
+    direction: '',
+    frame: null,
+    texture: null,
+    sX: Number.NaN,
+    sY: Number.NaN,
+    tX: Number.NaN,
+    tY: Number.NaN,
+    radius: -1,
+    mode: null,
+  }
+}
 
 export function syncPixiReplaySprite(
   sprite: Sprite,
   unit: ReplayUnit,
   view: ReplayCrowdUnitView,
+  state: PixiReplaySpriteState,
+  counters?: ReplayRenderCounters,
 ): boolean {
-  const frame = resolveReplaySprite(unit.type, getReplaySpriteDirection(unit))
-  if (!frame) return false
-  const texture = getReplayTexture(frame)
-  if (!texture) return false
-  const size = getSpriteDrawSize(unit.type, frame.assetType, view.radius, view.mode)
-  sprite.visible = true
-  sprite.texture = texture
-  sprite.x = view.x
-  sprite.y = view.y + getSpriteOffsetY(frame.assetType, view.mode)
-  sprite.width = size
-  sprite.height = size
+  const movementChanged =
+    state.sX !== unit.sX ||
+    state.sY !== unit.sY ||
+    state.tX !== unit.tX ||
+    state.tY !== unit.tY ||
+    state.team !== unit.team
+  const direction = movementChanged
+    ? getReplaySpriteDirection(unit)
+    : state.direction
+  let frame = state.frame
+  let changed = false
+  if (state.type !== unit.type || state.direction !== direction) {
+    frame = resolveReplaySprite(unit.type, direction)
+    state.type = unit.type
+    state.direction = direction
+    state.frame = frame
+    state.texture = frame ? getReplayTexture(frame) : null
+    changed = true
+  }
+  if (movementChanged) {
+    state.team = unit.team
+    state.sX = unit.sX
+    state.sY = unit.sY
+    state.tX = unit.tX
+    state.tY = unit.tY
+  }
+  if (!frame) {
+    if (sprite.visible) {
+      sprite.visible = false
+      changed = true
+    }
+    if (changed && counters) counters.spriteChanges++
+    return false
+  }
+  const texture = state.texture
+  if (!texture) {
+    if (sprite.visible) sprite.visible = false
+    return false
+  }
+  if (sprite.texture !== texture) {
+    sprite.texture = texture
+    changed = true
+  }
+  if (state.radius !== view.radius || state.mode !== view.mode) {
+    const size =
+      getSpriteDrawSize(unit.type, frame.assetType, view.radius, view.mode)
+    sprite.y = getSpriteOffsetY(frame.assetType, view.mode)
+    sprite.width = size
+    sprite.height = size
+    state.radius = view.radius
+    state.mode = view.mode
+    changed = true
+  }
+  if (!sprite.visible) {
+    sprite.visible = true
+    changed = true
+  }
+  if (changed && counters) counters.spriteChanges++
   return true
 }
 

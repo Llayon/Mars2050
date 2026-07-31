@@ -30,7 +30,7 @@ test('production simulator2 default Pixi replay paints after simulation starts',
   await expect(page.getByLabel('Replay renderer')).toHaveValue('pixi')
   expect(network.hasChunk('pixi'), 'first simulator screen should not load Pixi').toBe(false)
 
-  await loadReplayPreset(page, 'ranged_duel')
+  await loadReplayPreset(page, 'tier1_visual_qa')
   await startSelectedSimulation(page)
 
   const canvas = page.locator('canvas').last()
@@ -39,6 +39,12 @@ test('production simulator2 default Pixi replay paints after simulation starts',
   await page.waitForTimeout(900)
   await expectBattleReplayCanvasPainted(canvas)
   await expect(page.getByRole('button', { name: /Пауза|Играть/ })).toBeVisible()
+  await canvas.evaluate(element => {
+    element.dispatchEvent(
+      new CustomEvent('mars2050:replay-profile-request'),
+    )
+  })
+  await expect(canvas).not.toHaveAttribute('data-replay-profile-json')
 
   expect(network.countPathPrefix('/api/')).toBe(0)
   expect(consoleWarnings, 'console warnings').toEqual([])

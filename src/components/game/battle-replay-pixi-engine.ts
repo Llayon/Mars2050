@@ -1,4 +1,4 @@
-import { Application, Assets, Container } from 'pixi.js'
+import { Application, Assets, Container, UPDATE_PRIORITY } from 'pixi.js'
 import { FIELD_HEIGHT, FIELD_WIDTH } from '@/domains/combat/combat.utils'
 import type { BattleReplayEngineProps, ReplayAppHandle } from './battle-replay-canvas-types'
 import { createBattleReplayRuntime } from './battle-replay-runtime'
@@ -7,6 +7,11 @@ import { getBrowserReplayRenderBudget } from './battle-replay-quality'
 import { createPixiReplayScene } from './battle-replay-pixi-scene'
 import { resolveReplaySprite } from './battle-replay-sprites'
 import { SPRITE_DIRS } from './battle-replay-visual-registry'
+import {
+  installReplayProfileExport,
+  isReplayRenderProfilingEnabled,
+  ReplayRenderProfiler,
+} from './battle-replay-profile'
 
 export type { BattleReplayEngineProps, ReplayAppHandle, ReplayControls } from './battle-replay-canvas-types'
 
@@ -38,26 +43,61 @@ export async function startPixiBattleReplayEngine(props: BattleReplayEngineProps
   root.sortableChildren = true
   app.stage.addChild(root)
   const scene = createPixiReplayScene(root, obstacles ?? [])
+  const profiler = isReplayRenderProfilingEnabled()
+    ? new ReplayRenderProfiler({
+        unitCount: initialUnits.length,
+        renderBudget,
+        viewportWidth: window.innerWidth,
+        viewportHeight: window.innerHeight,
+        devicePixelRatio: window.devicePixelRatio || 1,
+        userAgent: window.navigator.userAgent,
+      })
+    : undefined
+  const removeProfileExport = profiler
+    ? installReplayProfileExport(app.canvas, profiler)
+    : undefined
 
   const renderLoop = () => {
-    const frame = runtime.frame(performance.now())
-    drawPixiReplay(scene, frame, renderBudget)
+    const now = performance.now()
+    profiler?.beginFrame(now)
+    const runtimeStartedAt = profiler?.now() ?? 0
+    const frame = runtime.frame(now)
+    if (profiler) {
+      profiler.recordRuntime(profiler.now() - runtimeStartedAt)
+      profiler.setUnitCount(frame.unitList.length)
+    }
+    drawPixiReplay(scene, frame, renderBudget, profiler)
     if (process.env.NODE_ENV !== 'production') {
       app.canvas.dataset.replayTextColors = frame.texts.map(text => text.color).join(',')
       app.canvas.dataset.replayProjectileColors = frame.projectiles
         .map(projectile => projectile.color)
         .join(',')
     }
+    profiler?.finishDraw(profiler.now())
   }
+  const finishProfileFrame = () => profiler?.finishFrame(profiler.now())
   app.ticker.maxFPS = renderBudget.maxFps
   app.ticker.add(renderLoop)
+  if (profiler) {
+    app.ticker.add(
+      finishProfileFrame,
+      undefined,
+      UPDATE_PRIORITY.UTILITY,
+    )
+  }
   renderLoop()
 
   const cleanupEvents = () => {
     app.ticker.remove(renderLoop)
+    if (profiler) app.ticker.remove(finishProfileFrame)
+    removeProfileExport?.()
     try { app.destroy(true, { children: true, texture: false, textureSource: false }) } catch {}
   }
-  const replayApp: ReplayAppHandle = { canvas: app.canvas, destroy: cleanupEvents }
+  const replayApp: ReplayAppHandle = {
+    canvas: app.canvas,
+    destroy: cleanupEvents,
+    getPerformanceProfile: () => profiler?.snapshot() ?? null,
+  }
   return { app: replayApp, cleanupEvents, controls: runtime.controls }
 }
 
