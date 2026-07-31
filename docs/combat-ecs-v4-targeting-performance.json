@@ -1,0 +1,65 @@
+{
+  "date": "2026-07-31",
+  "seed": 24680,
+  "method": "alternating same-process legacy/packed A/B, followed by packed diagnostic runs",
+  "production": [
+    {
+      "preset": "massive_clash",
+      "units": 100,
+      "ticks": 82,
+      "pairs": 10,
+      "legacyMedianMs": 182.1454,
+      "packedMedianMs": 158.3782,
+      "speedupPercent": 13.0485
+    },
+    {
+      "preset": "zerg_rush",
+      "units": 605,
+      "ticks": 205,
+      "pairs": 6,
+      "legacyMedianMs": 3758.8888,
+      "packedMedianMs": 3371.0626,
+      "speedupPercent": 10.3176
+    }
+  ],
+  "profile": [
+    {
+      "preset": "massive_clash",
+      "runs": 3,
+      "medianMs": 159.76,
+      "targetingFrameBuildCount": 82,
+      "targetingFrameEntityCount": 5841,
+      "targetingAcquisitionCount": 2617,
+      "targetingBucketCandidateCount": 18437,
+      "targetingCandidateCount": 15714,
+      "targetingMaxCandidates": 50,
+      "targetingDirtyCandidateCount": 0,
+      "targetingLegacyFallbackCount": 0,
+      "targetingScratchGrowthCount": 1,
+      "targetingFrameBuildMs": 0.9956,
+      "targetingQueryMs": 6.8256,
+      "targetingSelectionMs": 24.8366,
+      "legacySpatialTargetingQueries": 0
+    },
+    {
+      "preset": "zerg_rush",
+      "runs": 3,
+      "medianMs": 3390.78,
+      "targetingFrameBuildCount": 205,
+      "targetingFrameEntityCount": 63259,
+      "targetingAcquisitionCount": 33514,
+      "targetingBucketCandidateCount": 1028952,
+      "targetingCandidateCount": 897166,
+      "targetingMaxCandidates": 353,
+      "targetingDirtyCandidateCount": 0,
+      "targetingLegacyFallbackCount": 0,
+      "targetingScratchGrowthCount": 1,
+      "targetingFrameBuildMs": 8.4155,
+      "targetingQueryMs": 148.7065,
+      "targetingSelectionMs": 936.8761,
+      "legacySpatialTargetingQueries": 0,
+      "remainingOtherSpatialQueries": 595
+    }
+  ],
+  "zergRushReplayFingerprint": "a674e659111b627330cb7486eec9817cd4b8110a5863d4f4f3f7ea7bb3aed629"
+}

@@ -23,10 +23,7 @@ export class EntitySpatialIndex {
   private readonly profile: SpatialQueryProfile = createSpatialQueryProfile()
   private dirty = true
 
-  constructor(
-    private readonly cellSize = TILE_SIZE,
-    private readonly profilingEnabled = true,
-  ) {}
+  constructor(private readonly cellSize = TILE_SIZE, private readonly profilingEnabled = true) {}
   rebuild(world: CombatWorld): void {
     if (this.profilingEnabled) this.profile.rebuildCount++
     this.cells.clear()
@@ -192,8 +189,10 @@ export class EntitySpatialIndex {
 
   getProfile(world?: CombatWorld): SpatialQueryProfile {
     const component = world?.getQueryProfile()
+    const targeting = world?.resources.get('targetingRuntime')?.getProfile()
     return {
       ...this.profile,
+      ...targeting,
       componentQueryCount: component?.queryCount ?? 0,
       componentCandidateCount: component?.candidateCount ?? 0,
       componentResultCount: component?.resultCount ?? 0,

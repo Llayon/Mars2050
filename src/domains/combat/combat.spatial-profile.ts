@@ -19,6 +19,18 @@ export interface SpatialQueryProfile {
   collisionCandidatePairCount: number
   collisionOverlapPairCount: number
   dirtyCellCount: number
+  targetingFrameBuildCount: number
+  targetingFrameEntityCount: number
+  targetingAcquisitionCount: number
+  targetingBucketCandidateCount: number
+  targetingCandidateCount: number
+  targetingMaxCandidates: number
+  targetingDirtyCandidateCount: number
+  targetingLegacyFallbackCount: number
+  targetingScratchGrowthCount: number
+  targetingFrameBuildMs: number
+  targetingQueryMs: number
+  targetingSelectionMs: number
   purposes: Record<string, SpatialPurposeProfile>
 }
 

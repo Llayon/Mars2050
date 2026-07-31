@@ -22,7 +22,11 @@ function cloneRows(rows: UnitRow[]): UnitRow[] {
   return rows.map(row => ({ ...row, upgrade_path: [...(row.upgrade_path ?? [])] }))
 }
 
-function runPreset(presetId: string, runs: number, mode: BenchmarkMode): BenchmarkRow {
+function runPreset(
+  presetId: string,
+  runs: number,
+  mode: BenchmarkMode,
+): BenchmarkRow {
   const preset = getSimulatorPreset(presetId)
   if (!preset) throw new Error(`Missing simulator preset: ${presetId}`)
   simulate(preset.attackers, preset.defenders, mode)
@@ -45,7 +49,11 @@ function runPreset(presetId: string, runs: number, mode: BenchmarkMode): Benchma
   }
 }
 
-function simulate(attackers: UnitRow[], defenders: UnitRow[], mode: BenchmarkMode) {
+function simulate(
+  attackers: UnitRow[],
+  defenders: UnitRow[],
+  mode: BenchmarkMode,
+) {
   return simulateBattle(
     cloneRows(attackers),
     cloneRows(defenders),
@@ -68,6 +76,12 @@ function emptyProfile(): SpatialQueryProfile {
     neighborCandidatePairCount: 0, neighborEdgeCount: 0,
     collisionCandidatePairCount: 0, collisionOverlapPairCount: 0,
     dirtyCellCount: 0,
+    targetingFrameBuildCount: 0, targetingFrameEntityCount: 0,
+    targetingAcquisitionCount: 0, targetingBucketCandidateCount: 0,
+    targetingCandidateCount: 0, targetingMaxCandidates: 0,
+    targetingDirtyCandidateCount: 0, targetingLegacyFallbackCount: 0,
+    targetingScratchGrowthCount: 0, targetingFrameBuildMs: 0,
+    targetingQueryMs: 0, targetingSelectionMs: 0,
   }
 }
 

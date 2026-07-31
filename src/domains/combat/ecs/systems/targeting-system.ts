@@ -3,7 +3,14 @@ import type { HackControlMode } from '../../combat.primitives'
 import type { TargetingProfileConfig } from '../../combat.types'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
-import { canEcsTarget, getEcsMaxActionRange, getEcsTargetScore, getEcsTargetingProfile, getEntityDistance, isEcsTargetVisible } from '../targeting-evaluation'
+import { TargetingRuntime } from '../targeting-runtime'
+import {
+  compactEcsReachableEnemies,
+  selectEcsAggroTarget,
+  selectEcsNearestTarget,
+} from '../targeting-selection'
+import type { TargetingScratch } from '../targeting-scratch'
+import { canEcsTarget, getEcsMaxActionRange, getEcsTargetingProfile, getEntityDistance, isEcsTargetVisible } from '../targeting-evaluation'
 import { isEcsPassiveSupport, selectEcsHealTarget, selectEcsPassiveSupportTarget } from '../support-targeting'
 import { clearEcsMeleeSlot, hasEcsMeleeSlot, setEcsMeleeWaitingTarget, type EcsMeleeEngagementState } from './melee-engagement-system'
 
@@ -13,7 +20,26 @@ const MELEE_ACQUISITION_RADIUS = 240
 const RANGED_ACQUISITION_BUFFER = 120
 const HACK_CONTROL_LOCK_TICKS = 6
 
-export function runTargetingSystem(world: CombatWorld, unitId: EntityId, melee: EcsMeleeEngagementState): EntityId | null {
+export function runTargetingSystem(
+  world: CombatWorld,
+  unitId: EntityId,
+  melee: EcsMeleeEngagementState,
+  targeting = getTargetingRuntime(world),
+): EntityId | null {
+  const startedAt = targeting.startSelection()
+  try {
+    return resolveTarget(world, unitId, melee, targeting)
+  } finally {
+    targeting.finishSelection(startedAt)
+  }
+}
+
+function resolveTarget(
+  world: CombatWorld,
+  unitId: EntityId,
+  melee: EcsMeleeEngagementState,
+  targeting: TargetingRuntime,
+): EntityId | null {
   const mode = getHackMode(world, unitId)
   const weapon = world.stores.weapon.require(unitId)
   const combat = world.stores.combat.require(unitId)
@@ -33,26 +59,32 @@ export function runTargetingSystem(world: CombatWorld, unitId: EntityId, melee: 
       return locked
     }
   }
-  const candidates = getAcquisitionCandidates(world, unitId, mode)
+  const profile = getEcsTargetingProfile(world, unitId)
+  const candidates = getAcquisitionCandidates(
+    world, unitId, mode, targeting, profile,
+  )
   const controlled = selectHackTarget(world, unitId, candidates, melee, mode)
   if (controlled.handled) return controlled.target
-  const enemies = candidates.filter(entityId => isReachableEnemy(world, unitId, entityId))
-  if (enemies.length === 0) {
+  compactEcsReachableEnemies(world, unitId, candidates)
+  if (candidates.length === 0) {
     clearTarget(world, unitId)
-    return selectMovementFallback(world, unitId, melee)
+    return selectMovementFallback(world, unitId, melee, targeting)
   }
-  const profile = getEcsTargetingProfile(world, unitId)
-  let valid = enemies
   if (isMelee(world, unitId)) {
-    valid = enemies.filter(targetId => hasEcsMeleeSlot(world, unitId, targetId, melee))
-    if (valid.length === 0) {
+    const target = selectEcsAggroTarget(
+      world, unitId, candidates, profile,
+      targetId => hasEcsMeleeSlot(world, unitId, targetId, melee),
+    )
+    if (target === null) {
       clearTarget(world, unitId, false)
-      const waiting = selectAggroTarget(world, unitId, enemies, profile)
+      const waiting = selectEcsAggroTarget(world, unitId, candidates, profile)
       if (waiting !== null) setEcsMeleeWaitingTarget(world, unitId, waiting)
       return waiting
     }
+    setTarget(world, unitId, target, profile.targetingCooldownTicks ?? AGGRO_LOCK_TICKS)
+    return target
   }
-  const target = selectAggroTarget(world, unitId, valid, profile)
+  const target = selectEcsAggroTarget(world, unitId, candidates, profile)
   if (target === null) {
     clearTarget(world, unitId)
     return null
@@ -65,17 +97,23 @@ function getAcquisitionCandidates(
   world: CombatWorld,
   unitId: EntityId,
   mode: HackControlMode | null,
-): readonly EntityId[] {
-  if (getEcsTargetingProfile(world, unitId).acquisition === 'global') return getUnits(world)
+  targeting: TargetingRuntime,
+  profile: TargetingProfileConfig,
+): TargetingScratch {
+  if (profile.acquisition === 'global') {
+    targeting.scratch.fill(getUnits(world))
+    return targeting.scratch
+  }
   const transform = world.stores.transform.require(unitId)
-  const spatial = world.resources.require('entitySpatial')
   const radius = getAcquisitionRadius(world, unitId)
-  if (mode === 'confuse') return spatial.query(world, transform.x, transform.y, radius, 'targeting')
+  if (mode === 'confuse') {
+    return targeting.collect(world, transform.x, transform.y, radius, 'all')
+  }
   const ownTeam = world.stores.identity.require(unitId).team
   const targetTeam = mode === 'redirect'
     ? ownTeam
     : ownTeam === 'attacker' ? 'defender' : 'attacker'
-  return spatial.queryTeam(world, transform.x, transform.y, radius, targetTeam, 'targeting')
+  return targeting.collect(world, transform.x, transform.y, radius, targetTeam)
 }
 
 
@@ -88,47 +126,28 @@ function getLockedTarget(world: CombatWorld, unitId: EntityId, melee: EcsMeleeEn
   return null
 }
 
-function selectMovementFallback(world: CombatWorld, unitId: EntityId, melee: EcsMeleeEngagementState): EntityId | null {
-  const enemies = getUnits(world).filter(entityId => isReachableEnemy(world, unitId, entityId))
-  if (enemies.length === 0) return null
-  if (!isMelee(world, unitId)) return selectNearest(world, unitId, enemies)
-  const valid = enemies.filter(targetId => hasEcsMeleeSlot(world, unitId, targetId, melee))
-  if (valid.length > 0) return selectNearest(world, unitId, valid)
-  const waiting = selectNearest(world, unitId, enemies)
+function selectMovementFallback(
+  world: CombatWorld,
+  unitId: EntityId,
+  melee: EcsMeleeEngagementState,
+  targeting: TargetingRuntime,
+): EntityId | null {
+  const candidates = targeting.scratch
+  candidates.fill(getUnits(world))
+  compactEcsReachableEnemies(world, unitId, candidates)
+  if (candidates.length === 0) return null
+  if (!isMelee(world, unitId)) return selectEcsNearestTarget(world, unitId, candidates)
+  const target = selectEcsNearestTarget(
+    world, unitId, candidates,
+    targetId => hasEcsMeleeSlot(world, unitId, targetId, melee),
+  )
+  if (target !== null) return target
+  const waiting = selectEcsNearestTarget(world, unitId, candidates)
   if (waiting !== null) setEcsMeleeWaitingTarget(world, unitId, waiting)
   return waiting
 }
 
-function selectAggroTarget(world: CombatWorld, unitId: EntityId, enemies: readonly EntityId[], profile: TargetingProfileConfig): EntityId | null {
-  const candidates = enemies.map(entityId => ({
-    entityId,
-    distance: getEntityDistance(world, unitId, entityId),
-  }))
-  const nearestDistance = candidates.reduce(
-    (nearest, candidate) => Math.min(nearest, candidate.distance),
-    Infinity,
-  )
-  let target: typeof candidates[number] | null = null
-  let bestScore = -Infinity
-  for (const candidate of candidates) {
-    const score = getEcsTargetScore(
-      world,
-      unitId,
-      candidate.entityId,
-      profile,
-      nearestDistance,
-      candidate.distance,
-    )
-    if (target === null || score > bestScore ||
-        (score === bestScore && isBetterTargetCandidate(world, candidate, target))) {
-      target = candidate
-      bestScore = score
-    }
-  }
-  return target?.entityId ?? null
-}
-
-function selectHackTarget(world: CombatWorld, unitId: EntityId, candidates: readonly EntityId[], melee: EcsMeleeEngagementState, mode: HackControlMode | null): { handled: boolean; target: EntityId | null } {
+function selectHackTarget(world: CombatWorld, unitId: EntityId, candidates: TargetingScratch, melee: EcsMeleeEngagementState, mode: HackControlMode | null): { handled: boolean; target: EntityId | null } {
   if (mode === null) return { handled: false, target: null }
   const combat = world.stores.combat.require(unitId)
   const weapon = world.stores.weapon.require(unitId)
@@ -136,9 +155,11 @@ function selectHackTarget(world: CombatWorld, unitId: EntityId, candidates: read
     clearTarget(world, unitId)
     return { handled: true, target: null }
   }
-  let targets = candidates.filter(targetId => isHackCandidate(world, unitId, targetId, mode))
-  if (isMelee(world, unitId)) targets = targets.filter(targetId => hasEcsMeleeSlot(world, unitId, targetId, melee))
-  const target = selectNearest(world, unitId, targets)
+  const meleeUnit = isMelee(world, unitId)
+  const target = selectEcsNearestTarget(world, unitId, candidates, targetId =>
+    isHackCandidate(world, unitId, targetId, mode) &&
+    (!meleeUnit || hasEcsMeleeSlot(world, unitId, targetId, melee)),
+  )
   if (target === null) clearTarget(world, unitId)
   else setTarget(world, unitId, target, HACK_CONTROL_LOCK_TICKS)
   return { handled: true, target }
@@ -174,28 +195,6 @@ function getAcquisitionRadius(world: CombatWorld, unitId: EntityId): number {
   return range <= 60 ? MELEE_ACQUISITION_RADIUS : Math.max(MELEE_ACQUISITION_RADIUS, range + RANGED_ACQUISITION_BUFFER)
 }
 
-function selectNearest(world: CombatWorld, unitId: EntityId, targets: readonly EntityId[]): EntityId | null {
-  let target: { entityId: EntityId; distance: number } | null = null
-  for (const entityId of targets) {
-    const candidate = { entityId, distance: getEntityDistance(world, unitId, entityId) }
-    if (target === null || isBetterTargetCandidate(world, candidate, target)) target = candidate
-  }
-  return target?.entityId ?? null
-}
-
-function isBetterTargetCandidate(
-  world: CombatWorld,
-  candidate: { entityId: EntityId; distance: number },
-  current: { entityId: EntityId; distance: number },
-): boolean {
-  if (candidate.distance !== current.distance) return candidate.distance < current.distance
-  const candidateHp = world.stores.vitality.require(candidate.entityId).hp
-  const currentHp = world.stores.vitality.require(current.entityId).hp
-  return candidateHp !== currentHp
-    ? candidateHp < currentHp
-    : getExternalId(world, candidate.entityId) < getExternalId(world, current.entityId)
-}
-
 function setTarget(world: CombatWorld, unitId: EntityId, targetId: EntityId, lockTicks: number): void {
   world.stores.entityTargets.require(unitId).attackTarget = targetId
   world.stores.targeting.require(unitId).aggroLockTicks = lockTicks
@@ -216,6 +215,10 @@ function getUnits(world: CombatWorld): readonly EntityId[] {
   return world.query(['identity', 'transform', 'vitality', 'combat', 'weapon', 'targeting', 'entityTargets'])
 }
 
-function getExternalId(world: CombatWorld, entityId: EntityId): string {
-  return world.stores.entityMeta.require(entityId).externalId
+function getTargetingRuntime(world: CombatWorld): TargetingRuntime {
+  const current = world.resources.get('targetingRuntime')
+  if (current) return current
+  const runtime = new TargetingRuntime(false)
+  world.resources.set('targetingRuntime', runtime)
+  return runtime
 }

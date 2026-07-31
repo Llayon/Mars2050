@@ -4,6 +4,7 @@ import { getEcsTerminalOutcome } from './systems'
 import { createSquadEntities } from './combat-entity-factory'
 import { EntitySpatialIndex } from './entity-spatial-index'
 import { EcsCombatPhaseScheduler } from './combat-phase-scheduler'
+import { TargetingRuntime } from './targeting-runtime'
 
 export interface EcsCombatRuntime extends CombatRuntime {
   readonly world: CombatWorld
@@ -16,6 +17,10 @@ export function createEcsCombatRuntime(options: { profile?: boolean } = {}): Ecs
   world.resources.set('entitySpatial', new EntitySpatialIndex(undefined, profilingEnabled))
   world.resources.set('combatTagCache', new Map())
   world.resources.set('dirtySpatialEntities', new Set())
+  world.resources.set(
+    'targetingRuntime',
+    new TargetingRuntime(profilingEnabled),
+  )
   return {
     world,
     addSquad: (row, team, rng) => { createSquadEntities(world, row, team, rng) },

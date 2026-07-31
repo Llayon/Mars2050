@@ -34,6 +34,6 @@ describe('combat ECS v4 golden replay contract', () => {
   for (const [presetId, expectedHash] of Object.entries(goldenHashes)) {
     it(`keeps ${presetId} deterministic`, () => {
       expect(fingerprintPreset(presetId)).toBe(expectedHash)
-    })
+    }, presetId === 'zerg_rush' ? 30_000 : 5_000)
   }
 })

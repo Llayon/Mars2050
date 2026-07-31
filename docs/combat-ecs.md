@@ -1,7 +1,8 @@
 # Combat ECS Runtime
 
-The active batch-movement sequence is tracked in
-`docs/combat-ecs-v4-batch-movement.md`. The v3 plan remains as historical
+The active batch-movement and batch-targeting sequences are tracked in
+`docs/combat-ecs-v4-batch-movement.md` and
+`docs/combat-ecs-v4-batch-targeting.md`. The v3 plan remains as historical
 optimization context.
 
 Simulation version 4 uses the in-repository ECS runtime exclusively. The public
@@ -45,9 +46,10 @@ periodic spawning. Systems therefore do not scan every unit merely to discover
 whether an optional configuration exists.
 
 `EntitySpatialIndex` is team-aware and maintained incrementally for movement,
-team changes, deaths, summons, clones, and hazards. Dense nearest-target queries
-apply a deterministic candidate cap before ranking; broad local mechanics query
-only intersecting buckets and preserve stable external-ID tie-breaking.
+team changes, deaths, summons, clones, and hazards. Actor targeting uses a
+separate immutable packed frame with a live dirty-entity delta and reusable
+candidate buffers. Broad local mechanics query only intersecting buckets and
+preserve stable external-ID tie-breaking.
 
 ## Migration Status: Complete
 
@@ -365,10 +367,12 @@ survivors, and metrics. Mirror gates swap teams and field coordinates to expose
 initiative or ID bias.
 
 With `{ profile: true }`, the result reports EntityId spatial query counts,
-total local candidates, and maximum candidates in one query. Targeting, broad
-weapon shapes, auras, hazards, projectile interception, and damage sharing use
-local component queries. Batch movement reports movement requests, bounded
-neighbor candidates/edges, collision candidates/overlaps, and dirty cells.
+total local candidates, and maximum candidates in one query. Packed targeting
+reports frame builds, acquisitions, bucket candidates, live-delta candidates,
+scratch growth, and build/query/selection time. Broad weapon shapes, auras,
+hazards, projectile interception, and damage sharing retain local spatial
+queries. Batch movement reports movement requests, bounded neighbor
+candidates/edges, collision candidates/overlaps, and dirty cells.
 
 The checked-in v4 benchmark uses seed `24680`, eleven production runs for
 `massive_clash`, seven for `zerg_rush`, and five diagnostic runs. Production

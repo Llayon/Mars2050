@@ -217,8 +217,11 @@ describe('combat ECS runtime', () => {
     expect(preset).not.toBeNull()
     const result = simulateBattle(preset!.attackers, preset!.defenders, 12345, [], [], [], { profile: true })
 
-    expect(result.profile?.queryCount).toBeGreaterThan(0)
-    expect(result.profile?.candidateCount).toBeGreaterThanOrEqual(result.profile?.maxCandidates ?? 0)
+    expect(result.profile?.targetingFrameBuildCount).toBeGreaterThan(0)
+    expect(result.profile?.targetingAcquisitionCount).toBeGreaterThan(0)
+    expect(result.profile?.targetingCandidateCount)
+      .toBeGreaterThanOrEqual(result.profile?.targetingMaxCandidates ?? 0)
+    expect(result.profile?.targetingLegacyFallbackCount).toBe(0)
     expect(result.profile?.componentQueryCount).toBeGreaterThan(0)
     expect(result.profile?.componentCandidateCount).toBeGreaterThan(0)
     expect(result.profile?.componentResultCount).toBeGreaterThan(0)

@@ -46,7 +46,7 @@ compatibility requirement.
 - `CURRENT_SIMULATION_VERSION` is 4.
 - v2 and v3 stored replays remain playable as approximate historical
   visualizations; newer versions remain unsupported.
-- v4 has five checked-in golden replay fingerprints.
+- v4 has six checked-in golden replay fingerprints, including `zerg_rush`.
 - One collision pass is a balance constraint. Two unconditional passes delayed
   contact and failed the scout focus-fire role gate.
 
@@ -67,8 +67,9 @@ lower than the old movement-query plus depenetration broad phases.
 
 The three-second total target is now within normal wall-clock noise: the
 production median is 3009.14 ms and the five-run diagnostic median is
-2997.18 ms. Further work should target general targeting `queryCells`, not alter
-movement semantics or weaken role gates.
+2997.18 ms. The next completed optimization replaces general targeting
+`queryCells` with a packed immutable frame; see
+`docs/combat-ecs-v4-batch-targeting.md`.
 
 ## Verification
 

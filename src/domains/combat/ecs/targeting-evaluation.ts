@@ -31,21 +31,27 @@ export function getEcsTargetScore(
   profile: TargetingProfileConfig,
   nearestDistance: number,
   knownDistance?: number,
+  currentTarget?: EntityId,
+  targetPriorityProfile?: string,
 ): number {
-  const unitTargeting = world.stores.targeting.require(unitId)
   const enemyVitality = world.stores.vitality.require(enemyId)
   const distance = Math.max(1, knownDistance ?? getEntityDistance(world, unitId, enemyId))
   const hpRatio = enemyVitality.maxHp > 0 ? Math.max(0, enemyVitality.hp / enemyVitality.maxHp) : 1
   let tagScore = 0
-  for (const tag of getEcsCombatTags(world, enemyId)) {
-    tagScore += (profile.preferredTags?.[tag] ?? 0) - (profile.avoidedTags?.[tag] ?? 0)
+  if (profile.preferredTags || profile.avoidedTags) {
+    for (const tag of getEcsCombatTags(world, enemyId)) {
+      tagScore += (profile.preferredTags?.[tag] ?? 0) - (profile.avoidedTags?.[tag] ?? 0)
+    }
   }
   if (distance > Math.max(1, nearestDistance) * TAG_DISTANCE_RATIO_CAP && tagScore > 0) tagScore = 0
-  const refs = world.stores.entityTargets.require(unitId)
-  const current = refs.attackTarget === enemyId ? profile.currentTargetBonus : 0
+  const current = currentTarget === enemyId ? profile.currentTargetBonus : 0
   const mark = world.stores.statusControl.require(enemyId).targetMark
   const markPriority = mark && mark.duration > 0 ? Math.max(0, mark.focusPriority ?? 0) : 0
-  return profile.distanceWeight / distance + current + (1 - hpRatio) * profile.lowHpWeight + tagScore + markPriority + getRuntimePriority(world, unitTargeting.targetPriorityProfile, enemyId)
+  const runtimePriority = targetPriorityProfile
+    ? getRuntimePriority(world, targetPriorityProfile, enemyId)
+    : 0
+  return profile.distanceWeight / distance + current + (1 - hpRatio) *
+    profile.lowHpWeight + tagScore + markPriority + runtimePriority
 }
 
 export function getEcsCombatTags(world: CombatWorld, entityId: EntityId): CombatTag[] {
@@ -93,8 +99,10 @@ export function canEcsTarget(world: CombatWorld, attackerId: EntityId, targetId:
 export function isEcsTargetVisible(world: CombatWorld, targetId: EntityId): boolean {
   const status = world.stores.statusControl.require(targetId)
   const movement = world.stores.movement.require(targetId)
-  const revealed = status.statusEffects.some(effect => effect.type === 'revealed' && effect.duration > 0)
-  if (revealed) return true
+  if (!status.stealthUntilAttack && !movement.stealthWhileMoving) return true
+  for (const effect of status.statusEffects) {
+    if (effect.type === 'revealed' && effect.duration > 0) return true
+  }
   if (status.stealthUntilAttack && !status.hasAttacked) return false
   return !(movement.stealthWhileMoving && movement.movementStealthActive && !status.hasAttacked)
 }

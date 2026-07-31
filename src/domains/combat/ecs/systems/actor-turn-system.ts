@@ -24,28 +24,34 @@ export function runEcsActorTurnSystem(
   world.flushStructuralCommands()
   world.resources.require('entitySpatial').ensureCurrent(world)
   const melee = createEcsMeleeEngagementState()
+  const targeting = world.resources.require('targetingRuntime')
+  targeting.begin(world)
 
-  for (let initiativeIndex = 0; initiativeIndex < turnOrder.length; initiativeIndex++) {
-    const entityId = turnOrder[initiativeIndex]
-    if (world.stores.vitality.require(entityId).isDead) continue
-    runModifierSystem(world, entityId, context.actions, expiredId => {
-      resolveEcsDeath(world, expiredId, undefined, context.actions, 'expiration')
-    })
-    if (world.stores.vitality.require(entityId).isDead) continue
-    const targetId = runTargetingSystem(world, entityId, melee)
-    if (targetId === null) continue
-    if (world.stores.periodicSpawnerCapability.has(entityId)) {
-      runEcsPeriodicSpawnerSystem(world, entityId, targetId, context.actions, {
-        rng, tick: context.tick,
+  try {
+    for (let initiativeIndex = 0; initiativeIndex < turnOrder.length; initiativeIndex++) {
+      const entityId = turnOrder[initiativeIndex]
+      if (world.stores.vitality.require(entityId).isDead) continue
+      runModifierSystem(world, entityId, context.actions, expiredId => {
+        resolveEcsDeath(world, expiredId, undefined, context.actions, 'expiration')
       })
+      if (world.stores.vitality.require(entityId).isDead) continue
+      const targetId = runTargetingSystem(world, entityId, melee, targeting)
+      if (targetId === null) continue
+      if (world.stores.periodicSpawnerCapability.has(entityId)) {
+        runEcsPeriodicSpawnerSystem(world, entityId, targetId, context.actions, {
+          rng, tick: context.tick,
+        })
+      }
+      const canAct = canActOnTarget(world, entityId, targetId)
+      const engaged = canAct ? reserveEcsMeleeSlot(world, entityId, targetId, melee) : true
+      const acted = canAct && engaged
+        ? runActionSystem(world, entityId, targetId, context.actions, { rng, tick: context.tick }).acted
+        : false
+      world.flushStructuralCommands()
+      if (!acted) movementRequests.push({ entityId, targetId, initiativeIndex })
     }
-    const canAct = canActOnTarget(world, entityId, targetId)
-    const engaged = canAct ? reserveEcsMeleeSlot(world, entityId, targetId, melee) : true
-    const acted = canAct && engaged
-      ? runActionSystem(world, entityId, targetId, context.actions, { rng, tick: context.tick }).acted
-      : false
-    world.flushStructuralCommands()
-    if (!acted) movementRequests.push({ entityId, targetId, initiativeIndex })
+  } finally {
+    targeting.end()
   }
 }
 

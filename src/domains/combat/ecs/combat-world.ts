@@ -123,9 +123,7 @@ export class CombatWorld {
   }
 
   getEntityId(externalId: string): EntityId | undefined { return this.externalIdToEntity.get(externalId) }
-
   allocateExternalId(namespace: string): string { return this.externalIds.allocate(namespace) }
-
   preferExternalId(externalId: string): string { return this.externalIds.prefer(externalId) }
   query(query: readonly ComponentName[] | QuerySpec, includeDead = false): readonly EntityId[] {
     return this.queries.query(this.stores, query, includeDead)
@@ -142,6 +140,7 @@ export class CombatWorld {
     if (vitality.isDead === isDead) return
     vitality.isDead = isDead
     this.queries.touchAlive()
+    this.resources.get('targetingRuntime')?.markDirty(entityId)
     const spatial = this.resources.get('entitySpatial')
     if (isDead) spatial?.remove(entityId)
     else spatial?.insert(this, entityId)
@@ -150,6 +149,7 @@ export class CombatWorld {
     const transform = this.stores.transform.require(entityId)
     transform.x = x
     transform.y = y
+    this.resources.get('targetingRuntime')?.markDirty(entityId)
     this.resources.get('dirtySpatialEntities')?.add(entityId)
     this.resources.get('entitySpatial')?.update(this, entityId)
   }
@@ -160,6 +160,7 @@ export class CombatWorld {
       const transform = this.stores.transform.require(position.entityId)
       transform.x = position.x
       transform.y = position.y
+      this.resources.get('targetingRuntime')?.markDirty(position.entityId)
       this.resources.get('dirtySpatialEntities')?.add(position.entityId)
     }
     this.resources.get('entitySpatial')?.updateBatch(this, positions.map(position => position.entityId))
@@ -169,21 +170,19 @@ export class CombatWorld {
     if (identity.team === team) return
     this.indexes.moveTeamEntity(entityId, identity.team, team)
     identity.team = team
+    this.resources.get('targetingRuntime')?.markDirty(entityId)
     this.resources.get('entitySpatial')?.updateTeam(this, entityId)
   }
-
   linkSummonOwner(entityId: EntityId, ownerId: EntityId): void {
     this.stores.entityTargets.require(entityId).summonOwner = ownerId
     this.indexes.linkSummon(entityId, ownerId)
   }
-
   getActiveSummons(ownerId: EntityId): readonly EntityId[] { return this.indexes.getActiveSummons(ownerId) }
   setUnitCapability(entityId: EntityId, capability: UnitCapabilityName, present: boolean): void {
     if (setUnitCapabilityPresence(this.stores, entityId, capability, present)) {
       this.queries.touchStructure()
     }
   }
-
   getQueryProfile(): ComponentQueryProfile { return this.queries.getProfile() }
   getComponent<Name extends ComponentName>(componentName: Name, entityId: EntityId): CombatComponentMap[Name] | undefined {
     return this.stores[componentName].get(entityId)
@@ -217,6 +216,7 @@ export class CombatWorld {
     this.externalIdToEntity.set(externalId, entityId)
     this.queries.touchStructure()
     this.resources.get('entitySpatial')?.insert(this, entityId)
+    this.resources.get('targetingRuntime')?.markDirty(entityId)
     return entityId
   }
 

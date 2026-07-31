@@ -10,6 +10,7 @@ import type { CombatTag } from '../combat.primitives'
 import type { EntitySpatialIndex } from './entity-spatial-index'
 import type { MovementRequest } from './movement-batch.types'
 import type { EntityId } from './entity'
+import type { TargetingRuntime } from './targeting-runtime'
 
 export interface CombatClockResource {
   tick: number
@@ -30,6 +31,7 @@ export interface CombatResourceMap {
   movementRequests: MovementRequest[]
   combatTagCache: Map<EntityId, { signature: number; tags: CombatTag[] }>
   dirtySpatialEntities: Set<EntityId>
+  targetingRuntime: TargetingRuntime
 }
 
 export class CombatResourceStore {

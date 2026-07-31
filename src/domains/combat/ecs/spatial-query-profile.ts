@@ -22,6 +22,18 @@ export function createSpatialQueryProfile(): SpatialQueryProfile {
     collisionCandidatePairCount: 0,
     collisionOverlapPairCount: 0,
     dirtyCellCount: 0,
+    targetingFrameBuildCount: 0,
+    targetingFrameEntityCount: 0,
+    targetingAcquisitionCount: 0,
+    targetingBucketCandidateCount: 0,
+    targetingCandidateCount: 0,
+    targetingMaxCandidates: 0,
+    targetingDirtyCandidateCount: 0,
+    targetingLegacyFallbackCount: 0,
+    targetingScratchGrowthCount: 0,
+    targetingFrameBuildMs: 0,
+    targetingQueryMs: 0,
+    targetingSelectionMs: 0,
     purposes: {},
   }
 }
