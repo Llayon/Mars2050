@@ -77,6 +77,29 @@ describe('Tier 1 placement and support value', () => {
     expect(result.winner).toBe('defender')
     expect(result.survivors.some(unit => unit.team === 'defender' && unit.type === 'marine')).toBe(true)
   })
+
+  it('keeps a dense grenadier battery answerable by mobile and sustained counters', () => {
+    const xs = [240, 300, 360]
+    for (const counter of ['heavy_gunner', 'scavenger_buggy', 'jetpack_trooper'] as const) {
+      const grenadiers = xs.map((x, index) =>
+        positionedRow(`grenadier-a-${index}`, 'grenadier', 'attacker', x, 900))
+      const defenders = xs.map((x, index) =>
+        positionedRow(`${counter}-d-${index}`, counter, 'defender', x, 300))
+      const normal = simulateBattle(grenadiers, defenders, 101, [])
+      const mirrored = simulateBattle(
+        mirrorRows(defenders, 'attacker'),
+        mirrorRows(grenadiers, 'defender'),
+        101,
+        [],
+      )
+
+      expect(normal.winner, counter).toBe('defender')
+      expect(mirrored.winner, counter).toBe('attacker')
+    }
+
+    expect(simulateScenario(findScenario('tier1_grenadier_vs_clump'), 101).winner)
+      .toBe('attacker')
+  })
 })
 
 function mirroredWins(scenario: CombatBalanceScenario): number {
