@@ -3,6 +3,7 @@ import type { BarrageAttackConfig, BeamAttackConfig, ChainAttackConfig, Conditio
 export interface UnitWeaponComponent {
   attackType: 'single' | 'aoe' | 'heal' | 'spawn'
   aoeRadius?: number; spawnType?: string; spawnCap?: number
+  selfDestructOnAttack?: boolean
   statusOnHit?: StatusEffect[]; markOnHit?: TargetMarkConfig
   linePierce?: LinePierceConfig; coneAttack?: ConeAttackConfig; beamAttack?: BeamAttackConfig
   barrageAttack?: BarrageAttackConfig; chainAttack?: ChainAttackConfig

@@ -268,10 +268,10 @@ upgrades, auras, or hazards without hardcoding one-off behavior.
 
 ## Global Findings
 
-1. The first Tier 1 separation pass is implemented: `marine` is the reference
-   line carry, `heavy_gunner` is protected suppression/soft AA, `sniper` removes
-   priority support, and `shock_trooper` provides assault-screen pressure. Exact
-   survivor margins remain tuning targets rather than new role definitions.
+1. The second Tier 1 separation pass is implemented: `marine` is the reference
+   line carry, `heavy_gunner` is protected suppression/soft AA, `grenadier`
+   punishes clumps, `flamethrower` clears screens and blocks healing, while
+   `explosive_drone` and `light_walker` establish demolition/anchor counterplay.
 2. Dedicated anti-air was diluted by generalist AA. First-pass cleanup now keeps
    baseline air targeting mostly on dedicated counters and upgrade paths.
 3. Several high-concept units are currently placeholders: their config names imply
@@ -301,16 +301,16 @@ are the contract for the dedicated Tier 1 balance scenarios included in
 | Unit | Primary job | Strength | Weakness / counter | Role signal |
 | --- | --- | --- | --- | --- |
 | `marine` | Baseline line carry | Flexible ground DPS and clean reference point for balance comparisons. | Should lose specialist races against AoE, burst demolition, suppression, and flank access. | Sustained `damage` without special replay primitives. |
-| `heavy_gunner` | Protected suppression / soft anti-air | Wins when screened long enough to sustain fire and can punish light aircraft without dedicated AA priority. | Four-body squad is inefficient when exposed to rifle fire, burst, or flankers. | High cadence, `split_fire`, `output_suppressed`, and air-target damage. |
+| `heavy_gunner` | Protected suppression / soft anti-air | Wins when screened long enough to sustain fire and can punish light aircraft without dedicated AA priority. | Three-body squad is inefficient when exposed to rifle fire, burst, or flankers. | High cadence, `split_fire`, `output_suppressed`, and air-target damage. |
 | `grenadier` | Mid-range anti-clump | Punishes dense light formations and melee blobs. | Inefficient into scattered, fast, or high-HP single targets. | Multi-target `damage` from AoE splash. |
-| `flamethrower` | Short-range burn screen clear | Cone pressure plus `burn` makes it anti-swarm and anti-armor-over-time. | Must enter danger range; should not replace sapper demolition or ranged carry DPS. | `cone_attack` plus `status_apply: burn`. |
-| `sapper` | Burst demolition hard stop | Deletes nearby light vehicles and applies armor-piercing burst to mechanical or fortified targets. | Low HP and uptime make a long open approach losing. | Large short-range `damage` through `demolition_local` acquisition. |
+| `flamethrower` | Short-range burn screen clear / anti-sustain | Cone pressure clears compact light formations; active `burn` fully blocks normal healing. | Must enter danger range and should not replace demolition or ranged carry DPS. | `cone_attack`, `status_apply: burn`, and blocked heals. |
+| `explosive_drone` | One-use anti-anchor breach | Fast ground-hover squad deals contact AoE, armor-piercing percent-HP damage, then destroys itself. | Screening and sustained rapid fire can remove drones before contact; every successful attack spends a body. | `percent_hp_damage`, `self_destruct`, then `die: self_destruct`. |
+| `light_walker` | Solo armored anchor | One durable body resists splash and fires a slow single-target cannon. | Rifle mass and dedicated percent-HP demolition overwhelm its low cadence. | One large model with deliberate single-target attacks. |
 | `shock_trooper` | Assault screen | Ten bodies absorb precision shots, occupy melee space, and screen fragile damage dealers. | AoE, burn, rifle kiting, and protected sustained fire remove the compact screen efficiently. | Fast engage, high body count, and visible melee casualties. |
 | `jetpack_trooper` | Flanker / backline access | Crosses space quickly and pressures fragile support or ranged units. | Exposed to AA while moving and weaker in a direct brawl than pure melee. | `mode_change` before committing to attack. |
 | `sniper` | Precision range pressure | Deletes low-HP or support targets from long range. | Low body count, overkill risk, vulnerable if screened or flanked; success is support removal, not winning a frontline duel. | Long-range `damage` from assassin profile. |
 | `scout_drone` | Flying target designator | A single drone applies a squad-wide +125% shared focus-fire mark while contributing no direct damage. | Fragile, helpless alone, and removed quickly by the heavy gunner or dedicated AA. | Repeated `target_mark` actions with shared damage and focus priority. |
 | `medic` | Organic sustain support | Four medics materially extend a compact organic line through high-throughput direct healing. | Does not solve burst, armor, shields, structures, or mechanical repair. | `heal` actions and `healingDoneByUnitType.medic`. |
-| `officer` | Command aura support | Accelerates movement and action cooldown recovery for a compact nearby group. | No direct damage; loses most value when placed outside the 220-unit aura. | `status_apply: haste` plus increased allied action cadence. |
 
 Tier 1 initiative and deployment are part of the role contract. Equal-speed
 units alternate by team instead of granting the attacking roster a full opening
@@ -335,15 +335,16 @@ variation.
 | `alien_worm` | PvE damage tank/disruptor | Heavy AoE melee, low DPS | Tune | Needs either more durability or a formation disruption identity. |
 | `marine` | Baseline carry | 8 units, 280 total HP, high DPS, no native AA | Tune | Less universal after AA cleanup. Can become emergency AA through upgrades. |
 | `shock_trooper` | Assault screen | 10 units, compact grid, high total HP, moderate per-model output | Ready / Tune | Wastes precision fire and occupies contact space, while flame and splash punish its density. |
-| `flamethrower` | Short-range screen clear | 4 units, low range cone plus burn | Ready | Good identity. Keep it distinct from sapper burst: burn/DoT and cone pressure, not demolition. |
+| `flamethrower` | Short-range screen clear / anti-sustain | 5 units, low-range cone, burn, and full healing denial while burn is active | Ready | Clears compact screens but still loses the open-field ranged-line gate. |
 | `scout_drone` | Flying target designator | 1 unit, zero attack, squad-wide shared `markOnHit`, permanent flight | Ready / Tune | Makes a five-squad rifle line competitive with six rifle squads, adds value only through allies, and requires an air counter to remove. |
 | `medic` | Organic utility support | 4 units, 160-range organic-only healing, no damage | Ready / Tune | Improves a five-squad line by at least 20% in the sustain gate but remains vulnerable to burst. |
 | `sniper` | Precision range pressure/assassin | 2 units, 280 range, `assassin`, no native AA | Tune | Good ground precision role. AA should remain upgrade-based if needed. |
 | `scavenger_buggy` | Tempo pressure/flanker | 3 vehicles, very fast, short range, movement-distance charge damage | Tune | Now has raider burst identity. Tune charge cap, cooldown, and counterplay. |
-| `grenadier` | Mid-range screen clear | 4 units, AoE, explosive tag | Ready | Solid anti-clump role. Can gain AA through upgrade only. |
-| `heavy_gunner` | Protected suppression / soft AA | 4 units, 200 range, suppression split fire, native air targeting with a 1.5x air modifier | Ready / Tune | Loses exposed rifle-line fights but rewards screening and removes scout drones. |
-| `sapper` | Demolition hard stop | 3 units, armor-piercing burst, narrow AoE, local mechanical/structure priority | Ready / Tune | Point-blank placement stops a charge; a long approach loses to the same buggy composition. |
-| `officer` | Command utility support | Zero damage, 220-radius haste aura, movement and cooldown recovery +35% | Ready / Tune | Compact placement materially improves a five-squad line; displaced placement does not. |
+| `grenadier` | Mid-range anti-clump | 3 units, long cooldown, minimum range, AoE, explosive tag | Ready | Strong into dense screens but inefficient into spread formations and single anchors. |
+| `heavy_gunner` | Protected suppression / soft AA | 3 units, 200 range, 25% suppression split fire, native air targeting with a 1.5x air modifier | Ready / Tune | Loses exposed rifle-line fights but rewards screening and removes scout drones. |
+| `explosive_drone` | One-use anti-anchor breach | 4 fast ground-hover bodies, contact AoE, 40% capped max-HP bonus, 80% armor pierce | Ready / Tune | Breaches light walkers, but screened rapid-fire lines remove it before contact. |
+| `light_walker` | Solo armored anchor | 1 large body, 220 HP, defense 6, slow single-target cannon | Ready / Tune | Resists grenadier splash; rifle mass and explosive drones counter its low cadence. |
+| `sapper` / `officer` | Replay compatibility only | Configs remain available for old snapshots but have `recruitable: false` | Legacy | Active database rows migrate to `explosive_drone` / `light_walker`. |
 | `jetpack_trooper` | Jump flanker/backline killer | 5 infantry, local support preference, airborne movement and grounded attacks | Ready / Tune | Open flank reaches a sniper; center deployment meets the screen. It never acquires targets globally. |
 | `exosuit` | Medium damage tank/bruiser | 4 units, armored heavy, low range | Ready | Good bridge between infantry and vehicles. |
 | `gatling_rover` | Anti-air/screen clear specialist | 2 vehicles, rapid fire, `anti_air`, split fire | Ready | Good dedicated AA and light-screen clearer. Tune split-fire multiplier if it crowds out infantry clear. |
@@ -460,11 +461,11 @@ The early roster should teach clean counters:
 | `medic` | Utility support learning | Damage role |
 | `grenadier` | Mid-range AoE | Single-target efficiency |
 | `heavy_gunner` | Sustained carry/suppression | Overlap with marine and dedicated screen clear |
-| `sapper` | Burst demolition | Reliability and survivability |
+| `explosive_drone` | One-use percent-HP demolition | Survivability after contact; successful attacks must always consume a body |
 | `scout_drone` | Fast air scout/harassment | Generalist DPS and durability |
 | `sniper` | Precision range pressure | Screen clear and AA relevance |
 | `scavenger_buggy` | Charge flank tempo | Straight-line brawler reliability |
-| `officer` | Command aura support | Mandatory aura stacking |
+| `light_walker` | Solo armored anchor and slow cannon | Generalist DPS and resistance to dedicated demolition |
 | `jetpack_trooper` | Backline/flank access | Direct melee superiority over shock troopers |
 
 Tier 1 acceptance gates now separate hard role contracts from diagnostic
@@ -474,10 +475,11 @@ contracts should stay true unless the role document is updated first:
 | Gate | Scenario | Contract protected |
 | --- | --- | --- |
 | Suppression carry | `tier1_heavy_gunner_sustained_line` | A screened heavy gunner must win while emitting visible `output_suppressed`, not only raw damage. |
-| Suppression counterplay | `tier1_heavy_gunner_exposed` | Four-body heavy squad should lose when fielded without a screen. |
+| Suppression counterplay | `tier1_heavy_gunner_exposed` | Three-body heavy squad should lose when fielded without a screen. |
 | Fire screen clear | `tier1_flamethrower_vs_shock_screen` | Flamethrower should beat the compact assault screen through cone/burn pressure. |
 | Fire counterplay | `tier1_flamethrower_vs_ranged_line` | Flamethrower should not become a reliable open-field ranged carry. |
-| Demolition placement | `tier1_sapper_point_blank_stop` / `tier1_sapper_long_approach` | The same equal-point matchup flips when the sapper starts inside or outside its burst window. |
+| Demolition breach | `tier1_explosive_drone_vs_walker` / `tier1_explosive_drone_screened_out` | Drones should breach slow armored anchors but lose bodies before contact against a rapid-fire screen. |
+| Solo anchor | `tier1_light_walker_anchors_aoe` / `tier1_light_walker_overwhelmed_by_line` | The walker should resist anti-clump splash while losing to sustained rifle mass. |
 | Designator focus | `tier1_scout_focus_fire` | At the default 6 CP limit, five rifle squads plus a zero-DPS scout should beat six rifle squads on the baseline map. |
 | Soft anti-air | `tier1_scout_countered_by_heavy` | Zero-DPS scout designators should lose to the T1 sustained-fire air answer. |
 | Precision support removal | `tier1_sniper_priority_target` | Sniper should remove support, not replace frontline DPS. |
@@ -493,12 +495,8 @@ The follow-up suppression pass makes `output_suppressed` stack by source with a
 cap, extends action cooldown under suppression, and lets heavy gunner spread
 status through split fire without forced secondary HP chip damage.
 
-No open Tier 1 matchup diagnostics remain. P0 utility-role diagnostics are now
-scenario-covered separately from final balance tuning.
-
-Tier 1 sapper reliability pass narrows the sapper blast and reduces universal
-burst: static demolition remains intact, while the mobile-screen diagnostic now
-checks that shock troopers can punish sapper overcommitment.
+No open Tier 1 matchup diagnostics remain. Legacy officer utility diagnostics
+stay in the P0 compatibility suite, separately from the recruitable T1 roster.
 
 ## Upgrade Implications
 

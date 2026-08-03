@@ -11,8 +11,8 @@ export const UNIT_UPKEEP: Partial<Record<UnitTypeKey, Record<string, number>>> =
   scavenger_buggy:  { energy: 1.0 },
   grenadier:        { food: 0.5, minerals: 0.5 },
   heavy_gunner:     { food: 0.8, minerals: 0.2 },
-  sapper:           { food: 0.5, minerals: 0.8 },
-  officer:          { food: 1.0, consumer_goods: 0.5 },
+  explosive_drone:  { minerals: 0.8, energy: 0.5 },
+  light_walker:     { minerals: 1.0, energy: 0.5 },
   jetpack_trooper:  { food: 0.5, energy: 1.0 },
 
   // Tier 2

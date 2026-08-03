@@ -11,7 +11,9 @@ export async function hireUnit(colonyId: string, unitType: UnitTypeKey) {
   const supabase = getServerClient()
   const config = UNIT_TYPES[unitType]
 
-  if (!config) return { success: false, error: 'Invalid unit type' }
+  if (!config || config.recruitable === false) {
+    return { success: false, error: 'Invalid unit type' }
+  }
 
   // Check and deduct resources
   for (const [resType, amount] of Object.entries(config.hireCost)) {

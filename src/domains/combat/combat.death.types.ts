@@ -6,6 +6,7 @@ export const DEATH_CAUSES = [
   'mine',
   'hazard',
   'trigger',
+  'self_destruct',
   'expiration',
 ] as const
 

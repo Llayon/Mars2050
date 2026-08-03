@@ -38,6 +38,7 @@ export function createRuntimeUnitFromConfig(input: RuntimeUnitFactoryInput): Sim
     range: stats.range * 40,
     attackType: stats.attackType,
     aoeRadius: stats.aoeRadius ? stats.aoeRadius * 40 : undefined,
+    selfDestructOnAttack: stats.selfDestructOnAttack,
     spawnType: stats.spawnType,
     spawnCap: stats.spawnCap,
     actionCooldownMax: stats.actionCooldownMax ?? 10,

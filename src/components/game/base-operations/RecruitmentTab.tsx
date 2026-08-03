@@ -76,7 +76,8 @@ export function RecruitmentTab({ colonyId, resources }: RecruitmentTabProps) {
 
         <div className="space-y-3">
           {Object.entries(UNIT_TYPES)
-            .filter(([_, config]) => config.hireCost && Object.keys(config.hireCost).length > 0)
+            .filter(([_, config]) => config.recruitable !== false &&
+              config.hireCost && Object.keys(config.hireCost).length > 0)
             .map(([type, config]) => {
             const queueCount = queues[type as UnitTypeKey] || 0
             const totalCost = Object.entries(config.hireCost || {}).map(([resType, amt]) => ({ resType, amt: amt * Math.max(1, queueCount) }))

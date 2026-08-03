@@ -64,6 +64,10 @@ export function applyProceduralMotion(s: SpriteState, config: MotionVfxConfig, f
   if (!s.s) return;
   const vConf = UNIT_VISUALS[s.type as UnitTypeKey] || {};
   const { dt, globalTime } = config;
+  const modeVisual = s.mobilityMode === 'air'
+    ? vConf.modeVisuals?.air
+    : vConf.modeVisuals?.ground
+  const locomotion = modeVisual?.locomotion ?? vConf.locomotion
   
   // Recoil decay (dt-independent)
   if (s.recoil && s.recoil > 0) {
@@ -80,13 +84,13 @@ export function applyProceduralMotion(s: SpriteState, config: MotionVfxConfig, f
   // Locomotion bobbing
   let bobY = 0;
   let tilt = 0;
-  if (s.act === 'walk' && vConf.locomotion) {
-     if (vConf.locomotion === 'tracks' || vConf.locomotion === 'wheels') {
+  if (s.act === 'walk' && locomotion) {
+     if (locomotion === 'tracks' || locomotion === 'wheels') {
        bobY = Math.sin(globalTime * 0.4) * 1.5;
-     } else if (vConf.locomotion === 'legs') {
+     } else if (locomotion === 'legs') {
        bobY = Math.abs(Math.sin(globalTime * 0.05)) * -4;
        tilt = Math.sin(globalTime * 0.05) * 0.05;
-     } else if (vConf.locomotion === 'hover') {
+     } else if (locomotion === 'hover') {
        tilt = 0.05; // tilt forward
      }
   }
@@ -94,15 +98,18 @@ export function applyProceduralMotion(s: SpriteState, config: MotionVfxConfig, f
   // Hover logic (from engine)
   let hoverY = 0;
   const isFlying = UNIT_TYPES[s.type as UnitTypeKey]?.baseStats.isFlying;
-  const hasHoverVisual = isFlying || s.mobilityMode === 'air' || vConf.locomotion === 'hover' || vConf.hoverAmplitude !== undefined;
+  const hoverAmplitude = modeVisual?.hoverAmplitude ?? vConf.hoverAmplitude
+  const hoverSpeed = modeVisual?.hoverSpeed ?? vConf.hoverSpeed
+  const hasHoverVisual = Boolean(isFlying || s.mobilityMode === 'air' ||
+    locomotion === 'hover' || hoverAmplitude !== undefined);
   if (hasHoverVisual) {
-     const hAmp = vConf.hoverAmplitude || 3;
-     const hSpeed = vConf.hoverSpeed || 0.05;
+     const hAmp = hoverAmplitude || 3;
+     const hSpeed = hoverSpeed || 0.05;
      hoverY = Math.sin(globalTime * hSpeed + (s.c.uid || 0)) * hAmp;
   }
   
   // Trail emission
-  if (s.act === 'walk' && vConf.locomotion && vConf.trailColor) {
+  if (s.act === 'walk' && locomotion && vConf.trailColor) {
     const uid = String(s.c.uid || s.type); // unique enough for deterministic pool
     if (!nextTrailAt[uid]) nextTrailAt[uid] = 0;
     
@@ -114,6 +121,7 @@ export function applyProceduralMotion(s: SpriteState, config: MotionVfxConfig, f
 
   // Apply all transforms to Sprite
   s.s.x = recoilX;
-  s.s.y = (vConf.yOffset || (hasHoverVisual ? -20 : 0)) + hoverY + bobY + recoilY;
+  const yOffset = modeVisual?.yOffset ?? vConf.yOffset ?? (hasHoverVisual ? -20 : 0)
+  s.s.y = yOffset + hoverY + bobY + recoilY;
   s.s.rotation = tilt;
 }

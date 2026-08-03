@@ -32,7 +32,9 @@ export function resolveEcsDeath(
   if (target.hp > 0) return false
   if (target.resurrectOnce) {
     target.resurrectOnce = false
-    applyEcsHealing(world, targetId, targetId, target.maxHp, actions)
+    applyEcsHealing(world, targetId, targetId, target.maxHp, actions, {
+      bypassStatusBlock: true,
+    })
     return false
   }
   startDeathReassembly(world, targetId, actions)

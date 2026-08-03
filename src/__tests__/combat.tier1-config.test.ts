@@ -21,10 +21,23 @@ describe('Tier 1 simulator balance config', () => {
     expect(getTier1CommandCost('exosuit')).toBeNull()
   })
 
-  it('uses one compact internal formation for every multi-model Tier 1 squad', () => {
+  it('keeps role-specific squad silhouettes for the reworked line units', () => {
+    expect(UNIT_TYPES.flamethrower).toMatchObject({ squadSize: 5, formation: 'wedge' })
+    expect(UNIT_TYPES.grenadier).toMatchObject({ squadSize: 3, formation: 'line' })
+    expect(UNIT_TYPES.heavy_gunner).toMatchObject({ squadSize: 3, formation: 'line' })
+    expect(UNIT_TYPES.explosive_drone).toMatchObject({ squadSize: 4, formation: 'wedge' })
+    expect(UNIT_TYPES.light_walker).toMatchObject({ squadSize: 1 })
+
     for (const unitType of TIER1_UNIT_TYPES) {
       const config = UNIT_TYPES[unitType]
-      if ((config.squadSize ?? 1) > 1) expect(config.formation, unitType).toBe('grid')
+      if ((config.squadSize ?? 1) > 1) expect(config.formation, unitType).toBeTruthy()
     }
+  })
+
+  it('keeps retired specialists out of recruitment without breaking replay config', () => {
+    expect(UNIT_TYPES.sapper.recruitable).toBe(false)
+    expect(UNIT_TYPES.officer.recruitable).toBe(false)
+    expect(TIER1_UNIT_TYPES).not.toContain('sapper')
+    expect(TIER1_UNIT_TYPES).not.toContain('officer')
   })
 })

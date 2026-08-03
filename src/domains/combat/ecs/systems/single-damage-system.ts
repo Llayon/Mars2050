@@ -68,6 +68,7 @@ export function runSimpleSingleDamage(
   combat.actionCooldown = getEcsActionCooldown(world, entityId)
   const shots = combat.multishot || 1
   for (let shot = 0; shot < shots; shot++) {
+    if (world.stores.vitality.require(entityId).isDead) break
     if (world.stores.vitality.require(targetId).isDead) break
     resolveEcsSingleShot(world, entityId, targetId, actions, tick, rng)
   }

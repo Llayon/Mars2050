@@ -8,35 +8,31 @@ import { FIELD_HEIGHT, generateObstacles } from '@/domains/combat/combat.utils'
 const SEEDS = [101, 202, 303, 404, 505]
 
 describe('Tier 1 placement and support value', () => {
-  it('changes sapper and jetpack outcomes through deployment alone', () => {
-    const sapperClose = mirroredWins(findScenario('tier1_sapper_point_blank_stop'))
-    const sapperFar = mirroredWins(findScenario('tier1_sapper_long_approach'))
+  it('changes explosive-drone and jetpack outcomes through matchup and deployment', () => {
+    const droneBreach = mirroredWins(findScenario('tier1_explosive_drone_vs_walker'))
+    const droneScreened = mirroredWins(findScenario('tier1_explosive_drone_screened_out'))
     const jetpackFlank = mirroredRolePower(findScenario('tier1_jetpack_open_flank'))
     const jetpackCenter = mirroredRolePower(findScenario('tier1_jetpack_center_lane'))
 
-    expect(sapperClose).toBeGreaterThanOrEqual(sapperFar + 6)
+    expect(droneBreach).toBeGreaterThanOrEqual(droneScreened + 6)
     expect(jetpackFlank).toBeGreaterThan(jetpackCenter * 1.5)
   }, 30000)
 
-  it('makes medic and compact officer materially improve a five-squad line', () => {
-    for (const scenarioId of ['tier1_medic_sustain_check', 'tier1_officer_compact_aura']) {
-      const scenario = findScenario(scenarioId)
-      const supported = simulateScenario(scenario, 101, true)
-      const control = simulateBattle(
-        cloneRows(scenario.attackers.filter(unit => unit.unit_type !== 'medic' && unit.unit_type !== 'officer')),
-        cloneRows(scenario.defenders),
-        101,
-        [],
-        [],
-        [],
-        { trackMetrics: true },
-      )
+  it('makes a medic materially improve a five-squad line', () => {
+    const scenario = findScenario('tier1_medic_sustain_check')
+    const medic = simulateScenario(scenario, 101, true)
+    const control = simulateBattle(
+      cloneRows(scenario.attackers.filter(unit => unit.unit_type !== 'medic')),
+      cloneRows(scenario.defenders),
+      101,
+      [],
+      [],
+      [],
+      { trackMetrics: true },
+    )
 
-      expect(remainingPower(supported, 'defender'), scenarioId)
-        .toBeLessThan(remainingPower(control, 'defender') * 0.92)
-    }
-
-    const medic = simulateScenario(findScenario('tier1_medic_sustain_check'), 101, true)
+    expect(remainingPower(medic, 'defender'))
+      .toBeLessThan(remainingPower(control, 'defender') * 0.92)
     expect(medic.metrics?.healingDoneByUnitType.medic ?? 0).toBeGreaterThan(500)
   }, 30000)
 

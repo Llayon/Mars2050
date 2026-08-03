@@ -5,6 +5,7 @@ import { UNIT_TYPES } from '@/domains/combat/combat.config'
 import { getReplaySpriteDirection, resolveReplaySprite } from '@/components/game/battle-replay-sprites'
 import type { ReplayUnit } from '@/components/game/battle-replay-canvas-types'
 import { createReplayUnitVisualState } from '@/components/game/battle-replay-visual-state'
+import { UNIT_VISUALS } from '@/components/game/battle-replay-visuals'
 import {
   getReplayVisualCoverageIssues,
   getReplayVisualCoverageSummary,
@@ -91,6 +92,28 @@ describe('battle replay sprites', () => {
       src: '/assets/units/sapper/east.png',
       assetType: 'sapper',
       kind: 'png',
+    })
+    expect(resolveReplaySprite('explosive_drone', 'east')).toMatchObject({
+      src: '/assets/units/drone_8dir.svg',
+      assetType: 'explosive_drone',
+      kind: 'svg-strip',
+    })
+    expect(resolveReplaySprite('light_walker', 'north')).toMatchObject({
+      src: '/assets/units/railgun_walker_8dir.svg',
+      assetType: 'light_walker',
+      kind: 'svg-strip',
+    })
+  })
+
+  it('lands jetpack troopers visually when their mobility mode is ground', () => {
+    expect(UNIT_VISUALS.jetpack_trooper?.modeVisuals).toEqual({
+      ground: { locomotion: 'legs', yOffset: 0 },
+      air: {
+        locomotion: 'hover',
+        yOffset: -18,
+        hoverAmplitude: 5,
+        hoverSpeed: 0.08,
+      },
     })
   })
 

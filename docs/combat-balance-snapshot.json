@@ -98,24 +98,24 @@
       "name": "Tier 1: medic sustain check"
     },
     {
-      "id": "tier1_officer_compact_aura",
-      "name": "Tier 1: officer inside compact line"
+      "id": "tier1_light_walker_anchors_aoe",
+      "name": "Tier 1: light walker anchors against area damage"
     },
     {
-      "id": "tier1_officer_out_of_position",
-      "name": "Tier 1: officer outside aura range"
+      "id": "tier1_light_walker_overwhelmed_by_line",
+      "name": "Tier 1: line infantry overwhelms light walkers"
     },
     {
       "id": "tier1_buggy_charge_flank",
       "name": "Tier 1: scavenger buggy charge flank"
     },
     {
-      "id": "tier1_sapper_point_blank_stop",
-      "name": "Tier 1: sapper stops charge at point blank"
+      "id": "tier1_explosive_drone_vs_walker",
+      "name": "Tier 1: explosive drones breach light walkers"
     },
     {
-      "id": "tier1_sapper_long_approach",
-      "name": "Tier 1: sapper exposed on long approach"
+      "id": "tier1_explosive_drone_screened_out",
+      "name": "Tier 1: heavy gunners screen explosive drones"
     },
     {
       "id": "tier1_heavy_gunner_sustained_line",
@@ -598,13 +598,13 @@
       "name": "QA: визуалы T1",
       "seed": 24680,
       "winner": "attacker",
-      "lastActionTick": 48,
-      "battleDurationTicks": 49,
+      "lastActionTick": 30,
+      "battleDurationTicks": 31,
       "initialUnits": {
         "attacker": {
-          "flamethrower": 4,
-          "grenadier": 4,
-          "heavy_gunner": 4,
+          "flamethrower": 5,
+          "grenadier": 3,
+          "heavy_gunner": 3,
           "marine": 8,
           "officer": 1,
           "sapper": 3,
@@ -616,9 +616,9 @@
       },
       "survivors": {
         "attacker": {
-          "flamethrower": 4,
-          "grenadier": 4,
-          "heavy_gunner": 4,
+          "flamethrower": 5,
+          "grenadier": 3,
+          "heavy_gunner": 3,
           "marine": 8,
           "officer": 1,
           "sapper": 3,
@@ -632,8 +632,8 @@
           "grenadier": 150,
           "heavy_gunner": 150,
           "marine": 100,
-          "officer": 300,
-          "sapper": 130,
+          "officer": 0,
+          "sapper": 0,
           "shock_trooper": 100
         },
         "defender": {
@@ -646,59 +646,59 @@
           "grenadier": 150,
           "heavy_gunner": 150,
           "marine": 100,
-          "officer": 300,
-          "sapper": 130,
+          "officer": 0,
+          "sapper": 0,
           "shock_trooper": 100
         },
         "defender": {}
       },
       "teamValue": {
         "initial": {
-          "attacker": 1080,
+          "attacker": 650,
           "defender": 0
         },
         "survivors": {
-          "attacker": 1080,
+          "attacker": 650,
           "defender": 0
         }
       },
       "metrics": {
-        "firstAttackTick": 11,
-        "averageTimeToEngage": 19.45,
-        "averageEngagementDistance": 112.98,
-        "overlapSamples": 1470,
-        "maxOverlap": 13.51,
-        "averageOverlap": 3.03,
-        "maxOverlapRatio": 0.71,
+        "firstAttackTick": 10,
+        "averageTimeToEngage": 18.57,
+        "averageEngagementDistance": 99.43,
+        "overlapSamples": 1169,
+        "maxOverlap": 13.77,
+        "averageOverlap": 2.96,
+        "maxOverlapRatio": 0.72,
         "averageOverlapRatio": 0.16,
-        "severeOverlapSamples": 60,
-        "targetSwitches": 366,
-        "meleeSlotWaitTicks": 1290,
-        "overkillDamage": 444
+        "severeOverlapSamples": 57,
+        "targetSwitches": 278,
+        "meleeSlotWaitTicks": 1091,
+        "overkillDamage": 429
       },
       "damageByUnitType": {
-        "alien_bug": 64,
-        "flamethrower": 84,
-        "grenadier": 473,
-        "heavy_gunner": 247,
-        "marine": 180,
-        "sapper": 350,
-        "shock_trooper": 110
+        "alien_bug": 60,
+        "flamethrower": 158,
+        "grenadier": 320,
+        "heavy_gunner": 181,
+        "marine": 230,
+        "sapper": 400,
+        "shock_trooper": 140
       },
       "damageTakenByUnitType": {
-        "alien_bug": 1444,
-        "sapper": 28,
-        "shock_trooper": 36
+        "alien_bug": 1429,
+        "sapper": 8,
+        "shock_trooper": 52
       },
       "healingDoneByUnitType": {},
       "teamPerformance": {
         "damageDealt": {
-          "attacker": 1444,
-          "defender": 64
+          "attacker": 1429,
+          "defender": 60
         },
         "damageTaken": {
-          "attacker": 64,
-          "defender": 1444
+          "attacker": 60,
+          "defender": 1429
         },
         "healingDone": {
           "attacker": 0,
@@ -707,11 +707,11 @@
       },
       "costEfficiency": {
         "damageDealtPerCost": {
-          "attacker": 1.34,
+          "attacker": 2.2,
           "defender": 0
         },
         "damageTakenPerCost": {
-          "attacker": 0.06,
+          "attacker": 0.09,
           "defender": 0
         },
         "healingDonePerCost": {
@@ -719,7 +719,7 @@
           "defender": 0
         },
         "netDamagePerCost": {
-          "attacker": 1.28,
+          "attacker": 2.11,
           "defender": 0
         },
         "survivorValueRatio": {
@@ -728,19 +728,19 @@
         }
       },
       "actionCounts": {
-        "attack": 138,
-        "damage": 219,
+        "attack": 129,
+        "damage": 192,
         "heal": 0,
         "die": 50,
         "spawn": 0,
         "spawn_blocked": 0,
         "projectile_intercept": 0,
-        "status_apply": 286,
+        "status_apply": 190,
         "status_cleanse": 0,
         "shield_apply": 0,
         "mode_change": 0,
         "stance_change": 0,
-        "cone_attack": 9,
+        "cone_attack": 18,
         "charge_damage": 0,
         "control_convert": 0,
         "barrier_absorb": 0,
@@ -749,14 +749,14 @@
       },
       "roleSignals": {
         "actions": {
-          "cone_attack": 9,
-          "split_fire": 75,
-          "status_apply": 286
+          "cone_attack": 18,
+          "split_fire": 46,
+          "status_apply": 190
         },
         "statusApplications": {
-          "burn": 15,
-          "haste": 153,
-          "output_suppressed": 118
+          "burn": 35,
+          "haste": 82,
+          "output_suppressed": 73
         }
       }
     },
@@ -1793,12 +1793,12 @@
       "name": "Очищение статусов",
       "seed": 24680,
       "winner": "attacker",
-      "lastActionTick": 119,
-      "battleDurationTicks": 120,
+      "lastActionTick": 95,
+      "battleDurationTicks": 96,
       "initialUnits": {
         "attacker": {
           "alien_spitter": 3,
-          "flamethrower": 4
+          "flamethrower": 5
         },
         "defender": {
           "engineer": 1,
@@ -1825,7 +1825,7 @@
       "survivorValue": {
         "attacker": {
           "alien_spitter": 0,
-          "flamethrower": 37.5
+          "flamethrower": 30
         },
         "defender": {}
       },
@@ -1835,83 +1835,83 @@
           "defender": 600
         },
         "survivors": {
-          "attacker": 37.5,
+          "attacker": 30,
           "defender": 0
         }
       },
       "metrics": {
         "firstAttackTick": 11,
-        "averageTimeToEngage": 19.18,
-        "averageEngagementDistance": 92.66,
-        "overlapSamples": 459,
-        "maxOverlap": 20.81,
-        "averageOverlap": 1.87,
-        "maxOverlapRatio": 0.61,
+        "averageTimeToEngage": 17.83,
+        "averageEngagementDistance": 94.36,
+        "overlapSamples": 437,
+        "maxOverlap": 17.64,
+        "averageOverlap": 1.91,
+        "maxOverlapRatio": 0.58,
         "averageOverlapRatio": 0.07,
-        "severeOverlapSamples": 4,
-        "targetSwitches": 30,
-        "meleeSlotWaitTicks": 97,
-        "overkillDamage": 41
+        "severeOverlapSamples": 2,
+        "targetSwitches": 34,
+        "meleeSlotWaitTicks": 96,
+        "overkillDamage": 29
       },
       "damageByUnitType": {
-        "alien_spitter": 532,
+        "alien_spitter": 436,
         "exosuit": 252,
-        "flamethrower": 189
+        "flamethrower": 275
       },
       "damageTakenByUnitType": {
-        "engineer": 100,
-        "exosuit": 621,
+        "engineer": 101,
+        "exosuit": 610,
         "flamethrower": 252
       },
       "healingDoneByUnitType": {
-        "engineer": 16
+        "engineer": 6
       },
       "teamPerformance": {
         "damageDealt": {
-          "attacker": 721,
+          "attacker": 711,
           "defender": 252
         },
         "damageTaken": {
           "attacker": 252,
-          "defender": 721
+          "defender": 711
         },
         "healingDone": {
           "attacker": 0,
-          "defender": 16
+          "defender": 6
         }
       },
       "costEfficiency": {
         "damageDealtPerCost": {
-          "attacker": 4.81,
+          "attacker": 4.74,
           "defender": 0.42
         },
         "damageTakenPerCost": {
           "attacker": 1.68,
-          "defender": 1.2
+          "defender": 1.19
         },
         "healingDonePerCost": {
           "attacker": 0,
-          "defender": 0.03
+          "defender": 0.01
         },
         "netDamagePerCost": {
-          "attacker": 3.13,
-          "defender": -0.78
+          "attacker": 3.06,
+          "defender": -0.76
         },
         "survivorValueRatio": {
-          "attacker": 0.25,
+          "attacker": 0.2,
           "defender": 0
         }
       },
       "actionCounts": {
-        "attack": 130,
-        "damage": 249,
-        "heal": 2,
-        "die": 8,
+        "attack": 121,
+        "damage": 277,
+        "heal": 1,
+        "die": 9,
         "spawn": 0,
         "spawn_blocked": 0,
         "projectile_intercept": 0,
-        "status_apply": 138,
-        "status_cleanse": 31,
+        "status_apply": 154,
+        "status_cleanse": 18,
         "shield_apply": 0,
         "mode_change": 0,
         "stance_change": 0,
@@ -1925,13 +1925,13 @@
       "roleSignals": {
         "actions": {
           "cone_attack": 49,
-          "heal": 2,
-          "status_apply": 138,
-          "status_cleanse": 31
+          "heal": 1,
+          "status_apply": 154,
+          "status_cleanse": 18
         },
         "statusApplications": {
-          "acid": 56,
-          "burn": 74,
+          "acid": 48,
+          "burn": 98,
           "status_immunity": 8
         }
       }
@@ -2386,11 +2386,11 @@
       "name": "Tier 1: flamethrower clears assault screen",
       "seed": 24680,
       "winner": "attacker",
-      "lastActionTick": 68,
-      "battleDurationTicks": 69,
+      "lastActionTick": 63,
+      "battleDurationTicks": 64,
       "initialUnits": {
         "attacker": {
-          "flamethrower": 12
+          "flamethrower": 15
         },
         "defender": {
           "shock_trooper": 30
@@ -2398,7 +2398,7 @@
       },
       "survivors": {
         "attacker": {
-          "flamethrower": 7
+          "flamethrower": 10
         },
         "defender": {}
       },
@@ -2412,7 +2412,7 @@
       },
       "survivorValue": {
         "attacker": {
-          "flamethrower": 262.5
+          "flamethrower": 300
         },
         "defender": {}
       },
@@ -2422,41 +2422,41 @@
           "defender": 300
         },
         "survivors": {
-          "attacker": 262.5,
+          "attacker": 300,
           "defender": 0
         }
       },
       "metrics": {
         "firstAttackTick": 20,
-        "averageTimeToEngage": 26.51,
-        "averageEngagementDistance": 31.39,
-        "overlapSamples": 1235,
-        "maxOverlap": 14.64,
-        "averageOverlap": 2.95,
-        "maxOverlapRatio": 0.77,
+        "averageTimeToEngage": 25.93,
+        "averageEngagementDistance": 31.98,
+        "overlapSamples": 1165,
+        "maxOverlap": 13.89,
+        "averageOverlap": 3.1,
+        "maxOverlapRatio": 0.73,
         "averageOverlapRatio": 0.16,
-        "severeOverlapSamples": 47,
-        "targetSwitches": 96,
-        "meleeSlotWaitTicks": 754,
-        "overkillDamage": 74
+        "severeOverlapSamples": 42,
+        "targetSwitches": 111,
+        "meleeSlotWaitTicks": 747,
+        "overkillDamage": 31
       },
       "damageByUnitType": {
-        "flamethrower": 1314,
-        "shock_trooper": 512
+        "flamethrower": 1291,
+        "shock_trooper": 528
       },
       "damageTakenByUnitType": {
-        "flamethrower": 512,
-        "shock_trooper": 1314
+        "flamethrower": 528,
+        "shock_trooper": 1291
       },
       "healingDoneByUnitType": {},
       "teamPerformance": {
         "damageDealt": {
-          "attacker": 1314,
-          "defender": 512
+          "attacker": 1291,
+          "defender": 528
         },
         "damageTaken": {
-          "attacker": 512,
-          "defender": 1314
+          "attacker": 528,
+          "defender": 1291
         },
         "healingDone": {
           "attacker": 0,
@@ -2465,40 +2465,40 @@
       },
       "costEfficiency": {
         "damageDealtPerCost": {
-          "attacker": 2.92,
-          "defender": 1.71
+          "attacker": 2.87,
+          "defender": 1.76
         },
         "damageTakenPerCost": {
-          "attacker": 1.14,
-          "defender": 4.38
+          "attacker": 1.17,
+          "defender": 4.3
         },
         "healingDonePerCost": {
           "attacker": 0,
           "defender": 0
         },
         "netDamagePerCost": {
-          "attacker": 1.78,
-          "defender": -2.67
+          "attacker": 1.7,
+          "defender": -2.54
         },
         "survivorValueRatio": {
-          "attacker": 0.58,
+          "attacker": 0.67,
           "defender": 0
         }
       },
       "actionCounts": {
-        "attack": 158,
-        "damage": 401,
+        "attack": 157,
+        "damage": 466,
         "heal": 0,
         "die": 35,
         "spawn": 0,
         "spawn_blocked": 0,
         "projectile_intercept": 0,
-        "status_apply": 209,
+        "status_apply": 262,
         "status_cleanse": 0,
         "shield_apply": 0,
         "mode_change": 0,
         "stance_change": 0,
-        "cone_attack": 94,
+        "cone_attack": 91,
         "charge_damage": 0,
         "control_convert": 0,
         "barrier_absorb": 0,
@@ -2507,11 +2507,11 @@
       },
       "roleSignals": {
         "actions": {
-          "cone_attack": 94,
-          "status_apply": 209
+          "cone_attack": 91,
+          "status_apply": 262
         },
         "statusApplications": {
-          "burn": 209
+          "burn": 262
         }
       },
       "commandPoints": {
@@ -2525,11 +2525,11 @@
       "name": "Tier 1: flamethrower exposed to range",
       "seed": 24680,
       "winner": "defender",
-      "lastActionTick": 56,
-      "battleDurationTicks": 57,
+      "lastActionTick": 51,
+      "battleDurationTicks": 52,
       "initialUnits": {
         "attacker": {
-          "flamethrower": 12
+          "flamethrower": 15
         },
         "defender": {
           "marine": 24
@@ -2567,35 +2567,35 @@
       },
       "metrics": {
         "firstAttackTick": 23,
-        "averageTimeToEngage": 25.52,
-        "averageEngagementDistance": 109.28,
-        "overlapSamples": 960,
-        "maxOverlap": 12.04,
-        "averageOverlap": 2.83,
-        "maxOverlapRatio": 0.63,
-        "averageOverlapRatio": 0.15,
+        "averageTimeToEngage": 25.7,
+        "averageEngagementDistance": 106.32,
+        "overlapSamples": 831,
+        "maxOverlap": 13.77,
+        "averageOverlap": 3.14,
+        "maxOverlapRatio": 0.72,
+        "averageOverlapRatio": 0.17,
         "severeOverlapSamples": 21,
-        "targetSwitches": 76,
+        "targetSwitches": 91,
         "meleeSlotWaitTicks": 0,
-        "overkillDamage": 54
+        "overkillDamage": 4
       },
       "damageByUnitType": {
-        "flamethrower": 189,
-        "marine": 768
+        "flamethrower": 200,
+        "marine": 720
       },
       "damageTakenByUnitType": {
-        "flamethrower": 768,
-        "marine": 189
+        "flamethrower": 720,
+        "marine": 200
       },
       "healingDoneByUnitType": {},
       "teamPerformance": {
         "damageDealt": {
-          "attacker": 189,
-          "defender": 768
+          "attacker": 200,
+          "defender": 720
         },
         "damageTaken": {
-          "attacker": 768,
-          "defender": 189
+          "attacker": 720,
+          "defender": 200
         },
         "healingDone": {
           "attacker": 0,
@@ -2604,20 +2604,20 @@
       },
       "costEfficiency": {
         "damageDealtPerCost": {
-          "attacker": 0.42,
-          "defender": 2.56
+          "attacker": 0.44,
+          "defender": 2.4
         },
         "damageTakenPerCost": {
-          "attacker": 1.71,
-          "defender": 0.63
+          "attacker": 1.6,
+          "defender": 0.67
         },
         "healingDonePerCost": {
           "attacker": 0,
           "defender": 0
         },
         "netDamagePerCost": {
-          "attacker": -1.29,
-          "defender": 1.93
+          "attacker": -1.16,
+          "defender": 1.73
         },
         "survivorValueRatio": {
           "attacker": 0,
@@ -2625,19 +2625,19 @@
         }
       },
       "actionCounts": {
-        "attack": 132,
-        "damage": 147,
+        "attack": 131,
+        "damage": 158,
         "heal": 0,
-        "die": 15,
+        "die": 18,
         "spawn": 0,
         "spawn_blocked": 0,
         "projectile_intercept": 0,
-        "status_apply": 36,
+        "status_apply": 45,
         "status_cleanse": 0,
         "shield_apply": 0,
         "mode_change": 0,
         "stance_change": 0,
-        "cone_attack": 36,
+        "cone_attack": 41,
         "charge_damage": 0,
         "control_convert": 0,
         "barrier_absorb": 0,
@@ -2646,11 +2646,11 @@
       },
       "roleSignals": {
         "actions": {
-          "cone_attack": 36,
-          "status_apply": 36
+          "cone_attack": 41,
+          "status_apply": 45
         },
         "statusApplications": {
-          "burn": 36
+          "burn": 45
         }
       },
       "commandPoints": {
@@ -2664,11 +2664,11 @@
       "name": "Tier 1: grenadier versus clump",
       "seed": 24680,
       "winner": "attacker",
-      "lastActionTick": 64,
-      "battleDurationTicks": 65,
+      "lastActionTick": 90,
+      "battleDurationTicks": 91,
       "initialUnits": {
         "attacker": {
-          "grenadier": 12
+          "grenadier": 9
         },
         "defender": {
           "shock_trooper": 30
@@ -2676,7 +2676,7 @@
       },
       "survivors": {
         "attacker": {
-          "grenadier": 10
+          "grenadier": 4
         },
         "defender": {}
       },
@@ -2690,7 +2690,7 @@
       },
       "survivorValue": {
         "attacker": {
-          "grenadier": 375
+          "grenadier": 200
         },
         "defender": {}
       },
@@ -2700,41 +2700,41 @@
           "defender": 300
         },
         "survivors": {
-          "attacker": 375,
+          "attacker": 200,
           "defender": 0
         }
       },
       "metrics": {
-        "firstAttackTick": 16,
-        "averageTimeToEngage": 25.89,
-        "averageEngagementDistance": 162.19,
-        "overlapSamples": 953,
-        "maxOverlap": 13.65,
-        "averageOverlap": 3.13,
-        "maxOverlapRatio": 0.72,
-        "averageOverlapRatio": 0.16,
-        "severeOverlapSamples": 42,
-        "targetSwitches": 102,
-        "meleeSlotWaitTicks": 737,
-        "overkillDamage": 333
+        "firstAttackTick": 15,
+        "averageTimeToEngage": 27.05,
+        "averageEngagementDistance": 147,
+        "overlapSamples": 855,
+        "maxOverlap": 13.87,
+        "averageOverlap": 3.52,
+        "maxOverlapRatio": 0.73,
+        "averageOverlapRatio": 0.19,
+        "severeOverlapSamples": 49,
+        "targetSwitches": 87,
+        "meleeSlotWaitTicks": 754,
+        "overkillDamage": 180
       },
       "damageByUnitType": {
-        "grenadier": 1581,
-        "shock_trooper": 108
+        "grenadier": 1415,
+        "shock_trooper": 252
       },
       "damageTakenByUnitType": {
-        "grenadier": 108,
-        "shock_trooper": 1581
+        "grenadier": 252,
+        "shock_trooper": 1415
       },
       "healingDoneByUnitType": {},
       "teamPerformance": {
         "damageDealt": {
-          "attacker": 1581,
-          "defender": 108
+          "attacker": 1415,
+          "defender": 252
         },
         "damageTaken": {
-          "attacker": 108,
-          "defender": 1581
+          "attacker": 252,
+          "defender": 1415
         },
         "healingDone": {
           "attacker": 0,
@@ -2743,31 +2743,31 @@
       },
       "costEfficiency": {
         "damageDealtPerCost": {
-          "attacker": 3.51,
-          "defender": 0.36
+          "attacker": 3.14,
+          "defender": 0.84
         },
         "damageTakenPerCost": {
-          "attacker": 0.24,
-          "defender": 5.27
+          "attacker": 0.56,
+          "defender": 4.72
         },
         "healingDonePerCost": {
           "attacker": 0,
           "defender": 0
         },
         "netDamagePerCost": {
-          "attacker": 3.27,
-          "defender": -4.91
+          "attacker": 2.58,
+          "defender": -3.88
         },
         "survivorValueRatio": {
-          "attacker": 0.83,
+          "attacker": 0.44,
           "defender": 0
         }
       },
       "actionCounts": {
-        "attack": 147,
-        "damage": 147,
+        "attack": 163,
+        "damage": 163,
         "heal": 0,
-        "die": 32,
+        "die": 35,
         "spawn": 0,
         "spawn_blocked": 0,
         "projectile_intercept": 0,
@@ -2798,11 +2798,11 @@
       "name": "Tier 1: grenadier versus spread",
       "seed": 24680,
       "winner": "defender",
-      "lastActionTick": 94,
-      "battleDurationTicks": 95,
+      "lastActionTick": 81,
+      "battleDurationTicks": 82,
       "initialUnits": {
         "attacker": {
-          "grenadier": 12
+          "grenadier": 9
         },
         "defender": {
           "shock_trooper": 30
@@ -2811,7 +2811,7 @@
       "survivors": {
         "attacker": {},
         "defender": {
-          "shock_trooper": 7
+          "shock_trooper": 14
         }
       },
       "initialValue": {
@@ -2825,7 +2825,7 @@
       "survivorValue": {
         "attacker": {},
         "defender": {
-          "shock_trooper": 70
+          "shock_trooper": 140
         }
       },
       "teamValue": {
@@ -2835,40 +2835,40 @@
         },
         "survivors": {
           "attacker": 0,
-          "defender": 70
+          "defender": 140
         }
       },
       "metrics": {
-        "firstAttackTick": 17,
-        "averageTimeToEngage": 27.15,
-        "averageEngagementDistance": 120.7,
-        "overlapSamples": 963,
-        "maxOverlap": 13.23,
-        "averageOverlap": 3.17,
-        "maxOverlapRatio": 0.7,
+        "firstAttackTick": 16,
+        "averageTimeToEngage": 30,
+        "averageEngagementDistance": 119.26,
+        "overlapSamples": 1260,
+        "maxOverlap": 15.44,
+        "averageOverlap": 3.32,
+        "maxOverlapRatio": 0.81,
         "averageOverlapRatio": 0.17,
-        "severeOverlapSamples": 40,
-        "targetSwitches": 128,
-        "meleeSlotWaitTicks": 944,
-        "overkillDamage": 304
+        "severeOverlapSamples": 71,
+        "targetSwitches": 148,
+        "meleeSlotWaitTicks": 1171,
+        "overkillDamage": 130
       },
       "damageByUnitType": {
-        "grenadier": 1388,
-        "shock_trooper": 432
+        "grenadier": 1084,
+        "shock_trooper": 405
       },
       "damageTakenByUnitType": {
-        "grenadier": 432,
-        "shock_trooper": 1388
+        "grenadier": 405,
+        "shock_trooper": 1084
       },
       "healingDoneByUnitType": {},
       "teamPerformance": {
         "damageDealt": {
-          "attacker": 1388,
-          "defender": 432
+          "attacker": 1084,
+          "defender": 405
         },
         "damageTaken": {
-          "attacker": 432,
-          "defender": 1388
+          "attacker": 405,
+          "defender": 1084
         },
         "healingDone": {
           "attacker": 0,
@@ -2877,31 +2877,31 @@
       },
       "costEfficiency": {
         "damageDealtPerCost": {
-          "attacker": 3.08,
-          "defender": 1.44
+          "attacker": 2.41,
+          "defender": 1.35
         },
         "damageTakenPerCost": {
-          "attacker": 0.96,
-          "defender": 4.63
+          "attacker": 0.9,
+          "defender": 3.61
         },
         "healingDonePerCost": {
           "attacker": 0,
           "defender": 0
         },
         "netDamagePerCost": {
-          "attacker": 2.12,
-          "defender": -3.19
+          "attacker": 1.51,
+          "defender": -2.26
         },
         "survivorValueRatio": {
           "attacker": 0,
-          "defender": 0.23
+          "defender": 0.47
         }
       },
       "actionCounts": {
-        "attack": 167,
-        "damage": 167,
+        "attack": 151,
+        "damage": 151,
         "heal": 0,
-        "die": 35,
+        "die": 25,
         "spawn": 0,
         "spawn_blocked": 0,
         "projectile_intercept": 0,
@@ -3211,20 +3211,20 @@
       "name": "Tier 1: heavy gunner soft anti-air",
       "seed": 24680,
       "winner": "defender",
-      "lastActionTick": 17,
-      "battleDurationTicks": 18,
+      "lastActionTick": 14,
+      "battleDurationTicks": 15,
       "initialUnits": {
         "attacker": {
           "scout_drone": 3
         },
         "defender": {
-          "heavy_gunner": 12
+          "heavy_gunner": 9
         }
       },
       "survivors": {
         "attacker": {},
         "defender": {
-          "heavy_gunner": 12
+          "heavy_gunner": 9
         }
       },
       "initialValue": {
@@ -3252,33 +3252,33 @@
         }
       },
       "metrics": {
-        "firstAttackTick": 14,
-        "averageTimeToEngage": 15,
-        "averageEngagementDistance": 203.46,
-        "overlapSamples": 146,
-        "maxOverlap": 7.78,
-        "averageOverlap": 2.4,
-        "maxOverlapRatio": 0.41,
-        "averageOverlapRatio": 0.13,
+        "firstAttackTick": 13,
+        "averageTimeToEngage": 13.78,
+        "averageEngagementDistance": 200.7,
+        "overlapSamples": 59,
+        "maxOverlap": 4.65,
+        "averageOverlap": 2.16,
+        "maxOverlapRatio": 0.24,
+        "averageOverlapRatio": 0.11,
         "severeOverlapSamples": 0,
-        "targetSwitches": 9,
+        "targetSwitches": 0,
         "meleeSlotWaitTicks": 0,
-        "overkillDamage": 0
+        "overkillDamage": 9
       },
       "damageByUnitType": {
-        "heavy_gunner": 54
+        "heavy_gunner": 63
       },
       "damageTakenByUnitType": {
-        "scout_drone": 54
+        "scout_drone": 63
       },
       "healingDoneByUnitType": {},
       "teamPerformance": {
         "damageDealt": {
           "attacker": 0,
-          "defender": 54
+          "defender": 63
         },
         "damageTaken": {
-          "attacker": 54,
+          "attacker": 63,
           "defender": 0
         },
         "healingDone": {
@@ -3289,10 +3289,10 @@
       "costEfficiency": {
         "damageDealtPerCost": {
           "attacker": 0,
-          "defender": 0.12
+          "defender": 0.14
         },
         "damageTakenPerCost": {
-          "attacker": 0.15,
+          "attacker": 0.18,
           "defender": 0
         },
         "healingDonePerCost": {
@@ -3300,8 +3300,8 @@
           "defender": 0
         },
         "netDamagePerCost": {
-          "attacker": -0.15,
-          "defender": 0.12
+          "attacker": -0.17,
+          "defender": 0.14
         },
         "survivorValueRatio": {
           "attacker": 0,
@@ -3482,83 +3482,82 @@
       }
     },
     {
-      "presetId": "tier1_officer_compact_aura",
+      "presetId": "tier1_light_walker_anchors_aoe",
       "group": "tier1",
-      "name": "Tier 1: officer inside compact line",
+      "name": "Tier 1: light walker anchors against area damage",
       "seed": 24680,
-      "winner": "defender",
-      "lastActionTick": 70,
-      "battleDurationTicks": 71,
+      "winner": "attacker",
+      "lastActionTick": 65,
+      "battleDurationTicks": 66,
       "initialUnits": {
         "attacker": {
-          "marine": 40,
-          "officer": 1
+          "light_walker": 3
         },
         "defender": {
-          "marine": 48
+          "grenadier": 9
         }
       },
       "survivors": {
-        "attacker": {},
-        "defender": {
-          "marine": 22
-        }
+        "attacker": {
+          "light_walker": 3
+        },
+        "defender": {}
       },
       "initialValue": {
         "attacker": {
-          "marine": 500,
-          "officer": 300
+          "light_walker": 900
         },
         "defender": {
-          "marine": 600
+          "grenadier": 450
         }
       },
       "survivorValue": {
-        "attacker": {},
-        "defender": {
-          "marine": 275
-        }
+        "attacker": {
+          "light_walker": 900
+        },
+        "defender": {}
       },
       "teamValue": {
         "initial": {
-          "attacker": 800,
-          "defender": 600
+          "attacker": 900,
+          "defender": 450
         },
         "survivors": {
-          "attacker": 0,
-          "defender": 275
+          "attacker": 900,
+          "defender": 0
         }
       },
       "metrics": {
-        "firstAttackTick": 15,
-        "averageTimeToEngage": 17.22,
-        "averageEngagementDistance": 127.97,
-        "overlapSamples": 2727,
-        "maxOverlap": 12.66,
-        "averageOverlap": 2.33,
-        "maxOverlapRatio": 0.67,
-        "averageOverlapRatio": 0.12,
-        "severeOverlapSamples": 31,
-        "targetSwitches": 373,
+        "firstAttackTick": 23,
+        "averageTimeToEngage": 24.58,
+        "averageEngagementDistance": 190.04,
+        "overlapSamples": 47,
+        "maxOverlap": 6.56,
+        "averageOverlap": 2.38,
+        "maxOverlapRatio": 0.35,
+        "averageOverlapRatio": 0.13,
+        "severeOverlapSamples": 0,
+        "targetSwitches": 8,
         "meleeSlotWaitTicks": 0,
-        "overkillDamage": 330
+        "overkillDamage": 81
       },
       "damageByUnitType": {
-        "marine": 2808
+        "grenadier": 168,
+        "light_walker": 441
       },
       "damageTakenByUnitType": {
-        "marine": 2728,
-        "officer": 80
+        "grenadier": 441,
+        "light_walker": 168
       },
       "healingDoneByUnitType": {},
       "teamPerformance": {
         "damageDealt": {
-          "attacker": 1128,
-          "defender": 1680
+          "attacker": 441,
+          "defender": 168
         },
         "damageTaken": {
-          "attacker": 1680,
-          "defender": 1128
+          "attacker": 168,
+          "defender": 441
         },
         "healingDone": {
           "attacker": 0,
@@ -3567,35 +3566,35 @@
       },
       "costEfficiency": {
         "damageDealtPerCost": {
-          "attacker": 1.41,
-          "defender": 2.8
+          "attacker": 0.49,
+          "defender": 0.37
         },
         "damageTakenPerCost": {
-          "attacker": 2.1,
-          "defender": 1.88
+          "attacker": 0.19,
+          "defender": 0.98
         },
         "healingDonePerCost": {
           "attacker": 0,
           "defender": 0
         },
         "netDamagePerCost": {
-          "attacker": -0.69,
-          "defender": 0.92
+          "attacker": 0.3,
+          "defender": -0.61
         },
         "survivorValueRatio": {
-          "attacker": 0,
-          "defender": 0.46
+          "attacker": 1,
+          "defender": 0
         }
       },
       "actionCounts": {
-        "attack": 357,
-        "damage": 357,
+        "attack": 21,
+        "damage": 21,
         "heal": 0,
-        "die": 67,
+        "die": 9,
         "spawn": 0,
         "spawn_blocked": 0,
         "projectile_intercept": 0,
-        "status_apply": 200,
+        "status_apply": 0,
         "status_cleanse": 0,
         "shield_apply": 0,
         "mode_change": 0,
@@ -3608,96 +3607,91 @@
         "field_effect": 0
       },
       "roleSignals": {
-        "actions": {
-          "status_apply": 200
-        },
-        "statusApplications": {
-          "haste": 200
-        }
+        "actions": {},
+        "statusApplications": {}
       },
       "commandPoints": {
-        "attacker": 6,
-        "defender": 6
+        "attacker": 3,
+        "defender": 3
       }
     },
     {
-      "presetId": "tier1_officer_out_of_position",
+      "presetId": "tier1_light_walker_overwhelmed_by_line",
       "group": "tier1",
-      "name": "Tier 1: officer outside aura range",
+      "name": "Tier 1: line infantry overwhelms light walkers",
       "seed": 24680,
       "winner": "defender",
-      "lastActionTick": 74,
-      "battleDurationTicks": 75,
+      "lastActionTick": 111,
+      "battleDurationTicks": 112,
       "initialUnits": {
         "attacker": {
-          "marine": 40,
-          "officer": 1
+          "light_walker": 3
         },
         "defender": {
-          "marine": 48
+          "marine": 24
         }
       },
       "survivors": {
         "attacker": {},
         "defender": {
-          "marine": 26
+          "marine": 9
         }
       },
       "initialValue": {
         "attacker": {
-          "marine": 500,
-          "officer": 300
+          "light_walker": 900
         },
         "defender": {
-          "marine": 600
+          "marine": 300
         }
       },
       "survivorValue": {
         "attacker": {},
         "defender": {
-          "marine": 325
+          "marine": 112.5
         }
       },
       "teamValue": {
         "initial": {
-          "attacker": 800,
-          "defender": 600
+          "attacker": 900,
+          "defender": 300
         },
         "survivors": {
           "attacker": 0,
-          "defender": 325
+          "defender": 112.5
         }
       },
       "metrics": {
-        "firstAttackTick": 16,
-        "averageTimeToEngage": 19.68,
-        "averageEngagementDistance": 129.39,
-        "overlapSamples": 3050,
-        "maxOverlap": 13.9,
-        "averageOverlap": 2.4,
-        "maxOverlapRatio": 0.73,
-        "averageOverlapRatio": 0.13,
-        "severeOverlapSamples": 43,
-        "targetSwitches": 390,
+        "firstAttackTick": 23,
+        "averageTimeToEngage": 29.79,
+        "averageEngagementDistance": 149.06,
+        "overlapSamples": 936,
+        "maxOverlap": 12.51,
+        "averageOverlap": 2.74,
+        "maxOverlapRatio": 0.66,
+        "averageOverlapRatio": 0.14,
+        "severeOverlapSamples": 22,
+        "targetSwitches": 19,
         "meleeSlotWaitTicks": 0,
-        "overkillDamage": 310
+        "overkillDamage": 195
       },
       "damageByUnitType": {
-        "marine": 2712
+        "light_walker": 720,
+        "marine": 660
       },
       "damageTakenByUnitType": {
-        "marine": 2632,
-        "officer": 80
+        "light_walker": 660,
+        "marine": 720
       },
       "healingDoneByUnitType": {},
       "teamPerformance": {
         "damageDealt": {
-          "attacker": 1032,
-          "defender": 1680
+          "attacker": 720,
+          "defender": 660
         },
         "damageTaken": {
-          "attacker": 1680,
-          "defender": 1032
+          "attacker": 660,
+          "defender": 720
         },
         "healingDone": {
           "attacker": 0,
@@ -3706,35 +3700,35 @@
       },
       "costEfficiency": {
         "damageDealtPerCost": {
-          "attacker": 1.29,
-          "defender": 2.8
+          "attacker": 0.8,
+          "defender": 2.2
         },
         "damageTakenPerCost": {
-          "attacker": 2.1,
-          "defender": 1.72
+          "attacker": 0.73,
+          "defender": 2.4
         },
         "healingDonePerCost": {
           "attacker": 0,
           "defender": 0
         },
         "netDamagePerCost": {
-          "attacker": -0.81,
-          "defender": 1.08
+          "attacker": 0.07,
+          "defender": -0.2
         },
         "survivorValueRatio": {
           "attacker": 0,
-          "defender": 0.54
+          "defender": 0.38
         }
       },
       "actionCounts": {
-        "attack": 345,
-        "damage": 345,
+        "attack": 180,
+        "damage": 180,
         "heal": 0,
-        "die": 63,
+        "die": 18,
         "spawn": 0,
         "spawn_blocked": 0,
         "projectile_intercept": 0,
-        "status_apply": 13,
+        "status_apply": 0,
         "status_cleanse": 0,
         "shield_apply": 0,
         "mode_change": 0,
@@ -3747,16 +3741,12 @@
         "field_effect": 0
       },
       "roleSignals": {
-        "actions": {
-          "status_apply": 13
-        },
-        "statusApplications": {
-          "haste": 13
-        }
+        "actions": {},
+        "statusApplications": {}
       },
       "commandPoints": {
-        "attacker": 6,
-        "defender": 6
+        "attacker": 3,
+        "defender": 3
       }
     },
     {
@@ -3896,82 +3886,82 @@
       }
     },
     {
-      "presetId": "tier1_sapper_point_blank_stop",
+      "presetId": "tier1_explosive_drone_vs_walker",
       "group": "tier1",
-      "name": "Tier 1: sapper stops charge at point blank",
+      "name": "Tier 1: explosive drones breach light walkers",
       "seed": 24680,
       "winner": "attacker",
-      "lastActionTick": 5,
-      "battleDurationTicks": 6,
+      "lastActionTick": 32,
+      "battleDurationTicks": 33,
       "initialUnits": {
         "attacker": {
-          "sapper": 9
+          "explosive_drone": 12
         },
         "defender": {
-          "scavenger_buggy": 9
+          "light_walker": 3
         }
       },
       "survivors": {
         "attacker": {
-          "sapper": 9
+          "explosive_drone": 6
         },
         "defender": {}
       },
       "initialValue": {
         "attacker": {
-          "sapper": 390
+          "explosive_drone": 390
         },
         "defender": {
-          "scavenger_buggy": 600
+          "light_walker": 900
         }
       },
       "survivorValue": {
         "attacker": {
-          "sapper": 390
+          "explosive_drone": 195
         },
         "defender": {}
       },
       "teamValue": {
         "initial": {
           "attacker": 390,
-          "defender": 600
+          "defender": 900
         },
         "survivors": {
-          "attacker": 390,
+          "attacker": 195,
           "defender": 0
         }
       },
       "metrics": {
-        "firstAttackTick": 1,
-        "averageTimeToEngage": 2.5,
-        "averageEngagementDistance": 60.99,
-        "overlapSamples": 6,
-        "maxOverlap": 0.49,
-        "averageOverlap": 0.28,
-        "maxOverlapRatio": 0.03,
-        "averageOverlapRatio": 0.01,
-        "severeOverlapSamples": 0,
-        "targetSwitches": 9,
-        "meleeSlotWaitTicks": 16,
-        "overkillDamage": 162
+        "firstAttackTick": 14,
+        "averageTimeToEngage": 20.56,
+        "averageEngagementDistance": 80.78,
+        "overlapSamples": 44,
+        "maxOverlap": 12.49,
+        "averageOverlap": 3.29,
+        "maxOverlapRatio": 0.63,
+        "averageOverlapRatio": 0.15,
+        "severeOverlapSamples": 3,
+        "targetSwitches": 10,
+        "meleeSlotWaitTicks": 273,
+        "overkillDamage": 12
       },
       "damageByUnitType": {
-        "sapper": 882,
-        "scavenger_buggy": 42
+        "explosive_drone": 672,
+        "light_walker": 150
       },
       "damageTakenByUnitType": {
-        "sapper": 42,
-        "scavenger_buggy": 882
+        "explosive_drone": 150,
+        "light_walker": 672
       },
       "healingDoneByUnitType": {},
       "teamPerformance": {
         "damageDealt": {
-          "attacker": 882,
-          "defender": 42
+          "attacker": 672,
+          "defender": 150
         },
         "damageTaken": {
-          "attacker": 42,
-          "defender": 882
+          "attacker": 150,
+          "defender": 672
         },
         "healingDone": {
           "attacker": 0,
@@ -3980,29 +3970,29 @@
       },
       "costEfficiency": {
         "damageDealtPerCost": {
-          "attacker": 2.26,
-          "defender": 0.07
+          "attacker": 1.72,
+          "defender": 0.17
         },
         "damageTakenPerCost": {
-          "attacker": 0.11,
-          "defender": 1.47
+          "attacker": 0.38,
+          "defender": 0.75
         },
         "healingDonePerCost": {
           "attacker": 0,
           "defender": 0
         },
         "netDamagePerCost": {
-          "attacker": 2.15,
-          "defender": -1.4
+          "attacker": 1.34,
+          "defender": -0.58
         },
         "survivorValueRatio": {
-          "attacker": 1,
+          "attacker": 0.5,
           "defender": 0
         }
       },
       "actionCounts": {
-        "attack": 12,
-        "damage": 12,
+        "attack": 9,
+        "damage": 9,
         "heal": 0,
         "die": 9,
         "spawn": 0,
@@ -4021,7 +4011,9 @@
         "field_effect": 0
       },
       "roleSignals": {
-        "actions": {},
+        "actions": {
+          "percent_hp_damage": 6
+        },
         "statusApplications": {}
       },
       "commandPoints": {
@@ -4030,82 +4022,82 @@
       }
     },
     {
-      "presetId": "tier1_sapper_long_approach",
+      "presetId": "tier1_explosive_drone_screened_out",
       "group": "tier1",
-      "name": "Tier 1: sapper exposed on long approach",
+      "name": "Tier 1: heavy gunners screen explosive drones",
       "seed": 24680,
       "winner": "defender",
-      "lastActionTick": 19,
-      "battleDurationTicks": 20,
+      "lastActionTick": 28,
+      "battleDurationTicks": 29,
       "initialUnits": {
         "attacker": {
-          "sapper": 9
+          "explosive_drone": 12
         },
         "defender": {
-          "scavenger_buggy": 9
+          "heavy_gunner": 9
         }
       },
       "survivors": {
         "attacker": {},
         "defender": {
-          "scavenger_buggy": 8
+          "heavy_gunner": 7
         }
       },
       "initialValue": {
         "attacker": {
-          "sapper": 390
+          "explosive_drone": 390
         },
         "defender": {
-          "scavenger_buggy": 600
+          "heavy_gunner": 450
         }
       },
       "survivorValue": {
         "attacker": {},
         "defender": {
-          "scavenger_buggy": 533.33
+          "heavy_gunner": 350
         }
       },
       "teamValue": {
         "initial": {
           "attacker": 390,
-          "defender": 600
+          "defender": 450
         },
         "survivors": {
           "attacker": 0,
-          "defender": 533.33
+          "defender": 350
         }
       },
       "metrics": {
-        "firstAttackTick": 15,
-        "averageTimeToEngage": 16.8,
-        "averageEngagementDistance": 82.31,
-        "overlapSamples": 107,
-        "maxOverlap": 23.76,
-        "averageOverlap": 5.4,
+        "firstAttackTick": 12,
+        "averageTimeToEngage": 18.79,
+        "averageEngagementDistance": 74.49,
+        "overlapSamples": 157,
+        "maxOverlap": 13.05,
+        "averageOverlap": 3.37,
         "maxOverlapRatio": 0.69,
-        "averageOverlapRatio": 0.19,
-        "severeOverlapSamples": 10,
-        "targetSwitches": 15,
-        "meleeSlotWaitTicks": 141,
-        "overkillDamage": 36
+        "averageOverlapRatio": 0.18,
+        "severeOverlapSamples": 13,
+        "targetSwitches": 29,
+        "meleeSlotWaitTicks": 251,
+        "overkillDamage": 40
       },
       "damageByUnitType": {
-        "sapper": 98,
-        "scavenger_buggy": 288
+        "explosive_drone": 280,
+        "heavy_gunner": 338
       },
       "damageTakenByUnitType": {
-        "sapper": 288,
-        "scavenger_buggy": 98
+        "explosive_drone": 338,
+        "heavy_gunner": 280
       },
       "healingDoneByUnitType": {},
       "teamPerformance": {
         "damageDealt": {
-          "attacker": 98,
-          "defender": 288
+          "attacker": 280,
+          "defender": 338
         },
         "damageTaken": {
-          "attacker": 288,
-          "defender": 98
+          "attacker": 338,
+          "defender": 280
         },
         "healingDone": {
           "attacker": 0,
@@ -4114,41 +4106,41 @@
       },
       "costEfficiency": {
         "damageDealtPerCost": {
-          "attacker": 0.25,
-          "defender": 0.48
+          "attacker": 0.72,
+          "defender": 0.75
         },
         "damageTakenPerCost": {
-          "attacker": 0.74,
-          "defender": 0.16
+          "attacker": 0.87,
+          "defender": 0.62
         },
         "healingDonePerCost": {
           "attacker": 0,
           "defender": 0
         },
         "netDamagePerCost": {
-          "attacker": -0.49,
-          "defender": 0.32
+          "attacker": -0.15,
+          "defender": 0.13
         },
         "survivorValueRatio": {
           "attacker": 0,
-          "defender": 0.89
+          "defender": 0.78
         }
       },
       "actionCounts": {
-        "attack": 10,
-        "damage": 10,
+        "attack": 71,
+        "damage": 154,
         "heal": 0,
-        "die": 10,
+        "die": 14,
         "spawn": 0,
         "spawn_blocked": 0,
         "projectile_intercept": 0,
-        "status_apply": 0,
+        "status_apply": 134,
         "status_cleanse": 0,
         "shield_apply": 0,
         "mode_change": 0,
         "stance_change": 0,
         "cone_attack": 0,
-        "charge_damage": 9,
+        "charge_damage": 0,
         "control_convert": 0,
         "barrier_absorb": 0,
         "hazard_cleanse": 0,
@@ -4156,9 +4148,13 @@
       },
       "roleSignals": {
         "actions": {
-          "charge_damage": 9
+          "percent_hp_damage": 10,
+          "split_fire": 83,
+          "status_apply": 134
         },
-        "statusApplications": {}
+        "statusApplications": {
+          "output_suppressed": 134
+        }
       },
       "commandPoints": {
         "attacker": 3,
@@ -4171,11 +4167,11 @@
       "name": "Tier 1: protected heavy gunner line",
       "seed": 24680,
       "winner": "attacker",
-      "lastActionTick": 136,
-      "battleDurationTicks": 137,
+      "lastActionTick": 115,
+      "battleDurationTicks": 116,
       "initialUnits": {
         "attacker": {
-          "heavy_gunner": 4,
+          "heavy_gunner": 3,
           "marine": 16
         },
         "defender": {
@@ -4184,7 +4180,8 @@
       },
       "survivors": {
         "attacker": {
-          "heavy_gunner": 4
+          "heavy_gunner": 2,
+          "marine": 3
         },
         "defender": {}
       },
@@ -4199,7 +4196,8 @@
       },
       "survivorValue": {
         "attacker": {
-          "heavy_gunner": 150
+          "heavy_gunner": 100,
+          "marine": 37.5
         },
         "defender": {}
       },
@@ -4209,43 +4207,43 @@
           "defender": 300
         },
         "survivors": {
-          "attacker": 150,
+          "attacker": 137.5,
           "defender": 0
         }
       },
       "metrics": {
         "firstAttackTick": 14,
-        "averageTimeToEngage": 20.67,
-        "averageEngagementDistance": 52.04,
-        "overlapSamples": 1662,
-        "maxOverlap": 13.19,
-        "averageOverlap": 2.94,
-        "maxOverlapRatio": 0.69,
-        "averageOverlapRatio": 0.15,
-        "severeOverlapSamples": 64,
-        "targetSwitches": 253,
-        "meleeSlotWaitTicks": 771,
-        "overkillDamage": 87
+        "averageTimeToEngage": 21.15,
+        "averageEngagementDistance": 53.16,
+        "overlapSamples": 1711,
+        "maxOverlap": 13.52,
+        "averageOverlap": 3.12,
+        "maxOverlapRatio": 0.71,
+        "averageOverlapRatio": 0.16,
+        "severeOverlapSamples": 75,
+        "targetSwitches": 235,
+        "meleeSlotWaitTicks": 788,
+        "overkillDamage": 118
       },
       "damageByUnitType": {
-        "heavy_gunner": 663,
-        "marine": 621,
-        "shock_trooper": 689
+        "heavy_gunner": 500,
+        "marine": 828,
+        "shock_trooper": 643
       },
       "damageTakenByUnitType": {
-        "heavy_gunner": 66,
-        "marine": 623,
-        "shock_trooper": 1284
+        "heavy_gunner": 101,
+        "marine": 542,
+        "shock_trooper": 1328
       },
       "healingDoneByUnitType": {},
       "teamPerformance": {
         "damageDealt": {
-          "attacker": 1284,
-          "defender": 689
+          "attacker": 1328,
+          "defender": 643
         },
         "damageTaken": {
-          "attacker": 689,
-          "defender": 1284
+          "attacker": 643,
+          "defender": 1328
         },
         "healingDone": {
           "attacker": 0,
@@ -4254,35 +4252,35 @@
       },
       "costEfficiency": {
         "damageDealtPerCost": {
-          "attacker": 3.67,
-          "defender": 2.3
+          "attacker": 3.79,
+          "defender": 2.14
         },
         "damageTakenPerCost": {
-          "attacker": 1.97,
-          "defender": 4.28
+          "attacker": 1.84,
+          "defender": 4.43
         },
         "healingDonePerCost": {
           "attacker": 0,
           "defender": 0
         },
         "netDamagePerCost": {
-          "attacker": 1.7,
-          "defender": -1.98
+          "attacker": 1.96,
+          "defender": -2.28
         },
         "survivorValueRatio": {
-          "attacker": 0.43,
+          "attacker": 0.39,
           "defender": 0
         }
       },
       "actionCounts": {
-        "attack": 396,
-        "damage": 396,
+        "attack": 318,
+        "damage": 318,
         "heal": 0,
-        "die": 46,
+        "die": 44,
         "spawn": 0,
         "spawn_blocked": 0,
         "projectile_intercept": 0,
-        "status_apply": 642,
+        "status_apply": 366,
         "status_cleanse": 0,
         "shield_apply": 0,
         "mode_change": 0,
@@ -4296,11 +4294,11 @@
       },
       "roleSignals": {
         "actions": {
-          "split_fire": 421,
-          "status_apply": 642
+          "split_fire": 241,
+          "status_apply": 366
         },
         "statusApplications": {
-          "output_suppressed": 642
+          "output_suppressed": 366
         }
       },
       "commandPoints": {
@@ -4314,11 +4312,11 @@
       "name": "Tier 1: exposed heavy gunner line",
       "seed": 24680,
       "winner": "defender",
-      "lastActionTick": 116,
-      "battleDurationTicks": 117,
+      "lastActionTick": 112,
+      "battleDurationTicks": 113,
       "initialUnits": {
         "attacker": {
-          "heavy_gunner": 12
+          "heavy_gunner": 9
         },
         "defender": {
           "marine": 24
@@ -4327,7 +4325,7 @@
       "survivors": {
         "attacker": {},
         "defender": {
-          "marine": 10
+          "marine": 6
         }
       },
       "initialValue": {
@@ -4341,7 +4339,7 @@
       "survivorValue": {
         "attacker": {},
         "defender": {
-          "marine": 125
+          "marine": 75
         }
       },
       "teamValue": {
@@ -4351,40 +4349,40 @@
         },
         "survivors": {
           "attacker": 0,
-          "defender": 125
+          "defender": 75
         }
       },
       "metrics": {
-        "firstAttackTick": 21,
-        "averageTimeToEngage": 27.86,
-        "averageEngagementDistance": 134.37,
-        "overlapSamples": 1381,
-        "maxOverlap": 11.52,
-        "averageOverlap": 2.44,
-        "maxOverlapRatio": 0.61,
-        "averageOverlapRatio": 0.13,
-        "severeOverlapSamples": 20,
-        "targetSwitches": 93,
+        "firstAttackTick": 20,
+        "averageTimeToEngage": 27.09,
+        "averageEngagementDistance": 134.22,
+        "overlapSamples": 1038,
+        "maxOverlap": 14.13,
+        "averageOverlap": 2.72,
+        "maxOverlapRatio": 0.74,
+        "averageOverlapRatio": 0.14,
+        "severeOverlapSamples": 28,
+        "targetSwitches": 62,
         "meleeSlotWaitTicks": 0,
-        "overkillDamage": 38
+        "overkillDamage": 43
       },
       "damageByUnitType": {
-        "heavy_gunner": 608,
-        "marine": 564
+        "heavy_gunner": 732,
+        "marine": 475
       },
       "damageTakenByUnitType": {
-        "heavy_gunner": 564,
-        "marine": 608
+        "heavy_gunner": 475,
+        "marine": 732
       },
       "healingDoneByUnitType": {},
       "teamPerformance": {
         "damageDealt": {
-          "attacker": 608,
-          "defender": 564
+          "attacker": 732,
+          "defender": 475
         },
         "damageTaken": {
-          "attacker": 564,
-          "defender": 608
+          "attacker": 475,
+          "defender": 732
         },
         "healingDone": {
           "attacker": 0,
@@ -4393,35 +4391,35 @@
       },
       "costEfficiency": {
         "damageDealtPerCost": {
-          "attacker": 1.35,
-          "defender": 1.88
+          "attacker": 1.63,
+          "defender": 1.58
         },
         "damageTakenPerCost": {
-          "attacker": 1.25,
-          "defender": 2.03
+          "attacker": 1.06,
+          "defender": 2.44
         },
         "healingDonePerCost": {
           "attacker": 0,
           "defender": 0
         },
         "netDamagePerCost": {
-          "attacker": 0.1,
-          "defender": -0.15
+          "attacker": 0.57,
+          "defender": -0.86
         },
         "survivorValueRatio": {
           "attacker": 0,
-          "defender": 0.42
+          "defender": 0.25
         }
       },
       "actionCounts": {
-        "attack": 436,
-        "damage": 436,
+        "attack": 358,
+        "damage": 358,
         "heal": 0,
-        "die": 26,
+        "die": 27,
         "spawn": 0,
         "spawn_blocked": 0,
         "projectile_intercept": 0,
-        "status_apply": 892,
+        "status_apply": 716,
         "status_cleanse": 0,
         "shield_apply": 0,
         "mode_change": 0,
@@ -4435,11 +4433,11 @@
       },
       "roleSignals": {
         "actions": {
-          "split_fire": 588,
-          "status_apply": 892
+          "split_fire": 472,
+          "status_apply": 716
         },
         "statusApplications": {
-          "output_suppressed": 892
+          "output_suppressed": 716
         }
       },
       "commandPoints": {
@@ -5708,7 +5706,7 @@
       "initialValue": {
         "attacker": {
           "marine": 300,
-          "officer": 300
+          "officer": 0
         },
         "defender": {
           "alien_bug": 0
@@ -5717,17 +5715,17 @@
       "survivorValue": {
         "attacker": {
           "marine": 300,
-          "officer": 300
+          "officer": 0
         },
         "defender": {}
       },
       "teamValue": {
         "initial": {
-          "attacker": 600,
+          "attacker": 300,
           "defender": 0
         },
         "survivors": {
-          "attacker": 600,
+          "attacker": 300,
           "defender": 0
         }
       },
@@ -5770,11 +5768,11 @@
       },
       "costEfficiency": {
         "damageDealtPerCost": {
-          "attacker": 1.33,
+          "attacker": 2.67,
           "defender": 0
         },
         "damageTakenPerCost": {
-          "attacker": 0.1,
+          "attacker": 0.19,
           "defender": 0
         },
         "healingDonePerCost": {
@@ -5782,7 +5780,7 @@
           "defender": 0
         },
         "netDamagePerCost": {
-          "attacker": 1.24,
+          "attacker": 2.48,
           "defender": 0
         },
         "survivorValueRatio": {

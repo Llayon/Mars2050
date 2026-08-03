@@ -69,12 +69,12 @@ describe('combat ECS split fire', () => {
     expect(nativeResult).toEqual({ acted: true })
     expect(world.stores.vitality.require(2).hp).toBe(world.stores.vitality.require(2).maxHp)
     expect(world.stores.statusControl.require(2).statusEffects)
-      .toContainEqual(expect.objectContaining({ type: 'output_suppressed', value: 0.18 }))
+      .toContainEqual(expect.objectContaining({ type: 'output_suppressed', value: 0.25 }))
     expect(nativeActions).toContainEqual({
       unitId: 'secondary',
       type: 'status_apply',
       statusType: 'output_suppressed',
-      value: 0.18,
+      value: 0.25,
     })
   })
 

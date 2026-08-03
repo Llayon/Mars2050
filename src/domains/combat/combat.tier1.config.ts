@@ -10,8 +10,8 @@ export const TIER1_UNIT_TYPES = [
   'scavenger_buggy',
   'grenadier',
   'heavy_gunner',
-  'sapper',
-  'officer',
+  'explosive_drone',
+  'light_walker',
   'jetpack_trooper',
 ] as const satisfies readonly UnitTypeKey[]
 
@@ -33,8 +33,8 @@ export const TIER1_COMMAND_COSTS: Record<Tier1UnitType, 1> = {
   scavenger_buggy: 1,
   grenadier: 1,
   heavy_gunner: 1,
-  sapper: 1,
-  officer: 1,
+  explosive_drone: 1,
+  light_walker: 1,
   jetpack_trooper: 1,
 }
 

@@ -83,6 +83,8 @@ export const REPLAY_VISUAL_ASSETS = {
   drone: { kind: 'svg-strip', path: '/assets/units/drone_8dir.svg' },
   alien_worm: { kind: 'svg-strip', path: '/assets/units/alien_worm_8dir.svg' },
   scout_drone: { kind: 'svg-strip', path: '/assets/units/scout_drone_8dir.svg' },
+  explosive_drone: { kind: 'svg-strip', path: '/assets/units/drone_8dir.svg' },
+  light_walker: { kind: 'svg-strip', path: '/assets/units/railgun_walker_8dir.svg' },
   scavenger_buggy: { kind: 'svg-strip', path: '/assets/units/scavenger_buggy_8dir.svg' },
   jetpack_trooper: { kind: 'svg-strip', path: '/assets/units/jetpack_trooper_8dir.svg' },
   gatling_rover: { kind: 'svg-strip', path: '/assets/units/gatling_rover_8dir.svg' },

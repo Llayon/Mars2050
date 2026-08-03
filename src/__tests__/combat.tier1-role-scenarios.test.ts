@@ -13,7 +13,7 @@ const ROLE_SIGNAL_GATES: { scenarioId: string; actions: BattleActionType[]; stat
   { scenarioId: 'tier1_jetpack_open_flank', actions: ['mode_change'] },
   { scenarioId: 'tier1_scout_focus_fire', actions: ['target_mark'] },
   { scenarioId: 'tier1_medic_sustain_check', actions: ['heal'] },
-  { scenarioId: 'tier1_officer_compact_aura', actions: ['status_apply'], statusType: 'haste' },
+  { scenarioId: 'tier1_explosive_drone_vs_walker', actions: ['self_destruct', 'percent_hp_damage'] },
   { scenarioId: 'tier1_buggy_charge_flank', actions: ['charge_damage'] },
 ]
 
@@ -23,7 +23,8 @@ const DAMAGE_GATES: { scenarioId: string; unitType: string }[] = [
   { scenarioId: 'tier1_grenadier_vs_clump', unitType: 'grenadier' },
   { scenarioId: 'tier1_grenadier_vs_spread', unitType: 'grenadier' },
   { scenarioId: 'tier1_flamethrower_vs_shock_screen', unitType: 'flamethrower' },
-  { scenarioId: 'tier1_sapper_point_blank_stop', unitType: 'sapper' },
+  { scenarioId: 'tier1_explosive_drone_vs_walker', unitType: 'explosive_drone' },
+  { scenarioId: 'tier1_light_walker_anchors_aoe', unitType: 'light_walker' },
   { scenarioId: 'tier1_shock_screen_vs_snipers', unitType: 'shock_trooper' },
   { scenarioId: 'tier1_jetpack_open_flank', unitType: 'jetpack_trooper' },
   { scenarioId: 'tier1_sniper_priority_target', unitType: 'sniper' },
@@ -43,11 +44,11 @@ describe('Tier 1 combat role scenarios', () => {
       'tier1_scout_focus_fire',
       'tier1_scout_countered_by_heavy',
       'tier1_medic_sustain_check',
-      'tier1_officer_compact_aura',
-      'tier1_officer_out_of_position',
+      'tier1_light_walker_anchors_aoe',
+      'tier1_light_walker_overwhelmed_by_line',
       'tier1_buggy_charge_flank',
-      'tier1_sapper_point_blank_stop',
-      'tier1_sapper_long_approach',
+      'tier1_explosive_drone_vs_walker',
+      'tier1_explosive_drone_screened_out',
       'tier1_heavy_gunner_sustained_line',
       'tier1_heavy_gunner_exposed',
       'tier1_jetpack_open_flank',
@@ -136,8 +137,10 @@ describe('Tier 1 combat role scenarios', () => {
     expect(simulateScenario(findScenario('tier1_flamethrower_vs_ranged_line')).winner).toBe('defender')
     expect(simulateScenario(findScenario('tier1_scout_focus_fire')).winner).toBe('attacker')
     expect(simulateScenario(findScenario('tier1_scout_countered_by_heavy')).winner).toBe('defender')
-    expect(simulateScenario(findScenario('tier1_sapper_point_blank_stop')).winner).toBe('attacker')
-    expect(simulateScenario(findScenario('tier1_sapper_long_approach')).winner).toBe('defender')
+    expect(simulateScenario(findScenario('tier1_light_walker_anchors_aoe')).winner).toBe('attacker')
+    expect(simulateScenario(findScenario('tier1_light_walker_overwhelmed_by_line')).winner).toBe('defender')
+    expect(simulateScenario(findScenario('tier1_explosive_drone_vs_walker')).winner).toBe('attacker')
+    expect(simulateScenario(findScenario('tier1_explosive_drone_screened_out')).winner).toBe('defender')
     expect(heavy.winner).toBe('attacker')
     expect(simulateScenario(findScenario('tier1_heavy_gunner_exposed')).winner).toBe('defender')
     expect(simulateScenario(findScenario('tier1_jetpack_vs_shock_screen')).winner).toBe('defender')

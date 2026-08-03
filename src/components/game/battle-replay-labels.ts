@@ -12,6 +12,7 @@ export function getReplayActionLabel(action: BattleAction): string | null {
     case 'shield_break': return 'ЩИТ СЛОМАН'
     case 'shield_hit_block': return 'ЩИТ БЛОК'
     case 'shield_apply': return 'ЩИТ'
+    case 'heal_blocked': return 'ЛЕЧЕНИЕ БЛОК'
     case 'unit_blocked_damage': return action.damage !== undefined ? `БЛОК ${action.damage}` : 'БЛОК'
     case 'barrier_absorb': return action.damage !== undefined ? `БАРЬЕР ${action.damage}` : 'БАРЬЕР'
     case 'status_apply': return formatStatus(action.statusType)
@@ -56,6 +57,7 @@ export function getReplayActionLabel(action: BattleAction): string | null {
     case 'emerge_strike': return 'УДАР'
     case 'conditional_attack_mode': return 'РЕЖИМ ОГНЯ'
     case 'sweep_hit': return 'СЕКТОРНЫЙ УДАР'
+    case 'self_destruct': return 'ПОДРЫВ'
     default: return null
   }
 }

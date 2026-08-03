@@ -100,6 +100,7 @@ export function createRuntimeSquad(row: UnitRow, team: Team, rng: PRNG): SimUnit
     Object.assign(unit, {
       squadId, rank, hp: row.hp_current !== undefined ? Math.min(row.hp_current, hp) : hp,
       maxHp: Math.round(hp), attack: Math.round(attack), defense, speed, range, attackType,
+      selfDestructOnAttack: config.baseStats.selfDestructOnAttack,
       spawnType: config.baseStats.spawnType, spawnCap: config.baseStats.spawnCap,
       actionCooldownMax: cooldown, actionCooldown: 0,
       isFlying: modeSwitchConfig ? (modeSwitchConfig.startMode ?? 'ground') === 'air' : flying,

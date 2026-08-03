@@ -26,6 +26,7 @@ export interface UnitBaseStats {
   minimumRange?: number
   attackType: 'single' | 'aoe' | 'heal' | 'spawn'
   aoeRadius?: number; spawnType?: string; spawnCap?: number; actionCooldownMax?: number
+  selfDestructOnAttack?: boolean
   spawnOverrides?: { hp?: number; attack?: number; isTemporary?: boolean; duration?: number }
   coneAttack?: ConeAttackConfig
   beamAttack?: BeamAttackConfig
@@ -68,6 +69,7 @@ export interface UnitTypeConfig {
   name: string
   baseStats: UnitBaseStats
   hireCost: Record<string, number>
+  recruitable?: boolean
   squadSize?: number
   squadSpacing?: number
   formation?: 'line' | 'wedge' | 'grid'

@@ -42,7 +42,8 @@ describe('simulator2 Tier 1 setup', () => {
   it('counts every Tier 1 squad as one point and ignores QA units', () => {
     expect(getTier1CommandPoints([
       row('marine', 'attacker', 'marine'),
-      row('officer', 'attacker', 'officer'),
+      row('walker', 'attacker', 'light_walker'),
+      row('legacy-officer', 'attacker', 'officer'),
       row('exo', 'attacker', 'exosuit'),
     ])).toBe(2)
   })

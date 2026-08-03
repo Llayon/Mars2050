@@ -183,7 +183,7 @@ describe('combat ECS world boundary', () => {
   })
 
   it('publishes the new deterministic simulation version', () => {
-    expect(CURRENT_SIMULATION_VERSION).toBe(4)
+    expect(CURRENT_SIMULATION_VERSION).toBe(5)
   })
 
   it('invalidates registered query caches on death and revival', () => {

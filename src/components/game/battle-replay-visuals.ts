@@ -1,5 +1,14 @@
 import type { UnitTypeKey } from '@/domains/combat/combat.types'
 
+export type UnitLocomotion = 'wheels' | 'tracks' | 'legs' | 'hover'
+
+export interface UnitModeVisualConfig {
+  locomotion: UnitLocomotion
+  yOffset?: number
+  hoverAmplitude?: number
+  hoverSpeed?: number
+}
+
 export interface UnitVisualConfig {
   scale?: number
   sourceCanvas?: number
@@ -10,7 +19,8 @@ export interface UnitVisualConfig {
   vfxScale?: number
   muzzleOffset?: number
   fxType?: string
-  locomotion?: 'wheels' | 'tracks' | 'legs' | 'hover'
+  locomotion?: UnitLocomotion
+  modeVisuals?: Partial<Record<'ground' | 'air', UnitModeVisualConfig>>
   recoilPx?: number
   trailColor?: number
 }
@@ -21,8 +31,10 @@ export const UNIT_VISUALS: Partial<Record<UnitTypeKey, UnitVisualConfig>> = {
   drone: { scale: 0.95, yOffset: -18, hoverAmplitude: 3, hoverSpeed: 0.08, muzzleOffset: 14, fxType: 'fx_muzzle_green', vfxScale: 0.5, locomotion: 'hover' },
   alien_worm: { scale: 1.25, anchor: { x: 0.5, y: 0.68 }, muzzleOffset: 16, fxType: 'fx_impact_cyan', vfxScale: 0.9, locomotion: 'legs' },
   scout_drone: { scale: 0.95, yOffset: -24, hoverAmplitude: 4, hoverSpeed: 0.09, muzzleOffset: 18, fxType: 'fx_muzzle_cyan', vfxScale: 0.5, locomotion: 'hover' },
+  explosive_drone: { scale: 0.78, yOffset: -6, hoverAmplitude: 1.5, hoverSpeed: 0.1, muzzleOffset: 10, fxType: 'fx_impact_orange', vfxScale: 0.8, locomotion: 'hover' },
+  light_walker: { scale: 0.82, anchor: { x: 0.5, y: 0.7 }, muzzleOffset: 32, fxType: 'fx_muzzle_orange', vfxScale: 1.0, locomotion: 'legs', recoilPx: 7 },
   scavenger_buggy: { scale: 1.05, muzzleOffset: 18, fxType: 'fx_impact_orange', vfxScale: 0.7, locomotion: 'wheels', recoilPx: 4, trailColor: 0xb45309 },
-  jetpack_trooper: { scale: 1.05, yOffset: -18, hoverAmplitude: 5, hoverSpeed: 0.08, muzzleOffset: 10, fxType: 'fx_impact_orange', vfxScale: 0.6, locomotion: 'hover' },
+  jetpack_trooper: { scale: 1.05, muzzleOffset: 10, fxType: 'fx_impact_orange', vfxScale: 0.6, modeVisuals: { ground: { locomotion: 'legs', yOffset: 0 }, air: { locomotion: 'hover', yOffset: -18, hoverAmplitude: 5, hoverSpeed: 0.08 } } },
   gatling_rover: { scale: 1.05, muzzleOffset: 28, fxType: 'fx_muzzle_orange', vfxScale: 0.8, locomotion: 'wheels', recoilPx: 3, trailColor: 0x7f1d1d },
   plasma_tank: { scale: 1.15, muzzleOffset: 45, fxType: 'fx_muzzle_cyan', vfxScale: 1.0 },
   missile_buggy: { scale: 1.0, muzzleOffset: 25, fxType: 'fx_impact_orange', vfxScale: 0.8, locomotion: 'wheels', recoilPx: 3, trailColor: 0x8b4513 },

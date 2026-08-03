@@ -34,6 +34,7 @@ export function resolveEcsSingleShot(
 ): void {
   const identity = world.stores.identity.require(entityId)
   const combat = world.stores.combat.require(entityId)
+  const weapon = world.stores.weapon.require(entityId)
   const status = world.stores.statusControl.require(entityId)
   actions.push({
     unitId: identity.id,
@@ -64,6 +65,7 @@ export function resolveEcsSingleShot(
     targetId,
     primaryDamage,
     actions,
+    { interceptable: !weapon.selfDestructOnAttack },
   )
   status.hasAttacked = true
   breakEcsMovementStealthOnAttack(world, entityId, actions)
@@ -96,4 +98,14 @@ export function resolveEcsSingleShot(
     emergeStrike?.aoeRadiusAdd,
   )
   applyEcsDisplacement(world, entityId, targetId, actions)
+  if (weapon.selfDestructOnAttack) {
+    actions.push({
+      unitId: identity.id,
+      type: 'self_destruct',
+      targetId: world.stores.identity.require(targetId).id,
+      radius: weapon.aoeRadius,
+    })
+    world.stores.vitality.require(entityId).hp = 0
+    resolveEcsDeath(world, entityId, undefined, actions, 'self_destruct')
+  }
 }

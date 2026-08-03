@@ -36,7 +36,7 @@ function makePresetUnit(id: string, colonyId: string, unitType: UnitTypeKey, x: 
 export const UNIT_CATEGORIES = [
   {
     name: 'Тир 1 (Пехота)',
-    keys: ['marine', 'shock_trooper', 'flamethrower', 'scout_drone', 'medic', 'sniper', 'scavenger_buggy', 'grenadier', 'heavy_gunner', 'sapper', 'officer', 'jetpack_trooper'] as UnitTypeKey[]
+    keys: ['marine', 'shock_trooper', 'flamethrower', 'scout_drone', 'medic', 'sniper', 'scavenger_buggy', 'grenadier', 'heavy_gunner', 'explosive_drone', 'light_walker', 'jetpack_trooper'] as UnitTypeKey[]
   },
   {
     name: 'Тир 2 (Средняя техника)',
