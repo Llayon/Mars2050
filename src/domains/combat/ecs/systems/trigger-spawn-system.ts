@@ -1,6 +1,7 @@
 import type { BattleAction } from '../../combat.actions'
 import type { TriggerPayload } from '../../combat.sim.types'
-import { createRuntimeUnitFromConfig } from '../../combat.unit-factory'
+import type { UnitTypeKey } from '../../combat.types'
+import { compileUnit } from '../../combat.unit-compiler'
 import { FIELD_HEIGHT, FIELD_WIDTH } from '../../combat.utils'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
@@ -28,32 +29,38 @@ export function spawnEcsTriggerUnits(
 
   for (let index = 0; index < count && existing + spawned < cap; index++) {
     const position = getSpawnPosition(anchor)
-    const unit = createRuntimeUnitFromConfig({
-      id: world.allocateExternalId(`trigger_${owner.id}_${sourceKey}`),
-      team: owner.team,
-      type: payload.unitType,
-      x: position.x,
-      y: position.y,
-      summonOwnerId: owner.id,
-      summonSourceId: sourceKey,
-      currentAngle: ownerTransform.currentAngle,
+    const unit = compileUnit({
+      definitionId: payload.unitType as UnitTypeKey,
+      identity: {
+        id: world.allocateExternalId(`trigger_${owner.id}_${sourceKey}`),
+        team: owner.team,
+        summonOwnerId: owner.id,
+        summonSourceId: sourceKey,
+      },
+      loadout: { rank: 1, upgradeIds: [] },
+      placement: {
+        x: position.x,
+        y: position.y,
+        angle: ownerTransform.currentAngle,
+      },
+      spawn: { inheritance: 'base' },
+      overrides: { hpPercent: payload.hpPercent },
     })
     if (!unit) continue
-    if (payload.hpPercent !== undefined) {
-      unit.hp = Math.max(1, Math.floor(unit.maxHp * payload.hpPercent))
-      unit.maxHp = unit.hp
-    }
-    world.queueUnitCreation(unit)
+    world.queueCompiledUnitCreation(unit)
+    const identity = unit.components.identity
+    const transform = unit.components.transform
+    const vitality = unit.components.vitality
     spawned++
     actions.push({
       unitId: owner.id,
       type: 'spawn',
-      targetId: unit.id,
-      toX: unit.x,
-      toY: unit.y,
-      spawnType: unit.type,
-      spawnTeam: unit.team,
-      spawnMaxHp: unit.maxHp,
+      targetId: identity.id,
+      toX: transform.x,
+      toY: transform.y,
+      spawnType: identity.type,
+      spawnTeam: identity.team,
+      spawnMaxHp: vitality.maxHp,
     })
   }
 

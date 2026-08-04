@@ -17,6 +17,7 @@ export interface RuntimeMovementContext {
 export interface RuntimeActionContext {
   rng: PRNG
   tick: number
+  allowDeadActorAction?: boolean
 }
 
 export interface RuntimeActionResult {

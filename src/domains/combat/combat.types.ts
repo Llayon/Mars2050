@@ -1,5 +1,5 @@
 import { Database, UnitsType } from '@/types/database'
-import type { AttackChargeConfig, BarrageAttackConfig, BeamAttackConfig, BurrowConfig, ChainAttackConfig, CombatTag, ConditionalAttackModeConfig, ConditionalRangeConfig, ConeAttackConfig, ControlBeamConfig, DelayedReassemblyConfig, FieldEffectConfig, FlatDamageBlockConfig, FormationModifiersConfig, LinePierceConfig, PercentHpDamageConfig, PeriodicAbilityConfig, RankScalingConfig, ShieldHitBlockConfig, SideWeaponConfig, SplitFireConfig, StatGrowthConfig, StatusEffect, SupportAura, SweepAttackConfig, TargetMarkConfig, TargetPriorityProfile, TransformModeConfig, TriggerEffectConfig, UnitModeSwitchConfig, UnitStanceConfig } from './combat.sim.types'
+import type { AttackChargeConfig, BarrageAttackConfig, BeamAttackConfig, BurrowConfig, ChainAttackConfig, ChargeDamageConfig, CombatTag, ConditionalAttackModeConfig, ConditionalRangeConfig, ConeAttackConfig, ControlBeamConfig, DelayedReassemblyConfig, FieldEffectConfig, FlatDamageBlockConfig, FormationModifiersConfig, LinePierceConfig, MineOnActionConfig, OnKillConfig, PercentHpDamageConfig, PeriodicAbilityConfig, RampDamageConfig, RankScalingConfig, ShieldHitBlockConfig, SideWeaponConfig, SplitFireConfig, StatGrowthConfig, StatusEffect, SupportAura, SweepAttackConfig, TargetMarkConfig, TargetPriorityProfile, TransformModeConfig, TriggerEffectConfig, UnitModeSwitchConfig, UnitStanceConfig } from './combat.sim.types'
 
 export type UnitRow = Database['public']['Tables']['units']['Row']
 export type BattleRow = Database['public']['Tables']['battles']['Row']
@@ -34,11 +34,11 @@ export interface UnitBaseStats {
   chainAttack?: ChainAttackConfig
   splitFire?: SplitFireConfig
   sideWeapon?: SideWeaponConfig
-  rampDamage?: { step: number; maxMultiplier: number }
-  chargeDamage?: { minDistance: number; maxDistance: number; maxMultiplier: number }
+  rampDamage?: RampDamageConfig
+  chargeDamage?: ChargeDamageConfig
   percentHpDamage?: PercentHpDamageConfig & { maxBonus: number }
   shieldDamageMult?: number; armorPierceRatio?: number; antiAirDamageMult?: number; summonCounterDamageMult?: number; accuracyPenaltyResist?: number
-  onKill?: { cooldownReset?: boolean; healPercent?: number; status?: StatusEffect }
+  onKill?: OnKillConfig
   linePierce?: LinePierceConfig
   pullOnHit?: { radius: number; strength: number; maxTargets?: number }
   knockbackOnHit?: { radius: number; strength: number; maxTargets?: number }
@@ -51,7 +51,7 @@ export interface UnitBaseStats {
   statusOnHit?: StatusEffect[]
   markOnHit?: TargetMarkConfig
   supportAuras?: SupportAura[]
-  mineOnAction?: { radius: number; damage: number; duration: number }
+  mineOnAction?: MineOnActionConfig
   smokeOnAction?: { radius: number; duration: number; rangeSuppression?: number; outputSuppression?: number; accuracySuppression?: number }
   periodicAbilities?: PeriodicAbilityConfig[]; triggerEffects?: TriggerEffectConfig[]; transformMode?: TransformModeConfig[]; controlBeam?: ControlBeamConfig; fieldEffect?: FieldEffectConfig[]; formationModifiers?: FormationModifiersConfig
   statGrowth?: StatGrowthConfig; attackCharge?: AttackChargeConfig; reassembly?: DelayedReassemblyConfig

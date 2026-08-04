@@ -96,6 +96,63 @@ describe('battle replay metrics', () => {
     expect(metrics.severeOverlapSamples).toBe(1)
   })
 
+  it('measures squad designation use from replay actions', () => {
+    const logs: BattleTick[] = [
+      {
+        tick: 4,
+        actions: [
+          {
+            unitId: 'scout',
+            type: 'target_mark',
+            targetId: 'target',
+            markEvent: 'new_squad',
+            markSquadId: 'enemy-squad',
+            markDuration: 20,
+            retargetCount: 2,
+          },
+          { unitId: 'marine', type: 'attack', targetId: 'target' },
+          {
+            unitId: 'marine',
+            type: 'damage',
+            targetId: 'target',
+            damage: 14,
+            bonusDamage: 6,
+          },
+        ],
+      },
+      {
+        tick: 5,
+        actions: [{
+          unitId: 'scout',
+          type: 'target_mark',
+          targetId: 'target',
+          markEvent: 'refresh',
+          markSquadId: 'enemy-squad',
+          markDuration: 20,
+          retargetCount: 0,
+        }],
+      },
+    ]
+    const metrics = buildBattleReplayMetrics(logs, [
+      simUnit('scout', 'attacker', 100, 100, { type: 'scout_drone', attack: 0 }),
+      simUnit('marine', 'attacker', 100, 120),
+      simUnit('target', 'defender', 200, 100, { squadId: 'enemy-squad' }),
+    ], false)
+
+    expect(metrics.mark).toMatchObject({
+      firstMarkTick: 4,
+      markUptimeTicks: 2,
+      uniqueMarkedSquads: 1,
+      markRefreshCount: 1,
+      alliedShotsWhileMarkActive: 1,
+      shotsAgainstMarkedTargets: 1,
+      markUtilization: 1,
+      damageAgainstMarkedTargets: 14,
+      bonusDamageFromMarks: 6,
+      alliesRetargetedByMark: 2,
+    })
+  })
+
   it('skips synchronous overlap analysis for large replay workloads', () => {
     expect(shouldCollectInlineReplayOverlapMetrics(82, 100)).toBe(true)
     expect(shouldCollectInlineReplayOverlapMetrics(205, 605)).toBe(false)

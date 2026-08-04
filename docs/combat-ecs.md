@@ -37,6 +37,26 @@ state, survivors, and replay serialization. It is not runtime storage.
 `COMPONENT_FIELDS_ARE_EXHAUSTIVE` makes missing component-to-snapshot mappings a
 compile-time error.
 
+## Unit Compilation
+
+`UNIT_TYPES` is a design catalog and is read only before structural creation.
+Every deployment and summon is described by a typed `UnitBuildSpec` and passes
+through the same pipeline:
+
+`Unit definition + rank + upgrades + spawn policy + overrides -> compileUnit() -> UnitEntityBundle`
+
+Squads compile directly into bundles before they enter `CombatWorld`. Spawn,
+periodic-spawn, and trigger-spawn systems use the same compiler and explicitly
+select `inheritance: 'base'`, preserving the current rule that summons do not
+inherit owner rank or upgrades. The compiler also supports explicit owner-rank,
+owner-loadout, and selected-upgrade policies for future unit mechanics.
+
+Compiled bundles own combat stats, capabilities, primitives, and immutable
+runtime rules. ECS systems read those components exclusively; no module under
+`combat/ecs` imports or queries `UNIT_TYPES`. Dynamic statuses remain runtime
+state and are applied after compilation. Clones copy compiled rules from their
+source entity instead of recompiling from the catalog.
+
 Registered component queries start from the smallest participating store and
 cache stable result sets until structure or alive-state revisions change.
 Optional mechanics are represented by capability marker components, including
@@ -333,6 +353,20 @@ The operation order is contractual and covered by `combat.damage-order.test.ts`:
 Weapon loadouts allow one primary area geometry. Split fire and side weapons are
 explicit secondary weapons. Invalid multi-geometry configurations fail during
 runtime creation instead of stacking accidental primary attacks.
+
+### Squad designation
+
+Shared target marks are indexed by source entity. Normal acquisition remains
+local, while a marked squad may contribute candidates inside its explicit assist
+radius. A new squad designation may shorten allied aggro locks without deleting
+current targets; refreshes do not cause global target churn. Each source owns one
+active designation, separate sources may designate separate squads, and a target
+stores only one effective mark so damage multipliers never stack.
+
+Combat and replay metrics expose first mark tick, uptime, unique squads,
+designation switches, refreshes, assisted shots, utilization, marked damage,
+bonus damage, retarget requests, and marked overkill. Simulation version 6
+introduces this targeting and replay-action contract.
 
 ## Termination
 

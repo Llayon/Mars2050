@@ -1,8 +1,7 @@
 import type { BattleAction } from '../../combat.actions'
-import { UNIT_TYPES } from '../../combat.config'
+import type { MineOnActionConfig } from '../../combat.primitives'
 import type { RuntimeActionContext, RuntimeActionResult } from '../../combat.runtime'
 import type { StatusEffect } from '../../combat.sim.types'
-import type { UnitBaseStats, UnitTypeKey } from '../../combat.types'
 import { FIELD_HEIGHT, FIELD_WIDTH, getDistance, getSizeRadius } from '../../combat.utils'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
@@ -15,7 +14,7 @@ import {
 import { syncEcsBurrowForAction } from './emerge-strike-system'
 
 const FACING_TOLERANCE = 0.26
-type MineConfig = NonNullable<UnitBaseStats['mineOnAction']>
+type MineConfig = MineOnActionConfig
 
 export function canUseEcsMineAction(world: CombatWorld, entityId: EntityId): boolean {
   return getMineConfig(world, entityId) !== undefined
@@ -96,8 +95,7 @@ function deployMine(
 }
 
 function getMineConfig(world: CombatWorld, entityId: EntityId): MineConfig | undefined {
-  const type = world.stores.identity.require(entityId).type as UnitTypeKey
-  return UNIT_TYPES[type]?.baseStats.mineOnAction
+  return world.stores.runtimeRules.require(entityId).mineOnAction
 }
 
 function isActionBlocked(effects: StatusEffect[]): boolean {

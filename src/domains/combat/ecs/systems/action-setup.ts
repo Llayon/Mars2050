@@ -1,11 +1,7 @@
 import type { BattleAction } from '../../combat.actions'
-import { UNIT_TYPES } from '../../combat.config'
-import type { UnitTypeKey } from '../../combat.types'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
 import { getEcsEffectiveActionRangeAgainst, isEcsMeleeEngagementReady } from '../movement-positioning'
-
-const GRID_TO_PIXELS = 40
 
 export function isEcsWeaponActionInRange(
   world: CombatWorld,
@@ -83,8 +79,7 @@ export function syncEcsModeForAction(
 }
 
 function getEcsMinimumActionRange(world: CombatWorld, entityId: EntityId): number {
-  const type = world.stores.identity.require(entityId).type as UnitTypeKey
-  return (UNIT_TYPES[type]?.baseStats.minimumRange ?? 0) * GRID_TO_PIXELS
+  return world.stores.runtimeRules.require(entityId).minimumRange
 }
 
 function setDeployed(

@@ -1,7 +1,5 @@
 import type { BattleAction } from '../../combat.actions'
-import { UNIT_TYPES } from '../../combat.config'
 import type { RuntimeStatusEffect } from '../../combat.sim.types'
-import type { UnitTypeKey } from '../../combat.types'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
 
@@ -35,8 +33,7 @@ export function buildEcsDamagePayload(
 }
 
 function getPercentHpDamage(world: CombatWorld, attackerId: EntityId, targetId: EntityId): number {
-  const identity = world.stores.identity.require(attackerId)
-  const config = UNIT_TYPES[identity.type as UnitTypeKey]?.baseStats.percentHpDamage
+  const config = world.stores.runtimeRules.require(attackerId).percentHpDamage
   if (!config) return 0
   const vitality = world.stores.vitality.require(targetId)
   const basis = (config.basis ?? 'max') === 'current' ? vitality.hp : vitality.maxHp

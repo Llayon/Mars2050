@@ -43,6 +43,7 @@ export interface UnitCombatComponent {
 export interface UnitTargetingComponent {
   attackTargetId?: string; rampTargetId?: string
   rampMultiplier?: number; chargeDistance?: number; aggroLockTicks: number
+  designatedSquadId?: string
   meleeSlotTargetId?: string; meleeSlotIndex?: number; meleeWaitingTargetId?: string
   targetPriorityProfile?: TargetPriorityProfile
   conditionalRange?: ConditionalRangeConfig[]

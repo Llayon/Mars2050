@@ -1,6 +1,5 @@
 import type { BattleAction } from '../combat.actions'
 import type { Obstacle } from '../combat.sim.types'
-import { UNIT_TYPES } from '../combat.config'
 import { getDistance, getSizeRadius } from '../combat.utils'
 import type { CombatWorld } from './combat-world'
 import type { EntityId } from './entity'
@@ -158,8 +157,7 @@ export function getEcsRecoveryForce(world: CombatWorld, entityId: EntityId, targ
 }
 
 export function recordEcsChargeMovement(world: CombatWorld, entityId: EntityId, distance: number): void {
-  const identity = world.stores.identity.require(entityId)
-  const config = UNIT_TYPES[identity.type as keyof typeof UNIT_TYPES]?.baseStats.chargeDamage
+  const config = world.stores.runtimeRules.require(entityId).chargeDamage
   if (!config || distance <= 0) return
   const targeting = world.stores.targeting.require(entityId)
   targeting.chargeDistance = Math.min(config.maxDistance, (targeting.chargeDistance ?? 0) + distance)

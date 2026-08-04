@@ -1,10 +1,9 @@
 import type { BattleAction } from '../../combat.actions'
-import { UNIT_TYPES } from '../../combat.config'
 import type { DeathCause } from '../../combat.death.types'
 import type { RuntimeStatusEffect } from '../../combat.sim.types'
-import type { UnitTypeKey } from '../../combat.types'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
+import { getEcsCombatTags } from '../targeting-evaluation'
 import { applyEcsHealing } from './healing-system'
 import { applyEcsBarriers } from './damage-barrier-system'
 import { applyEcsDamageSharing } from './damage-sharing-system'
@@ -12,6 +11,7 @@ import { tryEcsProjectileInterception } from './damage-interception-system'
 import { buildEcsDamagePayload } from './damage-payload-system'
 interface EcsDamageResult {
   damage: number
+  bonusDamage: number
   shieldDamage: number
   shieldBroken: boolean
   shieldHitBlock: boolean
@@ -25,12 +25,10 @@ interface EcsDamageResult {
   intercepted: boolean
 }
 export interface EcsDamageOptions {
-  allowPercentHpDamage?: boolean
-  allowMinimumDamage?: boolean
+  allowPercentHpDamage?: boolean; allowMinimumDamage?: boolean
   interceptable?: boolean
   deathCause?: DeathCause
 }
-
 export function applyEcsSingleDamage(
   world: CombatWorld,
   attackerId: EntityId,
@@ -79,7 +77,9 @@ export function applyEcsSingleDamage(
   damage = barrier.damage
   damage = applyTargetStatuses(targetStatus.statusEffects, damage)
   const markMultiplier = getMarkDamageMultiplier(world, attackerId, targetId, targetStatus.targetMark)
+  const beforeMark = damage
   if (markMultiplier > 0) damage = Math.max(0, Math.floor(damage * (1 + markMultiplier)))
+  const bonusDamage = Math.max(0, damage - beforeMark)
   damage = applyFlatBlock(world, targetId, damage)
   const blockedBeforeShield = Math.max(0, raw - damage)
   const shield = applyShield(world, targetId, damage, attacker.shieldDamageMult)
@@ -100,9 +100,15 @@ export function applyEcsSingleDamage(
     lifesteal = applyEcsHealing(world, attackerId, attackerId, Math.floor((damage + sharing.sharedDamage) * attacker.lifestealMult))
   }
   if (damage > 0) targetVitality.hp -= damage
+  const actionGroup = world.resources.get('actionGroup')
+  if (actionGroup?.active && damage > 0) {
+    targetVitality.hp += damage
+    actionGroup.queueDamage(targetId, attackerId, damage)
+  }
   const result = {
     ...shield,
     damage,
+    bonusDamage,
     blockedDamage: blockedBeforeShield + shield.shieldHitBlockedDamage + reactiveBlock,
     barrierBlockedDamage: barrier.blockedDamage,
     barrierBreaks: barrier.breaks,
@@ -113,7 +119,6 @@ export function applyEcsSingleDamage(
   emitDamageActions(world, attackerId, targetId, result, actions)
   return result
 }
-
 function applyShield(world: CombatWorld, targetId: EntityId, damage: number, shieldMultiplier = 1): EcsDamageResult {
   const vitality = world.stores.vitality.require(targetId)
   const defense = world.stores.defense.require(targetId)
@@ -136,7 +141,6 @@ function applyShield(world: CombatWorld, targetId: EntityId, damage: number, shi
   }
   return createResult({ damage: overflow, shieldDamage: currentShield, shieldBroken: true })
 }
-
 function emitDamageActions(world: CombatWorld, attackerId: EntityId, targetId: EntityId, result: EcsDamageResult, actions: BattleAction[]): void {
   const attacker = world.stores.identity.require(attackerId).id
   const target = world.stores.identity.require(targetId).id
@@ -146,11 +150,10 @@ function emitDamageActions(world: CombatWorld, attackerId: EntityId, targetId: E
   for (const event of result.barrierBreaks) actions.push({ unitId: event.sourceUnitId, type: 'barrier_break', hazardId: event.hazardId })
   if (result.shieldDamage > 0) actions.push({ unitId: attacker, type: 'shield_damage', targetId: target, damage: result.shieldDamage, isShieldHit: true })
   if (result.shieldBroken) actions.push({ unitId: attacker, type: 'shield_break', targetId: target })
-  if (result.damage > 0) actions.push({ unitId: attacker, type: 'damage', targetId: target, damage: result.damage })
+  if (result.damage > 0) actions.push({ unitId: attacker, type: 'damage', targetId: target, damage: result.damage, ...(result.bonusDamage > 0 ? { bonusDamage: result.bonusDamage } : {}) })
   for (const event of result.sharedDamageEvents) actions.push({ unitId: attacker, type: 'damage_share', targetId: event.targetId, damage: event.damage })
   if (result.lifesteal > 0) actions.push({ unitId: attacker, type: 'lifesteal', targetId: attacker, damage: result.lifesteal })
 }
-
 function applyOutputSuppression(effects: RuntimeStatusEffect[], damage: number): number {
   let suppression = 0
   for (const effect of effects) {
@@ -161,7 +164,6 @@ function applyOutputSuppression(effects: RuntimeStatusEffect[], damage: number):
   suppression = Math.min(0.5, suppression)
   return suppression > 0 ? Math.max(0, Math.floor(damage * (1 - suppression))) : damage
 }
-
 function applyAccuracy(effects: RuntimeStatusEffect[], resistValue: number | undefined, damage: number): number {
   const penalty = getStatusValue(effects, 'accuracy_reduced') ?? 0
   if (damage <= 0 || penalty <= 0) return damage
@@ -169,7 +171,6 @@ function applyAccuracy(effects: RuntimeStatusEffect[], resistValue: number | und
   const effective = Math.max(0, Math.min(0.95, penalty * (1 - resist)))
   return Math.max(0, Math.floor(damage * (1 - effective)))
 }
-
 function applyTargetStatuses(effects: RuntimeStatusEffect[], damage: number): number {
   const vulnerable = getStatusValue(effects, 'vulnerable') ?? 0
   const reduction = getStatusValue(effects, 'damage_reduction') ?? 0
@@ -211,9 +212,8 @@ function getRankMultiplier(world: CombatWorld, attackerId: EntityId, targetId: E
 function applySummonCounter(world: CombatWorld, attackerId: EntityId, targetId: EntityId, damage: number): number {
   const multiplier = Math.max(1, world.stores.combat.require(attackerId).summonCounterDamageMult ?? 1)
   if (multiplier <= 1) return damage
-  const identity = world.stores.identity.require(targetId)
   const vitality = world.stores.vitality.require(targetId)
-  const tags = UNIT_TYPES[identity.type as UnitTypeKey]?.baseStats.combatTags ?? []
+  const tags = getEcsCombatTags(world, targetId)
   const summon = world.stores.weapon.require(targetId).attackType === 'spawn' || world.stores.entityTargets.require(targetId).summonOwner !== undefined ||
     vitality.isTemporary || tags.includes('summoner')
   return summon ? Math.floor(damage * multiplier) : damage
@@ -240,7 +240,7 @@ function getStatusValue(effects: RuntimeStatusEffect[], type: RuntimeStatusEffec
 
 function createResult(overrides: Partial<EcsDamageResult> = {}): EcsDamageResult {
   return {
-    damage: 0, shieldDamage: 0, shieldBroken: false,
+    damage: 0, bonusDamage: 0, shieldDamage: 0, shieldBroken: false,
     shieldHitBlock: false, shieldHitBlockedDamage: 0,
     blockedDamage: 0, barrierBlockedDamage: 0, barrierBreaks: [],
     sharedDamage: 0, sharedDamageEvents: [],

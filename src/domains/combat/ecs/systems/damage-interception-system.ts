@@ -1,11 +1,8 @@
 import type { BattleAction } from '../../combat.actions'
-import { UNIT_TYPES } from '../../combat.config'
-import type { UnitTypeKey } from '../../combat.types'
 import { getDistance } from '../../combat.utils'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
 
-const MIN_INTERCEPTABLE_RANGE = 80
 const MAX_INTERCEPT_QUERY_RADIUS = 400
 
 export function tryEcsProjectileInterception(
@@ -43,11 +40,7 @@ export function tryEcsProjectileInterception(
 }
 
 function isInterceptable(world: CombatWorld, attackerId: EntityId): boolean {
-  const identity = world.stores.identity.require(attackerId)
-  const combat = world.stores.combat.require(attackerId)
-  const stats = UNIT_TYPES[identity.type as UnitTypeKey]?.baseStats
-  return Boolean(stats?.barrageAttack) ||
-    Boolean(stats?.combatTags?.includes('explosive') && combat.range > MIN_INTERCEPTABLE_RANGE && combat.attack > 0)
+  return world.stores.runtimeRules.require(attackerId).projectileInterceptable
 }
 
 function isEligible(world: CombatWorld, entityId: EntityId, targetId: EntityId, team: string, rawDamage: number): boolean {

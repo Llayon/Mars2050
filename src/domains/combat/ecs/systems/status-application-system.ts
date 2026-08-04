@@ -16,6 +16,18 @@ export function applyEcsStatus(
   effect: StatusEffect,
   actions: BattleAction[],
 ): boolean {
+  const actionGroup = world.resources.get('actionGroup')
+  if (actionGroup?.active && !actionGroup.committing) {
+    const normalized = normalizeStatusEffect(effect)
+    if (normalized.duration <= 0) return false
+    const statuses = world.stores.statusControl.require(targetId).statusEffects
+    if (isBlockedByImmunity(statuses, normalized)) {
+      actions.push({ unitId: world.stores.identity.require(targetId).id, type: 'status_immune', statusType: normalized.type })
+      return false
+    }
+    actionGroup.queueStatus(targetId, normalized)
+    return true
+  }
   const identity = world.stores.identity.require(targetId)
   const statuses = world.stores.statusControl.require(targetId).statusEffects
   const normalized = normalizeStatusEffect(effect)

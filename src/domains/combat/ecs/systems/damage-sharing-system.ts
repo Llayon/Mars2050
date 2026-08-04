@@ -41,9 +41,14 @@ export function applyEcsDamageSharing(
     const shared = baseDamage + (remainder > 0 ? 1 : 0)
     remainder = Math.max(0, remainder - 1)
     if (shared <= 0) continue
-    world.stores.vitality.require(recipientId).hp -= shared
+    const actionGroup = world.resources.get('actionGroup')
+    if (actionGroup?.active) {
+      actionGroup.queueDamage(recipientId, attackerId, shared)
+    } else {
+      world.stores.vitality.require(recipientId).hp -= shared
+    }
     events.push({ targetId: world.stores.identity.require(recipientId).id, damage: shared })
-    resolveEcsDeath(world, recipientId, attackerId, actions, deathCause)
+    if (!actionGroup?.active) resolveEcsDeath(world, recipientId, attackerId, actions, deathCause)
   }
   const sharedDamage = events.reduce((sum, event) => sum + event.damage, 0)
   return { damage: damage - sharedDamage, sharedDamage, events }

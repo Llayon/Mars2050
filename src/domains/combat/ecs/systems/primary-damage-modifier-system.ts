@@ -1,6 +1,4 @@
 import type { BattleAction } from '../../combat.actions'
-import { UNIT_TYPES } from '../../combat.config'
-import type { UnitTypeKey } from '../../combat.types'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
 
@@ -23,7 +21,7 @@ function applyRampDamage(
   actions: BattleAction[],
 ): number {
   const identity = world.stores.identity.require(attackerId)
-  const config = UNIT_TYPES[identity.type as UnitTypeKey]?.baseStats.rampDamage
+  const config = world.stores.runtimeRules.require(attackerId).rampDamage
   if (!config) return damage
   const targeting = world.stores.targeting.require(attackerId)
   const refs = world.stores.entityTargets.require(attackerId)
@@ -50,7 +48,7 @@ function applyChargeDamage(
   actions: BattleAction[],
 ): number {
   const identity = world.stores.identity.require(attackerId)
-  const config = UNIT_TYPES[identity.type as UnitTypeKey]?.baseStats.chargeDamage
+  const config = world.stores.runtimeRules.require(attackerId).chargeDamage
   if (!config) return damage
   const targeting = world.stores.targeting.require(attackerId)
   const chargeDistance = targeting.chargeDistance ?? 0

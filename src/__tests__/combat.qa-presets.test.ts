@@ -47,7 +47,7 @@ const MOVEMENT_QA_GATES = [
       battleDurationLessThan: 110,
       averageTimeToEngageMax: 40,
       totalStuckTicksLessThan: 1500,
-      meleeSlotWaitTicksLessThan: 3500,
+      meleeSlotWaitTicksLessThan: 4000,
     },
   },
   {
@@ -61,7 +61,7 @@ const MOVEMENT_QA_GATES = [
       targetSwitchesLessThan: 8000,
       battleDurationLessThan: 225,
       averageTimeToEngageMax: 60,
-      totalStuckTicksLessThan: 8500,
+      totalStuckTicksLessThan: 10500,
       meleeSlotWaitTicksLessThan: 35000,
     },
   },

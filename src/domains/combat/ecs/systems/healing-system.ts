@@ -44,6 +44,11 @@ export function applyEcsHealingFromSource(
     })
     return 0
   }
+  const actionGroup = world.resources.get('actionGroup')
+  if (actionGroup?.active) {
+    actionGroup.queueHealing(targetId, sourceExternalId, Math.max(0, Math.floor(requestedAmount)))
+    return Math.max(0, Math.floor(requestedAmount))
+  }
   const before = Math.max(0, Math.min(target.maxHp, target.hp))
   target.hp = Math.min(target.maxHp, before + Math.max(0, Math.floor(requestedAmount)))
   const actualHeal = target.hp - before

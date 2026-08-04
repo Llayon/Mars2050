@@ -34,7 +34,7 @@ describe('pvp.replay — snapshot version contract', () => {
     const snapshot = {
       battle_id: 'b1', seed: 1, initial_state: {}, log: [],
       metrics: { firstAttackTick: 3 },
-      version: 7, created_at: '2026-01-01',
+      version: 8, created_at: '2026-01-01',
     }
     fromMock
       .mockImplementationOnce(() => chainable({ data: battle, error: null }))
@@ -42,7 +42,7 @@ describe('pvp.replay — snapshot version contract', () => {
 
     const r = await loadBattleWithSnapshot('b1')
     expect(r).not.toBeNull()
-    expect(r?.snapshot.version).toBe(7)
+    expect(r?.snapshot.version).toBe(8)
     expect(r?.snapshot.metrics).toEqual({ firstAttackTick: 3 })
     expect(r?.compatibility).toMatchObject({
       status: 'unsupported',

@@ -1,5 +1,10 @@
 import type { BattleTick, SimUnit } from '@/domains/combat/combat.types'
 import { collectOverlapMetrics } from '@/domains/combat/combat.metrics-overlap'
+import {
+  emptyMarkCombatMetrics,
+  MarkMetricsAccumulator,
+  type MarkCombatMetrics,
+} from '@/domains/combat/combat.mark-metrics'
 
 export const INLINE_REPLAY_OVERLAP_WORK_LIMIT = 12_000
 
@@ -12,6 +17,7 @@ export interface BattleReplayMetrics {
   averageOverlapRatio: number
   maxOverlapRatio: number
   severeOverlapSamples: number
+  mark: MarkCombatMetrics
 }
 
 interface MetricUnitState {
@@ -22,7 +28,11 @@ interface MetricUnitState {
   isFlying: boolean
 }
 
-export function buildBattleReplayMetrics(logs: BattleTick[], initialState?: SimUnit[]): BattleReplayMetrics {
+export function buildBattleReplayMetrics(
+  logs: BattleTick[],
+  initialState?: SimUnit[],
+  collectOverlap = true,
+): BattleReplayMetrics {
   const metrics: BattleReplayMetrics = {
     totalTicks: logs.length,
     firstAttack: -1,
@@ -32,6 +42,7 @@ export function buildBattleReplayMetrics(logs: BattleTick[], initialState?: SimU
     averageOverlapRatio: 0,
     maxOverlapRatio: 0,
     severeOverlapSamples: 0,
+    mark: emptyMarkCombatMetrics(),
   }
 
   for (const log of logs) {
@@ -41,6 +52,10 @@ export function buildBattleReplayMetrics(logs: BattleTick[], initialState?: SimU
   }
 
   if (!initialState) return metrics
+  const markAccumulator = new MarkMetricsAccumulator(initialState)
+  for (const log of logs) markAccumulator.consumeTick(log.tick, log.actions)
+  metrics.mark = markAccumulator.snapshot()
+  if (!collectOverlap) return metrics
 
   const units = new Map<string, MetricUnitState>()
   for (const unit of initialState) {

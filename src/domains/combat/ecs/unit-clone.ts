@@ -3,11 +3,13 @@ import type { UnitCapabilityName } from './combat-components'
 import type { CombatWorld } from './combat-world'
 import type { EntityId } from './entity'
 import { captureCapabilityNames } from './unit-capabilities'
+import type { UnitRuntimeRules } from '../combat.unit-build.types'
 
 export interface UnitCloneData {
   externalId: string
   components: UnitComponentDataMap
   capabilities: UnitCapabilityName[]
+  runtimeRules: UnitRuntimeRules
 }
 
 export function captureUnitClone(
@@ -47,6 +49,7 @@ export function captureUnitClone(
     rampMultiplier: undefined,
     chargeDistance: 0,
     aggroLockTicks: 0,
+    designatedSquadId: undefined,
     meleeSlotIndex: undefined,
     controlProgress: undefined,
   })
@@ -73,5 +76,6 @@ export function captureUnitClone(
     externalId,
     components,
     capabilities,
+    runtimeRules: structuredClone(world.stores.runtimeRules.require(sourceId)),
   }
 }

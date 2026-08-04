@@ -1,7 +1,6 @@
-import { UNIT_TYPES } from '../combat.config'
 import type { CombatTag } from '../combat.primitives'
-import { DEFAULT_TARGETING_PROFILE, TARGETING_PROFILES } from '../combat.targeting.config'
-import type { TargetingProfileConfig, TargetingProfileKey, UnitTypeKey } from '../combat.types'
+import { TARGETING_PROFILES } from '../combat.targeting.config'
+import type { TargetingProfileConfig, TargetingProfileKey } from '../combat.types'
 import type { CombatWorld } from './combat-world'
 import type { EntityId } from './entity'
 
@@ -55,7 +54,6 @@ export function getEcsTargetScore(
 }
 
 export function getEcsCombatTags(world: CombatWorld, entityId: EntityId): CombatTag[] {
-  const identity = world.stores.identity.require(entityId)
   const transform = world.stores.transform.require(entityId)
   const vitality = world.stores.vitality.require(entityId)
   const weapon = world.stores.weapon.require(entityId)
@@ -77,7 +75,7 @@ export function getEcsCombatTags(world: CombatWorld, entityId: EntityId): Combat
   const cached = cache.get(entityId)
   if (cached?.signature === signature) return cached.tags
   const tags = new Set<CombatTag>(
-    UNIT_TYPES[identity.type as UnitTypeKey]?.baseStats.combatTags ?? [],
+    world.stores.runtimeRules.require(entityId).baseCombatTags,
   )
   if (movement.modeSwitchConfig && !transform.isFlying) tags.delete('aircraft')
   if (transform.isFlying) tags.add('aircraft')
@@ -108,8 +106,7 @@ export function isEcsTargetVisible(world: CombatWorld, targetId: EntityId): bool
 }
 
 export function canEcsReceiveHeal(world: CombatWorld, sourceId: EntityId, targetId: EntityId): boolean {
-  const source = world.stores.identity.require(sourceId)
-  const targetTags = UNIT_TYPES[source.type as UnitTypeKey]?.baseStats.healTargetTags
+  const targetTags = world.stores.runtimeRules.require(sourceId).healTargetTags
   if (!targetTags?.length) return true
   const effectiveTags = new Set(getEcsCombatTags(world, targetId))
   return targetTags.some(tag => effectiveTags.has(tag))
@@ -122,8 +119,7 @@ export function getEntityDistance(world: CombatWorld, leftId: EntityId, rightId:
 }
 
 function getProfileKey(world: CombatWorld, entityId: EntityId): TargetingProfileKey {
-  const type = world.stores.identity.require(entityId).type as UnitTypeKey
-  return UNIT_TYPES[type]?.baseStats.targetingProfile ?? DEFAULT_TARGETING_PROFILE
+  return world.stores.runtimeRules.require(entityId).targetingProfile
 }
 
 function getEffectiveRange(world: CombatWorld, entityId: EntityId): number {

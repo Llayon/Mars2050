@@ -1,5 +1,9 @@
 import type { BattleAction } from './combat.actions'
 import { collectOverlapMetrics } from './combat.metrics-overlap'
+import {
+  MarkMetricsAccumulator,
+  type MarkCombatMetrics,
+} from './combat.mark-metrics'
 import type { TimeoutPolicy } from './combat.result'
 import type { CombatWorld } from './ecs/combat-world'
 import { isEcsMeleeEngagementReady } from './ecs/movement-positioning'
@@ -31,6 +35,7 @@ export interface CombatMetrics {
   healingDoneByUnitType: Record<string, number>
   killsByUnitType: Record<string, number>
   overkillDamage: number
+  mark: MarkCombatMetrics
 }
 
 export interface CombatMetricsCollector {
@@ -55,6 +60,7 @@ export interface CombatMetricsCollector {
   hpByUnitId: Map<string, number>
   firstEngageTickByUnitId: Map<string, number>
   lastTargetByUnitId: Map<string, string>
+  markAccumulator: MarkMetricsAccumulator
 }
 
 export function createCombatMetrics(world: CombatWorld): CombatMetricsCollector {
@@ -83,6 +89,7 @@ export function createCombatMetrics(world: CombatWorld): CombatMetricsCollector 
     ])),
     firstEngageTickByUnitId: new Map(),
     lastTargetByUnitId: new Map(),
+    markAccumulator: new MarkMetricsAccumulator(world.snapshot()),
   }
 }
 
@@ -98,14 +105,13 @@ export function recordCombatActions(
     if (action.type === 'heal') recordHealAction(metrics, action, world)
     if (action.type === 'die') recordDeathAction(metrics, action, world)
   }
+  metrics.markAccumulator.consumeTick(tick, actions)
 }
-
 export function recordCombatTick(metrics: CombatMetricsCollector, world: CombatWorld): void {
   recordTargetSwitches(metrics, world)
   recordMovementStateMetrics(metrics, world)
   recordOverlap(metrics, world)
 }
-
 export function finalizeCombatMetrics(
   metrics: CombatMetricsCollector,
   battleDurationTicks: number
@@ -130,9 +136,9 @@ export function finalizeCombatMetrics(
     healingDoneByUnitType: metrics.healingDoneByUnitType,
     killsByUnitType: metrics.killsByUnitType,
     overkillDamage: metrics.overkillDamage,
+    mark: metrics.markAccumulator.snapshot(),
   }
 }
-
 function recordAttackIntent(
   metrics: CombatMetricsCollector,
   tick: number,
@@ -152,8 +158,9 @@ function recordAttackIntent(
     metrics.engagementDistanceSamples++
   }
 }
-
-function recordDamageAction(metrics: CombatMetricsCollector, action: BattleAction, world: CombatWorld): void {
+function recordDamageAction(
+  metrics: CombatMetricsCollector, action: BattleAction, world: CombatWorld,
+): void {
   const damage = Math.max(0, action.damage ?? 0)
   const attackerType = getUnitType(world, action.sourceUnitId ?? action.unitId)
   metrics.damageByUnitType[attackerType] = (metrics.damageByUnitType[attackerType] ?? 0) + damage
@@ -167,7 +174,6 @@ function recordDamageAction(metrics: CombatMetricsCollector, action: BattleActio
   metrics.overkillDamage += Math.max(0, damage - Math.max(0, previousHp))
   metrics.hpByUnitId.set(action.targetId, Math.max(0, previousHp - damage))
 }
-
 function recordHealAction(
   metrics: CombatMetricsCollector,
   action: BattleAction,
@@ -179,14 +185,12 @@ function recordHealAction(
   const previousHp = metrics.hpByUnitId.get(action.targetId) ?? 0
   metrics.hpByUnitId.set(action.targetId, previousHp + Math.max(0, action.damage ?? 0))
 }
-
 function recordDeathAction(metrics: CombatMetricsCollector, action: BattleAction, world: CombatWorld): void {
   metrics.hpByUnitId.set(action.unitId, 0)
   if (!action.sourceUnitId) return
   const killerType = getUnitType(world, action.sourceUnitId)
   metrics.killsByUnitType[killerType] = (metrics.killsByUnitType[killerType] ?? 0) + 1
 }
-
 function recordTargetSwitches(metrics: CombatMetricsCollector, world: CombatWorld): void {
   for (const entityId of world.query(['identity', 'vitality', 'targeting', 'entityTargets'], true)) {
     const identity = world.stores.identity.require(entityId)
@@ -206,7 +210,6 @@ function recordTargetSwitches(metrics: CombatMetricsCollector, world: CombatWorl
     metrics.lastTargetByUnitId.set(identity.id, targetExternalId)
   }
 }
-
 function recordMovementStateMetrics(metrics: CombatMetricsCollector, world: CombatWorld): void {
   for (const entityId of world.query(['identity', 'vitality', 'movement', 'targeting', 'entityTargets'])) {
     const identity = world.stores.identity.require(entityId)
@@ -221,7 +224,6 @@ function recordMovementStateMetrics(metrics: CombatMetricsCollector, world: Comb
         !isEcsMeleeEngagementReady(world, entityId, targetId)) metrics.meleeSlotWaitTicks++
   }
 }
-
 function recordOverlap(metrics: CombatMetricsCollector, world: CombatWorld): void {
   const units = world.query(['transform', 'vitality'], true).map(entityId => ({
     ...world.stores.transform.require(entityId),
@@ -235,12 +237,10 @@ function recordOverlap(metrics: CombatMetricsCollector, world: CombatWorld): voi
   metrics.maxOverlapRatio = Math.max(metrics.maxOverlapRatio, overlap.maxOverlapRatio)
   metrics.severeOverlapSamples += overlap.severeOverlapSamples
 }
-
 function getUnitType(world: CombatWorld, externalId: string): string {
   const entityId = world.getEntityId(externalId)
   return entityId === undefined ? 'unknown' : world.stores.identity.get(entityId)?.type ?? 'unknown'
 }
-
 function getAverageTimeToEngage(metrics: CombatMetricsCollector): number | null {
   if (metrics.firstEngageTickByUnitId.size === 0) return null
   let total = 0

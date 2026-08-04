@@ -51,6 +51,11 @@ export interface BattleAction {
   stanceMode?: string
   modeState?: string
   value?: number
+  markEvent?: 'new_squad' | 'refresh'
+  markSquadId?: string
+  markDuration?: number
+  retargetCount?: number
+  bonusDamage?: number
 }
 
 export interface BattleTick {

@@ -1,13 +1,12 @@
 import type { BattleAction } from '../../combat.actions'
-import { UNIT_TYPES } from '../../combat.config'
 import type { RuntimeActionContext, RuntimeActionResult } from '../../combat.runtime'
 import type { StatusEffect } from '../../combat.sim.types'
-import type { UnitSnapshot } from '../../combat.unit-components'
 import type { UnitTypeKey } from '../../combat.types'
-import { createRuntimeUnitFromConfig } from '../../combat.unit-factory'
+import { compileUnit } from '../../combat.unit-compiler'
 import { FIELD_HEIGHT, FIELD_WIDTH } from '../../combat.utils'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
+import type { UnitEntityBundle } from '../unit-entity-bundle'
 import { isEcsMeleeEngagementReady } from '../movement-positioning'
 import {
   getEcsActionCooldown,
@@ -62,16 +61,18 @@ export function runEcsSpawnAction(
     if (options.preserveCooldown) combat.actionCooldown = previousCooldown
     return { acted: false }
   }
-  world.queueUnitCreation(spawn.unit)
+  world.queueCompiledUnitCreation(spawn.unit)
+  const spawnedIdentity = spawn.unit.components.identity
+  const spawnedTransform = spawn.unit.components.transform
   actions.push({
     unitId: identity.id,
     type: 'spawn',
-    toX: spawn.unit.x,
-    toY: spawn.unit.y,
-    spawnType: spawn.unit.type,
+    toX: spawnedTransform.x,
+    toY: spawnedTransform.y,
+    spawnType: spawnedIdentity.type,
     spawnTeam: identity.team,
     spawnMaxHp: spawn.spawnMaxHp,
-    targetId: spawn.unit.id,
+    targetId: spawnedIdentity.id,
   })
   if (options.preserveCooldown) combat.actionCooldown = previousCooldown
   return { acted: true }
@@ -97,14 +98,13 @@ function createSpawnedUnit(
   targetId: EntityId,
   context: RuntimeActionContext,
   configuredSpawnType?: string,
-): { unit: UnitSnapshot; spawnMaxHp: number } | null {
+): { unit: UnitEntityBundle; spawnMaxHp: number } | null {
   const identity = world.stores.identity.require(entityId)
   const transform = world.stores.transform.require(entityId)
   const target = world.stores.transform.require(targetId)
   const weapon = world.stores.weapon.require(entityId)
   const spawnType = configuredSpawnType ?? weapon.spawnType ?? 'turret'
-  const spawnConfig = UNIT_TYPES[spawnType as UnitTypeKey]
-  const sourceConfig = UNIT_TYPES[identity.type as UnitTypeKey]
+  const overrides = world.stores.runtimeRules.require(entityId).spawnOverrides
   const dx = target.x - transform.x
   const dy = target.y - transform.y
   const magnitude = Math.hypot(dx, dy) || 1
@@ -115,23 +115,30 @@ function createSpawnedUnit(
     y = transform.y
   }
   const id = world.allocateExternalId('spawn')
-  if (!spawnConfig) return null
-  const overrides = sourceConfig?.baseStats.spawnOverrides
-  const hp = overrides?.hp ?? spawnConfig.baseStats.hp
-  const unit = createRuntimeUnitFromConfig({
-    id,
-    team: identity.team,
-    type: spawnType,
-    hp,
-    attack: overrides?.attack ?? spawnConfig.baseStats.attack,
-    isTemporary: overrides?.isTemporary,
-    temporaryDuration: overrides?.duration,
-    currentAngle: identity.team === 'attacker' ? Math.PI / 2 : -Math.PI / 2,
-    x,
-    y,
-    summonOwnerId: identity.id,
+  const unit = compileUnit({
+    definitionId: spawnType as UnitTypeKey,
+    identity: {
+      id,
+      team: identity.team,
+      summonOwnerId: identity.id,
+    },
+    loadout: { rank: 1, upgradeIds: [] },
+    placement: {
+      x,
+      y,
+      angle: identity.team === 'attacker' ? Math.PI / 2 : -Math.PI / 2,
+    },
+    spawn: { inheritance: 'base' },
+    overrides: {
+      maxHp: overrides?.hp,
+      attack: overrides?.attack,
+      isTemporary: overrides?.isTemporary,
+      temporaryDuration: overrides?.duration,
+    },
   })
-  return unit ? { unit, spawnMaxHp: hp } : null
+  return unit
+    ? { unit, spawnMaxHp: unit.components.vitality.maxHp }
+    : null
 }
 
 function isSpawnCapReached(world: CombatWorld, entityId: EntityId): boolean {

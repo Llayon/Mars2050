@@ -1,6 +1,7 @@
 import type { BattleAction } from '../../combat.actions'
 import type { PeriodicAbilityPayload } from '../../combat.sim.types'
-import { createRuntimeUnitFromConfig } from '../../combat.unit-factory'
+import type { UnitTypeKey } from '../../combat.types'
+import { compileUnit } from '../../combat.unit-compiler'
 import { FIELD_HEIGHT, FIELD_WIDTH } from '../../combat.utils'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
@@ -34,32 +35,38 @@ export function spawnEcsPeriodicUnits(
       index,
       count,
     )
-    const unit = createRuntimeUnitFromConfig({
-      id: world.allocateExternalId(`periodic_${source.id}_${abilityId}`),
-      team: source.team,
-      type: payload.unitType,
-      x: position.x,
-      y: position.y,
-      summonOwnerId: source.id,
-      summonSourceId: abilityId,
-      currentAngle: sourceTransform.currentAngle,
+    const unit = compileUnit({
+      definitionId: payload.unitType as UnitTypeKey,
+      identity: {
+        id: world.allocateExternalId(`periodic_${source.id}_${abilityId}`),
+        team: source.team,
+        summonOwnerId: source.id,
+        summonSourceId: abilityId,
+      },
+      loadout: { rank: 1, upgradeIds: [] },
+      placement: {
+        x: position.x,
+        y: position.y,
+        angle: sourceTransform.currentAngle,
+      },
+      spawn: { inheritance: 'base' },
+      overrides: { hpPercent: payload.hpPercent },
     })
     if (!unit) continue
-    if (payload.hpPercent !== undefined) {
-      unit.hp = Math.max(1, Math.floor(unit.maxHp * payload.hpPercent))
-      unit.maxHp = unit.hp
-    }
-    world.queueUnitCreation(unit)
+    world.queueCompiledUnitCreation(unit)
+    const identity = unit.components.identity
+    const transform = unit.components.transform
+    const vitality = unit.components.vitality
     spawned++
     actions.push({
       unitId: source.id,
       type: 'spawn',
-      targetId: unit.id,
-      toX: unit.x,
-      toY: unit.y,
-      spawnType: unit.type,
-      spawnTeam: unit.team,
-      spawnMaxHp: unit.maxHp,
+      targetId: identity.id,
+      toX: transform.x,
+      toY: transform.y,
+      spawnType: identity.type,
+      spawnTeam: identity.team,
+      spawnMaxHp: vitality.maxHp,
     })
   }
   if (spawned === 0 && cap !== Number.MAX_SAFE_INTEGER) {

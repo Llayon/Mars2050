@@ -1,4 +1,5 @@
 import type { SimHazard } from '../combat.sim.types'
+import type { UnitRuntimeRules } from '../combat.unit-build.types'
 import type { UnitComponentDataMap, UnitField } from '../combat.unit-components'
 import { ComponentStore } from './component-store'
 import type { EntityId } from './entity'
@@ -19,7 +20,7 @@ export type UnitCapabilityName =
 
 export type ComponentName =
   | 'entityMeta' | UnitComponentName | UnitCapabilityName
-  | 'entityTargets' | 'entitySources' | 'hazard'
+  | 'entityTargets' | 'entitySources' | 'runtimeRules' | 'hazard'
 
 export const COMPONENT_FIELDS = {
   identity: ['id', 'team', 'type', 'rank', 'squadId', 'summonSourceId'],
@@ -27,7 +28,7 @@ export const COMPONENT_FIELDS = {
   vitality: ['hp', 'maxHp', 'shield', 'maxShield', 'isDead', 'resurrectOnce', 'isTemporary', 'temporaryDuration', 'reassemblyConfig', 'reassemblyState', 'reassemblyTriggersUsed'],
   combat: ['attack', 'defense', 'speed', 'range', 'actionCooldownMax', 'actionCooldown', 'canTargetAir', 'multishot', 'antiAirDamageMult', 'executeThreshold', 'lifestealMult', 'groundDamageMult', 'shieldDamageMult', 'armorPierceRatio', 'summonCounterDamageMult', 'accuracyPenaltyResist', 'rankScaling'],
   weapon: ['attackType', 'aoeRadius', 'spawnType', 'spawnCap', 'selfDestructOnAttack', 'statusOnHit', 'markOnHit', 'linePierce', 'coneAttack', 'beamAttack', 'barrageAttack', 'chainAttack', 'splitFire', 'sideWeapon', 'conditionalAttackMode', 'sweepAttack', 'emergeStrikePending', 'appliesEmp', 'leavesPuddle', 'smokeOnAction', 'pullOnHit', 'knockbackOnHit'],
-  targeting: ['rampMultiplier', 'chargeDistance', 'aggroLockTicks', 'meleeSlotIndex', 'targetPriorityProfile', 'conditionalRange', 'controlBeam', 'controlProgress'],
+  targeting: ['rampMultiplier', 'chargeDistance', 'aggroLockTicks', 'designatedSquadId', 'meleeSlotIndex', 'targetPriorityProfile', 'conditionalRange', 'controlBeam', 'controlProgress'],
   movement: ['turnSpeed', 'isMoving', 'isNavigatingObstacle', 'lastProgressX', 'lastProgressY', 'lastTargetDistance', 'stuckTicks', 'avoidanceSide', 'avoidanceTicks', 'damageReductionWhileMoving', 'burrowConfig', 'isBurrowed', 'modeSwitchConfig', 'mobilityMode', 'stanceConfig', 'stanceMode', 'stanceTicks', 'stealthWhileMoving', 'movementStealthActive'],
   statusControl: ['statusEffects', 'targetMark', 'stealthUntilAttack', 'hasAttacked', 'transformMode', 'transformState'],
   defense: ['flatDamageBlock', 'shieldHitBlock', 'shieldHitBlockCharges', 'reactiveArmorCharges', 'reactiveArmorBlock', 'damageShareRadius', 'damageShareRatio', 'damageShareMaxTargets', 'projectileInterceptRadius', 'projectileInterceptCooldownMax', 'projectileInterceptCooldown', 'projectileInterceptMaxDamage'],
@@ -81,6 +82,7 @@ export interface CombatComponentMap {
   defense: UnitComponentDataMap['defense']
   support: UnitComponentDataMap['support']
   lifecycle: UnitComponentDataMap['lifecycle']
+  runtimeRules: UnitRuntimeRules
   supportAuraCapability: UnitCapabilityComponent
   periodicAbilityCapability: UnitCapabilityComponent
   fieldEffectCapability: UnitCapabilityComponent
@@ -114,6 +116,7 @@ export const FIELD_COMPONENT = new Map<UnitField, ComponentName>(
     ] as const).map(field => [field, 'entityTargets'] as const),
   ],
 )
+FIELD_COMPONENT.set('runtimeRules', 'runtimeRules')
 
 export function createComponentStores(): CombatComponentStores {
   return {
@@ -129,6 +132,7 @@ export function createComponentStores(): CombatComponentStores {
     defense: new ComponentStore<CombatComponentMap['defense']>(),
     support: new ComponentStore<CombatComponentMap['support']>(),
     lifecycle: new ComponentStore<CombatComponentMap['lifecycle']>(),
+    runtimeRules: new ComponentStore<CombatComponentMap['runtimeRules']>(),
     supportAuraCapability: new ComponentStore<CombatComponentMap['supportAuraCapability']>(),
     periodicAbilityCapability: new ComponentStore<CombatComponentMap['periodicAbilityCapability']>(),
     fieldEffectCapability: new ComponentStore<CombatComponentMap['fieldEffectCapability']>(),

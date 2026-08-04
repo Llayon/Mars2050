@@ -4,6 +4,8 @@ import { COMPONENT_FIELDS, type UnitComponentName, type UnitCapabilityName } fro
 import { captureUnitRelations, type PendingUnitRelations } from './unit-relation-codec'
 import { getUnitCapabilityNames } from './unit-capabilities'
 import { getStatusStackIdentity } from '../combat.status-core'
+import { DEFAULT_TARGETING_PROFILE } from '../combat.targeting.config'
+import type { UnitRuntimeRules } from '../combat.unit-build.types'
 
 export interface UnitEntityBundle {
   externalId: string
@@ -13,6 +15,7 @@ export interface UnitEntityBundle {
   statusSources: Record<string, string>
   targetMarkSource?: string
   controlProgressSource?: string
+  runtimeRules: UnitRuntimeRules
 }
 
 export function captureUnitEntityBundle(unit: SimUnit): UnitEntityBundle {
@@ -35,5 +38,11 @@ export function captureUnitEntityBundle(unit: SimUnit): UnitEntityBundle {
     )),
     targetMarkSource: unit.targetMark?.sourceUnitId,
     controlProgressSource: unit.controlProgress?.sourceUnitId,
+    runtimeRules: structuredClone(unit.runtimeRules ?? {
+      baseCombatTags: [],
+      targetingProfile: DEFAULT_TARGETING_PROFILE,
+      minimumRange: 0,
+      projectileInterceptable: false,
+    }),
   }
 }

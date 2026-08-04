@@ -309,13 +309,18 @@ are the contract for the dedicated Tier 1 balance scenarios included in
 | `shock_trooper` | Assault screen | Ten bodies absorb precision shots, occupy melee space, and screen fragile damage dealers. | AoE, burn, rifle kiting, and protected sustained fire remove the compact screen efficiently. | Fast engage, high body count, and visible melee casualties. |
 | `jetpack_trooper` | Flanker / backline access | Crosses space quickly and pressures fragile support or ranged units. | Exposed to AA while moving and weaker in a direct brawl than pure melee. | `mode_change` before committing to attack. |
 | `sniper` | Precision range pressure | Deletes low-HP or support targets from long range. | Low body count, overkill risk, vulnerable if screened or flanked; success is support removal, not winning a frontline duel. | Long-range `damage` from assassin profile. |
-| `scout_drone` | Flying target designator | A single drone applies a squad-wide +125% shared focus-fire mark while contributing no direct damage. | Fragile, helpless alone, and removed quickly by the heavy gunner or dedicated AA. | Repeated `target_mark` actions with shared damage and focus priority. |
+| `scout_drone` | Flying target designator | A single drone applies a squad-wide +125% shared focus-fire mark within a 320px assist radius while contributing no direct damage. | Fragile, helpless alone, and removed quickly by the heavy gunner or dedicated AA. | Repeated `target_mark` actions plus utilization and bonus-damage metrics. |
 | `medic` | Organic sustain support | Four medics materially extend a compact organic line through high-throughput direct healing. | Does not solve burst, armor, shields, structures, or mechanical repair. | `heal` actions and `healingDoneByUnitType.medic`. |
 
 Tier 1 initiative and deployment are part of the role contract. Equal-speed
 units alternate by team instead of granting the attacking roster a full opening
-volley. A shared scout mark clears allied sticky target locks so the marked squad
-receives immediate coordinated focus. Simulator deployments whose formation
+volley. A new shared Scout designation shortens eligible allied sticky locks to
+two ticks without erasing their current targets; refreshing the same squad does
+not disturb locks. Marked targets enter local candidate sets only inside the
+320px assist radius, and focus priority remains weaker than an extreme nearby
+threat. Each Scout owns one active squad designation, different Scouts may
+designate different squads, and duplicate marks do not stack. Simulator
+deployments whose formation
 footprint intersects an obstacle are rejected rather than treated as a balance
 result; legal placement around obstacles remains an intended source of matchup
 variation.

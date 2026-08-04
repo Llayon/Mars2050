@@ -11,6 +11,8 @@ import type { EntitySpatialIndex } from './entity-spatial-index'
 import type { MovementRequest } from './movement-batch.types'
 import type { EntityId } from './entity'
 import type { TargetingRuntime } from './targeting-runtime'
+import type { DesignationIndex } from './designation-index'
+import type { EcsActionGroupLedger } from '../combat.action-intent'
 
 export interface CombatClockResource {
   tick: number
@@ -32,6 +34,8 @@ export interface CombatResourceMap {
   combatTagCache: Map<EntityId, { signature: number; tags: CombatTag[] }>
   dirtySpatialEntities: Set<EntityId>
   targetingRuntime: TargetingRuntime
+  designationIndex: DesignationIndex
+  actionGroup: EcsActionGroupLedger | undefined
 }
 
 export class CombatResourceStore {

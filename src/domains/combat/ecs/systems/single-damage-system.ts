@@ -47,6 +47,7 @@ export function runSimpleSingleDamage(
   actions: BattleAction[],
   tick: number,
   rng: PRNG,
+  options: { allowDeadActorAction?: boolean } = {},
 ): RuntimeActionResult {
   const transform = world.stores.transform.require(entityId)
   const targetTransform = world.stores.transform.require(targetId)
@@ -68,8 +69,8 @@ export function runSimpleSingleDamage(
   combat.actionCooldown = getEcsActionCooldown(world, entityId)
   const shots = combat.multishot || 1
   for (let shot = 0; shot < shots; shot++) {
-    if (world.stores.vitality.require(entityId).isDead) break
-    if (world.stores.vitality.require(targetId).isDead) break
+    if (world.stores.vitality.require(entityId).isDead && !options.allowDeadActorAction) break
+    if (world.stores.vitality.require(targetId).isDead && !options.allowDeadActorAction) break
     resolveEcsSingleShot(world, entityId, targetId, actions, tick, rng)
   }
   return { acted: true }

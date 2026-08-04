@@ -14,9 +14,7 @@ import { captureUnitRelations, resolveUnitRelations, type PendingUnitRelations }
 import { CombatEntityIndexes } from './combat-entity-indexes'
 import { captureUnitEntityBundle, type UnitEntityBundle } from './unit-entity-bundle'
 import { CombatSourceIndex } from './combat-source-index'
-
 export type { ComponentQueryProfile } from './component-query-registry'
-
 export class CombatWorld {
   readonly stores = createComponentStores()
   readonly resources = new CombatResourceStore()
@@ -63,6 +61,7 @@ export class CombatWorld {
       bundle.relations,
     )
     installCapabilityNames(this.stores, entityId, bundle.capabilities)
+    this.stores.runtimeRules.set(entityId, structuredClone(bundle.runtimeRules))
     this.sourceRefs.queueStatusSources(entityId, bundle.statusSources)
     this.sourceRefs.queueEntitySources(entityId, {
       targetMarkSource: bundle.targetMarkSource,
@@ -91,6 +90,7 @@ export class CombatWorld {
       (name, entityId) => { this.setClonedComponent(name, entityId, clone) },
     )
     installCapabilityNames(this.stores, entityId, clone.capabilities)
+    this.stores.runtimeRules.set(entityId, structuredClone(clone.runtimeRules))
     this.resources.get('dirtySpatialEntities')?.add(entityId)
     return entityId
   }
@@ -105,9 +105,7 @@ export class CombatWorld {
     this.sourceRefs.resolvePending(this)
   }
   captureEntityWatermark(): number { return this.nextEntityId }
-  getUnitsCreatedSince(watermark: number): EntityId[] {
-    return this.query(['transform', 'vitality']).filter(entityId => entityId >= watermark)
-  }
+  getUnitsCreatedSince(watermark: number): EntityId[] { return this.query(['transform', 'vitality']).filter(entityId => entityId >= watermark) }
 
   getHazard(entityId: EntityId): SimHazard | undefined { return this.stores.hazard.get(entityId) }
 
@@ -173,6 +171,12 @@ export class CombatWorld {
     this.resources.get('targetingRuntime')?.markDirty(entityId)
     this.resources.get('entitySpatial')?.updateTeam(this, entityId)
   }
+
+  queueCompiledUnitCreation(...bundles: UnitEntityBundle[]): void {
+    for (const bundle of bundles) {
+      this.externalIds.reserve(bundle.externalId); this.structuralCommands.queueUnit(bundle)
+    }
+  }
   linkSummonOwner(entityId: EntityId, ownerId: EntityId): void {
     this.stores.entityTargets.require(entityId).summonOwner = ownerId
     this.indexes.linkSummon(entityId, ownerId)
@@ -187,11 +191,9 @@ export class CombatWorld {
   getComponent<Name extends ComponentName>(componentName: Name, entityId: EntityId): CombatComponentMap[Name] | undefined {
     return this.stores[componentName].get(entityId)
   }
-
   snapshotEntity(entityId: EntityId): SimUnit {
     return createUnitSnapshot(this, entityId, this.pendingRelations.get(entityId))
   }
-
   snapshot(): SimUnit[] {
     return createUnitSnapshots(this, this.entityIds, entityId => this.pendingRelations.get(entityId))
   }
@@ -230,7 +232,6 @@ export class CombatWorld {
   private setBundledComponent<Name extends UnitComponentName>(name: Name, entityId: EntityId, bundle: UnitEntityBundle): void {
     this.stores[name].set(entityId, bundle.components[name] as CombatComponentMap[Name])
   }
-
   private assertKnownFields(unit: SimUnit): void {
     for (const field of Object.keys(unit) as (keyof SimUnit)[]) {
       if (!FIELD_COMPONENT.has(field)) throw new Error(`Unmapped SimUnit field: ${String(field)}`)
@@ -245,5 +246,4 @@ export class CombatWorld {
       throw new CombatInvariantError(`Duplicate committed entity id: ${externalId}`)
     }
   }
-
 }

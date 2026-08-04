@@ -1,6 +1,4 @@
-import { UNIT_TYPES } from '../combat.config'
 import type { ConditionalRangeConfig, RuntimeStatusEffect } from '../combat.sim.types'
-import type { UnitTypeKey } from '../combat.types'
 import { getSizeRadius } from '../combat.utils'
 import type { CombatWorld } from './combat-world'
 import type { EntityId } from './entity'
@@ -145,8 +143,7 @@ function getStatusValue(effects: RuntimeStatusEffect[], type: RuntimeStatusEffec
 }
 
 function getMinimumRange(world: CombatWorld, entityId: EntityId): number {
-  const type = world.stores.identity.require(entityId).type as UnitTypeKey
-  return (UNIT_TYPES[type]?.baseStats.minimumRange ?? 0) * GRID_TO_PIXELS
+  return world.stores.runtimeRules.require(entityId).minimumRange
 }
 
 function getMeleePoint(world: CombatWorld, entityId: EntityId, targetId: EntityId): { x: number; y: number } {

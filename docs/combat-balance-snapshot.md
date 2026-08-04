@@ -19,11 +19,11 @@ Overlap metrics report both raw pixels and normalized ratio; `severeOverlapSampl
 | simulator | `ranged_duel` | defender | 146 | 147 | 23 | 17.3 | 1714 | defender.marine=6 |
 | simulator | `marine_crowd_qa` | attacker | 108 | 109 | 18 | 13.66 | 90 | attacker.marine=2 |
 | simulator | `tier1_visual_qa` | attacker | 30 | 31 | 10 | 13.77 | 278 | attacker.flamethrower=5; attacker.grenadier=3; attacker.heavy_gunner=3; attacker.marine=8; attacker.officer=1; attacker.sapper=3; attacker.shock_trooper=10 |
-| simulator | `visual_alias_qa` | attacker | 48 | 49 | 9 | 43.77 | 224 | attacker.aa_turret=1; attacker.drone=3; attacker.gatling_rover=2; attacker.jetpack_trooper=5; attacker.scavenger_buggy=3; attacker.scout_drone=1 |
+| simulator | `visual_alias_qa` | attacker | 56 | 57 | 9 | 43.37 | 209 | attacker.aa_turret=1; attacker.drone=3; attacker.gatling_rover=2; attacker.jetpack_trooper=5; attacker.scavenger_buggy=3; attacker.scout_drone=1 |
 | simulator | `massive_clash` | attacker | 81 | 82 | 13 | 14.68 | 470 | attacker.shock_trooper=50 |
 | simulator | `stealth_reveal` | attacker | 5 | 6 | 2 | 2.27 | 0 | attacker.sniper=2; attacker.stealth_operative=1; defender.radar_zepplin=1 |
 | simulator | `projectile_barrier` | defender | 249 | 250 | 6 | 20.1 | 22 | defender.marine=6 |
-| simulator | `summon_caps` | draw | 397 | 400 | 13 | 17.01 | 40 | attacker.drone_carrier=1; attacker.exosuit=1; attacker.mobile_factory=1; defender.railgun_walker=1 |
+| simulator | `summon_caps` | draw | 398 | 400 | 13 | 17.01 | 42 | attacker.drone_carrier=1; attacker.exosuit=1; attacker.mobile_factory=1; attacker.scout_drone=1; defender.railgun_walker=1 |
 | simulator | `control_status` | defender | 44 | 45 | 10 | 17.98 | 12 | attacker.emp_drone=4; defender.behemoth_tank=1; defender.exosuit=4 |
 | simulator | `transform_modes` | attacker | 44 | 45 | 12 | 13.37 | 38 | attacker.artillery_crawler=1; attacker.jetpack_trooper=5 |
 | simulator | `cleanse_status` | attacker | 95 | 96 | 11 | 17.64 | 34 | attacker.alien_spitter=3; attacker.flamethrower=1 |
@@ -35,7 +35,7 @@ Overlap metrics report both raw pixels and normalized ratio; `severeOverlapSampl
 | tier1 | `tier1_grenadier_vs_clump` | attacker | 90 | 91 | 15 | 13.87 | 87 | attacker.grenadier=4 |
 | tier1 | `tier1_grenadier_vs_spread` | defender | 81 | 82 | 16 | 15.44 | 148 | defender.shock_trooper=14 |
 | tier1 | `tier1_sniper_priority_target` | defender | 76 | 77 | 17 | 13.45 | 131 | defender.marine=11 |
-| tier1 | `tier1_scout_focus_fire` | attacker | 142 | 143 | 22 | 14.08 | 476 | attacker.marine=1; attacker.scout_drone=1 |
+| tier1 | `tier1_scout_focus_fire` | attacker | 102 | 103 | 22 | 14.08 | 625 | attacker.marine=6; attacker.scout_drone=1 |
 | tier1 | `tier1_scout_countered_by_heavy` | defender | 14 | 15 | 13 | 4.65 | 0 | defender.heavy_gunner=9 |
 | tier1 | `tier1_medic_sustain_check` | attacker | 187 | 188 | 16 | 13.9 | 414 | attacker.marine=5; attacker.medic=4 |
 | tier1 | `tier1_light_walker_anchors_aoe` | attacker | 65 | 66 | 23 | 6.56 | 8 | attacker.light_walker=3 |
@@ -69,11 +69,11 @@ Overlap metrics report both raw pixels and normalized ratio; `severeOverlapSampl
 | `ranged_duel` | attack=617; damage=617; heal=0; die=122; spawn=0; spawn_blocked=0; projectile_intercept=0; status_apply=0; status_cleanse=0; shield_apply=0; mode_change=0; stance_change=0; cone_attack=0; charge_damage=0; control_convert=0; barrier_absorb=0; hazard_cleanse=0; field_effect=0 |
 | `marine_crowd_qa` | attack=157; damage=157; heal=0; die=30; spawn=0; spawn_blocked=0; projectile_intercept=0; status_apply=0; status_cleanse=0; shield_apply=0; mode_change=0; stance_change=0; cone_attack=0; charge_damage=0; control_convert=0; barrier_absorb=0; hazard_cleanse=0; field_effect=0 |
 | `tier1_visual_qa` | attack=129; damage=192; heal=0; die=50; spawn=0; spawn_blocked=0; projectile_intercept=0; status_apply=190; status_cleanse=0; shield_apply=0; mode_change=0; stance_change=0; cone_attack=18; charge_damage=0; control_convert=0; barrier_absorb=0; hazard_cleanse=0; field_effect=0 |
-| `visual_alias_qa` | attack=90; damage=129; heal=0; die=41; spawn=0; spawn_blocked=0; projectile_intercept=0; status_apply=0; status_cleanse=0; shield_apply=0; mode_change=60; stance_change=0; cone_attack=0; charge_damage=3; control_convert=0; barrier_absorb=0; hazard_cleanse=0; field_effect=0 |
+| `visual_alias_qa` | attack=106; damage=147; heal=0; die=41; spawn=0; spawn_blocked=0; projectile_intercept=0; status_apply=0; status_cleanse=0; shield_apply=0; mode_change=50; stance_change=0; cone_attack=0; charge_damage=3; control_convert=0; barrier_absorb=0; hazard_cleanse=0; field_effect=0 |
 | `massive_clash` | attack=136; damage=136; heal=0; die=50; spawn=0; spawn_blocked=0; projectile_intercept=0; status_apply=0; status_cleanse=0; shield_apply=0; mode_change=0; stance_change=0; cone_attack=0; charge_damage=0; control_convert=0; barrier_absorb=0; hazard_cleanse=0; field_effect=0 |
 | `stealth_reveal` | attack=4; damage=4; heal=1; die=1; spawn=0; spawn_blocked=0; projectile_intercept=0; status_apply=5; status_cleanse=0; shield_apply=0; mode_change=0; stance_change=0; cone_attack=0; charge_damage=0; control_convert=0; barrier_absorb=0; hazard_cleanse=0; field_effect=0 |
 | `projectile_barrier` | attack=187; damage=184; heal=0; die=7; spawn=0; spawn_blocked=0; projectile_intercept=1; status_apply=0; status_cleanse=0; shield_apply=9; mode_change=0; stance_change=2; cone_attack=0; charge_damage=0; control_convert=0; barrier_absorb=0; hazard_cleanse=0; field_effect=0 |
-| `summon_caps` | attack=347; damage=468; heal=0; die=17; spawn=15; spawn_blocked=0; projectile_intercept=0; status_apply=0; status_cleanse=0; shield_apply=0; mode_change=0; stance_change=0; cone_attack=0; charge_damage=0; control_convert=0; barrier_absorb=0; hazard_cleanse=0; field_effect=0 |
+| `summon_caps` | attack=326; damage=443; heal=0; die=16; spawn=15; spawn_blocked=0; projectile_intercept=0; status_apply=0; status_cleanse=0; shield_apply=0; mode_change=0; stance_change=0; cone_attack=0; charge_damage=0; control_convert=0; barrier_absorb=0; hazard_cleanse=0; field_effect=0 |
 | `control_status` | attack=10; damage=4; heal=0; die=1; spawn=0; spawn_blocked=0; projectile_intercept=0; status_apply=6; status_cleanse=0; shield_apply=0; mode_change=0; stance_change=0; cone_attack=0; charge_damage=0; control_convert=0; barrier_absorb=0; hazard_cleanse=0; field_effect=0 |
 | `transform_modes` | attack=31; damage=32; heal=0; die=11; spawn=0; spawn_blocked=0; projectile_intercept=0; status_apply=0; status_cleanse=0; shield_apply=0; mode_change=29; stance_change=1; cone_attack=0; charge_damage=0; control_convert=0; barrier_absorb=0; hazard_cleanse=0; field_effect=0 |
 | `cleanse_status` | attack=121; damage=277; heal=1; die=9; spawn=0; spawn_blocked=0; projectile_intercept=0; status_apply=154; status_cleanse=18; shield_apply=0; mode_change=0; stance_change=0; cone_attack=49; charge_damage=0; control_convert=0; barrier_absorb=0; hazard_cleanse=0; field_effect=0 |
@@ -85,7 +85,7 @@ Overlap metrics report both raw pixels and normalized ratio; `severeOverlapSampl
 | `tier1_grenadier_vs_clump` | attack=163; damage=163; heal=0; die=35; spawn=0; spawn_blocked=0; projectile_intercept=0; status_apply=0; status_cleanse=0; shield_apply=0; mode_change=0; stance_change=0; cone_attack=0; charge_damage=0; control_convert=0; barrier_absorb=0; hazard_cleanse=0; field_effect=0 |
 | `tier1_grenadier_vs_spread` | attack=151; damage=151; heal=0; die=25; spawn=0; spawn_blocked=0; projectile_intercept=0; status_apply=0; status_cleanse=0; shield_apply=0; mode_change=0; stance_change=0; cone_attack=0; charge_damage=0; control_convert=0; barrier_absorb=0; hazard_cleanse=0; field_effect=0 |
 | `tier1_sniper_priority_target` | attack=149; damage=149; heal=11; die=27; spawn=0; spawn_blocked=0; projectile_intercept=0; status_apply=0; status_cleanse=0; shield_apply=0; mode_change=0; stance_change=0; cone_attack=0; charge_damage=0; control_convert=0; barrier_absorb=0; hazard_cleanse=0; field_effect=0 |
-| `tier1_scout_focus_fire` | attack=382; damage=369; heal=0; die=87; spawn=0; spawn_blocked=0; projectile_intercept=0; status_apply=0; status_cleanse=0; shield_apply=0; mode_change=0; stance_change=0; cone_attack=0; charge_damage=0; control_convert=0; barrier_absorb=0; hazard_cleanse=0; field_effect=0 |
+| `tier1_scout_focus_fire` | attack=327; damage=319; heal=0; die=82; spawn=0; spawn_blocked=0; projectile_intercept=0; status_apply=0; status_cleanse=0; shield_apply=0; mode_change=0; stance_change=0; cone_attack=0; charge_damage=0; control_convert=0; barrier_absorb=0; hazard_cleanse=0; field_effect=0 |
 | `tier1_scout_countered_by_heavy` | attack=9; damage=9; heal=0; die=3; spawn=0; spawn_blocked=0; projectile_intercept=0; status_apply=9; status_cleanse=0; shield_apply=0; mode_change=0; stance_change=0; cone_attack=0; charge_damage=0; control_convert=0; barrier_absorb=0; hazard_cleanse=0; field_effect=0 |
 | `tier1_medic_sustain_check` | attack=579; damage=579; heal=77; die=83; spawn=0; spawn_blocked=0; projectile_intercept=0; status_apply=0; status_cleanse=0; shield_apply=0; mode_change=0; stance_change=0; cone_attack=0; charge_damage=0; control_convert=0; barrier_absorb=0; hazard_cleanse=0; field_effect=0 |
 | `tier1_light_walker_anchors_aoe` | attack=21; damage=21; heal=0; die=9; spawn=0; spawn_blocked=0; projectile_intercept=0; status_apply=0; status_cleanse=0; shield_apply=0; mode_change=0; stance_change=0; cone_attack=0; charge_damage=0; control_convert=0; barrier_absorb=0; hazard_cleanse=0; field_effect=0 |
@@ -122,7 +122,7 @@ Overlap metrics report both raw pixels and normalized ratio; `severeOverlapSampl
 | `tier1_grenadier_vs_clump` | grenadier=1415; shock_trooper=252 | - | attack=163; damage=163; die=35 |
 | `tier1_grenadier_vs_spread` | grenadier=1084; shock_trooper=405 | - | attack=151; damage=151; die=25 |
 | `tier1_sniper_priority_target` | marine=1168; sniper=232 | medic=176 | attack=149; damage=149; heal=11; die=27 |
-| `tier1_scout_focus_fire` | marine=3522 | - | attack=382; damage=369; die=87 |
+| `tier1_scout_focus_fire` | marine=3242 | - | attack=327; damage=319; die=82 |
 | `tier1_scout_countered_by_heavy` | heavy_gunner=63 | - | attack=9; damage=9; die=3; status_apply=9 |
 | `tier1_medic_sustain_check` | marine=4632 | medic=1312 | attack=579; damage=579; heal=77; die=83 |
 | `tier1_light_walker_anchors_aoe` | grenadier=168; light_walker=441 | - | attack=21; damage=21; die=9 |
@@ -147,7 +147,7 @@ Overlap metrics report both raw pixels and normalized ratio; `severeOverlapSampl
 | `tier1_grenadier_vs_clump` | attacker=3; defender=3 | attacker=1415; defender=252 | attacker=0; defender=0 | attacker=0.44; defender=0 | - |
 | `tier1_grenadier_vs_spread` | attacker=3; defender=3 | attacker=1084; defender=405 | attacker=0; defender=0 | attacker=0; defender=0.47 | - |
 | `tier1_sniper_priority_target` | attacker=3; defender=3 | attacker=688; defender=712 | attacker=0; defender=176 | attacker=0; defender=0.46 | heal=11 |
-| `tier1_scout_focus_fire` | attacker=6; defender=6 | attacker=1930; defender=1592 | attacker=0; defender=0 | attacker=0.21; defender=0 | - |
+| `tier1_scout_focus_fire` | attacker=6; defender=6 | attacker=1842; defender=1400 | attacker=0; defender=0 | attacker=0.31; defender=0 | - |
 | `tier1_scout_countered_by_heavy` | attacker=3; defender=3 | attacker=0; defender=63 | attacker=0; defender=0 | attacker=0; defender=1 | status_apply=9; status:output_suppressed=9 |
 | `tier1_medic_sustain_check` | attacker=6; defender=6 | attacker=1920; defender=2712 | attacker=1312; defender=0 | attacker=0.27; defender=0 | heal=77 |
 | `tier1_light_walker_anchors_aoe` | attacker=3; defender=3 | attacker=441; defender=168 | attacker=0; defender=0 | attacker=1; defender=0 | - |
@@ -242,13 +242,13 @@ Overlap metrics report both raw pixels and normalized ratio; `severeOverlapSampl
 - Survivors: attacker.aa_turret=1; attacker.drone=3; attacker.gatling_rover=2; attacker.jetpack_trooper=5; attacker.scavenger_buggy=3; attacker.scout_drone=1
 - Initial value: attacker.aa_turret=200; attacker.drone=80; attacker.gatling_rover=300; attacker.jetpack_trooper=300; attacker.scavenger_buggy=200; attacker.scout_drone=120; defender.alien_bug=0; defender.alien_worm=0 (attacker=1200; defender=0)
 - Survivor value: attacker.aa_turret=200; attacker.drone=80; attacker.gatling_rover=300; attacker.jetpack_trooper=300; attacker.scavenger_buggy=200; attacker.scout_drone=120 (attacker=1200; defender=0)
-- Damage dealt: aa_turret=528; alien_bug=15; alien_worm=73; drone=204; gatling_rover=478; jetpack_trooper=262; scavenger_buggy=337
-- Damage taken: alien_bug=1508; alien_worm=301; jetpack_trooper=64; scavenger_buggy=24
+- Damage dealt: aa_turret=560; alien_bug=15; alien_worm=136; drone=171; gatling_rover=492; jetpack_trooper=204; scavenger_buggy=397
+- Damage taken: alien_bug=1506; alien_worm=318; drone=34; gatling_rover=1; jetpack_trooper=32; scavenger_buggy=67; scout_drone=17
 - Healing done: -
-- Team performance: damageDealt=attacker=1809; defender=88, damageTaken=attacker=88; defender=1809, healingDone=attacker=0; defender=0
-- Cost efficiency: damageDealtPerCost=attacker=1.51; defender=0, damageTakenPerCost=attacker=0.07; defender=0, healingDonePerCost=attacker=0; defender=0, netDamagePerCost=attacker=1.43; defender=0, survivorValueRatio=attacker=1; defender=0
-- Role signals: charge_damage=3; mode_change=60; split_fire=43
-- Engagement: averageTimeToEngage=22.35, averageEngagementDistance=83.38, averageOverlap=5.34, maxOverlapRatio=0.99, averageOverlapRatio=0.2, severeOverlapSamples=97/1170, meleeSlotWaitTicks=1072, overkillDamage=759
+- Team performance: damageDealt=attacker=1824; defender=151, damageTaken=attacker=151; defender=1824, healingDone=attacker=0; defender=0
+- Cost efficiency: damageDealtPerCost=attacker=1.52; defender=0, damageTakenPerCost=attacker=0.13; defender=0, healingDonePerCost=attacker=0; defender=0, netDamagePerCost=attacker=1.39; defender=0, survivorValueRatio=attacker=1; defender=0
+- Role signals: charge_damage=3; mode_change=50; split_fire=46
+- Engagement: averageTimeToEngage=21.22, averageEngagementDistance=98.6, averageOverlap=5.29, maxOverlapRatio=0.98, averageOverlapRatio=0.19, severeOverlapSamples=96/1084, meleeSlotWaitTicks=1131, overkillDamage=774
 
 ### massive_clash - Стенка 100+
 
@@ -295,16 +295,16 @@ Overlap metrics report both raw pixels and normalized ratio; `severeOverlapSampl
 ### summon_caps - Призывы / Лимиты
 
 - Initial units: attacker.drone_carrier=1; attacker.hologram_projector=1; attacker.mobile_factory=1; defender.gatling_rover=2; defender.railgun_walker=1
-- Survivors: attacker.drone_carrier=1; attacker.exosuit=1; attacker.mobile_factory=1; defender.railgun_walker=1
+- Survivors: attacker.drone_carrier=1; attacker.exosuit=1; attacker.mobile_factory=1; attacker.scout_drone=1; defender.railgun_walker=1
 - Initial value: attacker.drone_carrier=1000; attacker.hologram_projector=900; attacker.mobile_factory=2000; defender.gatling_rover=300; defender.railgun_walker=850 (attacker=3900; defender=1150)
-- Survivor value: attacker.drone_carrier=1000; attacker.exosuit=75; attacker.mobile_factory=2000; defender.railgun_walker=850 (attacker=3075; defender=850)
-- Damage dealt: exosuit=276; gatling_rover=619; railgun_walker=1360
-- Damage taken: drone_carrier=216; exosuit=966; gatling_rover=264; hologram_projector=80; mobile_factory=573; railgun_walker=12; scout_drone=144
+- Survivor value: attacker.drone_carrier=1000; attacker.exosuit=75; attacker.mobile_factory=2000; attacker.scout_drone=120; defender.railgun_walker=850 (attacker=3195; defender=850)
+- Damage dealt: exosuit=300; gatling_rover=580; railgun_walker=1360
+- Damage taken: drone_carrier=220; exosuit=943; gatling_rover=246; hologram_projector=80; mobile_factory=573; railgun_walker=54; scout_drone=124
 - Healing done: -
-- Team performance: damageDealt=attacker=0; defender=1979, damageTaken=attacker=869; defender=276, healingDone=attacker=0; defender=0
-- Cost efficiency: damageDealtPerCost=attacker=0; defender=1.72, damageTakenPerCost=attacker=0.22; defender=0.24, healingDonePerCost=attacker=0; defender=0, netDamagePerCost=attacker=-0.22; defender=1.48, survivorValueRatio=attacker=0.79; defender=0.74
-- Role signals: percent_hp_damage=10; spawn=15; split_fire=134
-- Engagement: averageTimeToEngage=146.47, averageEngagementDistance=130.13, averageOverlap=1.03, maxOverlapRatio=0.5, averageOverlapRatio=0.02, severeOverlapSamples=0/252, meleeSlotWaitTicks=117, overkillDamage=336
+- Team performance: damageDealt=attacker=0; defender=1940, damageTaken=attacker=873; defender=300, healingDone=attacker=0; defender=0
+- Cost efficiency: damageDealtPerCost=attacker=0; defender=1.69, damageTakenPerCost=attacker=0.22; defender=0.26, healingDonePerCost=attacker=0; defender=0, netDamagePerCost=attacker=-0.22; defender=1.43, survivorValueRatio=attacker=0.82; defender=0.74
+- Role signals: percent_hp_damage=10; spawn=15; split_fire=131
+- Engagement: averageTimeToEngage=147.06, averageEngagementDistance=130.45, averageOverlap=1.11, maxOverlapRatio=0.5, averageOverlapRatio=0.03, severeOverlapSamples=0/245, meleeSlotWaitTicks=110, overkillDamage=292
 
 ### control_status - Контроль / EMP
 
@@ -463,16 +463,16 @@ Overlap metrics report both raw pixels and normalized ratio; `severeOverlapSampl
 ### tier1_scout_focus_fire - Tier 1: scout marks for precision line
 
 - Initial units: attacker.marine=40; attacker.scout_drone=1; defender.marine=48
-- Survivors: attacker.marine=1; attacker.scout_drone=1
+- Survivors: attacker.marine=6; attacker.scout_drone=1
 - Initial value: attacker.marine=500; attacker.scout_drone=120; defender.marine=600 (attacker=620; defender=600)
-- Survivor value: attacker.marine=12.5; attacker.scout_drone=120 (attacker=132.5; defender=0)
-- Damage dealt: marine=3522
-- Damage taken: marine=3522
+- Survivor value: attacker.marine=75; attacker.scout_drone=120 (attacker=195; defender=0)
+- Damage dealt: marine=3242
+- Damage taken: marine=3242
 - Healing done: -
-- Team performance: damageDealt=attacker=1930; defender=1592, damageTaken=attacker=1592; defender=1930, healingDone=attacker=0; defender=0
-- Cost efficiency: damageDealtPerCost=attacker=3.11; defender=2.65, damageTakenPerCost=attacker=2.57; defender=3.22, healingDonePerCost=attacker=0; defender=0, netDamagePerCost=attacker=0.55; defender=-0.56, survivorValueRatio=attacker=0.21; defender=0
+- Team performance: damageDealt=attacker=1842; defender=1400, damageTaken=attacker=1400; defender=1842, healingDone=attacker=0; defender=0
+- Cost efficiency: damageDealtPerCost=attacker=2.97; defender=2.33, damageTakenPerCost=attacker=2.26; defender=3.07, healingDonePerCost=attacker=0; defender=0, netDamagePerCost=attacker=0.71; defender=-0.74, survivorValueRatio=attacker=0.31; defender=0
 - Role signals: -
-- Engagement: averageTimeToEngage=28.59, averageEngagementDistance=127.83, averageOverlap=2.72, maxOverlapRatio=0.74, averageOverlapRatio=0.14, severeOverlapSamples=83/3403, meleeSlotWaitTicks=0, overkillDamage=445
+- Engagement: averageTimeToEngage=29.33, averageEngagementDistance=124.33, averageOverlap=2.76, maxOverlapRatio=0.74, averageOverlapRatio=0.15, severeOverlapSamples=87/3470, meleeSlotWaitTicks=0, overkillDamage=332
 
 ### tier1_scout_countered_by_heavy - Tier 1: heavy gunner soft anti-air
 

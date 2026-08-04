@@ -1,6 +1,4 @@
 import type { BattleAction } from '../../combat.actions'
-import { UNIT_TYPES } from '../../combat.config'
-import type { UnitTypeKey } from '../../combat.types'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
 import { applyEcsHealing } from './healing-system'
@@ -14,7 +12,7 @@ export function applyEcsOnKillEffects(
 ): void {
   const killer = world.stores.identity.require(killerId)
   const victim = world.stores.identity.require(victimId)
-  const effect = UNIT_TYPES[killer.type as UnitTypeKey]?.baseStats.onKill
+  const effect = world.stores.runtimeRules.require(killerId).onKill
   if (!effect || killer.team === victim.team) return
 
   actions.push({ unitId: killer.id, type: 'on_kill', targetId: victim.id })

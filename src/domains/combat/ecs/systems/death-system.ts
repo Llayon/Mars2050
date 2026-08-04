@@ -14,9 +14,16 @@ export function resolveEcsDeath(
   sourceId: EntityId | undefined,
   actions: BattleAction[],
   cause: DeathCause = 'weapon',
+  options: { preMarked?: boolean } = {},
 ): boolean {
   const target = world.stores.vitality.require(targetId)
-  if (target.isDead) return false
+  const actionGroup = world.resources.get('actionGroup')
+  if (actionGroup?.active && cause !== 'expiration') {
+    if (target.hp > 0 && !target.isDead) return false
+    actionGroup.queueForcedDeath(targetId, sourceId, cause)
+    return false
+  }
+  if (target.isDead && !options.preMarked) return false
   if (cause === 'expiration') {
     world.setEntityDead(targetId, true)
     actions.push({
@@ -32,6 +39,7 @@ export function resolveEcsDeath(
   if (target.hp > 0) return false
   if (target.resurrectOnce) {
     target.resurrectOnce = false
+    if (options.preMarked) world.setEntityDead(targetId, false)
     applyEcsHealing(world, targetId, targetId, target.maxHp, actions, {
       bypassStatusBlock: true,
     })
@@ -49,7 +57,7 @@ export function resolveEcsDeath(
     cause,
   })
   processEcsDeathTriggers(world, targetId, actorId, actions)
-  if (sourceId !== undefined &&
+  if (sourceId !== undefined && !world.stores.vitality.require(sourceId).isDead &&
       world.stores.identity.require(sourceId).team !==
       world.stores.identity.require(targetId).team) {
     applyEcsOnKillEffects(world, sourceId, targetId, actions)

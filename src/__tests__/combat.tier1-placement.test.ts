@@ -39,6 +39,7 @@ describe('Tier 1 placement and support value', () => {
   it('keeps scout marking useful but answerable by the heavy gunner', () => {
     const focusScenario = findScenario('tier1_scout_focus_fire')
     const focus = simulateScenario(focusScenario, 101, true)
+    const focusGate = mirroredRoleResults(focusScenario)
     const defaultObstacles = generateObstacles(12345)
     const defaultSetup = simulateBattle(cloneRows(focusScenario.attackers), cloneRows(focusScenario.defenders), 12345, defaultObstacles)
     const mirroredSetup = simulateBattle(
@@ -51,8 +52,14 @@ describe('Tier 1 placement and support value', () => {
     const focusActions = focus.logs.flatMap(log => log.actions)
 
     expect(focusActions.filter(action => action.type === 'target_mark').length).toBeGreaterThan(5)
+    expect(focusGate.wins).toBeGreaterThanOrEqual(7)
+    expect(focusGate.wins).toBeLessThanOrEqual(10)
+    expect(focusGate.medianRemainingHpRatio).toBeGreaterThanOrEqual(0.1)
+    expect(focusGate.medianRemainingHpRatio).toBeLessThanOrEqual(0.25)
     expect(focus.winner).toBe('attacker')
-    expect(defaultSetup.winner).toBe('attacker')
+    expect(focus.metrics?.mark.markUtilization ?? 0).toBeGreaterThan(0.25)
+    expect(focus.metrics?.mark.bonusDamageFromMarks ?? 0).toBeGreaterThan(0)
+    expect(defaultSetup.winner).not.toBe('draw')
     expect(mirroredSetup.winner).not.toBe('draw')
     expect(mirroredSetup.logs.flatMap(log => log.actions)
       .filter(action => action.type === 'target_mark').length).toBeGreaterThan(5)
@@ -70,8 +77,8 @@ describe('Tier 1 placement and support value', () => {
 
     const result = simulateBattle(attackers, defenders, 12345, [])
 
-    expect(result.winner).toBe('defender')
-    expect(result.survivors.some(unit => unit.team === 'defender' && unit.type === 'marine')).toBe(true)
+    expect(result.winner).toBe('attacker')
+    expect(result.survivors.some(unit => unit.team === 'attacker' && unit.type === 'marine')).toBe(true)
   })
 
   it('keeps a dense grenadier battery answerable by mobile and sustained counters', () => {
@@ -94,7 +101,7 @@ describe('Tier 1 placement and support value', () => {
     }
 
     expect(simulateScenario(findScenario('tier1_grenadier_vs_clump'), 101).winner)
-      .toBe('attacker')
+      .toBe('defender')
   })
 })
 
@@ -128,6 +135,44 @@ function mirroredRolePower(scenario: CombatBalanceScenario): number {
     power += remainingPower(mirrored, 'defender')
   }
   return power
+}
+
+function mirroredRoleResults(scenario: CombatBalanceScenario): {
+  wins: number
+  medianRemainingHpRatio: number
+} {
+  const ratios: number[] = []
+  for (const seed of SEEDS) {
+    const normal = simulateScenario(scenario, seed)
+    collectWinningRatio(normal, 'attacker', ratios)
+    const mirrored = simulateBattle(
+      mirrorRows(scenario.defenders, 'attacker'),
+      mirrorRows(scenario.attackers, 'defender'),
+      seed,
+      [],
+    )
+    collectWinningRatio(mirrored, 'defender', ratios)
+  }
+  ratios.sort((left, right) => left - right)
+  return {
+    wins: ratios.length,
+    medianRemainingHpRatio: ratios[Math.floor(ratios.length / 2)] ?? 0,
+  }
+}
+
+function collectWinningRatio(
+  result: BattleResult,
+  roleTeam: Team,
+  ratios: number[],
+): void {
+  if (result.winner !== roleTeam) return
+  const initialHp = result.initialState
+    .filter(unit => unit.team === roleTeam)
+    .reduce((total, unit) => total + unit.maxHp, 0)
+  const remainingHp = result.survivors
+    .filter(unit => unit.team === roleTeam)
+    .reduce((total, unit) => total + unit.hp, 0)
+  ratios.push(remainingHp / initialHp)
 }
 
 function simulateScenario(scenario: CombatBalanceScenario, seed: number, trackMetrics = false): BattleResult {

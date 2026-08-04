@@ -12,7 +12,7 @@ function actionContext() {
 }
 
 describe('combat ECS on-hit effects', () => {
-  it('applies squad-wide scout marks and clears allied focus locks', () => {
+  it('applies squad-wide scout marks and shortens allied focus locks', () => {
     const scout = createRuntimeUnitFromConfig({
       id: 'scout',
       team: 'attacker',
@@ -45,11 +45,20 @@ describe('combat ECS on-hit effects', () => {
       y: 20,
       currentAngle: Math.PI,
     })!
+    const otherTarget = createRuntimeUnitFromConfig({
+      id: 'other-target',
+      team: 'defender',
+      type: 'marine',
+      x: 130,
+      y: 40,
+      currentAngle: Math.PI,
+    })!
     target.squadId = 'defender-squad'
     squadmate.squadId = 'defender-squad'
-    ally.attackTargetId = target.id
+    otherTarget.squadId = 'other-squad'
+    ally.attackTargetId = otherTarget.id
     ally.aggroLockTicks = 8
-    const world = new CombatWorld([scout, ally, target, squadmate])
+    const world = new CombatWorld([scout, ally, target, squadmate, otherTarget])
     const actions: Parameters<typeof runActionSystem>[3] = []
 
     const result = runActionSystem(world, 0, 2, actions, actionContext())
@@ -63,13 +72,34 @@ describe('combat ECS on-hit effects', () => {
     expect(world.stores.statusControl.require(3).targetMark).toEqual(
       world.stores.statusControl.require(2).targetMark,
     )
-    expect(world.stores.targeting.require(1).aggroLockTicks).toBe(0)
-    expect(world.stores.entityTargets.require(1).attackTarget).toBeUndefined()
-    expect(world.snapshotEntity(1).attackTargetId).toBeUndefined()
+    expect(world.stores.targeting.require(1).aggroLockTicks).toBe(2)
+    expect(world.stores.entityTargets.require(1).attackTarget).toBe(4)
+    expect(world.snapshotEntity(1).attackTargetId).toBe('other-target')
     expect(actions).toEqual([
       { unitId: 'scout', type: 'attack', targetId: 'target' },
-      { unitId: 'scout', type: 'target_mark', targetId: 'target', value: 1.25 },
+      {
+        unitId: 'scout',
+        type: 'target_mark',
+        targetId: 'target',
+        value: 1.25,
+        markEvent: 'new_squad',
+        markSquadId: 'defender-squad',
+        markDuration: 20,
+        retargetCount: 1,
+      },
     ])
+
+    world.stores.combat.require(0).actionCooldown = 0
+    world.stores.targeting.require(1).aggroLockTicks = 8
+    actions.length = 0
+    runActionSystem(world, 0, 2, actions, actionContext())
+
+    expect(world.stores.targeting.require(1).aggroLockTicks).toBe(8)
+    expect(actions.at(-1)).toMatchObject({
+      type: 'target_mark',
+      markEvent: 'refresh',
+      retargetCount: 0,
+    })
   })
 
   it('preserves normalized hack control mode in native replay', () => {

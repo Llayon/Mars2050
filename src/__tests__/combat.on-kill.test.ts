@@ -1,37 +1,22 @@
 import { describe, expect, it } from 'vitest'
 import type { BattleAction } from '@/domains/combat/combat.actions'
 import type { SimUnit, Team } from '@/domains/combat/combat.types'
+import type { UnitTypeKey } from '@/domains/combat/combat.types'
+import { createRuntimeUnitFromConfig } from '@/domains/combat/combat.unit-factory'
 import { PRNG } from '@/domains/combat/combat.utils'
 import { CombatWorld } from '@/domains/combat/ecs/combat-world'
 import { resolveEcsDeath } from '@/domains/combat/ecs/systems'
 
 function makeUnit(overrides: Partial<SimUnit> & { id: string; team: Team; type?: string }): SimUnit {
-  return {
-    type: 'marine',
-    hp: 100,
-    maxHp: 100,
-    attack: 20,
-    defense: 0,
-    speed: 10,
-    range: 240,
-    attackType: 'single',
-    actionCooldownMax: 10,
-    actionCooldown: 0,
-    isFlying: false,
-    canTargetAir: false,
-    x: 0,
-    y: 0,
-    isDead: false,
-    turnSpeed: 10,
-    currentAngle: 0,
-    size: 'S',
-    shield: 0,
-    maxShield: 0,
-    statusEffects: [],
-    aggroLockTicks: 0,
-    velocity: { x: 0, y: 0 },
-    ...overrides,
-  }
+  const unit = createRuntimeUnitFromConfig({
+    id: overrides.id,
+    team: overrides.team,
+    type: (overrides.type ?? 'marine') as UnitTypeKey,
+    x: overrides.x ?? 0,
+    y: overrides.y ?? 0,
+    currentAngle: overrides.currentAngle ?? 0,
+  })!
+  return Object.assign(unit, { hp: 100, maxHp: 100 }, overrides)
 }
 
 describe('combat on-kill effects', () => {

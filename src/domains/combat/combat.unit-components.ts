@@ -13,6 +13,7 @@ import type {
   UnitSupportComponent,
   UnitWeaponComponent,
 } from './combat.unit-ability-components'
+import type { UnitRuntimeRules } from './combat.unit-build.types'
 
 export interface UnitComponentDataMap {
   identity: Omit<UnitIdentityComponent, 'summonOwnerId'>
@@ -32,5 +33,7 @@ export interface UnitComponentDataMap {
 export type UnitSnapshot = UnitIdentityComponent & UnitTransformComponent &
   UnitVitalityComponent & UnitCombatComponent & UnitWeaponComponent &
   UnitTargetingComponent & UnitMovementComponent & UnitStatusControlComponent &
-  UnitDefenseComponent & UnitSupportComponent & UnitLifecycleComponent
+  UnitDefenseComponent & UnitSupportComponent & UnitLifecycleComponent & {
+    runtimeRules?: UnitRuntimeRules
+  }
 export type UnitField = keyof UnitSnapshot

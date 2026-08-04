@@ -2,6 +2,7 @@ import { chooseHackControlMode } from '../../combat.control-mode'
 import type { HackControlMode } from '../../combat.primitives'
 import type { TargetingProfileConfig } from '../../combat.types'
 import type { CombatWorld } from '../combat-world'
+import { getDesignationIndex } from '../designation-index'
 import type { EntityId } from '../entity'
 import { TargetingRuntime } from '../targeting-runtime'
 import {
@@ -113,7 +114,19 @@ function getAcquisitionCandidates(
   const targetTeam = mode === 'redirect'
     ? ownTeam
     : ownTeam === 'attacker' ? 'defender' : 'attacker'
-  return targeting.collect(world, transform.x, transform.y, radius, targetTeam)
+  const candidates = targeting.collect(
+    world, transform.x, transform.y, radius, targetTeam,
+  )
+  if (mode === null) {
+    getDesignationIndex(world).appendAssistTargets(
+      world,
+      ownTeam,
+      transform.x,
+      transform.y,
+      candidates,
+    )
+  }
+  return candidates
 }
 
 

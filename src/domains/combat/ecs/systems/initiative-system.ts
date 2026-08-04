@@ -1,6 +1,28 @@
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
 
+export interface EcsInitiativeGroup {
+  speed: number
+  entityIds: EntityId[]
+}
+
+export function getEcsInitiativeGroups(world: CombatWorld): EcsInitiativeGroup[] {
+  const groups = new Map<number, EntityId[]>()
+  for (const entityId of world.query(['identity', 'vitality', 'combat'])) {
+    const speed = world.stores.combat.require(entityId).speed ?? 0
+    const group = groups.get(speed) ?? []
+    group.push(entityId)
+    groups.set(speed, group)
+  }
+  return [...groups.entries()]
+    .sort(([left], [right]) => right - left)
+    .map(([speed, entityIds]) => ({
+      speed,
+      entityIds: entityIds.sort((left, right) =>
+        world.stores.identity.require(left).id.localeCompare(world.stores.identity.require(right).id)),
+    }))
+}
+
 export function getEcsTurnOrder(world: CombatWorld, tick = 0): EntityId[] {
   const groups = new Map<number, EntityId[]>()
   for (const entityId of world.query(['identity', 'vitality', 'combat'])) {

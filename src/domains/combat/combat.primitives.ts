@@ -20,7 +20,29 @@ export interface BurrowConfig { damageReduction: number; regenPercentPerTick?: n
 export interface UnitModeSwitchConfig { trigger: 'while_moving'; startMode?: MobilityMode; groundForAction?: boolean; airSpeedMultiplier?: number; groundSpeedMultiplier?: number }
 export interface StatusEffect { type: StatusType; duration: number; value?: number; sourceUnitId?: string; stackKey?: string; controlMode?: HackControlMode; tickInterval?: number }
 export interface RuntimeStatusEffect extends StatusEffect { tickInterval: number; nextTickIn: number }
-export interface TargetMark { sourceUnitId: string; duration: number; damageMultiplier?: number; sharedDamage?: boolean; squadWide?: boolean; executeThreshold?: number; focusPriority?: number }
+export type MarkRetargetPolicy = 'always' | 'new_squad_only' | 'none'
+export interface RampDamageConfig { step: number; maxMultiplier: number }
+export interface ChargeDamageConfig {
+  minDistance: number
+  maxDistance: number
+  maxMultiplier: number
+}
+export interface MineOnActionConfig {
+  radius: number
+  damage: number
+  duration: number
+}
+export interface OnKillConfig {
+  cooldownReset?: boolean
+  healPercent?: number
+  status?: StatusEffect
+}
+export interface TargetMark {
+  sourceUnitId: string; duration: number; damageMultiplier?: number
+  sharedDamage?: boolean; squadWide?: boolean; executeThreshold?: number
+  focusPriority?: number; focusRadius?: number
+  retargetPolicy?: MarkRetargetPolicy; retargetLockTicks?: number
+}
 export type TargetMarkConfig = Omit<TargetMark, 'sourceUnitId'>
 export type PercentHpDamageBasis = 'max' | 'current'
 export interface PercentHpDamageConfig { percent: number; basis?: PercentHpDamageBasis; maxBonus?: number; minBonus?: number }

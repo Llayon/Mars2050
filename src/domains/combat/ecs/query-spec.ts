@@ -29,6 +29,7 @@ const COMPONENT_INDEX: Record<ComponentName, number> = {
   activeStatusCapability: 25,
   activeControlProgressCapability: 26,
   entitySources: 27,
+  runtimeRules: 28,
 }
 
 export interface QuerySpec {

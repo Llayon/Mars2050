@@ -1,12 +1,10 @@
 import type { BattleAction } from '../../combat.actions'
-import { UNIT_TYPES } from '../../combat.config'
 import type { RuntimeActionContext, RuntimeActionResult } from '../../combat.runtime'
-import type { UnitTypeKey } from '../../combat.types'
 import { getDistance, getSizeRadius } from '../../combat.utils'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
 import { getEcsEffectiveActionRangeAgainst } from '../movement-positioning'
-import { getEcsCombatTags } from '../targeting-evaluation'
+import { canEcsReceiveHeal } from '../targeting-evaluation'
 import { applyEcsHealing } from './healing-system'
 import { canUseSimpleSingleDamage, runSimpleSingleDamage } from './single-damage-system'
 import { canUseEcsMineAction, runEcsMineAction } from './mine-action-system'
@@ -50,6 +48,7 @@ export function runActionSystem(
       actions,
       context.tick,
       context.rng,
+      { allowDeadActorAction: context.allowDeadActorAction },
     )
   }
   return runHealAction(world, entityId, targetId, actions)
@@ -68,7 +67,7 @@ function runHealAction(
   const targetVitality = world.stores.vitality.require(targetId)
   const movement = world.stores.movement.require(entityId)
   const status = world.stores.statusControl.require(entityId)
-  if (!canHealTarget(world, identity.type, targetId)) return notActed()
+  if (!canEcsReceiveHeal(world, entityId, targetId)) return notActed()
   const distance = getDistance(transform.x, transform.y, targetTransform.x, targetTransform.y) -
     getSizeRadius(targetTransform.size) - getSizeRadius(transform.size)
   if (targetVitality.hp >= targetVitality.maxHp ||
@@ -85,13 +84,6 @@ function runHealAction(
   combat.actionCooldown = getEcsActionCooldown(world, entityId)
   applyEcsHealing(world, entityId, targetId, combat.attack, actions)
   return { acted: true }
-}
-
-function canHealTarget(world: CombatWorld, sourceType: string, targetId: EntityId): boolean {
-  const tags = UNIT_TYPES[sourceType as UnitTypeKey]?.baseStats.healTargetTags
-  if (!tags?.length) return true
-  const targetTags = new Set(getEcsCombatTags(world, targetId))
-  return tags.some(tag => targetTags.has(tag))
 }
 
 function isActionBlocked(effects: { type: string; duration: number }[]): boolean {

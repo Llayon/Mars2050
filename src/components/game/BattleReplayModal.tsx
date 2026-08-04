@@ -7,6 +7,7 @@ import {
   buildBattleReplayMetrics,
   shouldCollectInlineReplayOverlapMetrics,
 } from './battle-replay-metrics'
+import { BattleReplayDebugMetrics } from './battle-replay-debug-metrics'
 
 interface BattleReplayModalProps {
   attackerUnits: UnitRow[]
@@ -37,12 +38,11 @@ export const BattleReplayModal = memo(function BattleReplayModal({ attackerUnits
   const metrics = useMemo(
     () => buildBattleReplayMetrics(
       logs,
-      collectOverlapMetrics ? initialState : undefined,
+      initialState,
+      collectOverlapMetrics,
     ),
     [collectOverlapMetrics, logs, initialState],
   )
-  const formatMetric = (value: number, digits: number) => value.toFixed(digits)
-
   useEffect(() => {
     const media = window.matchMedia?.(
       '(min-width: 1024px) and (hover: hover) and (pointer: fine)',
@@ -146,19 +146,10 @@ export const BattleReplayModal = memo(function BattleReplayModal({ attackerUnits
         : `absolute inset-x-2 z-[60] flex flex-col gap-2 ${replayWarning ? 'bottom-14' : 'bottom-2'}`}
       >
         {showDesktopDebug && (
-          <div className="w-64 border border-gray-600 bg-gray-800/95 p-3 text-sm shadow-lg flex flex-col gap-2 rounded-lg">
-            <div className="font-bold text-gray-200 border-b border-gray-700 pb-1 mb-1">Метрики (Tick {metrics.totalTicks})</div>
-            <div className="flex justify-between text-gray-300"><span>Первая атака:</span> <span>{metrics.firstAttack >= 0 ? `Tick ${metrics.firstAttack}` : 'Нет'}</span></div>
-            {collectOverlapMetrics && (
-              <>
-                <div className="flex justify-between text-gray-300"><span>Avg Overlap:</span> <span>{formatMetric(metrics.averageOverlap, 1)}px</span></div>
-                <div className="flex justify-between text-gray-300"><span>Max Overlap:</span> <span>{formatMetric(metrics.maxOverlap, 1)}px</span></div>
-                <div className="flex justify-between text-gray-300"><span>Avg Ratio:</span> <span>{formatMetric(metrics.averageOverlapRatio, 2)}</span></div>
-                <div className="flex justify-between text-gray-300"><span>Max Ratio:</span> <span>{formatMetric(metrics.maxOverlapRatio, 2)}</span></div>
-                <div className="flex justify-between text-gray-300"><span>Severe Samples:</span> <span>{metrics.severeOverlapSamples}/{metrics.overlapSamples}</span></div>
-              </>
-            )}
-          </div>
+          <BattleReplayDebugMetrics
+            metrics={metrics}
+            showOverlap={collectOverlapMetrics}
+          />
         )}
 
         <div
