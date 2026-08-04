@@ -6,6 +6,7 @@ import type { EntityId } from '../entity'
 export function getEcsTerminalOutcome(
   world: CombatWorld,
 ): BattleOutcome | null {
+  if (world.resources.require('pendingImpacts').hasDamagePending()) return null
   const pendingAttackers = hasPendingReassembly(world, 'attacker')
   const pendingDefenders = hasPendingReassembly(world, 'defender')
   const attackers = [...world.queryTeam('attacker', ['identity', 'vitality'])]
@@ -35,7 +36,7 @@ function canTeamDealDamage(world: CombatWorld, allies: EntityId[], enemies: Enti
     const targeting = world.stores.targeting.require(entityId)
     const support = world.stores.support.require(entityId)
     const lifecycle = world.stores.lifecycle.require(entityId)
-    if (weapon.attackType === 'spawn' || lifecycle.spawnerConfig || support.periodicAbilities?.length || targeting.controlBeam) return true
+    if (weapon.attackType === 'spawn' || lifecycle.spawnerConfig || support.periodicAbilities?.length || support.periodicPrograms?.length || targeting.controlBeam) return true
     if (weapon.attackType === 'heal') return false
     const hasDamage = (combat.attack ?? 0) > 0 || weapon.statusOnHit?.some(status => ['burn', 'acid', 'degeneration'].includes(status.type))
     return Boolean(hasDamage) && enemies.some(enemyId => canTarget(world, entityId, enemyId))

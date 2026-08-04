@@ -65,8 +65,10 @@ describe('spawn caps', () => {
       type: 'scout_drone',
       speed: 180,
       range: 120,
-      markOnHit: { squadWide: true },
     })
+    expect(units[2].abilityPrograms).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: 'scout_drone_mark' }),
+    ]))
     expect(actions[0]).toMatchObject({ unitId: 'carrier', type: 'spawn', targetId: units[2].id })
   })
 

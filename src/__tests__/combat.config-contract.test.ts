@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import { UNIT_TYPES } from '@/domains/combat/combat.config'
 import type { UnitBaseStats, UnitTypeConfig } from '@/domains/combat/combat.types'
+import type { SupportAura } from '@/domains/combat/combat.primitives'
 
+function configuredAuras(stats: UnitBaseStats): SupportAura[] { return [...(stats.supportAuras ?? []), ...(stats.abilities ?? []).flatMap(ability => ability.effects.flatMap(group => group.effects.flatMap(effect => effect.kind === 'support_aura' ? [effect.aura] : [])))] }
 function hasShieldBehavior(stats: UnitBaseStats): boolean {
-  return (stats.supportAuras ?? []).some(aura => aura.type === 'shield')
+  return configuredAuras(stats).some(aura => aura.type === 'shield')
 }
 
 function hasUtilityBehavior(stats: UnitBaseStats): boolean {
@@ -11,7 +13,7 @@ function hasUtilityBehavior(stats: UnitBaseStats): boolean {
     || stats.attackType === 'heal'
     || (stats.statusOnHit?.length ?? 0) > 0
     || stats.markOnHit !== undefined
-    || (stats.supportAuras?.length ?? 0) > 0
+    || configuredAuras(stats).length > 0
     || stats.mineOnAction !== undefined
     || stats.smokeOnAction !== undefined
     || stats.pullOnHit !== undefined
@@ -19,6 +21,7 @@ function hasUtilityBehavior(stats: UnitBaseStats): boolean {
     || stats.stance !== undefined
     || stats.modeSwitch !== undefined
     || stats.projectileInterception !== undefined
+    || (stats.abilities?.length ?? 0) > 0
 }
 
 describe('combat unit config contract', () => {
@@ -201,7 +204,7 @@ describe('combat unit config contract', () => {
         expect(hasShieldBehavior(stats), `${unitType} is tagged shielded without shield behavior`).toBe(true)
       }
       if (tags.has('healer')) {
-        expect(stats.attackType === 'heal' || (stats.supportAuras ?? []).some(aura => aura.type === 'regen'), `${unitType} is tagged healer without heal/regen behavior`).toBe(true)
+        expect(stats.attackType === 'heal' || configuredAuras(stats).some(aura => aura.type === 'regen'), `${unitType} is tagged healer without heal/regen behavior`).toBe(true)
       }
       if (tags.has('summoner')) {
         expect(stats.attackType, `${unitType} is tagged summoner without spawn attack type`).toBe('spawn')
@@ -225,7 +228,7 @@ describe('combat unit config contract', () => {
 
   it('keeps support aura configs complete', () => {
     for (const [unitType, config] of Object.entries(UNIT_TYPES) as [string, UnitTypeConfig][]) {
-      for (const aura of config.baseStats.supportAuras ?? []) {
+      for (const aura of configuredAuras(config.baseStats)) {
         expect(aura.radius, `${unitType} has support aura without positive radius`).toBeGreaterThan(0)
         expect(['allies', 'enemies'], `${unitType} has support aura with invalid target`).toContain(aura.target)
         if (aura.interval !== undefined) {

@@ -18,6 +18,7 @@ export const COMBAT_PHASE_IDS = [
   'status',
   'actor_turn',
   'batch_movement',
+  'projectile_impact',
   'hazard',
   'hp_threshold_trigger',
 ] as const

@@ -7,11 +7,15 @@ import type {
   UnitRuntimeRules,
 } from './combat.unit-build.types'
 import type { UnitBaseStats } from './combat.types'
+import type { SupportAura } from './combat.primitives'
 import {
   compileUnitStats,
   resolveUnitUpgradeIds,
 } from './combat.unit-stat-compiler'
 import { assertValidWeaponLoadout } from './combat.weapon-validation'
+import { compileAbilityDefinitions } from './combat.ability-compiler'
+import { auraAbility, extractSupportAuras, periodicAbility } from './combat.ability-config'
+import { createLegacyAbilityDefinitions } from './combat.ability-legacy'
 import {
   captureUnitEntityBundle,
   type UnitEntityBundle,
@@ -42,6 +46,21 @@ export function compileUnitSnapshot(spec: UnitBuildSpec): SimUnit | null {
     : compiled.isFlying
   const shield = Math.round(compiled.shield)
   const runtimeSpawn = spec.spawn !== undefined
+  const abilityPrograms = compileAbilityDefinitions([
+    ...createLegacyAbilityDefinitions(spec.definitionId, primitives),
+    ...(primitives.abilities ?? []),
+  ])
+  const periodicPrograms = compileAbilityDefinitions((primitives.periodicAbilities ?? [])
+    .map(ability => periodicAbility(`${spec.definitionId}:periodic:${ability.id}`, ability)))
+  const authoredSupportAuras = extractSupportAuras(primitives.abilities)
+  const resolvedUpgradeIds = resolveUnitUpgradeIds(spec)
+  const resolvedSupportAuras = getUnitSupportAuras(
+    [...(primitives.supportAuras ?? []), ...authoredSupportAuras],
+    resolvedUpgradeIds,
+  )
+  const upgradeSupportPrograms = compileAbilityDefinitions((resolvedSupportAuras ?? [])
+    .filter(aura => !authoredSupportAuras.some(authored => sameSupportAura(authored, aura)))
+    .map((aura, index) => auraAbility(`${spec.definitionId}:upgrade_aura:${index}`, aura)))
   const unit: SimUnit = {
     id: spec.identity.id,
     team: spec.identity.team,
@@ -57,6 +76,8 @@ export function compileUnitSnapshot(spec: UnitBuildSpec): SimUnit | null {
     speed: compiled.speed,
     range: compiled.range,
     attackType: compiled.attackType,
+    delivery: primitives.delivery ? { ...primitives.delivery } : undefined,
+    abilityPrograms,
     aoeRadius: compiled.aoeRadius,
     selfDestructOnAttack: primitives.selfDestructOnAttack,
     spawnType: primitives.spawnType,
@@ -86,10 +107,13 @@ export function compileUnitSnapshot(spec: UnitBuildSpec): SimUnit | null {
     statusEffects: [],
     statusOnHit: primitives.statusOnHit?.map(status => ({ ...status })),
     markOnHit: primitives.markOnHit ? { ...primitives.markOnHit } : undefined,
-    supportAuras: getUnitSupportAuras(
-      primitives.supportAuras,
-      resolveUnitUpgradeIds(spec),
-    ),
+    supportAuras: resolvedSupportAuras ?? authoredSupportAuras,
+    supportPrograms: [
+      ...abilityPrograms.filter(program => program.groups.some(group =>
+        group.effects.some(effect => effect.kind === 'support_aura'))),
+      ...upgradeSupportPrograms,
+    ],
+    periodicPrograms,
     groundDamageMult: compiled.groundDamageMult,
     shieldDamageMult: compiled.shieldDamageMult,
     armorPierceRatio: compiled.armorPierceRatio || undefined,
@@ -168,14 +192,19 @@ export function compileUnitSnapshot(spec: UnitBuildSpec): SimUnit | null {
     lifestealMult: runtimeSpawn && compiled.lifestealMult === 0
       ? undefined
       : compiled.lifestealMult,
-    runtimeRules: compileRuntimeRules(primitives),
+    runtimeRules: compileRuntimeRules(primitives, spec.executionMode ?? 'compiled'),
   }
   prepareRuntimePrimitives(unit, primitives)
+  if (!runtimeSpawn && periodicPrograms.length > 0) {
+    unit.periodicProgramState = unit.periodicAbilities
+    unit.periodicAbilities = undefined
+  }
   return unit
 }
 
 function compileRuntimeRules(
   stats: UnitBaseStats,
+  abilityExecutionMode: 'compiled' | 'legacy_mutable' = 'compiled',
 ): UnitRuntimeRules {
   return {
     baseCombatTags: [...(stats.combatTags ?? [])],
@@ -201,8 +230,17 @@ function compileRuntimeRules(
         stats.range * 40 > 80 &&
         stats.attack > 0,
       ),
+    abilityExecutionMode,
+    abilityProgramsAuthoritative: abilityExecutionMode === 'compiled',
     spawnOverrides: stats.spawnOverrides
       ? { ...stats.spawnOverrides }
       : undefined,
   }
+}
+
+function sameSupportAura(left: SupportAura, right: SupportAura): boolean {
+  return left.type === right.type && left.radius === right.radius &&
+    left.value === right.value && left.duration === right.duration &&
+    left.interval === right.interval && left.target === right.target &&
+    JSON.stringify(left.targetTags ?? []) === JSON.stringify(right.targetTags ?? [])
 }

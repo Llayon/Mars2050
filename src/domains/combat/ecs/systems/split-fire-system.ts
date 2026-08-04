@@ -1,4 +1,5 @@
 import type { BattleAction } from '../../combat.actions'
+import type { SplitFireConfig } from '../../combat.primitives'
 import { getDistance, getSizeRadius } from '../../combat.utils'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
@@ -21,12 +22,13 @@ export function applyEcsSplitFire(
   attackerId: EntityId,
   primaryId: EntityId,
   actions: BattleAction[],
+  overrideConfig?: SplitFireConfig,
 ): void {
-  const config = world.stores.weapon.require(attackerId).splitFire
+  const config = overrideConfig ?? world.stores.weapon.require(attackerId).splitFire
   if (!config) return
   const identity = world.stores.identity.require(attackerId).id
   const damage = Math.floor(world.stores.combat.require(attackerId).attack * config.damageMultiplier)
-  for (const targetId of getSplitFireTargets(world, attackerId, primaryId)) {
+  for (const targetId of getSplitFireTargets(world, attackerId, primaryId, config)) {
     actions.push({
       unitId: identity,
       type: 'split_fire',
@@ -42,8 +44,9 @@ function getSplitFireTargets(
   world: CombatWorld,
   attackerId: EntityId,
   primaryId: EntityId,
+  overrideConfig?: SplitFireConfig,
 ): EntityId[] {
-  const config = world.stores.weapon.require(attackerId).splitFire
+  const config = overrideConfig ?? world.stores.weapon.require(attackerId).splitFire
   if (!config) return []
   const attacker = world.stores.transform.require(attackerId)
   const attackerIdentity = world.stores.identity.require(attackerId)

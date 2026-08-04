@@ -1,4 +1,5 @@
 import type { BattleAction } from '../../combat.actions'
+import type { ChainAttackConfig } from '../../combat.primitives'
 import { getDistance, getSizeRadius } from '../../combat.utils'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
@@ -26,10 +27,11 @@ export function applyEcsChainAttack(
   attackerId: EntityId,
   primaryId: EntityId,
   actions: BattleAction[],
+  overrideConfig?: ChainAttackConfig,
 ): void {
   const attacker = world.stores.identity.require(attackerId).id
   const attack = world.stores.combat.require(attackerId).attack
-  for (const hit of getChainHits(world, attackerId, primaryId)) {
+  for (const hit of getChainHits(world, attackerId, primaryId, overrideConfig)) {
     actions.push({
       unitId: attacker,
       type: 'chain_jump',
@@ -50,8 +52,9 @@ function getChainHits(
   world: CombatWorld,
   attackerId: EntityId,
   primaryId: EntityId,
+  overrideConfig?: ChainAttackConfig,
 ): EcsChainHit[] {
-  const config = world.stores.weapon.require(attackerId).chainAttack
+  const config = overrideConfig ?? world.stores.weapon.require(attackerId).chainAttack
   if (!config) return []
   const primary = world.stores.transform.require(primaryId)
   const combat = world.stores.combat.require(attackerId)

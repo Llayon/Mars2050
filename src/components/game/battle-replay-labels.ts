@@ -3,7 +3,7 @@ import type { BattleAction, BattleActionType } from '@/domains/combat/combat.typ
 export const REPLAY_ACTION_LABEL_EXEMPTIONS = [
   'move', 'knockback', 'attack', 'heal', 'die', 'spawn', 'hazard_spawn',
   'damage', 'damage_share', 'lifesteal', 'status_expire', 'status_tick',
-  'control_link', 'control_progress',
+  'control_link', 'control_progress', 'projectile_launch',
 ] as const satisfies readonly BattleActionType[]
 
 export function getReplayActionLabel(action: BattleAction): string | null {
@@ -25,6 +25,10 @@ export function getReplayActionLabel(action: BattleAction): string | null {
     case 'burrow_change': return action.modeState === 'burrowed' ? 'ПОД ЗЕМЛЮ' : 'НА ПОВЕРХНОСТЬ'
     case 'mode_change': return action.modeState === 'air' ? 'ВЗЛЕТ' : 'ПОСАДКА'
     case 'projectile_intercept': return 'ПЕРЕХВАТ'
+    case 'attack_windup': return 'ПОДГОТОВКА АТАКИ'
+    case 'projectile_impact': return 'ПОПАДАНИЕ'
+    case 'projectile_miss': return 'ПРОМАХ'
+    case 'attack_cancel': return 'АТАКА ОТМЕНЕНА'
     case 'stealth_change': return action.modeState === 'movement_active' ? 'СКРЫТ' : 'ОБНАРУЖЕН'
     case 'cone_attack': return 'КОНУС ОГНЯ'
     case 'beam_tick': return 'ЛУЧ'

@@ -1,5 +1,6 @@
 import { Database, UnitsType } from '@/types/database'
 import type { AttackChargeConfig, BarrageAttackConfig, BeamAttackConfig, BurrowConfig, ChainAttackConfig, ChargeDamageConfig, CombatTag, ConditionalAttackModeConfig, ConditionalRangeConfig, ConeAttackConfig, ControlBeamConfig, DelayedReassemblyConfig, FieldEffectConfig, FlatDamageBlockConfig, FormationModifiersConfig, LinePierceConfig, MineOnActionConfig, OnKillConfig, PercentHpDamageConfig, PeriodicAbilityConfig, RampDamageConfig, RankScalingConfig, ShieldHitBlockConfig, SideWeaponConfig, SplitFireConfig, StatGrowthConfig, StatusEffect, SupportAura, SweepAttackConfig, TargetMarkConfig, TargetPriorityProfile, TransformModeConfig, TriggerEffectConfig, UnitModeSwitchConfig, UnitStanceConfig } from './combat.sim.types'
+import type { AbilityDefinition } from './combat.ability.types'
 
 export type UnitRow = Database['public']['Tables']['units']['Row']
 export type BattleRow = Database['public']['Tables']['battles']['Row']
@@ -10,6 +11,11 @@ export type TargetingProfileKey =
   | 'anti_armor' | 'siege' | 'assassin' | 'support_hunter'
   | 'flanker_local' | 'demolition_local'
 export type TargetingProfile = TargetingProfileKey
+
+export type AttackDeliveryConfig =
+  | { kind: 'instant' }
+  | { kind: 'projectile'; speed: number; homing: 'full'; windupTicks: number; interceptable: boolean }
+  | { kind: 'ground_targeted'; flightTicks: number; windupTicks: number; interceptable: boolean }
 
 export interface TargetingProfileConfig {
   acquisition: TargetingAcquisition
@@ -63,6 +69,8 @@ export interface UnitBaseStats {
   combatTags?: CombatTag[]
   turnSpeed?: number // Radians per tick
   size?: 'S' | 'M' | 'L' | 'XL'
+  delivery?: AttackDeliveryConfig
+  abilities?: AbilityDefinition[]
 }
 
 export interface UnitTypeConfig {

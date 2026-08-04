@@ -100,7 +100,7 @@ export function runEcsActorTurnSystem(
   }
 }
 
-function commitActionGroup(
+export function commitActionGroup(
   world: CombatWorld,
   ledger: EcsActionGroupLedger,
   actions: RuntimePhaseContext['actions'],

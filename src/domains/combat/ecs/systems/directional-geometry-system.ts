@@ -1,8 +1,14 @@
 import type { BattleAction } from '../../combat.actions'
+import type { BeamAttackConfig, ConeAttackConfig, LinePierceConfig } from '../../combat.primitives'
 import { getDistance, getSizeRadius } from '../../combat.utils'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
 import { resolveEcsSecondaryHit } from './secondary-hit-system'
+
+export type DirectionalOverride =
+  | { kind: 'line_pierce'; config: LinePierceConfig }
+  | { kind: 'cone_attack'; config: ConeAttackConfig }
+  | { kind: 'beam_attack'; config: BeamAttackConfig }
 
 export function canUseEcsDirectionalGeometry(
   world: CombatWorld,
@@ -18,22 +24,23 @@ export function applyEcsDirectionalGeometry(
   attackerId: EntityId,
   primaryId: EntityId,
   actions: BattleAction[],
+  override?: DirectionalOverride,
 ): void {
   const weapon = world.stores.weapon.require(attackerId)
   const combat = world.stores.combat.require(attackerId)
   const attacker = world.stores.identity.require(attackerId).id
   const primary = world.stores.identity.require(primaryId).id
-  const targets = getDirectionalTargets(world, attackerId, primaryId)
+  const targets = getDirectionalTargets(world, attackerId, primaryId, override)
   let multiplier: number | undefined
   let emitsAttackIntent = false
-  if (weapon.linePierce) {
-    multiplier = weapon.linePierce.damageMultiplier
+  if (override?.kind === 'line_pierce' || weapon.linePierce) {
+    multiplier = override?.kind === 'line_pierce' ? override.config.damageMultiplier : weapon.linePierce!.damageMultiplier
     emitsAttackIntent = true
-  } else if (weapon.coneAttack) {
-    multiplier = weapon.coneAttack.damageMultiplier
+  } else if (override?.kind === 'cone_attack' || weapon.coneAttack) {
+    multiplier = override?.kind === 'cone_attack' ? override.config.damageMultiplier : weapon.coneAttack!.damageMultiplier
     actions.push({ unitId: attacker, type: 'cone_attack', targetId: primary, radius: combat.range, value: multiplier })
-  } else if (weapon.beamAttack) {
-    multiplier = weapon.beamAttack.damageMultiplier
+  } else if (override?.kind === 'beam_attack' || weapon.beamAttack) {
+    multiplier = override?.kind === 'beam_attack' ? override.config.damageMultiplier : weapon.beamAttack!.damageMultiplier
     actions.push({ unitId: attacker, type: 'beam_tick', targetId: primary, radius: combat.range, value: multiplier })
   }
   if (!multiplier) return
@@ -53,6 +60,7 @@ function getDirectionalTargets(
   world: CombatWorld,
   attackerId: EntityId,
   primaryId: EntityId,
+  override?: DirectionalOverride,
 ): EntityId[] {
   const weapon = world.stores.weapon.require(attackerId)
   if (!hasDirectionalGeometry(world, attackerId)) return []
@@ -62,9 +70,12 @@ function getDirectionalTargets(
   const candidates = world.resources.require('entitySpatial')
     .query(world, attacker.x, attacker.y, combat.range + 240)
     .filter(candidateId => isCandidate(world, attackerId, primaryId, candidateId))
-  if (weapon.coneAttack) {
+  const cone = override?.kind === 'cone_attack' ? override.config : weapon.coneAttack
+  const line = override?.kind === 'line_pierce' ? override.config : weapon.linePierce
+  const beam = override?.kind === 'beam_attack' ? override.config : weapon.beamAttack
+  if (cone) {
     const centerAngle = Math.atan2(primary.y - attacker.y, primary.x - attacker.x)
-    const maxAngle = weapon.coneAttack.angleDeg * Math.PI / 360
+    const maxAngle = cone.angleDeg * Math.PI / 360
     return candidates
       .map(targetId => ({
         targetId,
@@ -74,7 +85,7 @@ function getDirectionalTargets(
       .filter(hit => hit.distance <= combat.range + getTargetRadius(world, hit.targetId))
       .filter(hit => Math.abs(normalizeAngle(hit.angle - centerAngle)) <= maxAngle)
       .sort((left, right) => left.distance - right.distance || compareIds(world, left.targetId, right.targetId))
-      .slice(0, weapon.coneAttack.maxTargets ?? Number.MAX_SAFE_INTEGER)
+      .slice(0, cone.maxTargets ?? Number.MAX_SAFE_INTEGER)
       .map(hit => hit.targetId)
   }
   const dx = primary.x - attacker.x
@@ -83,9 +94,9 @@ function getDirectionalTargets(
   if (length <= 0) return []
   const ux = dx / length
   const uy = dy / length
-  const limit = weapon.linePierce ? length : combat.range
-  const width = weapon.linePierce?.width ?? weapon.beamAttack?.width ?? 0
-  const maxTargets = weapon.linePierce?.maxTargets ?? weapon.beamAttack?.maxTargets
+  const limit = line ? length : combat.range
+  const width = line?.width ?? beam?.width ?? 0
+  const maxTargets = line?.maxTargets ?? beam?.maxTargets
   return candidates
     .map(targetId => ({ targetId, progress: getProgress(world, attackerId, targetId, ux, uy) }))
     .filter(hit => hit.progress > 0 && hit.progress <= limit)
@@ -107,7 +118,9 @@ function isCandidate(world: CombatWorld, attackerId: EntityId, primaryId: Entity
 
 function hasDirectionalGeometry(world: CombatWorld, attackerId: EntityId): boolean {
   const weapon = world.stores.weapon.require(attackerId)
-  return Boolean(weapon.linePierce || weapon.coneAttack || weapon.beamAttack)
+  return Boolean(weapon.linePierce || weapon.coneAttack || weapon.beamAttack ||
+    weapon.abilityPrograms?.some(program => program.groups.some(group => group.effects.some(effect =>
+      effect.kind === 'line_pierce' || effect.kind === 'cone_attack' || effect.kind === 'beam_attack'))))
 }
 
 function getEntityDistance(world: CombatWorld, leftId: EntityId, rightId: EntityId): number {

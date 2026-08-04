@@ -13,6 +13,8 @@ import type { EntityId } from './entity'
 import type { TargetingRuntime } from './targeting-runtime'
 import type { DesignationIndex } from './designation-index'
 import type { EcsActionGroupLedger } from '../combat.action-intent'
+import type { PendingImpactQueue } from './pending-impacts'
+import type { AttackTimelineState } from './pending-impacts'
 
 export interface CombatClockResource {
   tick: number
@@ -36,6 +38,8 @@ export interface CombatResourceMap {
   targetingRuntime: TargetingRuntime
   designationIndex: DesignationIndex
   actionGroup: EcsActionGroupLedger | undefined
+  pendingImpacts: PendingImpactQueue
+  temporalAttacks: Map<EntityId, AttackTimelineState>
 }
 
 export class CombatResourceStore {

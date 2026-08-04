@@ -7,6 +7,7 @@ vi.mock('@/domains/resource/resource.server', () => ({
 }))
 
 import { loadBattleWithSnapshot, persistBattleWithSnapshot, SNAPSHOT_VERSION } from '@/domains/pvp/pvp.replay'
+import { CURRENT_SIMULATION_VERSION } from '@/domains/combat/combat.version'
 
 function chainable(result: unknown) {
   const c: Record<string, unknown> = {}
@@ -34,7 +35,7 @@ describe('pvp.replay — snapshot version contract', () => {
     const snapshot = {
       battle_id: 'b1', seed: 1, initial_state: {}, log: [],
       metrics: { firstAttackTick: 3 },
-      version: 8, created_at: '2026-01-01',
+      version: CURRENT_SIMULATION_VERSION, created_at: '2026-01-01',
     }
     fromMock
       .mockImplementationOnce(() => chainable({ data: battle, error: null }))
@@ -42,12 +43,11 @@ describe('pvp.replay — snapshot version contract', () => {
 
     const r = await loadBattleWithSnapshot('b1')
     expect(r).not.toBeNull()
-    expect(r?.snapshot.version).toBe(8)
+    expect(r?.snapshot.version).toBe(CURRENT_SIMULATION_VERSION)
     expect(r?.snapshot.metrics).toEqual({ firstAttackTick: 3 })
     expect(r?.compatibility).toMatchObject({
-      status: 'unsupported',
-      canPlay: false,
-      reason: 'newer_engine',
+      status: 'current',
+      canPlay: true,
     })
   })
 

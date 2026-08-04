@@ -28,6 +28,7 @@ import {
   runHazardSystem,
   runStatusSystem,
   runEcsActorTurnSystem,
+  runProjectileImpactSystem,
 } from './systems'
 
 interface EcsPhaseDefinition {
@@ -51,6 +52,7 @@ const ECS_PHASES = [
   phase('status', 'pre_action', runStatusPhase),
   phase('actor_turn', 'action', (world, context) => runEcsActorTurnSystem(world, context)),
   phase('batch_movement', 'post_action', runBatchMovementSystem),
+  phase('projectile_impact', 'post_action', (world, context) => runProjectileImpactSystem(world, context)),
   phase('hazard', 'post_action', runHazardPhase),
   phase('hp_threshold_trigger', 'post_action', runHpThresholdPhase),
 ] as const satisfies readonly EcsPhaseDefinition[]

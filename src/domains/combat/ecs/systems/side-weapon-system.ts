@@ -1,4 +1,5 @@
 import type { BattleAction } from '../../combat.actions'
+import type { SideWeaponConfig } from '../../combat.primitives'
 import { getDistance, getSizeRadius } from '../../combat.utils'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
@@ -21,11 +22,12 @@ export function applyEcsSideWeapon(
   attackerId: EntityId,
   primaryId: EntityId,
   actions: BattleAction[],
+  overrideConfig?: SideWeaponConfig,
 ): void {
-  const config = world.stores.weapon.require(attackerId).sideWeapon
+  const config = overrideConfig ?? world.stores.weapon.require(attackerId).sideWeapon
   if (!config || config.damage <= 0) return
   const attacker = world.stores.identity.require(attackerId).id
-  for (const targetId of getSideWeaponTargets(world, attackerId, primaryId)) {
+  for (const targetId of getSideWeaponTargets(world, attackerId, primaryId, overrideConfig)) {
     actions.push({
       unitId: attacker,
       type: 'side_weapon_attack',
@@ -41,8 +43,9 @@ function getSideWeaponTargets(
   world: CombatWorld,
   attackerId: EntityId,
   primaryId: EntityId,
+  overrideConfig?: SideWeaponConfig,
 ): EntityId[] {
-  const config = world.stores.weapon.require(attackerId).sideWeapon
+  const config = overrideConfig ?? world.stores.weapon.require(attackerId).sideWeapon
   if (!config) return []
   const attacker = world.stores.transform.require(attackerId)
   const attackerIdentity = world.stores.identity.require(attackerId)

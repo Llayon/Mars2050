@@ -53,8 +53,10 @@ describe('combat ECS spawn action', () => {
       type: 'scout_drone',
       speed: 180,
       range: 120,
-      markOnHit: { squadWide: true },
     })
+    expect(world.snapshot()[2].abilityPrograms).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: 'scout_drone_mark' }),
+    ]))
     const spawnedId = world.getEntityId(world.snapshot()[2].id)
     expect(spawnedId).not.toBeUndefined()
     expect(world.snapshotEntity(spawnedId!)).toEqual(world.snapshot()[2])

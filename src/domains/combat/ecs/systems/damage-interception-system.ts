@@ -14,15 +14,29 @@ export function tryEcsProjectileInterception(
 ): boolean {
   if (!isInterceptable(world, attackerId)) return false
   const target = world.stores.transform.require(targetId)
-  const targetTeam = world.stores.identity.require(targetId).team
+  return tryEcsPointInterception(world, attackerId, targetId, target.x, target.y, rawDamage, actions)
+}
+
+export function tryEcsPointInterception(
+  world: CombatWorld,
+  attackerId: EntityId,
+  targetId: EntityId | undefined,
+  x: number,
+  y: number,
+  rawDamage: number,
+  actions: BattleAction[],
+  force = false,
+): boolean {
+  if (!isInterceptable(world, attackerId)) return false
+  const targetTeam = targetId ? world.stores.identity.require(targetId).team : world.stores.identity.require(attackerId).team === 'attacker' ? 'defender' : 'attacker'
   const interceptorId = world.resources.require('entitySpatial')
-    .query(world, target.x, target.y, MAX_INTERCEPT_QUERY_RADIUS)
-    .filter(entityId => isEligible(world, entityId, targetId, targetTeam, rawDamage))
+    .query(world, x, y, MAX_INTERCEPT_QUERY_RADIUS)
+    .filter(entityId => isEligibleAtPoint(world, entityId, targetTeam, rawDamage, x, y))
     .sort((left, right) => {
       const leftTransform = world.stores.transform.require(left)
       const rightTransform = world.stores.transform.require(right)
-      const distance = getDistance(leftTransform.x, leftTransform.y, target.x, target.y) -
-        getDistance(rightTransform.x, rightTransform.y, target.x, target.y)
+      const distance = getDistance(leftTransform.x, leftTransform.y, x, y) -
+        getDistance(rightTransform.x, rightTransform.y, x, y)
       return distance || world.stores.identity.require(left).id.localeCompare(world.stores.identity.require(right).id)
     })[0]
   if (interceptorId === undefined) return false
@@ -32,9 +46,9 @@ export function tryEcsProjectileInterception(
   actions.push({
     unitId: world.stores.identity.require(interceptorId).id,
     type: 'projectile_intercept',
-    targetId: world.stores.identity.require(targetId).id,
+    ...(targetId ? { targetId: world.stores.identity.require(targetId).id } : {}),
     damage: rawDamage,
-    fromX: attacker.x, fromY: attacker.y, toX: target.x, toY: target.y,
+    fromX: attacker.x, fromY: attacker.y, toX: x, toY: y,
   })
   return true
 }
@@ -52,4 +66,14 @@ function isEligible(world: CombatWorld, entityId: EntityId, targetId: EntityId, 
   const source = world.stores.transform.require(entityId)
   const target = world.stores.transform.require(targetId)
   return getDistance(source.x, source.y, target.x, target.y) <= defense.projectileInterceptRadius
+}
+
+function isEligibleAtPoint(world: CombatWorld, entityId: EntityId, team: string, rawDamage: number, x: number, y: number): boolean {
+  const vitality = world.stores.vitality.require(entityId)
+  const identity = world.stores.identity.require(entityId)
+  const defense = world.stores.defense.require(entityId)
+  if (vitality.isDead || identity.team !== team || !defense.projectileInterceptRadius || (defense.projectileInterceptCooldown ?? 0) > 0) return false
+  if (defense.projectileInterceptMaxDamage !== undefined && rawDamage > defense.projectileInterceptMaxDamage) return false
+  const source = world.stores.transform.require(entityId)
+  return getDistance(source.x, source.y, x, y) <= defense.projectileInterceptRadius
 }

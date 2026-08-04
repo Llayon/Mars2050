@@ -5,10 +5,33 @@ The active batch-movement and batch-targeting sequences are tracked in
 `docs/combat-ecs-v4-batch-targeting.md`. The v3 plan remains as historical
 optimization context.
 
-Simulation version 4 uses the in-repository ECS runtime exclusively. The public
+Simulation version 8 uses the in-repository ECS runtime exclusively. The v4 and
+v7 documents remain historical optimization and initiative references. The public
 simulation API no longer exposes an engine selector or legacy array runtime.
-Version 4 adds immutable movement frames and a deterministic batch commit while
-keeping action resolution and seeded replay ordering canonical ECS concerns.
+Version 8 adds temporal attack delivery, compiled ability programs, and an
+explicit compiled/legacy execution mode while keeping action resolution and
+seeded replay ordering canonical ECS concerns.
+
+## V8 Combat Contracts
+
+Every attack passes the shared ECS weapon preflight before delivery. The
+preflight owns range, minimum range, cooldown, status/control locks, stance
+setup, burrow state, and instant-weapon facing. Temporal weapons may begin
+wind-up while turning; their impact is resolved later from the deterministic
+pending-impact queue. Artillery captures a ground point at launch, while
+tracking projectiles resolve against the target's current transform.
+
+Compiled ability programs are authoritative for production entities, including
+summons. They are created by `compileUnit()` from the unit definition, rank,
+upgrades, spawn policy, and runtime overrides. The mutable compatibility path is
+limited to `createRuntimeUnitFromConfig()` fixtures. New production abilities
+must use typed effect definitions rather than adding another special weapon flag.
+
+Replay consumers must handle `attack_windup`, `projectile_launch`,
+`projectile_impact`, `projectile_miss`, and `attack_cancel`. The phase order for
+post-action delivery is movement, projectile impact, then hazards. A change to
+this order or to any action payload requires a simulation-version bump and a
+golden replay update.
 
 ## World Model
 

@@ -1,4 +1,5 @@
 import type { BattleAction } from '../../combat.actions'
+import type { BarrageAttackConfig } from '../../combat.primitives'
 import { getDistance, getSizeRadius } from '../../combat.utils'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
@@ -25,13 +26,14 @@ export function applyEcsBarrageAttack(
   attackerId: EntityId,
   primaryId: EntityId,
   actions: BattleAction[],
+  overrideConfig?: BarrageAttackConfig,
 ): void {
-  const config = world.stores.weapon.require(attackerId).barrageAttack
+  const config = overrideConfig ?? world.stores.weapon.require(attackerId).barrageAttack
   if (!config) return
   const attacker = world.stores.identity.require(attackerId).id
   const primary = world.stores.identity.require(primaryId).id
   const damage = Math.floor(world.stores.combat.require(attackerId).attack * config.damageMultiplier)
-  for (const impact of getImpacts(world, attackerId, primaryId)) {
+  for (const impact of getImpacts(world, attackerId, primaryId, overrideConfig)) {
     const event = {
       unitId: attacker,
       targetId: primary,
@@ -41,7 +43,7 @@ export function applyEcsBarrageAttack(
       value: impact.index,
     }
     actions.push({ ...event, type: 'barrage_marker' })
-    for (const targetId of getTargets(world, attackerId, impact)) {
+    for (const targetId of getTargets(world, attackerId, impact, overrideConfig)) {
       resolveEcsSecondaryHit(world, attackerId, targetId, damage, actions, {
         interceptable: true,
       })
@@ -54,8 +56,9 @@ function getImpacts(
   world: CombatWorld,
   attackerId: EntityId,
   primaryId: EntityId,
+  overrideConfig?: BarrageAttackConfig,
 ): EcsBarrageImpact[] {
-  const config = world.stores.weapon.require(attackerId).barrageAttack
+  const config = overrideConfig ?? world.stores.weapon.require(attackerId).barrageAttack
   if (!config) return []
   const primary = world.stores.transform.require(primaryId)
   return Array.from({ length: config.impacts }, (_, index) => {
@@ -73,8 +76,9 @@ function getTargets(
   world: CombatWorld,
   attackerId: EntityId,
   impact: EcsBarrageImpact,
+  overrideConfig?: BarrageAttackConfig,
 ): EntityId[] {
-  const config = world.stores.weapon.require(attackerId).barrageAttack
+  const config = overrideConfig ?? world.stores.weapon.require(attackerId).barrageAttack
   if (!config) return []
   const attacker = world.stores.identity.require(attackerId)
   const combat = world.stores.combat.require(attackerId)

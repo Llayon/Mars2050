@@ -69,8 +69,8 @@ export function setUnitCapabilityPresence(
 
 function hasCapability(unit: SimUnit, capability: UnitCapabilityName): boolean {
   switch (capability) {
-    case 'supportAuraCapability': return (unit.supportAuras?.length ?? 0) > 0
-    case 'periodicAbilityCapability': return (unit.periodicAbilities?.length ?? 0) > 0
+    case 'supportAuraCapability': return (unit.supportAuras?.length ?? 0) > 0 || (unit.supportPrograms?.length ?? 0) > 0
+    case 'periodicAbilityCapability': return (unit.periodicAbilities?.length ?? 0) > 0 || (unit.periodicPrograms?.length ?? 0) > 0
     case 'fieldEffectCapability': return (unit.fieldEffect?.length ?? 0) > 0
     case 'formationBonusCapability': return Boolean(unit.formationModifiers?.adjacencyBonus)
     case 'controlBeamCapability': return unit.controlBeam !== undefined

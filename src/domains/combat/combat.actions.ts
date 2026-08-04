@@ -8,7 +8,7 @@ export const BATTLE_ACTION_TYPES = [
   'damage', 'damage_share', 'shield_damage', 'shield_break', 'shield_hit_block', 'lifesteal', 'unit_blocked_damage',
   'status_apply', 'status_expire', 'status_cleanse', 'status_tick', 'status_immune',
   'shield_apply', 'target_mark', 'target_mark_expire', 'spawn_blocked', 'stance_change', 'burrow_change', 'mode_change',
-  'projectile_intercept', 'stealth_change',
+  'projectile_intercept', 'projectile_launch', 'projectile_impact', 'projectile_miss', 'attack_windup', 'attack_cancel', 'stealth_change',
   'cone_attack', 'beam_tick',
   'barrage_marker', 'barrage_impact',
   'chain_jump',
@@ -56,6 +56,10 @@ export interface BattleAction {
   markDuration?: number
   retargetCount?: number
   bonusDamage?: number
+  impactId?: number
+  launchTick?: number
+  impactTick?: number
+  projectileKind?: 'projectile' | 'ground_targeted'
 }
 
 export interface BattleTick {

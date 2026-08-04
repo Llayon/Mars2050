@@ -47,6 +47,27 @@ export function handlePrimitiveReplayEvent(
     spawnTxt('ПЕРЕХВАТ', source.c.x, source.c.y, 0x22d3ee)
     return true
   }
+  if (action.type === 'attack_windup') {
+    spawnTxt('ЗАРЯДКА', source.c.x, source.c.y, 0xfbbf24)
+    return true
+  }
+  if (action.type === 'attack_cancel') {
+    spawnTxt('ОТМЕНА', source.c.x, source.c.y, 0x94a3b8)
+    return true
+  }
+  if (action.type === 'projectile_launch') {
+    const target = action.targetId ? sprites[action.targetId] : undefined
+    if (target) spawnProj(source.c.x, source.c.y, target.c.x, target.c.y, 0xfb923c)
+    return true
+  }
+  if (action.type === 'projectile_impact') {
+    spawnTxt('УДАР', source.c.x, source.c.y, 0xf97316)
+    return true
+  }
+  if (action.type === 'projectile_miss') {
+    spawnTxt('ПРОМАХ', source.c.x, source.c.y, 0x94a3b8)
+    return true
+  }
   if (action.type === 'stealth_change') {
     spawnTxt(action.modeState === 'movement_active' ? 'СКРЫТ' : 'ОБНАРУЖЕН', source.c.x, source.c.y, action.modeState === 'movement_active' ? 0xa3e635 : 0xfacc15)
     return true

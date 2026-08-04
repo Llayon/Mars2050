@@ -7,6 +7,7 @@ import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
 import { applyEcsStatus } from './status-application-system'
 import { cleanseEcsStatuses } from './trigger-field-system'
+import { getAbilityExecutionMode } from './ability-effect-system'
 
 const DEFAULT_AURA_INTERVAL = 10
 
@@ -25,12 +26,7 @@ export function hasEcsSupportAuraAtTick(
   tick: number,
   entityIds = getEcsSupportAuraEntities(world),
 ): boolean {
-  return entityIds.some(entityId =>
-    world.stores.support.require(entityId).supportAuras?.some(aura => {
-      const interval = aura.interval ?? DEFAULT_AURA_INTERVAL
-      return interval <= 1 || tick % interval === 0
-    }),
-  )
+  return entityIds.some(entityId => getAurasAtTick(world, entityId, tick).length > 0)
 }
 
 export function runEcsSupportAuraSystem(
@@ -44,14 +40,32 @@ export function runEcsSupportAuraSystem(
   )
   for (const sourceId of sources) {
     if (world.stores.vitality.require(sourceId).isDead) continue
-    for (const aura of world.stores.support.require(sourceId).supportAuras ?? []) {
-      const interval = aura.interval ?? DEFAULT_AURA_INTERVAL
-      if (interval > 1 && tick % interval !== 0) continue
+    for (const aura of getAurasAtTick(world, sourceId, tick)) {
       for (const targetId of getTargets(world, sourceId, aura)) {
         applyAura(world, sourceId, targetId, aura, actions)
       }
     }
   }
+}
+
+function getAurasAtTick(world: CombatWorld, sourceId: EntityId, tick: number): SupportAura[] {
+  const support = world.stores.support.require(sourceId)
+  const compiled = getAbilityExecutionMode(world, sourceId) === 'compiled'
+  if (!compiled) return (support.supportAuras ?? []).filter(aura => {
+    const interval = aura.interval ?? DEFAULT_AURA_INTERVAL
+    return interval <= 1 || tick % interval === 0
+  })
+  const auras: SupportAura[] = []
+  for (const program of support.supportPrograms ?? []) {
+    if (program.trigger.kind !== 'periodic') continue
+    if (program.trigger.intervalTicks > 1 && tick % program.trigger.intervalTicks !== 0) continue
+    for (const group of program.groups) {
+      for (const effect of group.effects) {
+        if (effect.kind === 'support_aura') auras.push(effect.aura)
+      }
+    }
+  }
+  return auras
 }
 
 function getTargets(

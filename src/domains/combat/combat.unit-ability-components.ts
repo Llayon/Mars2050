@@ -1,7 +1,11 @@
 import type { BarrageAttackConfig, BeamAttackConfig, ChainAttackConfig, ConditionalAttackModeConfig, ConeAttackConfig, FlatDamageBlockConfig, FormationModifiersConfig, LinePierceConfig, RuntimeAttackCharge, RuntimeFieldEffect, RuntimePeriodicAbility, RuntimeStatGrowth, RuntimeStatusEffect, RuntimeTriggerEffect, ShieldHitBlockConfig, SideWeaponConfig, SplitFireConfig, StatusEffect, SupportAura, SweepAttackConfig, TargetMark, TargetMarkConfig, TransformModeConfig, TransformModeState } from './combat.primitives'
+import type { AttackDeliveryConfig } from './combat.types'
+import type { CompiledAbilityProgram } from './combat.ability-compiler'
 
 export interface UnitWeaponComponent {
   attackType: 'single' | 'aoe' | 'heal' | 'spawn'
+  delivery?: AttackDeliveryConfig
+  abilityPrograms?: CompiledAbilityProgram[]
   aoeRadius?: number; spawnType?: string; spawnCap?: number
   selfDestructOnAttack?: boolean
   statusOnHit?: StatusEffect[]; markOnHit?: TargetMarkConfig
@@ -34,7 +38,10 @@ export interface UnitDefenseComponent {
 
 export interface UnitSupportComponent {
   supportAuras?: SupportAura[]
+  supportPrograms?: CompiledAbilityProgram[]
   periodicAbilities?: RuntimePeriodicAbility[]
+  periodicPrograms?: CompiledAbilityProgram[]
+  periodicProgramState?: RuntimePeriodicAbility[]
   fieldEffect?: RuntimeFieldEffect[]
   formationModifiers?: FormationModifiersConfig
 }

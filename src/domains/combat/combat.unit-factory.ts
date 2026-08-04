@@ -19,6 +19,7 @@ export function createRuntimeUnitFromConfig(
     },
     loadout: { rank: 1, upgradeIds: [] },
     spawn: { inheritance: 'base' },
+    executionMode: 'legacy_mutable',
     placement: {
       x: input.x,
       y: input.y,

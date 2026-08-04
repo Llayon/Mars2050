@@ -54,6 +54,7 @@ export interface UnitBuildSpec {
     inheritance: SpawnInheritance
     selectedUpgradeIds?: string[]
   }
+  executionMode?: 'compiled' | 'legacy_mutable'
   overrides?: {
     currentHp?: number
     maxHp?: number
@@ -75,6 +76,8 @@ export interface UnitRuntimeRules {
   mineOnAction?: MineOnActionConfig
   onKill?: OnKillConfig
   projectileInterceptable: boolean
+  abilityExecutionMode?: 'compiled' | 'legacy_mutable'
+  abilityProgramsAuthoritative?: boolean
   spawnOverrides?: {
     hp?: number
     attack?: number

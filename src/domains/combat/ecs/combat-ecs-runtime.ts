@@ -6,6 +6,7 @@ import { EntitySpatialIndex } from './entity-spatial-index'
 import { EcsCombatPhaseScheduler } from './combat-phase-scheduler'
 import { TargetingRuntime } from './targeting-runtime'
 import { DesignationIndex } from './designation-index'
+import { PendingImpactQueue } from './pending-impacts'
 
 export interface EcsCombatRuntime extends CombatRuntime {
   readonly world: CombatWorld
@@ -23,6 +24,8 @@ export function createEcsCombatRuntime(options: { profile?: boolean } = {}): Ecs
     new TargetingRuntime(profilingEnabled),
   )
   world.resources.set('designationIndex', new DesignationIndex())
+  world.resources.set('pendingImpacts', new PendingImpactQueue())
+  world.resources.set('temporalAttacks', new Map())
   return {
     world,
     addSquad: (row, team, rng) => { createSquadEntities(world, row, team, rng) },

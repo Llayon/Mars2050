@@ -1,9 +1,12 @@
 import type { BattleAction } from '../../combat.actions'
 import type { RuntimePeriodicAbility } from '../../combat.sim.types'
+import type { CompiledAbilityProgram } from '../../combat.ability-compiler'
+import type { PeriodicAbilityPayload } from '../../combat.sim.types'
 import { getDistance } from '../../combat.utils'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
 import { applyEcsPeriodicAbilityPayload } from './periodic-ability-payload-system'
+import { getAbilityExecutionMode } from './ability-effect-system'
 
 export function getEcsPeriodicAbilityEntities(world: CombatWorld): readonly EntityId[] {
   return world.query([
@@ -29,7 +32,8 @@ export function runEcsPeriodicAbilitySystem(
   for (const sourceId of sources) {
     if (world.stores.vitality.require(sourceId).isDead) continue
     const support = world.stores.support.require(sourceId)
-    for (const ability of support.periodicAbilities ?? []) {
+    for (const entry of getPeriodicEntries(world, sourceId)) {
+      const { ability, payload } = entry
       if (!canUseAbility(tick, ability)) continue
       const targetId = selectTarget(world, sourceId, ability)
       if (targetId === null) continue
@@ -47,13 +51,45 @@ export function runEcsPeriodicAbilitySystem(
         world,
         sourceId,
         targetId,
-        ability.payload,
+        payload,
         ability.id,
         tick,
         actions,
       )
     }
   }
+}
+
+interface PeriodicEntry {
+  ability: RuntimePeriodicAbility
+  payload: PeriodicAbilityPayload
+}
+
+function getPeriodicEntries(world: CombatWorld, sourceId: EntityId): PeriodicEntry[] {
+  const support = world.stores.support.require(sourceId)
+  const compiled = getAbilityExecutionMode(world, sourceId) === 'compiled'
+  if (!compiled || (support.periodicPrograms?.length ?? 0) === 0) {
+    return (support.periodicAbilities ?? []).map(ability => ({ ability, payload: ability.payload }))
+  }
+  const state = support.periodicProgramState ?? []
+  return state.flatMap(ability => {
+    const program = (support.periodicPrograms ?? []).find(candidate =>
+      candidate.groups.some(group => group.effects.some(effect =>
+        effect.kind === 'periodic_payload' && effect.ability.id === ability.id,
+      )),
+    )
+    const payload = getProgramPayload(program)
+    return payload ? [{ ability, payload }] : []
+  })
+}
+
+function getProgramPayload(program: CompiledAbilityProgram | undefined): PeriodicAbilityPayload | undefined {
+  for (const group of program?.groups ?? []) {
+    for (const effect of group.effects) {
+      if (effect.kind === 'periodic_payload') return effect.ability.payload
+    }
+  }
+  return undefined
 }
 
 function canUseAbility(

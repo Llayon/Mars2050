@@ -25,6 +25,7 @@ describe('combat ECS phase scheduler', () => {
   it('publishes the deterministic post-action order', () => {
     expect(getEcsPhaseOrder('post_action')).toEqual([
       'batch_movement',
+      'projectile_impact',
       'hazard',
       'hp_threshold_trigger',
     ])

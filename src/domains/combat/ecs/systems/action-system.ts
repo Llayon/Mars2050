@@ -14,8 +14,10 @@ import { syncEcsBurrowForAction } from './emerge-strike-system'
 import {
   getEcsActionCooldown,
   prepareEcsStanceForAction,
+  prepareEcsWeaponAction,
   syncEcsModeForAction,
 } from './action-setup'
+import { runTemporalAttack } from './temporal-attack-system'
 
 const FACING_TOLERANCE = 0.26
 
@@ -28,6 +30,18 @@ export function runActionSystem(
 ): RuntimeActionResult {
   world.resources.set('rng', context.rng)
   const weapon = world.stores.weapon.require(entityId)
+  if (weapon.delivery && weapon.delivery.kind !== 'instant') {
+    const timelines = world.resources.get('temporalAttacks')
+    if (!timelines?.has(entityId)) {
+      const preparation = prepareEcsWeaponAction(world, entityId, targetId, actions, { requireFacing: false })
+      if (preparation.state === 'setup_in_progress') return { acted: true }
+      if (preparation.state === 'not_ready') return { acted: false }
+      syncEcsModeForAction(world, entityId, actions)
+      syncEcsBurrowForAction(world, entityId, actions)
+    }
+    const temporal = runTemporalAttack(world, entityId, targetId, actions, context)
+    if (temporal.acted) return temporal
+  }
   if (canUseEcsMineAction(world, entityId)) {
     return runEcsMineAction(world, entityId, targetId, actions, context)
   }

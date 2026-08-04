@@ -1,7 +1,44 @@
 import type { BattleAction } from '../../combat.actions'
+import { chooseHackControlMode } from '../../combat.control-mode'
+import type { RuntimeStatusEffect } from '../../combat.primitives'
+import { getSizeRadius } from '../../combat.utils'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
 import { getEcsEffectiveActionRangeAgainst, isEcsMeleeEngagementReady } from '../movement-positioning'
+
+const FACING_TOLERANCE = 0.26
+
+export type EcsWeaponPreparation =
+  | { state: 'not_ready' }
+  | { state: 'setup_in_progress' }
+  | { state: 'ready' }
+
+export function prepareEcsWeaponAction(
+  world: CombatWorld,
+  entityId: EntityId,
+  targetId: EntityId,
+  actions: BattleAction[],
+  options: { requireFacing?: boolean } = {},
+): EcsWeaponPreparation {
+  const source = world.stores.transform.require(entityId)
+  const target = world.stores.transform.require(targetId)
+  const combat = world.stores.combat.require(entityId)
+  const status = world.stores.statusControl.require(entityId)
+  const edgeDistance = Math.hypot(target.x - source.x, target.y - source.y) -
+    getSizeRadius(target.size) - getSizeRadius(source.size)
+  if (!isEcsWeaponActionInRange(world, entityId, targetId, edgeDistance)) {
+    return { state: 'not_ready' }
+  }
+  const targetAngle = Math.atan2(target.y - source.y, target.x - source.x)
+  if ((options.requireFacing !== false && Math.abs(normalizeAngle(targetAngle - source.currentAngle)) > FACING_TOLERANCE) ||
+      combat.actionCooldown > 0 || isEcsAttackBlocked(status.statusEffects, combat.attack)) {
+    return { state: 'not_ready' }
+  }
+  if (!prepareEcsStanceForAction(world, entityId, actions)) {
+    return { state: 'setup_in_progress' }
+  }
+  return { state: 'ready' }
+}
 
 export function isEcsWeaponActionInRange(
   world: CombatWorld,
@@ -81,6 +118,25 @@ export function syncEcsModeForAction(
 function getEcsMinimumActionRange(world: CombatWorld, entityId: EntityId): number {
   return world.stores.runtimeRules.require(entityId).minimumRange
 }
+
+function isEcsAttackBlocked(effects: RuntimeStatusEffect[], attack: number): boolean {
+  let hackMode: ReturnType<typeof chooseHackControlMode> | undefined
+  for (const effect of effects) {
+    if (effect.duration <= 0) continue
+    if (effect.type === 'emp') return true
+    if (effect.type === 'hacked') {
+      hackMode = chooseHackControlMode(hackMode, effect.controlMode ?? 'disable')
+    }
+  }
+  return hackMode === 'disable' || (hackMode !== undefined && attack <= 0)
+}
+
+function normalizeAngle(value: number): number {
+  while (value > Math.PI) value -= Math.PI * 2
+  while (value < -Math.PI) value += Math.PI * 2
+  return value
+}
+
 
 function setDeployed(
   externalId: string,

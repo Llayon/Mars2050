@@ -4,13 +4,8 @@ import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
 import { breakEcsMovementStealthOnAttack } from '../movement-state'
 import { consumeEcsAttackCharge } from './attack-charge-system'
-import { applyEcsBarrageAttack } from './barrage-attack-system'
-import { applyEcsChainAttack } from './chain-attack-system'
-import { applyEcsConditionalAttack } from './conditional-attack-system'
 import { applyEcsSingleDamage } from './damage-system'
 import { resolveEcsDeath } from './death-system'
-import { applyEcsDirectionalGeometry } from './directional-geometry-system'
-import { applyEcsDisplacement } from './displacement-system'
 import { consumeEcsEmergeStrike } from './emerge-strike-system'
 import { applyEcsOnHitEffects } from './on-hit-system'
 import {
@@ -19,10 +14,8 @@ import {
 } from './post-hit-trigger-system'
 import { applyEcsPrimaryDamageModifiers } from './primary-damage-modifier-system'
 import { spawnEcsAttackPuddle } from './puddle-system'
-import { applyEcsRadialAoe } from './radial-aoe-system'
-import { applyEcsSideWeapon } from './side-weapon-system'
-import { applyEcsSplitFire } from './split-fire-system'
-import { applyEcsSweepAttack } from './sweep-attack-system'
+import { hasCompiledAbilityTrigger, runCompiledAbilityTrigger } from './ability-effect-system'
+import { runLegacyGeometryEffects } from './legacy-geometry-system'
 
 export function resolveEcsSingleShot(
   world: CombatWorld,
@@ -83,21 +76,14 @@ export function resolveEcsSingleShot(
   }
   resolveEcsDeath(world, targetId, entityId, actions)
   if (damageResult.intercepted) return
-  applyEcsDirectionalGeometry(world, entityId, targetId, actions)
-  applyEcsBarrageAttack(world, entityId, targetId, actions)
-  applyEcsChainAttack(world, entityId, targetId, actions)
-  applyEcsSplitFire(world, entityId, targetId, actions)
-  applyEcsSideWeapon(world, entityId, targetId, actions)
-  applyEcsConditionalAttack(world, entityId, targetId, actions)
-  applyEcsSweepAttack(world, entityId, targetId, actions)
-  applyEcsRadialAoe(
-    world,
-    entityId,
-    targetId,
-    actions,
-    emergeStrike?.aoeRadiusAdd,
-  )
-  applyEcsDisplacement(world, entityId, targetId, actions)
+  if (hasCompiledAbilityTrigger(world, entityId, 'weapon_attack')) {
+    runCompiledAbilityTrigger(world, entityId, targetId, 'weapon_attack', actions)
+  } else {
+    runLegacyGeometryEffects(world, entityId, targetId, actions, emergeStrike?.aoeRadiusAdd)
+  }
+  if (hasCompiledAbilityTrigger(world, entityId, 'post_weapon_attack')) {
+    runCompiledAbilityTrigger(world, entityId, targetId, 'post_weapon_attack', actions)
+  }
   if (weapon.selfDestructOnAttack) {
     actions.push({
       unitId: identity.id,
