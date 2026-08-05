@@ -1,8 +1,8 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { getServerClient } from '@/domains/resource/resource.server'
-import { CURRENT_SIMULATION_VERSION } from '@/domains/combat/combat.version'
+import { CURRENT_SIMULATION_REVISION, CURRENT_SIMULATION_VERSION } from '@/domains/combat/combat.version'
 import type { TerminationReason } from '@/domains/combat/combat.result'
-import { getReplayCompatibility } from './pvp.replay-compat'
+import { getReplayCompatibility, getReplayEngineRevision } from './pvp.replay-compat'
 import type { ReplayCompatibility } from './pvp.types'
 
 /** Snapshot version written by the current deterministic combat engine. */
@@ -63,7 +63,7 @@ export async function loadBattleWithSnapshot(
   return {
     battle: battle as BattleRow,
     snapshot: snapshot as BattleSnapshotRow,
-    compatibility: getReplayCompatibility(snapshot.version),
+    compatibility: getReplayCompatibility(snapshot.version, getReplayEngineRevision(snapshot.metrics)),
   }
 }
 
@@ -162,7 +162,10 @@ export async function persistBattleWithSnapshot(
     seed: snapshot.seed,
     initial_state: snapshot.initial_state,
     log: snapshot.log,
-    metrics: snapshot.metrics ?? null,
+    metrics: {
+      ...(snapshot.metrics ?? {}),
+      engineRevision: CURRENT_SIMULATION_REVISION,
+    },
     termination_reason: snapshot.terminationReason ?? null,
     elapsed_ticks: snapshot.elapsedTicks ?? null,
     version,

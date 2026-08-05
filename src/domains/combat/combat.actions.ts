@@ -22,6 +22,12 @@ export const BATTLE_ACTION_TYPES = [
   'conditional_attack_mode', 'sweep_hit', 'self_destruct',
 ] as const
 
+export const ATTACK_CANCEL_REASONS = [
+  'source_dead', 'source_reassembled', 'status_blocked', 'control_mode_changed', 'target_lost',
+] as const
+
+export type AttackCancelReason = typeof ATTACK_CANCEL_REASONS[number]
+
 export type BattleActionType = typeof BATTLE_ACTION_TYPES[number]
 
 export interface BattleAction {
@@ -60,6 +66,7 @@ export interface BattleAction {
   launchTick?: number
   impactTick?: number
   projectileKind?: 'projectile' | 'ground_targeted'
+  cancelReason?: AttackCancelReason
 }
 
 export interface BattleTick {

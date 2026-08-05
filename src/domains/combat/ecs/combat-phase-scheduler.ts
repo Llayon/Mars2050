@@ -28,6 +28,7 @@ import {
   runHazardSystem,
   runStatusSystem,
   runEcsActorTurnSystem,
+  runTemporalTimelineSystem,
   runProjectileImpactSystem,
 } from './systems'
 
@@ -52,6 +53,7 @@ const ECS_PHASES = [
   phase('status', 'pre_action', runStatusPhase),
   phase('actor_turn', 'action', (world, context) => runEcsActorTurnSystem(world, context)),
   phase('batch_movement', 'post_action', runBatchMovementSystem),
+  phase('temporal_timeline', 'post_action', (world, context) => runTemporalTimelineSystem(world, context)),
   phase('projectile_impact', 'post_action', (world, context) => runProjectileImpactSystem(world, context)),
   phase('hazard', 'post_action', runHazardPhase),
   phase('hp_threshold_trigger', 'post_action', runHpThresholdPhase),

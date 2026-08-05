@@ -124,7 +124,9 @@ function emitIntentAction(
   actions.push({
     unitId: world.stores.identity.require(intent.entityId).id,
     type: 'move',
-    targetId: world.stores.identity.require(intent.targetId).id,
+    ...(intent.targetId !== undefined
+      ? { targetId: world.stores.identity.require(intent.targetId).id }
+      : {}),
     fromX: round(intent.fromX),
     fromY: round(intent.fromY),
     toX: round(collisions.x[intent.entityId]),

@@ -29,9 +29,10 @@ must use typed effect definitions rather than adding another special weapon flag
 
 Replay consumers must handle `attack_windup`, `projectile_launch`,
 `projectile_impact`, `projectile_miss`, and `attack_cancel`. The phase order for
-post-action delivery is movement, projectile impact, then hazards. A change to
-this order or to any action payload requires a simulation-version bump and a
-golden replay update.
+post-action delivery is movement, temporal timeline, projectile impact, then
+hazards. A change to this order or to any action payload requires a golden
+replay update and an engine-revision change; the public version remains stable
+only when the compatibility contract is intentionally preserved.
 
 ## World Model
 
@@ -404,18 +405,14 @@ before the timeout limit.
 
 ## Replay Compatibility
 
-New snapshots are written with simulation version 4. Stored replay responses are
-validated with Zod before reaching the renderer:
-
-- version 4 is current and rendered normally;
-- versions 2 and 3 remain playable through the stable replay log/snapshot
-  boundary and are visibly labelled as approximate historical visualizations;
-- version 1, invalid versions, and versions newer than the current engine are
-  rejected as unsupported instead of being silently re-simulated;
-- malformed payloads for otherwise playable versions never reach the renderer.
-
-Compatibility is a presentation guarantee, not a promise that a v2 or v3 battle
-would produce identical results if re-simulated by the v4 engine.
+New snapshots use simulation version 8 and engine revision
+`combat-ecs-v8-stabilized-r1`. Stored replay responses are validated with Zod
+before reaching the renderer. V8 snapshots with the exact revision render
+normally; V8 snapshots without it or with another revision are rejected as
+unsupported instead of being silently re-simulated. Older snapshots remain
+subject to their explicitly supported historical compatibility rules, while a
+replay from the previous V8 behavior is not interchangeable with the stabilized
+contract.
 
 ## Verification And Profiling
 

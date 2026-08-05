@@ -7,6 +7,7 @@ import { applyEcsOnKillEffects } from './on-kill-system'
 import { processEcsKillTriggers } from './post-hit-trigger-system'
 import { processEcsDeathTriggers } from './death-trigger-system'
 import { applyEcsHealing } from './healing-system'
+import { cancelTemporalTimeline } from './temporal-attack-system'
 
 export function resolveEcsDeath(
   world: CombatWorld,
@@ -25,6 +26,7 @@ export function resolveEcsDeath(
   }
   if (target.isDead && !options.preMarked) return false
   if (cause === 'expiration') {
+    cancelSourceTimeline(world, targetId, actions)
     world.setEntityDead(targetId, true)
     actions.push({
       unitId: world.stores.identity.require(targetId).id,
@@ -37,6 +39,7 @@ export function resolveEcsDeath(
     return true
   }
   if (target.hp > 0) return false
+  cancelSourceTimeline(world, targetId, actions)
   if (target.resurrectOnce) {
     target.resurrectOnce = false
     if (options.preMarked) world.setEntityDead(targetId, false)
@@ -66,6 +69,11 @@ export function resolveEcsDeath(
   }
   spawnEcsDeathHazard(world, targetId, actions)
   return true
+}
+
+function cancelSourceTimeline(world: CombatWorld, targetId: EntityId, actions: BattleAction[]): void {
+  const timeline = world.resources.get('temporalAttacks')?.get(targetId)
+  if (timeline) cancelTemporalTimeline(world, targetId, timeline, actions, 'source_dead')
 }
 
 function replicateEcsKiller(

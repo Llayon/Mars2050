@@ -14,7 +14,13 @@ export function applyEcsDisplacement(
   attackerId: EntityId,
   centerId: EntityId,
   actions: BattleAction[],
+  override?: { pullOnHit?: { radius: number; strength: number; maxTargets?: number }; knockbackOnHit?: { radius: number; strength: number; maxTargets?: number } },
 ): void {
+  if (override) {
+    if (override.pullOnHit) applyPull(world, attackerId, centerId, actions, override.pullOnHit)
+    if (override.knockbackOnHit) applyKnockback(world, attackerId, centerId, actions, override.knockbackOnHit)
+    return
+  }
   applyPull(world, attackerId, centerId, actions)
   applyKnockback(world, attackerId, centerId, actions)
 }
@@ -24,8 +30,9 @@ function applyPull(
   attackerId: EntityId,
   centerId: EntityId,
   actions: BattleAction[],
+  override?: { radius: number; strength: number; maxTargets?: number },
 ): void {
-  const config = world.stores.weapon.require(attackerId).pullOnHit
+  const config = override ?? world.stores.weapon.require(attackerId).pullOnHit
   if (!config) return
   const center = world.stores.transform.require(centerId)
   for (const targetId of getTargets(world, attackerId, centerId, config.radius, config.maxTargets, false)) {
@@ -59,8 +66,9 @@ function applyKnockback(
   attackerId: EntityId,
   centerId: EntityId,
   actions: BattleAction[],
+  override?: { radius: number; strength: number; maxTargets?: number },
 ): void {
-  const config = world.stores.weapon.require(attackerId).knockbackOnHit
+  const config = override ?? world.stores.weapon.require(attackerId).knockbackOnHit
   if (!config || config.strength <= 0) return
   const source = world.stores.transform.require(attackerId)
   for (const targetId of getTargets(world, attackerId, centerId, config.radius, config.maxTargets, true)) {

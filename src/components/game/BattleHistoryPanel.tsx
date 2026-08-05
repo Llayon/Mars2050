@@ -63,7 +63,10 @@ export function BattleHistoryPanel({ colonyId, onReplay }: BattleHistoryPanelPro
     try {
       const data = await fetchBattle(battle.id)
       if (!data.compatibility.canPlay) {
-        toast(`Реплей v${data.simulationVersion} несовместим с симулятором v${data.compatibility.currentVersion}`, 'error')
+        const reason = data.compatibility.reason === 'engine_revision_mismatch'
+          ? 'другая ревизия движка'
+          : `симулятором v${data.compatibility.currentVersion}`
+        toast(`Реплей v${data.simulationVersion} несовместим: ${reason}`, 'error')
         return
       }
       const replayWarning = data.compatibility.visuallyApproximate

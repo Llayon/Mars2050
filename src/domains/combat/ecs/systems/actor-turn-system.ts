@@ -49,12 +49,29 @@ export function runEcsActorTurnSystem(
       const groupMovement: MovementRequest[] = []
       for (const entityId of group.entityIds) {
         if (world.stores.vitality.require(entityId).isDead) continue
+        const timeline = world.resources.require('temporalAttacks').get(entityId)
+        if (timeline) {
+          const target = world.stores.transform.get(timeline.targetId)
+          const aim = timeline.positionPolicy === 'captured_at_windup'
+            ? { x: timeline.aimX, y: timeline.aimY }
+            : target && !world.stores.vitality.require(timeline.targetId).isDead
+              ? { x: target.x, y: target.y }
+              : { x: timeline.aimX, y: timeline.aimY }
+          groupMovement.push({
+            kind: 'turn',
+            entityId,
+            targetX: aim.x,
+            targetY: aim.y,
+            initiativeIndex: initiativeIndex++,
+          })
+          continue
+        }
         const targetId = runTargetingSystem(world, entityId, melee, targeting)
         if (targetId === null) continue
         const canAct = canActOnTarget(world, entityId, targetId)
         const engaged = canAct ? reserveEcsMeleeSlot(world, entityId, targetId, melee) : true
         if (!canAct || !engaged) {
-          groupMovement.push({ entityId, targetId, initiativeIndex: initiativeIndex++ })
+          groupMovement.push({ kind: 'move', entityId, targetId, initiativeIndex: initiativeIndex++ })
           continue
         }
         const actor = world.stores.identity.require(entityId)
@@ -85,6 +102,7 @@ export function runEcsActorTurnSystem(
           { rng, tick: context.tick, allowDeadActorAction: true },
         ).acted
         if (!acted) groupMovement.push({
+          kind: 'move',
           entityId: intent.actorId,
           targetId: intent.targetId,
           initiativeIndex: initiativeIndex++,

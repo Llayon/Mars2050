@@ -29,7 +29,7 @@ export interface TradeResult {
 }
 
 export type ReplayCompatibilityStatus = 'current' | 'legacy_approximate' | 'unsupported'
-export type ReplayCompatibilityReason = 'older_engine' | 'newer_engine' | 'invalid_version'
+export type ReplayCompatibilityReason = 'older_engine' | 'newer_engine' | 'invalid_version' | 'engine_revision_mismatch'
 
 export interface ReplayCompatibility {
   snapshotVersion: number

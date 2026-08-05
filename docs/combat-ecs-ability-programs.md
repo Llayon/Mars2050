@@ -61,3 +61,13 @@ fields for focused low-level tests.
 Directional attacks now use typed `line_pierce`, `cone_attack`, and
 `beam_attack` effects. The directional executor accepts those compiled
 overrides, while its weapon-field path remains available for legacy fixtures.
+
+The V8 DSL is intentionally narrow: supported triggers are `hit`,
+`weapon_attack`, `post_weapon_attack`, `projectile_impact`, and `periodic`, and
+selectors are `primary_target`, `self`, `area_at_target`, and `area_at_impact`.
+Compilation rejects duplicate ids, invalid numeric values, unsupported
+trigger/selector/effect combinations, and incompatible primary geometry instead
+of creating a silent no-op. Damage expressions are either fixed values or an
+explicit multiplier of the current compiled attack stat. Displacement passes
+radius, strength, and target limits to the shared pull/knockback kernel, which
+keeps stable distance/external-id ordering and size-aware stop distances.

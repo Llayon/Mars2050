@@ -7,7 +7,7 @@ vi.mock('@/domains/resource/resource.server', () => ({
 }))
 
 import { loadBattleWithSnapshot, persistBattleWithSnapshot, SNAPSHOT_VERSION } from '@/domains/pvp/pvp.replay'
-import { CURRENT_SIMULATION_VERSION } from '@/domains/combat/combat.version'
+import { CURRENT_SIMULATION_REVISION, CURRENT_SIMULATION_VERSION } from '@/domains/combat/combat.version'
 
 function chainable(result: unknown) {
   const c: Record<string, unknown> = {}
@@ -34,7 +34,7 @@ describe('pvp.replay — snapshot version contract', () => {
     }
     const snapshot = {
       battle_id: 'b1', seed: 1, initial_state: {}, log: [],
-      metrics: { firstAttackTick: 3 },
+      metrics: { firstAttackTick: 3, engineRevision: CURRENT_SIMULATION_REVISION },
       version: CURRENT_SIMULATION_VERSION, created_at: '2026-01-01',
     }
     fromMock
@@ -44,7 +44,7 @@ describe('pvp.replay — snapshot version contract', () => {
     const r = await loadBattleWithSnapshot('b1')
     expect(r).not.toBeNull()
     expect(r?.snapshot.version).toBe(CURRENT_SIMULATION_VERSION)
-    expect(r?.snapshot.metrics).toEqual({ firstAttackTick: 3 })
+    expect(r?.snapshot.metrics).toEqual({ firstAttackTick: 3, engineRevision: CURRENT_SIMULATION_REVISION })
     expect(r?.compatibility).toMatchObject({
       status: 'current',
       canPlay: true,
@@ -70,7 +70,7 @@ describe('pvp.replay — snapshot version contract', () => {
     )
     expect(id).toBe('b2')
     expect(snapshotInsert).toHaveBeenCalledWith(expect.objectContaining({
-      metrics: { averageOverlapRatio: 0.25 },
+      metrics: expect.objectContaining({ averageOverlapRatio: 0.25, engineRevision: CURRENT_SIMULATION_REVISION }),
     }))
   })
 

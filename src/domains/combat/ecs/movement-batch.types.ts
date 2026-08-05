@@ -22,11 +22,9 @@ export interface MovementFrame {
   y: Float64Array
 }
 
-export interface MovementRequest {
-  entityId: EntityId
-  targetId: EntityId
-  initiativeIndex: number
-}
+export type MovementRequest =
+  | { kind: 'move'; entityId: EntityId; targetId: EntityId; initiativeIndex: number }
+  | { kind: 'turn'; entityId: EntityId; targetX: number; targetY: number; initiativeIndex: number }
 
 export interface MovementNeighborLookup {
   get(entityId: EntityId): Int32Array
@@ -41,7 +39,8 @@ export interface MovementNeighborGraph {
 
 export interface MovementIntent {
   entityId: EntityId
-  targetId: EntityId
+  targetId?: EntityId
+  requestKind: MovementRequest['kind']
   initiativeIndex: number
   team: Team
   fromX: number

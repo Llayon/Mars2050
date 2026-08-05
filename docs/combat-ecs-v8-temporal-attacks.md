@@ -10,16 +10,25 @@ valid target; instant attacks retain their strict facing check. Deploying a
 stance consumes the setup action first and emits `stance_change` before any
 wind-up begins.
 
-The post-action order is movement, projectile impact, then hazards. A launched
-impact is therefore resolved against the current battlefield state; a missile
-tracks its target until impact, while artillery keeps the ground point captured
-when the wind-up began. Pending impacts also prevent premature elimination
-outcomes.
+The post-action order is movement, temporal timeline, projectile impact, then
+hazards. A launched impact is therefore resolved against the current
+battlefield state; full-homing missiles track a live target until impact,
+ordinary projectiles capture their launch position, and ground-targeted
+artillery captures its point when wind-up starts. Pending impacts also prevent
+premature elimination outcomes.
 
-Instant weapons retain the v7 behavior. Interception remains opt-in through
-the delivery config and is evaluated at the impact coordinate. Replay receives
-explicit `attack_windup`, `projectile_launch`, `projectile_impact`,
-`projectile_miss`, and `attack_cancel` actions.
+Instant weapons retain the v7 behavior. Temporal interception is allocated once
+per impact tick from an immutable frame: threats are ordered by maximum raw
+damage and impact id, while interceptors use distance and external id tie
+breaks. Each shell is allocated independently at its ground point. Replay
+receives actual launch/impact coordinates and explicit `attack_windup`,
+`projectile_launch`, `projectile_impact`, `projectile_miss`, and `attack_cancel`
+actions with cancellation reasons.
+
+The public simulation version remains `8`, but the stabilized runtime writes
+`combat-ecs-v8-stabilized-r1` as its engine revision in replay metrics. A stored
+V8 replay without that revision, or with a different revision, is unsupported;
+the numeric version is intentionally not reused for both simulation contracts.
 
 ## Verification
 
@@ -33,5 +42,7 @@ npx tsc --noEmit --pretty false
 npx tsx scripts/check-limits.ts --diff HEAD --json
 ```
 
-The V8 baseline currently passes 167 test files and 613 tests with no
-architecture-gate violations.
+The checked-in V8 golden fixture is verified by the golden test and the
+`combat:ecs:golden` script. The release gate above must pass with no
+architecture-gate violations; the exact test count is deliberately not part of
+the contract.

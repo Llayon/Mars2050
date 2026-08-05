@@ -14,7 +14,7 @@ export type TargetingProfile = TargetingProfileKey
 
 export type AttackDeliveryConfig =
   | { kind: 'instant' }
-  | { kind: 'projectile'; speed: number; homing: 'full'; windupTicks: number; interceptable: boolean }
+  | { kind: 'projectile'; speed: number; homing: 'full' | 'none'; windupTicks: number; interceptable: boolean }
   | { kind: 'ground_targeted'; flightTicks: number; windupTicks: number; interceptable: boolean }
 
 export interface TargetingProfileConfig {

@@ -50,8 +50,8 @@ export function displaceAbility(id: string, mode: 'pull' | 'knockback', radius: 
     id,
     trigger: { kind: 'post_weapon_attack' },
     effects: [{
-      selector: { kind: 'area_at_target', radius: radius * 40, maxTargets },
-      effects: [{ kind: 'displace', mode, strength: strength * 40 }],
+      selector: { kind: 'primary_target' },
+      effects: [{ kind: 'displace', mode, radius: radius * 40, strength: strength * 40, maxTargets }],
     }],
   }
 }

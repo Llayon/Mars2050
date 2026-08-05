@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto'
 import { describe, expect, it } from 'vitest'
+import fixture from './fixtures/combat-ecs-v8-golden.json'
 import { getSimulatorPreset } from '@/app/simulator2/simulator.presets'
 import { simulateBattle } from '@/domains/combat/combat.engine'
 import type { UnitRow } from '@/domains/combat/combat.types'
@@ -11,12 +12,7 @@ function cloneRows(rows: UnitRow[]): UnitRow[] {
 function fingerprintPreset(presetId: string): string {
   const preset = getSimulatorPreset(presetId)
   if (!preset) throw new Error(`Missing simulator preset: ${presetId}`)
-  const result = simulateBattle(
-    cloneRows(preset.attackers),
-    cloneRows(preset.defenders),
-    24680,
-    [],
-  )
+  const result = simulateBattle(cloneRows(preset.attackers), cloneRows(preset.defenders), fixture.seed, [])
   const contract = {
     winner: result.winner,
     logs: result.logs,
@@ -30,9 +26,9 @@ function fingerprintPreset(presetId: string): string {
 }
 
 describe('combat ECS v8 golden replay contract', () => {
-  for (const presetId of ['ranged_duel', 'summon_caps', 'control_status', 'transform_modes', 'qa_primitive_events', 'zerg_rush']) {
-    it(`keeps ${presetId} deterministic`, () => {
-      expect(fingerprintPreset(presetId)).toBe(fingerprintPreset(presetId))
-    }, presetId === 'zerg_rush' ? 30_000 : 5_000)
+  for (const [presetId, expected] of Object.entries(fixture.presets)) {
+    it(`matches the checked-in ${presetId} contract`, () => {
+      expect(fingerprintPreset(presetId)).toBe(expected)
+    }, presetId === 'zerg_rush' ? 30_000 : 10_000)
   }
 })

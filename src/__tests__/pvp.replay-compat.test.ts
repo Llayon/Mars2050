@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import legacyV2Fixture from './fixtures/combat-replay-v2.json'
 import { buildReplayRenderUnits } from '@/components/game/battle-replay-state'
-import { CURRENT_SIMULATION_VERSION } from '@/domains/combat/combat.version'
+import { CURRENT_SIMULATION_REVISION, CURRENT_SIMULATION_VERSION } from '@/domains/combat/combat.version'
 import { getReplayCompatibility, parseBattleReplayResponse } from '@/domains/pvp/pvp.replay-compat'
 
 describe('stored battle replay compatibility', () => {
@@ -33,12 +33,20 @@ describe('stored battle replay compatibility', () => {
   })
 
   it('classifies the current replay version without approximation', () => {
-    expect(getReplayCompatibility(CURRENT_SIMULATION_VERSION)).toEqual({
+    expect(getReplayCompatibility(CURRENT_SIMULATION_VERSION, CURRENT_SIMULATION_REVISION)).toEqual({
       snapshotVersion: CURRENT_SIMULATION_VERSION,
       currentVersion: CURRENT_SIMULATION_VERSION,
       status: 'current',
       canPlay: true,
       visuallyApproximate: false,
+    })
+  })
+
+  it('rejects a stored V8 replay without the stabilized engine revision', () => {
+    expect(getReplayCompatibility(CURRENT_SIMULATION_VERSION)).toMatchObject({
+      status: 'unsupported',
+      canPlay: false,
+      reason: 'engine_revision_mismatch',
     })
   })
 

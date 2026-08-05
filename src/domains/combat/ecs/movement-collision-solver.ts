@@ -32,6 +32,7 @@ export function solveBatchMovementCollisions(
   const y: number[] = []
   const velocityX: number[] = []
   const velocityY: number[] = []
+  const turnLocked = new Set(intents.filter(intent => intent.requestKind === 'turn').map(intent => intent.entityId))
   for (const entityId of frame.entityIds) {
     const transform = frame.transforms[entityId]!
     x[entityId] = transform.x
@@ -84,6 +85,7 @@ export function solveBatchMovementCollisions(
         overlap,
         correctionX,
         correctionY,
+        turnLocked,
       )
       accumulateVelocityCorrection(
         world,
@@ -94,6 +96,7 @@ export function solveBatchMovementCollisions(
         velocityY,
         velocityDeltaX,
         velocityDeltaY,
+        turnLocked,
       )
     }
     for (const entityId of frame.entityIds) {
@@ -130,9 +133,10 @@ function accumulatePositionCorrection(
   overlap: number,
   correctionX: number[],
   correctionY: number[],
+  turnLocked: ReadonlySet<EntityId>,
 ): void {
-  const firstCanMove = canDepenetrate(world, firstId)
-  const secondCanMove = canDepenetrate(world, secondId)
+  const firstCanMove = canDepenetrate(world, firstId, turnLocked)
+  const secondCanMove = canDepenetrate(world, secondId, turnLocked)
   if (!firstCanMove && !secondCanMove) return
   const first = frame.transforms[firstId]!
   const second = frame.transforms[secondId]!
@@ -157,9 +161,10 @@ function accumulateVelocityCorrection(
   velocityY: readonly number[],
   deltaX: number[],
   deltaY: number[],
+  turnLocked: ReadonlySet<EntityId>,
 ): void {
-  dampVelocity(world, firstId, direction.x, direction.y, velocityX, velocityY, deltaX, deltaY)
-  dampVelocity(world, secondId, -direction.x, -direction.y, velocityX, velocityY, deltaX, deltaY)
+  dampVelocity(world, firstId, direction.x, direction.y, velocityX, velocityY, deltaX, deltaY, turnLocked)
+  dampVelocity(world, secondId, -direction.x, -direction.y, velocityX, velocityY, deltaX, deltaY, turnLocked)
 }
 
 function dampVelocity(
@@ -171,10 +176,11 @@ function dampVelocity(
   velocityY: readonly number[],
   deltaX: number[],
   deltaY: number[],
+  turnLocked: ReadonlySet<EntityId>,
 ): void {
   const combat = world.stores.combat.get(entityId)!
   const identity = world.stores.identity.get(entityId)!
-  if (!canDepenetrate(world, entityId) || (combat.range <= 60 && !identity.type.startsWith('alien_'))) return
+  if (!canDepenetrate(world, entityId, turnLocked) || (combat.range <= 60 && !identity.type.startsWith('alien_'))) return
   const inwardSpeed = velocityX[entityId] * inwardX + velocityY[entityId] * inwardY
   if (inwardSpeed <= 0) return
   addVector(
@@ -186,7 +192,8 @@ function dampVelocity(
   )
 }
 
-function canDepenetrate(world: CombatWorld, entityId: EntityId): boolean {
+function canDepenetrate(world: CombatWorld, entityId: EntityId, turnLocked: ReadonlySet<EntityId>): boolean {
+  if (turnLocked.has(entityId)) return false
   const combat = world.stores.combat.get(entityId)!
   const movement = world.stores.movement.get(entityId)!
   return combat.speed > 0 && movement.stanceMode !== 'deployed' && movement.isBurrowed !== true

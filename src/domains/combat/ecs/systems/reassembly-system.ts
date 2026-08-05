@@ -1,5 +1,6 @@
 import type { BattleAction } from '../../combat.actions'
 import type { CombatWorld } from '../combat-world'
+import { cancelTemporalTimeline } from './temporal-attack-system'
 
 export function runEcsReassemblySystem(
   world: CombatWorld,
@@ -17,6 +18,8 @@ export function runEcsReassemblySystem(
     const vitality = world.stores.vitality.require(entityId)
     const state = vitality.reassemblyState
     if (!state) continue
+    const timeline = world.resources.get('temporalAttacks')?.get(entityId)
+    if (timeline) cancelTemporalTimeline(world, entityId, timeline, actions, 'source_reassembled')
     state.remainingTicks--
     if (state.remainingTicks > 0) continue
 

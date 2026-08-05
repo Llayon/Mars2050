@@ -1,0 +1,13 @@
+{
+  "simulationVersion": 8,
+  "seed": 24680,
+  "presets": {
+    "control_status": "7a6590721c7b1f29baa6b3a4ac61431194d1a74eca306cc18b3e117f9ccbc4e5",
+    "qa_primitive_events": "26e5dce0b074a836468ef720ff827fa7e47c8917dc6675ddaba1bd9ec4d90ef9",
+    "ranged_duel": "a9f6a7dc94886212bf3986648d227cc026fb91b6ff75617007b18571b62ee42b",
+    "summon_caps": "1be7f882951bd2df6e00c29a3dbd8d7cf2bd42239c472450a1145c0f86c5500a",
+    "transform_modes": "5b8a34797c0331e83f3475d8f9b5b75f128428833d8d7bc947e721ba3f376a42",
+    "zerg_rush": "b87ad1e69ca541ec16dd6f715b6cd0d584ef6efd4935207d3645c414d763d51a",
+    "projectile_barrier": "b9f02f4bbbae5592f9542e12d65b44e20965515cfbd6fef6801ed0dbb09b98f1"
+  }
+}

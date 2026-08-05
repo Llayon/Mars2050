@@ -15,6 +15,7 @@ import {
   normalizeMovementAngle as normalizeAngle,
 } from '../movement-batch-math'
 import { getEcsPositioningDecision } from '../movement-positioning'
+import { createTurnIntent } from './batch-movement-turn'
 import {
   getEcsFormationForce,
   getEcsObstacleCorrection,
@@ -35,11 +36,18 @@ export function createBatchMovementIntent(
   actions: BattleAction[],
   context: RuntimeMovementContext,
 ): MovementIntent | null {
-  const { entityId, targetId } = request
+  const entityId = request.entityId
   const vitality = world.stores.vitality.get(entityId)
   const frozen = graph.frame.transforms[entityId]
+  if (!vitality || vitality.isDead || !frozen) return null
+
+  if (request.kind === 'turn') {
+    return createTurnIntent(world, request, frozen, context)
+  }
+
+  const targetId = request.targetId
   const frozenTarget = graph.frame.transforms[targetId]
-  if (!vitality || vitality.isDead || !frozen || !frozenTarget) return null
+  if (!frozenTarget) return null
 
   const identity = world.stores.identity.require(entityId)
   const combat = world.stores.combat.require(entityId)
@@ -214,7 +222,10 @@ function createIntent(
   isWalking: boolean,
 ): MovementIntent {
   return {
-    ...request,
+    entityId: request.entityId,
+    targetId: request.kind === 'move' ? request.targetId : undefined,
+    requestKind: request.kind,
+    initiativeIndex: request.initiativeIndex,
     team,
     fromX,
     fromY,
