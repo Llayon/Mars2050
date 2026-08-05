@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { CombatWorld } from '@/domains/combat/ecs/combat-world'
 import { createRuntimeUnitFromConfig } from '@/domains/combat/combat.unit-factory'
 import { applyEcsCapturedDamage } from '@/domains/combat/ecs/systems/damage-system'
+import { resolveEcsDeath } from '@/domains/combat/ecs/systems/death-system'
 import type { DamageSourceContext } from '@/domains/combat/ecs/damage-source'
 import { EcsActionGroupLedger } from '@/domains/combat/combat.action-intent'
 import { createCombatMetrics, recordCombatActions } from '@/domains/combat/combat.metrics'
@@ -64,6 +65,21 @@ describe('captured ECS damage source', () => {
       sourceUnitType: 'missile_buggy',
       sourceTeam: 'attacker',
       damage: 40,
+    }))
+  })
+
+  it('keeps death attribution when the referenced source entity was removed', () => {
+    const target = createRuntimeUnitFromConfig({ id: 'target', team: 'defender', type: 'marine', x: 100, y: 20, currentAngle: Math.PI })!
+    const world = new CombatWorld([target])
+    world.stores.vitality.require(0).hp = 0
+    const actions: Parameters<typeof resolveEcsDeath>[3] = []
+
+    expect(resolveEcsDeath(world, 0, source(99).attribution, actions)).toBe(true)
+    expect(actions).toContainEqual(expect.objectContaining({
+      type: 'die',
+      sourceUnitId: 'retired-missile',
+      sourceUnitType: 'missile_buggy',
+      sourceTeam: 'attacker',
     }))
   })
 
