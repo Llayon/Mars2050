@@ -3,6 +3,7 @@ import type { RuntimeTriggerEffect, TriggerPayload } from '../../combat.sim.type
 import { getDistance } from '../../combat.utils'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
+import type { DamageAttribution } from '../damage-source'
 import { applyEcsTriggerPayload } from './trigger-payload-system'
 
 export function processEcsHpThresholdTriggers(
@@ -73,8 +74,9 @@ export function fireEcsTrigger(
   ownerId: EntityId,
   trigger: RuntimeTriggerEffect,
   eventTargetId: EntityId,
-  actorId: EntityId,
+  actorId: EntityId | undefined,
   actions: BattleAction[],
+  attribution?: DamageAttribution,
 ): void {
   if (!canFireTrigger(trigger)) return
   trigger.fired = true
@@ -88,6 +90,9 @@ export function fireEcsTrigger(
     type: 'trigger_effect',
     targetId: targetId === null ? undefined : getExternalId(world, targetId),
     statusType: trigger.id,
+    ...(attribution && attribution.sourceEntityId === undefined
+      ? { sourceUnitId: attribution.sourceExternalId, sourceUnitType: attribution.sourceUnitType, sourceTeam: attribution.sourceTeam }
+      : {}),
   })
   applyEcsTriggerPayload(
     world,
@@ -109,12 +114,12 @@ function resolveTarget(
   world: CombatWorld,
   ownerId: EntityId,
   eventTargetId: EntityId,
-  actorId: EntityId,
+  actorId: EntityId | undefined,
   payload: TriggerPayload,
 ): EntityId | null {
   if (payload.target === 'self') return ownerId
   if (payload.target === 'target' || payload.target === 'victim') return eventTargetId
-  if (payload.target === 'attacker' || payload.target === 'killer') return actorId
+  if (payload.target === 'attacker' || payload.target === 'killer') return actorId ?? null
   return selectNearestEnemy(world, ownerId)
 }
 

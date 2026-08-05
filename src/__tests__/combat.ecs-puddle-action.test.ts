@@ -32,8 +32,8 @@ function createWorld(units: SimUnit[]): CombatWorld {
 
 describe('combat ECS attack puddle action', () => {
   it('creates deterministic napalm for every multishot hit', () => {
-    const attacker = unit('buggy', 'attacker', 'missile_buggy', 100)
-    const target = unit('target', 'defender', 'marine', 300)
+    const attacker = unit('buggy', 'attacker', 'marine', 100)
+    const target = unit('target', 'defender', 'marine', 220)
     attacker.leavesPuddle = true
     attacker.multishot = 2
     target.hp = target.maxHp = 1000
@@ -53,10 +53,10 @@ describe('combat ECS attack puddle action', () => {
     expect(world.snapshotHazards()[0]).toMatchObject({
       team: 'attacker',
       type: 'napalm',
-      x: 300,
+      x: 220,
       y: 100,
       radius: 40,
-      damagePerTick: 5,
+      damagePerTick: 2,
       duration: 50,
     })
     for (const hazard of world.snapshotHazards()) {

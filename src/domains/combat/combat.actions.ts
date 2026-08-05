@@ -60,6 +60,8 @@ export interface BattleAction {
   markEvent?: 'new_squad' | 'refresh'
   markSquadId?: string
   markDuration?: number
+  sourceUnitType?: string
+  sourceTeam?: Team
   retargetCount?: number
   bonusDamage?: number
   impactId?: number

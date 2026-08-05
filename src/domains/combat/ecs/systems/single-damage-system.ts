@@ -28,6 +28,7 @@ const FACING_TOLERANCE = 0.26
 
 export function canUseSimpleSingleDamage(world: CombatWorld, entityId: EntityId, targetId: EntityId): boolean {
   const weapon = world.stores.weapon.require(entityId)
+  if (weapon.delivery && weapon.delivery.kind !== 'instant') return false
   if (!['single', 'aoe'].includes(weapon.attackType)) return false
   return canUseEcsDirectionalGeometry(world, entityId, targetId) &&
     canUseEcsBarrageAttack(world, entityId, targetId) &&

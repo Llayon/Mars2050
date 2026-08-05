@@ -45,7 +45,7 @@ describe('combat ECS artillery action setup', () => {
     const units = [artillery, primary, nearby]
     const world = createWorld(units)
 
-    expect(canUseSimpleSingleDamage(world, 0, 1)).toBe(true)
+    expect(canUseSimpleSingleDamage(world, 0, 1)).toBe(false)
     const deployActions = runStep(world)
 
     expect(deployActions).toEqual([
@@ -58,14 +58,18 @@ describe('combat ECS artillery action setup', () => {
 
     expect(attackActions[0]).toEqual({
       unitId: 'artillery',
-      type: 'attack',
+      type: 'attack_windup',
       targetId: 'primary',
+      launchTick: 8,
+      projectileKind: 'ground_targeted',
+      toX: 460,
+      toY: 100,
     })
-    expect(attackActions.filter(action => action.type === 'barrage_marker')).toHaveLength(4)
-    expect(attackActions.filter(action => action.type === 'barrage_impact')).toHaveLength(4)
-    expect(world.stores.combat.require(0).actionCooldown).toBe(144)
-    expect(world.stores.vitality.require(1).hp).toBeLessThan(1000)
-    expect(world.stores.vitality.require(2).hp).toBeLessThan(1000)
+    expect(attackActions.filter(action => action.type === 'barrage_marker')).toHaveLength(0)
+    expect(attackActions.filter(action => action.type === 'barrage_impact')).toHaveLength(0)
+    expect(world.stores.combat.require(0).actionCooldown).toBe(0)
+    expect(world.stores.vitality.require(1).hp).toBe(1000)
+    expect(world.stores.vitality.require(2).hp).toBe(1000)
   })
 
   it('keeps artillery from acting inside its minimum range', () => {
@@ -75,7 +79,7 @@ describe('combat ECS artillery action setup', () => {
     ]
     const world = createWorld(units)
 
-    expect(canUseSimpleSingleDamage(world, 0, 1)).toBe(true)
+    expect(canUseSimpleSingleDamage(world, 0, 1)).toBe(false)
     const actions = runStep(world, false)
 
     expect(actions).toEqual([])

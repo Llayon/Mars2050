@@ -154,14 +154,14 @@ export function commitActionGroup(
     if (!world.stores.vitality.require(entityId).isDead) world.setEntityDead(entityId, true)
   }
   for (const [entityId, forced] of forcedEntries) {
-    resolveEcsDeath(world, entityId, forced.sourceId, actions, forced.cause, { preMarked: true })
+    resolveEcsDeath(world, entityId, forced.source, actions, forced.cause, { preMarked: true })
   }
   for (const entityId of deaths) {
     const vitality = world.stores.vitality.require(entityId)
-    const sourceId = (ledger.damage.get(entityId) ?? [])
+    const attribution = (ledger.damage.get(entityId) ?? [])
       .sort((left, right) => right.amount - left.amount ||
-        world.stores.identity.require(left.sourceId).id.localeCompare(world.stores.identity.require(right.sourceId).id))[0]?.sourceId
-    resolveEcsDeath(world, entityId, sourceId, actions, 'weapon', { preMarked: true })
+        left.attribution.sourceExternalId.localeCompare(right.attribution.sourceExternalId))[0]?.attribution
+    resolveEcsDeath(world, entityId, attribution, actions, 'weapon', { preMarked: true })
     vitality.hp = 0
   }
 }

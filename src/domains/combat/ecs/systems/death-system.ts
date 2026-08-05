@@ -3,6 +3,7 @@ import type { DeathCause } from '../../combat.death.types'
 import type { SimHazard } from '../../combat.sim.types'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
+import { captureLiveDamageSource, type DamageAttribution } from '../damage-source'
 import { applyEcsOnKillEffects } from './on-kill-system'
 import { processEcsKillTriggers } from './post-hit-trigger-system'
 import { processEcsDeathTriggers } from './death-trigger-system'
@@ -12,16 +13,18 @@ import { cancelTemporalTimeline } from './temporal-attack-system'
 export function resolveEcsDeath(
   world: CombatWorld,
   targetId: EntityId,
-  sourceId: EntityId | undefined,
+  source: EntityId | DamageAttribution | undefined,
   actions: BattleAction[],
   cause: DeathCause = 'weapon',
   options: { preMarked?: boolean } = {},
 ): boolean {
+  const attribution = normalizeAttribution(world, source)
+  const liveSourceId = attribution?.sourceEntityId
   const target = world.stores.vitality.require(targetId)
   const actionGroup = world.resources.get('actionGroup')
   if (actionGroup?.active && cause !== 'expiration') {
     if (target.hp > 0 && !target.isDead) return false
-    actionGroup.queueForcedDeath(targetId, sourceId, cause)
+    actionGroup.queueForcedDeath(targetId, attribution, cause)
     return false
   }
   if (target.isDead && !options.preMarked) return false
@@ -31,9 +34,12 @@ export function resolveEcsDeath(
     actions.push({
       unitId: world.stores.identity.require(targetId).id,
       type: 'die',
-      sourceUnitId: sourceId === undefined
-        ? undefined
-        : world.stores.identity.require(sourceId).id,
+        sourceUnitId: attribution === undefined
+          ? undefined
+          : attribution.sourceExternalId,
+      ...(attribution?.sourceEntityId === undefined && attribution
+        ? { sourceUnitType: attribution.sourceUnitType, sourceTeam: attribution.sourceTeam }
+        : {}),
       cause,
     })
     return true
@@ -50,25 +56,33 @@ export function resolveEcsDeath(
   }
   startDeathReassembly(world, targetId, actions)
   world.setEntityDead(targetId, true)
-  const actorId = sourceId ?? targetId
   actions.push({
     unitId: world.stores.identity.require(targetId).id,
     type: 'die',
-    sourceUnitId: sourceId === undefined
+    sourceUnitId: attribution === undefined
       ? undefined
-      : world.stores.identity.require(sourceId).id,
+      : attribution.sourceExternalId,
     cause,
+    ...(attribution?.sourceEntityId === undefined && attribution
+      ? { sourceUnitType: attribution.sourceUnitType, sourceTeam: attribution.sourceTeam }
+      : {}),
   })
-  processEcsDeathTriggers(world, targetId, actorId, actions)
-  if (sourceId !== undefined && !world.stores.vitality.require(sourceId).isDead &&
-      world.stores.identity.require(sourceId).team !==
+  processEcsDeathTriggers(world, targetId, attribution, liveSourceId, actions)
+  if (liveSourceId !== undefined && !world.stores.vitality.require(liveSourceId).isDead &&
+      world.stores.identity.require(liveSourceId).team !==
       world.stores.identity.require(targetId).team) {
-    applyEcsOnKillEffects(world, sourceId, targetId, actions)
-    processEcsKillTriggers(world, sourceId, targetId, actions)
-    replicateEcsKiller(world, sourceId, targetId, actions)
+    applyEcsOnKillEffects(world, liveSourceId, targetId, actions)
+    processEcsKillTriggers(world, liveSourceId, targetId, actions)
+    replicateEcsKiller(world, liveSourceId, targetId, actions)
   }
   spawnEcsDeathHazard(world, targetId, actions)
   return true
+}
+
+function normalizeAttribution(world: CombatWorld, source: EntityId | DamageAttribution | undefined): DamageAttribution | undefined {
+  if (source === undefined) return undefined
+  if (typeof source === 'number') return captureLiveDamageSource(world, source).attribution
+  return source
 }
 
 function cancelSourceTimeline(world: CombatWorld, targetId: EntityId, actions: BattleAction[]): void {

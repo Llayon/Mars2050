@@ -3,6 +3,7 @@ import type { DeathCause } from './combat.death.types'
 import type { StatusEffect } from './combat.primitives'
 import type { EntityId } from './ecs/entity'
 import type { CombatWorld } from './ecs/combat-world'
+import type { DamageAttribution } from './ecs/damage-source'
 
 export type EcsActionKind = 'weapon' | 'heal' | 'spawn' | 'mine' | 'smoke'
 
@@ -18,7 +19,7 @@ export interface EcsActionIntent {
 }
 
 export interface PendingDamage {
-  sourceId: EntityId
+  attribution: DamageAttribution
   amount: number
 }
 
@@ -36,7 +37,7 @@ export class EcsActionGroupLedger {
   readonly startHp = new Map<EntityId, number>()
   readonly damage = new Map<EntityId, PendingDamage[]>()
   readonly healing = new Map<EntityId, PendingHealing[]>()
-  readonly forcedDeaths = new Map<EntityId, { sourceId?: EntityId; cause: DeathCause }>()
+  readonly forcedDeaths = new Map<EntityId, { source?: DamageAttribution; cause: DeathCause }>()
   readonly statuses: PendingStatus[] = []
   active = false
   committing = false
@@ -55,15 +56,22 @@ export class EcsActionGroupLedger {
     this.active = true
   }
 
-  queueForcedDeath(targetId: EntityId, sourceId: EntityId | undefined, cause: DeathCause): void {
-    this.forcedDeaths.set(targetId, { sourceId, cause })
+  queueForcedDeath(targetId: EntityId, source: DamageAttribution | undefined, cause: DeathCause): void {
+    this.forcedDeaths.set(targetId, { source, cause })
   }
 
-  queueDamage(targetId: EntityId, sourceId: EntityId, amount: number): void {
+  queueDamage(targetId: EntityId, attribution: DamageAttribution, amount: number): void {
     if (amount <= 0) return
     const entries = this.damage.get(targetId) ?? []
-    entries.push({ sourceId, amount })
+    entries.push({ attribution, amount })
     this.damage.set(targetId, entries)
+  }
+
+  getProjectedHp(world: CombatWorld, targetId: EntityId): number {
+    const startHp = this.startHp.get(targetId) ?? world.stores.vitality.require(targetId).hp
+    const healing = (this.healing.get(targetId) ?? []).reduce((sum, entry) => sum + entry.amount, 0)
+    const damage = (this.damage.get(targetId) ?? []).reduce((sum, entry) => sum + entry.amount, 0)
+    return startHp + healing - damage
   }
 
   queueHealing(targetId: EntityId, sourceExternalId: string, amount: number): void {

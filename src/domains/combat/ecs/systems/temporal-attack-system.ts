@@ -23,8 +23,8 @@ export function runTemporalAttack(
   if (!temporalPlan || temporalPlan.delivery.kind !== delivery.kind) {
     throw new CombatInvariantError(`Missing compiled temporal plan for ${world.stores.identity.require(entityId).id}`)
   }
-  const timelines = world.resources.get('temporalAttacks')
-  if (!timelines) throw new CombatInvariantError('Temporal attack resource is unavailable')
+  const timelines = world.resources.get('temporalAttacks') ?? new Map()
+  world.resources.set('temporalAttacks', timelines)
   if (timelines.has(entityId)) return { handled: true, acted: true, state: 'windup_active' }
 
   const target = world.stores.transform.require(targetId)

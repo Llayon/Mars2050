@@ -70,7 +70,7 @@ function clearPreviousDesignation(world: CombatWorld, attackerId: EntityId, acti
   const attackerExternalId = world.stores.identity.require(attackerId).id
   for (const targetId of world.query(['identity', 'statusControl'], true)) {
     const status = world.stores.statusControl.require(targetId)
-    if (world.stores.entitySources.require(targetId).targetMarkSource !== attackerId) continue
+    if (status.targetMark?.sourceUnitId !== attackerExternalId) continue
     status.targetMark = undefined
     world.stores.entitySources.require(targetId).targetMarkSource = undefined
     actions.push({ unitId: attackerExternalId, type: 'target_mark_expire', targetId: world.stores.identity.require(targetId).id })
