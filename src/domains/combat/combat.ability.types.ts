@@ -24,7 +24,7 @@ export type TargetSelector =
   | { kind: 'area_at_impact'; radius: number; maxTargets?: number }
 
 export type AbilityEffect =
-  | { kind: 'damage'; expression: DamageExpression; damageClass?: 'kinetic' | 'energy' | 'true' }
+  | { kind: 'damage'; expression: DamageExpression }
   | { kind: 'apply_status'; status: StatusType; duration: number; value?: number; controlMode?: 'disable' | 'redirect' | 'confuse' }
   | { kind: 'displace'; mode: 'pull' | 'knockback'; radius: number; strength: number; maxTargets?: number }
   | { kind: 'support_aura'; aura: SupportAura }

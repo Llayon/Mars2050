@@ -33,8 +33,10 @@ the numeric version is intentionally not reused for both simulation contracts.
 ## Verification
 
 Temporal behavior is covered by `combat.ecs-v8-temporal.test.ts`, including
-wind-up, launch, impact, cancellation, interception, tracking, and artillery
-ground targeting. The release gate is:
+queue ordering, delayed extraction, interception allocation, artillery shell
+integration, timeline cancellation, and captured source context. Tracking and
+position-policy behavior is additionally exercised by the replay scenario and
+golden fixture suites. The release gate is:
 
 ```text
 npm test

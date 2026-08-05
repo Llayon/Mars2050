@@ -1,6 +1,7 @@
 import type { Team } from '../combat.sim.types'
 import type { EntityId } from './entity'
 import type { CompiledAbilityProgram } from '../combat.ability-compiler'
+import type { DamageSourceContext } from './damage-source'
 
 export type PendingImpactKind = 'projectile' | 'ground_targeted'
 export type ImpactPositionPolicy = 'tracked_target' | 'captured_at_launch' | 'captured_at_windup'
@@ -14,6 +15,10 @@ export interface PendingImpactInput {
   sourceExternalId: string
   sourceTeam: Team
   targetTeam?: Team
+  hostileTeamAtLaunch?: Team
+  canTargetAir?: boolean
+  canTargetGround?: boolean
+  sourceContext?: DamageSourceContext
   targetId?: EntityId
   targetX: number
   targetY: number
@@ -24,7 +29,7 @@ export interface PendingImpactInput {
   payload: ImpactPayload
   interceptionDamage?: number
   interceptable: boolean
-  programs?: CompiledAbilityProgram[]
+  programs?: readonly CompiledAbilityProgram[]
 }
 
 export interface PendingImpact extends PendingImpactInput {
@@ -54,11 +59,16 @@ export class PendingImpactQueue {
   private readonly byTick = new Map<number, PendingImpact[]>()
 
   enqueue(input: PendingImpactInput): PendingImpact {
-    const payload = input.payload
+    const payload = structuredClone(input.payload)
     const impact = {
       ...input,
       payload,
+      sourceContext: input.sourceContext ? structuredClone(input.sourceContext) : undefined,
+      programs: input.programs ? structuredClone(input.programs) : undefined,
       targetTeam: input.targetTeam ?? (input.sourceTeam === 'attacker' ? 'defender' : 'attacker'),
+      hostileTeamAtLaunch: input.hostileTeamAtLaunch ?? input.targetTeam ?? (input.sourceTeam === 'attacker' ? 'defender' : 'attacker'),
+      canTargetAir: input.canTargetAir ?? true,
+      canTargetGround: input.canTargetGround ?? true,
       positionPolicy: input.positionPolicy ?? (input.kind === 'ground_targeted' ? 'captured_at_windup' : 'tracked_target'),
       interceptionDamage: input.interceptionDamage ?? payload.damage,
       id: this.nextId++,

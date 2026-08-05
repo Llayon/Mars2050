@@ -79,7 +79,7 @@ export function allocateTemporalInterceptions(
       .filter(entityId => !used.has(entityId) && isEligibleAtPoint(
         world,
         entityId,
-        point.impact.targetTeam ?? oppositeTeam(point.impact.sourceTeam),
+        point.impact.hostileTeamAtLaunch ?? point.impact.targetTeam ?? oppositeTeam(point.impact.sourceTeam),
         point.impact.interceptionDamage,
         point.x,
         point.y,

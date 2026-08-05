@@ -2,6 +2,7 @@ import type { BattleAction } from '../../combat.actions'
 import type { TargetMarkConfig } from '../../combat.primitives'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
+import type { DamageAttribution } from '../damage-source'
 import { getDesignationIndex } from '../designation-index'
 import {
   canEcsTarget,
@@ -42,6 +43,34 @@ export function applyEcsTargetMark(
     markSquadId: squadId,
     markDuration: mark.duration,
     retargetCount,
+  })
+}
+
+/** Applies a packet-owned mark without requiring a live source entity. */
+export function applyEcsCapturedTargetMark(
+  world: CombatWorld,
+  attribution: DamageAttribution,
+  targetId: EntityId,
+  mark: TargetMarkConfig,
+  actions: BattleAction[],
+): void {
+  const sourceId = attribution.sourceEntityId
+  const sourceAlive = sourceId !== undefined && world.stores.identity.get(sourceId) !== undefined &&
+    !world.stores.vitality.require(sourceId).isDead
+  if (sourceAlive) {
+    applyEcsTargetMark(world, sourceId, targetId, mark, actions, false)
+    return
+  }
+  const target = world.stores.identity.require(targetId)
+  world.stores.statusControl.require(targetId).targetMark = { ...mark, sourceUnitId: attribution.sourceExternalId }
+  world.stores.entitySources.require(targetId).targetMarkSource = undefined
+  actions.push({
+    unitId: attribution.sourceExternalId,
+    type: 'target_mark',
+    targetId: target.id,
+    value: mark.damageMultiplier ?? mark.executeThreshold ?? mark.focusPriority,
+    markEvent: 'refresh',
+    markDuration: mark.duration,
   })
 }
 

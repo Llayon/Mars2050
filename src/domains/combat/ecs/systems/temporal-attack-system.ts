@@ -1,12 +1,15 @@
 import type { BattleAction } from '../../combat.actions'
 import type { RuntimeActionContext } from '../../combat.runtime'
 import { chooseHackControlMode } from '../../combat.control-mode'
+import type { AbilityEffect } from '../../combat.ability.types'
 import type { AttackDeliveryConfig } from '../../combat.types'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
 import type { AttackTimelineState, ImpactPositionPolicy } from '../pending-impacts'
 import { CombatInvariantError } from '../combat-invariant-error'
+import { captureLiveDamageSource } from '../damage-source'
 import { getEcsActionCooldown } from './action-setup'
+import { evaluateDamageExpression, evaluateLaunchRawDamage } from './temporal-impact-ability-system'
 
 export type TemporalDispatchResult =
   | { handled: false; acted: false }
@@ -115,6 +118,7 @@ function launchTemporalAttack(
   const delivery = weapon.delivery
   if (!delivery || delivery.kind === 'instant') return
   const combat = world.stores.combat.require(entityId)
+  const sourceContext = captureLiveDamageSource(world, entityId)
   const source = world.stores.transform.require(entityId)
   const distance = Math.hypot(aim.x - source.x, aim.y - source.y)
   const flight = delivery.kind === 'projectile'
@@ -132,22 +136,33 @@ function launchTemporalAttack(
   if (delivery.kind === 'ground_targeted' && !shellPlan) {
     throw new CombatInvariantError(`Missing compiled barrage plan for ${identity.id}`)
   }
+  const programs = structuredClone(temporalPlan.impactPrograms)
+  const programDamage = programs.flatMap(program => program.groups.flatMap(group => group.effects))
+    .filter((effect): effect is Extract<AbilityEffect, { kind: 'damage' }> => effect.kind === 'damage')
+    .reduce((sum, effect) => sum + evaluateDamageExpression(effect, sourceContext), 0)
   for (const [index, offset] of impacts.entries()) {
     const x = aim.x + offset.x
     const y = aim.y + offset.y
     const payload = delivery.kind === 'ground_targeted'
       ? {
           kind: 'area' as const,
-          damage: Math.floor(combat.attack * shellPlan!.damageMultiplier),
+          damage: Math.floor(sourceContext.attack * shellPlan!.damageMultiplier),
           radius: shellPlan!.radius,
           maxTargets: shellPlan!.maxTargets,
         }
-      : { kind: 'direct' as const, damage: combat.attack, targetId: timeline.targetId, targetExternalId: timeline.targetExternalId }
+      : { kind: 'direct' as const, damage: sourceContext.attack, targetId: timeline.targetId, targetExternalId: timeline.targetExternalId }
+    const launchRaw = delivery.kind === 'ground_targeted'
+      ? payload.damage + programDamage
+      : programDamage > 0 ? programDamage : payload.damage
     const impact = queue.enqueue({
       sourceId: entityId,
       sourceExternalId: identity.id,
       sourceTeam: identity.team,
       targetTeam: world.stores.identity.require(timeline.targetId).team,
+      hostileTeamAtLaunch: world.stores.identity.require(timeline.targetId).team,
+      canTargetAir: combat.canTargetAir,
+      canTargetGround: true,
+      sourceContext,
       targetId: delivery.kind === 'ground_targeted' ? undefined : timeline.targetId,
       targetX: x,
       targetY: y,
@@ -156,9 +171,9 @@ function launchTemporalAttack(
       kind: delivery.kind,
       positionPolicy: timeline.positionPolicy,
       payload,
-      interceptionDamage: payload.damage,
+      interceptionDamage: evaluateLaunchRawDamage(sourceContext, launchRaw),
       interceptable: delivery.interceptable,
-      programs: [...temporalPlan.impactPrograms],
+      programs,
     })
     actions.push({
       unitId: identity.id,

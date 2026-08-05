@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { PendingImpactQueue } from '@/domains/combat/ecs/pending-impacts'
 import { allocateTemporalInterceptions } from '@/domains/combat/ecs/systems/damage-interception-system'
+import { executeCapturedImpactPrograms } from '@/domains/combat/ecs/systems/temporal-impact-ability-system'
+import { runTemporalTimelineSystem } from '@/domains/combat/ecs/systems/temporal-attack-system'
 import { CombatWorld } from '@/domains/combat/ecs/combat-world'
 import { EntitySpatialIndex } from '@/domains/combat/ecs/entity-spatial-index'
 import { createRuntimeUnitFromConfig } from '@/domains/combat/combat.unit-factory'
@@ -8,6 +10,7 @@ import { getSimulatorPreset } from '@/app/simulator2/simulator.presets'
 import { simulateBattle } from '@/domains/combat/combat.engine'
 import type { SimUnit } from '@/domains/combat/combat.sim.types'
 import type { UnitRow } from '@/domains/combat/combat.types'
+import type { PendingImpact } from '@/domains/combat/ecs/pending-impacts'
 
 function cloneRows(rows: UnitRow[]): UnitRow[] {
   return rows.map(row => ({ ...row, upgrade_path: [...(row.upgrade_path ?? [])] }))
@@ -74,5 +77,90 @@ describe('combat ECS v8 temporal delivery', () => {
     expect(artilleryActions.some(action => action.type === 'barrage_impact')).toBe(false)
     expect(artilleryActions.filter(action => action.type === 'projectile_impact')
       .every(action => action.targetId === undefined)).toBe(true)
+  })
+
+  it('cancels a wind-up as soon as its source is dead', () => {
+    const source = createRuntimeUnitFromConfig({ id: 'source', team: 'attacker', type: 'missile_buggy', x: 10, y: 100, currentAngle: 0 })!
+    const target = createRuntimeUnitFromConfig({ id: 'target', team: 'defender', type: 'marine', x: 150, y: 100, currentAngle: Math.PI })!
+    const world = new CombatWorld([source, target])
+    world.resources.set('temporalAttacks', new Map([[0, {
+      targetId: 1,
+      targetExternalId: 'target',
+      targetX: 150,
+      targetY: 100,
+      aimX: 150,
+      aimY: 100,
+      kind: 'projectile',
+      startedTick: 0,
+      minimumLaunchTick: 5,
+      positionPolicy: 'tracked_target',
+      controlMode: 'none',
+    }]]))
+    world.setEntityDead(0, true)
+    const actions: Parameters<typeof runTemporalTimelineSystem>[1]['actions'] = []
+
+    runTemporalTimelineSystem(world, { tick: 1, actions })
+
+    expect(world.resources.require('temporalAttacks').size).toBe(0)
+    expect(actions).toContainEqual(expect.objectContaining({
+      unitId: 'source',
+      type: 'attack_cancel',
+      cancelReason: 'source_dead',
+    }))
+  })
+
+  it('resolves a launched impact from captured source data after the shooter dies', () => {
+    const source = createRuntimeUnitFromConfig({ id: 'source', team: 'attacker', type: 'missile_buggy', x: 10, y: 100, currentAngle: 0 })!
+    const target = createRuntimeUnitFromConfig({ id: 'target', team: 'defender', type: 'marine', x: 150, y: 100, currentAngle: Math.PI })!
+    target.defense = 0
+    const world = new CombatWorld([source, target])
+    world.setEntityDead(0, true)
+    const impact: PendingImpact = {
+      id: 1,
+      sourceId: 0,
+      sourceExternalId: 'source',
+      sourceTeam: 'attacker',
+      targetTeam: 'defender',
+      hostileTeamAtLaunch: 'defender',
+      canTargetAir: true,
+      canTargetGround: true,
+      sourceContext: {
+        attribution: { sourceExternalId: 'source', sourceUnitType: 'missile_buggy', sourceTeam: 'attacker', sourceEntityId: 0 },
+        attack: 40,
+        modifiers: {
+          attackBoostValue: 0,
+          outputSuppression: 0,
+          accuracyPenalty: 0,
+          accuracyPenaltyResist: 0,
+          armorPierceRatio: 0,
+          summonCounterDamageMult: 1,
+          shieldDamageMult: 1,
+          lifestealMult: 0,
+          executeThreshold: 0,
+        },
+      },
+      targetId: 1,
+      targetX: 150,
+      targetY: 100,
+      launchTick: 1,
+      impactTick: 2,
+      kind: 'projectile',
+      positionPolicy: 'tracked_target',
+      payload: { kind: 'direct', damage: 40, targetId: 1, targetExternalId: 'target' },
+      interceptionDamage: 40,
+      interceptable: false,
+      programs: [{
+        id: 'captured-damage',
+        trigger: { kind: 'projectile_impact' },
+        priority: 0,
+        groups: [{ selector: { kind: 'primary_target' }, effects: [{ kind: 'damage', expression: { kind: 'attack_multiplier', multiplier: 1 } }] }],
+      }],
+    }
+    const actions: Parameters<typeof executeCapturedImpactPrograms>[4] = []
+
+    executeCapturedImpactPrograms(world, impact, { baseAreaTargets: [], groups: new Map([['0:0', [1]]]) }, { x: 150, y: 100 }, actions)
+
+    expect(world.stores.vitality.require(1).hp).toBe(target.maxHp - 40)
+    expect(actions).toContainEqual(expect.objectContaining({ unitId: 'source', type: 'damage', targetId: 'target', damage: 40 }))
   })
 })
