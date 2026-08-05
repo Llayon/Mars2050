@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest'
+import { beforeEach, describe, it, expect, vi } from 'vitest'
 
 const fromMock = vi.fn()
 const getServerClientMock = vi.fn(() => ({ from: fromMock }))
@@ -21,6 +21,10 @@ function chainable(result: unknown) {
 }
 
 describe('pvp.replay — snapshot version contract', () => {
+  beforeEach(() => {
+    fromMock.mockReset()
+  })
+
   it('SNAPSHOT_VERSION is a positive integer', () => {
     expect(typeof SNAPSHOT_VERSION).toBe('number')
     expect(SNAPSHOT_VERSION).toBeGreaterThanOrEqual(1)
@@ -66,7 +70,14 @@ describe('pvp.replay — snapshot version contract', () => {
         attacker_colony_id: 'a', defender_colony_id: 'd', winner: 'draw',
         attacker_units: {}, defender_units: {}, rewards: {},
       },
-      { seed: 0, initial_state: {}, log: {}, metrics: { averageOverlapRatio: 0.25 } }
+      {
+        seed: 0,
+        initial_state: {},
+        log: {},
+        metrics: { averageOverlapRatio: 0.25 },
+        simulationVersion: CURRENT_SIMULATION_VERSION,
+        simulationRevision: CURRENT_SIMULATION_REVISION,
+      }
     )
     expect(id).toBe('b2')
     expect(snapshotInsert).toHaveBeenCalledWith(expect.objectContaining({
@@ -84,8 +95,34 @@ describe('pvp.replay — snapshot version contract', () => {
         attacker_colony_id: 'a', defender_colony_id: 'd', winner: 'attacker',
         attacker_units: {}, defender_units: {}, rewards: {},
       },
-      { seed: 0, initial_state: {}, log: {}, simulationVersion: 99 }
+      { seed: 0, initial_state: {}, log: {}, simulationVersion: 99, simulationRevision: CURRENT_SIMULATION_REVISION }
     )
     expect(id).toBeNull()
+  })
+
+  it('rejects persistence when the producer version is missing', async () => {
+    const id = await persistBattleWithSnapshot(
+      {
+        attacker_colony_id: 'a', defender_colony_id: 'd', winner: 'draw',
+        attacker_units: {}, defender_units: {}, rewards: {},
+      },
+      { seed: 0, initial_state: {}, log: {}, simulationRevision: CURRENT_SIMULATION_REVISION },
+    )
+
+    expect(id).toBeNull()
+    expect(fromMock).not.toHaveBeenCalled()
+  })
+
+  it('rejects persistence when the producer revision is missing', async () => {
+    const id = await persistBattleWithSnapshot(
+      {
+        attacker_colony_id: 'a', defender_colony_id: 'd', winner: 'draw',
+        attacker_units: {}, defender_units: {}, rewards: {},
+      },
+      { seed: 0, initial_state: {}, log: {}, simulationVersion: CURRENT_SIMULATION_VERSION },
+    )
+
+    expect(id).toBeNull()
+    expect(fromMock).not.toHaveBeenCalled()
   })
 })

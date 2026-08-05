@@ -82,8 +82,8 @@ describe('immutable temporal impact packets', () => {
     const actions: RuntimePhaseContext['actions'] = []
     runProjectileImpactSystem(world, { tick: 1, actions } as RuntimePhaseContext)
 
-    expect(world.stores.vitality.require(1).hp).toBe(first.maxHp - 15)
-    expect(world.stores.vitality.require(2).hp).toBe(second.maxHp - 15)
+    expect(world.stores.vitality.require(1).hp).toBe(first.maxHp - 5)
+    expect(world.stores.vitality.require(2).hp).toBe(second.maxHp - 5)
     expect(world.stores.statusControl.require(1).statusEffects).toEqual(expect.arrayContaining([expect.objectContaining({ type: 'burn', value: 3 })]))
     expect(world.stores.statusControl.require(2).statusEffects).toEqual(expect.arrayContaining([expect.objectContaining({ type: 'burn', value: 3 })]))
     expect(actions).toContainEqual(expect.objectContaining({ type: 'projectile_impact', unitId: 'packet-source' }))

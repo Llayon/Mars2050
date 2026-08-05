@@ -157,9 +157,7 @@ function launchTemporalAttack(
           maxTargets: shellPlan!.maxTargets,
         }
       : { kind: 'direct' as const, damage: sourceContext.attack, targetId: timeline.targetId, targetExternalId: timeline.targetExternalId }
-    const launchRaw = delivery.kind === 'ground_targeted'
-      ? payload.damage + programDamage
-      : programDamage > 0 ? programDamage : payload.damage
+    const launchRaw = programDamage > 0 ? programDamage : payload.damage
     const impact = queue.enqueue({
       sourceId: entityId,
       sourceExternalId: identity.id,

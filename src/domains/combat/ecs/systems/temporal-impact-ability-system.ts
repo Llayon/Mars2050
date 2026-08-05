@@ -59,6 +59,8 @@ export function executeCapturedImpactPrograms(
   if (!source) throw new CombatInvariantError(`Missing captured source context for impact ${impact.id}`)
   const contributions = new Map<EntityId, TargetContribution>()
   const directProgramDamage = new Set<EntityId>()
+  const hasProgramDamage = (impact.programs ?? []).some(program =>
+    program.groups.some(group => group.effects.some(effect => effect.kind === 'damage')))
   for (const [programIndex, program] of (impact.programs ?? []).entries()) {
     for (const [groupIndex, group] of program.groups.entries()) {
       for (const targetId of frozen.groups.get(`${programIndex}:${groupIndex}`) ?? []) {
@@ -76,10 +78,12 @@ export function executeCapturedImpactPrograms(
     }
   }
   if (impact.payload.kind === 'area') {
-    for (const targetId of frozen.baseAreaTargets) {
-      const contribution = contributions.get(targetId) ?? { rawDamage: 0, effects: [] }
-      contribution.rawDamage += impact.payload.damage
-      contributions.set(targetId, contribution)
+    if (!hasProgramDamage) {
+      for (const targetId of frozen.baseAreaTargets) {
+        const contribution = contributions.get(targetId) ?? { rawDamage: 0, effects: [] }
+        contribution.rawDamage += impact.payload.damage
+        contributions.set(targetId, contribution)
+      }
     }
   } else {
     const targetId = impact.payload.targetId ?? impact.targetId

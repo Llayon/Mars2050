@@ -13,8 +13,12 @@ export function runProjectileImpactSystem(world: CombatWorld, context: RuntimePh
   const points: TemporalImpactPoint[] = []
   for (const impact of impacts) {
     const point = resolveImpactPoint(world, impact)
-    if (point) points.push(point)
-    else context.actions.push({ unitId: impact.sourceExternalId, type: 'projectile_miss', impactId: impact.id, impactTick: impact.impactTick, toX: impact.targetX, toY: impact.targetY })
+    const targetId = impact.payload.kind === 'direct' ? impact.payload.targetId ?? impact.targetId : undefined
+    if (!point || (impact.payload.kind === 'direct' && (targetId === undefined || !isDirectTargetValid(world, impact, targetId, point.x, point.y)))) {
+      context.actions.push({ unitId: impact.sourceExternalId, type: 'projectile_miss', impactId: impact.id, impactTick: impact.impactTick, toX: impact.targetX, toY: impact.targetY })
+      continue
+    }
+    points.push(point)
   }
   const allocation = allocateTemporalInterceptions(world, points)
   for (const entityId of allocation.cooldownEntities) {

@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { getServerClient } from '@/domains/resource/resource.server'
-import { CURRENT_SIMULATION_REVISION, CURRENT_SIMULATION_VERSION } from '@/domains/combat/combat.version'
+import { CURRENT_SIMULATION_VERSION } from '@/domains/combat/combat.version'
 import type { TerminationReason } from '@/domains/combat/combat.result'
 import { getReplayCompatibility, getReplayEngineRevision } from './pvp.replay-compat'
 import type { ReplayCompatibility } from './pvp.types'
@@ -141,6 +141,7 @@ export async function persistBattleWithSnapshot(
     elapsedTicks?: number
   }
 ): Promise<string | null> {
+  if (snapshot.simulationVersion === undefined || snapshot.simulationRevision === undefined) return null
   const supabase = getServerClient()
   const { data: battleRow, error: battleError } = await supabase
     .from('battles')
@@ -157,7 +158,6 @@ export async function persistBattleWithSnapshot(
     .single()
   if (battleError || !battleRow?.id) return null
 
-  const version = snapshot.simulationVersion ?? SNAPSHOT_VERSION
   const { error: snapError } = await supabase.from('battle_snapshots').insert({
     battle_id: battleRow.id,
     seed: snapshot.seed,
@@ -165,11 +165,11 @@ export async function persistBattleWithSnapshot(
     log: snapshot.log,
     metrics: {
       ...(snapshot.metrics ?? {}),
-      engineRevision: snapshot.simulationRevision ?? CURRENT_SIMULATION_REVISION,
+      engineRevision: snapshot.simulationRevision,
     },
     termination_reason: snapshot.terminationReason ?? null,
     elapsed_ticks: snapshot.elapsedTicks ?? null,
-    version,
+    version: snapshot.simulationVersion,
   })
   if (snapError) {
     console.error('battle_snapshot insert failed', snapError)
