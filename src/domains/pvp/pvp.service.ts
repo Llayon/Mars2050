@@ -181,6 +181,7 @@ export async function executeAttack(
         initial_state: battleResult.initialState as unknown as Record<string, unknown>,
         log: battleResult.logs as unknown as Record<string, unknown>,
         simulationVersion: battleResult.simulationVersion,
+        simulationRevision: battleResult.simulationRevision,
         terminationReason: battleResult.terminationReason,
         elapsedTicks: battleResult.elapsedTicks,
       }
@@ -212,6 +213,7 @@ export async function executeAttack(
     seed: battleResult.seed,
     metrics: undefined,
     simulationVersion: battleResult.simulationVersion,
+    simulationRevision: battleResult.simulationRevision,
     terminationReason: battleResult.terminationReason,
     elapsedTicks: battleResult.elapsedTicks,
   }

@@ -53,7 +53,7 @@ export function runTemporalAttack(
     unitId: world.stores.identity.require(entityId).id,
     type: 'attack_windup',
     targetId: identity.id,
-    launchTick: timeline.minimumLaunchTick,
+    earliestLaunchTick: timeline.minimumLaunchTick,
     projectileKind: delivery.kind,
     toX: timeline.aimX,
     toY: timeline.aimY,

@@ -66,6 +66,7 @@ export interface BattleAction {
   bonusDamage?: number
   impactId?: number
   launchTick?: number
+  earliestLaunchTick?: number
   impactTick?: number
   projectileKind?: 'projectile' | 'ground_targeted'
   cancelReason?: AttackCancelReason
@@ -87,5 +88,6 @@ export interface BattleResult {
   terminationReason: TerminationReason
   elapsedTicks: number
   simulationVersion: number
+  simulationRevision: string
   profile?: SpatialQueryProfile
 }

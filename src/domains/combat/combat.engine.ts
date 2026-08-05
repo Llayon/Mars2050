@@ -6,7 +6,7 @@ import { createCombatMetrics, finalizeCombatMetrics, recordCombatActions, record
 import { PRNG, generateObstacles } from './combat.utils'
 import { createPathfindingMap } from './combat.pathfinding'
 import { getTimeoutOutcome, type BattleOutcome } from './combat.outcome'
-import { CURRENT_SIMULATION_VERSION } from './combat.version'
+import { CURRENT_SIMULATION_REVISION, CURRENT_SIMULATION_VERSION } from './combat.version'
 import { createEcsCombatRuntime } from './ecs/combat-ecs-runtime'
 export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[], providedSeed?: number, providedObstacles?: Obstacle[], attackerGlobals: string[] = [], defenderGlobals: string[] = [], options: BattleSimulationOptions = {}): BattleResult {
   const seed = providedSeed ?? Date.now(), rng = new PRNG(seed), dt = 0.1
@@ -71,6 +71,7 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
     terminationReason: outcome.reason,
     elapsedTicks: tick,
     simulationVersion: CURRENT_SIMULATION_VERSION,
+    simulationRevision: CURRENT_SIMULATION_REVISION,
     profile: options.profile
       ? runtime.world.resources.require('entitySpatial').getProfile(runtime.world)
       : undefined,

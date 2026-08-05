@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import fixture from './fixtures/combat-ecs-v8-golden.json'
 import { getSimulatorPreset } from '@/app/simulator2/simulator.presets'
 import { simulateBattle } from '@/domains/combat/combat.engine'
+import { CURRENT_SIMULATION_REVISION, CURRENT_SIMULATION_VERSION } from '@/domains/combat/combat.version'
 import type { UnitRow } from '@/domains/combat/combat.types'
 
 function cloneRows(rows: UnitRow[]): UnitRow[] {
@@ -26,6 +27,10 @@ function fingerprintPreset(presetId: string): string {
 }
 
 describe('combat ECS v8 golden replay contract', () => {
+  it('matches the current simulation metadata contract', () => {
+    expect(fixture.simulationVersion).toBe(CURRENT_SIMULATION_VERSION)
+    expect(fixture.simulationRevision).toBe(CURRENT_SIMULATION_REVISION)
+  })
   for (const [presetId, expected] of Object.entries(fixture.presets)) {
     it(`matches the checked-in ${presetId} contract`, () => {
       expect(fingerprintPreset(presetId)).toBe(expected)

@@ -60,7 +60,7 @@ describe('combat ECS artillery action setup', () => {
       unitId: 'artillery',
       type: 'attack_windup',
       targetId: 'primary',
-      launchTick: 8,
+      earliestLaunchTick: 8,
       projectileKind: 'ground_targeted',
       toX: 460,
       toY: 100,

@@ -38,6 +38,7 @@ const { mockSimulateBattle } = vi.hoisted(() => ({
     terminationReason: 'elimination',
     elapsedTicks: 2,
     simulationVersion: 2,
+    simulationRevision: CURRENT_SIMULATION_REVISION,
   })),
 }))
 vi.mock('@/domains/pvp/pvp.replay', async () => {
@@ -92,6 +93,7 @@ vi.mock('@/domains/resource/resource.server', () => ({
 }))
 
 import { executeAttack, ATTACK_COOLDOWN_SECONDS } from '@/domains/pvp/pvp.service'
+import { CURRENT_SIMULATION_REVISION } from '@/domains/combat/combat.version'
 
 const UUID = '550e8400-e29b-41d4-a716-446655440000'
 
@@ -125,9 +127,10 @@ describe('executeAttack — contract: simulationVersion in snapshot', () => {
 
     expect(result.success).toBe(true)
     expect(mockPersist).toHaveBeenCalledTimes(1)
-    const snapshotArg = mockPersist.mock.calls[0]![1] as { simulationVersion: number; terminationReason: string; elapsedTicks: number }
+    const snapshotArg = mockPersist.mock.calls[0]![1] as { simulationVersion: number; simulationRevision: string; terminationReason: string; elapsedTicks: number }
     expect(typeof snapshotArg.simulationVersion).toBe('number')
     expect(snapshotArg.simulationVersion).toBeGreaterThanOrEqual(1)
+    expect(snapshotArg.simulationRevision).toBe(CURRENT_SIMULATION_REVISION)
     expect(snapshotArg.terminationReason).toBe('elimination')
     expect(snapshotArg.elapsedTicks).toBe(2)
   })
@@ -139,6 +142,7 @@ describe('executeAttack — contract: simulationVersion in snapshot', () => {
     )
     expect(result.simulationVersion).toBeDefined()
     expect(result.simulationVersion).toBeGreaterThanOrEqual(1)
+    expect(result.simulationRevision).toBe(CURRENT_SIMULATION_REVISION)
     expect(result.terminationReason).toBe('elimination')
     expect(result.elapsedTicks).toBe(2)
   })

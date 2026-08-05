@@ -136,6 +136,7 @@ export async function persistBattleWithSnapshot(
     log: Record<string, unknown>
     metrics?: Record<string, unknown>
     simulationVersion?: number
+    simulationRevision?: string
     terminationReason?: TerminationReason
     elapsedTicks?: number
   }
@@ -164,7 +165,7 @@ export async function persistBattleWithSnapshot(
     log: snapshot.log,
     metrics: {
       ...(snapshot.metrics ?? {}),
-      engineRevision: CURRENT_SIMULATION_REVISION,
+      engineRevision: snapshot.simulationRevision ?? CURRENT_SIMULATION_REVISION,
     },
     termination_reason: snapshot.terminationReason ?? null,
     elapsed_ticks: snapshot.elapsedTicks ?? null,

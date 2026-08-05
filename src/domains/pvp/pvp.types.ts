@@ -17,6 +17,7 @@ export interface AttackResult {
   seed?: number
   metrics?: CombatMetrics
   simulationVersion?: number
+  simulationRevision?: string
   terminationReason?: TerminationReason
   elapsedTicks?: number
   cooldownRemaining?: number

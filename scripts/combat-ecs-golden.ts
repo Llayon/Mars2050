@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto'
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { getSimulatorPreset } from '../src/app/simulator2/simulator.presets'
 import { simulateBattle } from '../src/domains/combat/combat.engine'
+import { CURRENT_SIMULATION_REVISION, CURRENT_SIMULATION_VERSION } from '../src/domains/combat/combat.version'
 import type { UnitRow } from '../src/domains/combat/combat.types'
 
 const FIXTURE = 'src/__tests__/fixtures/combat-ecs-v8-golden.json'
@@ -9,6 +10,7 @@ const seed = 24680
 
 interface GoldenFixture {
   simulationVersion: number
+  simulationRevision: string
   seed: number
   presets: Record<string, string>
 }
@@ -34,10 +36,17 @@ function fingerprintPreset(presetId: string): string {
 }
 
 function readFixture(): GoldenFixture {
-  if (!existsSync(FIXTURE)) return { simulationVersion: 8, seed, presets: {} }
+  if (!existsSync(FIXTURE)) return { simulationVersion: CURRENT_SIMULATION_VERSION, simulationRevision: CURRENT_SIMULATION_REVISION, seed, presets: {} }
   const parsed = JSON.parse(readFileSync(FIXTURE, 'utf8')) as Record<string, unknown>
-  if ('presets' in parsed) return parsed as unknown as GoldenFixture
-  return { simulationVersion: 8, seed, presets: Object.fromEntries(Object.entries(parsed)) }
+  if ('presets' in parsed) {
+    return {
+      simulationVersion: typeof parsed.simulationVersion === 'number' ? parsed.simulationVersion : CURRENT_SIMULATION_VERSION,
+      simulationRevision: typeof parsed.simulationRevision === 'string' ? parsed.simulationRevision : CURRENT_SIMULATION_REVISION,
+      seed: typeof parsed.seed === 'number' ? parsed.seed : seed,
+      presets: parsed.presets as Record<string, string>,
+    }
+  }
+  return { simulationVersion: CURRENT_SIMULATION_VERSION, simulationRevision: CURRENT_SIMULATION_REVISION, seed, presets: Object.fromEntries(Object.entries(parsed)) }
 }
 
 function main(): void {
@@ -49,6 +58,8 @@ function main(): void {
   if (updateIndex >= 0 && updateIds.length === 0) throw new Error('--update requires at least one preset id')
   const names = updateIndex >= 0 ? updateIds : ids
   const drift: string[] = []
+  if (updateIndex < 0 && fixture.simulationVersion !== CURRENT_SIMULATION_VERSION) drift.push(`fixture simulationVersion ${fixture.simulationVersion} != ${CURRENT_SIMULATION_VERSION}`)
+  if (updateIndex < 0 && fixture.simulationRevision !== CURRENT_SIMULATION_REVISION) drift.push(`fixture simulationRevision ${fixture.simulationRevision} != ${CURRENT_SIMULATION_REVISION}`)
   for (const presetId of names) {
     const actual = fingerprintPreset(presetId)
     const expected = fixture.presets[presetId]
@@ -56,7 +67,8 @@ function main(): void {
     if (updateIndex >= 0) fixture.presets[presetId] = actual
   }
   if (updateIndex >= 0) {
-    fixture.simulationVersion = 8
+    fixture.simulationVersion = CURRENT_SIMULATION_VERSION
+    fixture.simulationRevision = CURRENT_SIMULATION_REVISION
     fixture.seed = seed
     writeFileSync(FIXTURE, `${JSON.stringify(fixture, null, 2)}\n`, 'utf8')
     console.log(`Updated ${drift.length || updateIds.length} golden preset(s): ${updateIds.join(', ')}`)
