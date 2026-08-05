@@ -162,7 +162,7 @@ function recordDamageAction(
   metrics: CombatMetricsCollector, action: BattleAction, world: CombatWorld,
 ): void {
   const damage = Math.max(0, action.damage ?? 0)
-  const attackerType = getUnitType(world, action.sourceUnitId ?? action.unitId)
+  const attackerType = action.sourceUnitType ?? getUnitType(world, action.sourceUnitId ?? action.unitId)
   metrics.damageByUnitType[attackerType] = (metrics.damageByUnitType[attackerType] ?? 0) + damage
 
   if (!action.targetId || damage <= 0) return
@@ -180,15 +180,15 @@ function recordHealAction(
   world: CombatWorld,
 ): void {
   if (!action.targetId) return
-  const healerType = getUnitType(world, action.sourceUnitId ?? action.unitId)
+  const healerType = action.sourceUnitType ?? getUnitType(world, action.sourceUnitId ?? action.unitId)
   metrics.healingDoneByUnitType[healerType] = (metrics.healingDoneByUnitType[healerType] ?? 0) + Math.max(0, action.damage ?? 0)
   const previousHp = metrics.hpByUnitId.get(action.targetId) ?? 0
   metrics.hpByUnitId.set(action.targetId, previousHp + Math.max(0, action.damage ?? 0))
 }
 function recordDeathAction(metrics: CombatMetricsCollector, action: BattleAction, world: CombatWorld): void {
   metrics.hpByUnitId.set(action.unitId, 0)
-  if (!action.sourceUnitId) return
-  const killerType = getUnitType(world, action.sourceUnitId)
+  if (!action.sourceUnitId && !action.sourceUnitType) return
+  const killerType = action.sourceUnitType ?? getUnitType(world, action.sourceUnitId!)
   metrics.killsByUnitType[killerType] = (metrics.killsByUnitType[killerType] ?? 0) + 1
 }
 function recordTargetSwitches(metrics: CombatMetricsCollector, world: CombatWorld): void {

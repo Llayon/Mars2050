@@ -4,6 +4,7 @@ import { createRuntimeUnitFromConfig } from '@/domains/combat/combat.unit-factor
 import { applyEcsCapturedDamage } from '@/domains/combat/ecs/systems/damage-system'
 import type { DamageSourceContext } from '@/domains/combat/ecs/damage-source'
 import { EcsActionGroupLedger } from '@/domains/combat/combat.action-intent'
+import { createCombatMetrics, recordCombatActions } from '@/domains/combat/combat.metrics'
 
 function source(): DamageSourceContext {
   return {
@@ -58,5 +59,23 @@ describe('captured ECS damage source', () => {
     ledger.queueDamage(0, source().attribution, 25)
 
     expect(ledger.getProjectedHp(world, 0)).toBe(target.maxHp - 25)
+  })
+
+  it('attributes source-free damage to metrics by captured unit type', () => {
+    const target = createRuntimeUnitFromConfig({ id: 'target', team: 'defender', type: 'marine', x: 100, y: 20, currentAngle: Math.PI })!
+    const world = new CombatWorld([target])
+    const metrics = createCombatMetrics(world)
+
+    recordCombatActions(metrics, 0, [{
+      unitId: 'retired-missile',
+      type: 'damage',
+      targetId: 'target',
+      sourceUnitId: 'retired-missile',
+      sourceUnitType: 'missile_buggy',
+      sourceTeam: 'attacker',
+      damage: 7,
+    }], world)
+
+    expect(metrics.damageByUnitType.missile_buggy).toBe(7)
   })
 })

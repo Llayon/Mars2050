@@ -115,6 +115,7 @@ describe('combat ECS v8 temporal delivery', () => {
     target.defense = 0
     const world = new CombatWorld([source, target])
     world.setEntityDead(0, true)
+    world.stores.combat.require(0).attack = 999
     const impact: PendingImpact = {
       id: 1,
       sourceId: 0,

@@ -118,6 +118,41 @@ describe('immutable temporal impact packets', () => {
     expect(actions).toContainEqual(expect.objectContaining({ type: 'projectile_miss', impactId: 1 }))
   })
 
+  it('does not apply impact status after projected lethal damage', () => {
+    const source = createRuntimeUnitFromConfig({ id: 'source', team: 'attacker', type: 'marine', x: 0, y: 100, currentAngle: 0 })!
+    const target = createRuntimeUnitFromConfig({ id: 'target', team: 'defender', type: 'marine', x: 100, y: 100, currentAngle: Math.PI })!
+    target.defense = 0
+    target.hp = 10
+    const world = createWorld([source, target])
+    world.resources.require('pendingImpacts').enqueue({
+      sourceId: 0,
+      sourceExternalId: 'packet-source',
+      sourceTeam: 'attacker',
+      hostileTeamAtLaunch: 'defender',
+      sourceContext: sourceContext(),
+      targetId: 1,
+      targetX: 100,
+      targetY: 100,
+      launchTick: 0,
+      impactTick: 1,
+      kind: 'projectile',
+      positionPolicy: 'tracked_target',
+      payload: { kind: 'direct', damage: 20, targetId: 1 },
+      interceptable: false,
+      programs: [{
+        id: 'lethal-status',
+        trigger: { kind: 'projectile_impact' },
+        priority: 0,
+        groups: [{ selector: { kind: 'primary_target' }, effects: [{ kind: 'apply_status', status: 'burn', duration: 5, value: 3 }] }],
+      }],
+    })
+    const actions: RuntimePhaseContext['actions'] = []
+    runProjectileImpactSystem(world, { tick: 1, actions } as RuntimePhaseContext)
+
+    expect(world.stores.vitality.require(1).isDead).toBe(true)
+    expect(world.stores.statusControl.require(1).statusEffects.some(effect => effect.type === 'burn')).toBe(false)
+  })
+
   it('resolves a packet after the source entity is gone and preserves attribution', () => {
     const target = createRuntimeUnitFromConfig({ id: 'target', team: 'defender', type: 'marine', x: 100, y: 100, currentAngle: Math.PI })!
     target.defense = 0
@@ -172,5 +207,34 @@ describe('immutable temporal impact packets', () => {
 
     expect(world.stores.vitality.require(1).hp).toBe(target.maxHp)
     expect(actions).toContainEqual(expect.objectContaining({ type: 'projectile_miss', impactId: 1 }))
+  })
+
+  it('resolves a tracked packet at the target position at impact time', () => {
+    const source = createRuntimeUnitFromConfig({ id: 'source', team: 'attacker', type: 'marine', x: 0, y: 100, currentAngle: 0 })!
+    const target = createRuntimeUnitFromConfig({ id: 'target', team: 'defender', type: 'marine', x: 100, y: 100, currentAngle: Math.PI })!
+    target.defense = 0
+    const world = createWorld([source, target])
+    world.stores.transform.require(1).x = 130
+    world.resources.require('pendingImpacts').enqueue({
+      sourceId: 0,
+      sourceExternalId: 'packet-source',
+      sourceTeam: 'attacker',
+      hostileTeamAtLaunch: 'defender',
+      sourceContext: sourceContext(),
+      targetId: 1,
+      targetX: 100,
+      targetY: 100,
+      launchTick: 0,
+      impactTick: 1,
+      kind: 'projectile',
+      positionPolicy: 'tracked_target',
+      payload: { kind: 'direct', damage: 20, targetId: 1 },
+      interceptable: false,
+    })
+    const actions: RuntimePhaseContext['actions'] = []
+    runProjectileImpactSystem(world, { tick: 1, actions } as RuntimePhaseContext)
+
+    expect(world.stores.vitality.require(1).hp).toBe(target.maxHp - 20)
+    expect(actions).toContainEqual(expect.objectContaining({ type: 'projectile_impact', toX: 130 }))
   })
 })
