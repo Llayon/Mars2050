@@ -23,7 +23,7 @@ export const BATTLE_ACTION_TYPES = [
 ] as const
 
 export const ATTACK_CANCEL_REASONS = [
-  'source_dead', 'source_reassembled', 'status_blocked', 'control_mode_changed', 'target_lost',
+  'source_dead', 'source_reassembled', 'status_blocked', 'control_mode_changed', 'target_lost', 'target_invalid',
 ] as const
 
 export type AttackCancelReason = typeof ATTACK_CANCEL_REASONS[number]

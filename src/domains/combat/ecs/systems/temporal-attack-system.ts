@@ -92,6 +92,12 @@ export function runTemporalTimelineSystem(
       cancelTemporalTimeline(world, entityId, timeline, context.actions, 'target_lost')
       continue
     }
+    const sourceTeam = world.stores.identity.require(entityId).team
+    const targetTeam = world.stores.identity.get(timeline.targetId)?.team
+    if (timeline.kind !== 'ground_targeted' && targetTeam !== undefined && targetTeam === sourceTeam) {
+      cancelTemporalTimeline(world, entityId, timeline, context.actions, 'target_invalid')
+      continue
+    }
     const aim = timeline.positionPolicy === 'captured_at_windup'
       ? { x: timeline.aimX, y: timeline.aimY }
       : targetAlive && target
@@ -158,8 +164,8 @@ function launchTemporalAttack(
       sourceId: entityId,
       sourceExternalId: identity.id,
       sourceTeam: identity.team,
-      targetTeam: world.stores.identity.require(timeline.targetId).team,
-      hostileTeamAtLaunch: world.stores.identity.require(timeline.targetId).team,
+      targetTeam: identity.team === 'attacker' ? 'defender' : 'attacker',
+      hostileTeamAtLaunch: identity.team === 'attacker' ? 'defender' : 'attacker',
       canTargetAir: combat.canTargetAir,
       canTargetGround: true,
       sourceContext,

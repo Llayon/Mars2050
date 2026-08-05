@@ -18,7 +18,7 @@ export interface PendingImpactInput {
   hostileTeamAtLaunch?: Team
   canTargetAir?: boolean
   canTargetGround?: boolean
-  sourceContext?: DamageSourceContext
+  sourceContext: DamageSourceContext
   targetId?: EntityId
   targetX: number
   targetY: number
@@ -63,7 +63,7 @@ export class PendingImpactQueue {
     const impact = {
       ...input,
       payload,
-      sourceContext: input.sourceContext ? structuredClone(input.sourceContext) : undefined,
+      sourceContext: structuredClone(input.sourceContext),
       programs: input.programs ? structuredClone(input.programs) : undefined,
       targetTeam: input.targetTeam ?? (input.sourceTeam === 'attacker' ? 'defender' : 'attacker'),
       hostileTeamAtLaunch: input.hostileTeamAtLaunch ?? input.targetTeam ?? (input.sourceTeam === 'attacker' ? 'defender' : 'attacker'),

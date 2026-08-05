@@ -27,6 +27,9 @@ actions with cancellation reasons. After launch, an impact owns an immutable
 source packet: it does not re-read the attacker's weapon, attack, rank or
 statuses. Area target lists are frozen from one spatial query, and all damage
 expressions for one target are aggregated before the target-side damage kernel.
+The packet must contain its captured source context; HP and death resolution
+are grouped for one impact tick, while shields, barriers and other consumable
+defenses resolve in stable impact-id order.
 
 The public simulation version remains `8`, but the stabilized runtime writes
 `combat-ecs-v8-stabilized-r2` as its engine revision in replay metrics and in

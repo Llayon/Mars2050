@@ -8,7 +8,7 @@ import { getDistance, getSizeRadius } from '../../combat.utils'
 import { applyEcsCapturedDamage } from './damage-system'
 import { applyEcsStatus } from './status-application-system'
 import { applyEcsCapturedTargetMark } from './target-mark-system'
-import { captureLiveDamageSource } from '../damage-source'
+import { CombatInvariantError } from '../combat-invariant-error'
 
 export interface FrozenImpactTargets {
   readonly baseAreaTargets: readonly EntityId[]
@@ -55,12 +55,8 @@ export function executeCapturedImpactPrograms(
   impactPoint: { x: number; y: number },
   actions: BattleAction[],
 ): void {
-  const source = impact.sourceContext ?? (
-    world.stores.identity.get(impact.sourceId)
-      ? captureLiveDamageSource(world, impact.sourceId)
-      : undefined
-  )
-  if (!source) throw new Error(`Missing captured source context for impact ${impact.id}`)
+  const source = impact.sourceContext
+  if (!source) throw new CombatInvariantError(`Missing captured source context for impact ${impact.id}`)
   const contributions = new Map<EntityId, TargetContribution>()
   const directProgramDamage = new Set<EntityId>()
   for (const [programIndex, program] of (impact.programs ?? []).entries()) {

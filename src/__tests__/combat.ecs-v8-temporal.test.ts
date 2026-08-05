@@ -11,9 +11,26 @@ import { simulateBattle } from '@/domains/combat/combat.engine'
 import type { SimUnit } from '@/domains/combat/combat.sim.types'
 import type { UnitRow } from '@/domains/combat/combat.types'
 import type { PendingImpact } from '@/domains/combat/ecs/pending-impacts'
+import type { DamageSourceContext } from '@/domains/combat/ecs/damage-source'
 
 function cloneRows(rows: UnitRow[]): UnitRow[] {
   return rows.map(row => ({ ...row, upgrade_path: [...(row.upgrade_path ?? [])] }))
+}
+
+const capturedSourceContext: DamageSourceContext = {
+  attribution: { sourceExternalId: 'source', sourceUnitType: 'missile_buggy', sourceTeam: 'attacker' },
+  attack: 1,
+  modifiers: {
+    attackBoostValue: 0,
+    outputSuppression: 0,
+    accuracyPenalty: 0,
+    accuracyPenaltyResist: 0,
+    armorPierceRatio: 0,
+    summonCounterDamageMult: 1,
+    shieldDamageMult: 1,
+    lifestealMult: 0,
+    executeThreshold: 0,
+  },
 }
 
 describe('combat ECS v8 temporal delivery', () => {
@@ -21,6 +38,7 @@ describe('combat ECS v8 temporal delivery', () => {
     const queue = new PendingImpactQueue()
     const base = {
       sourceId: 1, sourceExternalId: 'a', sourceTeam: 'attacker' as const,
+      sourceContext: capturedSourceContext,
       targetX: 10, targetY: 10, launchTick: 2, impactTick: 5,
       kind: 'projectile' as const, payload: { kind: 'direct' as const, damage: 10 },
       interceptable: true,
@@ -35,6 +53,7 @@ describe('combat ECS v8 temporal delivery', () => {
     const queue = new PendingImpactQueue()
     queue.enqueue({
       sourceId: 1, sourceExternalId: 'a', sourceTeam: 'attacker', targetX: 0, targetY: 0,
+      sourceContext: capturedSourceContext,
       launchTick: 1, impactTick: 4, kind: 'ground_targeted',
       payload: { kind: 'area' as const, damage: 4, radius: 30 }, interceptable: true,
     })
@@ -53,8 +72,8 @@ describe('combat ECS v8 temporal delivery', () => {
     spatial.rebuild(world)
     world.resources.set('entitySpatial', spatial)
     const points = [
-      { impact: { id: 2, sourceId: 0, sourceExternalId: 'source', sourceTeam: 'attacker' as const, targetTeam: 'defender' as const, targetX: 120, targetY: 100, launchTick: 0, impactTick: 1, kind: 'projectile' as const, positionPolicy: 'captured_at_launch' as const, payload: { kind: 'direct' as const, damage: 20, targetId: 1 }, interceptionDamage: 20, interceptable: true }, x: 120, y: 100 },
-      { impact: { id: 1, sourceId: 0, sourceExternalId: 'source', sourceTeam: 'attacker' as const, targetTeam: 'defender' as const, targetX: 120, targetY: 100, launchTick: 0, impactTick: 1, kind: 'projectile' as const, positionPolicy: 'captured_at_launch' as const, payload: { kind: 'direct' as const, damage: 90, targetId: 1 }, interceptionDamage: 90, interceptable: true }, x: 120, y: 100 },
+      { impact: { id: 2, sourceId: 0, sourceExternalId: 'source', sourceTeam: 'attacker' as const, targetTeam: 'defender' as const, sourceContext: capturedSourceContext, targetX: 120, targetY: 100, launchTick: 0, impactTick: 1, kind: 'projectile' as const, positionPolicy: 'captured_at_launch' as const, payload: { kind: 'direct' as const, damage: 20, targetId: 1 }, interceptionDamage: 20, interceptable: true }, x: 120, y: 100 },
+      { impact: { id: 1, sourceId: 0, sourceExternalId: 'source', sourceTeam: 'attacker' as const, targetTeam: 'defender' as const, sourceContext: capturedSourceContext, targetX: 120, targetY: 100, launchTick: 0, impactTick: 1, kind: 'projectile' as const, positionPolicy: 'captured_at_launch' as const, payload: { kind: 'direct' as const, damage: 90, targetId: 1 }, interceptionDamage: 90, interceptable: true }, x: 120, y: 100 },
     ]
     const allocation = allocateTemporalInterceptions(world, points)
     expect([...allocation.byImpact.entries()]).toEqual([[1, 1]])
@@ -106,6 +125,36 @@ describe('combat ECS v8 temporal delivery', () => {
       unitId: 'source',
       type: 'attack_cancel',
       cancelReason: 'source_dead',
+    }))
+  })
+
+  it('cancels a direct wind-up when its target changes team', () => {
+    const source = createRuntimeUnitFromConfig({ id: 'source', team: 'attacker', type: 'missile_buggy', x: 10, y: 100, currentAngle: 0 })!
+    const target = createRuntimeUnitFromConfig({ id: 'target', team: 'defender', type: 'marine', x: 150, y: 100, currentAngle: Math.PI })!
+    const world = new CombatWorld([source, target])
+    world.resources.set('temporalAttacks', new Map([[0, {
+      targetId: 1,
+      targetExternalId: 'target',
+      targetX: 150,
+      targetY: 100,
+      aimX: 150,
+      aimY: 100,
+      kind: 'projectile',
+      startedTick: 0,
+      minimumLaunchTick: 1,
+      positionPolicy: 'tracked_target',
+      controlMode: 'none',
+    }]]))
+    world.stores.identity.require(1).team = 'attacker'
+    const actions: Parameters<typeof runTemporalTimelineSystem>[1]['actions'] = []
+
+    runTemporalTimelineSystem(world, { tick: 1, actions })
+
+    expect(world.resources.require('temporalAttacks').size).toBe(0)
+    expect(actions).toContainEqual(expect.objectContaining({
+      unitId: 'source',
+      type: 'attack_cancel',
+      cancelReason: 'target_invalid',
     }))
   })
 
