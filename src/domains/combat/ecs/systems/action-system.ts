@@ -40,7 +40,7 @@ export function runActionSystem(
       syncEcsBurrowForAction(world, entityId, actions)
     }
     const temporal = runTemporalAttack(world, entityId, targetId, actions, context)
-    if (temporal.acted) return temporal
+    if (temporal.handled) return { acted: temporal.acted }
   }
   if (canUseEcsMineAction(world, entityId)) {
     return runEcsMineAction(world, entityId, targetId, actions, context)

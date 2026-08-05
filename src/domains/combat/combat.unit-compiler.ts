@@ -14,6 +14,7 @@ import {
 } from './combat.unit-stat-compiler'
 import { assertValidWeaponLoadout } from './combat.weapon-validation'
 import { compileAbilityDefinitions } from './combat.ability-compiler'
+import { compileTemporalWeaponPlan } from './combat.temporal-compiler'
 import { auraAbility, extractSupportAuras, periodicAbility } from './combat.ability-config'
 import { createLegacyAbilityDefinitions } from './combat.ability-legacy'
 import {
@@ -50,6 +51,7 @@ export function compileUnitSnapshot(spec: UnitBuildSpec): SimUnit | null {
     ...createLegacyAbilityDefinitions(spec.definitionId, primitives),
     ...(primitives.abilities ?? []),
   ])
+  const temporalPlan = compileTemporalWeaponPlan(spec.definitionId, primitives, abilityPrograms)
   const periodicPrograms = compileAbilityDefinitions((primitives.periodicAbilities ?? [])
     .map(ability => periodicAbility(`${spec.definitionId}:periodic:${ability.id}`, ability)))
   const authoredSupportAuras = extractSupportAuras(primitives.abilities)
@@ -192,7 +194,7 @@ export function compileUnitSnapshot(spec: UnitBuildSpec): SimUnit | null {
     lifestealMult: runtimeSpawn && compiled.lifestealMult === 0
       ? undefined
       : compiled.lifestealMult,
-    runtimeRules: compileRuntimeRules(primitives, spec.executionMode ?? 'compiled'),
+    runtimeRules: compileRuntimeRules(primitives, spec.executionMode ?? 'compiled', temporalPlan),
   }
   prepareRuntimePrimitives(unit, primitives)
   if (!runtimeSpawn && periodicPrograms.length > 0) {
@@ -201,10 +203,10 @@ export function compileUnitSnapshot(spec: UnitBuildSpec): SimUnit | null {
   }
   return unit
 }
-
 function compileRuntimeRules(
   stats: UnitBaseStats,
   abilityExecutionMode: 'compiled' | 'legacy_mutable' = 'compiled',
+  temporalPlan?: ReturnType<typeof compileTemporalWeaponPlan>,
 ): UnitRuntimeRules {
   return {
     baseCombatTags: [...(stats.combatTags ?? [])],
@@ -235,6 +237,7 @@ function compileRuntimeRules(
     spawnOverrides: stats.spawnOverrides
       ? { ...stats.spawnOverrides }
       : undefined,
+    temporalPlan,
   }
 }
 

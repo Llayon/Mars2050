@@ -1,31 +1,36 @@
 import type { BattleAction } from '../../combat.actions'
-import type { AbilityEffect } from '../../combat.ability.types'
-import type { CompiledAbilityProgram } from '../../combat.ability-compiler'
-import type { RuntimeActionContext, RuntimeActionResult } from '../../combat.runtime'
+import type { RuntimeActionContext } from '../../combat.runtime'
 import { chooseHackControlMode } from '../../combat.control-mode'
-import type { BarrageAttackConfig } from '../../combat.primitives'
 import type { AttackDeliveryConfig } from '../../combat.types'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
 import type { AttackTimelineState, ImpactPositionPolicy } from '../pending-impacts'
+import { CombatInvariantError } from '../combat-invariant-error'
 import { getEcsActionCooldown } from './action-setup'
+
+export type TemporalDispatchResult =
+  | { handled: false; acted: false }
+  | { handled: true; acted: boolean; state: 'windup_started' | 'windup_active' | 'blocked' }
 
 export function runTemporalAttack(
   world: CombatWorld, entityId: EntityId, targetId: EntityId,
   actions: BattleAction[], context: RuntimeActionContext,
-): RuntimeActionResult {
+): TemporalDispatchResult {
   const weapon = world.stores.weapon.require(entityId)
   const delivery = weapon.delivery
-  if (!delivery || delivery.kind === 'instant') return { acted: false }
-  if (delivery.kind === 'ground_targeted' && !compileBarrageShellPlan(weapon)) return { acted: false }
+  if (!delivery || delivery.kind === 'instant') return { handled: false, acted: false }
+  const temporalPlan = world.stores.runtimeRules.require(entityId).temporalPlan
+  if (!temporalPlan || temporalPlan.delivery.kind !== delivery.kind) {
+    throw new CombatInvariantError(`Missing compiled temporal plan for ${world.stores.identity.require(entityId).id}`)
+  }
   const timelines = world.resources.get('temporalAttacks')
-  if (!timelines) return { acted: false }
-  if (timelines.has(entityId)) return { acted: true }
+  if (!timelines) throw new CombatInvariantError('Temporal attack resource is unavailable')
+  if (timelines.has(entityId)) return { handled: true, acted: true, state: 'windup_active' }
 
   const target = world.stores.transform.require(targetId)
   const identity = world.stores.identity.require(targetId)
   const controlMode = getEffectiveTemporalControlMode(world, entityId)
-  if (controlMode === 'disable') return { acted: false }
+  if (controlMode === 'disable') return { handled: true, acted: false, state: 'blocked' }
   const positionPolicy = getImpactPositionPolicy(delivery)
   const timeline: AttackTimelineState = {
     targetId,
@@ -50,7 +55,7 @@ export function runTemporalAttack(
     toX: timeline.aimX,
     toY: timeline.aimY,
   })
-  return { acted: true }
+  return { handled: true, acted: true, state: 'windup_started' }
 }
 
 export function runTemporalTimelineSystem(
@@ -116,11 +121,17 @@ function launchTemporalAttack(
     ? Math.max(1, Math.ceil(distance / Math.max(1, delivery.speed)))
     : Math.max(1, delivery.flightTicks)
   const queue = world.resources.require('pendingImpacts')
-  const shellPlan = delivery.kind === 'ground_targeted' ? compileBarrageShellPlan(weapon) : undefined
+  const temporalPlan = world.stores.runtimeRules.require(entityId).temporalPlan
+  if (!temporalPlan || temporalPlan.delivery.kind !== delivery.kind) {
+    throw new CombatInvariantError(`Missing compiled temporal plan for ${identity.id}`)
+  }
+  const shellPlan = temporalPlan.barrage
   const impacts = delivery.kind === 'ground_targeted'
-    ? getGroundShellOffsets(shellPlan)
+    ? shellPlan?.offsets ?? []
     : [{ x: 0, y: 0 }]
-  if (delivery.kind === 'ground_targeted' && !shellPlan) return
+  if (delivery.kind === 'ground_targeted' && !shellPlan) {
+    throw new CombatInvariantError(`Missing compiled barrage plan for ${identity.id}`)
+  }
   for (const [index, offset] of impacts.entries()) {
     const x = aim.x + offset.x
     const y = aim.y + offset.y
@@ -147,7 +158,7 @@ function launchTemporalAttack(
       payload,
       interceptionDamage: payload.damage,
       interceptable: delivery.interceptable,
-      programs: weapon.abilityPrograms?.filter(program => program.trigger.kind === 'projectile_impact'),
+      programs: [...temporalPlan.impactPrograms],
     })
     actions.push({
       unitId: identity.id,
@@ -167,42 +178,6 @@ function launchTemporalAttack(
   actions.push({ unitId: identity.id, type: 'attack', targetId: timeline.targetExternalId, toX: aim.x, toY: aim.y })
 }
 
-interface BarrageShellPlan {
-  impacts: number
-  radius: number
-  spreadRadius: number
-  damageMultiplier: number
-  maxTargets: number | undefined
-  impactIntervalTicks: number
-}
-
-function compileBarrageShellPlan(weapon: { barrageAttack?: BarrageAttackConfig; abilityPrograms?: CompiledAbilityProgram[] }): BarrageShellPlan | undefined {
-  const authored = weapon.abilityPrograms?.flatMap(program => program.groups)
-    .flatMap(group => group.effects)
-    .find((effect): effect is Extract<AbilityEffect, { kind: 'barrage_attack' }> => effect.kind === 'barrage_attack')?.config
-  const config = authored ?? weapon.barrageAttack
-  if (!config) return undefined
-  return {
-    impacts: config.impacts,
-    radius: config.radius,
-    spreadRadius: config.spreadRadius,
-    damageMultiplier: config.damageMultiplier,
-    maxTargets: config.maxTargetsPerImpact ?? 6,
-    impactIntervalTicks: config.impactIntervalTicks ?? 1,
-  }
-}
-
-function getGroundShellOffsets(config: BarrageShellPlan | undefined): { x: number; y: number }[] {
-  if (!config) return []
-  const impacts = config.impacts
-  const spread = config.spreadRadius
-  return Array.from({ length: impacts }, (_, index) => {
-    if (index === 0 || spread <= 0) return { x: 0, y: 0 }
-    const angle = (index - 1) * 2.399963229728653
-    const ring = 0.55 + (index % 3) * 0.225
-    return { x: Math.cos(angle) * spread * ring, y: Math.sin(angle) * spread * ring }
-  })
-}
 
 export function cancelTemporalTimeline(
   world: CombatWorld,

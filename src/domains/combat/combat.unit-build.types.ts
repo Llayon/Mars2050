@@ -8,6 +8,7 @@ import type {
 } from './combat.primitives'
 import type { Team } from './combat.sim.types'
 import type { TargetingProfileKey, UnitTypeKey } from './combat.types'
+import type { CompiledTemporalWeaponPlan } from './combat.temporal.types'
 
 export type SpawnInheritance =
   | 'base'
@@ -84,4 +85,5 @@ export interface UnitRuntimeRules {
     isTemporary?: boolean
     duration?: number
   }
+  temporalPlan?: CompiledTemporalWeaponPlan
 }
