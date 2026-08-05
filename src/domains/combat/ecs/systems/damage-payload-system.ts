@@ -1,7 +1,7 @@
 import type { BattleAction } from '../../combat.actions'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
-import type { DamageSourceContext } from '../damage-source'
+import { getDamageAttributionMetadata, type DamageSourceContext } from '../damage-source'
 
 export function buildEcsDamagePayload(
   world: CombatWorld,
@@ -23,7 +23,7 @@ export function buildEcsDamagePayload(
   if (percentDamage > 0) {
     actions.push({
       unitId: source.attribution.sourceExternalId,
-      ...(source.attribution.sourceEntityId === undefined ? { sourceUnitType: source.attribution.sourceUnitType, sourceTeam: source.attribution.sourceTeam } : {}),
+      ...getDamageAttributionMetadata(world, source.attribution),
       type: 'percent_hp_damage',
       targetId: world.stores.identity.require(targetId).id,
       value: percentDamage,

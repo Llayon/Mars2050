@@ -33,6 +33,17 @@ export interface DamageSourceContext {
   modifiers: DamageSourceModifiers
 }
 
+export function getDamageAttributionMetadata(
+  world: CombatWorld,
+  attribution: DamageAttribution,
+): { sourceUnitType?: string; sourceTeam?: Team } {
+  if (attribution.sourceEntityId !== undefined && world.stores.identity.get(attribution.sourceEntityId) !== undefined) return {}
+  return {
+    sourceUnitType: attribution.sourceUnitType,
+    sourceTeam: attribution.sourceTeam,
+  }
+}
+
 export function captureLiveDamageSource(world: CombatWorld, sourceEntityId: EntityId): DamageSourceContext {
   const identity = world.stores.identity.require(sourceEntityId)
   const combat = world.stores.combat.require(sourceEntityId)

@@ -3,7 +3,7 @@ import type { RuntimeTriggerEffect, TriggerPayload } from '../../combat.sim.type
 import { getDistance } from '../../combat.utils'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
-import type { DamageAttribution } from '../damage-source'
+import { getDamageAttributionMetadata, type DamageAttribution } from '../damage-source'
 import { applyEcsTriggerPayload } from './trigger-payload-system'
 
 export function processEcsHpThresholdTriggers(
@@ -90,9 +90,7 @@ export function fireEcsTrigger(
     type: 'trigger_effect',
     targetId: targetId === null ? undefined : getExternalId(world, targetId),
     statusType: trigger.id,
-    ...(attribution && attribution.sourceEntityId === undefined
-      ? { sourceUnitId: attribution.sourceExternalId, sourceUnitType: attribution.sourceUnitType, sourceTeam: attribution.sourceTeam }
-      : {}),
+    ...(attribution ? { sourceUnitId: attribution.sourceExternalId, ...getDamageAttributionMetadata(world, attribution) } : {}),
   })
   applyEcsTriggerPayload(
     world,

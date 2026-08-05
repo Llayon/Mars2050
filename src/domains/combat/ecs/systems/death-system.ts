@@ -3,7 +3,7 @@ import type { DeathCause } from '../../combat.death.types'
 import type { SimHazard } from '../../combat.sim.types'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
-import { captureLiveDamageSource, type DamageAttribution } from '../damage-source'
+import { captureLiveDamageSource, getDamageAttributionMetadata, type DamageAttribution } from '../damage-source'
 import { applyEcsOnKillEffects } from './on-kill-system'
 import { processEcsKillTriggers } from './post-hit-trigger-system'
 import { processEcsDeathTriggers } from './death-trigger-system'
@@ -19,7 +19,12 @@ export function resolveEcsDeath(
   options: { preMarked?: boolean } = {},
 ): boolean {
   const attribution = normalizeAttribution(world, source)
-  const liveSourceId = attribution?.sourceEntityId
+  const sourceEntityId = attribution?.sourceEntityId
+  const liveSourceId = sourceEntityId !== undefined &&
+    world.stores.identity.get(sourceEntityId) !== undefined &&
+    world.stores.vitality.get(sourceEntityId) !== undefined
+    ? sourceEntityId
+    : undefined
   const target = world.stores.vitality.require(targetId)
   const actionGroup = world.resources.get('actionGroup')
   if (actionGroup?.active && cause !== 'expiration') {
@@ -37,9 +42,7 @@ export function resolveEcsDeath(
         sourceUnitId: attribution === undefined
           ? undefined
           : attribution.sourceExternalId,
-      ...(attribution?.sourceEntityId === undefined && attribution
-        ? { sourceUnitType: attribution.sourceUnitType, sourceTeam: attribution.sourceTeam }
-        : {}),
+      ...(attribution ? getDamageAttributionMetadata(world, attribution) : {}),
       cause,
     })
     return true
@@ -63,9 +66,7 @@ export function resolveEcsDeath(
       ? undefined
       : attribution.sourceExternalId,
     cause,
-    ...(attribution?.sourceEntityId === undefined && attribution
-      ? { sourceUnitType: attribution.sourceUnitType, sourceTeam: attribution.sourceTeam }
-      : {}),
+    ...(attribution ? getDamageAttributionMetadata(world, attribution) : {}),
   })
   processEcsDeathTriggers(world, targetId, attribution, liveSourceId, actions)
   if (liveSourceId !== undefined && !world.stores.vitality.require(liveSourceId).isDead &&

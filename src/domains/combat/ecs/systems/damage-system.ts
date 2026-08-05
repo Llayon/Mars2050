@@ -3,7 +3,7 @@ import type { DeathCause } from '../../combat.death.types'
 import type { RuntimeStatusEffect } from '../../combat.sim.types'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
-import { captureLiveDamageSource, type DamageAttribution, type DamageSourceContext } from '../damage-source'
+import { captureLiveDamageSource, getDamageAttributionMetadata, type DamageAttribution, type DamageSourceContext } from '../damage-source'
 import { applyEcsHealing } from './healing-system'
 import { applyEcsBarriers } from './damage-barrier-system'
 import { applyEcsDamageSharing } from './damage-sharing-system'
@@ -85,6 +85,7 @@ function applyEcsDamageWithSource(
   )
   if (raw <= 0) return createResult()
   if (options.interceptable !== false && source.attribution.sourceEntityId !== undefined &&
+      world.stores.runtimeRules.get(source.attribution.sourceEntityId) !== undefined &&
       tryEcsProjectileInterception(world, source.attribution.sourceEntityId, targetId, raw, actions)) {
     return createResult({ blockedDamage: raw, intercepted: true })
   }
@@ -175,9 +176,7 @@ function applyShield(world: CombatWorld, targetId: EntityId, damage: number, shi
 }
 function emitDamageActions(world: CombatWorld, attribution: DamageAttribution, targetId: EntityId, result: EcsDamageResult, actions: BattleAction[]): void {
   const attacker = attribution.sourceExternalId
-  const sourceMetadata = attribution.sourceEntityId === undefined
-    ? { sourceUnitType: attribution.sourceUnitType, sourceTeam: attribution.sourceTeam }
-    : {}
+  const sourceMetadata = getDamageAttributionMetadata(world, attribution)
   const target = world.stores.identity.require(targetId).id
   if (result.blockedDamage > 0) actions.push({ unitId: target, type: 'unit_blocked_damage', targetId: attacker, damage: result.blockedDamage })
   if (result.shieldHitBlock) actions.push({ unitId: target, type: 'shield_hit_block', targetId: attacker, damage: result.shieldHitBlockedDamage })

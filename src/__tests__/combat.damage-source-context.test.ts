@@ -6,12 +6,13 @@ import type { DamageSourceContext } from '@/domains/combat/ecs/damage-source'
 import { EcsActionGroupLedger } from '@/domains/combat/combat.action-intent'
 import { createCombatMetrics, recordCombatActions } from '@/domains/combat/combat.metrics'
 
-function source(): DamageSourceContext {
+function source(sourceEntityId?: number): DamageSourceContext {
   return {
     attribution: {
       sourceExternalId: 'retired-missile',
       sourceUnitType: 'missile_buggy',
       sourceTeam: 'attacker',
+      sourceEntityId,
     },
     attack: 40,
     modifiers: {
@@ -45,6 +46,23 @@ describe('captured ECS damage source', () => {
       sourceUnitType: 'missile_buggy',
       sourceTeam: 'attacker',
       targetId: 'target',
+      damage: 40,
+    }))
+  })
+
+  it('keeps captured metadata when the referenced source entity was removed', () => {
+    const target = createRuntimeUnitFromConfig({ id: 'target', team: 'defender', type: 'marine', x: 100, y: 20, currentAngle: Math.PI })!
+    target.defense = 0
+    const world = new CombatWorld([target])
+    const actions: Parameters<typeof applyEcsCapturedDamage>[4] = []
+
+    applyEcsCapturedDamage(world, source(99), 0, 40, actions)
+
+    expect(actions).toContainEqual(expect.objectContaining({
+      type: 'damage',
+      unitId: 'retired-missile',
+      sourceUnitType: 'missile_buggy',
+      sourceTeam: 'attacker',
       damage: 40,
     }))
   })
