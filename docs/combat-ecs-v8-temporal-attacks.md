@@ -23,10 +23,14 @@ damage and impact id, while interceptors use distance and external id tie
 breaks. Each shell is allocated independently at its ground point. Replay
 receives actual launch/impact coordinates and explicit `attack_windup`,
 `projectile_launch`, `projectile_impact`, `projectile_miss`, and `attack_cancel`
-actions with cancellation reasons.
+actions with cancellation reasons. After launch, an impact owns an immutable
+source packet: it does not re-read the attacker's weapon, attack, rank or
+statuses. Area target lists are frozen from one spatial query, and all damage
+expressions for one target are aggregated before the target-side damage kernel.
 
 The public simulation version remains `8`, but the stabilized runtime writes
-`combat-ecs-v8-stabilized-r1` as its engine revision in replay metrics. A stored
+`combat-ecs-v8-stabilized-r2` as its engine revision in replay metrics and in
+the `BattleResult` contract. A stored
 V8 replay without that revision, or with a different revision, is unsupported;
 the numeric version is intentionally not reused for both simulation contracts.
 
