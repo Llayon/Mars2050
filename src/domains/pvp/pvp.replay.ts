@@ -135,8 +135,8 @@ export async function persistBattleWithSnapshot(
     initial_state: Record<string, unknown>
     log: Record<string, unknown>
     metrics?: Record<string, unknown>
-    simulationVersion?: number
-    simulationRevision?: string
+    simulationVersion: number
+    simulationRevision: string
     terminationReason?: TerminationReason
     elapsedTicks?: number
   }

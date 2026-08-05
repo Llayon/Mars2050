@@ -106,7 +106,7 @@ describe('pvp.replay — snapshot version contract', () => {
         attacker_colony_id: 'a', defender_colony_id: 'd', winner: 'draw',
         attacker_units: {}, defender_units: {}, rewards: {},
       },
-      { seed: 0, initial_state: {}, log: {}, simulationRevision: CURRENT_SIMULATION_REVISION },
+      { seed: 0, initial_state: {}, log: {}, simulationRevision: CURRENT_SIMULATION_REVISION } as unknown as Parameters<typeof persistBattleWithSnapshot>[1],
     )
 
     expect(id).toBeNull()
@@ -119,7 +119,7 @@ describe('pvp.replay — snapshot version contract', () => {
         attacker_colony_id: 'a', defender_colony_id: 'd', winner: 'draw',
         attacker_units: {}, defender_units: {}, rewards: {},
       },
-      { seed: 0, initial_state: {}, log: {}, simulationVersion: CURRENT_SIMULATION_VERSION },
+      { seed: 0, initial_state: {}, log: {}, simulationVersion: CURRENT_SIMULATION_VERSION } as unknown as Parameters<typeof persistBattleWithSnapshot>[1],
     )
 
     expect(id).toBeNull()

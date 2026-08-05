@@ -9,7 +9,7 @@ import type { AttackTimelineState, ImpactPositionPolicy } from '../pending-impac
 import { CombatInvariantError } from '../combat-invariant-error'
 import { captureLiveDamageSource } from '../damage-source'
 import { getEcsActionCooldown } from './action-setup'
-import { evaluateDamageExpression, evaluateLaunchRawDamage } from './temporal-impact-ability-system'
+import { evaluateDamageExpression, evaluateLaunchRawDamage, hasImpactProgramDamage } from './temporal-impact-ability-system'
 
 export type TemporalDispatchResult =
   | { handled: false; acted: false }
@@ -157,7 +157,7 @@ function launchTemporalAttack(
           maxTargets: shellPlan!.maxTargets,
         }
       : { kind: 'direct' as const, damage: sourceContext.attack, targetId: timeline.targetId, targetExternalId: timeline.targetExternalId }
-    const launchRaw = programDamage > 0 ? programDamage : payload.damage
+    const launchRaw = hasImpactProgramDamage(programs) ? programDamage : payload.damage
     const impact = queue.enqueue({
       sourceId: entityId,
       sourceExternalId: identity.id,

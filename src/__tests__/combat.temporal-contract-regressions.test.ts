@@ -115,4 +115,77 @@ describe('combat temporal contract regressions', () => {
     expect(world.stores.vitality.require(1).hp).toBe(first.maxHp - 5)
     expect(world.stores.vitality.require(2).hp).toBe(second.maxHp)
   })
+
+  it('replaces direct payload damage when only a neighboring area target is selected', () => {
+    const source = createRuntimeUnitFromConfig({ id: 'source', team: 'attacker', type: 'marine', x: 0, y: 100, currentAngle: 0 })!
+    const primary = createRuntimeUnitFromConfig({ id: 'primary', team: 'defender', type: 'marine', x: 105, y: 100, currentAngle: Math.PI })!
+    const neighbor = createRuntimeUnitFromConfig({ id: 'neighbor', team: 'defender', type: 'marine', x: 100, y: 100, currentAngle: Math.PI })!
+    for (const target of [primary, neighbor]) target.defense = 0
+    const world = createWorld([source, primary, neighbor])
+    world.resources.require('pendingImpacts').enqueue({
+      sourceId: 0,
+      sourceExternalId: 'packet-source',
+      sourceTeam: 'attacker',
+      hostileTeamAtLaunch: 'defender',
+      sourceContext: sourceContext(),
+      targetId: 1,
+      targetX: 100,
+      targetY: 100,
+      launchTick: 0,
+      impactTick: 1,
+      kind: 'projectile',
+      positionPolicy: 'captured_at_launch',
+      payload: { kind: 'direct', damage: 10, targetId: 1 },
+      interceptable: false,
+      programs: [{
+        id: 'direct-area-program',
+        trigger: { kind: 'projectile_impact' },
+        priority: 0,
+        groups: [{
+          selector: { kind: 'area_at_impact', radius: 3, maxTargets: 1 },
+          effects: [{ kind: 'damage', expression: { kind: 'fixed', amount: 5 } }],
+        }],
+      }],
+    })
+
+    runProjectileImpactSystem(world, { tick: 1, actions: [] } as RuntimePhaseContext)
+
+    expect(world.stores.vitality.require(1).hp).toBe(primary.maxHp)
+    expect(world.stores.vitality.require(2).hp).toBe(neighbor.maxHp - 5)
+  })
+
+  it('treats a zero damage effect as replacement rather than falling back to base damage', () => {
+    const source = createRuntimeUnitFromConfig({ id: 'source', team: 'attacker', type: 'marine', x: 0, y: 100, currentAngle: 0 })!
+    const target = createRuntimeUnitFromConfig({ id: 'target', team: 'defender', type: 'marine', x: 100, y: 100, currentAngle: Math.PI })!
+    target.defense = 0
+    const world = createWorld([source, target])
+    world.resources.require('pendingImpacts').enqueue({
+      sourceId: 0,
+      sourceExternalId: 'packet-source',
+      sourceTeam: 'attacker',
+      hostileTeamAtLaunch: 'defender',
+      sourceContext: sourceContext(),
+      targetX: 100,
+      targetY: 100,
+      launchTick: 0,
+      impactTick: 1,
+      kind: 'ground_targeted',
+      positionPolicy: 'captured_at_windup',
+      payload: { kind: 'area', damage: 10, radius: 20, maxTargets: 1 },
+      interceptable: false,
+      programs: [{
+        id: 'zero-damage-program',
+        trigger: { kind: 'projectile_impact' },
+        priority: 0,
+        groups: [{
+          selector: { kind: 'area_at_impact', radius: 20, maxTargets: 1 },
+          effects: [{ kind: 'damage', expression: { kind: 'fixed', amount: 0 } }],
+        }],
+      }],
+    })
+
+    runProjectileImpactSystem(world, { tick: 1, actions: [] } as RuntimePhaseContext)
+
+    expect(world.stores.vitality.require(1).hp).toBe(target.maxHp)
+  })
 })

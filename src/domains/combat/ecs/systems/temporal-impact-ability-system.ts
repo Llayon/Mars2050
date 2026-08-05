@@ -1,4 +1,5 @@
 import type { BattleAction } from '../../combat.actions'
+import type { CompiledAbilityProgram } from '../../combat.ability-compiler'
 import type { AbilityEffect, TargetSelector } from '../../combat.ability.types'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
@@ -18,6 +19,11 @@ export interface FrozenImpactTargets {
 interface TargetContribution {
   rawDamage: number
   effects: AbilityEffect[]
+}
+
+export function hasImpactProgramDamage(programs: readonly CompiledAbilityProgram[]): boolean {
+  return programs.some(program =>
+    program.groups.some(group => group.effects.some(effect => effect.kind === 'damage')))
 }
 
 export function freezeImpactTargets(
@@ -58,9 +64,7 @@ export function executeCapturedImpactPrograms(
   const source = impact.sourceContext
   if (!source) throw new CombatInvariantError(`Missing captured source context for impact ${impact.id}`)
   const contributions = new Map<EntityId, TargetContribution>()
-  const directProgramDamage = new Set<EntityId>()
-  const hasProgramDamage = (impact.programs ?? []).some(program =>
-    program.groups.some(group => group.effects.some(effect => effect.kind === 'damage')))
+  const hasProgramDamage = hasImpactProgramDamage(impact.programs ?? [])
   for (const [programIndex, program] of (impact.programs ?? []).entries()) {
     for (const [groupIndex, group] of program.groups.entries()) {
       for (const targetId of frozen.groups.get(`${programIndex}:${groupIndex}`) ?? []) {
@@ -68,7 +72,6 @@ export function executeCapturedImpactPrograms(
         for (const effect of group.effects) {
           if (effect.kind === 'damage') {
             contribution.rawDamage += evaluateDamageExpression(effect, source)
-            if (impact.payload.kind === 'direct') directProgramDamage.add(targetId)
           } else {
             contribution.effects.push(effect)
           }
@@ -87,7 +90,7 @@ export function executeCapturedImpactPrograms(
     }
   } else {
     const targetId = impact.payload.targetId ?? impact.targetId
-    if (targetId !== undefined && !directProgramDamage.has(targetId)) {
+    if (targetId !== undefined && !hasProgramDamage) {
       const contribution = contributions.get(targetId) ?? { rawDamage: 0, effects: [] }
       contribution.rawDamage += impact.payload.damage
       contributions.set(targetId, contribution)
