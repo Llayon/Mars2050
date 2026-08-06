@@ -57,6 +57,10 @@ export interface DamageClaim {
   readonly allowMinimumDamage?: boolean
   readonly allowPercentHpDamage?: boolean
   readonly deathCause?: string
+  readonly hazardId?: string
+  readonly statusType?: string
+  readonly damageKind?: 'weapon' | 'dot' | 'hazard' | 'true'
+  readonly impactId?: number
   readonly deferredConsequences?: readonly unknown[]
   /** True when the source was present and alive at group start. */
   readonly sourceAliveAtGroupStart?: boolean
@@ -136,6 +140,7 @@ export interface ResolvedDamageClaim {
   readonly sharedDamageEvents: readonly { targetExternalId: string; damage: number }[]
   readonly shieldBroken: boolean
   readonly shieldHitBlock: boolean
+  readonly shieldHitBlockedDamage: number
   readonly reactiveArmorBlockedDamage: number
   readonly barrierBreaks: readonly string[]
   readonly lifesteal: number
@@ -258,10 +263,10 @@ export function resolveDefenseBatch(snapshot: DefenseBatchSnapshot, inputClaims:
       const lifesteal = claim.sourceAliveAtGroupStart !== false ? Math.floor((hpDamage + shared.total) * Math.max(0, modifiers.lifestealMult ?? 0)) : 0
       if (lifesteal > 0) healingIntents.push({ targetExternalId: claim.sourceExternalId, sourceExternalId: claim.sourceExternalId, amount: lifesteal })
       const bonusDamage = Math.max(0, beforeShield - raw)
-      resolutions.push({ claim, targetExternalId: target.externalId, sourceExternalId: claim.sourceExternalId, rawDamage: raw, mitigatedDamage: beforeShield, hpDamage, bonusDamage, damage: hpDamage, shieldDamage, barrierDamage, barrierBlockedDamage: barrierBlocked, blockedDamage: blocked, sharedDamage: shared.total, sharedDamageEvents: shared.events, shieldBroken, shieldHitBlock, reactiveArmorBlockedDamage, barrierBreaks, lifesteal })
+      resolutions.push({ claim, targetExternalId: target.externalId, sourceExternalId: claim.sourceExternalId, rawDamage: raw, mitigatedDamage: beforeShield, hpDamage, bonusDamage, damage: hpDamage, shieldDamage, barrierDamage, barrierBlockedDamage: barrierBlocked, blockedDamage: blocked, sharedDamage: shared.total, sharedDamageEvents: shared.events, shieldBroken, shieldHitBlock, shieldHitBlockedDamage, reactiveArmorBlockedDamage, barrierBreaks, lifesteal })
     } else {
       projected.set(target.externalId, (projected.get(target.externalId) ?? target.hp) - damage)
-      resolutions.push({ claim, targetExternalId: target.externalId, sourceExternalId: claim.sourceExternalId, rawDamage: raw, mitigatedDamage: damage, hpDamage: damage, bonusDamage: 0, damage, shieldDamage: 0, barrierDamage: 0, barrierBlockedDamage: 0, blockedDamage: 0, sharedDamage: 0, sharedDamageEvents: [], shieldBroken: false, shieldHitBlock: false, reactiveArmorBlockedDamage: 0, barrierBreaks: [], lifesteal: 0 })
+      resolutions.push({ claim, targetExternalId: target.externalId, sourceExternalId: claim.sourceExternalId, rawDamage: raw, mitigatedDamage: damage, hpDamage: damage, bonusDamage: 0, damage, shieldDamage: 0, barrierDamage: 0, barrierBlockedDamage: 0, blockedDamage: 0, sharedDamage: 0, sharedDamageEvents: [], shieldBroken: false, shieldHitBlock: false, shieldHitBlockedDamage: 0, reactiveArmorBlockedDamage: 0, barrierBreaks: [], lifesteal: 0 })
     }
   }
   for (const intent of healingIntents) projected.set(intent.targetExternalId, (projected.get(intent.targetExternalId) ?? 0) + intent.amount)
@@ -314,7 +319,7 @@ function getStatus(effects: readonly RuntimeStatusEffect[] | undefined, type: Ru
 }
 
 function emptyResolution(claim: DamageClaim): ResolvedDamageClaim {
-  return { claim, targetExternalId: claim.targetExternalId, sourceExternalId: claim.sourceExternalId, rawDamage: 0, mitigatedDamage: 0, hpDamage: 0, bonusDamage: 0, damage: 0, shieldDamage: 0, barrierDamage: 0, barrierBlockedDamage: 0, blockedDamage: 0, sharedDamage: 0, sharedDamageEvents: [], shieldBroken: false, shieldHitBlock: false, reactiveArmorBlockedDamage: 0, barrierBreaks: [], lifesteal: 0 }
+  return { claim, targetExternalId: claim.targetExternalId, sourceExternalId: claim.sourceExternalId, rawDamage: 0, mitigatedDamage: 0, hpDamage: 0, bonusDamage: 0, damage: 0, shieldDamage: 0, barrierDamage: 0, barrierBlockedDamage: 0, blockedDamage: 0, sharedDamage: 0, sharedDamageEvents: [], shieldBroken: false, shieldHitBlock: false, shieldHitBlockedDamage: 0, reactiveArmorBlockedDamage: 0, barrierBreaks: [], lifesteal: 0 }
 }
 
 function toOrderKey(claim: DamageClaim): DamageOrderKey {

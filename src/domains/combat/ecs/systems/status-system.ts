@@ -81,9 +81,8 @@ function applyPeriodicEffect(
         attribution: { sourceExternalId: sourceId, ...(effect.sourceUnitId ? { sourceUnitType: effect.type, sourceTeam: world.stores.identity.require(entityId).team } : {}) },
         attack: 0,
         modifiers: { attackBoostValue: 0, outputSuppression: 0, accuracyPenalty: 0, accuracyPenaltyResist: 0, armorPierceRatio: 0, summonCounterDamageMult: 1, shieldDamageMult: 1, lifestealMult: 0, executeThreshold: 0 },
-      }, entityId, damage, actions, { defensePolicy: 'bypass_all', allowMinimumDamage: false, interceptable: false, deathCause: damageCause, originExternalId: `status:${externalId}:${getStatusStackIdentity(effect)}`, authoredOrdinal: 0 })
+      }, entityId, damage, actions, { defensePolicy: 'bypass_all', allowMinimumDamage: false, interceptable: false, deathCause: damageCause, originExternalId: `status:${externalId}:${getStatusStackIdentity(effect)}`, authoredOrdinal: 0, statusType: effect.type, damageKind: 'dot' })
       actions.push({ unitId: sourceId, type: 'status_tick', targetId: externalId, statusType: effect.type, value: damage })
-      actions.push({ unitId: sourceId, type: 'damage', targetId: externalId, damage, statusType: effect.type, damageKind: 'dot' })
       return
     }
     vitality.hp -= damage

@@ -85,8 +85,7 @@ function useV9DamageBatch(world: CombatWorld, hazard: ReturnType<CombatWorld['st
     attribution: { sourceExternalId: hazard.sourceUnitId ?? hazard.id, ...(hazard.sourceUnitId ? { sourceUnitType: hazard.type, sourceTeam: hazard.team } : {}) },
     attack: 0,
     modifiers: { attackBoostValue: 0, outputSuppression: 0, accuracyPenalty: 0, accuracyPenaltyResist: 0, armorPierceRatio: 0, summonCounterDamageMult: 1, shieldDamageMult: 1, lifestealMult: 0, executeThreshold: 0 },
-  }, targetId, hazard.damagePerTick, actions, { defensePolicy: 'bypass_all', allowMinimumDamage: false, interceptable: false, deathCause: cause, originExternalId: `hazard:${hazard.id}`, authoredOrdinal: targetOrdinal })
-  actions.push(createDamageAction(world, hazard, targetId))
+  }, targetId, hazard.damagePerTick, actions, { defensePolicy: 'bypass_all', allowMinimumDamage: false, interceptable: false, deathCause: cause, originExternalId: `hazard:${hazard.id}`, authoredOrdinal: targetOrdinal, hazardId: hazard.id, damageKind: 'hazard' })
   return true
 }
 
@@ -112,16 +111,13 @@ function getTargetsInRadius(world: CombatWorld, hazardId: EntityId): EntityId[] 
   }).sort((left, right) => getExternalId(world, left) < getExternalId(world, right) ? -1 : getExternalId(world, left) > getExternalId(world, right) ? 1 : 0)
 }
 
-function createDamageAction(
-  world: CombatWorld,
-  hazard: ReturnType<CombatWorld['stores']['hazard']['require']>,
-  targetId: EntityId,
-): BattleAction {
-  const action: BattleAction = { unitId: hazard.sourceUnitId ?? hazard.id, type: 'damage', targetId: getExternalId(world, targetId), damage: hazard.damagePerTick, hazardId: hazard.id, damageKind: 'hazard' }
-  if (hazard.sourceUnitId) action.sourceUnitId = hazard.sourceUnitId
-  return action
-}
 
 function getExternalId(world: CombatWorld, entityId: EntityId): string {
   return world.stores.entityMeta.require(entityId).externalId
+}
+
+function createDamageAction(world: CombatWorld, hazard: ReturnType<CombatWorld['stores']['hazard']['require']>, targetId: EntityId): BattleAction {
+  const action: BattleAction = { unitId: hazard.sourceUnitId ?? hazard.id, type: 'damage', targetId: getExternalId(world, targetId), damage: hazard.damagePerTick, hazardId: hazard.id, damageKind: 'hazard' }
+  if (hazard.sourceUnitId) action.sourceUnitId = hazard.sourceUnitId
+  return action
 }

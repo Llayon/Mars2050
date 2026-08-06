@@ -55,7 +55,7 @@ export function commitV9DefenseBatch(world: CombatWorld, ledger: EcsActionGroupL
         }, shared.damage, result.claim.deathCause as import('../combat.death.types').DeathCause | undefined)
       }
     }
-    emitV9Actions(world, result, actions)
+    emitV9Actions(ledger, result, actions)
     for (const barrierId of result.barrierBreaks) {
       const entityId = ledger.frame.routing.barrierEntityByExternalId.get(barrierId)
       if (entityId !== undefined) breakBarrier(world, entityId)
@@ -160,18 +160,31 @@ function emitGroupHealing(world: CombatWorld, targetId: EntityId, ledger: EcsAct
   }
 }
 
-function emitV9Actions(world: CombatWorld, result: ReturnType<typeof resolveDefenseBatch>['claims'][number], actions: BattleAction[]): void {
-  const targetId = world.getEntityId(result.targetExternalId)
-  if (targetId === undefined) return
+function emitV9Actions(ledger: EcsActionGroupLedger, result: ReturnType<typeof resolveDefenseBatch>['claims'][number], actions: BattleAction[]): void {
   const target = result.targetExternalId
   const source = result.sourceExternalId
-  if (result.barrierBlockedDamage > 0) actions.push({ unitId: target, type: 'barrier_absorb', targetId: source, damage: result.barrierBlockedDamage })
-  for (const barrierId of result.barrierBreaks) actions.push({ unitId: source, type: 'barrier_break', hazardId: barrierId })
-  if (result.shieldDamage > 0) actions.push({ unitId: source, type: 'shield_damage', targetId: target, damage: result.shieldDamage, isShieldHit: true })
-  if (result.shieldBroken) actions.push({ unitId: source, type: 'shield_break', targetId: target })
-  if (result.shieldHitBlock) actions.push({ unitId: target, type: 'shield_hit_block', targetId: source, damage: result.blockedDamage })
-  if (result.blockedDamage > 0) actions.push({ unitId: target, type: 'unit_blocked_damage', targetId: source, damage: result.blockedDamage })
-  if (result.hpDamage > 0) actions.push({ unitId: source, type: 'damage', targetId: target, damage: result.hpDamage })
-  for (const shared of result.sharedDamageEvents) actions.push({ unitId: source, type: 'damage_share', targetId: shared.targetExternalId, damage: shared.damage })
-  if (result.lifesteal > 0) actions.push({ unitId: source, type: 'lifesteal', targetId: source, damage: result.lifesteal })
+  const claim = result.claim
+  const metadata = {
+    ...(claim.sourceUnitType ? { sourceUnitType: claim.sourceUnitType } : {}),
+    ...(claim.sourceTeam ? { sourceTeam: claim.sourceTeam } : {}),
+    ...(claim.hazardId ? { hazardId: claim.hazardId } : {}),
+    ...(claim.statusType ? { statusType: claim.statusType } : {}),
+    ...(claim.damageKind ? { damageKind: claim.damageKind } : {}),
+    ...(claim.deathCause ? { cause: claim.deathCause } : {}),
+    ...(claim.impactId !== undefined ? { impactId: claim.impactId } : {}),
+  }
+  const shieldOverflowBlocked = result.shieldHitBlockedDamage
+  const nonShieldBlocked = Math.max(0, result.blockedDamage - shieldOverflowBlocked - result.reactiveArmorBlockedDamage - result.barrierBlockedDamage)
+  if (result.barrierBlockedDamage > 0) actions.push({ unitId: target, type: 'barrier_absorb', targetId: source, damage: result.barrierBlockedDamage, ...metadata })
+  for (const barrierId of result.barrierBreaks) {
+    const owner = ledger.frame?.defense.barriersByExternalId.get(barrierId)?.sourceExternalId ?? source
+    actions.push({ unitId: owner, type: 'barrier_break', hazardId: barrierId, ...metadata })
+  }
+  if (result.shieldDamage > 0) actions.push({ unitId: source, type: 'shield_damage', targetId: target, damage: result.shieldDamage, isShieldHit: true, ...metadata })
+  if (result.shieldBroken) actions.push({ unitId: source, type: 'shield_break', targetId: target, ...metadata })
+  if (result.shieldHitBlock) actions.push({ unitId: target, type: 'shield_hit_block', targetId: source, damage: shieldOverflowBlocked, ...metadata })
+  if (nonShieldBlocked > 0) actions.push({ unitId: target, type: 'unit_blocked_damage', targetId: source, damage: nonShieldBlocked, ...metadata })
+  if (result.hpDamage > 0) actions.push({ unitId: source, type: 'damage', targetId: target, damage: result.hpDamage, ...(result.bonusDamage > 0 ? { bonusDamage: result.bonusDamage } : {}), ...metadata })
+  for (const shared of result.sharedDamageEvents) actions.push({ unitId: source, type: 'damage_share', targetId: shared.targetExternalId, damage: shared.damage, ...metadata })
+  if (result.lifesteal > 0) actions.push({ unitId: source, type: 'lifesteal', targetId: source, damage: result.lifesteal, ...metadata })
 }

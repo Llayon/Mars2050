@@ -47,6 +47,10 @@ export interface EcsDamageOptions {
   defensePolicy?: 'full' | 'bypass_all'
   originExternalId?: string
   authoredOrdinal?: number
+  hazardId?: string
+  statusType?: string
+  damageKind?: 'weapon' | 'dot' | 'hazard' | 'true'
+  impactId?: number
 }
 export function applyEcsSingleDamage(
   world: CombatWorld,
@@ -134,6 +138,10 @@ function applyEcsDamageWithSource(
       allowMinimumDamage: options.allowMinimumDamage,
       allowPercentHpDamage: options.allowPercentHpDamage,
       deathCause: options.deathCause,
+      hazardId: options.hazardId,
+      statusType: options.statusType,
+      damageKind: options.damageKind,
+      impactId: options.impactId,
       defensePolicy: options.defensePolicy,
       sourceAliveAtGroupStart: actionGroup.frame.routing.liveSourceExternalIds.has(source.attribution.sourceExternalId),
     })
@@ -204,7 +212,6 @@ function applyEcsDamageWithSource(
 
 function applyShield(world: CombatWorld, targetId: EntityId, damage: number, shieldMultiplier = 1): EcsDamageResult {
   const vitality = world.stores.vitality.require(targetId)
-  const defense = world.stores.defense.require(targetId)
   if (vitality.shield <= 0) return createResult({ damage })
   const multiplier = Math.max(1, shieldMultiplier)
   const budget = Math.max(1, Math.floor(damage * multiplier))
@@ -237,13 +244,6 @@ function emitDamageActions(world: CombatWorld, attribution: DamageAttribution, t
   for (const event of result.sharedDamageEvents) actions.push({ unitId: attacker, type: 'damage_share', targetId: event.targetId, damage: event.damage, ...sourceMetadata })
   if (result.lifesteal > 0) actions.push({ unitId: attacker, type: 'lifesteal', targetId: attacker, damage: result.lifesteal, ...sourceMetadata })
 }
-
 function createResult(overrides: Partial<EcsDamageResult> = {}): EcsDamageResult {
-  return {
-    damage: 0, bonusDamage: 0, shieldDamage: 0, shieldBroken: false,
-    shieldHitBlock: false, shieldHitBlockedDamage: 0,
-    blockedDamage: 0, barrierBlockedDamage: 0, barrierBreaks: [],
-    sharedDamage: 0, sharedDamageEvents: [],
-    lifesteal: 0, intercepted: false, ...overrides,
-  }
+  return { damage: 0, bonusDamage: 0, shieldDamage: 0, shieldBroken: false, shieldHitBlock: false, shieldHitBlockedDamage: 0, blockedDamage: 0, barrierBlockedDamage: 0, barrierBreaks: [], sharedDamage: 0, sharedDamageEvents: [], lifesteal: 0, intercepted: false, ...overrides }
 }
