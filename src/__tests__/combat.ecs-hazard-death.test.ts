@@ -56,7 +56,7 @@ describe('combat ECS hazard death', () => {
       sourceUnitId: owner.id,
     }
     const nativeActions: BattleAction[] = []
-    const runtime = createEcsCombatRuntime()
+    const runtime = createEcsCombatRuntime({ defenseResolutionMode: 'v8_sequential' })
     runtime.world.queueUnitCreation(owner, first, second)
     runtime.world.queueHazardCreation(structuredClone(mine))
     runtime.world.flushStructuralCommands()
@@ -87,7 +87,7 @@ describe('combat ECS hazard death', () => {
       duration: 11,
     }
     const nativeActions: BattleAction[] = []
-    const runtime = createEcsCombatRuntime()
+    const runtime = createEcsCombatRuntime({ defenseResolutionMode: 'v8_sequential' })
     runtime.world.queueUnitCreation(target)
     runtime.world.queueHazardCreation(structuredClone(hazard))
     runtime.world.flushStructuralCommands()
@@ -120,7 +120,7 @@ describe('combat ECS hazard death', () => {
       statusEffects: [{ type: 'burn', duration: 10, value: 5, tickInterval: 1 }],
     }
     const actions: BattleAction[] = []
-    const runtime = createEcsCombatRuntime()
+    const runtime = createEcsCombatRuntime({ defenseResolutionMode: 'v8_sequential' })
     runtime.world.queueUnitCreation(owner, target)
     runtime.world.queueHazardCreation(hazard)
     runtime.flushStructuralCommands()
@@ -150,7 +150,7 @@ describe('combat ECS hazard death', () => {
       damagePerTick: 5,
       duration: 5,
     }
-    const runtime = createEcsCombatRuntime()
+    const runtime = createEcsCombatRuntime({ defenseResolutionMode: 'v8_sequential' })
     runtime.world.queueUnitCreation(target)
     runtime.world.queueHazardCreation(mine)
     runtime.flushStructuralCommands()

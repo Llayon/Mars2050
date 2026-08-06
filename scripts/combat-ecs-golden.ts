@@ -2,13 +2,13 @@ import { createHash } from 'node:crypto'
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { getSimulatorPreset } from '../src/app/simulator2/simulator.presets'
 import { simulateBattle } from '../src/domains/combat/combat.engine'
-import { CURRENT_SIMULATION_REVISION, CURRENT_SIMULATION_VERSION, V8_SIMULATION_REVISION, V8_SIMULATION_VERSION } from '../src/domains/combat/combat.version'
+import { V8_SIMULATION_REVISION, V8_SIMULATION_VERSION, V9_SIMULATION_REVISION, V9_SIMULATION_VERSION } from '../src/domains/combat/combat.version'
 import type { UnitRow } from '../src/domains/combat/combat.types'
 
 const V9_MODE = process.argv.includes('--v9')
 const FIXTURE = V9_MODE ? 'src/__tests__/fixtures/combat-ecs-v9-golden.json' : 'src/__tests__/fixtures/combat-ecs-v8-golden.json'
-const SIMULATION_VERSION = V9_MODE ? CURRENT_SIMULATION_VERSION : V8_SIMULATION_VERSION
-const SIMULATION_REVISION = V9_MODE ? CURRENT_SIMULATION_REVISION : V8_SIMULATION_REVISION
+const SIMULATION_VERSION = V9_MODE ? V9_SIMULATION_VERSION : V8_SIMULATION_VERSION
+const SIMULATION_REVISION = V9_MODE ? V9_SIMULATION_REVISION : V8_SIMULATION_REVISION
 const seed = 24680
 
 interface GoldenFixture {
