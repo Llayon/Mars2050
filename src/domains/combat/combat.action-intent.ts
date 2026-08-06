@@ -4,8 +4,9 @@ import type { StatusEffect, TargetMarkConfig } from './combat.primitives'
 import type { EntityId } from './ecs/entity'
 import type { CombatWorld } from './ecs/combat-world'
 import type { DamageAttribution } from './ecs/damage-source'
-import type { CombatDefenseFrame, DefenseBatchSnapshot, DefenseRoutingSnapshot, DamageClaim, DamageOrderKey, DefenseBatchResolution } from './ecs/defense-batch'
+import type { CombatDefenseFrame, DefenseBatchSnapshot, DefenseRoutingSnapshot, DamageClaim, DamageOrderKey, AuthoredEffectPosition, DefenseBatchResolution } from './ecs/defense-batch'
 import { CombatInvariantError } from './ecs/defense-batch'
+import { compareDamageOrder } from './ecs/defense-batch'
 import { getDistance } from './combat.utils'
 import { getEcsCombatTags } from './ecs/targeting-evaluation'
 
@@ -30,7 +31,7 @@ export interface PendingDamage {
   cause?: DeathCause
 }
 
-export type { CombatDefenseFrame, DefenseBatchSnapshot, DefenseRoutingSnapshot, DamageClaim, DamageOrderKey }
+export type { CombatDefenseFrame, DefenseBatchSnapshot, DefenseRoutingSnapshot, DamageClaim, DamageOrderKey, AuthoredEffectPosition }
 
 export interface PendingHealing {
   sourceExternalId: string
@@ -40,12 +41,14 @@ export interface PendingHealing {
 export interface PendingStatus {
   targetId: EntityId
   effect: StatusEffect
+  authoredKey?: DamageOrderKey
 }
 
 export interface PendingMark {
   targetId: EntityId
   attribution: DamageAttribution
   mark: TargetMarkConfig
+  authoredKey?: DamageOrderKey
 }
 
 export interface PendingDefenseGrant {
@@ -189,12 +192,18 @@ export class EcsActionGroupLedger {
     this.healing.set(targetId, entries)
   }
 
-  queueStatus(targetId: EntityId, effect: StatusEffect): void {
-    this.statuses.push({ targetId, effect: { ...effect } })
+  queueStatus(targetId: EntityId, effect: StatusEffect, authoredKey?: DamageOrderKey): void {
+    if (authoredKey && this.statuses.some(entry => entry.authoredKey && compareDamageOrder(entry.authoredKey, authoredKey) === 0)) {
+      throw new CombatInvariantError(`Duplicate status authored key: ${JSON.stringify(authoredKey)}`)
+    }
+    this.statuses.push({ targetId, effect: { ...effect }, authoredKey })
   }
 
-  queueMark(targetId: EntityId, attribution: DamageAttribution, mark: TargetMarkConfig): void {
-    this.marks.push({ targetId, attribution, mark: structuredClone(mark) })
+  queueMark(targetId: EntityId, attribution: DamageAttribution, mark: TargetMarkConfig, authoredKey?: DamageOrderKey): void {
+    if (authoredKey && this.marks.some(entry => entry.authoredKey && compareDamageOrder(entry.authoredKey, authoredKey) === 0)) {
+      throw new CombatInvariantError(`Duplicate mark authored key: ${JSON.stringify(authoredKey)}`)
+    }
+    this.marks.push({ targetId, attribution, mark: structuredClone(mark), authoredKey })
   }
 
   queueDefenseGrant(targetId: EntityId, amount: number, sourceExternalId: string, kind: PendingDefenseGrant['kind']): void {

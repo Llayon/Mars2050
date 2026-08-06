@@ -14,6 +14,7 @@ import { applyEcsSweepAttack } from './sweep-attack-system'
 import { applyEcsRadialAoe } from './radial-aoe-system'
 import { applyEcsDisplacement } from './displacement-system'
 import { applyEcsTargetMark } from './target-mark-system'
+import type { DamageOrderKey } from '../defense-batch'
 
 export function runCompiledAbilityTrigger(
   world: CombatWorld,
@@ -27,14 +28,15 @@ export function runCompiledAbilityTrigger(
   let handledDamage = false
   const programs = world.stores.weapon.require(attackerId).abilityPrograms ?? []
   const executionMode = getAbilityExecutionMode(world, attackerId)
-  for (const program of programs) {
+  for (const [programIndex, program] of programs.entries()) {
     if (executionMode === 'legacy_mutable' && program.id.includes(':legacy:') || program.trigger.kind !== trigger) continue
-    for (const group of program.groups) {
-      for (const selected of selectTargets(world, attackerId, targetId, group.selector, impactPoint)) {
-        for (const effect of group.effects) {
+    for (const [groupIndex, group] of program.groups.entries()) {
+      for (const [targetOrdinal, selected] of selectTargets(world, attackerId, targetId, group.selector, impactPoint).entries()) {
+        for (const [effectIndex, effect] of group.effects.entries()) {
           handledDamage = applyEffect(world, attackerId, selected.targetId, effect, actions, {
             ...options,
             anchorPoint: selected.anchorPoint,
+            authoredPosition: { programIndex, groupIndex, targetOrdinal, effectIndex },
           }) || handledDamage
         }
       }
@@ -93,12 +95,20 @@ function applyEffect(
   actions: BattleAction[],
   options: AbilityExecutionOptions & { anchorPoint?: { x: number; y: number } },
 ): boolean {
+  const source = world.stores.identity.require(attackerId)
+  const target = world.stores.identity.require(targetId)
+  const authoredKey: DamageOrderKey = {
+    originExternalId: `unit:${source.id}:ability`,
+    position: options.authoredPosition,
+    targetExternalId: target.id,
+    sourceExternalId: source.id,
+  }
   if (effect.kind === 'damage') {
     const combat = world.stores.combat.require(attackerId)
     const amount = effect.expression.kind === 'fixed'
       ? effect.expression.amount
       : Math.floor(combat.attack * effect.expression.multiplier)
-    applyEcsSingleDamage(world, attackerId, targetId, amount, actions, { interceptable: false, originExternalId: `unit:${world.stores.identity.require(attackerId).id}:ability`, authoredOrdinal: 0 })
+    applyEcsSingleDamage(world, attackerId, targetId, amount, actions, { interceptable: false, originExternalId: authoredKey.originExternalId, authoredPosition: options.authoredPosition, authoredOrdinal: options.authoredPosition?.effectIndex ?? 0 })
     return true
   }
   if (effect.kind === 'legacy_geometry') {
@@ -144,7 +154,7 @@ function applyEffect(
     return false
   }
   if (effect.kind === 'apply_status') {
-    applyEcsStatus(world, targetId, { type: effect.status, duration: effect.duration, value: effect.value, controlMode: effect.controlMode, sourceUnitId: world.stores.identity.require(attackerId).id }, actions)
+    applyEcsStatus(world, targetId, { type: effect.status, duration: effect.duration, value: effect.value, controlMode: effect.controlMode, sourceUnitId: source.id }, actions, authoredKey)
     return false
   }
   if (effect.kind === 'mark_target') {
@@ -158,7 +168,7 @@ function applyEffect(
       focusRadius: effect.focusRadius,
       retargetPolicy: effect.retargetPolicy,
       retargetLockTicks: effect.retargetLockTicks,
-    }, actions, options.hitKind !== 'secondary')
+    }, actions, options.hitKind !== 'secondary', authoredKey)
     return false
   }
   if (effect.kind === 'displace') {

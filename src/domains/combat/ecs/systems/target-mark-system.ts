@@ -3,6 +3,7 @@ import type { TargetMarkConfig } from '../../combat.primitives'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
 import type { DamageAttribution } from '../damage-source'
+import type { DamageOrderKey } from '../defense-batch'
 import { getDesignationIndex } from '../designation-index'
 import {
   canEcsTarget,
@@ -18,8 +19,14 @@ export function applyEcsTargetMark(
   mark: TargetMarkConfig,
   actions: BattleAction[],
   propagateSquad: boolean,
+  authoredKey?: DamageOrderKey,
 ): void {
   const attacker = world.stores.identity.require(attackerId)
+  const actionGroup = world.resources.get('actionGroup')
+  if (world.resources.get('defenseResolutionMode') === 'v9_snapshot' && actionGroup?.active && !actionGroup.committing && authoredKey) {
+    actionGroup.queueMark(targetId, { sourceExternalId: authoredKey.sourceExternalId, sourceEntityId: attackerId, sourceTeam: attacker.team, sourceUnitType: attacker.type }, mark, authoredKey)
+    return
+  }
   const target = world.stores.identity.require(targetId)
   const squadId = target.squadId ?? target.id
   const sourceTargeting = world.stores.targeting.require(attackerId)
@@ -53,10 +60,11 @@ export function applyEcsCapturedTargetMark(
   targetId: EntityId,
   mark: TargetMarkConfig,
   actions: BattleAction[],
+  authoredKey?: DamageOrderKey,
 ): void {
   const actionGroup = world.resources.get('actionGroup')
   if (actionGroup?.active && !actionGroup.committing) {
-    actionGroup.queueMark(targetId, attribution, mark)
+    actionGroup.queueMark(targetId, attribution, mark, authoredKey)
     return
   }
   const sourceId = attribution.sourceEntityId

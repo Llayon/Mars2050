@@ -16,14 +16,17 @@ export function drainV9FollowUps(world: CombatWorld, context: RuntimePhaseContex
     const ledger = new EcsActionGroupLedger()
     const previous = world.resources.get('actionGroup')
     world.resources.set('actionGroup', ledger)
-    ledger.begin(world, world.query(['identity', 'vitality']), {
-      tick: context.tick,
-      phaseId: 'trigger_follow_up',
-      groupOrdinal: depth,
-    })
-    applyEcsTriggerPayload(world, job.ownerId, job.targetId, job.eventTargetId, job.payload, job.actions)
-    commitV9ResolutionGroup(world, ledger, job.actions)
-    world.resources.set('actionGroup', previous)
+    try {
+      ledger.begin(world, world.query(['identity', 'vitality']), {
+        tick: context.tick,
+        phaseId: 'trigger_follow_up',
+        groupOrdinal: depth,
+      })
+      applyEcsTriggerPayload(world, job.ownerId, job.targetId, job.eventTargetId, job.payload, job.actions)
+      commitV9ResolutionGroup(world, ledger, job.actions)
+    } finally {
+      world.resources.set('actionGroup', previous)
+    }
     world.flushStructuralCommands()
   }
 }

@@ -12,15 +12,26 @@ import {
   getRankMultiplierPure,
   getStatusValuePure,
 } from './damage-kernel-pure'
+import { compareAuthoredEffectPosition, compareDamageOrderStrings, legacyAuthoredPosition } from './authored-order'
+export { compareAuthoredEffectPosition } from './authored-order'
 
 /** The two deterministic damage execution modes supported by the combat ECS. */
 export type DefenseResolutionMode = 'v8_sequential' | 'v9_snapshot'
 export type DefenseInteractionPolicy = 'full' | 'bypass_all'
 
+export interface AuthoredEffectPosition {
+  readonly programIndex: number
+  readonly groupIndex: number
+  readonly targetOrdinal: number
+  readonly effectIndex: number
+}
+
 /** Stable, locale-independent ordering key for a damage claim. */
 export interface DamageOrderKey {
   readonly originExternalId: string
-  readonly authoredOrdinal: number
+  readonly position?: AuthoredEffectPosition
+  /** Legacy packed ordinal kept at the API boundary for older producers. */
+  readonly authoredOrdinal?: number
   readonly targetExternalId: string
   readonly sourceExternalId: string
 }
@@ -48,6 +59,7 @@ export interface DamageClaim {
   readonly sourceExternalId: string
   readonly originExternalId: string
   readonly authoredOrdinal: number
+  readonly authoredPosition?: AuthoredEffectPosition
   readonly rawDamage: number
   readonly sourceTeam?: Team
   readonly sourceUnitType?: string
@@ -163,9 +175,10 @@ export class CombatInvariantError extends Error {
 
 /** Code-unit comparator required by ADR-014. */
 export function compareDamageOrder(left: DamageOrderKey, right: DamageOrderKey): number {
-  return left.originExternalId < right.originExternalId ? -1 : left.originExternalId > right.originExternalId ? 1
-    : left.authoredOrdinal - right.authoredOrdinal || (left.targetExternalId < right.targetExternalId ? -1 : left.targetExternalId > right.targetExternalId ? 1
-      : left.sourceExternalId < right.sourceExternalId ? -1 : left.sourceExternalId > right.sourceExternalId ? 1 : 0)
+  return compareDamageOrderStrings(left.originExternalId, right.originExternalId) ||
+    compareAuthoredEffectPosition(left.position ?? legacyAuthoredPosition(left.authoredOrdinal), right.position ?? legacyAuthoredPosition(right.authoredOrdinal)) ||
+    compareDamageOrderStrings(left.targetExternalId, right.targetExternalId) ||
+    compareDamageOrderStrings(left.sourceExternalId, right.sourceExternalId)
 }
 
 export function sortDamageClaims(claims: readonly DamageClaim[]): DamageClaim[] {
@@ -319,5 +332,11 @@ function emptyResolution(claim: DamageClaim): ResolvedDamageClaim {
 }
 
 function toOrderKey(claim: DamageClaim): DamageOrderKey {
-  return claim.order ?? { originExternalId: claim.originExternalId, authoredOrdinal: claim.authoredOrdinal, targetExternalId: claim.targetExternalId, sourceExternalId: claim.sourceExternalId }
+  return claim.order ?? {
+    originExternalId: claim.originExternalId,
+    position: claim.authoredPosition,
+    authoredOrdinal: claim.authoredOrdinal,
+    targetExternalId: claim.targetExternalId,
+    sourceExternalId: claim.sourceExternalId,
+  }
 }

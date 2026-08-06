@@ -1,5 +1,6 @@
 export type {
   CapturedAttackerModifiers,
+  AuthoredEffectPosition,
   DamageClaim,
   DamageOrderKey,
   DefenseInteractionPolicy,

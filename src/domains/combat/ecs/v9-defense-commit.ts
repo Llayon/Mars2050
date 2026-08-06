@@ -1,7 +1,7 @@
 import type { BattleAction } from '../combat.actions'
 import type { EcsActionGroupLedger } from '../combat.action-intent'
 import type { DeathCause } from '../combat.death.types'
-import { resolveDefenseBatch } from './defense-batch'
+import { compareDamageOrder, resolveDefenseBatch, type DamageOrderKey } from './defense-batch'
 import type { CombatWorld } from './combat-world'
 import type { EntityId } from './entity'
 import { breakBarrier, grantBarrier, grantShield, increaseShieldCapacity, setBarrierCapacity, setReactiveArmorCharges, setShield, setShieldHitBlockCharges } from './defense-resource-commit'
@@ -74,44 +74,50 @@ export function commitV9DefenseBatch(world: CombatWorld, ledger: EcsActionGroupL
 /** Completes a V9 group, including projection, effects and simultaneous death resolution. */
 export function commitV9ResolutionGroup(world: CombatWorld, ledger: EcsActionGroupLedger, actions: BattleAction[]): Set<EntityId> {
   if (!ledger.frame) return new Set()
-  const affected = ledger.claims.length > 0
-    ? commitV9DefenseBatch(world, ledger, actions)
-    : new Set<EntityId>([...ledger.damage.keys(), ...ledger.healing.keys()])
+  let affected: Set<EntityId>
+  try {
+    affected = ledger.claims.length > 0
+      ? commitV9DefenseBatch(world, ledger, actions)
+      : new Set<EntityId>([...ledger.damage.keys(), ...ledger.healing.keys()])
+  } catch (error) {
+    ledger.finish()
+    throw error
+  }
 
   ledger.committing = true
-  for (const grant of [...ledger.defenseGrants].sort((left, right) =>
-    left.sourceExternalId < right.sourceExternalId ? -1 : left.sourceExternalId > right.sourceExternalId ? 1 :
-      left.kind.localeCompare(right.kind) ||
-      (world.stores.entityMeta.require(left.targetId).externalId < world.stores.entityMeta.require(right.targetId).externalId ? -1 : 1))) {
-    if (grant.kind === 'shield') grantShield(world, grant.targetId, grant.amount)
-    else if (grant.kind === 'shield_capacity') increaseShieldCapacity(world, grant.targetId, grant.amount)
-    else grantBarrier(world, grant.targetId, grant.amount)
-  }
-
-  for (const entityId of affected) {
-    const vitality = world.stores.vitality.require(entityId)
-    const startHp = ledger.startHp.get(entityId) ?? vitality.hp
-    const healing = (ledger.healing.get(entityId) ?? []).reduce((sum, item) => sum + item.amount, 0)
-    const damage = (ledger.damage.get(entityId) ?? []).reduce((sum, item) => sum + item.amount, 0)
-    vitality.hp = Math.max(0, Math.min(vitality.maxHp, startHp + healing - damage))
-    emitGroupHealing(world, entityId, ledger, actions, damage)
-  }
-
-  for (const pending of [...ledger.statuses].sort((left, right) =>
-    world.stores.identity.require(left.targetId).id.localeCompare(world.stores.identity.require(right.targetId).id))) {
-    if (ledger.getProjectedHp(world, pending.targetId) > 0 && !world.stores.vitality.require(pending.targetId).isDead) {
-      applyEcsStatus(world, pending.targetId, pending.effect, actions)
+  try {
+    for (const grant of [...ledger.defenseGrants].sort((left, right) =>
+      left.sourceExternalId < right.sourceExternalId ? -1 : left.sourceExternalId > right.sourceExternalId ? 1 :
+        left.kind < right.kind ? -1 : left.kind > right.kind ? 1 :
+          (world.stores.entityMeta.require(left.targetId).externalId < world.stores.entityMeta.require(right.targetId).externalId ? -1 : 1))) {
+      if (grant.kind === 'shield') grantShield(world, grant.targetId, grant.amount)
+      else if (grant.kind === 'shield_capacity') increaseShieldCapacity(world, grant.targetId, grant.amount)
+      else grantBarrier(world, grant.targetId, grant.amount)
     }
-  }
-  for (const pending of [...ledger.marks].sort((left, right) =>
-    left.attribution.sourceExternalId < right.attribution.sourceExternalId ? -1 : left.attribution.sourceExternalId > right.attribution.sourceExternalId ? 1 :
-      world.stores.identity.require(left.targetId).id.localeCompare(world.stores.identity.require(right.targetId).id))) {
-    if (ledger.getProjectedHp(world, pending.targetId) > 0 && !world.stores.vitality.require(pending.targetId).isDead) {
-      applyEcsCapturedTargetMark(world, pending.attribution, pending.targetId, pending.mark, actions)
+
+    for (const entityId of affected) {
+      const vitality = world.stores.vitality.require(entityId)
+      const startHp = ledger.startHp.get(entityId) ?? vitality.hp
+      const healing = (ledger.healing.get(entityId) ?? []).reduce((sum, item) => sum + item.amount, 0)
+      const damage = (ledger.damage.get(entityId) ?? []).reduce((sum, item) => sum + item.amount, 0)
+      vitality.hp = Math.max(0, Math.min(vitality.maxHp, startHp + healing - damage))
+      emitGroupHealing(world, entityId, ledger, actions, damage)
     }
+
+    for (const pending of [...ledger.statuses].sort((left, right) => comparePendingStatus(world, left, right))) {
+      if (ledger.getProjectedHp(world, pending.targetId) > 0 && !world.stores.vitality.require(pending.targetId).isDead) {
+        applyEcsStatus(world, pending.targetId, pending.effect, actions)
+      }
+    }
+    for (const pending of [...ledger.marks].sort((left, right) => comparePendingMark(world, left, right))) {
+      if (ledger.getProjectedHp(world, pending.targetId) > 0 && !world.stores.vitality.require(pending.targetId).isDead) {
+        applyEcsCapturedTargetMark(world, pending.attribution, pending.targetId, pending.mark, actions)
+      }
+    }
+  } finally {
+    ledger.committing = false
+    ledger.finish()
   }
-  ledger.committing = false
-  ledger.finish()
 
   const forcedEntries = [...ledger.forcedDeaths.entries()]
   for (const [entityId] of forcedEntries) {
@@ -187,4 +193,21 @@ function emitV9Actions(ledger: EcsActionGroupLedger, result: ReturnType<typeof r
   if (result.hpDamage > 0) actions.push({ unitId: source, type: 'damage', targetId: target, damage: result.hpDamage, ...(result.bonusDamage > 0 ? { bonusDamage: result.bonusDamage } : {}), ...metadata })
   for (const shared of result.sharedDamageEvents) actions.push({ unitId: source, type: 'damage_share', targetId: shared.targetExternalId, damage: shared.damage, ...metadata })
   if (result.lifesteal > 0) actions.push({ unitId: source, type: 'lifesteal', targetId: source, damage: result.lifesteal, ...metadata })
+}
+
+function comparePendingStatus(world: CombatWorld, left: EcsActionGroupLedger['statuses'][number], right: EcsActionGroupLedger['statuses'][number]): number {
+  return compareDamageOrder(left.authoredKey ?? legacyPendingKey(world, left.targetId, left.effect.sourceUnitId ?? left.effect.type), right.authoredKey ?? legacyPendingKey(world, right.targetId, right.effect.sourceUnitId ?? right.effect.type))
+}
+
+function comparePendingMark(world: CombatWorld, left: EcsActionGroupLedger['marks'][number], right: EcsActionGroupLedger['marks'][number]): number {
+  return compareDamageOrder(left.authoredKey ?? legacyPendingKey(world, left.targetId, left.attribution.sourceExternalId), right.authoredKey ?? legacyPendingKey(world, right.targetId, right.attribution.sourceExternalId))
+}
+
+function legacyPendingKey(world: CombatWorld, targetId: EntityId, sourceExternalId: string): DamageOrderKey {
+  return {
+    originExternalId: `pending:${sourceExternalId}`,
+    authoredOrdinal: 0,
+    targetExternalId: world.stores.identity.require(targetId).id,
+    sourceExternalId,
+  }
 }

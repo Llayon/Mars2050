@@ -1,4 +1,5 @@
 import type { BarrageAttackConfig, BeamAttackConfig, ChainAttackConfig, ConeAttackConfig, LinePierceConfig, PeriodicAbilityConfig, SideWeaponConfig, SplitFireConfig, StatusType, SupportAura } from './combat.primitives'
+import type { AuthoredEffectPosition } from './ecs/defense-batch'
 
 export type AbilityTrigger =
   | { kind: 'weapon_attack' }
@@ -15,6 +16,7 @@ export type DamageExpression =
 
 export interface AbilityExecutionOptions {
   hitKind?: 'primary' | 'secondary'
+  authoredPosition?: AuthoredEffectPosition
 }
 
 export type TargetSelector =

@@ -9,12 +9,14 @@ import {
 } from '../../combat.status-core'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
+import type { DamageOrderKey } from '../defense-batch'
 
 export function applyEcsStatus(
   world: CombatWorld,
   targetId: EntityId,
   effect: StatusEffect,
   actions: BattleAction[],
+  authoredKey?: DamageOrderKey,
 ): boolean {
   const actionGroup = world.resources.get('actionGroup')
   if (actionGroup?.active && !actionGroup.committing) {
@@ -25,7 +27,7 @@ export function applyEcsStatus(
       actions.push({ unitId: world.stores.identity.require(targetId).id, type: 'status_immune', statusType: normalized.type })
       return false
     }
-    actionGroup.queueStatus(targetId, normalized)
+    actionGroup.queueStatus(targetId, normalized, authoredKey)
     return true
   }
   const identity = world.stores.identity.require(targetId)

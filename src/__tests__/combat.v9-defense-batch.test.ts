@@ -38,6 +38,13 @@ describe('V9 defense batch resolver', () => {
     expect(() => resolveDefenseBatch(frame(), [claim('a', 0, 1), claim('a', 0, 1)])).toThrow(/Duplicate damage order key/)
   })
 
+  it('orders compiled effects by structural authored position before target and source ids', () => {
+    const earlier = { originExternalId: 'ability:shared', position: { programIndex: 0, groupIndex: 1, targetOrdinal: 0, effectIndex: 2 }, targetExternalId: 'z', sourceExternalId: 'b' }
+    const later = { originExternalId: 'ability:shared', position: { programIndex: 0, groupIndex: 1, targetOrdinal: 1, effectIndex: 0 }, targetExternalId: 'a', sourceExternalId: 'a' }
+    expect(compareDamageOrder(earlier, later)).toBeLessThan(0)
+    expect(compareDamageOrder({ ...earlier, position: { ...earlier.position, effectIndex: 1 } }, earlier)).toBeLessThan(0)
+  })
+
   it('applies barriers only to allied covered targets', () => {
     const original = frame()
     const allied: DefenseBatchSnapshot = {
