@@ -25,7 +25,9 @@ export function runHazardSystem(
     else hazard.duration--
     if (hazard.duration <= 0) {
       if (hazard.type === 'barrier_dome' && (hazard.capacity ?? 0) > 0) {
-        actions.push({ unitId: hazard.sourceUnitId ?? hazard.id, type: 'barrier_expire', hazardId: hazard.id })
+        const group = world.resources.get('actionGroup')
+        if (world.resources.get('defenseResolutionMode') === 'v9_snapshot' && group?.active) group.queueBarrierExpiration(hazard.id)
+        else actions.push({ unitId: hazard.sourceUnitId ?? hazard.id, type: 'barrier_expire', hazardId: hazard.id })
       }
       if (world.resources.get('defenseResolutionMode') === 'v9_snapshot' && world.resources.get('actionGroup')?.active) {
         world.structuralCommands.queueHazardRemoval(hazardId)
@@ -87,7 +89,7 @@ function applyV9DamageBatch(world: CombatWorld, hazard: ReturnType<CombatWorld['
     attribution: { sourceExternalId: hazard.sourceUnitId ?? hazard.id, ...(hazard.sourceUnitId ? { sourceUnitType: hazard.type, sourceTeam: hazard.team } : {}) },
     attack: 0,
     modifiers: { attackBoostValue: 0, outputSuppression: 0, accuracyPenalty: 0, accuracyPenaltyResist: 0, armorPierceRatio: 0, summonCounterDamageMult: 1, shieldDamageMult: 1, lifestealMult: 0, executeThreshold: 0 },
-  }, targetId, hazard.damagePerTick, actions, { defensePolicy: 'bypass_all', allowMinimumDamage: false, interceptable: false, deathCause: cause, originExternalId: `hazard:${hazard.id}`, authoredOrdinal: targetOrdinal, hazardId: hazard.id, damageKind: 'hazard' })
+  }, targetId, hazard.damagePerTick, actions, { defensePolicy: 'bypass_all', allowMinimumDamage: false, interceptable: false, deathCause: cause, originExternalId: `hazard:${hazard.id}`, authoredOrdinal: targetOrdinal, authoredPosition: { programIndex: 0, groupIndex: 0, targetOrdinal, effectIndex: 0 }, hazardId: hazard.id, damageKind: 'hazard' })
   return true
 }
 

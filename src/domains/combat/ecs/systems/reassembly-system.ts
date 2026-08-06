@@ -1,5 +1,6 @@
 import type { BattleAction } from '../../combat.actions'
 import type { CombatWorld } from '../combat-world'
+import { clearAllStatusDamageAttributions } from '../damage-source'
 import { cancelTemporalTimeline } from './temporal-attack-system'
 
 export function runEcsReassemblySystem(
@@ -35,6 +36,7 @@ export function runEcsReassemblySystem(
     combat.actionCooldown = 0
     status.statusEffects = []
     world.sourceRefs.clearAll(world, entityId)
+    clearAllStatusDamageAttributions(world, entityId)
     world.setUnitCapability(entityId, 'activeStatusCapability', false)
     status.targetMark = undefined
     world.stores.entitySources.require(entityId).targetMarkSource = undefined

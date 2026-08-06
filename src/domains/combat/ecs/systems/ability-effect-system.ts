@@ -154,7 +154,7 @@ function applyEffect(
     return false
   }
   if (effect.kind === 'apply_status') {
-    applyEcsStatus(world, targetId, { type: effect.status, duration: effect.duration, value: effect.value, controlMode: effect.controlMode, sourceUnitId: source.id }, actions, authoredKey)
+    applyEcsStatus(world, targetId, { type: effect.status, duration: effect.duration, value: effect.value, controlMode: effect.controlMode, sourceUnitId: source.id }, actions, authoredKey, { sourceExternalId: source.id, sourceEntityId: attackerId, sourceUnitType: source.type, sourceTeam: source.team })
     return false
   }
   if (effect.kind === 'mark_target') {

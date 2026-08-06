@@ -13,10 +13,13 @@ import type { EntityId } from './entity'
 import type { TargetingRuntime } from './targeting-runtime'
 import type { DesignationIndex } from './designation-index'
 import type { EcsActionGroupLedger } from '../combat.action-intent'
+import type { ResolutionGroupKey } from '../combat.action-intent'
+import type { DamageAttribution } from './damage-source'
 import type { PendingImpactQueue } from './pending-impacts'
 import type { AttackTimelineState } from './pending-impacts'
 import type { DefenseResolutionMode } from './defense-batch'
 import type { TriggerPayload } from '../combat.sim.types'
+import type { DamageOrderKey } from './defense-batch'
 
 export interface V9FollowUpJob {
   ownerId: EntityId
@@ -24,6 +27,11 @@ export interface V9FollowUpJob {
   eventTargetId: EntityId
   payload: TriggerPayload
   actions: BattleAction[]
+  parentGroupKey?: ResolutionGroupKey
+  followUpOrdinal: number
+  order: DamageOrderKey
+  attribution?: DamageAttribution
+  chainPath: readonly string[]
 }
 
 export interface CombatClockResource {
@@ -52,6 +60,7 @@ export interface CombatResourceMap {
   temporalAttacks: Map<EntityId, AttackTimelineState>
   defenseResolutionMode: DefenseResolutionMode
   v9FollowUps: V9FollowUpJob[]
+  statusDamageAttribution: Map<string, DamageAttribution>
 }
 
 export class CombatResourceStore {

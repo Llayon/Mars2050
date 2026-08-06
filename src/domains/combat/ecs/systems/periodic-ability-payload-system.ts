@@ -86,7 +86,7 @@ function applyDamage(
     targetId,
     Math.max(0, Math.floor(payload.amount ?? 0)) + percentDamage,
     actions,
-    { allowPercentHpDamage: false, deathCause: 'weapon', originExternalId: `ability:${abilityId}`, authoredOrdinal: targetOrdinal },
+    { allowPercentHpDamage: false, deathCause: 'weapon', originExternalId: `ability:${abilityId}`, authoredOrdinal: targetOrdinal, authoredPosition: { programIndex: 0, groupIndex: 0, targetOrdinal, effectIndex: 0 } },
   )
   if (result.intercepted) return
   resolveEcsDeath(world, targetId, sourceId, actions, 'weapon')

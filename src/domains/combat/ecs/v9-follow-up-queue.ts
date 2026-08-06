@@ -3,6 +3,7 @@ import { EcsActionGroupLedger } from '../combat.action-intent'
 import type { CombatWorld } from './combat-world'
 import { commitV9ResolutionGroup } from './v9-defense-commit'
 import { applyEcsTriggerPayload } from './systems/trigger-payload-system'
+import { compareDamageOrder } from './defense-batch'
 
 const MAX_FOLLOW_UP_DEPTH = 32
 
@@ -11,7 +12,11 @@ export function drainV9FollowUps(world: CombatWorld, context: RuntimePhaseContex
   const queue = world.resources.require('v9FollowUps')
   let depth = 0
   while (queue.length > 0) {
-    if (depth++ >= MAX_FOLLOW_UP_DEPTH) throw new Error(`V9 follow-up trigger depth exceeded ${MAX_FOLLOW_UP_DEPTH}`)
+    queue.sort((left, right) => compareDamageOrder(left.order, right.order) || left.followUpOrdinal - right.followUpOrdinal)
+    if (depth++ >= MAX_FOLLOW_UP_DEPTH) {
+      const path = queue.map(job => job.chainPath.join(' > ')).join(' | ')
+      throw new Error(`V9 follow-up trigger depth exceeded ${MAX_FOLLOW_UP_DEPTH}; chain=${path}`)
+    }
     const job = queue.shift()!
     const ledger = new EcsActionGroupLedger()
     const previous = world.resources.get('actionGroup')

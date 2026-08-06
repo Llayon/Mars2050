@@ -23,9 +23,9 @@ import {
   getRankMultiplier,
   getStatusValue,
 } from './damage-kernel-helpers'
-import { stableAuthoredOrdinal } from '../damage-kernel-pure'
 import type { AuthoredEffectPosition, ResolvedDamageClaim } from '../defense-batch'
 import { applyEcsShield } from './damage-shield'
+import { legacyAuthoredPosition } from '../authored-order'
 interface EcsDamageResult {
   damage: number
   bonusDamage: number
@@ -125,18 +125,19 @@ function applyEcsDamageWithSource(
   if (world.resources.get('defenseResolutionMode') === 'v9_snapshot' && actionGroup?.active && actionGroup.frame) {
     const targetExternalId = world.stores.identity.require(targetId).id
     const originExternalId = options.originExternalId ?? `unit:${source.attribution.sourceExternalId}`
-    const authoredOrdinal = options.authoredOrdinal ?? stableAuthoredOrdinal(targetExternalId, source.attribution.sourceExternalId, raw, options.deathCause)
+    const authoredOrdinal = options.authoredOrdinal ?? options.authoredPosition?.effectIndex ?? 0
+    const authoredPosition = options.authoredPosition ?? legacyAuthoredPosition(authoredOrdinal)
     actionGroup.captureClaim({
       order: {
         originExternalId,
-        position: options.authoredPosition,
+        position: authoredPosition,
         authoredOrdinal,
         targetExternalId,
         sourceExternalId: source.attribution.sourceExternalId,
       },
       originExternalId,
       authoredOrdinal,
-      authoredPosition: options.authoredPosition,
+      authoredPosition,
       targetExternalId,
       sourceExternalId: source.attribution.sourceExternalId,
       rawDamage: raw,

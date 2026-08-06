@@ -4,10 +4,13 @@ import type { DeathCause } from '../combat.death.types'
 import { compareDamageOrder, resolveDefenseBatch, type DamageOrderKey } from './defense-batch'
 import type { CombatWorld } from './combat-world'
 import type { EntityId } from './entity'
+import type { Team } from '../combat.sim.types'
+import type { DamageAttribution } from './damage-source'
 import { breakBarrier, grantBarrier, grantShield, increaseShieldCapacity, setBarrierCapacity, setReactiveArmorCharges, setShield, setShieldHitBlockCharges } from './defense-resource-commit'
 import { resolveEcsDeath } from './systems/death-system'
 import { applyEcsStatus } from './systems/status-application-system'
 import { applyEcsCapturedTargetMark } from './systems/target-mark-system'
+import { recordEcsResolvedDamageTakenTriggers } from './systems/post-hit-trigger-system'
 
 /** Resolve the immutable V9 frame and translate the pure result into V8 ledger entries. */
 export function commitV9DefenseBatch(world: CombatWorld, ledger: EcsActionGroupLedger, actions: BattleAction[]): Set<EntityId> {
@@ -36,36 +39,27 @@ export function commitV9DefenseBatch(world: CombatWorld, ledger: EcsActionGroupL
     const targetId = ledger.frame.routing.entityByExternalId.get(result.targetExternalId)
     if (targetId !== undefined && result.hpDamage > 0) {
       affected.add(targetId)
-      ledger.queueDamage(targetId, {
-        sourceExternalId: result.sourceExternalId,
-        ...(ledger.frame.routing.entityByExternalId.has(result.sourceExternalId) ? { sourceEntityId: ledger.frame.routing.entityByExternalId.get(result.sourceExternalId) } : {}),
-        ...(result.claim.sourceUnitType ? { sourceUnitType: result.claim.sourceUnitType } : {}),
-        ...(result.claim.sourceTeam ? { sourceTeam: result.claim.sourceTeam } : {}),
-      }, result.hpDamage, result.claim.deathCause as import('../combat.death.types').DeathCause | undefined)
+      const attribution = getResolvedAttribution(ledger, result.sourceExternalId, result.claim.sourceUnitType, result.claim.sourceTeam)
+      ledger.queueDamage(targetId, attribution, result.hpDamage, result.claim.deathCause as import('../combat.death.types').DeathCause | undefined)
+      ledger.resolvedDamageTaken.push({ targetExternalId: result.targetExternalId, damage: result.hpDamage, ...attribution })
     }
     for (const shared of result.sharedDamageEvents) {
       const sharedId = ledger.frame.routing.entityByExternalId.get(shared.targetExternalId)
       if (sharedId !== undefined) {
         affected.add(sharedId)
-        ledger.queueDamage(sharedId, {
-          sourceExternalId: result.sourceExternalId,
-          ...(ledger.frame.routing.entityByExternalId.has(result.sourceExternalId) ? { sourceEntityId: ledger.frame.routing.entityByExternalId.get(result.sourceExternalId) } : {}),
-          ...(result.claim.sourceUnitType ? { sourceUnitType: result.claim.sourceUnitType } : {}),
-          ...(result.claim.sourceTeam ? { sourceTeam: result.claim.sourceTeam } : {}),
-        }, shared.damage, result.claim.deathCause as import('../combat.death.types').DeathCause | undefined)
+        const attribution = getResolvedAttribution(ledger, result.sourceExternalId, result.claim.sourceUnitType, result.claim.sourceTeam)
+        ledger.queueDamage(sharedId, attribution, shared.damage, result.claim.deathCause as import('../combat.death.types').DeathCause | undefined)
+        ledger.resolvedDamageTaken.push({ targetExternalId: shared.targetExternalId, damage: shared.damage, ...attribution })
       }
     }
     emitV9Actions(ledger, result, actions)
-    for (const barrierId of result.barrierBreaks) {
-      const entityId = ledger.frame.routing.barrierEntityByExternalId.get(barrierId)
-      if (entityId !== undefined) breakBarrier(world, entityId)
-    }
+    for (const barrierId of result.barrierBreaks) ledger.barrierBreaks.add(barrierId)
   }
   for (const intent of resolution.healingIntents) {
     const targetId = ledger.frame.routing.entityByExternalId.get(intent.targetExternalId)
     if (targetId !== undefined) {
       affected.add(targetId)
-      ledger.queueHealing(targetId, intent.sourceExternalId, intent.amount)
+      ledger.queueHealing(targetId, intent.sourceExternalId, intent.amount, 'lifesteal')
     }
   }
   return affected
@@ -106,7 +100,7 @@ export function commitV9ResolutionGroup(world: CombatWorld, ledger: EcsActionGro
 
     for (const pending of [...ledger.statuses].sort((left, right) => comparePendingStatus(world, left, right))) {
       if (ledger.getProjectedHp(world, pending.targetId) > 0 && !world.stores.vitality.require(pending.targetId).isDead) {
-        applyEcsStatus(world, pending.targetId, pending.effect, actions)
+        applyEcsStatus(world, pending.targetId, pending.effect, actions, pending.authoredKey, pending.sourceAttribution)
       }
     }
     for (const pending of [...ledger.marks].sort((left, right) => comparePendingMark(world, left, right))) {
@@ -117,6 +111,19 @@ export function commitV9ResolutionGroup(world: CombatWorld, ledger: EcsActionGro
   } finally {
     ledger.committing = false
     ledger.finish()
+  }
+
+  emitBarrierLifecycleActions(world, ledger, actions)
+
+  for (const intent of ledger.resolvedDamageTaken) {
+    const targetId = ledger.frame.routing.entityByExternalId.get(intent.targetExternalId)
+    if (targetId === undefined) continue
+    recordEcsResolvedDamageTakenTriggers(world, targetId, {
+      sourceExternalId: intent.sourceExternalId,
+      sourceEntityId: intent.sourceEntityId,
+      sourceUnitType: intent.sourceUnitType,
+      sourceTeam: intent.sourceTeam,
+    }, intent.damage, actions)
   }
 
   const forcedEntries = [...ledger.forcedDeaths.entries()]
@@ -150,6 +157,32 @@ export function commitV9ResolutionGroup(world: CombatWorld, ledger: EcsActionGro
   return affected
 }
 
+function getResolvedAttribution(ledger: EcsActionGroupLedger, sourceExternalId: string, sourceUnitType?: string, sourceTeam?: Team): DamageAttribution {
+  return {
+    sourceExternalId,
+    ...(ledger.frame?.routing.entityByExternalId.has(sourceExternalId) ? { sourceEntityId: ledger.frame.routing.entityByExternalId.get(sourceExternalId) } : {}),
+    ...(sourceUnitType ? { sourceUnitType } : {}),
+    ...(sourceTeam ? { sourceTeam } : {}),
+  }
+}
+
+function emitBarrierLifecycleActions(world: CombatWorld, ledger: EcsActionGroupLedger, actions: BattleAction[]): void {
+  const barrierIds = new Set([...ledger.barrierBreaks, ...ledger.barrierExpirations])
+  for (const barrierId of [...barrierIds].sort((left, right) => left < right ? -1 : left > right ? 1 : 0)) {
+    const barrierEntityId = ledger.frame?.routing.barrierEntityByExternalId.get(barrierId)
+    if (barrierEntityId === undefined) continue
+    const barrier = ledger.frame?.defense.barriersByExternalId.get(barrierId)
+    if (ledger.barrierBreaks.has(barrierId)) {
+      breakBarrier(world, barrierEntityId)
+      world.structuralCommands.queueHazardRemoval(barrierEntityId)
+      actions.push({ unitId: barrier?.sourceExternalId ?? barrierId, type: 'barrier_break', hazardId: barrierId })
+      continue
+    }
+    actions.push({ unitId: barrier?.sourceExternalId ?? barrierId, type: 'barrier_expire', hazardId: barrierId })
+    world.structuralCommands.queueHazardRemoval(barrierEntityId)
+  }
+}
+
 function emitGroupHealing(world: CombatWorld, targetId: EntityId, ledger: EcsActionGroupLedger, actions: BattleAction[], damage: number): void {
   const entries = [...(ledger.healing.get(targetId) ?? [])]
   if (entries.length === 0) return
@@ -161,7 +194,7 @@ function emitGroupHealing(world: CombatWorld, targetId: EntityId, ledger: EcsAct
   ))
   for (const entry of entries.sort((left, right) => left.sourceExternalId.localeCompare(right.sourceExternalId))) {
     const actual = Math.min(remaining, entry.amount)
-    if (actual > 0) actions.push({ unitId: entry.sourceExternalId, type: 'heal', targetId: world.stores.identity.require(targetId).id, damage: actual })
+    if (actual > 0 && entry.kind !== 'lifesteal') actions.push({ unitId: entry.sourceExternalId, type: 'heal', targetId: world.stores.identity.require(targetId).id, damage: actual })
     remaining -= actual
   }
 }
@@ -179,16 +212,11 @@ function emitV9Actions(ledger: EcsActionGroupLedger, result: ReturnType<typeof r
     ...(claim.deathCause ? { cause: claim.deathCause } : {}),
     ...(claim.impactId !== undefined ? { impactId: claim.impactId } : {}),
   }
-  const shieldOverflowBlocked = result.shieldHitBlockedDamage
-  const nonShieldBlocked = Math.max(0, result.blockedDamage - shieldOverflowBlocked - result.reactiveArmorBlockedDamage - result.barrierBlockedDamage)
+  const nonShieldBlocked = result.blockedDamage
   if (result.barrierBlockedDamage > 0) actions.push({ unitId: target, type: 'barrier_absorb', targetId: source, damage: result.barrierBlockedDamage, ...metadata })
-  for (const barrierId of result.barrierBreaks) {
-    const owner = ledger.frame?.defense.barriersByExternalId.get(barrierId)?.sourceExternalId ?? source
-    actions.push({ unitId: owner, type: 'barrier_break', hazardId: barrierId, ...metadata })
-  }
   if (result.shieldDamage > 0) actions.push({ unitId: source, type: 'shield_damage', targetId: target, damage: result.shieldDamage, isShieldHit: true, ...metadata })
   if (result.shieldBroken) actions.push({ unitId: source, type: 'shield_break', targetId: target, ...metadata })
-  if (result.shieldHitBlock) actions.push({ unitId: target, type: 'shield_hit_block', targetId: source, damage: shieldOverflowBlocked, ...metadata })
+  if (result.shieldHitBlock) actions.push({ unitId: target, type: 'shield_hit_block', targetId: source, damage: result.shieldHitBlockedDamage, ...metadata })
   if (nonShieldBlocked > 0) actions.push({ unitId: target, type: 'unit_blocked_damage', targetId: source, damage: nonShieldBlocked, ...metadata })
   if (result.hpDamage > 0) actions.push({ unitId: source, type: 'damage', targetId: target, damage: result.hpDamage, ...(result.bonusDamage > 0 ? { bonusDamage: result.bonusDamage } : {}), ...metadata })
   for (const shared of result.sharedDamageEvents) actions.push({ unitId: source, type: 'damage_share', targetId: shared.targetExternalId, damage: shared.damage, ...metadata })

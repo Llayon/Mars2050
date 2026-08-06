@@ -58,19 +58,15 @@ export function resolveEcsSingleShot(
     targetId,
     primaryDamage,
     actions,
-    { interceptable: !weapon.selfDestructOnAttack, originExternalId: `unit:${identity.id}:attack`, authoredOrdinal: 0 },
+    { interceptable: !weapon.selfDestructOnAttack, originExternalId: `unit:${identity.id}:attack`, authoredOrdinal: 0, authoredPosition: { programIndex: 0, groupIndex: 0, targetOrdinal: 0, effectIndex: 0 } },
   )
   status.hasAttacked = true
   breakEcsMovementStealthOnAttack(world, entityId, actions)
   if (!damageResult.intercepted) {
     recordEcsAttackTriggers(world, entityId, targetId, actions)
-    recordEcsDamageTakenTriggers(
-      world,
-      entityId,
-      targetId,
-      damageResult.damage + damageResult.sharedDamage,
-      actions,
-    )
+    if (world.resources.get('defenseResolutionMode') !== 'v9_snapshot') {
+      recordEcsDamageTakenTriggers(world, entityId, targetId, damageResult.damage + damageResult.sharedDamage, actions)
+    }
     applyEcsOnHitEffects(world, entityId, targetId, actions)
     spawnEcsAttackPuddle(world, entityId, targetId, rng)
   }

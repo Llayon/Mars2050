@@ -40,6 +40,7 @@ export function applyEcsTriggerDamage(
         interceptable: false,
         originExternalId: `trigger:${world.stores.identity.require(ownerId).id}`,
         authoredOrdinal: targetOrdinal,
+        authoredPosition: { programIndex: 0, groupIndex: 0, targetOrdinal, effectIndex: 0 },
       },
     )
     resolveEcsDeath(world, hitId, ownerId, actions, 'trigger')

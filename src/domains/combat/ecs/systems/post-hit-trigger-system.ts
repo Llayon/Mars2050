@@ -4,6 +4,7 @@ import { getDistance } from '../../combat.utils'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
 import { getDamageAttributionMetadata, type DamageAttribution } from '../damage-source'
+import type { DamageOrderKey } from '../defense-batch'
 import { applyEcsTriggerPayload } from './trigger-payload-system'
 
 export function processEcsHpThresholdTriggers(
@@ -60,6 +61,20 @@ export function recordEcsDamageTakenTriggers(
   }
 }
 
+export function recordEcsResolvedDamageTakenTriggers(
+  world: CombatWorld,
+  targetId: EntityId,
+  attribution: DamageAttribution,
+  damage: number,
+  actions: BattleAction[],
+): void {
+  if (damage <= 0) return
+  for (const trigger of getTriggers(world, targetId, 'damage_taken')) {
+    if (damage < Math.max(0, trigger.threshold ?? 0)) continue
+    fireEcsTrigger(world, targetId, trigger, targetId, attribution.sourceEntityId, actions, attribution)
+  }
+}
+
 function getTriggers(
   world: CombatWorld,
   entityId: EntityId,
@@ -93,7 +108,25 @@ export function fireEcsTrigger(
     ...(attribution ? { sourceUnitId: attribution.sourceExternalId, ...getDamageAttributionMetadata(world, attribution) } : {}),
   })
   if (world.resources.get('defenseResolutionMode') === 'v9_snapshot' && !world.resources.get('actionGroup')?.active) {
-    world.resources.require('v9FollowUps').push({ ownerId, targetId, eventTargetId, payload: trigger.payload, actions })
+    const ownerExternalId = getExternalId(world, ownerId)
+    const targetExternalId = targetId === null ? getExternalId(world, eventTargetId) : getExternalId(world, targetId)
+    const sourceExternalId = actorId === undefined ? ownerExternalId : getExternalId(world, actorId)
+    const order: DamageOrderKey = {
+      originExternalId: `trigger:${ownerExternalId}:${trigger.id}`,
+      position: { programIndex: 0, groupIndex: 0, targetOrdinal: 0, effectIndex: 0 },
+      targetExternalId,
+      sourceExternalId,
+    }
+    const queue = world.resources.get('v9FollowUps') ?? []
+    world.resources.set('v9FollowUps', queue)
+    queue.push({
+      ownerId, targetId, eventTargetId, payload: structuredClone(trigger.payload), actions,
+      parentGroupKey: world.resources.get('actionGroup')?.groupKey,
+      followUpOrdinal: queue.length,
+      order,
+      attribution: attribution ? structuredClone(attribution) : undefined,
+      chainPath: [order.originExternalId],
+    })
     return
   }
   applyEcsTriggerPayload(

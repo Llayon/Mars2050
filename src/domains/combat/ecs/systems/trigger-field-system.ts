@@ -8,6 +8,7 @@ import type {
 } from '../../combat.sim.types'
 import { getDistance } from '../../combat.utils'
 import type { CombatWorld } from '../combat-world'
+import { clearStatusDamageAttribution } from '../damage-source'
 import type { EntityId } from '../entity'
 import { getStatusStackIdentity } from '../../combat.status-core'
 
@@ -173,6 +174,7 @@ export function cleanseEcsStatuses(
     const effect = status.statusEffects[index]
     if (!allowed.has(effect.type)) continue
     status.statusEffects.splice(index, 1)
+    clearStatusDamageAttribution(world, entityId, effect)
     world.sourceRefs.clear(world, entityId, getStatusStackIdentity(effect))
     actions.push({
       unitId: identity.id,

@@ -29,6 +29,7 @@ export function createEcsCombatRuntime(options: { profile?: boolean; defenseReso
   world.resources.set('temporalAttacks', new Map())
   world.resources.set('defenseResolutionMode', options.defenseResolutionMode ?? 'v9_snapshot')
   world.resources.set('v9FollowUps', [])
+  world.resources.set('statusDamageAttribution', new Map())
   return {
     world,
     addSquad: (row, team, rng) => { createSquadEntities(world, row, team, rng) },

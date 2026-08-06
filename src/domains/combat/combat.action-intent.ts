@@ -36,12 +36,14 @@ export type { CombatDefenseFrame, DefenseBatchSnapshot, DefenseRoutingSnapshot, 
 export interface PendingHealing {
   sourceExternalId: string
   amount: number
+  kind?: 'lifesteal'
 }
 
 export interface PendingStatus {
   targetId: EntityId
   effect: StatusEffect
   authoredKey?: DamageOrderKey
+  sourceAttribution?: DamageAttribution
 }
 
 export interface PendingMark {
@@ -49,6 +51,15 @@ export interface PendingMark {
   attribution: DamageAttribution
   mark: TargetMarkConfig
   authoredKey?: DamageOrderKey
+}
+
+export interface ResolvedDamageTakenIntent {
+  targetExternalId: string
+  sourceExternalId: string
+  sourceEntityId?: EntityId
+  sourceUnitType?: string
+  sourceTeam?: Team
+  damage: number
 }
 
 export interface PendingDefenseGrant {
@@ -67,6 +78,9 @@ export class EcsActionGroupLedger {
   readonly marks: PendingMark[] = []
   readonly defenseGrants: PendingDefenseGrant[] = []
   readonly claims: DamageClaim[] = []
+  readonly resolvedDamageTaken: ResolvedDamageTakenIntent[] = []
+  readonly barrierExpirations = new Set<string>()
+  readonly barrierBreaks = new Set<string>()
   frame: CombatDefenseFrame | undefined
   resolution: DefenseBatchResolution | undefined
   groupKey: ResolutionGroupKey | undefined
@@ -82,6 +96,9 @@ export class EcsActionGroupLedger {
     this.marks.length = 0
     this.defenseGrants.length = 0
     this.claims.length = 0
+    this.resolvedDamageTaken.length = 0
+    this.barrierExpirations.clear()
+    this.barrierBreaks.clear()
     this.resolution = undefined
     this.committing = false
     const captured = world.query(['identity', 'vitality', 'transform', 'combat', 'movement', 'statusControl', 'defense'], true)
@@ -185,18 +202,18 @@ export class EcsActionGroupLedger {
     return startHp + healing - damage
   }
 
-  queueHealing(targetId: EntityId, sourceExternalId: string, amount: number): void {
+  queueHealing(targetId: EntityId, sourceExternalId: string, amount: number, kind?: PendingHealing['kind']): void {
     if (amount <= 0) return
     const entries = this.healing.get(targetId) ?? []
-    entries.push({ sourceExternalId, amount })
+    entries.push({ sourceExternalId, amount, kind })
     this.healing.set(targetId, entries)
   }
 
-  queueStatus(targetId: EntityId, effect: StatusEffect, authoredKey?: DamageOrderKey): void {
+  queueStatus(targetId: EntityId, effect: StatusEffect, authoredKey?: DamageOrderKey, sourceAttribution?: DamageAttribution): void {
     if (authoredKey && this.statuses.some(entry => entry.authoredKey && compareDamageOrder(entry.authoredKey, authoredKey) === 0)) {
       throw new CombatInvariantError(`Duplicate status authored key: ${JSON.stringify(authoredKey)}`)
     }
-    this.statuses.push({ targetId, effect: { ...effect }, authoredKey })
+    this.statuses.push({ targetId, effect: { ...effect }, authoredKey, sourceAttribution })
   }
 
   queueMark(targetId: EntityId, attribution: DamageAttribution, mark: TargetMarkConfig, authoredKey?: DamageOrderKey): void {
@@ -209,6 +226,10 @@ export class EcsActionGroupLedger {
   queueDefenseGrant(targetId: EntityId, amount: number, sourceExternalId: string, kind: PendingDefenseGrant['kind']): void {
     if (amount <= 0) return
     this.defenseGrants.push({ targetId, amount, sourceExternalId, kind })
+  }
+
+  queueBarrierExpiration(externalId: string): void {
+    if (this.active) this.barrierExpirations.add(externalId)
   }
 
   finish(): void {

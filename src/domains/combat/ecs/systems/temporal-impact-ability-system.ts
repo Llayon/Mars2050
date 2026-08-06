@@ -104,7 +104,7 @@ export function executeCapturedImpactPrograms(
     const vitality = world.stores.vitality.get(targetId)
     if (!vitality || vitality.isDead) continue
     if (contribution.rawDamage > 0) {
-      applyEcsCapturedDamage(world, source, targetId, contribution.rawDamage, actions, { interceptable: false, originExternalId: `impact:${impact.id}`, authoredOrdinal: targetOrdinal, impactId: impact.id, damageKind: 'weapon' })
+      applyEcsCapturedDamage(world, source, targetId, contribution.rawDamage, actions, { interceptable: false, originExternalId: `impact:${impact.id}`, authoredOrdinal: targetOrdinal, authoredPosition: { programIndex: 0, groupIndex: 0, targetOrdinal, effectIndex: 0 }, impactId: impact.id, damageKind: 'weapon' })
     }
     if (getProjectedHp(world, targetId) <= 0) continue
     for (const effect of contribution.effects) {

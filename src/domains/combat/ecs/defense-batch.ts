@@ -13,6 +13,7 @@ import {
   getStatusValuePure,
 } from './damage-kernel-pure'
 import { compareAuthoredEffectPosition, compareDamageOrderStrings, legacyAuthoredPosition } from './authored-order'
+import { resolveDamageLifesteal } from './damage-lifesteal'
 export { compareAuthoredEffectPosition } from './authored-order'
 
 /** The two deterministic damage execution modes supported by the combat ECS. */
@@ -239,7 +240,8 @@ export function resolveDefenseBatch(snapshot: DefenseBatchSnapshot, inputClaims:
       }
       const barrierReduction = covered.reduce((value, barrier) => Math.max(value, Math.max(0, Math.min(0.95, barrier.damageReduction ?? 0))), 0)
       if (barrierReduction > 0) damage = Math.floor(damage * (1 - barrierReduction))
-      damage = applyTargetDefense(target, claim, damage)
+      const targetDefense = applyTargetDefense(target, claim, damage)
+      damage = targetDefense.damage
       const beforeShield = damage
       const shield = shields.get(target.externalId) ?? 0
       const multiplier = Math.max(1, modifiers.shieldDamageMult ?? 1)
@@ -273,10 +275,14 @@ export function resolveDefenseBatch(snapshot: DefenseBatchSnapshot, inputClaims:
       for (const event of shared.events) projected.set(event.targetExternalId, (projected.get(event.targetExternalId) ?? 0) - event.damage)
       const hpDamage = applyExecute(target, claim, damage, projected.get(target.externalId) ?? target.hp)
       projected.set(target.externalId, (projected.get(target.externalId) ?? target.hp) - hpDamage)
-      const lifesteal = claim.sourceAliveAtGroupStart !== false ? Math.floor((hpDamage + shared.total) * Math.max(0, modifiers.lifestealMult ?? 0)) : 0
-      if (lifesteal > 0) healingIntents.push({ targetExternalId: claim.sourceExternalId, sourceExternalId: claim.sourceExternalId, amount: lifesteal })
-      const bonusDamage = Math.max(0, beforeShield - raw)
-      resolutions.push({ claim, targetExternalId: target.externalId, sourceExternalId: claim.sourceExternalId, rawDamage: raw, mitigatedDamage: beforeShield, hpDamage, bonusDamage, damage: hpDamage, shieldDamage, barrierDamage, barrierBlockedDamage: barrierBlocked, blockedDamage: blocked, sharedDamage: shared.total, sharedDamageEvents: shared.events, shieldBroken, shieldHitBlock, shieldHitBlockedDamage, reactiveArmorBlockedDamage, barrierBreaks, lifesteal })
+      const sourceSnapshot = snapshot.targetsByExternalId.get(claim.sourceExternalId)
+      const sourceProjectedHp = sourceSnapshot ? (projected.get(claim.sourceExternalId) ?? sourceSnapshot.hp) : 0
+      const lifesteal = resolveDamageLifesteal(snapshot, projected, claim, hpDamage + shared.total, modifiers.lifestealMult ?? 0)
+      if (lifesteal > 0) {
+        healingIntents.push({ targetExternalId: claim.sourceExternalId, sourceExternalId: claim.sourceExternalId, amount: lifesteal })
+        projected.set(claim.sourceExternalId, sourceProjectedHp + lifesteal)
+      }
+      resolutions.push({ claim, targetExternalId: target.externalId, sourceExternalId: claim.sourceExternalId, rawDamage: raw, mitigatedDamage: beforeShield, hpDamage, bonusDamage: targetDefense.bonusDamage, damage: hpDamage, shieldDamage, barrierDamage, barrierBlockedDamage: barrierBlocked, blockedDamage: blocked, sharedDamage: shared.total, sharedDamageEvents: shared.events, shieldBroken, shieldHitBlock, shieldHitBlockedDamage, reactiveArmorBlockedDamage, barrierBreaks, lifesteal })
     } else {
       projected.set(target.externalId, (projected.get(target.externalId) ?? target.hp) - damage)
       resolutions.push({ claim, targetExternalId: target.externalId, sourceExternalId: claim.sourceExternalId, rawDamage: raw, mitigatedDamage: damage, hpDamage: damage, bonusDamage: 0, damage, shieldDamage: 0, barrierDamage: 0, barrierBlockedDamage: 0, blockedDamage: 0, sharedDamage: 0, sharedDamageEvents: [], shieldBroken: false, shieldHitBlock: false, shieldHitBlockedDamage: 0, reactiveArmorBlockedDamage: 0, barrierBreaks: [], lifesteal: 0 })
@@ -298,13 +304,14 @@ function applyArmorAndModifiers(target: TargetDefenseSnapshot, claim: DamageClai
   return Math.max(0, applySummonCounterPure(target.isSummon === true, Math.max(1, modifiers.summonCounterDamageMult ?? 1), damage))
 }
 
-function applyTargetDefense(target: TargetDefenseSnapshot, claim: DamageClaim, damage: number): number {
+function applyTargetDefense(target: TargetDefenseSnapshot, claim: DamageClaim, damage: number): { damage: number; bonusDamage: number } {
   let result = applyTargetStatusesPure(target.statusEffects ?? [], damage)
   const revealed = (target.statusEffects ?? []).some(effect => effect.type === 'revealed' && effect.duration > 0)
   result = applyMovementReductionPure(target.isMoving === true, target.damageReductionWhileMoving ?? 0, target.isBurrowed === true, target.burrowDamageReduction ?? 0, revealed, result)
+  const beforeMark = result
   const markMultiplier = getMarkDamageMultiplierPure(claim.sourceExternalId, target.targetMark)
   if (markMultiplier > 0) result = Math.max(0, Math.floor(result * (1 + markMultiplier)))
-  return Math.max(0, applyFlatBlockPure(target.flatDamageBlock, target.rank ?? 1, result))
+  return { damage: Math.max(0, applyFlatBlockPure(target.flatDamageBlock, target.rank ?? 1, result)), bonusDamage: Math.max(0, result - beforeMark) }
 }
 
 function resolveSharing(snapshot: DefenseBatchSnapshot, target: TargetDefenseSnapshot, claim: DamageClaim, damage: number): { remaining: number; total: number; events: { targetExternalId: string; damage: number }[] } {
