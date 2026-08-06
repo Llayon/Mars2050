@@ -37,14 +37,14 @@ export function applyEcsPeriodicAbilityPayload(
       actions,
     )
   } else {
-    for (const payloadTargetId of getPayloadTargets(
+    for (const [targetOrdinal, payloadTargetId] of getPayloadTargets(
       world,
       sourceId,
       targetId,
       payload,
-    )) {
+    ).entries()) {
       if (payload.kind === 'damage') {
-        applyDamage(world, sourceId, payloadTargetId, payload, actions)
+        applyDamage(world, sourceId, payloadTargetId, payload, actions, abilityId, targetOrdinal)
       } else if (payload.kind === 'status') {
         for (const status of payload.effects) {
           applyEcsStatus(world, payloadTargetId, {
@@ -67,6 +67,8 @@ function applyDamage(
   targetId: EntityId,
   payload: Extract<PeriodicAbilityPayload, { kind: 'damage' }>,
   actions: BattleAction[],
+  abilityId: string,
+  targetOrdinal: number,
 ): void {
   const percentDamage = getPercentDamage(world, targetId, payload.percentHp)
   if (percentDamage > 0) {
@@ -83,7 +85,7 @@ function applyDamage(
     targetId,
     Math.max(0, Math.floor(payload.amount ?? 0)) + percentDamage,
     actions,
-    { allowPercentHpDamage: false, deathCause: 'weapon' },
+    { allowPercentHpDamage: false, deathCause: 'weapon', originExternalId: `ability:${abilityId}`, authoredOrdinal: targetOrdinal },
   )
   if (result.intercepted) return
   resolveEcsDeath(world, targetId, sourceId, actions, 'weapon')

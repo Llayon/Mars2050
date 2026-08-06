@@ -100,11 +100,11 @@ export function executeCapturedImpactPrograms(
     .sort((left, right) => getDistance(impactPoint.x, impactPoint.y, world.stores.transform.require(left[0]).x, world.stores.transform.require(left[0]).y) -
       getDistance(impactPoint.x, impactPoint.y, world.stores.transform.require(right[0]).x, world.stores.transform.require(right[0]).y) ||
       world.stores.identity.require(left[0]).id.localeCompare(world.stores.identity.require(right[0]).id))
-  for (const [targetId, contribution] of ordered) {
+  for (const [targetOrdinal, [targetId, contribution]] of ordered.entries()) {
     const vitality = world.stores.vitality.get(targetId)
     if (!vitality || vitality.isDead) continue
     if (contribution.rawDamage > 0) {
-      applyEcsCapturedDamage(world, source, targetId, contribution.rawDamage, actions, { interceptable: false })
+      applyEcsCapturedDamage(world, source, targetId, contribution.rawDamage, actions, { interceptable: false, originExternalId: `impact:${impact.id}`, authoredOrdinal: targetOrdinal })
     }
     if (getProjectedHp(world, targetId) <= 0) continue
     for (const effect of contribution.effects) {

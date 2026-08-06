@@ -80,3 +80,10 @@ export function getStatusValuePure(effects: readonly RuntimeStatusEffect[], type
   }
   return value
 }
+
+export function stableAuthoredOrdinal(targetExternalId: string, sourceExternalId: string, rawDamage: number, cause = ''): number {
+  const value = `${targetExternalId}\u0000${sourceExternalId}\u0000${rawDamage}\u0000${cause}`
+  let hash = 2166136261
+  for (let index = 0; index < value.length; index += 1) hash = Math.imul(hash ^ value.charCodeAt(index), 16777619)
+  return hash >>> 0
+}

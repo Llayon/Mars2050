@@ -98,7 +98,7 @@ function applyEffect(
     const amount = effect.expression.kind === 'fixed'
       ? effect.expression.amount
       : Math.floor(combat.attack * effect.expression.multiplier)
-    applyEcsSingleDamage(world, attackerId, targetId, amount, actions, { interceptable: false })
+    applyEcsSingleDamage(world, attackerId, targetId, amount, actions, { interceptable: false, originExternalId: `unit:${world.stores.identity.require(attackerId).id}:ability`, authoredOrdinal: 0 })
     return true
   }
   if (effect.kind === 'legacy_geometry') {

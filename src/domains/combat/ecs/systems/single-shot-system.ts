@@ -58,7 +58,7 @@ export function resolveEcsSingleShot(
     targetId,
     primaryDamage,
     actions,
-    { interceptable: !weapon.selfDestructOnAttack },
+    { interceptable: !weapon.selfDestructOnAttack, originExternalId: `unit:${identity.id}:attack`, authoredOrdinal: 0 },
   )
   status.hasAttacked = true
   breakEcsMovementStealthOnAttack(world, entityId, actions)

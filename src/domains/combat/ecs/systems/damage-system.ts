@@ -24,6 +24,7 @@ import {
   getRankMultiplier,
   getStatusValue,
 } from './damage-kernel-helpers'
+import { stableAuthoredOrdinal } from '../damage-kernel-pure'
 interface EcsDamageResult {
   damage: number
   bonusDamage: number
@@ -44,6 +45,8 @@ export interface EcsDamageOptions {
   interceptable?: boolean
   deathCause?: DeathCause
   defensePolicy?: 'full' | 'bypass_all'
+  originExternalId?: string
+  authoredOrdinal?: number
 }
 export function applyEcsSingleDamage(
   world: CombatWorld,
@@ -111,15 +114,17 @@ function applyEcsDamageWithSource(
   }
   if (world.resources.get('defenseResolutionMode') === 'v9_snapshot' && actionGroup?.active && actionGroup.frame) {
     const targetExternalId = world.stores.identity.require(targetId).id
+    const originExternalId = options.originExternalId ?? `unit:${source.attribution.sourceExternalId}`
+    const authoredOrdinal = options.authoredOrdinal ?? stableAuthoredOrdinal(targetExternalId, source.attribution.sourceExternalId, raw, options.deathCause)
     actionGroup.captureClaim({
       order: {
-        originExternalId: `unit:${source.attribution.sourceExternalId}`,
-        authoredOrdinal: actionGroup.claims.length,
+        originExternalId,
+        authoredOrdinal,
         targetExternalId,
         sourceExternalId: source.attribution.sourceExternalId,
       },
-      originExternalId: `unit:${source.attribution.sourceExternalId}`,
-      authoredOrdinal: actionGroup.claims.length,
+      originExternalId,
+      authoredOrdinal,
       targetExternalId,
       sourceExternalId: source.attribution.sourceExternalId,
       rawDamage: raw,
@@ -196,6 +201,7 @@ function applyEcsDamageWithSource(
   emitDamageActions(world, source.attribution, targetId, result, actions)
   return result
 }
+
 function applyShield(world: CombatWorld, targetId: EntityId, damage: number, shieldMultiplier = 1): EcsDamageResult {
   const vitality = world.stores.vitality.require(targetId)
   const defense = world.stores.defense.require(targetId)

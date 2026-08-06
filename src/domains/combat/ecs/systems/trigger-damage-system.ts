@@ -18,7 +18,7 @@ export function applyEcsTriggerDamage(
   payload: DamagePayload,
   actions: BattleAction[],
 ): void {
-  for (const hitId of getTargets(world, ownerId, targetId, payload.radius)) {
+  for (const [targetOrdinal, hitId] of getTargets(world, ownerId, targetId, payload.radius).entries()) {
     const percentDamage = getConfiguredDamage(world, hitId, payload.percentHp)
     if (percentDamage > 0) {
       actions.push({
@@ -38,6 +38,8 @@ export function applyEcsTriggerDamage(
         allowPercentHpDamage: false,
         deathCause: 'trigger',
         interceptable: false,
+        originExternalId: `trigger:${world.stores.identity.require(ownerId).id}`,
+        authoredOrdinal: targetOrdinal,
       },
     )
     resolveEcsDeath(world, hitId, ownerId, actions, 'trigger')
