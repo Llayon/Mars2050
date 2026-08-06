@@ -1,6 +1,7 @@
 import type { CombatPhaseId, CombatPhaseStage, RuntimePhaseContext } from '../combat.phase'
 import { CombatInvariantError } from './combat-invariant-error'
 import type { CombatWorld } from './combat-world'
+import { EcsActionGroupLedger } from '../combat.action-intent'
 import {
   getEcsBurrowRegenerationEntities,
   getEcsControlBeamEntities,
@@ -28,6 +29,7 @@ import {
   runHazardSystem,
   runStatusSystem,
   runEcsActorTurnSystem,
+  commitActionGroup,
   runTemporalTimelineSystem,
   runProjectileImpactSystem,
 } from './systems'
@@ -53,8 +55,8 @@ const ECS_PHASES = [
   phase('status', 'pre_action', runStatusPhase),
   phase('actor_turn', 'action', (world, context) => runEcsActorTurnSystem(world, context)),
   phase('batch_movement', 'post_action', runBatchMovementSystem),
-  phase('temporal_timeline', 'post_action', (world, context) => runTemporalTimelineSystem(world, context)),
-  phase('projectile_impact', 'post_action', (world, context) => runProjectileImpactSystem(world, context)),
+  phase('temporal_timeline', 'post_action', (world, context) => runDefenseGroup(world, context, 'temporal_timeline', 0, () => runTemporalTimelineSystem(world, context))),
+  phase('projectile_impact', 'post_action', (world, context) => runDefenseGroup(world, context, 'projectile_impact', 1, () => runProjectileImpactSystem(world, context))),
   phase('hazard', 'post_action', runHazardPhase),
   phase('hp_threshold_trigger', 'post_action', runHpThresholdPhase),
 ] as const satisfies readonly EcsPhaseDefinition[]
@@ -133,25 +135,33 @@ function runPeriodicAbilityPhase(world: CombatWorld, context: RuntimePhaseContex
   world.flushStructuralCommands()
   requireRng(world, context, 'periodic_ability')
   ensureSpatial(world)
-  runEcsPeriodicAbilitySystem(world, context.tick, context.actions, entityIds)
+  runDefenseGroup(world, context, 'periodic_ability', 0, () => runEcsPeriodicAbilitySystem(world, context.tick, context.actions, entityIds))
   world.flushStructuralCommands()
 }
 
 function runStatusPhase(world: CombatWorld, context: RuntimePhaseContext): void {
   world.flushStructuralCommands()
-  runStatusSystem(world, context.actions, (entityId, sourceId, cause) => {
+  runDefenseGroup(world, context, 'status', 0, () => runStatusSystem(world, context.actions, (entityId, sourceId, cause) => {
     resolveEcsDeath(world, entityId, sourceId, context.actions, cause)
     world.flushStructuralCommands()
-  })
+  }))
 }
 
 function runHazardPhase(world: CombatWorld, context: RuntimePhaseContext): void {
   world.flushStructuralCommands()
   ensureSpatial(world)
-  runHazardSystem(world, context.actions, (entityId, sourceId, cause) => {
+  runDefenseGroup(world, context, 'hazard', 0, () => runHazardSystem(world, context.actions, (entityId, sourceId, cause) => {
     resolveEcsDeath(world, entityId, sourceId, context.actions, cause)
     world.flushStructuralCommands()
-  })
+  }))
+}
+
+function runDefenseGroup(world: CombatWorld, context: RuntimePhaseContext, phaseId: string, groupOrdinal: number, run: () => void): void {
+  if (world.resources.get('defenseResolutionMode') !== 'v9_snapshot') { run(); return }
+  const ledger = world.resources.get('actionGroup') ?? new EcsActionGroupLedger()
+  world.resources.set('actionGroup', ledger)
+  ledger.begin(world, world.query(['identity', 'vitality']), { tick: context.tick, phaseId, groupOrdinal })
+  try { run() } finally { commitActionGroup(world, ledger, context.actions); world.flushStructuralCommands() }
 }
 
 function runHpThresholdPhase(world: CombatWorld, context: RuntimePhaseContext): void {

@@ -6,6 +6,7 @@ import type {
 import { getDistance } from '../../combat.utils'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
+import { grantShield } from '../defense-resource-commit'
 import { applyEcsSingleDamage } from './damage-system'
 import { resolveEcsDeath } from './death-system'
 import { applyEcsHealing } from './healing-system'
@@ -135,9 +136,7 @@ function applyShield(
   actions: BattleAction[],
 ): void {
   const granted = Math.max(0, Math.floor(amount))
-  const vitality = world.stores.vitality.require(targetId)
-  vitality.maxShield = Math.max(vitality.maxShield, vitality.shield + granted)
-  vitality.shield += granted
+    grantShield(world, targetId, granted)
   actions.push({
     unitId: getExternalId(world, sourceId),
     type: 'shield_apply',

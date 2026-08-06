@@ -8,6 +8,7 @@ import type { EntityId } from '../entity'
 import { applyEcsStatus } from './status-application-system'
 import { cleanseEcsStatuses } from './trigger-field-system'
 import { getAbilityExecutionMode } from './ability-effect-system'
+import { setShield, setShieldCapacity } from '../defense-resource-commit'
 
 const DEFAULT_AURA_INTERVAL = 10
 
@@ -144,15 +145,15 @@ function applyShieldAura(
     const cap = Math.max(0, Math.floor(aura.value))
     if (cap <= 0 || vitality.shield >= cap) return
     granted = cap - vitality.shield
-    vitality.maxShield = Math.max(vitality.maxShield, cap)
-    vitality.shield = cap
+    setShieldCapacity(world, targetId, Math.max(vitality.maxShield, cap))
+    setShield(world, targetId, cap)
   } else {
     const repair = Math.max(0, Math.floor(aura.value))
     if (repair <= 0 ||
         vitality.maxShield <= 0 ||
         vitality.shield >= vitality.maxShield) return
     granted = Math.min(repair, vitality.maxShield - vitality.shield)
-    vitality.shield += granted
+    setShield(world, targetId, vitality.shield + granted)
   }
   actions.push({
     unitId: getExternalId(world, sourceId),

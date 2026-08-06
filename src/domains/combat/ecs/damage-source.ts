@@ -5,8 +5,8 @@ import type { EntityId } from './entity'
 
 export interface DamageAttribution {
   sourceExternalId: string
-  sourceUnitType: string
-  sourceTeam: Team
+  sourceUnitType?: string
+  sourceTeam?: Team
   sourceEntityId?: EntityId
 }
 
@@ -39,8 +39,8 @@ export function getDamageAttributionMetadata(
 ): { sourceUnitType?: string; sourceTeam?: Team } {
   if (attribution.sourceEntityId !== undefined && world.stores.identity.get(attribution.sourceEntityId) !== undefined) return {}
   return {
-    sourceUnitType: attribution.sourceUnitType,
-    sourceTeam: attribution.sourceTeam,
+    ...(attribution.sourceUnitType ? { sourceUnitType: attribution.sourceUnitType } : {}),
+    ...(attribution.sourceTeam ? { sourceTeam: attribution.sourceTeam } : {}),
   }
 }
 

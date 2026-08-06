@@ -4,6 +4,7 @@ import type { RuntimeStatusEffect, StatusEffect } from '../../combat.primitives'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
 import { getStatusStackIdentity } from '../../combat.status-core'
+import { applyEcsCapturedDamage } from './damage-system'
 
 export type EcsStatusDeathHandler = (
   entityId: EntityId,
@@ -66,9 +67,20 @@ function applyPeriodicEffect(
     return
   }
 
-  const damage = getPeriodicDamage(vitality.maxHp, effect)
-  if (damage <= 0) return
-  vitality.hp -= damage
+    const damage = getPeriodicDamage(vitality.maxHp, effect)
+    if (damage <= 0) return
+    if (world.resources.get('defenseResolutionMode') === 'v9_snapshot' && world.resources.get('actionGroup')?.active) {
+      const damageCause = effect.type === 'burn' || effect.type === 'acid' ? effect.type : 'degeneration'
+      applyEcsCapturedDamage(world, {
+        attribution: { sourceExternalId: sourceId, ...(effect.sourceUnitId ? { sourceUnitType: effect.type, sourceTeam: world.stores.identity.require(entityId).team } : {}) },
+        attack: 0,
+        modifiers: { attackBoostValue: 0, outputSuppression: 0, accuracyPenalty: 0, accuracyPenaltyResist: 0, armorPierceRatio: 0, summonCounterDamageMult: 1, shieldDamageMult: 1, lifestealMult: 0, executeThreshold: 0 },
+      }, entityId, damage, actions, { defensePolicy: 'bypass_all', allowMinimumDamage: false, interceptable: false, deathCause: damageCause })
+      actions.push({ unitId: sourceId, type: 'status_tick', targetId: externalId, statusType: effect.type, value: damage })
+      actions.push({ unitId: sourceId, type: 'damage', targetId: externalId, damage, statusType: effect.type, damageKind: 'dot' })
+      return
+    }
+    vitality.hp -= damage
   actions.push({ unitId: sourceId, type: 'status_tick', targetId: externalId, statusType: effect.type, value: damage })
   actions.push({ unitId: sourceId, type: 'damage', targetId: externalId, damage, statusType: effect.type, damageKind: 'dot' })
   if (vitality.hp <= 0 && !vitality.isDead) {

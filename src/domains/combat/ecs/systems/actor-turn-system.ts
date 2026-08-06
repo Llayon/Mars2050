@@ -15,6 +15,7 @@ import { runModifierSystem } from './modifier-system'
 import { runEcsPeriodicSpawnerSystem } from './periodic-spawner-system'
 import { runTargetingSystem } from './targeting-system'
 import { applyEcsStatus } from './status-application-system'
+import { commitV9DefenseBatch } from '../v9-defense-commit'
 
 export function runEcsActorTurnSystem(
   world: CombatWorld,
@@ -44,7 +45,11 @@ export function runEcsActorTurnSystem(
   try {
     let initiativeIndex = 0
     for (const group of getEcsInitiativeGroups(world)) {
-      ledger.begin(world, world.query(['identity', 'vitality']))
+      ledger.begin(world, world.query(['identity', 'vitality']), {
+        tick: context.tick,
+        phaseId: 'actor_turn',
+        groupOrdinal: initiativeIndex,
+      })
       const intents: EcsActionIntent[] = []
       const groupMovement: MovementRequest[] = []
       for (const entityId of group.entityIds) {
@@ -123,6 +128,10 @@ export function commitActionGroup(
   ledger: EcsActionGroupLedger,
   actions: RuntimePhaseContext['actions'],
 ): void {
+  if (world.resources.get('defenseResolutionMode') === 'v9_snapshot') ledger.assertRoutingIntact(world)
+  if (world.resources.get('defenseResolutionMode') === 'v9_snapshot' && ledger.claims.length > 0) {
+    commitV9DefenseBatch(world, ledger, actions)
+  }
   const affected = new Set([...ledger.damage.keys(), ...ledger.healing.keys()])
   for (const entityId of affected) {
     const vitality = world.stores.vitality.require(entityId)
@@ -135,7 +144,8 @@ export function commitActionGroup(
   ledger.committing = true
   for (const pending of ledger.statuses
     .sort((left, right) => world.stores.identity.require(left.targetId).id.localeCompare(world.stores.identity.require(right.targetId).id))) {
-    if (!world.stores.vitality.require(pending.targetId).isDead) {
+    const pendingVitality = world.stores.vitality.require(pending.targetId)
+    if (!pendingVitality.isDead && (world.resources.get('defenseResolutionMode') !== 'v9_snapshot' || pendingVitality.hp > 0)) {
       applyEcsStatus(world, pending.targetId, pending.effect, actions)
     }
   }
@@ -158,10 +168,12 @@ export function commitActionGroup(
   }
   for (const entityId of deaths) {
     const vitality = world.stores.vitality.require(entityId)
-    const attribution = (ledger.damage.get(entityId) ?? [])
-      .sort((left, right) => right.amount - left.amount ||
-        left.attribution.sourceExternalId.localeCompare(right.attribution.sourceExternalId))[0]?.attribution
-    resolveEcsDeath(world, entityId, attribution, actions, 'weapon', { preMarked: true })
+      const pendingAttribution = (ledger.damage.get(entityId) ?? [])
+        .sort((left, right) => right.amount - left.amount ||
+          left.attribution.sourceExternalId.localeCompare(right.attribution.sourceExternalId))[0]?.attribution
+      const attribution = pendingAttribution && (pendingAttribution.sourceEntityId !== undefined || pendingAttribution.sourceUnitType || pendingAttribution.sourceTeam) ? pendingAttribution : undefined
+      const cause = (ledger.damage.get(entityId) ?? []).sort((left, right) => right.amount - left.amount || left.attribution.sourceExternalId.localeCompare(right.attribution.sourceExternalId))[0]?.cause ?? 'weapon'
+      resolveEcsDeath(world, entityId, attribution, actions, cause, { preMarked: true })
     vitality.hp = 0
   }
 }

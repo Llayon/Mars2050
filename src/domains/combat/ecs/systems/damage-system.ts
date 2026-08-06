@@ -9,6 +9,9 @@ import { applyEcsBarriers } from './damage-barrier-system'
 import { applyEcsDamageSharing } from './damage-sharing-system'
 import { tryEcsProjectileInterception } from './damage-interception-system'
 import { buildEcsDamagePayload } from './damage-payload-system'
+import { consumeReactiveArmorCharge, consumeShieldHitBlockCharge, setShield } from '../defense-resource-commit'
+import { EcsActionGroupLedger } from '../../combat.action-intent'
+import { commitV9DefenseBatch } from '../v9-defense-commit'
 import {
   applyAccuracy,
   applyFlatBlock,
@@ -40,6 +43,7 @@ export interface EcsDamageOptions {
   allowPercentHpDamage?: boolean; allowMinimumDamage?: boolean
   interceptable?: boolean
   deathCause?: DeathCause
+  defensePolicy?: 'full' | 'bypass_all'
 }
 export function applyEcsSingleDamage(
   world: CombatWorld,
@@ -89,6 +93,45 @@ function applyEcsDamageWithSource(
       tryEcsProjectileInterception(world, source.attribution.sourceEntityId, targetId, raw, actions)) {
     return createResult({ blockedDamage: raw, intercepted: true })
   }
+  const actionGroup = world.resources.get('actionGroup')
+  if (world.resources.get('defenseResolutionMode') === 'v9_snapshot' && !actionGroup?.active) {
+    const singleton = new EcsActionGroupLedger()
+    const previous = actionGroup
+    world.resources.set('actionGroup', singleton)
+    singleton.begin(world, [targetId], { tick: world.resources.get('clock')?.tick ?? 0, phaseId: 'immediate', groupOrdinal: 0 })
+    applyEcsDamageWithSource(world, source, targetId, rawDamage, actions, options)
+    commitV9DefenseBatch(world, singleton, actions)
+    singleton.finish()
+    const resolved = singleton.resolution?.claims[0]
+    world.resources.set('actionGroup', previous)
+    if (!resolved) return createResult()
+    return createResult({ damage: resolved.hpDamage, shieldDamage: resolved.shieldDamage, shieldBroken: resolved.shieldBroken, shieldHitBlock: resolved.shieldHitBlock, blockedDamage: resolved.blockedDamage, barrierBlockedDamage: resolved.barrierBlockedDamage, barrierBreaks: resolved.barrierBreaks.map(hazardId => ({ hazardId, sourceUnitId: source.attribution.sourceExternalId })), sharedDamage: resolved.sharedDamage, sharedDamageEvents: resolved.sharedDamageEvents.map(event => ({ targetId: event.targetExternalId, damage: event.damage })), lifesteal: resolved.lifesteal })
+  }
+  if (world.resources.get('defenseResolutionMode') === 'v9_snapshot' && actionGroup?.active && actionGroup.frame) {
+    const targetExternalId = world.stores.identity.require(targetId).id
+    actionGroup.captureClaim({
+      order: {
+        originExternalId: `unit:${source.attribution.sourceExternalId}`,
+        authoredOrdinal: actionGroup.claims.length,
+        targetExternalId,
+        sourceExternalId: source.attribution.sourceExternalId,
+      },
+      originExternalId: `unit:${source.attribution.sourceExternalId}`,
+      authoredOrdinal: actionGroup.claims.length,
+      targetExternalId,
+      sourceExternalId: source.attribution.sourceExternalId,
+      rawDamage: raw,
+      sourceTeam: source.attribution.sourceTeam,
+      sourceUnitType: source.attribution.sourceUnitType,
+      attackerModifiers: source.modifiers,
+      allowMinimumDamage: options.allowMinimumDamage,
+      allowPercentHpDamage: options.allowPercentHpDamage,
+      deathCause: options.deathCause,
+      defensePolicy: options.defensePolicy,
+      sourceAliveAtGroupStart: actionGroup.frame.routing.liveSourceExternalIds.has(source.attribution.sourceExternalId),
+    })
+    return createResult()
+  }
 
   const armorBroken = getStatusValue(targetStatus.statusEffects, 'armor_broken') ?? 0
   const defenseReduction = armorBroken <= 1 ? targetCombat.defense * armorBroken : armorBroken
@@ -117,7 +160,7 @@ function applyEcsDamageWithSource(
   damage = shield.damage
   let reactiveBlock = 0
   if (damage > 0 && targetDefense.reactiveArmorCharges && targetDefense.reactiveArmorBlock) {
-    targetDefense.reactiveArmorCharges--
+    consumeReactiveArmorCharge(world, targetId)
     reactiveBlock = Math.min(damage, Math.max(0, Math.floor(targetDefense.reactiveArmorBlock)))
     damage -= reactiveBlock
   }
@@ -133,7 +176,6 @@ function applyEcsDamageWithSource(
     lifesteal = applyEcsHealing(world, source.attribution.sourceEntityId, source.attribution.sourceEntityId, Math.floor((damage + sharing.sharedDamage) * source.modifiers.lifestealMult))
   }
   if (damage > 0) targetVitality.hp -= damage
-  const actionGroup = world.resources.get('actionGroup')
   if (actionGroup?.active && damage > 0) {
     targetVitality.hp += damage
     actionGroup.queueDamage(targetId, source.attribution, damage)
@@ -160,13 +202,12 @@ function applyShield(world: CombatWorld, targetId: EntityId, damage: number, shi
   const budget = Math.max(1, Math.floor(damage * multiplier))
   const currentShield = vitality.shield
   if (vitality.shield >= budget) {
-    vitality.shield -= budget
-    return createResult({ damage: 0, shieldDamage: budget, shieldBroken: vitality.shield === 0 })
+    const nextShield = setShield(world, targetId, vitality.shield - budget)
+    return createResult({ damage: 0, shieldDamage: budget, shieldBroken: nextShield === 0 })
   }
-  vitality.shield = 0
+  setShield(world, targetId, 0)
   const overflow = Math.max(0, damage - Math.ceil(currentShield / multiplier))
-  if (overflow > 0 && (defense.shieldHitBlockCharges ?? 0) > 0) {
-    defense.shieldHitBlockCharges = Math.max(0, (defense.shieldHitBlockCharges ?? 0) - 1)
+  if (overflow > 0 && consumeShieldHitBlockCharge(world, targetId)) {
     return createResult({
       damage: 0, shieldDamage: currentShield, shieldBroken: true,
       shieldHitBlock: true, shieldHitBlockedDamage: overflow,

@@ -15,6 +15,7 @@ import type { DesignationIndex } from './designation-index'
 import type { EcsActionGroupLedger } from '../combat.action-intent'
 import type { PendingImpactQueue } from './pending-impacts'
 import type { AttackTimelineState } from './pending-impacts'
+import type { DefenseResolutionMode } from './defense-batch'
 
 export interface CombatClockResource {
   tick: number
@@ -40,6 +41,7 @@ export interface CombatResourceMap {
   actionGroup: EcsActionGroupLedger | undefined
   pendingImpacts: PendingImpactQueue
   temporalAttacks: Map<EntityId, AttackTimelineState>
+  defenseResolutionMode: DefenseResolutionMode
 }
 
 export class CombatResourceStore {

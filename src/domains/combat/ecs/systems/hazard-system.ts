@@ -3,6 +3,7 @@ import type { DeathCause } from '../../combat.death.types'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
 import { applyEcsStatus } from './status-application-system'
+import { applyEcsCapturedDamage } from './damage-system'
 
 export type EcsHazardDeathHandler = (
   entityId: EntityId,
@@ -38,6 +39,7 @@ export function runHazardSystem(
     if (hazard.damagePerTick > 0 && hazard.duration % 10 === 0) {
       for (const targetId of getTargetsInRadius(world, hazardId)) {
         const vitality = world.stores.vitality.require(targetId)
+        if (useV9DamageBatch(world, hazard, targetId, actions, 'hazard')) continue
         vitality.hp -= hazard.damagePerTick
         actions.push(createDamageAction(world, hazard, targetId))
         if (vitality.hp <= 0 && !vitality.isDead) onUnitDeath(
@@ -58,6 +60,7 @@ function processMine(world: CombatWorld, hazardId: EntityId, actions: BattleActi
   if (targets.length === 0) return false
   for (const targetId of targets) {
     const vitality = world.stores.vitality.require(targetId)
+    if (useV9DamageBatch(world, hazard, targetId, actions, 'mine')) continue
     vitality.hp -= hazard.damagePerTick
     actions.push(createDamageAction(world, hazard, targetId))
     if (vitality.hp <= 0 && !vitality.isDead) onDeath(
@@ -66,6 +69,17 @@ function processMine(world: CombatWorld, hazardId: EntityId, actions: BattleActi
       'mine',
     )
   }
+  return true
+}
+
+function useV9DamageBatch(world: CombatWorld, hazard: ReturnType<CombatWorld['stores']['hazard']['require']>, targetId: EntityId, actions: BattleAction[], cause: DeathCause): boolean {
+  if (world.resources.get('defenseResolutionMode') !== 'v9_snapshot' || !world.resources.get('actionGroup')?.active) return false
+  applyEcsCapturedDamage(world, {
+    attribution: { sourceExternalId: hazard.sourceUnitId ?? hazard.id, ...(hazard.sourceUnitId ? { sourceUnitType: hazard.type, sourceTeam: hazard.team } : {}) },
+    attack: 0,
+    modifiers: { attackBoostValue: 0, outputSuppression: 0, accuracyPenalty: 0, accuracyPenaltyResist: 0, armorPierceRatio: 0, summonCounterDamageMult: 1, shieldDamageMult: 1, lifestealMult: 0, executeThreshold: 0 },
+  }, targetId, hazard.damagePerTick, actions, { defensePolicy: 'bypass_all', allowMinimumDamage: false, interceptable: false, deathCause: cause })
+  actions.push(createDamageAction(world, hazard, targetId))
   return true
 }
 

@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import fixture from './fixtures/combat-ecs-v8-golden.json'
 import { getSimulatorPreset } from '@/app/simulator2/simulator.presets'
 import { simulateBattle } from '@/domains/combat/combat.engine'
-import { CURRENT_SIMULATION_REVISION, CURRENT_SIMULATION_VERSION } from '@/domains/combat/combat.version'
+import { V8_SIMULATION_REVISION, V8_SIMULATION_VERSION } from '@/domains/combat/combat.version'
 import type { UnitRow } from '@/domains/combat/combat.types'
 
 function cloneRows(rows: UnitRow[]): UnitRow[] {
@@ -13,7 +13,7 @@ function cloneRows(rows: UnitRow[]): UnitRow[] {
 function fingerprintPreset(presetId: string): string {
   const preset = getSimulatorPreset(presetId)
   if (!preset) throw new Error(`Missing simulator preset: ${presetId}`)
-  const result = simulateBattle(cloneRows(preset.attackers), cloneRows(preset.defenders), fixture.seed, [])
+  const result = simulateBattle(cloneRows(preset.attackers), cloneRows(preset.defenders), fixture.seed, [], [], [], { defenseResolutionMode: 'v8_sequential' })
   const contract = {
     winner: result.winner,
     logs: result.logs,
@@ -28,8 +28,8 @@ function fingerprintPreset(presetId: string): string {
 
 describe('combat ECS v8 golden replay contract', () => {
   it('matches the current simulation metadata contract', () => {
-    expect(fixture.simulationVersion).toBe(CURRENT_SIMULATION_VERSION)
-    expect(fixture.simulationRevision).toBe(CURRENT_SIMULATION_REVISION)
+    expect(fixture.simulationVersion).toBe(V8_SIMULATION_VERSION)
+    expect(fixture.simulationRevision).toBe(V8_SIMULATION_REVISION)
   })
   for (const [presetId, expected] of Object.entries(fixture.presets)) {
     it(`matches the checked-in ${presetId} contract`, () => {

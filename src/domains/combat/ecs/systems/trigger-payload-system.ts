@@ -2,6 +2,7 @@ import type { BattleAction } from '../../combat.actions'
 import type { TriggerPayload } from '../../combat.sim.types'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
+import { grantShield } from '../defense-resource-commit'
 import { applyEcsHealing } from './healing-system'
 import { applyEcsStatus } from './status-application-system'
 import { applyEcsTriggerDamage } from './trigger-damage-system'
@@ -63,8 +64,7 @@ function applyShield(
 ): void {
   const amount = Math.max(0, Math.floor(requestedAmount))
   const vitality = world.stores.vitality.require(targetId)
-  vitality.maxShield = Math.max(vitality.maxShield, vitality.shield + amount)
-  vitality.shield += amount
+    grantShield(world, targetId, amount)
   actions.push({
     unitId: getExternalId(world, ownerId),
     type: 'shield_apply',

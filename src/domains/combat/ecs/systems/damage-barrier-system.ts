@@ -1,6 +1,7 @@
 import { getDistance } from '../../combat.utils'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
+import { breakBarrier, consumeBarrierCapacity } from '../defense-resource-commit'
 
 export interface EcsBarrierResult {
   damage: number
@@ -24,11 +25,10 @@ export function applyEcsBarriers(world: CombatWorld, targetId: EntityId, incomin
     if (damage <= 0) break
     const barrier = world.stores.hazard.require(barrierId)
     if ((barrier.capacity ?? 0) <= 0) continue
-    const absorbed = Math.min(damage, barrier.capacity ?? 0)
-    barrier.capacity = Math.max(0, (barrier.capacity ?? 0) - absorbed)
+    const absorbed = consumeBarrierCapacity(world, barrierId, damage)
     damage -= absorbed
-    if (barrier.capacity <= 0) {
-      barrier.duration = 0
+    if ((world.stores.hazard.require(barrierId).capacity ?? 0) <= 0) {
+      breakBarrier(world, barrierId)
       breaks.push({ hazardId: barrier.id, sourceUnitId: barrier.sourceUnitId ?? barrier.id })
     }
   }
