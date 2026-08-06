@@ -12,7 +12,7 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
   const seed = providedSeed ?? Date.now(), rng = new PRNG(seed), dt = 0.1
   const maxTicks = normalizeMaxTicks(options.maxTicks)
   const timeoutPolicy = options.timeoutPolicy ?? 'draw'
-  const defenseResolutionMode = options.defenseResolutionMode ?? 'v8_sequential'
+  const defenseResolutionMode = options.defenseResolutionMode ?? 'v9_snapshot'
   const runtime = createEcsCombatRuntime({ profile: options.profile === true, defenseResolutionMode })
   const activeGlobals: { team: Team, upg: GlobalUpgradeConfig }[] = []
   attackerGlobals.forEach(id => { if (GLOBAL_UPGRADES[id]) activeGlobals.push({ team: 'attacker', upg: GLOBAL_UPGRADES[id] }) })
