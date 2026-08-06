@@ -79,6 +79,7 @@ function applyEcsDamageWithSource(
   const targetVitality = world.stores.vitality.require(targetId)
   const targetStatus = world.stores.statusControl.require(targetId)
   const targetDefense = world.stores.defense.require(targetId)
+  const actionGroup = world.resources.get('actionGroup')
   const raw = buildEcsDamagePayload(
     world,
     source,
@@ -86,6 +87,9 @@ function applyEcsDamageWithSource(
     rawDamage,
     actions,
     options.allowPercentHpDamage !== false,
+    world.resources.get('defenseResolutionMode') === 'v9_snapshot' && actionGroup?.active
+      ? actionGroup.frame?.defense.targetsByExternalId.get(world.stores.identity.require(targetId).id)?.hp
+      : undefined,
   )
   if (raw <= 0) return createResult()
   if (options.interceptable !== false && source.attribution.sourceEntityId !== undefined &&
@@ -93,7 +97,6 @@ function applyEcsDamageWithSource(
       tryEcsProjectileInterception(world, source.attribution.sourceEntityId, targetId, raw, actions)) {
     return createResult({ blockedDamage: raw, intercepted: true })
   }
-  const actionGroup = world.resources.get('actionGroup')
   if (world.resources.get('defenseResolutionMode') === 'v9_snapshot' && !actionGroup?.active) {
     const singleton = new EcsActionGroupLedger()
     const previous = actionGroup

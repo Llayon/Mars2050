@@ -7,6 +7,7 @@ import type { DamageAttribution } from './ecs/damage-source'
 import type { CombatDefenseFrame, DefenseBatchSnapshot, DefenseRoutingSnapshot, DamageClaim, DamageOrderKey, DefenseBatchResolution } from './ecs/defense-batch'
 import { CombatInvariantError } from './ecs/defense-batch'
 import { getDistance } from './combat.utils'
+import { getEcsCombatTags } from './ecs/targeting-evaluation'
 
 export interface ResolutionGroupKey { readonly tick: number; readonly phaseId: string; readonly groupOrdinal: number }
 
@@ -90,6 +91,10 @@ export class EcsActionGroupLedger {
         shieldHitBlockCharges: defense.shieldHitBlockCharges, reactiveArmorCharges: defense.reactiveArmorCharges, reactiveArmorBlock: defense.reactiveArmorBlock,
         damageShareRadius: defense.damageShareRadius, damageShareRatio: defense.damageShareRatio, damageShareMaxTargets: defense.damageShareMaxTargets,
         team: identity.team, targetClass: identity.type,
+        isSummon: world.stores.weapon.require(entityId).attackType === 'spawn' ||
+          world.stores.entityTargets.require(entityId).summonOwner !== undefined ||
+          vitality.isTemporary ||
+          getEcsCombatTags(world, entityId).includes('summoner'),
         transform: { x: transform.x, y: transform.y, isFlying: transform.isFlying, size: transform.size, velocity: transform.velocity, currentAngle: transform.currentAngle },
       })
     }
@@ -113,12 +118,13 @@ export class EcsActionGroupLedger {
       const barrier = world.stores.hazard.require(barrierId)
       if (barrier.type !== 'barrier_dome' || barrier.duration <= 0) continue
       const coveredTargetExternalIds = [...targetsByExternalId.values()].filter(target => {
+        if (target.team !== barrier.team) return false
         const targetId = entityByExternalId.get(target.externalId)
         if (targetId === undefined) return false
         const transform = world.stores.transform.require(targetId)
         return getDistance(transform.x, transform.y, barrier.x, barrier.y) <= barrier.radius
-      }).map(target => target.externalId)
-      barriersByExternalId.set(barrier.id, { externalId: barrier.id, capacity: barrier.capacity ?? 0, maxCapacity: barrier.maxCapacity, damageReduction: barrier.damageReduction, coveredTargetExternalIds, sourceExternalId: barrier.sourceUnitId, active: barrier.duration > 0 })
+      }).map(target => target.externalId).sort()
+      barriersByExternalId.set(barrier.id, { externalId: barrier.id, capacity: barrier.capacity ?? 0, maxCapacity: barrier.maxCapacity, damageReduction: barrier.damageReduction, coveredTargetExternalIds, sourceExternalId: barrier.sourceUnitId, team: barrier.team, active: barrier.duration > 0 })
       barrierEntityByExternalId.set(barrier.id, barrierId)
     }
     this.frame = { defense: { targetsByExternalId, barriersByExternalId }, routing: { entityByExternalId, barrierEntityByExternalId, liveSourceExternalIds } }

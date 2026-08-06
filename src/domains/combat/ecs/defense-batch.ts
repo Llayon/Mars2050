@@ -1,4 +1,17 @@
 import type { RankScalingConfig, RuntimeStatusEffect, TargetMark, Team } from '../combat.primitives'
+import {
+  applyAccuracyPure,
+  applyArmorReduction,
+  applyFlatBlockPure,
+  applyMovementReductionPure,
+  applyOutputSuppressionPure,
+  applySummonCounterPure,
+  applyTargetStatusesPure,
+  getMarkDamageMultiplierPure,
+  getMarkExecuteThresholdPure,
+  getRankMultiplierPure,
+  getStatusValuePure,
+} from './damage-kernel-pure'
 
 /** The two deterministic damage execution modes supported by the combat ECS. */
 export type DefenseResolutionMode = 'v8_sequential' | 'v9_snapshot'
@@ -75,6 +88,7 @@ export interface TargetDefenseSnapshot {
   readonly sharingRecipients?: readonly string[]
   readonly team?: Team
   readonly targetClass?: string
+  readonly isSummon?: boolean
   readonly transform?: { x: number; y: number; isFlying: boolean; size?: 'S' | 'M' | 'L' | 'XL'; velocity?: { x: number; y: number }; currentAngle?: number }
 }
 
@@ -86,6 +100,7 @@ export interface BarrierDefenseSnapshot {
   readonly coveredTargetExternalIds: readonly string[]
   readonly sourceExternalId?: string
   readonly active?: boolean
+  readonly team?: Team
 }
 
 export interface DefenseBatchSnapshot {
@@ -111,6 +126,7 @@ export interface ResolvedDamageClaim {
   readonly rawDamage: number
   readonly mitigatedDamage: number
   readonly hpDamage: number
+  readonly bonusDamage: number
   readonly damage: number
   readonly shieldDamage: number
   readonly barrierDamage: number
@@ -186,7 +202,7 @@ export function resolveDefenseBatch(snapshot: DefenseBatchSnapshot, inputClaims:
     const barrierBreaks: string[] = []
     if (policy === 'full') {
       const modifiers = claim.attackerModifiers ?? claim.capturedAttackerModifiers ?? {}
-      damage = applyArmorAndModifiers(snapshot, target, claim, damage)
+      damage = applyArmorAndModifiers(target, claim, damage)
       const covered = [...snapshot.barriersByExternalId.values()]
         .filter(barrier => barrier.active !== false && barrier.coveredTargetExternalIds.includes(target.externalId))
         .sort((a, b) => a.externalId < b.externalId ? -1 : a.externalId > b.externalId ? 1 : 0)
@@ -203,7 +219,7 @@ export function resolveDefenseBatch(snapshot: DefenseBatchSnapshot, inputClaims:
       }
       const barrierReduction = covered.reduce((value, barrier) => Math.max(value, Math.max(0, Math.min(0.95, barrier.damageReduction ?? 0))), 0)
       if (barrierReduction > 0) damage = Math.floor(damage * (1 - barrierReduction))
-      damage = applyTargetDefense(target, damage)
+      damage = applyTargetDefense(target, claim, damage)
       const beforeShield = damage
       const shield = shields.get(target.externalId) ?? 0
       const multiplier = Math.max(1, modifiers.shieldDamageMult ?? 1)
@@ -239,47 +255,36 @@ export function resolveDefenseBatch(snapshot: DefenseBatchSnapshot, inputClaims:
       projected.set(target.externalId, (projected.get(target.externalId) ?? target.hp) - hpDamage)
       const lifesteal = claim.sourceAliveAtGroupStart !== false ? Math.floor((hpDamage + shared.total) * Math.max(0, modifiers.lifestealMult ?? 0)) : 0
       if (lifesteal > 0) healingIntents.push({ targetExternalId: claim.sourceExternalId, sourceExternalId: claim.sourceExternalId, amount: lifesteal })
-      resolutions.push({ claim, targetExternalId: target.externalId, sourceExternalId: claim.sourceExternalId, rawDamage: raw, mitigatedDamage: beforeShield, hpDamage, damage: hpDamage, shieldDamage, barrierDamage, barrierBlockedDamage: barrierBlocked, blockedDamage: blocked, sharedDamage: shared.total, sharedDamageEvents: shared.events, shieldBroken, shieldHitBlock, reactiveArmorBlockedDamage, barrierBreaks, lifesteal })
+      const bonusDamage = Math.max(0, beforeShield - raw)
+      resolutions.push({ claim, targetExternalId: target.externalId, sourceExternalId: claim.sourceExternalId, rawDamage: raw, mitigatedDamage: beforeShield, hpDamage, bonusDamage, damage: hpDamage, shieldDamage, barrierDamage, barrierBlockedDamage: barrierBlocked, blockedDamage: blocked, sharedDamage: shared.total, sharedDamageEvents: shared.events, shieldBroken, shieldHitBlock, reactiveArmorBlockedDamage, barrierBreaks, lifesteal })
     } else {
       projected.set(target.externalId, (projected.get(target.externalId) ?? target.hp) - damage)
-      resolutions.push({ claim, targetExternalId: target.externalId, sourceExternalId: claim.sourceExternalId, rawDamage: raw, mitigatedDamage: damage, hpDamage: damage, damage, shieldDamage: 0, barrierDamage: 0, barrierBlockedDamage: 0, blockedDamage: 0, sharedDamage: 0, sharedDamageEvents: [], shieldBroken: false, shieldHitBlock: false, reactiveArmorBlockedDamage: 0, barrierBreaks: [], lifesteal: 0 })
+      resolutions.push({ claim, targetExternalId: target.externalId, sourceExternalId: claim.sourceExternalId, rawDamage: raw, mitigatedDamage: damage, hpDamage: damage, bonusDamage: 0, damage, shieldDamage: 0, barrierDamage: 0, barrierBlockedDamage: 0, blockedDamage: 0, sharedDamage: 0, sharedDamageEvents: [], shieldBroken: false, shieldHitBlock: false, reactiveArmorBlockedDamage: 0, barrierBreaks: [], lifesteal: 0 })
     }
   }
   for (const intent of healingIntents) projected.set(intent.targetExternalId, (projected.get(intent.targetExternalId) ?? 0) + intent.amount)
   return { claims: resolutions, projectedHpByExternalId: projected, healingIntents, shieldByExternalId: shields, shieldHitBlockChargesByExternalId: shieldCharges, reactiveArmorChargesByExternalId: reactiveCharges, barrierCapacityByExternalId: barriers }
 }
 
-function applyArmorAndModifiers(snapshot: DefenseBatchSnapshot, target: TargetDefenseSnapshot, claim: DamageClaim, raw: number): number {
+function applyArmorAndModifiers(target: TargetDefenseSnapshot, claim: DamageClaim, raw: number): number {
   const modifiers = claim.attackerModifiers ?? claim.capturedAttackerModifiers ?? {}
-  const armor = Math.max(0, target.armor ?? 0)
-  const armorPierce = Math.max(0, Math.min(1, modifiers.armorPierceRatio ?? 0))
-  let damage = raw - Math.floor(armor * (1 - armorPierce))
-  damage = claim.allowMinimumDamage === false ? Math.max(0, damage) : Math.max(1, damage)
-  if (modifiers.outputSuppression) damage = Math.max(0, Math.floor(damage * (1 - modifiers.outputSuppression)))
-  if (modifiers.accuracyPenalty) damage = Math.max(0, Math.floor(damage * (1 - Math.min(0.95, modifiers.accuracyPenalty * (1 - (modifiers.accuracyPenaltyResist ?? 0))))))
+  const damageReduction = getStatusValuePure(target.statusEffects ?? [], 'armor_broken') ?? 0
+  let damage = applyArmorReduction(raw, Math.max(0, target.armor ?? 0), damageReduction, modifiers.armorPierceRatio ?? 0, claim.allowMinimumDamage !== false)
+  damage = applyOutputSuppressionPure(modifiers.outputSuppression ?? 0, damage)
+  damage = applyAccuracyPure(modifiers.accuracyPenalty ?? 0, modifiers.accuracyPenaltyResist ?? 0, damage)
   if (target.isFlying && modifiers.antiAirDamageMult) damage = Math.floor(damage * modifiers.antiAirDamageMult)
   if (!target.isFlying && modifiers.groundDamageMult) damage = Math.floor(damage * modifiers.groundDamageMult)
-  const rank = modifiers.rank ?? 1
-  if (modifiers.rankScaling?.damageModifiers) {
-    const relation = rank === (target.rank ?? 1) ? 'same_rank' : (target.rank ?? 1) > rank ? 'higher_rank' : 'lower_rank'
-    for (const item of modifiers.rankScaling.damageModifiers) if (item.relation === relation) damage = Math.floor(damage * Math.max(0, item.multiplier))
-  }
-  return Math.max(0, damage)
+  damage = Math.floor(damage * getRankMultiplierPure(modifiers.rank ?? 1, target.rank ?? 1, modifiers.rankScaling))
+  return Math.max(0, applySummonCounterPure(target.isSummon === true, Math.max(1, modifiers.summonCounterDamageMult ?? 1), damage))
 }
 
-function applyTargetDefense(target: TargetDefenseSnapshot, damage: number): number {
-  let result = damage
-  const vulnerable = getStatus(target.statusEffects, 'vulnerable')
-  const reduction = getStatus(target.statusEffects, 'damage_reduction')
-  if (vulnerable > 0) result = Math.floor(result * (1 + vulnerable))
-  if (reduction > 0) result = Math.floor(result * Math.max(0, 1 - reduction))
-  const movementReduction = target.isMoving ? target.damageReductionWhileMoving ?? 0 : 0
-  const burrowReduction = target.isBurrowed ? target.burrowDamageReduction ?? 0 : 0
-  const movement = Math.max(movementReduction, burrowReduction)
-  if (movement > 0) result = Math.floor(result * Math.max(0, 1 - Math.min(0.9, movement)))
-  const flat = target.flatDamageBlock
-  if (flat) result = Math.max(Math.floor(flat.minimumDamage ?? 0), result - Math.max(0, Math.floor(flat.amount + (flat.perRank ?? 0) * Math.max(0, (target.rank ?? 1) - 1))))
-  return Math.max(0, result)
+function applyTargetDefense(target: TargetDefenseSnapshot, claim: DamageClaim, damage: number): number {
+  let result = applyTargetStatusesPure(target.statusEffects ?? [], damage)
+  const revealed = (target.statusEffects ?? []).some(effect => effect.type === 'revealed' && effect.duration > 0)
+  result = applyMovementReductionPure(target.isMoving === true, target.damageReductionWhileMoving ?? 0, target.isBurrowed === true, target.burrowDamageReduction ?? 0, revealed, result)
+  const markMultiplier = getMarkDamageMultiplierPure(claim.sourceExternalId, target.targetMark)
+  if (markMultiplier > 0) result = Math.max(0, Math.floor(result * (1 + markMultiplier)))
+  return Math.max(0, applyFlatBlockPure(target.flatDamageBlock, target.rank ?? 1, result))
 }
 
 function resolveSharing(snapshot: DefenseBatchSnapshot, target: TargetDefenseSnapshot, claim: DamageClaim, damage: number): { remaining: number; total: number; events: { targetExternalId: string; damage: number }[] } {
@@ -297,7 +302,7 @@ function resolveSharing(snapshot: DefenseBatchSnapshot, target: TargetDefenseSna
 }
 
 function applyExecute(target: TargetDefenseSnapshot, claim: DamageClaim, damage: number, hp: number): number {
-  const markThreshold = target.targetMark?.sourceUnitId === claim.sourceExternalId ? target.targetMark.executeThreshold ?? 0 : 0
+  const markThreshold = getMarkExecuteThresholdPure(claim.sourceExternalId, target.targetMark)
   const threshold = Math.max(claim.attackerModifiers?.executeThreshold ?? claim.capturedAttackerModifiers?.executeThreshold ?? 0, markThreshold)
   return threshold > 0 && hp <= threshold ? hp : damage
 }
@@ -307,7 +312,7 @@ function getStatus(effects: readonly RuntimeStatusEffect[] | undefined, type: Ru
 }
 
 function emptyResolution(claim: DamageClaim): ResolvedDamageClaim {
-  return { claim, targetExternalId: claim.targetExternalId, sourceExternalId: claim.sourceExternalId, rawDamage: 0, mitigatedDamage: 0, hpDamage: 0, damage: 0, shieldDamage: 0, barrierDamage: 0, barrierBlockedDamage: 0, blockedDamage: 0, sharedDamage: 0, sharedDamageEvents: [], shieldBroken: false, shieldHitBlock: false, reactiveArmorBlockedDamage: 0, barrierBreaks: [], lifesteal: 0 }
+  return { claim, targetExternalId: claim.targetExternalId, sourceExternalId: claim.sourceExternalId, rawDamage: 0, mitigatedDamage: 0, hpDamage: 0, bonusDamage: 0, damage: 0, shieldDamage: 0, barrierDamage: 0, barrierBlockedDamage: 0, blockedDamage: 0, sharedDamage: 0, sharedDamageEvents: [], shieldBroken: false, shieldHitBlock: false, reactiveArmorBlockedDamage: 0, barrierBreaks: [], lifesteal: 0 }
 }
 
 function toOrderKey(claim: DamageClaim): DamageOrderKey {

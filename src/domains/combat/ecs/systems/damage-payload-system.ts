@@ -10,6 +10,7 @@ export function buildEcsDamagePayload(
   rawDamage: number,
   actions: BattleAction[],
   allowPercentHpDamage = true,
+  currentHpOverride?: number,
 ): number {
   const boost = source.modifiers.attackBoostValue
   const boostMultiplier = boost >= 1 ? boost : 1 + boost
@@ -18,7 +19,7 @@ export function buildEcsDamagePayload(
     : Math.floor(rawDamage)
   if (baseRaw <= 0) return 0
   const percentDamage = allowPercentHpDamage
-    ? getPercentHpDamage(world, source, targetId)
+    ? getPercentHpDamage(world, source, targetId, currentHpOverride)
     : 0
   if (percentDamage > 0) {
     actions.push({
@@ -32,11 +33,11 @@ export function buildEcsDamagePayload(
   return baseRaw + percentDamage
 }
 
-function getPercentHpDamage(world: CombatWorld, source: DamageSourceContext, targetId: EntityId): number {
+function getPercentHpDamage(world: CombatWorld, source: DamageSourceContext, targetId: EntityId, currentHpOverride?: number): number {
   const config = source.modifiers.percentHpDamage
   if (!config) return 0
   const vitality = world.stores.vitality.require(targetId)
-  const basis = (config.basis ?? 'max') === 'current' ? vitality.hp : vitality.maxHp
+  const basis = (config.basis ?? 'max') === 'current' ? currentHpOverride ?? vitality.hp : vitality.maxHp
   let damage = Math.max(0, Math.floor(basis * config.percent))
   if (config.minBonus !== undefined) damage = Math.max(damage, Math.floor(config.minBonus))
   if (config.maxBonus !== undefined) damage = Math.min(damage, Math.floor(config.maxBonus))
