@@ -108,7 +108,6 @@ export class CombatWorld {
   getUnitsCreatedSince(watermark: number): EntityId[] { return this.query(['transform', 'vitality']).filter(entityId => entityId >= watermark) }
 
   getHazard(entityId: EntityId): SimHazard | undefined { return this.stores.hazard.get(entityId) }
-
   removeHazardEntity(entityId: EntityId): void {
     const hazard = this.stores.hazard.get(entityId)
     if (hazard) this.externalIdToEntity.delete(hazard.id)
