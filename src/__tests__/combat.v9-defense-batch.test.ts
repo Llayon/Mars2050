@@ -37,4 +37,14 @@ describe('V9 defense batch resolver', () => {
     expect(compareDamageOrder({ originExternalId: 'unit:a', authoredOrdinal: 0, targetExternalId: 'z', sourceExternalId: 'x' }, { originExternalId: 'unit:ä', authoredOrdinal: 0, targetExternalId: 'a', sourceExternalId: 'x' })).toBeLessThan(0)
     expect(() => resolveDefenseBatch(frame(), [claim('a', 0, 1), claim('a', 0, 1)])).toThrow(/Duplicate damage order key/)
   })
+
+  it('applies barriers only to allied covered targets', () => {
+    const original = frame()
+    const allied: DefenseBatchSnapshot = {
+      targetsByExternalId: new Map([...original.targetsByExternalId].map(([id, target]) => [id, id === 'unit:target' ? { ...target, team: 'attacker' } : target])),
+      barriersByExternalId: new Map([...original.barriersByExternalId].map(([id, barrier]) => [id, { ...barrier, team: 'defender' }])),
+    }
+    const result = resolveDefenseBatch(allied, [claim('a', 0, 10)])
+    expect(result.claims[0]?.barrierDamage).toBe(0)
+  })
 })

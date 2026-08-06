@@ -204,7 +204,9 @@ export function resolveDefenseBatch(snapshot: DefenseBatchSnapshot, inputClaims:
       const modifiers = claim.attackerModifiers ?? claim.capturedAttackerModifiers ?? {}
       damage = applyArmorAndModifiers(target, claim, damage)
       const covered = [...snapshot.barriersByExternalId.values()]
-        .filter(barrier => barrier.active !== false && barrier.coveredTargetExternalIds.includes(target.externalId))
+        .filter(barrier => barrier.active !== false &&
+          (barrier.team === undefined || barrier.team === target.team) &&
+          barrier.coveredTargetExternalIds.includes(target.externalId))
         .sort((a, b) => a.externalId < b.externalId ? -1 : a.externalId > b.externalId ? 1 : 0)
       for (const barrier of covered) {
         const available = barriers.get(barrier.externalId) ?? 0
