@@ -1,6 +1,6 @@
 import type { Team } from './combat.sim.types'
 import type { DeathCause } from './combat.death.types'
-import type { StatusEffect } from './combat.primitives'
+import type { StatusEffect, TargetMarkConfig } from './combat.primitives'
 import type { EntityId } from './ecs/entity'
 import type { CombatWorld } from './ecs/combat-world'
 import type { DamageAttribution } from './ecs/damage-source'
@@ -42,12 +42,27 @@ export interface PendingStatus {
   effect: StatusEffect
 }
 
+export interface PendingMark {
+  targetId: EntityId
+  attribution: DamageAttribution
+  mark: TargetMarkConfig
+}
+
+export interface PendingDefenseGrant {
+  targetId: EntityId
+  amount: number
+  sourceExternalId: string
+  kind: 'shield' | 'shield_capacity' | 'barrier_capacity'
+}
+
 export class EcsActionGroupLedger {
   readonly startHp = new Map<EntityId, number>()
   readonly damage = new Map<EntityId, PendingDamage[]>()
   readonly healing = new Map<EntityId, PendingHealing[]>()
   readonly forcedDeaths = new Map<EntityId, { source?: DamageAttribution; cause: DeathCause }>()
   readonly statuses: PendingStatus[] = []
+  readonly marks: PendingMark[] = []
+  readonly defenseGrants: PendingDefenseGrant[] = []
   readonly claims: DamageClaim[] = []
   frame: CombatDefenseFrame | undefined
   resolution: DefenseBatchResolution | undefined
@@ -61,6 +76,8 @@ export class EcsActionGroupLedger {
     this.healing.clear()
     this.forcedDeaths.clear()
     this.statuses.length = 0
+    this.marks.length = 0
+    this.defenseGrants.length = 0
     this.claims.length = 0
     this.resolution = undefined
     this.committing = false
@@ -174,6 +191,15 @@ export class EcsActionGroupLedger {
 
   queueStatus(targetId: EntityId, effect: StatusEffect): void {
     this.statuses.push({ targetId, effect: { ...effect } })
+  }
+
+  queueMark(targetId: EntityId, attribution: DamageAttribution, mark: TargetMarkConfig): void {
+    this.marks.push({ targetId, attribution, mark: structuredClone(mark) })
+  }
+
+  queueDefenseGrant(targetId: EntityId, amount: number, sourceExternalId: string, kind: PendingDefenseGrant['kind']): void {
+    if (amount <= 0) return
+    this.defenseGrants.push({ targetId, amount, sourceExternalId, kind })
   }
 
   finish(): void {

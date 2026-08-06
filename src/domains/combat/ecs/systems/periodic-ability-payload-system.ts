@@ -13,6 +13,7 @@ import { applyEcsHealing } from './healing-system'
 import { applyEcsStatus } from './status-application-system'
 import { cleanseEcsStatuses } from './trigger-field-system'
 import { spawnEcsPeriodicUnits } from './periodic-ability-spawn-system'
+import { applyEcsCapturedTargetMark } from './target-mark-system'
 
 export function applyEcsPeriodicAbilityPayload(
   world: CombatWorld,
@@ -173,19 +174,7 @@ function applyMark(
 ): void {
   if (world.stores.vitality.require(targetId).isDead) return
   const sourceExternalId = getExternalId(world, sourceId)
-  world.stores.statusControl.require(targetId).targetMark = {
-    ...mark,
-    sourceUnitId: sourceExternalId,
-  }
-  world.stores.entitySources.require(targetId).targetMarkSource = sourceId
-  actions.push({
-    unitId: sourceExternalId,
-    type: 'target_mark',
-    targetId: getExternalId(world, targetId),
-    value: mark.damageMultiplier ??
-      mark.executeThreshold ??
-      mark.focusPriority,
-  })
+  applyEcsCapturedTargetMark(world, { sourceExternalId, sourceEntityId: sourceId, sourceUnitType: world.stores.identity.require(sourceId).type, sourceTeam: world.stores.identity.require(sourceId).team }, targetId, mark, actions)
 }
 
 function getPayloadTargets(

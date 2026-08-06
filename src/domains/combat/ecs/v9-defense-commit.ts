@@ -4,9 +4,10 @@ import type { DeathCause } from '../combat.death.types'
 import { resolveDefenseBatch } from './defense-batch'
 import type { CombatWorld } from './combat-world'
 import type { EntityId } from './entity'
-import { breakBarrier, setBarrierCapacity, setReactiveArmorCharges, setShield, setShieldHitBlockCharges } from './defense-resource-commit'
+import { breakBarrier, grantBarrier, grantShield, increaseShieldCapacity, setBarrierCapacity, setReactiveArmorCharges, setShield, setShieldHitBlockCharges } from './defense-resource-commit'
 import { resolveEcsDeath } from './systems/death-system'
 import { applyEcsStatus } from './systems/status-application-system'
+import { applyEcsCapturedTargetMark } from './systems/target-mark-system'
 
 /** Resolve the immutable V9 frame and translate the pure result into V8 ledger entries. */
 export function commitV9DefenseBatch(world: CombatWorld, ledger: EcsActionGroupLedger, actions: BattleAction[]): Set<EntityId> {
@@ -77,6 +78,16 @@ export function commitV9ResolutionGroup(world: CombatWorld, ledger: EcsActionGro
     ? commitV9DefenseBatch(world, ledger, actions)
     : new Set<EntityId>([...ledger.damage.keys(), ...ledger.healing.keys()])
 
+  ledger.committing = true
+  for (const grant of [...ledger.defenseGrants].sort((left, right) =>
+    left.sourceExternalId < right.sourceExternalId ? -1 : left.sourceExternalId > right.sourceExternalId ? 1 :
+      left.kind.localeCompare(right.kind) ||
+      (world.stores.entityMeta.require(left.targetId).externalId < world.stores.entityMeta.require(right.targetId).externalId ? -1 : 1))) {
+    if (grant.kind === 'shield') grantShield(world, grant.targetId, grant.amount)
+    else if (grant.kind === 'shield_capacity') increaseShieldCapacity(world, grant.targetId, grant.amount)
+    else grantBarrier(world, grant.targetId, grant.amount)
+  }
+
   for (const entityId of affected) {
     const vitality = world.stores.vitality.require(entityId)
     const startHp = ledger.startHp.get(entityId) ?? vitality.hp
@@ -86,11 +97,17 @@ export function commitV9ResolutionGroup(world: CombatWorld, ledger: EcsActionGro
     emitGroupHealing(world, entityId, ledger, actions, damage)
   }
 
-  ledger.committing = true
   for (const pending of [...ledger.statuses].sort((left, right) =>
     world.stores.identity.require(left.targetId).id.localeCompare(world.stores.identity.require(right.targetId).id))) {
     if (ledger.getProjectedHp(world, pending.targetId) > 0 && !world.stores.vitality.require(pending.targetId).isDead) {
       applyEcsStatus(world, pending.targetId, pending.effect, actions)
+    }
+  }
+  for (const pending of [...ledger.marks].sort((left, right) =>
+    left.attribution.sourceExternalId < right.attribution.sourceExternalId ? -1 : left.attribution.sourceExternalId > right.attribution.sourceExternalId ? 1 :
+      world.stores.identity.require(left.targetId).id.localeCompare(world.stores.identity.require(right.targetId).id))) {
+    if (ledger.getProjectedHp(world, pending.targetId) > 0 && !world.stores.vitality.require(pending.targetId).isDead) {
+      applyEcsCapturedTargetMark(world, pending.attribution, pending.targetId, pending.mark, actions)
     }
   }
   ledger.committing = false

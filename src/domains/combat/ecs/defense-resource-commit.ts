@@ -21,6 +21,11 @@ export function addShield(world: CombatWorld, entityId: EntityId, amount: number
 export function increaseShieldCapacity(world: CombatWorld, entityId: EntityId, amount: number): number {
   const vitality = world.stores.vitality.require(entityId)
   const increment = Math.max(0, amount)
+  const group = world.resources.get('actionGroup')
+  if (world.resources.get('defenseResolutionMode') === 'v9_snapshot' && group?.active && !group.committing) {
+    group.queueDefenseGrant(entityId, increment, world.stores.identity.require(entityId).id, 'shield_capacity')
+    return vitality.maxShield + increment
+  }
   vitality.maxShield += increment
   return grantShield(world, entityId, increment)
 }
@@ -62,6 +67,11 @@ export function setReactiveArmorCharges(world: CombatWorld, entityId: EntityId, 
 export function grantShield(world: CombatWorld, entityId: EntityId, amount: number): number {
   const vitality = world.stores.vitality.require(entityId)
   const granted = Math.max(0, amount)
+  const group = world.resources.get('actionGroup')
+  if (world.resources.get('defenseResolutionMode') === 'v9_snapshot' && group?.active && !group.committing) {
+    group.queueDefenseGrant(entityId, granted, world.stores.identity.require(entityId).id, 'shield')
+    return vitality.shield + granted
+  }
   vitality.maxShield = Math.max(vitality.maxShield, vitality.shield + granted)
   return setShield(world, entityId, vitality.shield + granted)
 }
@@ -83,6 +93,11 @@ export function consumeBarrierCapacity(world: CombatWorld, entityId: EntityId, a
 
 export function grantBarrier(world: CombatWorld, entityId: EntityId, amount: number): number {
   const barrier = world.stores.hazard.require(entityId)
+  const group = world.resources.get('actionGroup')
+  if (world.resources.get('defenseResolutionMode') === 'v9_snapshot' && group?.active && !group.committing) {
+    group.queueDefenseGrant(entityId, amount, barrier.id, 'barrier_capacity')
+    return (barrier.capacity ?? 0) + Math.max(0, amount)
+  }
   return setBarrierCapacity(world, entityId, (barrier.capacity ?? 0) + Math.max(0, amount))
 }
 

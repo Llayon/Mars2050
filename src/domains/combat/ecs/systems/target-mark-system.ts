@@ -54,6 +54,11 @@ export function applyEcsCapturedTargetMark(
   mark: TargetMarkConfig,
   actions: BattleAction[],
 ): void {
+  const actionGroup = world.resources.get('actionGroup')
+  if (actionGroup?.active && !actionGroup.committing) {
+    actionGroup.queueMark(targetId, attribution, mark)
+    return
+  }
   const sourceId = attribution.sourceEntityId
   const sourceAlive = sourceId !== undefined && world.stores.identity.get(sourceId) !== undefined &&
     !world.stores.vitality.require(sourceId).isDead

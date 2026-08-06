@@ -5,6 +5,7 @@ import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
 import { getStatusStackIdentity } from '../../combat.status-core'
 import { applyEcsCapturedDamage } from './damage-system'
+import { applyEcsHealingFromSource } from './healing-system'
 
 export type EcsStatusDeathHandler = (
   entityId: EntityId,
@@ -57,6 +58,11 @@ function applyPeriodicEffect(
   const sourceId = effect.sourceUnitId ?? effect.type
   if (effect.type === 'regen') {
     const requested = Math.max(1, Math.floor(effect.value ?? vitality.maxHp * 0.02))
+    if (world.resources.get('defenseResolutionMode') === 'v9_snapshot' && world.resources.get('actionGroup')?.active) {
+      applyEcsHealingFromSource(world, sourceId, entityId, requested, actions, { bypassStatusBlock: true })
+      actions.push({ unitId: sourceId, type: 'status_tick', targetId: externalId, statusType: effect.type, value: requested })
+      return
+    }
     const before = Math.max(0, Math.min(vitality.maxHp, vitality.hp))
     vitality.hp = Math.min(vitality.maxHp, before + requested)
     const actual = vitality.hp - before
