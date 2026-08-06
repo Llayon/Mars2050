@@ -12,7 +12,7 @@ import {
   getRankMultiplierPure,
   getStatusValuePure,
 } from './damage-kernel-pure'
-import { compareAuthoredEffectPosition, compareDamageOrderStrings, legacyAuthoredPosition } from './authored-order'
+import { compareAuthoredEffectPosition, compareDamageOrderStrings } from './authored-order'
 import { resolveDamageLifesteal } from './damage-lifesteal'
 export { compareAuthoredEffectPosition } from './authored-order'
 
@@ -30,7 +30,7 @@ export interface AuthoredEffectPosition {
 /** Stable, locale-independent ordering key for a damage claim. */
 export interface DamageOrderKey {
   readonly originExternalId: string
-  readonly position?: AuthoredEffectPosition
+  readonly position: AuthoredEffectPosition
   /** Legacy packed ordinal kept at the API boundary for older producers. */
   readonly authoredOrdinal?: number
   readonly targetExternalId: string
@@ -60,7 +60,7 @@ export interface DamageClaim {
   readonly sourceExternalId: string
   readonly originExternalId: string
   readonly authoredOrdinal: number
-  readonly authoredPosition?: AuthoredEffectPosition
+  readonly authoredPosition: AuthoredEffectPosition
   readonly rawDamage: number
   readonly sourceTeam?: Team
   readonly sourceUnitType?: string
@@ -177,7 +177,7 @@ export class CombatInvariantError extends Error {
 /** Code-unit comparator required by ADR-014. */
 export function compareDamageOrder(left: DamageOrderKey, right: DamageOrderKey): number {
   return compareDamageOrderStrings(left.originExternalId, right.originExternalId) ||
-    compareAuthoredEffectPosition(left.position ?? legacyAuthoredPosition(left.authoredOrdinal), right.position ?? legacyAuthoredPosition(right.authoredOrdinal)) ||
+    compareAuthoredEffectPosition(left.position, right.position) ||
     compareDamageOrderStrings(left.targetExternalId, right.targetExternalId) ||
     compareDamageOrderStrings(left.sourceExternalId, right.sourceExternalId)
 }

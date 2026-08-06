@@ -67,7 +67,7 @@ export function resolveEcsSingleShot(
     if (world.resources.get('defenseResolutionMode') !== 'v9_snapshot') {
       recordEcsDamageTakenTriggers(world, entityId, targetId, damageResult.damage + damageResult.sharedDamage, actions)
     }
-    applyEcsOnHitEffects(world, entityId, targetId, actions)
+    applyEcsOnHitEffects(world, entityId, targetId, actions, { authoredKey: { originExternalId: `unit:${identity.id}:attack`, position: { programIndex: 0, groupIndex: 0, targetOrdinal: 0, effectIndex: 0 }, targetExternalId: world.stores.identity.require(targetId).id, sourceExternalId: identity.id } })
     spawnEcsAttackPuddle(world, entityId, targetId, rng)
   }
   resolveEcsDeath(world, targetId, entityId, actions)

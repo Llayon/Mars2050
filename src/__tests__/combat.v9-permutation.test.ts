@@ -21,8 +21,9 @@ function shuffle<T>(items: readonly T[], state: { value: number }): T[] {
 
 function claim(source: string, ordinal: number, target = 'target:0'): DamageClaim {
   return {
-    order: { originExternalId: `ability:${source}`, authoredOrdinal: ordinal, targetExternalId: target, sourceExternalId: source },
+    order: { originExternalId: `ability:${source}`, position: { programIndex: 0, groupIndex: 0, targetOrdinal: 0, effectIndex: ordinal }, authoredOrdinal: ordinal, targetExternalId: target, sourceExternalId: source },
     originExternalId: `ability:${source}`,
+    authoredPosition: { programIndex: 0, groupIndex: 0, targetOrdinal: 0, effectIndex: ordinal },
     authoredOrdinal: ordinal,
     targetExternalId: target,
     sourceExternalId: source,

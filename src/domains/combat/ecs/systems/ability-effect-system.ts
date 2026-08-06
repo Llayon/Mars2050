@@ -15,6 +15,7 @@ import { applyEcsRadialAoe } from './radial-aoe-system'
 import { applyEcsDisplacement } from './displacement-system'
 import { applyEcsTargetMark } from './target-mark-system'
 import type { DamageOrderKey } from '../defense-batch'
+import { legacyAuthoredPosition } from '../authored-order'
 
 export function runCompiledAbilityTrigger(
   world: CombatWorld,
@@ -97,9 +98,10 @@ function applyEffect(
 ): boolean {
   const source = world.stores.identity.require(attackerId)
   const target = world.stores.identity.require(targetId)
+  const authoredPosition = options.authoredPosition ?? legacyAuthoredPosition()
   const authoredKey: DamageOrderKey = {
     originExternalId: `unit:${source.id}:ability`,
-    position: options.authoredPosition,
+    position: authoredPosition,
     targetExternalId: target.id,
     sourceExternalId: source.id,
   }
@@ -108,7 +110,7 @@ function applyEffect(
     const amount = effect.expression.kind === 'fixed'
       ? effect.expression.amount
       : Math.floor(combat.attack * effect.expression.multiplier)
-    applyEcsSingleDamage(world, attackerId, targetId, amount, actions, { interceptable: false, originExternalId: authoredKey.originExternalId, authoredPosition: options.authoredPosition, authoredOrdinal: options.authoredPosition?.effectIndex ?? 0 })
+    applyEcsSingleDamage(world, attackerId, targetId, amount, actions, { interceptable: false, originExternalId: authoredKey.originExternalId, authoredPosition: authoredPosition, authoredOrdinal: authoredPosition.effectIndex })
     return true
   }
   if (effect.kind === 'legacy_geometry') {

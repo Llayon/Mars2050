@@ -2,6 +2,7 @@ import type { BattleAction } from '../../combat.actions'
 import type { TriggerPayload } from '../../combat.sim.types'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
+import type { DamageOrderKey } from '../defense-batch'
 import { grantShield } from '../defense-resource-commit'
 import { applyEcsHealing } from './healing-system'
 import { applyEcsStatus } from './status-application-system'
@@ -17,6 +18,7 @@ export function applyEcsTriggerPayload(
   eventTargetId: EntityId,
   payload: TriggerPayload,
   actions: BattleAction[],
+  authoredKey?: DamageOrderKey,
 ): void {
   if (payload.kind === 'spawn') {
     spawnEcsTriggerUnits(world, ownerId, targetId ?? eventTargetId, payload, actions)
@@ -28,7 +30,7 @@ export function applyEcsTriggerPayload(
     return
   }
   if (payload.kind === 'damage') {
-    applyEcsTriggerDamage(world, ownerId, targetId, payload, actions)
+    applyEcsTriggerDamage(world, ownerId, targetId, payload, actions, authoredKey)
     return
   }
   if (payload.kind === 'delayed_reassembly') {
@@ -39,7 +41,7 @@ export function applyEcsTriggerPayload(
     applyEcsStatus(world, targetId, {
       ...payload.status,
       sourceUnitId: getExternalId(world, ownerId),
-    }, actions)
+    }, actions, authoredKey)
   } else if (payload.kind === 'shield') {
     applyShield(world, ownerId, targetId, payload.amount, actions)
   } else if (payload.kind === 'heal') {

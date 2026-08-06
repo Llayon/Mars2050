@@ -8,6 +8,7 @@ import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
 import { applyEcsSingleDamage } from './damage-system'
 import { resolveEcsDeath } from './death-system'
+import type { DamageOrderKey } from '../defense-batch'
 
 type DamagePayload = Extract<TriggerPayload, { kind: 'damage' }>
 
@@ -17,6 +18,7 @@ export function applyEcsTriggerDamage(
   targetId: EntityId,
   payload: DamagePayload,
   actions: BattleAction[],
+  authoredKey?: DamageOrderKey,
 ): void {
   for (const [targetOrdinal, hitId] of getTargets(world, ownerId, targetId, payload.radius).entries()) {
     const percentDamage = getConfiguredDamage(world, hitId, payload.percentHp)
@@ -38,9 +40,9 @@ export function applyEcsTriggerDamage(
         allowPercentHpDamage: false,
         deathCause: 'trigger',
         interceptable: false,
-        originExternalId: `trigger:${world.stores.identity.require(ownerId).id}`,
+        originExternalId: authoredKey?.originExternalId ?? `trigger:${world.stores.identity.require(ownerId).id}`,
         authoredOrdinal: targetOrdinal,
-        authoredPosition: { programIndex: 0, groupIndex: 0, targetOrdinal, effectIndex: 0 },
+        authoredPosition: authoredKey ? { ...authoredKey.position, targetOrdinal } : { programIndex: 0, groupIndex: 0, targetOrdinal, effectIndex: 0 },
       },
     )
     resolveEcsDeath(world, hitId, ownerId, actions, 'trigger')

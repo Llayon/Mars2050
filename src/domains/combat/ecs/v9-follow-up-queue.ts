@@ -27,7 +27,7 @@ export function drainV9FollowUps(world: CombatWorld, context: RuntimePhaseContex
         phaseId: 'trigger_follow_up',
         groupOrdinal: depth,
       })
-      applyEcsTriggerPayload(world, job.ownerId, job.targetId, job.eventTargetId, job.payload, job.actions)
+      applyEcsTriggerPayload(world, job.ownerId, job.targetId, job.eventTargetId, job.payload, job.actions, job.order)
       commitV9ResolutionGroup(world, ledger, job.actions)
     } finally {
       world.resources.set('actionGroup', previous)

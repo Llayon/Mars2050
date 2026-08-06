@@ -17,7 +17,7 @@ export function legacyAuthoredPosition(authoredOrdinal = 0): AuthoredEffectPosit
 
 export function compareAuthoredKeys(left: DamageOrderKey, right: DamageOrderKey): number {
   return compareDamageOrderStrings(left.originExternalId, right.originExternalId) ||
-    compareAuthoredEffectPosition(left.position ?? legacyAuthoredPosition(left.authoredOrdinal), right.position ?? legacyAuthoredPosition(right.authoredOrdinal)) ||
+    compareAuthoredEffectPosition(left.position, right.position) ||
     compareDamageOrderStrings(left.targetExternalId, right.targetExternalId) ||
     compareDamageOrderStrings(left.sourceExternalId, right.sourceExternalId)
 }

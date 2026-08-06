@@ -133,7 +133,7 @@ export function commitV9ResolutionGroup(world: CombatWorld, ledger: EcsActionGro
   }
   const deaths = [...affected]
     .filter(entityId => !world.stores.vitality.require(entityId).isDead && world.stores.vitality.require(entityId).hp <= 0)
-    .sort((left, right) => world.stores.identity.require(left).id.localeCompare(world.stores.identity.require(right).id))
+    .sort((left, right) => world.stores.identity.require(left).id < world.stores.identity.require(right).id ? -1 : world.stores.identity.require(left).id > world.stores.identity.require(right).id ? 1 : 0)
   for (const [entityId] of forcedEntries) {
     if (!world.stores.vitality.require(entityId).isDead) world.setEntityDead(entityId, true)
   }
@@ -143,7 +143,7 @@ export function commitV9ResolutionGroup(world: CombatWorld, ledger: EcsActionGro
   }
   for (const entityId of deaths) {
     const pending = [...(ledger.damage.get(entityId) ?? [])]
-      .sort((left, right) => right.amount - left.amount || left.attribution.sourceExternalId.localeCompare(right.attribution.sourceExternalId))[0]
+      .sort((left, right) => right.amount - left.amount || (left.attribution.sourceExternalId < right.attribution.sourceExternalId ? -1 : left.attribution.sourceExternalId > right.attribution.sourceExternalId ? 1 : 0))[0]
     resolveEcsDeath(
       world,
       entityId,
@@ -192,7 +192,7 @@ function emitGroupHealing(world: CombatWorld, targetId: EntityId, ledger: EcsAct
     entries.reduce((sum, entry) => sum + entry.amount, 0),
     vitality.maxHp - startHp + damage,
   ))
-  for (const entry of entries.sort((left, right) => left.sourceExternalId.localeCompare(right.sourceExternalId))) {
+  for (const entry of entries.sort((left, right) => left.sourceExternalId < right.sourceExternalId ? -1 : left.sourceExternalId > right.sourceExternalId ? 1 : 0)) {
     const actual = Math.min(remaining, entry.amount)
     if (actual > 0 && entry.kind !== 'lifesteal') actions.push({ unitId: entry.sourceExternalId, type: 'heal', targetId: world.stores.identity.require(targetId).id, damage: actual })
     remaining -= actual
@@ -234,6 +234,7 @@ function comparePendingMark(world: CombatWorld, left: EcsActionGroupLedger['mark
 function legacyPendingKey(world: CombatWorld, targetId: EntityId, sourceExternalId: string): DamageOrderKey {
   return {
     originExternalId: `pending:${sourceExternalId}`,
+    position: { programIndex: 0, groupIndex: 0, targetOrdinal: 0, effectIndex: 0 },
     authoredOrdinal: 0,
     targetExternalId: world.stores.identity.require(targetId).id,
     sourceExternalId,

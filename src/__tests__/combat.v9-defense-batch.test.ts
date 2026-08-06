@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest'
 import { compareDamageOrder, resolveDefenseBatch, type DamageClaim, type DefenseBatchSnapshot } from '@/domains/combat/ecs/defense-batch'
 
 const claim = (source: string, ordinal: number, rawDamage: number, target = 'unit:target'): DamageClaim => ({
-  order: { originExternalId: `unit:${source}`, authoredOrdinal: ordinal, targetExternalId: target, sourceExternalId: source },
-  originExternalId: `unit:${source}`, authoredOrdinal: ordinal, targetExternalId: target, sourceExternalId: source,
+  order: { originExternalId: `unit:${source}`, position: { programIndex: 0, groupIndex: 0, targetOrdinal: 0, effectIndex: ordinal }, authoredOrdinal: ordinal, targetExternalId: target, sourceExternalId: source },
+  originExternalId: `unit:${source}`, authoredPosition: { programIndex: 0, groupIndex: 0, targetOrdinal: 0, effectIndex: ordinal }, authoredOrdinal: ordinal, targetExternalId: target, sourceExternalId: source,
   rawDamage, attackerModifiers: { shieldDamageMult: 1 }, sourceAliveAtGroupStart: true,
 })
 
@@ -34,7 +34,7 @@ describe('V9 defense batch resolver', () => {
   })
 
   it('compares external ids by code unit and rejects duplicate keys', () => {
-    expect(compareDamageOrder({ originExternalId: 'unit:a', authoredOrdinal: 0, targetExternalId: 'z', sourceExternalId: 'x' }, { originExternalId: 'unit:ä', authoredOrdinal: 0, targetExternalId: 'a', sourceExternalId: 'x' })).toBeLessThan(0)
+    expect(compareDamageOrder({ originExternalId: 'unit:a', position: { programIndex: 0, groupIndex: 0, targetOrdinal: 0, effectIndex: 0 }, authoredOrdinal: 0, targetExternalId: 'z', sourceExternalId: 'x' }, { originExternalId: 'unit:ä', position: { programIndex: 0, groupIndex: 0, targetOrdinal: 0, effectIndex: 0 }, authoredOrdinal: 0, targetExternalId: 'a', sourceExternalId: 'x' })).toBeLessThan(0)
     expect(() => resolveDefenseBatch(frame(), [claim('a', 0, 1), claim('a', 0, 1)])).toThrow(/Duplicate damage order key/)
   })
 

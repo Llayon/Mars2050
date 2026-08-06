@@ -4,9 +4,11 @@ import type { EntityId } from '../entity'
 import { applyEcsStatus } from './status-application-system'
 import { hasCompiledHitAbility, runCompiledAbilityTrigger } from './ability-effect-system'
 import { applyEcsTargetMark } from './target-mark-system'
+import type { DamageOrderKey } from '../defense-batch'
 
 export interface EcsOnHitOptions {
   propagateSquadMark?: boolean
+  authoredKey?: DamageOrderKey
 }
 export function applyEcsOnHitEffects(
   world: CombatWorld,
@@ -19,6 +21,7 @@ export function applyEcsOnHitEffects(
   const attacker = world.stores.identity.require(attackerId)
   const weapon = world.stores.weapon.require(attackerId)
   const authoredHit = hasCompiledHitAbility(world, attackerId)
+  const statusOffset = weapon.appliesEmp ? 1 : 0
   runCompiledAbilityTrigger(world, attackerId, targetId, 'hit', actions, undefined, {
     hitKind: options.propagateSquadMark === false ? 'secondary' : 'primary',
   })
@@ -27,11 +30,11 @@ export function applyEcsOnHitEffects(
       type: 'emp',
       duration: 30,
       sourceUnitId: attacker.id,
-    }, actions)
+    }, actions, withEffectIndex(options.authoredKey, 1))
   }
   if (!authoredHit) {
-    for (const status of weapon.statusOnHit ?? []) {
-      applyEcsStatus(world, targetId, { ...status, sourceUnitId: attacker.id }, actions)
+    for (const [effectIndex, status] of (weapon.statusOnHit ?? []).entries()) {
+      applyEcsStatus(world, targetId, { ...status, sourceUnitId: attacker.id }, actions, withEffectIndex(options.authoredKey, effectIndex + 1 + statusOffset))
     }
   }
   if (!authoredHit && weapon.markOnHit) {
@@ -42,7 +45,12 @@ export function applyEcsOnHitEffects(
       weapon.markOnHit,
       actions,
       options.propagateSquadMark !== false,
+      withEffectIndex(options.authoredKey, (weapon.statusOnHit?.length ?? 0) + 1 + statusOffset),
     )
   }
+}
+
+function withEffectIndex(key: DamageOrderKey | undefined, effectIndex: number): DamageOrderKey | undefined {
+  return key ? { ...key, position: { ...key.position, effectIndex } } : undefined
 }
 

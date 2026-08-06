@@ -10,6 +10,7 @@ import { applyEcsCapturedDamage } from './damage-system'
 import { applyEcsStatus } from './status-application-system'
 import { applyEcsCapturedTargetMark } from './target-mark-system'
 import { CombatInvariantError } from '../combat-invariant-error'
+import type { DamageOrderKey } from '../defense-batch'
 
 export interface FrozenImpactTargets {
   readonly baseAreaTargets: readonly EntityId[]
@@ -107,8 +108,13 @@ export function executeCapturedImpactPrograms(
       applyEcsCapturedDamage(world, source, targetId, contribution.rawDamage, actions, { interceptable: false, originExternalId: `impact:${impact.id}`, authoredOrdinal: targetOrdinal, authoredPosition: { programIndex: 0, groupIndex: 0, targetOrdinal, effectIndex: 0 }, impactId: impact.id, damageKind: 'weapon' })
     }
     if (getProjectedHp(world, targetId) <= 0) continue
-    for (const effect of contribution.effects) {
-      applyCapturedEffect(world, source, targetId, effect, actions)
+    for (const [effectIndex, effect] of contribution.effects.entries()) {
+      applyCapturedEffect(world, source, targetId, effect, actions, {
+        originExternalId: `impact:${impact.id}`,
+        position: { programIndex: 0, groupIndex: 0, targetOrdinal, effectIndex: effectIndex + 1 },
+        targetExternalId: world.stores.identity.require(targetId).id,
+        sourceExternalId: source.attribution.sourceExternalId,
+      })
     }
   }
 }
@@ -136,6 +142,7 @@ function applyCapturedEffect(
   targetId: EntityId,
   effect: AbilityEffect,
   actions: BattleAction[],
+  authoredKey: DamageOrderKey,
 ): void {
   if (effect.kind === 'apply_status') {
     applyEcsStatus(world, targetId, {
@@ -144,7 +151,7 @@ function applyCapturedEffect(
       value: effect.value,
       controlMode: effect.controlMode,
       sourceUnitId: source.attribution.sourceExternalId,
-    }, actions)
+    }, actions, authoredKey)
     return
   }
   if (effect.kind === 'mark_target') {
@@ -158,7 +165,7 @@ function applyCapturedEffect(
       focusRadius: effect.focusRadius,
       retargetPolicy: effect.retargetPolicy,
       retargetLockTicks: effect.retargetLockTicks,
-    }, actions)
+    }, actions, authoredKey)
   }
 }
 

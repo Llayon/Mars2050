@@ -14,6 +14,7 @@ import { applyEcsStatus } from './status-application-system'
 import { cleanseEcsStatuses } from './trigger-field-system'
 import { spawnEcsPeriodicUnits } from './periodic-ability-spawn-system'
 import { applyEcsCapturedTargetMark } from './target-mark-system'
+import type { DamageOrderKey } from '../defense-batch'
 
 export function applyEcsPeriodicAbilityPayload(
   world: CombatWorld,
@@ -44,19 +45,20 @@ export function applyEcsPeriodicAbilityPayload(
       targetId,
       payload,
     ).entries()) {
+      const sourceExternalId = getExternalId(world, sourceId)
       if (payload.kind === 'damage') {
         applyDamage(world, sourceId, payloadTargetId, payload, actions, abilityId, targetOrdinal)
       } else if (payload.kind === 'status') {
-        for (const status of payload.effects) {
+        for (const [effectIndex, status] of payload.effects.entries()) {
           applyEcsStatus(world, payloadTargetId, {
             ...status,
-            sourceUnitId: getExternalId(world, sourceId),
-          }, actions)
+            sourceUnitId: sourceExternalId,
+          }, actions, abilityOrder(sourceExternalId, getExternalId(world, payloadTargetId), abilityId, targetOrdinal, effectIndex + 1))
         }
       } else if (payload.kind === 'heal') {
         applyHeal(world, sourceId, payloadTargetId, payload, actions)
       } else if (payload.kind === 'mark') {
-        applyMark(world, sourceId, payloadTargetId, payload.mark, actions)
+        applyMark(world, sourceId, payloadTargetId, payload.mark, actions, abilityOrder(sourceExternalId, getExternalId(world, payloadTargetId), abilityId, targetOrdinal, 1))
       }
     }
   }
@@ -91,11 +93,11 @@ function applyDamage(
   if (result.intercepted) return
   resolveEcsDeath(world, targetId, sourceId, actions, 'weapon')
   flushStructuralChanges(world)
-  for (const status of payload.statusEffects ?? []) {
+  for (const [effectIndex, status] of (payload.statusEffects ?? []).entries()) {
     applyEcsStatus(world, targetId, {
       ...status,
       sourceUnitId: getExternalId(world, sourceId),
-    }, actions)
+    }, actions, abilityOrder(getExternalId(world, sourceId), getExternalId(world, targetId), abilityId, targetOrdinal, effectIndex + 1))
   }
 }
 
@@ -171,10 +173,15 @@ function applyMark(
   targetId: EntityId,
   mark: Extract<PeriodicAbilityPayload, { kind: 'mark' }>['mark'],
   actions: BattleAction[],
+  authoredKey: DamageOrderKey,
 ): void {
   if (world.stores.vitality.require(targetId).isDead) return
   const sourceExternalId = getExternalId(world, sourceId)
-  applyEcsCapturedTargetMark(world, { sourceExternalId, sourceEntityId: sourceId, sourceUnitType: world.stores.identity.require(sourceId).type, sourceTeam: world.stores.identity.require(sourceId).team }, targetId, mark, actions)
+  applyEcsCapturedTargetMark(world, { sourceExternalId, sourceEntityId: sourceId, sourceUnitType: world.stores.identity.require(sourceId).type, sourceTeam: world.stores.identity.require(sourceId).team }, targetId, mark, actions, authoredKey)
+}
+
+function abilityOrder(sourceExternalId: string, targetExternalId: string, abilityId: string, targetOrdinal: number, effectIndex: number): DamageOrderKey {
+  return { originExternalId: `ability:${abilityId}:${sourceExternalId}`, position: { programIndex: 0, groupIndex: 0, targetOrdinal, effectIndex }, targetExternalId, sourceExternalId }
 }
 
 function getPayloadTargets(
