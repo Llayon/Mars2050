@@ -83,6 +83,12 @@ export function setBarrierCapacity(world: CombatWorld, entityId: EntityId, value
   return next
 }
 
+export function decrementBarrierDuration(world: CombatWorld, entityId: EntityId): number {
+  const barrier = world.stores.hazard.require(entityId)
+  barrier.duration = Math.max(0, barrier.duration - 1)
+  return barrier.duration
+}
+
 export function consumeBarrierCapacity(world: CombatWorld, entityId: EntityId, amount: number): number {
   const barrier = world.stores.hazard.require(entityId)
   const current = Math.max(0, barrier.capacity ?? 0)

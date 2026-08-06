@@ -16,6 +16,15 @@ import type { EcsActionGroupLedger } from '../combat.action-intent'
 import type { PendingImpactQueue } from './pending-impacts'
 import type { AttackTimelineState } from './pending-impacts'
 import type { DefenseResolutionMode } from './defense-batch'
+import type { TriggerPayload } from '../combat.sim.types'
+
+export interface V9FollowUpJob {
+  ownerId: EntityId
+  targetId: EntityId | null
+  eventTargetId: EntityId
+  payload: TriggerPayload
+  actions: BattleAction[]
+}
 
 export interface CombatClockResource {
   tick: number
@@ -42,6 +51,7 @@ export interface CombatResourceMap {
   pendingImpacts: PendingImpactQueue
   temporalAttacks: Map<EntityId, AttackTimelineState>
   defenseResolutionMode: DefenseResolutionMode
+  v9FollowUps: V9FollowUpJob[]
 }
 
 export class CombatResourceStore {

@@ -92,6 +92,10 @@ export function fireEcsTrigger(
     statusType: trigger.id,
     ...(attribution ? { sourceUnitId: attribution.sourceExternalId, ...getDamageAttributionMetadata(world, attribution) } : {}),
   })
+  if (world.resources.get('defenseResolutionMode') === 'v9_snapshot' && !world.resources.get('actionGroup')?.active) {
+    world.resources.require('v9FollowUps').push({ ownerId, targetId, eventTargetId, payload: trigger.payload, actions })
+    return
+  }
   applyEcsTriggerPayload(
     world,
     ownerId,

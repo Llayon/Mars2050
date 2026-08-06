@@ -47,4 +47,36 @@ describe('V9 defense batch resolver', () => {
     const result = resolveDefenseBatch(allied, [claim('a', 0, 10)])
     expect(result.claims[0]?.barrierDamage).toBe(0)
   })
+
+  it('preserves V8 mitigation details in a singleton claim', () => {
+    const base = frame({ shield: 5, capacity: 0 })
+    const snapshot: DefenseBatchSnapshot = {
+      targetsByExternalId: new Map([
+      ['unit:target', {
+        ...base.targetsByExternalId.get('unit:target')!, armor: 10, team: 'defender', rank: 2,
+        statusEffects: [
+          { type: 'armor_broken', duration: 3, value: 0.5, tickInterval: 0, nextTickIn: 0 },
+          { type: 'revealed', duration: 3, value: 0, tickInterval: 0, nextTickIn: 0 },
+        ],
+        isBurrowed: true, burrowDamageReduction: 0.8,
+        targetMark: { duration: 3, sourceUnitId: 'a', damageMultiplier: 0.5, executeThreshold: 1 },
+      }],
+      ['unit:ally', base.targetsByExternalId.get('unit:ally')!],
+      ]),
+      barriersByExternalId: base.barriersByExternalId,
+    }
+    const result = resolveDefenseBatch(snapshot, [{
+      ...claim('a', 0, 30),
+      targetExternalId: 'unit:target',
+      attackerModifiers: { armorPierceRatio: 0, shieldDamageMult: 1, rank: 2, summonCounterDamageMult: 1, lifestealMult: 0, executeThreshold: 0 },
+    }])
+    expect(result.claims[0]?.shieldDamage).toBe(5)
+    expect(result.claims[0]?.bonusDamage).toBeGreaterThan(0)
+  })
+
+  it('reports only shield overflow for shield-hit-block', () => {
+    const result = resolveDefenseBatch(frame({ shield: 4, capacity: 0 }), [claim('a', 0, 12)])
+    const breaking = result.claims.find(item => item.shieldHitBlock)
+    expect(breaking?.shieldHitBlockedDamage).toBe(8)
+  })
 })

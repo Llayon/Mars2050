@@ -33,6 +33,7 @@ import {
   runTemporalTimelineSystem,
   runProjectileImpactSystem,
 } from './systems'
+import { drainV9FollowUps } from './v9-follow-up-queue'
 
 interface EcsPhaseDefinition {
   id: CombatPhaseId
@@ -76,7 +77,10 @@ export class EcsCombatPhaseScheduler {
   runStage(stage: CombatPhaseStage, context: RuntimePhaseContext): void {
     prepareResources(this.world, context)
     for (const definition of ECS_PHASES) {
-      if (definition.stage === stage) definition.run(this.world, context)
+      if (definition.stage === stage) {
+        definition.run(this.world, context)
+        drainV9FollowUps(this.world, context)
+      }
     }
   }
 }

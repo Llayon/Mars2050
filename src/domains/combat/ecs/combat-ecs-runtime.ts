@@ -28,6 +28,7 @@ export function createEcsCombatRuntime(options: { profile?: boolean; defenseReso
   world.resources.set('pendingImpacts', new PendingImpactQueue())
   world.resources.set('temporalAttacks', new Map())
   world.resources.set('defenseResolutionMode', options.defenseResolutionMode ?? 'v8_sequential')
+  world.resources.set('v9FollowUps', [])
   return {
     world,
     addSquad: (row, team, rng) => { createSquadEntities(world, row, team, rng) },

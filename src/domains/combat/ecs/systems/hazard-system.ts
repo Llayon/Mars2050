@@ -4,6 +4,7 @@ import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
 import { applyEcsStatus } from './status-application-system'
 import { applyEcsCapturedDamage } from './damage-system'
+import { decrementBarrierDuration } from '../defense-resource-commit'
 
 export type EcsHazardDeathHandler = (
   entityId: EntityId,
@@ -20,7 +21,8 @@ export function runHazardSystem(
   for (const hazardId of hazardIds) {
     const hazard = world.stores.hazard.get(hazardId)
     if (!hazard) continue
-    hazard.duration--
+    if (hazard.type === 'barrier_dome') decrementBarrierDuration(world, hazardId)
+    else hazard.duration--
     if (hazard.duration <= 0) {
       if (hazard.type === 'barrier_dome' && (hazard.capacity ?? 0) > 0) {
         actions.push({ unitId: hazard.sourceUnitId ?? hazard.id, type: 'barrier_expire', hazardId: hazard.id })
