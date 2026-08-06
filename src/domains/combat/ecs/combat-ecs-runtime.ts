@@ -27,7 +27,7 @@ export function createEcsCombatRuntime(options: { profile?: boolean; defenseReso
   world.resources.set('designationIndex', new DesignationIndex())
   world.resources.set('pendingImpacts', new PendingImpactQueue())
   world.resources.set('temporalAttacks', new Map())
-  world.resources.set('defenseResolutionMode', options.defenseResolutionMode ?? 'v9_snapshot')
+  world.resources.set('defenseResolutionMode', options.defenseResolutionMode ?? 'v8_sequential')
   world.resources.set('v9FollowUps', [])
   world.resources.set('statusDamageAttribution', new Map())
   return {
