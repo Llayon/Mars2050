@@ -6,7 +6,7 @@ import { createCombatMetrics, finalizeCombatMetrics, recordCombatActions, record
 import { PRNG, generateObstacles } from './combat.utils'
 import { createPathfindingMap } from './combat.pathfinding'
 import { getTimeoutOutcome, type BattleOutcome } from './combat.outcome'
-import { CURRENT_SIMULATION_REVISION, CURRENT_SIMULATION_VERSION, V8_SIMULATION_REVISION, V8_SIMULATION_VERSION, V9_SIMULATION_REVISION, V9_SIMULATION_VERSION } from './combat.version'
+import { V8_SIMULATION_REVISION, V8_SIMULATION_VERSION, V9_SIMULATION_REVISION, V9_SIMULATION_VERSION } from './combat.version'
 import { createEcsCombatRuntime } from './ecs/combat-ecs-runtime'
 export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[], providedSeed?: number, providedObstacles?: Obstacle[], attackerGlobals: string[] = [], defenderGlobals: string[] = [], options: BattleSimulationOptions = {}): BattleResult {
   const seed = providedSeed ?? Date.now(), rng = new PRNG(seed), dt = 0.1

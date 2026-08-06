@@ -1,6 +1,5 @@
 import type { BattleAction } from '../../combat.actions'
 import type { DeathCause } from '../../combat.death.types'
-import type { RuntimeStatusEffect } from '../../combat.sim.types'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
 import { captureLiveDamageSource, getDamageAttributionMetadata, type DamageAttribution, type DamageSourceContext } from '../damage-source'

@@ -231,7 +231,7 @@ export function resolveDefenseBatch(snapshot: DefenseBatchSnapshot, inputClaims:
       const shield = shields.get(target.externalId) ?? 0
       const multiplier = Math.max(1, modifiers.shieldDamageMult ?? 1)
       const budget = Math.max(1, Math.floor(damage * multiplier))
-      let shieldDamage = Math.min(shield, budget)
+      const shieldDamage = Math.min(shield, budget)
       let shieldBroken = false
       let shieldHitBlock = false
       let shieldHitBlockedDamage = 0
@@ -312,10 +312,6 @@ function applyExecute(target: TargetDefenseSnapshot, claim: DamageClaim, damage:
   const markThreshold = getMarkExecuteThresholdPure(claim.sourceExternalId, target.targetMark)
   const threshold = Math.max(claim.attackerModifiers?.executeThreshold ?? claim.capturedAttackerModifiers?.executeThreshold ?? 0, markThreshold)
   return threshold > 0 && hp <= threshold ? hp : damage
-}
-
-function getStatus(effects: readonly RuntimeStatusEffect[] | undefined, type: RuntimeStatusEffect['type']): number {
-  return (effects ?? []).filter(effect => effect.type === type && effect.duration > 0 && effect.value !== undefined).reduce((max, effect) => Math.max(max, effect.value ?? 0), 0)
 }
 
 function emptyResolution(claim: DamageClaim): ResolvedDamageClaim {

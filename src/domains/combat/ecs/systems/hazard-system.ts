@@ -48,7 +48,7 @@ export function runHazardSystem(
     if (hazard.damagePerTick > 0 && hazard.duration % 10 === 0) {
       for (const [targetOrdinal, targetId] of getTargetsInRadius(world, hazardId).entries()) {
         const vitality = world.stores.vitality.require(targetId)
-        if (useV9DamageBatch(world, hazard, targetId, actions, 'hazard', targetOrdinal)) continue
+        if (applyV9DamageBatch(world, hazard, targetId, actions, 'hazard', targetOrdinal)) continue
         vitality.hp -= hazard.damagePerTick
         actions.push(createDamageAction(world, hazard, targetId))
         if (vitality.hp <= 0 && !vitality.isDead) onUnitDeath(
@@ -69,7 +69,7 @@ function processMine(world: CombatWorld, hazardId: EntityId, actions: BattleActi
   if (targets.length === 0) return false
   for (const [targetOrdinal, targetId] of targets.entries()) {
     const vitality = world.stores.vitality.require(targetId)
-    if (useV9DamageBatch(world, hazard, targetId, actions, 'mine', targetOrdinal)) continue
+    if (applyV9DamageBatch(world, hazard, targetId, actions, 'mine', targetOrdinal)) continue
     vitality.hp -= hazard.damagePerTick
     actions.push(createDamageAction(world, hazard, targetId))
     if (vitality.hp <= 0 && !vitality.isDead) onDeath(
@@ -81,7 +81,7 @@ function processMine(world: CombatWorld, hazardId: EntityId, actions: BattleActi
   return true
 }
 
-function useV9DamageBatch(world: CombatWorld, hazard: ReturnType<CombatWorld['stores']['hazard']['require']>, targetId: EntityId, actions: BattleAction[], cause: DeathCause, targetOrdinal: number): boolean {
+function applyV9DamageBatch(world: CombatWorld, hazard: ReturnType<CombatWorld['stores']['hazard']['require']>, targetId: EntityId, actions: BattleAction[], cause: DeathCause, targetOrdinal: number): boolean {
   if (world.resources.get('defenseResolutionMode') !== 'v9_snapshot' || !world.resources.get('actionGroup')?.active) return false
   applyEcsCapturedDamage(world, {
     attribution: { sourceExternalId: hazard.sourceUnitId ?? hazard.id, ...(hazard.sourceUnitId ? { sourceUnitType: hazard.type, sourceTeam: hazard.team } : {}) },
