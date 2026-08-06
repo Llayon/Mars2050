@@ -152,7 +152,9 @@ function runHazardPhase(world: CombatWorld, context: RuntimePhaseContext): void 
   ensureSpatial(world)
   runDefenseGroup(world, context, 'hazard', 0, () => runHazardSystem(world, context.actions, (entityId, sourceId, cause) => {
     resolveEcsDeath(world, entityId, sourceId, context.actions, cause)
-    world.flushStructuralCommands()
+    if (world.resources.get('defenseResolutionMode') !== 'v9_snapshot' || !world.resources.get('actionGroup')?.active) {
+      world.flushStructuralCommands()
+    }
   }))
 }
 

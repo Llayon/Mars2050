@@ -25,11 +25,18 @@ export function runHazardSystem(
       if (hazard.type === 'barrier_dome' && (hazard.capacity ?? 0) > 0) {
         actions.push({ unitId: hazard.sourceUnitId ?? hazard.id, type: 'barrier_expire', hazardId: hazard.id })
       }
-      world.removeHazardEntity(hazardId)
+      if (world.resources.get('defenseResolutionMode') === 'v9_snapshot' && world.resources.get('actionGroup')?.active) {
+        world.structuralCommands.queueHazardRemoval(hazardId)
+      } else {
+        world.removeHazardEntity(hazardId)
+      }
       continue
     }
     if (hazard.type === 'mine') {
-      if (processMine(world, hazardId, actions, onUnitDeath)) world.removeHazardEntity(hazardId)
+      if (processMine(world, hazardId, actions, onUnitDeath)) {
+        if (world.resources.get('defenseResolutionMode') === 'v9_snapshot' && world.resources.get('actionGroup')?.active) world.structuralCommands.queueHazardRemoval(hazardId)
+        else world.removeHazardEntity(hazardId)
+      }
       continue
     }
     if (hazard.type === 'smoke') {

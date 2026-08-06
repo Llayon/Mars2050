@@ -172,6 +172,7 @@ export class CombatWorld {
     this.resources.get('entitySpatial')?.updateTeam(this, entityId)
   }
 
+
   queueCompiledUnitCreation(...bundles: UnitEntityBundle[]): void {
     for (const bundle of bundles) {
       this.externalIds.reserve(bundle.externalId); this.structuralCommands.queueUnit(bundle)
