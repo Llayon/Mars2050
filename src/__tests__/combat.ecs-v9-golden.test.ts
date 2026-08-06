@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import fixture from './fixtures/combat-ecs-v9-golden.json'
 import { getSimulatorPreset } from '@/app/simulator2/simulator.presets'
 import { simulateBattle } from '@/domains/combat/combat.engine'
-import { CURRENT_SIMULATION_REVISION, CURRENT_SIMULATION_VERSION } from '@/domains/combat/combat.version'
+import { V9_SIMULATION_REVISION, V9_SIMULATION_VERSION } from '@/domains/combat/combat.version'
 import type { UnitRow } from '@/domains/combat/combat.types'
 
 function fingerprintPreset(presetId: string): string {
@@ -16,8 +16,8 @@ function fingerprintPreset(presetId: string): string {
 
 describe('combat ECS v9 defense snapshot golden replay contract', () => {
   it('publishes the V9 metadata contract', () => {
-    expect(fixture.simulationVersion).toBe(CURRENT_SIMULATION_VERSION)
-    expect(fixture.simulationRevision).toBe(CURRENT_SIMULATION_REVISION)
+    expect(fixture.simulationVersion).toBe(V9_SIMULATION_VERSION)
+    expect(fixture.simulationRevision).toBe(V9_SIMULATION_REVISION)
   })
   for (const presetId of Object.keys(fixture.presets)) it(`matches ${presetId}`, () => expect(fingerprintPreset(presetId)).toBe(fixture.presets[presetId as keyof typeof fixture.presets]), presetId === 'zerg_rush' ? 30_000 : 10_000)
 })

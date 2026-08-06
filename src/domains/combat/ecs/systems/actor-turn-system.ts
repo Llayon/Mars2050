@@ -15,7 +15,7 @@ import { runModifierSystem } from './modifier-system'
 import { runEcsPeriodicSpawnerSystem } from './periodic-spawner-system'
 import { runTargetingSystem } from './targeting-system'
 import { applyEcsStatus } from './status-application-system'
-import { commitV9DefenseBatch } from '../v9-defense-commit'
+import { commitV9ResolutionGroup } from '../v9-defense-commit'
 
 export function runEcsActorTurnSystem(
   world: CombatWorld,
@@ -128,10 +128,11 @@ export function commitActionGroup(
   ledger: EcsActionGroupLedger,
   actions: RuntimePhaseContext['actions'],
 ): void {
-  if (world.resources.get('defenseResolutionMode') === 'v9_snapshot') ledger.assertRoutingIntact(world)
-  if (world.resources.get('defenseResolutionMode') === 'v9_snapshot' && ledger.claims.length > 0) {
-    commitV9DefenseBatch(world, ledger, actions)
+  if (world.resources.get('defenseResolutionMode') === 'v9_snapshot') {
+    commitV9ResolutionGroup(world, ledger, actions)
+    return
   }
+  if (world.resources.get('defenseResolutionMode') === 'v9_snapshot') ledger.assertRoutingIntact(world)
   const affected = new Set([...ledger.damage.keys(), ...ledger.healing.keys()])
   for (const entityId of affected) {
     const vitality = world.stores.vitality.require(entityId)

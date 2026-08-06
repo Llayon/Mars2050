@@ -11,7 +11,7 @@ import { tryEcsProjectileInterception } from './damage-interception-system'
 import { buildEcsDamagePayload } from './damage-payload-system'
 import { consumeReactiveArmorCharge, consumeShieldHitBlockCharge, setShield } from '../defense-resource-commit'
 import { EcsActionGroupLedger } from '../../combat.action-intent'
-import { commitV9DefenseBatch } from '../v9-defense-commit'
+import { commitV9ResolutionGroup } from '../v9-defense-commit'
 import {
   applyAccuracy,
   applyFlatBlock,
@@ -100,8 +100,7 @@ function applyEcsDamageWithSource(
     world.resources.set('actionGroup', singleton)
     singleton.begin(world, [targetId], { tick: world.resources.get('clock')?.tick ?? 0, phaseId: 'immediate', groupOrdinal: 0 })
     applyEcsDamageWithSource(world, source, targetId, rawDamage, actions, options)
-    commitV9DefenseBatch(world, singleton, actions)
-    singleton.finish()
+    commitV9ResolutionGroup(world, singleton, actions)
     const resolved = singleton.resolution?.claims[0]
     world.resources.set('actionGroup', previous)
     if (!resolved) return createResult()
