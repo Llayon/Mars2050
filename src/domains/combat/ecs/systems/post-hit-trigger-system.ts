@@ -70,9 +70,11 @@ export function recordEcsResolvedDamageTakenTriggers(
   actions: BattleAction[],
 ): void {
   if (damage <= 0) return
+  const attackerId = attribution.sourceEntityId ?? world.getEntityId(attribution.sourceExternalId)
+  if (attackerId === undefined) return
   for (const trigger of getTriggers(world, targetId, 'damage_taken')) {
     if (damage < Math.max(0, trigger.threshold ?? 0)) continue
-    fireEcsTrigger(world, targetId, trigger, targetId, attribution.sourceEntityId, actions, attribution)
+    fireEcsTrigger(world, targetId, trigger, attackerId, attackerId, actions, attribution)
   }
 }
 
@@ -121,7 +123,9 @@ export function fireEcsTrigger(
     const queue = world.resources.get('v9FollowUps') ?? []
     world.resources.set('v9FollowUps', queue)
     const eventTargetExternalId = getExternalId(world, eventTargetId)
-    const capturedAttribution = attribution ?? captureTriggerOwnerAttribution(world, ownerId)
+    const capturedAttribution = trigger.event === 'damage_taken'
+      ? captureTriggerOwnerAttribution(world, ownerId)
+      : attribution ?? captureTriggerOwnerAttribution(world, ownerId)
     const capturedSource = captureLiveDamageSource(world, ownerId)
     queue.push({
       ownerExternalId,
