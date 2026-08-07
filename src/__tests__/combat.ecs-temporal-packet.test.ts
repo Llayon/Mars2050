@@ -7,7 +7,7 @@ import type { SimUnit } from '@/domains/combat/combat.sim.types'
 import { CombatWorld } from '@/domains/combat/ecs/combat-world'
 import { EntitySpatialIndex } from '@/domains/combat/ecs/entity-spatial-index'
 import { PendingImpactQueue } from '@/domains/combat/ecs/pending-impacts'
-import { runProjectileImpactSystem } from '@/domains/combat/ecs/systems/projectile-impact-system'
+import { EcsCombatPhaseScheduler } from '@/domains/combat/ecs/combat-phase-scheduler'
 
 function sourceContext(): DamageSourceContext {
   return {
@@ -38,7 +38,12 @@ function createWorld(targets: SimUnit[]): CombatWorld {
   world.resources.set('entitySpatial', spatial)
   world.resources.set('pendingImpacts', new PendingImpactQueue())
   world.resources.set('actionGroup', new EcsActionGroupLedger())
+  world.resources.set('defenseResolutionMode', 'v9_snapshot')
   return world
+}
+
+function runProjectileImpactSystem(world: CombatWorld, context: RuntimePhaseContext): void {
+  new EcsCombatPhaseScheduler(world).runPhase('projectile_impact', context)
 }
 
 describe('immutable temporal impact packets', () => {
