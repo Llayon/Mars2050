@@ -50,6 +50,7 @@ export interface PendingMark {
   targetId: EntityId
   attribution: DamageAttribution
   mark: TargetMarkConfig
+  propagateSquad: boolean
   authoredKey?: DamageOrderKey
 }
 
@@ -216,11 +217,11 @@ export class EcsActionGroupLedger {
     this.statuses.push({ targetId, effect: { ...effect }, authoredKey, sourceAttribution })
   }
 
-  queueMark(targetId: EntityId, attribution: DamageAttribution, mark: TargetMarkConfig, authoredKey?: DamageOrderKey): void {
+  queueMark(targetId: EntityId, attribution: DamageAttribution, mark: TargetMarkConfig, propagateSquad = false, authoredKey?: DamageOrderKey): void {
     if (authoredKey && this.marks.some(entry => entry.authoredKey && compareDamageOrder(entry.authoredKey, authoredKey) === 0)) {
       throw new CombatInvariantError(`Duplicate mark authored key: ${JSON.stringify(authoredKey)}`)
     }
-    this.marks.push({ targetId, attribution, mark: structuredClone(mark), authoredKey })
+    this.marks.push({ targetId, attribution, mark: structuredClone(mark), propagateSquad, authoredKey })
   }
 
   queueDefenseGrant(targetId: EntityId, amount: number, sourceExternalId: string, kind: PendingDefenseGrant['kind']): void {

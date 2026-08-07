@@ -3,8 +3,9 @@ import type { RuntimeTriggerEffect, TriggerPayload } from '../../combat.sim.type
 import { getDistance } from '../../combat.utils'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
-import { getDamageAttributionMetadata, type DamageAttribution } from '../damage-source'
+import { captureLiveDamageSource, getDamageAttributionMetadata, type DamageAttribution } from '../damage-source'
 import type { DamageOrderKey } from '../defense-batch'
+import { compareEntityExternalIdsForMode } from '../authored-order'
 import { applyEcsTriggerPayload } from './trigger-payload-system'
 
 export function processEcsHpThresholdTriggers(
@@ -121,6 +122,7 @@ export function fireEcsTrigger(
     world.resources.set('v9FollowUps', queue)
     const eventTargetExternalId = getExternalId(world, eventTargetId)
     const capturedAttribution = attribution ?? captureTriggerOwnerAttribution(world, ownerId)
+    const capturedSource = captureLiveDamageSource(world, ownerId)
     queue.push({
       ownerExternalId,
       targetExternalId: targetId === null ? undefined : getExternalId(world, targetId),
@@ -130,6 +132,7 @@ export function fireEcsTrigger(
       followUpOrdinal: stableFollowUpOrdinal(order),
       order,
       attribution: structuredClone(capturedAttribution),
+      capturedSource: structuredClone(capturedSource),
       chainPath: [order.originExternalId],
     })
     return
@@ -182,9 +185,10 @@ function selectNearestEnemy(world: CombatWorld, ownerId: EntityId): EntityId | n
   let selectedDistance = Number.POSITIVE_INFINITY
   for (const entityId of world.query(['identity', 'transform', 'vitality'])) {
     if (world.stores.identity.require(entityId).team === team) continue
+    if (world.stores.vitality.require(entityId).isDead) continue
     const target = world.stores.transform.require(entityId)
     const distance = getDistance(owner.x, owner.y, target.x, target.y)
-    if (distance < selectedDistance) {
+    if (distance < selectedDistance || distance === selectedDistance && selected !== null && compareEntityExternalIdsForMode(world, entityId, selected) < 0) {
       selected = entityId
       selectedDistance = distance
     }

@@ -298,13 +298,12 @@ function applyArmorAndModifiers(target: TargetDefenseSnapshot, claim: DamageClai
   if (target.isFlying && modifiers.antiAirDamageMult) damage = Math.floor(damage * modifiers.antiAirDamageMult)
   if (!target.isFlying && modifiers.groundDamageMult) damage = Math.floor(damage * modifiers.groundDamageMult)
   damage = Math.floor(damage * getRankMultiplierPure(modifiers.rank ?? 1, target.rank ?? 1, modifiers.rankScaling))
-  return Math.max(0, applySummonCounterPure(target.isSummon === true, Math.max(1, modifiers.summonCounterDamageMult ?? 1), damage))
+  const revealed = (target.statusEffects ?? []).some(effect => effect.type === 'revealed' && effect.duration > 0)
+  return applyMovementReductionPure(target.isMoving === true, target.damageReductionWhileMoving ?? 0, target.isBurrowed === true, target.burrowDamageReduction ?? 0, revealed, Math.max(0, applySummonCounterPure(target.isSummon === true, Math.max(1, modifiers.summonCounterDamageMult ?? 1), damage)))
 }
 
 function applyTargetDefense(target: TargetDefenseSnapshot, claim: DamageClaim, damage: number): { damage: number; bonusDamage: number } {
   let result = applyTargetStatusesPure(target.statusEffects ?? [], damage)
-  const revealed = (target.statusEffects ?? []).some(effect => effect.type === 'revealed' && effect.duration > 0)
-  result = applyMovementReductionPure(target.isMoving === true, target.damageReductionWhileMoving ?? 0, target.isBurrowed === true, target.burrowDamageReduction ?? 0, revealed, result)
   const beforeMark = result
   const markMultiplier = getMarkDamageMultiplierPure(claim.sourceExternalId, target.targetMark)
   if (markMultiplier > 0) result = Math.max(0, Math.floor(result * (1 + markMultiplier)))
@@ -315,7 +314,10 @@ function resolveSharing(snapshot: DefenseBatchSnapshot, target: TargetDefenseSna
   const recipients = target.sharingRecipients ?? []
   const ratio = Math.max(0, Math.min(1, target.damageShareRatio ?? 0))
   if (damage <= 0 || ratio <= 0 || recipients.length === 0) return { remaining: damage, total: 0, events: [] }
-  const selected = recipients.filter(id => id !== target.externalId && snapshot.targetsByExternalId.has(id)).slice(0, Math.max(0, target.damageShareMaxTargets ?? recipients.length))
+  const selected = recipients
+    .filter(id => id !== target.externalId && snapshot.targetsByExternalId.has(id))
+    .sort(compareDamageOrderStrings)
+    .slice(0, Math.max(0, target.damageShareMaxTargets ?? recipients.length))
   if (selected.length === 0) return { remaining: damage, total: 0, events: [] }
   const share = Math.floor(damage * ratio)
   const remainder = damage - share

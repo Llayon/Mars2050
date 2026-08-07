@@ -14,7 +14,7 @@ import type { TargetingRuntime } from './targeting-runtime'
 import type { DesignationIndex } from './designation-index'
 import type { EcsActionGroupLedger } from '../combat.action-intent'
 import type { ResolutionGroupKey } from '../combat.action-intent'
-import type { DamageAttribution } from './damage-source'
+import type { DamageAttribution, DamageSourceContext } from './damage-source'
 import type { PendingImpactQueue } from './pending-impacts'
 import type { AttackTimelineState } from './pending-impacts'
 import type { DefenseResolutionMode } from './defense-batch'
@@ -31,6 +31,7 @@ export interface V9FollowUpJob {
   followUpOrdinal: number
   order: DamageOrderKey
   attribution?: DamageAttribution
+  capturedSource?: DamageSourceContext
   chainPath: readonly string[]
 }
 

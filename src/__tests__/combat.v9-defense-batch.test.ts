@@ -33,6 +33,20 @@ describe('V9 defense batch resolver', () => {
     expect(result.claims[1]?.mitigatedDamage).toBe(5)
   })
 
+  it('applies movement reduction before barrier capacity', () => {
+    const snapshot: DefenseBatchSnapshot = {
+      targetsByExternalId: new Map([
+        ['unit:target', { externalId: 'unit:target', hp: 100, armor: 0, isMoving: true, damageReductionWhileMoving: 0.5 }],
+      ]),
+      barriersByExternalId: new Map([['barrier:a', { externalId: 'barrier:a', capacity: 60, coveredTargetExternalIds: ['unit:target'] }]]),
+    }
+    const result = resolveDefenseBatch(snapshot, [claim('a', 0, 100)])
+
+    expect(result.claims[0]).toMatchObject({ barrierDamage: 50, barrierBlockedDamage: 50, hpDamage: 0 })
+    expect(result.barrierCapacityByExternalId.get('barrier:a')).toBe(10)
+    expect(result.projectedHpByExternalId.get('unit:target')).toBe(100)
+  })
+
   it('compares external ids by code unit and rejects duplicate keys', () => {
     expect(compareDamageOrder({ originExternalId: 'unit:a', position: { programIndex: 0, groupIndex: 0, targetOrdinal: 0, effectIndex: 0 }, authoredOrdinal: 0, targetExternalId: 'z', sourceExternalId: 'x' }, { originExternalId: 'unit:ä', position: { programIndex: 0, groupIndex: 0, targetOrdinal: 0, effectIndex: 0 }, authoredOrdinal: 0, targetExternalId: 'a', sourceExternalId: 'x' })).toBeLessThan(0)
     expect(() => resolveDefenseBatch(frame(), [claim('a', 0, 1), claim('a', 0, 1)])).toThrow(/Duplicate damage order key/)

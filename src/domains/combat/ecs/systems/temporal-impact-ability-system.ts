@@ -166,7 +166,7 @@ function applyCapturedEffect(
       focusRadius: effect.focusRadius,
       retargetPolicy: effect.retargetPolicy,
       retargetLockTicks: effect.retargetLockTicks,
-    }, actions, authoredKey)
+    }, actions, world.resources.get('defenseResolutionMode') === 'v9_snapshot' && effect.squadWide === true, authoredKey)
   }
 }
 

@@ -179,7 +179,7 @@ function applyMark(
 ): void {
   if (world.stores.vitality.require(targetId).isDead) return
   const sourceExternalId = getExternalId(world, sourceId)
-  applyEcsCapturedTargetMark(world, { sourceExternalId, sourceEntityId: sourceId, sourceUnitType: world.stores.identity.require(sourceId).type, sourceTeam: world.stores.identity.require(sourceId).team }, targetId, mark, actions, authoredKey)
+  applyEcsCapturedTargetMark(world, { sourceExternalId, sourceEntityId: sourceId, sourceUnitType: world.stores.identity.require(sourceId).type, sourceTeam: world.stores.identity.require(sourceId).team }, targetId, mark, actions, world.resources.get('defenseResolutionMode') === 'v9_snapshot' && mark.squadWide === true, authoredKey)
 }
 
 function abilityOrder(sourceExternalId: string, targetExternalId: string, abilityId: string, targetOrdinal: number, effectIndex: number): DamageOrderKey {

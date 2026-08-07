@@ -3,7 +3,7 @@ import { EcsActionGroupLedger } from '../combat.action-intent'
 import type { CombatWorld } from './combat-world'
 import { commitV9ResolutionGroup } from './v9-defense-commit'
 import { applyEcsTriggerPayload } from './systems/trigger-payload-system'
-import { compareDamageOrder } from './defense-batch'
+import { CombatInvariantError, compareDamageOrder } from './defense-batch'
 
 const MAX_FOLLOW_UP_DEPTH = 32
 
@@ -15,7 +15,7 @@ export function drainV9FollowUps(world: CombatWorld, context: RuntimePhaseContex
     queue.sort((left, right) => compareDamageOrder(left.order, right.order) || left.followUpOrdinal - right.followUpOrdinal)
     if (depth++ >= MAX_FOLLOW_UP_DEPTH) {
       const path = queue.map(job => job.chainPath.join(' > ')).join(' | ')
-      throw new Error(`V9 follow-up trigger depth exceeded ${MAX_FOLLOW_UP_DEPTH}; chain=${path}`)
+      throw new CombatInvariantError(`V9 follow-up trigger depth exceeded ${MAX_FOLLOW_UP_DEPTH}; chain=${path}`)
     }
     const job = queue.shift()!
     const resolvedOwnerId = world.getEntityId(job.ownerExternalId)
@@ -24,7 +24,7 @@ export function drainV9FollowUps(world: CombatWorld, context: RuntimePhaseContex
       : undefined
     const targetId = job.targetExternalId === undefined ? null : world.getEntityId(job.targetExternalId) ?? null
     const eventTargetId = world.getEntityId(job.eventTargetExternalId)
-    if (eventTargetId === undefined || (targetId !== null && world.stores.vitality.require(targetId).isDead)) continue
+    if (eventTargetId === undefined) continue
     const ledger = new EcsActionGroupLedger()
     const previous = world.resources.get('actionGroup')
     world.resources.set('actionGroup', ledger)
@@ -34,7 +34,7 @@ export function drainV9FollowUps(world: CombatWorld, context: RuntimePhaseContex
         phaseId: 'trigger_follow_up',
         groupOrdinal: depth,
       })
-      applyEcsTriggerPayload(world, ownerId, targetId, eventTargetId, job.payload, job.actions, job.order, job.attribution)
+      applyEcsTriggerPayload(world, ownerId, targetId !== null && !world.stores.vitality.require(targetId).isDead ? targetId : null, eventTargetId, job.payload, job.actions, job.order, job.attribution, job.capturedSource)
       commitV9ResolutionGroup(world, ledger, job.actions)
     } finally {
       world.resources.set('actionGroup', previous)

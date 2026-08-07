@@ -109,7 +109,7 @@ export function commitV9ResolutionGroup(world: CombatWorld, ledger: EcsActionGro
     }
     for (const pending of [...ledger.marks].sort((left, right) => comparePendingMark(world, left, right))) {
       if (ledger.getProjectedHp(world, pending.targetId) > 0 && !world.stores.vitality.require(pending.targetId).isDead) {
-        applyEcsCapturedTargetMark(world, pending.attribution, pending.targetId, pending.mark, actions)
+        applyEcsCapturedTargetMark(world, pending.attribution, pending.targetId, pending.mark, actions, pending.propagateSquad, pending.authoredKey)
       }
     }
   } finally {

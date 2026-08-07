@@ -23,6 +23,7 @@ export function applyEcsTriggerDamage(
   actions: BattleAction[],
   authoredKey?: DamageOrderKey,
   capturedAttribution?: DamageAttribution,
+  capturedSource?: DamageSourceContext,
 ): void {
   for (const [targetOrdinal, hitId] of getTargets(world, ownerId, targetId, payload.radius).entries()) {
     const percentDamage = getConfiguredDamage(world, hitId, payload.percentHp)
@@ -42,8 +43,8 @@ export function applyEcsTriggerDamage(
       authoredOrdinal: targetOrdinal,
       authoredPosition: authoredKey ? { ...authoredKey.position, targetOrdinal } : { programIndex: 0, groupIndex: 0, targetOrdinal, effectIndex: 0 },
     }
-    const result = capturedAttribution
-      ? applyCapturedTriggerDamage(world, capturedAttribution, hitId, Math.max(0, Math.floor(payload.amount ?? 0)) + percentDamage, actions, options)
+    const result = capturedAttribution || capturedSource
+      ? applyCapturedTriggerDamage(world, capturedAttribution ?? capturedSource!.attribution, hitId, Math.max(0, Math.floor(payload.amount ?? 0)) + percentDamage, actions, options, capturedSource)
       : applyEcsSingleDamage(world, ownerId!, hitId, Math.max(0, Math.floor(payload.amount ?? 0)) + percentDamage, actions, options)
     if (!result.intercepted) resolveEcsDeath(world, hitId, capturedAttribution ?? ownerId, actions, 'trigger')
   }
@@ -56,22 +57,25 @@ function applyCapturedTriggerDamage(
   amount: number,
   actions: BattleAction[],
   options: Parameters<typeof applyEcsSingleDamage>[5],
+  capturedSource?: DamageSourceContext,
 ): ReturnType<typeof applyEcsSingleDamage> {
-  const source: DamageSourceContext = {
-    attribution,
-    attack: 0,
-    modifiers: {
-      attackBoostValue: 0,
-      outputSuppression: 0,
-      accuracyPenalty: 0,
-      accuracyPenaltyResist: 0,
-      armorPierceRatio: 0,
-      summonCounterDamageMult: 1,
-      shieldDamageMult: 1,
-      lifestealMult: 0,
-      executeThreshold: 0,
-    },
-  }
+  const source: DamageSourceContext = capturedSource
+    ? { ...structuredClone(capturedSource), attribution: structuredClone(attribution) }
+    : {
+      attribution,
+      attack: 0,
+      modifiers: {
+        attackBoostValue: 0,
+        outputSuppression: 0,
+        accuracyPenalty: 0,
+        accuracyPenaltyResist: 0,
+        armorPierceRatio: 0,
+        summonCounterDamageMult: 1,
+        shieldDamageMult: 1,
+        lifestealMult: 0,
+        executeThreshold: 0,
+      },
+    }
   return applyEcsCapturedDamage(world, source, targetId, amount, actions, options)
 }
 

@@ -24,7 +24,7 @@ export function applyEcsTargetMark(
   const attacker = world.stores.identity.require(attackerId)
   const actionGroup = world.resources.get('actionGroup')
   if (world.resources.get('defenseResolutionMode') === 'v9_snapshot' && actionGroup?.active && !actionGroup.committing && authoredKey) {
-    actionGroup.queueMark(targetId, { sourceExternalId: authoredKey.sourceExternalId, sourceEntityId: attackerId, sourceTeam: attacker.team, sourceUnitType: attacker.type }, mark, authoredKey)
+    actionGroup.queueMark(targetId, { sourceExternalId: authoredKey.sourceExternalId, sourceEntityId: attackerId, sourceTeam: attacker.team, sourceUnitType: attacker.type }, mark, propagateSquad, authoredKey)
     return
   }
   const target = world.stores.identity.require(targetId)
@@ -60,23 +60,23 @@ export function applyEcsCapturedTargetMark(
   targetId: EntityId,
   mark: TargetMarkConfig,
   actions: BattleAction[],
+  propagateSquad = false,
   authoredKey?: DamageOrderKey,
 ): void {
   const actionGroup = world.resources.get('actionGroup')
   if (actionGroup?.active && !actionGroup.committing) {
-    actionGroup.queueMark(targetId, attribution, mark, authoredKey)
+    actionGroup.queueMark(targetId, attribution, mark, propagateSquad, authoredKey)
     return
   }
   const sourceId = attribution.sourceEntityId
   const sourceAlive = sourceId !== undefined && world.stores.identity.get(sourceId) !== undefined &&
     !world.stores.vitality.require(sourceId).isDead
   if (sourceAlive) {
-    applyEcsTargetMark(world, sourceId, targetId, mark, actions, false)
+    applyEcsTargetMark(world, sourceId, targetId, mark, actions, propagateSquad, authoredKey)
     return
   }
+  applyCapturedMarkToSquad(world, attribution, targetId, mark, propagateSquad)
   const target = world.stores.identity.require(targetId)
-  world.stores.statusControl.require(targetId).targetMark = { ...mark, sourceUnitId: attribution.sourceExternalId }
-  world.stores.entitySources.require(targetId).targetMarkSource = undefined
   actions.push({
     unitId: attribution.sourceExternalId,
     type: 'target_mark',
@@ -85,6 +85,30 @@ export function applyEcsCapturedTargetMark(
     markEvent: 'refresh',
     markDuration: mark.duration,
   })
+}
+
+function applyCapturedMarkToSquad(world: CombatWorld, attribution: DamageAttribution, targetId: EntityId, mark: TargetMarkConfig, propagateSquad: boolean): EntityId[] {
+  const target = world.stores.identity.require(targetId)
+  const targetIds = [targetId]
+  setCapturedTargetMark(world, attribution, targetId, mark)
+  if (!propagateSquad || !mark.squadWide || !target.squadId) return targetIds
+  for (const squadmateId of [...world.query(['identity', 'statusControl'])].sort((left, right) => {
+    const a = world.stores.identity.require(left).id
+    const b = world.stores.identity.require(right).id
+    return a < b ? -1 : a > b ? 1 : 0
+  })) {
+    if (squadmateId === targetId) continue
+    const squadmate = world.stores.identity.require(squadmateId)
+    if (squadmate.team !== target.team || squadmate.squadId !== target.squadId) continue
+    setCapturedTargetMark(world, attribution, squadmateId, mark)
+    targetIds.push(squadmateId)
+  }
+  return targetIds
+}
+
+function setCapturedTargetMark(world: CombatWorld, attribution: DamageAttribution, targetId: EntityId, mark: TargetMarkConfig): void {
+  world.stores.statusControl.require(targetId).targetMark = { ...mark, sourceUnitId: attribution.sourceExternalId }
+  world.stores.entitySources.require(targetId).targetMarkSource = undefined
 }
 
 function applyMarkToSquad(world: CombatWorld, attackerId: EntityId, targetId: EntityId, mark: TargetMarkConfig, propagateSquad: boolean): EntityId[] {

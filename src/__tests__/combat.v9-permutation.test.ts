@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import { simulateBattle } from '@/domains/combat/combat.engine'
+import type { BattleAction } from '@/domains/combat/combat.actions'
 import type { UnitRow } from '@/domains/combat/combat.types'
 import { resolveDefenseBatch, type DamageClaim, type DefenseBatchSnapshot } from '@/domains/combat/ecs/defense-batch'
+import type { SimUnit } from '@/domains/combat/combat.sim.types'
+import { createRuntimeUnitFromConfig } from '@/domains/combat/combat.unit-factory'
+import { CombatWorld } from '@/domains/combat/ecs/combat-world'
+import { drainV9FollowUps } from '@/domains/combat/ecs/v9-follow-up-queue'
 
 function nextRandom(state: { value: number }): number {
   state.value = (Math.imul(state.value, 1664525) + 1013904223) >>> 0
@@ -60,6 +65,17 @@ function frame(targetOrder: readonly string[]): DefenseBatchSnapshot {
   }
 }
 
+function producerFrame(barrierOrder: readonly string[], recipientOrder: readonly string[]): DefenseBatchSnapshot {
+  return {
+    targetsByExternalId: new Map([
+      ['target:0', { externalId: 'target:0', hp: 100, armor: 0, damageShareRatio: 0.5, damageShareMaxTargets: 2, sharingRecipients: [...recipientOrder] }],
+      ['target:a', { externalId: 'target:a', hp: 100, armor: 0 }],
+      ['target:b', { externalId: 'target:b', hp: 100, armor: 0 }],
+    ]),
+    barriersByExternalId: new Map(barrierOrder.map(id => [id, { externalId: id, capacity: 3, coveredTargetExternalIds: ['target:0'] }])),
+  }
+}
+
 const integrationRows = (order: readonly string[]): UnitRow[] => order.map(id => {
   const index = Number(id.slice(2))
   const attacker = id.startsWith('a')
@@ -91,6 +107,22 @@ function integrationFingerprint(order: readonly string[], mode: 'v8_sequential' 
   })
 }
 
+function followUpFingerprint(order: readonly number[]): string {
+  const makeUnit = (id: string, team: SimUnit['team']): SimUnit => createRuntimeUnitFromConfig({ id, team, type: 'marine', x: team === 'attacker' ? 100 : 120, y: 100, currentAngle: 0 })!
+  const world = new CombatWorld([makeUnit('follow-owner', 'attacker'), makeUnit('follow-target', 'defender')])
+  world.resources.set('defenseResolutionMode', 'v9_snapshot')
+  const actions: BattleAction[] = []
+  world.resources.set('v9FollowUps', order.map(index => ({
+    ownerExternalId: 'follow-owner', targetExternalId: 'follow-target', eventTargetExternalId: 'follow-target',
+    payload: { kind: 'status' as const, target: 'target' as const, status: { type: index === 0 ? 'range_boost' as const : index === 1 ? 'attack_boost' as const : 'revealed' as const, duration: 5, value: index + 1 } },
+    actions, followUpOrdinal: index,
+    order: { originExternalId: `follow:${index}`, position: { programIndex: 0, groupIndex: 0, targetOrdinal: 0, effectIndex: index }, targetExternalId: 'follow-target', sourceExternalId: 'follow-owner' },
+    attribution: { sourceExternalId: 'follow-owner', sourceUnitType: 'marine', sourceTeam: 'attacker' }, chainPath: [`follow:${index}`],
+  })))
+  drainV9FollowUps(world, { tick: 0, actions })
+  return JSON.stringify(actions.filter(action => action.type === 'status_apply').map(action => action.statusType))
+}
+
 describe('V9 seeded permutation contracts', () => {
   it('keeps pure defense resolution stable across 100 seeded permutations', () => {
     const claims = Array.from({ length: 8 }, (_, index) => claim(`source:${index % 3}`, index))
@@ -98,6 +130,19 @@ describe('V9 seeded permutation contracts', () => {
     for (let permutation = 0; permutation < 100; permutation += 1) {
       const state = { value: 0x51f15e + permutation }
       const actual = resolveDefenseBatch(frame(shuffle(['target:0', 'target:1'], state)), shuffle(claims, state))
+      expect({ seed: state.value, permutation, actual }).toEqual({ seed: state.value, permutation, actual: baseline })
+    }
+  })
+
+  it('keeps barrier creation and sharing target-array order out of the pure result', () => {
+    const claims = [claim('source:0', 0, 'target:0')]
+    const baseline = resolveDefenseBatch(producerFrame(['barrier:a', 'barrier:b'], ['target:a', 'target:b']), claims)
+    for (let permutation = 0; permutation < 100; permutation += 1) {
+      const state = { value: 0x9e3779 + permutation }
+      const actual = resolveDefenseBatch(
+        producerFrame(shuffle(['barrier:a', 'barrier:b'], state), shuffle(['target:a', 'target:b'], state)),
+        shuffle(claims, state),
+      )
       expect({ seed: state.value, permutation, actual }).toEqual({ seed: state.value, permutation, actual: baseline })
     }
   })
@@ -113,4 +158,13 @@ describe('V9 seeded permutation contracts', () => {
       expect({ seed: state.value, permutation, mode: 'v9' as const, fingerprint: integrationFingerprint(order, 'v9_snapshot') }).toEqual({ seed: state.value, permutation, mode: 'v9' as const, fingerprint: baselineV9 })
     }
   }, 30_000)
+
+  it('keeps deferred follow-up insertion order out of the committed action stream', () => {
+    const baseline = followUpFingerprint([0, 1, 2])
+    for (let permutation = 0; permutation < 25; permutation += 1) {
+      const state = { value: 0x13579 + permutation }
+      const order = shuffle([0, 1, 2], state)
+      expect({ seed: state.value, permutation, fingerprint: followUpFingerprint(order) }).toEqual({ seed: state.value, permutation, fingerprint: baseline })
+    }
+  })
 })

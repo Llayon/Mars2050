@@ -2,7 +2,7 @@ import type { BattleAction } from '../../combat.actions'
 import type { TriggerPayload } from '../../combat.sim.types'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
-import type { DamageAttribution } from '../damage-source'
+import type { DamageAttribution, DamageSourceContext } from '../damage-source'
 import type { DamageOrderKey } from '../defense-batch'
 import { grantShield } from '../defense-resource-commit'
 import { applyEcsHealing } from './healing-system'
@@ -21,6 +21,7 @@ export function applyEcsTriggerPayload(
   actions: BattleAction[],
   authoredKey?: DamageOrderKey,
   capturedAttribution?: DamageAttribution,
+  capturedSource?: DamageSourceContext,
 ): void {
   if (ownerId === undefined) {
     if (targetId === null) return
@@ -30,7 +31,7 @@ export function applyEcsTriggerPayload(
         sourceUnitId: capturedAttribution?.sourceExternalId ?? payload.status.sourceUnitId,
       }, actions, authoredKey, capturedAttribution)
     } else if (payload.kind === 'damage') {
-      applyEcsTriggerDamage(world, undefined, targetId, payload, actions, authoredKey, capturedAttribution)
+      applyEcsTriggerDamage(world, undefined, targetId, payload, actions, authoredKey, capturedAttribution, capturedSource)
     }
     return
   }
@@ -44,7 +45,7 @@ export function applyEcsTriggerPayload(
     return
   }
   if (payload.kind === 'damage') {
-    applyEcsTriggerDamage(world, ownerId, targetId, payload, actions, authoredKey)
+    applyEcsTriggerDamage(world, ownerId, targetId, payload, actions, authoredKey, capturedAttribution, capturedSource)
     return
   }
   if (payload.kind === 'delayed_reassembly') {
