@@ -91,7 +91,7 @@ describe('combat ECS hp-threshold triggers', () => {
     target.hp = 80
     target.maxHp = 200
     target.defense = 0
-    const runtime = createEcsCombatRuntime()
+    const runtime = createEcsCombatRuntime({ defenseResolutionMode: 'v8_sequential' })
     runtime.world.queueUnitCreation(owner, target)
     runtime.world.flushStructuralCommands()
     const actions: BattleAction[] = []
@@ -127,7 +127,7 @@ describe('combat ECS hp-threshold triggers', () => {
       counter: 0,
       cooldownRemaining: 0,
     }]
-    const runtime = createEcsCombatRuntime()
+    const runtime = createEcsCombatRuntime({ defenseResolutionMode: 'v8_sequential' })
     runtime.world.queueUnitCreation(owner)
     runtime.world.flushStructuralCommands()
     const ownerId = runtime.world.getEntityId(owner.id)!

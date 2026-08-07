@@ -15,6 +15,8 @@ import { runModifierSystem } from './modifier-system'
 import { runEcsPeriodicSpawnerSystem } from './periodic-spawner-system'
 import { runTargetingSystem } from './targeting-system'
 import { applyEcsStatus } from './status-application-system'
+import { commitV9ResolutionGroup } from '../v9-defense-commit'
+import { compareEntityExternalIdsForMode, compareExternalIdsForMode } from '../authored-order'
 
 export function runEcsActorTurnSystem(
   world: CombatWorld,
@@ -31,7 +33,7 @@ export function runEcsActorTurnSystem(
   world.resources.set('actionGroup', ledger)
 
   const allActors = [...world.query(['identity', 'vitality', 'combat'])]
-    .sort((left, right) => world.stores.identity.require(left).id.localeCompare(world.stores.identity.require(right).id))
+    .sort((left, right) => compareEntityExternalIdsForMode(world, left, right))
   for (const entityId of allActors) {
       if (world.stores.vitality.require(entityId).isDead) continue
       runModifierSystem(world, entityId, context.actions, expiredId => {
@@ -44,7 +46,11 @@ export function runEcsActorTurnSystem(
   try {
     let initiativeIndex = 0
     for (const group of getEcsInitiativeGroups(world)) {
-      ledger.begin(world, world.query(['identity', 'vitality']))
+      ledger.begin(world, world.query(['identity', 'vitality']), {
+        tick: context.tick,
+        phaseId: 'actor_turn',
+        groupOrdinal: initiativeIndex,
+      })
       const intents: EcsActionIntent[] = []
       const groupMovement: MovementRequest[] = []
       for (const entityId of group.entityIds) {
@@ -88,7 +94,7 @@ export function runEcsActorTurnSystem(
         })
       }
 
-      for (const intent of intents.sort(compareIntents)) {
+      for (const intent of intents.sort((left, right) => compareIntents(world, left, right))) {
         if (world.stores.periodicSpawnerCapability.has(intent.actorId)) {
           runEcsPeriodicSpawnerSystem(world, intent.actorId, intent.targetId, context.actions, {
             rng, tick: context.tick,
@@ -123,6 +129,11 @@ export function commitActionGroup(
   ledger: EcsActionGroupLedger,
   actions: RuntimePhaseContext['actions'],
 ): void {
+  if (world.resources.get('defenseResolutionMode') === 'v9_snapshot') {
+    commitV9ResolutionGroup(world, ledger, actions)
+    return
+  }
+  if (world.resources.get('defenseResolutionMode') === 'v9_snapshot') ledger.assertRoutingIntact(world)
   const affected = new Set([...ledger.damage.keys(), ...ledger.healing.keys()])
   for (const entityId of affected) {
     const vitality = world.stores.vitality.require(entityId)
@@ -134,8 +145,9 @@ export function commitActionGroup(
   }
   ledger.committing = true
   for (const pending of ledger.statuses
-    .sort((left, right) => world.stores.identity.require(left.targetId).id.localeCompare(world.stores.identity.require(right.targetId).id))) {
-    if (!world.stores.vitality.require(pending.targetId).isDead) {
+    .sort((left, right) => compareEntityExternalIdsForMode(world, left.targetId, right.targetId))) {
+    const pendingVitality = world.stores.vitality.require(pending.targetId)
+    if (!pendingVitality.isDead && (world.resources.get('defenseResolutionMode') !== 'v9_snapshot' || pendingVitality.hp > 0)) {
       applyEcsStatus(world, pending.targetId, pending.effect, actions)
     }
   }
@@ -148,7 +160,7 @@ export function commitActionGroup(
   }
   const deaths = [...affected]
     .filter(entityId => !world.stores.vitality.require(entityId).isDead && world.stores.vitality.require(entityId).hp <= 0)
-    .sort((left, right) => world.stores.identity.require(left).id.localeCompare(world.stores.identity.require(right).id))
+    .sort((left, right) => compareEntityExternalIdsForMode(world, left, right))
   const deathIds = new Set([...forcedEntries.map(([entityId]) => entityId), ...deaths])
   for (const entityId of deathIds) {
     if (!world.stores.vitality.require(entityId).isDead) world.setEntityDead(entityId, true)
@@ -158,10 +170,12 @@ export function commitActionGroup(
   }
   for (const entityId of deaths) {
     const vitality = world.stores.vitality.require(entityId)
-    const attribution = (ledger.damage.get(entityId) ?? [])
-      .sort((left, right) => right.amount - left.amount ||
-        left.attribution.sourceExternalId.localeCompare(right.attribution.sourceExternalId))[0]?.attribution
-    resolveEcsDeath(world, entityId, attribution, actions, 'weapon', { preMarked: true })
+      const pendingAttribution = (ledger.damage.get(entityId) ?? [])
+        .sort((left, right) => right.amount - left.amount ||
+          compareExternalIdsForMode(world, left.attribution.sourceExternalId, right.attribution.sourceExternalId))[0]?.attribution
+      const attribution = pendingAttribution && (pendingAttribution.sourceEntityId !== undefined || pendingAttribution.sourceUnitType || pendingAttribution.sourceTeam) ? pendingAttribution : undefined
+      const cause = (ledger.damage.get(entityId) ?? []).sort((left, right) => right.amount - left.amount || compareExternalIdsForMode(world, left.attribution.sourceExternalId, right.attribution.sourceExternalId))[0]?.cause ?? 'weapon'
+      resolveEcsDeath(world, entityId, attribution, actions, cause, { preMarked: true })
     vitality.hp = 0
   }
 }
@@ -181,7 +195,7 @@ function emitGroupHealing(
     entries.reduce((sum, entry) => sum + entry.amount, 0),
     vitality.maxHp - startHp + damage,
   ))
-  for (const entry of entries.sort((left, right) => left.sourceExternalId.localeCompare(right.sourceExternalId))) {
+  for (const entry of entries.sort((left, right) => compareExternalIdsForMode(world, left.sourceExternalId, right.sourceExternalId))) {
     const actual = Math.min(remaining, entry.amount)
     if (actual > 0) actions.push({
       unitId: entry.sourceExternalId,
@@ -202,10 +216,10 @@ function getActionKind(world: CombatWorld, entityId: EntityId): EcsActionKind {
   return 'weapon'
 }
 
-function compareIntents(left: EcsActionIntent, right: EcsActionIntent): number {
-  return left.kind.localeCompare(right.kind) ||
-    left.actorExternalId.localeCompare(right.actorExternalId) ||
-    left.targetExternalId.localeCompare(right.targetExternalId) ||
+function compareIntents(world: CombatWorld, left: EcsActionIntent, right: EcsActionIntent): number {
+  return compareExternalIdsForMode(world, left.kind, right.kind) ||
+    compareExternalIdsForMode(world, left.actorExternalId, right.actorExternalId) ||
+    compareExternalIdsForMode(world, left.targetExternalId, right.targetExternalId) ||
     left.sequence - right.sequence
 }
 

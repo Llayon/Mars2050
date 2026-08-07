@@ -10,6 +10,7 @@
     "lint:limits": "tsx scripts/check-limits.ts",
     "combat:snapshot": "tsx scripts/combat-snapshot.ts",
     "combat:ecs:golden": "tsx scripts/combat-ecs-golden.ts",
+    "combat:ecs:v9:golden": "tsx scripts/combat-ecs-golden.ts --v9",
     "combat:metrics": "tsx scripts/combat-metrics-report.ts",
     "combat:ecs:benchmark": "tsx scripts/combat-ecs-benchmark.ts",
     "combat:qa:artifacts": "tsx scripts/combat-qa-artifacts.ts",

@@ -24,6 +24,8 @@
 | 010 | API Error Helper | accepted | api, errors, llm | lib/api-error.ts, app/api/**/*.ts, check-limits.ts |
 | 011 | Component Composition Pattern | accepted | architecture, pages, components, composition | app/**/page.tsx, app/**/layout.tsx, check-limits.ts |
 | 012 | Server vs Client Components | accepted | architecture, components, react, nextjs, performance | app/**/*.tsx, components/**/*.tsx, hooks/*.ts |
+| 013 | Combat Simulation Determinism | accepted | combat, simulation, determinism, replay | combat runtime |
+| 014 | Combat ECS V9 Defense Snapshots | accepted | combat, ecs, damage, determinism, replay | domains/combat/ecs |
 
 ## Быстрый поиск по тегам
 - `architecture`: 001, 006, 007, 008, 011, 012

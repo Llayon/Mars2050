@@ -7,12 +7,13 @@ import { EcsCombatPhaseScheduler } from './combat-phase-scheduler'
 import { TargetingRuntime } from './targeting-runtime'
 import { DesignationIndex } from './designation-index'
 import { PendingImpactQueue } from './pending-impacts'
+import type { DefenseResolutionMode } from './defense-batch'
 
 export interface EcsCombatRuntime extends CombatRuntime {
   readonly world: CombatWorld
 }
 
-export function createEcsCombatRuntime(options: { profile?: boolean } = {}): EcsCombatRuntime {
+export function createEcsCombatRuntime(options: { profile?: boolean; defenseResolutionMode?: DefenseResolutionMode } = {}): EcsCombatRuntime {
   const profilingEnabled = options.profile === true
   const world = new CombatWorld([], { profile: profilingEnabled })
   const scheduler = new EcsCombatPhaseScheduler(world)
@@ -26,6 +27,9 @@ export function createEcsCombatRuntime(options: { profile?: boolean } = {}): Ecs
   world.resources.set('designationIndex', new DesignationIndex())
   world.resources.set('pendingImpacts', new PendingImpactQueue())
   world.resources.set('temporalAttacks', new Map())
+  world.resources.set('defenseResolutionMode', options.defenseResolutionMode ?? 'v9_snapshot')
+  world.resources.set('v9FollowUps', [])
+  world.resources.set('statusDamageAttribution', new Map())
   return {
     world,
     addSquad: (row, team, rng) => { createSquadEntities(world, row, team, rng) },

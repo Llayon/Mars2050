@@ -8,8 +8,10 @@ import type {
 } from '../../combat.sim.types'
 import { getDistance } from '../../combat.utils'
 import type { CombatWorld } from '../combat-world'
+import { clearStatusDamageAttribution } from '../damage-source'
 import type { EntityId } from '../entity'
 import { getStatusStackIdentity } from '../../combat.status-core'
+import { compareEntityExternalIdsForMode } from '../authored-order'
 
 const CLEANSE_HAZARDS: HazardKind[] = [
   'napalm',
@@ -150,11 +152,7 @@ function cleanseAllies(
       return candidate.team === owner.team &&
         getDistance(source.x, source.y, transform.x, transform.y) <= radius
     })
-    .sort((left, right) =>
-      world.stores.identity.require(left).id.localeCompare(
-        world.stores.identity.require(right).id,
-      ),
-    )
+    .sort((left, right) => compareEntityExternalIdsForMode(world, left, right))
   for (const allyId of allies) {
     cleanseEcsStatuses(world, allyId, HARMFUL_STATUS_TYPES, actions)
   }
@@ -173,6 +171,7 @@ export function cleanseEcsStatuses(
     const effect = status.statusEffects[index]
     if (!allowed.has(effect.type)) continue
     status.statusEffects.splice(index, 1)
+    clearStatusDamageAttribution(world, entityId, effect)
     world.sourceRefs.clear(world, entityId, getStatusStackIdentity(effect))
     actions.push({
       unitId: identity.id,

@@ -3,6 +3,7 @@ import type { TransformModeConfig } from '../../combat.sim.types'
 import { FIELD_HEIGHT } from '../../combat.utils'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
+import { compareEntityExternalIdsForMode } from '../authored-order'
 
 export function getEcsTransformModeEntities(world: CombatWorld): readonly EntityId[] {
   return world.query([
@@ -23,9 +24,7 @@ export function runEcsTransformModeSystem(
   entityIds = getEcsTransformModeEntities(world),
 ): void {
   const ordered = [...entityIds].sort((left, right) =>
-    world.stores.identity.require(left).id.localeCompare(
-      world.stores.identity.require(right).id,
-    ),
+    compareEntityExternalIdsForMode(world, left, right),
   )
   for (const entityId of ordered) {
     const vitality = world.stores.vitality.require(entityId)

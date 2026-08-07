@@ -10,6 +10,8 @@ import { applyEcsCapturedDamage } from './damage-system'
 import { applyEcsStatus } from './status-application-system'
 import { applyEcsCapturedTargetMark } from './target-mark-system'
 import { CombatInvariantError } from '../combat-invariant-error'
+import type { DamageOrderKey } from '../defense-batch'
+import { compareEntityExternalIdsForMode } from '../authored-order'
 
 export interface FrozenImpactTargets {
   readonly baseAreaTargets: readonly EntityId[]
@@ -99,16 +101,21 @@ export function executeCapturedImpactPrograms(
   const ordered = [...contributions.entries()]
     .sort((left, right) => getDistance(impactPoint.x, impactPoint.y, world.stores.transform.require(left[0]).x, world.stores.transform.require(left[0]).y) -
       getDistance(impactPoint.x, impactPoint.y, world.stores.transform.require(right[0]).x, world.stores.transform.require(right[0]).y) ||
-      world.stores.identity.require(left[0]).id.localeCompare(world.stores.identity.require(right[0]).id))
-  for (const [targetId, contribution] of ordered) {
+      compareEntityExternalIdsForMode(world, left[0], right[0]))
+  for (const [targetOrdinal, [targetId, contribution]] of ordered.entries()) {
     const vitality = world.stores.vitality.get(targetId)
     if (!vitality || vitality.isDead) continue
     if (contribution.rawDamage > 0) {
-      applyEcsCapturedDamage(world, source, targetId, contribution.rawDamage, actions, { interceptable: false })
+      applyEcsCapturedDamage(world, source, targetId, contribution.rawDamage, actions, { interceptable: false, originExternalId: `impact:${impact.id}`, authoredOrdinal: targetOrdinal, authoredPosition: { programIndex: 0, groupIndex: 0, targetOrdinal, effectIndex: 0 }, impactId: impact.id, damageKind: 'weapon' })
     }
     if (getProjectedHp(world, targetId) <= 0) continue
-    for (const effect of contribution.effects) {
-      applyCapturedEffect(world, source, targetId, effect, actions)
+    for (const [effectIndex, effect] of contribution.effects.entries()) {
+      applyCapturedEffect(world, source, targetId, effect, actions, {
+        originExternalId: `impact:${impact.id}`,
+        position: { programIndex: 0, groupIndex: 0, targetOrdinal, effectIndex: effectIndex + 1 },
+        targetExternalId: world.stores.identity.require(targetId).id,
+        sourceExternalId: source.attribution.sourceExternalId,
+      })
     }
   }
 }
@@ -136,6 +143,7 @@ function applyCapturedEffect(
   targetId: EntityId,
   effect: AbilityEffect,
   actions: BattleAction[],
+  authoredKey: DamageOrderKey,
 ): void {
   if (effect.kind === 'apply_status') {
     applyEcsStatus(world, targetId, {
@@ -144,7 +152,7 @@ function applyCapturedEffect(
       value: effect.value,
       controlMode: effect.controlMode,
       sourceUnitId: source.attribution.sourceExternalId,
-    }, actions)
+    }, actions, authoredKey)
     return
   }
   if (effect.kind === 'mark_target') {
@@ -158,7 +166,7 @@ function applyCapturedEffect(
       focusRadius: effect.focusRadius,
       retargetPolicy: effect.retargetPolicy,
       retargetLockTicks: effect.retargetLockTicks,
-    }, actions)
+    }, actions, world.resources.get('defenseResolutionMode') === 'v9_snapshot' && effect.squadWide === true, authoredKey)
   }
 }
 
@@ -178,7 +186,7 @@ function selectTargets(
     : { x, y }
   return candidates
     .filter(targetId => getDistance(center.x, center.y, world.stores.transform.require(targetId).x, world.stores.transform.require(targetId).y) <= selector.radius + getSizeRadius(world.stores.transform.require(targetId).size))
-    .sort((left, right) => getDistance(center.x, center.y, world.stores.transform.require(left).x, world.stores.transform.require(left).y) - getDistance(center.x, center.y, world.stores.transform.require(right).x, world.stores.transform.require(right).y) || world.stores.identity.require(left).id.localeCompare(world.stores.identity.require(right).id))
+    .sort((left, right) => getDistance(center.x, center.y, world.stores.transform.require(left).x, world.stores.transform.require(left).y) - getDistance(center.x, center.y, world.stores.transform.require(right).x, world.stores.transform.require(right).y) || compareEntityExternalIdsForMode(world, left, right))
     .slice(0, selector.maxTargets ?? Number.MAX_SAFE_INTEGER)
 }
 

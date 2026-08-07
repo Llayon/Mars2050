@@ -5,6 +5,7 @@ import type { DamageAttribution } from '../damage-source'
 import { resolveEcsDeath } from './death-system'
 import type { BattleAction } from '../../combat.actions'
 import type { DeathCause } from '../../combat.death.types'
+import { compareEntityExternalIdsForMode } from '../authored-order'
 
 export interface EcsDamageShareResult {
   damage: number
@@ -31,7 +32,7 @@ export function applyEcsDamageSharing(
       const transform = world.stores.transform.require(entityId)
       return getDistance(transform.x, transform.y, target.x, target.y) <= defense.damageShareRadius!
     })
-    .sort((left, right) => world.stores.identity.require(left).id.localeCompare(world.stores.identity.require(right).id))
+    .sort((left, right) => compareEntityExternalIdsForMode(world, left, right))
     .slice(0, Math.max(1, defense.damageShareMaxTargets ?? Number.MAX_SAFE_INTEGER))
   if (recipients.length === 0) return { damage, sharedDamage: 0, events: [] }
   const budget = Math.floor(damage * ratio)

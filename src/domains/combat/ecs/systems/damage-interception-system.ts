@@ -3,6 +3,7 @@ import { getDistance } from '../../combat.utils'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
 import type { PendingImpact } from '../pending-impacts'
+import { compareEntityExternalIdsForMode } from '../authored-order'
 
 const MAX_INTERCEPT_QUERY_RADIUS = 400
 
@@ -37,7 +38,7 @@ export function tryEcsPointInterception(
       const rightTransform = world.stores.transform.require(right)
       const distance = getDistance(leftTransform.x, leftTransform.y, x, y) -
         getDistance(rightTransform.x, rightTransform.y, x, y)
-      return distance || world.stores.identity.require(left).id.localeCompare(world.stores.identity.require(right).id)
+      return distance || compareEntityExternalIdsForMode(world, left, right)
     })[0]
   if (interceptorId === undefined) return false
   const defense = world.stores.defense.require(interceptorId)
@@ -89,7 +90,7 @@ export function allocateTemporalInterceptions(
         const rightTransform = world.stores.transform.require(right)
         return getDistance(leftTransform.x, leftTransform.y, point.x, point.y) -
           getDistance(rightTransform.x, rightTransform.y, point.x, point.y) ||
-          world.stores.identity.require(left).id.localeCompare(world.stores.identity.require(right).id)
+          compareEntityExternalIdsForMode(world, left, right)
       })
     const interceptorId = candidates[0]
     if (interceptorId === undefined) continue

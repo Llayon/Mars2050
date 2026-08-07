@@ -10,6 +10,7 @@ import { CombatInvariantError } from '../combat-invariant-error'
 import { captureLiveDamageSource } from '../damage-source'
 import { getEcsActionCooldown } from './action-setup'
 import { evaluateDamageExpression, evaluateLaunchRawDamage, hasImpactProgramDamage } from './temporal-impact-ability-system'
+import { compareEntityExternalIdsForMode } from '../authored-order'
 
 export type TemporalDispatchResult =
   | { handled: false; acted: false }
@@ -67,7 +68,7 @@ export function runTemporalTimelineSystem(
 ): void {
   const timelines = world.resources.require('temporalAttacks')
   const ordered = [...timelines.entries()]
-    .sort((left, right) => world.stores.identity.require(left[0]).id.localeCompare(world.stores.identity.require(right[0]).id))
+    .sort((left, right) => compareEntityExternalIdsForMode(world, left[0], right[0]))
   for (const [entityId, timeline] of ordered) {
     if (!timelines.has(entityId)) continue
     const vitality = world.stores.vitality.get(entityId)

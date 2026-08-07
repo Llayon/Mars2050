@@ -70,7 +70,8 @@ const RULE_SEVERITY: Record<string, Severity> = {
   PAGE: 'warning',
   PASCAL: 'info',
   DOMAIN: 'warning',
-  ERROR_HELPER: 'warning',
+    ERROR_HELPER: 'warning',
+    COMBAT_DEFENSE_MUTATION: 'error',
   IMPORT_RULES: 'warning',
   EXPORT: 'info',
   JSDOC: 'info',
@@ -88,7 +89,8 @@ const RULE_ADR: Record<string, string[]> = {
   PAGE: ['ADR-007'],
   PASCAL: ['ADR-001'],
   DOMAIN: ['ADR-001'],
-  ERROR_HELPER: ['ADR-002'],
+    ERROR_HELPER: ['ADR-002'],
+    COMBAT_DEFENSE_MUTATION: ['ADR-014'],
   IMPORT_RULES: ['ADR-001', 'ADR-007'],
   EXPORT: ['ADR-001'],
   JSDOC: ['ADR-001'],
@@ -143,7 +145,8 @@ function readFileContent(filePath: string): string {
   return readFileSync(filePath, 'utf-8')
 }
 
-function classifyFile(relPath: string): { type: string; limit: number } {
+  function classifyFile(relPath: string): { type: string; limit: number } {
+    if (relPath.endsWith('domains/combat/ecs/defense-batch.ts')) return { type: 'Defense batch resolver', limit: 350 }
   if (isReplayRenderEngine(relPath)) return { type: 'Replay/render engine', limit: LIMITS['replayEngine'] }
   if (relPath.includes('/api/')) return { type: 'API route', limit: LIMITS['api'] }
   if (relPath.startsWith('hooks/')) return { type: 'Hook', limit: LIMITS['hook'] }
@@ -577,6 +580,28 @@ function checkImportRules(changedFiles?: Set<string>) {
   walkDir(SRC)
 }
 
+// ─── Rule 16: Combat defensive resource mutation gateway ────────
+// This rule intentionally ignores --diff: combat ECS runtime is always scanned.
+function checkCombatDefenseMutations() {
+  const combatPath = join(SRC, 'domains', 'combat', 'ecs')
+  const mutation = /(?:\.(?:shield|maxShield|capacity|shieldHitBlockCharges|reactiveArmorCharges)|\[['"](?:shield|maxShield|capacity|shieldHitBlockCharges|reactiveArmorCharges)['"]\]|\bbarrier\.duration)\s*(?:\+\+|--|(?:[+\-*/%]?=)(?!=))/gm
+  const destructuringMutation = /\(\s*\{[^}]*\b(?:shield|maxShield|capacity|shieldHitBlockCharges|reactiveArmorCharges)\b[^}]*\}\s*=\s*/gms
+  const walk = (dir: string) => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const fullPath = join(dir, entry.name)
+      if (entry.isDirectory()) { walk(fullPath); continue }
+      if (extname(entry.name) !== '.ts' || entry.name === 'defense-resource-commit.ts') continue
+      const content = readFileContent(fullPath)
+      const matches = [...content.matchAll(mutation), ...content.matchAll(destructuringMutation)]
+      for (const match of matches) {
+        const line = content.slice(0, match.index ?? 0).split('\n').length
+        addViolation('COMBAT_DEFENSE_MUTATION', relPath(fullPath), 'defensive resource mutation must use defense-resource-commit.ts', line)
+      }
+    }
+  }
+  try { walk(combatPath) } catch { /* combat domain may be absent in partial checkouts */ }
+}
+
 // ─── Rule 14: Domain barrel export ─────────────────────────────
 function checkDomainExports(changedFiles?: Set<string>) {
   const domainsPath = join(SRC, 'domains')
@@ -689,6 +714,7 @@ checkImportRules(changedFiles)
 checkDomainExports(changedFiles)
 checkJsDoc(changedFiles)
 checkDomainCompleteness(changedFiles)
+checkCombatDefenseMutations()
 
 // ─── Report ────────────────────────────────────────────────────
 if (JSON_OUTPUT) {

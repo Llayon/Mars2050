@@ -3,6 +3,9 @@ import type { DeathCause } from '../../combat.death.types'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
 import { applyEcsStatus } from './status-application-system'
+import { applyEcsCapturedDamage } from './damage-system'
+import { decrementBarrierDuration } from '../defense-resource-commit'
+import { compareEntityExternalIdsForMode } from '../authored-order'
 
 export type EcsHazardDeathHandler = (
   entityId: EntityId,
@@ -19,16 +22,26 @@ export function runHazardSystem(
   for (const hazardId of hazardIds) {
     const hazard = world.stores.hazard.get(hazardId)
     if (!hazard) continue
-    hazard.duration--
+    if (hazard.type === 'barrier_dome') decrementBarrierDuration(world, hazardId)
+    else hazard.duration--
     if (hazard.duration <= 0) {
-      if (hazard.type === 'barrier_dome' && (hazard.capacity ?? 0) > 0) {
-        actions.push({ unitId: hazard.sourceUnitId ?? hazard.id, type: 'barrier_expire', hazardId: hazard.id })
+      if (hazard.type === 'barrier_dome' && ((hazard.capacity ?? 0) > 0 || world.resources.get('defenseResolutionMode') === 'v9_snapshot')) {
+        const group = world.resources.get('actionGroup')
+        if (world.resources.get('defenseResolutionMode') === 'v9_snapshot' && group?.active) group.queueBarrierExpiration(hazard.id)
+        else actions.push({ unitId: hazard.sourceUnitId ?? hazard.id, type: 'barrier_expire', hazardId: hazard.id })
       }
-      world.removeHazardEntity(hazardId)
+      if (world.resources.get('defenseResolutionMode') === 'v9_snapshot' && world.resources.get('actionGroup')?.active) {
+        world.structuralCommands.queueHazardRemoval(hazardId)
+      } else {
+        world.removeHazardEntity(hazardId)
+      }
       continue
     }
     if (hazard.type === 'mine') {
-      if (processMine(world, hazardId, actions, onUnitDeath)) world.removeHazardEntity(hazardId)
+      if (processMine(world, hazardId, actions, onUnitDeath)) {
+        if (world.resources.get('defenseResolutionMode') === 'v9_snapshot' && world.resources.get('actionGroup')?.active) world.structuralCommands.queueHazardRemoval(hazardId)
+        else world.removeHazardEntity(hazardId)
+      }
       continue
     }
     if (hazard.type === 'smoke') {
@@ -36,8 +49,9 @@ export function runHazardSystem(
       continue
     }
     if (hazard.damagePerTick > 0 && hazard.duration % 10 === 0) {
-      for (const targetId of getTargetsInRadius(world, hazardId)) {
+      for (const [targetOrdinal, targetId] of getTargetsInRadius(world, hazardId).entries()) {
         const vitality = world.stores.vitality.require(targetId)
+        if (applyV9DamageBatch(world, hazard, targetId, actions, 'hazard', targetOrdinal)) continue
         vitality.hp -= hazard.damagePerTick
         actions.push(createDamageAction(world, hazard, targetId))
         if (vitality.hp <= 0 && !vitality.isDead) onUnitDeath(
@@ -54,10 +68,11 @@ function processMine(world: CombatWorld, hazardId: EntityId, actions: BattleActi
   const hazard = world.stores.hazard.require(hazardId)
   const targets = getTargetsInRadius(world, hazardId)
     .filter(entityId => world.stores.identity.require(entityId).team !== hazard.team)
-    .sort((left, right) => getExternalId(world, left).localeCompare(getExternalId(world, right)))
+    .sort((left, right) => compareEntityExternalIdsForMode(world, left, right))
   if (targets.length === 0) return false
-  for (const targetId of targets) {
+  for (const [targetOrdinal, targetId] of targets.entries()) {
     const vitality = world.stores.vitality.require(targetId)
+    if (applyV9DamageBatch(world, hazard, targetId, actions, 'mine', targetOrdinal)) continue
     vitality.hp -= hazard.damagePerTick
     actions.push(createDamageAction(world, hazard, targetId))
     if (vitality.hp <= 0 && !vitality.isDead) onDeath(
@@ -69,11 +84,21 @@ function processMine(world: CombatWorld, hazardId: EntityId, actions: BattleActi
   return true
 }
 
+function applyV9DamageBatch(world: CombatWorld, hazard: ReturnType<CombatWorld['stores']['hazard']['require']>, targetId: EntityId, actions: BattleAction[], cause: DeathCause, targetOrdinal: number): boolean {
+  if (world.resources.get('defenseResolutionMode') !== 'v9_snapshot' || !world.resources.get('actionGroup')?.active) return false
+  applyEcsCapturedDamage(world, {
+    attribution: { sourceExternalId: hazard.sourceUnitId ?? hazard.id, ...(hazard.sourceUnitId ? { sourceUnitType: hazard.type, sourceTeam: hazard.team } : {}) },
+    attack: 0,
+    modifiers: { attackBoostValue: 0, outputSuppression: 0, accuracyPenalty: 0, accuracyPenaltyResist: 0, armorPierceRatio: 0, summonCounterDamageMult: 1, shieldDamageMult: 1, lifestealMult: 0, executeThreshold: 0 },
+  }, targetId, hazard.damagePerTick, actions, { defensePolicy: 'bypass_all', allowMinimumDamage: false, interceptable: false, deathCause: cause, originExternalId: `hazard:${hazard.id}`, authoredOrdinal: targetOrdinal, authoredPosition: { programIndex: 0, groupIndex: 0, targetOrdinal, effectIndex: 0 }, hazardId: hazard.id, damageKind: 'hazard' })
+  return true
+}
+
 function processSmoke(world: CombatWorld, hazardId: EntityId, actions: BattleAction[]): void {
   const hazard = world.stores.hazard.require(hazardId)
   if (hazard.duration % 10 !== 0 || !hazard.statusEffects?.length) return
   const targets = getTargetsInRadius(world, hazardId)
-    .sort((left, right) => getExternalId(world, left).localeCompare(getExternalId(world, right)))
+    .sort((left, right) => compareEntityExternalIdsForMode(world, left, right))
   for (const targetId of targets) {
     for (const effect of hazard.statusEffects) applyEcsStatus(world, targetId, {
       ...effect,
@@ -88,19 +113,16 @@ function getTargetsInRadius(world: CombatWorld, hazardId: EntityId): EntityId[] 
   return world.resources.require('entitySpatial').query(world, hazard.x, hazard.y, hazard.radius).filter(entityId => {
     const transform = world.stores.transform.require(entityId)
     return !transform.isFlying
-  })
+  }).sort((left, right) => getExternalId(world, left) < getExternalId(world, right) ? -1 : getExternalId(world, left) > getExternalId(world, right) ? 1 : 0)
 }
 
-function createDamageAction(
-  world: CombatWorld,
-  hazard: ReturnType<CombatWorld['stores']['hazard']['require']>,
-  targetId: EntityId,
-): BattleAction {
-  const action: BattleAction = { unitId: hazard.sourceUnitId ?? hazard.id, type: 'damage', targetId: getExternalId(world, targetId), damage: hazard.damagePerTick, hazardId: hazard.id, damageKind: 'hazard' }
-  if (hazard.sourceUnitId) action.sourceUnitId = hazard.sourceUnitId
-  return action
-}
 
 function getExternalId(world: CombatWorld, entityId: EntityId): string {
   return world.stores.entityMeta.require(entityId).externalId
+}
+
+function createDamageAction(world: CombatWorld, hazard: ReturnType<CombatWorld['stores']['hazard']['require']>, targetId: EntityId): BattleAction {
+  const action: BattleAction = { unitId: hazard.sourceUnitId ?? hazard.id, type: 'damage', targetId: getExternalId(world, targetId), damage: hazard.damagePerTick, hazardId: hazard.id, damageKind: 'hazard' }
+  if (hazard.sourceUnitId) action.sourceUnitId = hazard.sourceUnitId
+  return action
 }

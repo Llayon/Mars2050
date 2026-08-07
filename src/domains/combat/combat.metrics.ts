@@ -7,12 +7,12 @@ import {
 import type { TimeoutPolicy } from './combat.result'
 import type { CombatWorld } from './ecs/combat-world'
 import { isEcsMeleeEngagementReady } from './ecs/movement-positioning'
-
 export interface BattleSimulationOptions {
   trackMetrics?: boolean
   maxTicks?: number
   timeoutPolicy?: TimeoutPolicy
   profile?: boolean
+  defenseResolutionMode?: 'v8_sequential' | 'v9_snapshot'
 }
 
 export interface CombatMetrics {

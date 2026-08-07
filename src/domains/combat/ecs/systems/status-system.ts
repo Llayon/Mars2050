@@ -4,10 +4,13 @@ import type { RuntimeStatusEffect, StatusEffect } from '../../combat.primitives'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
 import { getStatusStackIdentity } from '../../combat.status-core'
+import { applyEcsCapturedDamage } from './damage-system'
+import { applyEcsHealingFromSource } from './healing-system'
+import { clearStatusDamageAttribution, getStatusDamageAttribution, type DamageAttribution } from '../damage-source'
 
 export type EcsStatusDeathHandler = (
   entityId: EntityId,
-  sourceId: EntityId | undefined,
+  sourceId: EntityId | DamageAttribution | undefined,
   cause: DeathCause,
 ) => void
 
@@ -35,6 +38,7 @@ export function runStatusSystem(
       if (effect.duration > 0) continue
       statusControl.statusEffects.splice(index, 1)
       world.sourceRefs.clear(world, entityId, getStatusStackIdentity(effect))
+      clearStatusDamageAttribution(world, entityId, effect)
       actions.push({ unitId: identity.id, type: 'status_expire', statusType: effect.type })
     }
     if (statusControl.statusEffects.length === 0) {
@@ -56,6 +60,11 @@ function applyPeriodicEffect(
   const sourceId = effect.sourceUnitId ?? effect.type
   if (effect.type === 'regen') {
     const requested = Math.max(1, Math.floor(effect.value ?? vitality.maxHp * 0.02))
+    if (world.resources.get('defenseResolutionMode') === 'v9_snapshot' && world.resources.get('actionGroup')?.active) {
+      applyEcsHealingFromSource(world, sourceId, entityId, requested, actions, { bypassStatusBlock: true })
+      actions.push({ unitId: sourceId, type: 'status_tick', targetId: externalId, statusType: effect.type, value: requested })
+      return
+    }
     const before = Math.max(0, Math.min(vitality.maxHp, vitality.hp))
     vitality.hp = Math.min(vitality.maxHp, before + requested)
     const actual = vitality.hp - before
@@ -66,14 +75,25 @@ function applyPeriodicEffect(
     return
   }
 
-  const damage = getPeriodicDamage(vitality.maxHp, effect)
-  if (damage <= 0) return
-  vitality.hp -= damage
+    const damage = getPeriodicDamage(vitality.maxHp, effect)
+    if (damage <= 0) return
+    if (world.resources.get('defenseResolutionMode') === 'v9_snapshot' && world.resources.get('actionGroup')?.active) {
+      const damageCause = effect.type === 'burn' || effect.type === 'acid' ? effect.type : 'degeneration'
+      applyEcsCapturedDamage(world, {
+        attribution: getStatusDamageAttribution(world, entityId, effect) ?? { sourceExternalId: sourceId },
+        attack: 0,
+        modifiers: { attackBoostValue: 0, outputSuppression: 0, accuracyPenalty: 0, accuracyPenaltyResist: 0, armorPierceRatio: 0, summonCounterDamageMult: 1, shieldDamageMult: 1, lifestealMult: 0, executeThreshold: 0 },
+      }, entityId, damage, actions, { defensePolicy: 'bypass_all', allowMinimumDamage: false, interceptable: false, deathCause: damageCause, originExternalId: `status:${externalId}:${getStatusStackIdentity(effect)}`, authoredOrdinal: 0, authoredPosition: { programIndex: 0, groupIndex: 0, targetOrdinal: 0, effectIndex: 0 }, statusType: effect.type, damageKind: 'dot' })
+      actions.push({ unitId: sourceId, type: 'status_tick', targetId: externalId, statusType: effect.type, value: damage })
+      return
+    }
+    vitality.hp -= damage
   actions.push({ unitId: sourceId, type: 'status_tick', targetId: externalId, statusType: effect.type, value: damage })
   actions.push({ unitId: sourceId, type: 'damage', targetId: externalId, damage, statusType: effect.type, damageKind: 'dot' })
   if (vitality.hp <= 0 && !vitality.isDead) {
     const cause = effect.type === 'burn' || effect.type === 'acid' ? effect.type : 'degeneration'
-    onUnitDeath(entityId, world.sourceRefs.get(world, entityId, getStatusStackIdentity(effect)), cause)
+    const attribution = getStatusDamageAttribution(world, entityId, effect)
+    onUnitDeath(entityId, attribution ?? world.sourceRefs.get(world, entityId, getStatusStackIdentity(effect)), cause)
   }
 }
 

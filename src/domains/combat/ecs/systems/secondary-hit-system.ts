@@ -27,6 +27,9 @@ export function resolveEcsSecondaryHit(
     allowPercentHpDamage: false,
     allowMinimumDamage: options.allowMinimumDamage,
     interceptable: options.interceptable ?? false,
+    originExternalId: `unit:${attacker}:secondary`,
+    authoredOrdinal: 0,
+    authoredPosition: { programIndex: 0, groupIndex: 0, targetOrdinal: 0, effectIndex: 0 },
   })
   if (result.intercepted) {
     return

@@ -1,5 +1,6 @@
 import type { BattleAction } from '../../combat.actions'
 import type { CombatWorld } from '../combat-world'
+import { compareEntityExternalIdsForMode } from '../authored-order'
 import type { EntityId } from '../entity'
 import { applyEcsFieldEffectAt } from './trigger-field-system'
 
@@ -14,9 +15,7 @@ export function runEcsFieldEffectSystem(
   entityIds = getEcsFieldEffectEntities(world),
 ): void {
   const ordered = [...entityIds].sort((left, right) =>
-    world.stores.identity.require(left).id.localeCompare(
-      world.stores.identity.require(right).id,
-    ),
+    compareEntityExternalIdsForMode(world, left, right),
   )
   for (const entityId of ordered) {
     const vitality = world.stores.vitality.require(entityId)

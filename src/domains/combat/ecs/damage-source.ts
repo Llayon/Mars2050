@@ -2,11 +2,12 @@ import type { RankScalingConfig, RuntimeStatusEffect } from '../combat.primitive
 import type { PercentHpDamageConfig, Team } from '../combat.types'
 import type { CombatWorld } from './combat-world'
 import type { EntityId } from './entity'
+import { getStatusStackIdentity } from '../combat.status-core'
 
 export interface DamageAttribution {
   sourceExternalId: string
-  sourceUnitType: string
-  sourceTeam: Team
+  sourceUnitType?: string
+  sourceTeam?: Team
   sourceEntityId?: EntityId
 }
 
@@ -39,8 +40,8 @@ export function getDamageAttributionMetadata(
 ): { sourceUnitType?: string; sourceTeam?: Team } {
   if (attribution.sourceEntityId !== undefined && world.stores.identity.get(attribution.sourceEntityId) !== undefined) return {}
   return {
-    sourceUnitType: attribution.sourceUnitType,
-    sourceTeam: attribution.sourceTeam,
+    ...(attribution.sourceUnitType ? { sourceUnitType: attribution.sourceUnitType } : {}),
+    ...(attribution.sourceTeam ? { sourceTeam: attribution.sourceTeam } : {}),
   }
 }
 
@@ -74,6 +75,35 @@ export function captureLiveDamageSource(world: CombatWorld, sourceEntityId: Enti
       percentHpDamage: rules.percentHpDamage ? structuredClone(rules.percentHpDamage) : undefined,
     },
   }
+}
+
+export function setStatusDamageAttribution(world: CombatWorld, targetId: EntityId, effect: RuntimeStatusEffect, attribution: DamageAttribution): void {
+  const targetExternalId = world.stores.identity.require(targetId).id
+  const map = world.resources.get('statusDamageAttribution') ?? new Map<string, DamageAttribution>()
+  map.set(statusAttributionKey(targetExternalId, getStatusStackIdentity(effect)), structuredClone(attribution))
+  world.resources.set('statusDamageAttribution', map)
+}
+
+export function getStatusDamageAttribution(world: CombatWorld, targetId: EntityId, effect: RuntimeStatusEffect): DamageAttribution | undefined {
+  const targetExternalId = world.stores.identity.require(targetId).id
+  return world.resources.get('statusDamageAttribution')?.get(statusAttributionKey(targetExternalId, getStatusStackIdentity(effect)))
+}
+
+export function clearStatusDamageAttribution(world: CombatWorld, targetId: EntityId, effect: RuntimeStatusEffect): void {
+  const targetExternalId = world.stores.identity.require(targetId).id
+  world.resources.get('statusDamageAttribution')?.delete(statusAttributionKey(targetExternalId, getStatusStackIdentity(effect)))
+}
+
+export function clearAllStatusDamageAttributions(world: CombatWorld, targetId: EntityId): void {
+  const targetExternalId = world.stores.identity.require(targetId).id
+  const prefix = `${targetExternalId}\u0000`
+  const map = world.resources.get('statusDamageAttribution')
+  if (!map) return
+  for (const key of map.keys()) if (key.startsWith(prefix)) map.delete(key)
+}
+
+function statusAttributionKey(targetExternalId: string, stackIdentity: string): string {
+  return `${targetExternalId}\u0000${stackIdentity}`
 }
 
 function getOutputSuppression(effects: RuntimeStatusEffect[]): number {

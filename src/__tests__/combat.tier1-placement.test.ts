@@ -1,9 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import { UNIT_TYPES } from '@/domains/combat/combat.config'
-import { simulateBattle } from '@/domains/combat/combat.engine'
+import { simulateBattle as simulateBattleEngine } from '@/domains/combat/combat.engine'
 import { TIER1_BALANCE_SCENARIOS, type CombatBalanceScenario } from '@/domains/combat/combat.tier1-scenarios'
 import type { BattleResult, Team, UnitRow } from '@/domains/combat/combat.types'
 import { FIELD_HEIGHT, generateObstacles } from '@/domains/combat/combat.utils'
+
+function simulateBattle(...args: Parameters<typeof simulateBattleEngine>): ReturnType<typeof simulateBattleEngine> {
+  const [attackers, defenders, seed, obstacles, attackerGlobals, defenderGlobals, options] = args
+  return simulateBattleEngine(attackers, defenders, seed, obstacles, attackerGlobals, defenderGlobals, { ...options, defenseResolutionMode: 'v8_sequential' })
+}
 
 const SEEDS = [101, 202, 303, 404, 505]
 

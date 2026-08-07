@@ -6,12 +6,17 @@ import type {
 import { getDistance } from '../../combat.utils'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
+import { grantShield } from '../defense-resource-commit'
 import { applyEcsSingleDamage } from './damage-system'
+import { getEcsGroupStartHp } from './damage-payload-system'
 import { resolveEcsDeath } from './death-system'
 import { applyEcsHealing } from './healing-system'
 import { applyEcsStatus } from './status-application-system'
 import { cleanseEcsStatuses } from './trigger-field-system'
 import { spawnEcsPeriodicUnits } from './periodic-ability-spawn-system'
+import { applyEcsCapturedTargetMark } from './target-mark-system'
+import type { DamageOrderKey } from '../defense-batch'
+import { compareEntityExternalIdsForMode } from '../authored-order'
 
 export function applyEcsPeriodicAbilityPayload(
   world: CombatWorld,
@@ -36,25 +41,26 @@ export function applyEcsPeriodicAbilityPayload(
       actions,
     )
   } else {
-    for (const payloadTargetId of getPayloadTargets(
+    for (const [targetOrdinal, payloadTargetId] of getPayloadTargets(
       world,
       sourceId,
       targetId,
       payload,
-    )) {
+    ).entries()) {
+      const sourceExternalId = getExternalId(world, sourceId)
       if (payload.kind === 'damage') {
-        applyDamage(world, sourceId, payloadTargetId, payload, actions)
+        applyDamage(world, sourceId, payloadTargetId, payload, actions, abilityId, targetOrdinal)
       } else if (payload.kind === 'status') {
-        for (const status of payload.effects) {
+        for (const [effectIndex, status] of payload.effects.entries()) {
           applyEcsStatus(world, payloadTargetId, {
             ...status,
-            sourceUnitId: getExternalId(world, sourceId),
-          }, actions)
+            sourceUnitId: sourceExternalId,
+          }, actions, abilityOrder(sourceExternalId, getExternalId(world, payloadTargetId), abilityId, targetOrdinal, effectIndex + 1))
         }
       } else if (payload.kind === 'heal') {
         applyHeal(world, sourceId, payloadTargetId, payload, actions)
       } else if (payload.kind === 'mark') {
-        applyMark(world, sourceId, payloadTargetId, payload.mark, actions)
+        applyMark(world, sourceId, payloadTargetId, payload.mark, actions, abilityOrder(sourceExternalId, getExternalId(world, payloadTargetId), abilityId, targetOrdinal, 1))
       }
     }
   }
@@ -66,6 +72,8 @@ function applyDamage(
   targetId: EntityId,
   payload: Extract<PeriodicAbilityPayload, { kind: 'damage' }>,
   actions: BattleAction[],
+  abilityId: string,
+  targetOrdinal: number,
 ): void {
   const percentDamage = getPercentDamage(world, targetId, payload.percentHp)
   if (percentDamage > 0) {
@@ -82,16 +90,16 @@ function applyDamage(
     targetId,
     Math.max(0, Math.floor(payload.amount ?? 0)) + percentDamage,
     actions,
-    { allowPercentHpDamage: false, deathCause: 'weapon' },
+    { allowPercentHpDamage: false, deathCause: 'weapon', originExternalId: `ability:${abilityId}`, authoredOrdinal: targetOrdinal, authoredPosition: { programIndex: 0, groupIndex: 0, targetOrdinal, effectIndex: 0 } },
   )
   if (result.intercepted) return
   resolveEcsDeath(world, targetId, sourceId, actions, 'weapon')
   flushStructuralChanges(world)
-  for (const status of payload.statusEffects ?? []) {
+  for (const [effectIndex, status] of (payload.statusEffects ?? []).entries()) {
     applyEcsStatus(world, targetId, {
       ...status,
       sourceUnitId: getExternalId(world, sourceId),
-    }, actions)
+    }, actions, abilityOrder(getExternalId(world, sourceId), getExternalId(world, targetId), abilityId, targetOrdinal, effectIndex + 1))
   }
 }
 
@@ -135,9 +143,7 @@ function applyShield(
   actions: BattleAction[],
 ): void {
   const granted = Math.max(0, Math.floor(amount))
-  const vitality = world.stores.vitality.require(targetId)
-  vitality.maxShield = Math.max(vitality.maxShield, vitality.shield + granted)
-  vitality.shield += granted
+    grantShield(world, targetId, granted)
   actions.push({
     unitId: getExternalId(world, sourceId),
     type: 'shield_apply',
@@ -169,22 +175,15 @@ function applyMark(
   targetId: EntityId,
   mark: Extract<PeriodicAbilityPayload, { kind: 'mark' }>['mark'],
   actions: BattleAction[],
+  authoredKey: DamageOrderKey,
 ): void {
   if (world.stores.vitality.require(targetId).isDead) return
   const sourceExternalId = getExternalId(world, sourceId)
-  world.stores.statusControl.require(targetId).targetMark = {
-    ...mark,
-    sourceUnitId: sourceExternalId,
-  }
-  world.stores.entitySources.require(targetId).targetMarkSource = sourceId
-  actions.push({
-    unitId: sourceExternalId,
-    type: 'target_mark',
-    targetId: getExternalId(world, targetId),
-    value: mark.damageMultiplier ??
-      mark.executeThreshold ??
-      mark.focusPriority,
-  })
+  applyEcsCapturedTargetMark(world, { sourceExternalId, sourceEntityId: sourceId, sourceUnitType: world.stores.identity.require(sourceId).type, sourceTeam: world.stores.identity.require(sourceId).team }, targetId, mark, actions, world.resources.get('defenseResolutionMode') === 'v9_snapshot' && mark.squadWide === true, authoredKey)
+}
+
+function abilityOrder(sourceExternalId: string, targetExternalId: string, abilityId: string, targetOrdinal: number, effectIndex: number): DamageOrderKey {
+  return { originExternalId: `ability:${abilityId}:${sourceExternalId}`, position: { programIndex: 0, groupIndex: 0, targetOrdinal, effectIndex }, targetExternalId, sourceExternalId }
 }
 
 function getPayloadTargets(
@@ -208,9 +207,7 @@ function getPayloadTargets(
       return (payload.kind === 'heal' ? sameTeam : !sameTeam) &&
         getDistance(center.x, center.y, transform.x, transform.y) <= payload.radius!
     })
-    .sort((left, right) =>
-      getExternalId(world, left).localeCompare(getExternalId(world, right)),
-    )
+    .sort((left, right) => compareEntityExternalIdsForMode(world, left, right))
 }
 
 function getPercentDamage(
@@ -221,7 +218,7 @@ function getPercentDamage(
   if (!config) return 0
   const vitality = world.stores.vitality.require(targetId)
   const basis = (config.basis ?? 'max') === 'current'
-    ? vitality.hp
+    ? getEcsGroupStartHp(world, targetId) ?? vitality.hp
     : vitality.maxHp
   let damage = Math.max(0, Math.floor(basis * config.percent))
   if (config.minBonus !== undefined) damage = Math.max(damage, Math.floor(config.minBonus))

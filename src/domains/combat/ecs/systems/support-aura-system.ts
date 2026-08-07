@@ -4,10 +4,12 @@ import type { StatusType, SupportAura } from '../../combat.sim.types'
 import { getDistance } from '../../combat.utils'
 import { getEcsCombatTags } from '../targeting-evaluation'
 import type { CombatWorld } from '../combat-world'
+import { compareExternalIdsForMode } from '../authored-order'
 import type { EntityId } from '../entity'
 import { applyEcsStatus } from './status-application-system'
 import { cleanseEcsStatuses } from './trigger-field-system'
 import { getAbilityExecutionMode } from './ability-effect-system'
+import { setShield, setShieldCapacity } from '../defense-resource-commit'
 
 const DEFAULT_AURA_INTERVAL = 10
 
@@ -36,7 +38,7 @@ export function runEcsSupportAuraSystem(
   entityIds = getEcsSupportAuraEntities(world),
 ): void {
   const sources = [...entityIds].sort((left, right) =>
-    getExternalId(world, left).localeCompare(getExternalId(world, right)),
+    compareExternalIdsForMode(world, getExternalId(world, left), getExternalId(world, right)),
   )
   for (const sourceId of sources) {
     if (world.stores.vitality.require(sourceId).isDead) continue
@@ -89,7 +91,7 @@ function getTargets(
       return getDistance(source.x, source.y, target.x, target.y) <= aura.radius
     })
     .sort((left, right) =>
-      getExternalId(world, left).localeCompare(getExternalId(world, right)),
+    compareExternalIdsForMode(world, getExternalId(world, left), getExternalId(world, right)),
     )
 }
 
@@ -144,15 +146,15 @@ function applyShieldAura(
     const cap = Math.max(0, Math.floor(aura.value))
     if (cap <= 0 || vitality.shield >= cap) return
     granted = cap - vitality.shield
-    vitality.maxShield = Math.max(vitality.maxShield, cap)
-    vitality.shield = cap
+    setShieldCapacity(world, targetId, Math.max(vitality.maxShield, cap))
+    setShield(world, targetId, cap)
   } else {
     const repair = Math.max(0, Math.floor(aura.value))
     if (repair <= 0 ||
         vitality.maxShield <= 0 ||
         vitality.shield >= vitality.maxShield) return
     granted = Math.min(repair, vitality.maxShield - vitality.shield)
-    vitality.shield += granted
+    setShield(world, targetId, vitality.shield + granted)
   }
   actions.push({
     unitId: getExternalId(world, sourceId),

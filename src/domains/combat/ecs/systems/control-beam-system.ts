@@ -3,6 +3,7 @@ import type { ControlBeamConfig } from '../../combat.sim.types'
 import { getDistance } from '../../combat.utils'
 import { canEcsTarget } from '../targeting-evaluation'
 import type { CombatWorld } from '../combat-world'
+import { compareExternalIdsForMode } from '../authored-order'
 import type { EntityId } from '../entity'
 import { applyEcsHealing } from './healing-system'
 
@@ -23,7 +24,7 @@ export function runEcsControlBeamSystem(
   entityIds = getEcsControlBeamEntities(world),
 ): void {
   const sources = [...entityIds].sort((left, right) =>
-    getExternalId(world, left).localeCompare(getExternalId(world, right)),
+    compareExternalIdsForMode(world, getExternalId(world, left), getExternalId(world, right)),
   )
   for (const sourceId of sources) {
     if (world.stores.vitality.require(sourceId).isDead) continue
@@ -68,7 +69,7 @@ function selectTargets(
       const rightDistance = getEntityDistance(world, sourceId, right)
       return leftDistance !== rightDistance
         ? leftDistance - rightDistance
-        : getExternalId(world, left).localeCompare(getExternalId(world, right))
+        : compareExternalIdsForMode(world, getExternalId(world, left), getExternalId(world, right))
     })
     .slice(0, Math.max(1, config.maxTargets ?? 1))
 }

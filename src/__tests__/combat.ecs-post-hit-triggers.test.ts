@@ -4,6 +4,7 @@ import { createRuntimeUnitFromConfig } from '@/domains/combat/combat.unit-factor
 import { PRNG } from '@/domains/combat/combat.utils'
 import { CombatWorld } from '@/domains/combat/ecs/combat-world'
 import { EntitySpatialIndex } from '@/domains/combat/ecs/entity-spatial-index'
+import { drainV9FollowUps } from '@/domains/combat/ecs/v9-follow-up-queue'
 import {
   canUseSimpleSingleDamage,
   recordEcsAttackTriggers,
@@ -141,6 +142,35 @@ describe('combat ECS post-hit triggers', () => {
       'trigger_effect',
       'damage',
     ])
+  })
+
+  it('fires V9 damage-taken triggers from resolved HP damage and defers the payload', () => {
+    const attacker = unit('attacker', 'attacker', 100)
+    const target = unit('counter', 'defender', 220)
+    attacker.attack = 20
+    target.hp = target.maxHp = 100
+    target.defense = 0
+    target.triggerEffects = [{
+      id: 'resolved-counter',
+      event: 'damage_taken',
+      threshold: 10,
+      payload: { kind: 'status', target: 'self', status: { type: 'range_boost', duration: 10, value: 0.5 } },
+      fired: false,
+      counter: 0,
+      cooldownRemaining: 0,
+    }]
+    const actions: Parameters<typeof runActionSystem>[3] = []
+    const world = createWorld([attacker, target])
+    world.resources.set('defenseResolutionMode', 'v9_snapshot')
+
+    applyEcsSingleDamage(world, 0, 1, 20, actions, { interceptable: false })
+    expect(world.stores.vitality.require(1).hp).toBe(80)
+    expect(world.stores.statusControl.require(1).statusEffects).toEqual([])
+    expect(actions.map(action => action.type)).toContain('trigger_effect')
+
+    drainV9FollowUps(world, { tick: 0, actions })
+    expect(world.stores.statusControl.require(1).statusEffects).toContainEqual(expect.objectContaining({ type: 'range_boost', value: 0.5 }))
+    expect(actions.map(action => action.type)).toContain('status_apply')
   })
 
   it('matches finite trigger barriers and their damage break order', () => {

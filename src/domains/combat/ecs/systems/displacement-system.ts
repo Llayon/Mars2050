@@ -1,4 +1,5 @@
 import type { BattleAction } from '../../combat.actions'
+import { compareEntityExternalIdsForMode } from '../authored-order'
 import { FIELD_HEIGHT, FIELD_WIDTH, getDistance, getSizeRadius } from '../../combat.utils'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
@@ -131,7 +132,7 @@ function getTargets(
 }
 
 function compareIds(world: CombatWorld, leftId: EntityId, rightId: EntityId): number {
-  return world.stores.identity.require(leftId).id.localeCompare(world.stores.identity.require(rightId).id)
+  return compareEntityExternalIdsForMode(world, leftId, rightId)
 }
 
 function clamp(value: number, min: number, max: number): number {

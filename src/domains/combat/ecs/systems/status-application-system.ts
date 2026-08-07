@@ -9,12 +9,16 @@ import {
 } from '../../combat.status-core'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
+import type { DamageOrderKey } from '../defense-batch'
+import { setStatusDamageAttribution, type DamageAttribution } from '../damage-source'
 
 export function applyEcsStatus(
   world: CombatWorld,
   targetId: EntityId,
   effect: StatusEffect,
   actions: BattleAction[],
+  authoredKey?: DamageOrderKey,
+  sourceAttribution?: DamageAttribution,
 ): boolean {
   const actionGroup = world.resources.get('actionGroup')
   if (actionGroup?.active && !actionGroup.committing) {
@@ -25,7 +29,7 @@ export function applyEcsStatus(
       actions.push({ unitId: world.stores.identity.require(targetId).id, type: 'status_immune', statusType: normalized.type })
       return false
     }
-    actionGroup.queueStatus(targetId, normalized)
+    actionGroup.queueStatus(targetId, normalized, authoredKey, sourceAttribution ?? resolveStatusAttribution(world, normalized))
     return true
   }
   const identity = world.stores.identity.require(targetId)
@@ -50,6 +54,8 @@ export function applyEcsStatus(
     getStatusStackIdentity(existing ?? normalized),
     normalized.sourceUnitId,
   )
+  const attribution = sourceAttribution ?? resolveStatusAttribution(world, normalized)
+  if (attribution) setStatusDamageAttribution(world, targetId, normalized, attribution)
   const action: BattleAction = {
     unitId: identity.id,
     type: 'status_apply',
@@ -60,6 +66,14 @@ export function applyEcsStatus(
   actions.push(action)
   if (normalized.type === 'revealed') breakRevealStates(world, targetId, actions)
   return !existing
+}
+
+function resolveStatusAttribution(world: CombatWorld, effect: RuntimeStatusEffect): DamageAttribution | undefined {
+  if (!effect.sourceUnitId) return undefined
+  const sourceEntityId = world.getEntityId(effect.sourceUnitId)
+  if (sourceEntityId === undefined || !world.stores.identity.has(sourceEntityId)) return { sourceExternalId: effect.sourceUnitId }
+  const source = world.stores.identity.require(sourceEntityId)
+  return { sourceExternalId: source.id, sourceEntityId, sourceUnitType: source.type, sourceTeam: source.team }
 }
 
 function isBlockedByImmunity(

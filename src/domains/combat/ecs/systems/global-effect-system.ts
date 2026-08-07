@@ -6,6 +6,7 @@ import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
 import { applyEcsHealingFromSource } from './healing-system'
 import { applyEcsStatus } from './status-application-system'
+import { increaseShieldCapacity } from '../defense-resource-commit'
 
 export interface ActiveGlobal {
   team: Team
@@ -63,9 +64,7 @@ function applyMassShields(
   for (const { team, upg } of activeGlobals) {
     if (upg.type !== 'mass_shield') continue
     for (const targetId of getTeamEntities(world, team)) {
-      const vitality = world.stores.vitality.require(targetId)
-      vitality.maxShield += upg.value
-      vitality.shield += upg.value
+      increaseShieldCapacity(world, targetId, upg.value)
     }
   }
 }
