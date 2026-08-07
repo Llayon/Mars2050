@@ -58,7 +58,7 @@ const ECS_PHASES = [
   phase('actor_turn', 'action', (world, context) => runEcsActorTurnSystem(world, context)),
   phase('batch_movement', 'post_action', runBatchMovementSystem),
   phase('temporal_timeline', 'post_action', (world, context) => runDefenseGroup(world, context, 'temporal_timeline', 0, () => runTemporalTimelineSystem(world, context))),
-  phase('projectile_impact', 'post_action', (world, context) => runDefenseGroup(world, context, 'projectile_impact', 1, () => runProjectileImpactSystem(world, context))),
+  phase('projectile_impact', 'post_action', (world, context) => runDefenseGroup(world, context, 'projectile_impact', 1, () => runProjectileImpactSystem(world, context), true)),
   phase('hazard', 'post_action', runHazardPhase),
   phase('hp_threshold_trigger', 'post_action', runHpThresholdPhase),
 ] as const satisfies readonly EcsPhaseDefinition[]
@@ -163,8 +163,8 @@ function runHazardPhase(world: CombatWorld, context: RuntimePhaseContext): void 
   }))
 }
 
-function runDefenseGroup(world: CombatWorld, context: RuntimePhaseContext, phaseId: string, groupOrdinal: number, run: () => void): void {
-  if (world.resources.get('defenseResolutionMode') !== 'v9_snapshot') { run(); return }
+function runDefenseGroup(world: CombatWorld, context: RuntimePhaseContext, phaseId: string, groupOrdinal: number, run: () => void, forceForLegacyMode = false): void {
+  if (world.resources.get('defenseResolutionMode') !== 'v9_snapshot' && !forceForLegacyMode) { run(); return }
   const ledger = world.resources.get('actionGroup') ?? new EcsActionGroupLedger()
   world.resources.set('actionGroup', ledger)
   ledger.begin(world, world.query(['identity', 'vitality']), { tick: context.tick, phaseId, groupOrdinal })
