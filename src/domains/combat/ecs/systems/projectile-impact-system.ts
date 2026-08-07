@@ -2,7 +2,7 @@ import type { RuntimePhaseContext } from '../../combat.phase'
 import { getDistance, getSizeRadius } from '../../combat.utils'
 import type { CombatWorld } from '../combat-world'
 import type { PendingImpact } from '../pending-impacts'
-import { commitActionGroup } from './actor-turn-system'
+import { CombatInvariantError } from '../combat-invariant-error'
 import { allocateTemporalInterceptions, type TemporalImpactPoint } from './damage-interception-system'
 import { executeCapturedImpactPrograms, freezeImpactTargets } from './temporal-impact-ability-system'
 
@@ -26,9 +26,7 @@ export function runProjectileImpactSystem(world: CombatWorld, context: RuntimePh
     defense.projectileInterceptCooldown = defense.projectileInterceptCooldownMax ?? 0
   }
   const ledger = world.resources.get('actionGroup')
-  if (!ledger) return
-  const entities = world.query(['identity', 'vitality'])
-  ledger.begin(world, entities)
+  if (!ledger?.active) throw new CombatInvariantError('Projectile impact system requires an active defense group')
   for (const point of points) {
     const { impact, x, y } = point
     const targetId = impact.payload.kind === 'direct' ? impact.payload.targetId ?? impact.targetId : undefined
@@ -69,8 +67,6 @@ export function runProjectileImpactSystem(world: CombatWorld, context: RuntimePh
     const frozen = freezeImpactTargets(world, impact, x, y)
     executeCapturedImpactPrograms(world, impact, frozen, { x, y }, context.actions)
   }
-  commitActionGroup(world, ledger, context.actions)
-  ledger.finish()
 }
 
 function isDirectTargetValid(world: CombatWorld, impact: PendingImpact, targetId: number, x: number, y: number): boolean {

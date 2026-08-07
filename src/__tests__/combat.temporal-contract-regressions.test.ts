@@ -7,7 +7,7 @@ import type { SimUnit } from '@/domains/combat/combat.sim.types'
 import { CombatWorld } from '@/domains/combat/ecs/combat-world'
 import { EntitySpatialIndex } from '@/domains/combat/ecs/entity-spatial-index'
 import { PendingImpactQueue } from '@/domains/combat/ecs/pending-impacts'
-import { runProjectileImpactSystem } from '@/domains/combat/ecs/systems/projectile-impact-system'
+import { EcsCombatPhaseScheduler } from '@/domains/combat/ecs/combat-phase-scheduler'
 
 function sourceContext(): DamageSourceContext {
   return {
@@ -38,10 +38,44 @@ function createWorld(targets: SimUnit[]): CombatWorld {
   world.resources.set('entitySpatial', spatial)
   world.resources.set('pendingImpacts', new PendingImpactQueue())
   world.resources.set('actionGroup', new EcsActionGroupLedger())
+  world.resources.set('defenseResolutionMode', 'v9_snapshot')
   return world
 }
 
+function runProjectileImpactSystem(world: CombatWorld, context: RuntimePhaseContext): void {
+  new EcsCombatPhaseScheduler(world).runPhase('projectile_impact', context)
+}
+
 describe('combat temporal contract regressions', () => {
+  it('commits a scheduled projectile impact exactly once', () => {
+    const source = createRuntimeUnitFromConfig({ id: 'source', team: 'attacker', type: 'marine', x: 0, y: 100, currentAngle: 0 })!
+    const target = createRuntimeUnitFromConfig({ id: 'target', team: 'defender', type: 'marine', x: 100, y: 100, currentAngle: Math.PI })!
+    target.defense = 0
+    const world = createWorld([source, target])
+    world.resources.require('pendingImpacts').enqueue({
+      sourceId: 0,
+      sourceExternalId: 'packet-source',
+      sourceTeam: 'attacker',
+      hostileTeamAtLaunch: 'defender',
+      sourceContext: sourceContext(),
+      targetId: 1,
+      targetX: 100,
+      targetY: 100,
+      launchTick: 0,
+      impactTick: 1,
+      kind: 'projectile',
+      positionPolicy: 'captured_at_launch',
+      payload: { kind: 'direct', damage: 20, targetId: 1 },
+      interceptable: false,
+    })
+    const actions: RuntimePhaseContext['actions'] = []
+
+    runProjectileImpactSystem(world, { tick: 1, actions } as RuntimePhaseContext)
+
+    expect(world.stores.vitality.require(1).hp).toBe(target.maxHp - 20)
+    expect(actions.filter(action => action.type === 'damage')).toHaveLength(1)
+  })
+
   it('validates direct target before allocating interception', () => {
     const source = createRuntimeUnitFromConfig({ id: 'source', team: 'attacker', type: 'marine', x: 0, y: 100, currentAngle: 0 })!
     const target = createRuntimeUnitFromConfig({ id: 'target', team: 'defender', type: 'marine', x: 100, y: 100, currentAngle: Math.PI })!
