@@ -78,6 +78,10 @@ export function commitV9ResolutionGroup(world: CombatWorld, ledger: EcsActionGro
     throw error
   }
 
+  for (const entityId of [...ledger.damage.keys(), ...ledger.healing.keys(), ...ledger.forcedDeaths.keys()]) {
+    affected.add(entityId)
+  }
+
   ledger.committing = true
   try {
     for (const grant of [...ledger.defenseGrants].sort((left, right) =>

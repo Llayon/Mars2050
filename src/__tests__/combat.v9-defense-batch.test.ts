@@ -86,4 +86,23 @@ describe('V9 defense batch resolver', () => {
     const breaking = result.claims.find(item => item.shieldHitBlock)
     expect(breaking?.shieldHitBlockedDamage).toBe(8)
   })
+
+  it('projects lifesteal exactly once from the group-start HP snapshot', () => {
+    const base = frame({ shield: 0, capacity: 0 })
+    const snapshot: DefenseBatchSnapshot = {
+      ...base,
+      targetsByExternalId: new Map([
+        ['unit:target', { ...base.targetsByExternalId.get('unit:target')!, reactiveArmorCharges: 0 }],
+        ['unit:ally', { ...base.targetsByExternalId.get('unit:ally')!, hp: 50, maxHp: 100 }],
+      ]),
+    }
+    const result = resolveDefenseBatch(snapshot, [{
+      ...claim('unit:ally', 0, 20),
+      sourceExternalId: 'unit:ally',
+      attackerModifiers: { shieldDamageMult: 1, lifestealMult: 0.5 },
+    }])
+
+    expect(result.healingIntents).toEqual([{ targetExternalId: 'unit:ally', sourceExternalId: 'unit:ally', amount: 10 }])
+    expect(result.projectedHpByExternalId.get('unit:ally')).toBe(60)
+  })
 })

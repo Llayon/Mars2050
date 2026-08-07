@@ -1,6 +1,7 @@
 import type { BattleAction } from '../../combat.actions'
 import { getDistance } from '../../combat.utils'
 import type { CombatWorld } from '../combat-world'
+import { compareEntityExternalIdsForMode } from '../authored-order'
 import type { EntityId } from '../entity'
 import { applyEcsStatus } from './status-application-system'
 
@@ -16,9 +17,7 @@ export function runEcsFormationBonusSystem(
 ): void {
   if (tick % 10 !== 0) return
   const ordered = [...entityIds].sort((left, right) =>
-    world.stores.identity.require(left).id.localeCompare(
-      world.stores.identity.require(right).id,
-    ),
+    compareEntityExternalIdsForMode(world, left, right),
   )
   for (const entityId of ordered) {
     const config = world.stores.support.require(entityId)

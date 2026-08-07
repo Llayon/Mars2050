@@ -2,6 +2,7 @@ import type { BattleAction } from '../../combat.actions'
 import type { TriggerPayload } from '../../combat.sim.types'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
+import type { DamageAttribution } from '../damage-source'
 import type { DamageOrderKey } from '../defense-batch'
 import { grantShield } from '../defense-resource-commit'
 import { applyEcsHealing } from './healing-system'
@@ -13,13 +14,26 @@ import { spawnEcsTriggerUnits } from './trigger-spawn-system'
 
 export function applyEcsTriggerPayload(
   world: CombatWorld,
-  ownerId: EntityId,
+  ownerId: EntityId | undefined,
   targetId: EntityId | null,
   eventTargetId: EntityId,
   payload: TriggerPayload,
   actions: BattleAction[],
   authoredKey?: DamageOrderKey,
+  capturedAttribution?: DamageAttribution,
 ): void {
+  if (ownerId === undefined) {
+    if (targetId === null) return
+    if (payload.kind === 'status') {
+      applyEcsStatus(world, targetId, {
+        ...payload.status,
+        sourceUnitId: capturedAttribution?.sourceExternalId ?? payload.status.sourceUnitId,
+      }, actions, authoredKey, capturedAttribution)
+    } else if (payload.kind === 'damage') {
+      applyEcsTriggerDamage(world, undefined, targetId, payload, actions, authoredKey, capturedAttribution)
+    }
+    return
+  }
   if (payload.kind === 'spawn') {
     spawnEcsTriggerUnits(world, ownerId, targetId ?? eventTargetId, payload, actions)
     return

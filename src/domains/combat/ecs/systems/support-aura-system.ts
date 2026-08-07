@@ -4,6 +4,7 @@ import type { StatusType, SupportAura } from '../../combat.sim.types'
 import { getDistance } from '../../combat.utils'
 import { getEcsCombatTags } from '../targeting-evaluation'
 import type { CombatWorld } from '../combat-world'
+import { compareExternalIdsForMode } from '../authored-order'
 import type { EntityId } from '../entity'
 import { applyEcsStatus } from './status-application-system'
 import { cleanseEcsStatuses } from './trigger-field-system'
@@ -37,7 +38,7 @@ export function runEcsSupportAuraSystem(
   entityIds = getEcsSupportAuraEntities(world),
 ): void {
   const sources = [...entityIds].sort((left, right) =>
-    getExternalId(world, left).localeCompare(getExternalId(world, right)),
+    compareExternalIdsForMode(world, getExternalId(world, left), getExternalId(world, right)),
   )
   for (const sourceId of sources) {
     if (world.stores.vitality.require(sourceId).isDead) continue
@@ -90,7 +91,7 @@ function getTargets(
       return getDistance(source.x, source.y, target.x, target.y) <= aura.radius
     })
     .sort((left, right) =>
-      getExternalId(world, left).localeCompare(getExternalId(world, right)),
+    compareExternalIdsForMode(world, getExternalId(world, left), getExternalId(world, right)),
     )
 }
 

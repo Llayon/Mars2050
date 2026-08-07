@@ -33,6 +33,13 @@ export function buildEcsDamagePayload(
   return baseRaw + percentDamage
 }
 
+export function getEcsGroupStartHp(world: CombatWorld, targetId: EntityId): number | undefined {
+  if (world.resources.get('defenseResolutionMode') !== 'v9_snapshot') return undefined
+  const group = world.resources.get('actionGroup')
+  if (!group?.active || !group.frame) return undefined
+  return group.frame.defense.targetsByExternalId.get(world.stores.identity.require(targetId).id)?.hp
+}
+
 function getPercentHpDamage(world: CombatWorld, source: DamageSourceContext, targetId: EntityId, currentHpOverride?: number): number {
   const config = source.modifiers.percentHpDamage
   if (!config) return 0

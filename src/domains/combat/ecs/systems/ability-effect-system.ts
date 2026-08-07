@@ -16,6 +16,7 @@ import { applyEcsDisplacement } from './displacement-system'
 import { applyEcsTargetMark } from './target-mark-system'
 import type { DamageOrderKey } from '../defense-batch'
 import { legacyAuthoredPosition } from '../authored-order'
+import { compareEntityExternalIdsForMode } from '../authored-order'
 
 export function runCompiledAbilityTrigger(
   world: CombatWorld,
@@ -83,7 +84,7 @@ function selectTargets(world: CombatWorld, attackerId: EntityId, targetId: Entit
       !world.stores.vitality.require(candidateId).isDead &&
       world.stores.identity.require(candidateId).team !== attackerTeam &&
       !world.stores.transform.require(candidateId).isFlying)
-    .sort((left, right) => world.stores.identity.require(left).id.localeCompare(world.stores.identity.require(right).id))
+    .sort((left, right) => compareEntityExternalIdsForMode(world, left, right))
     .slice(0, selector.maxTargets ?? Number.MAX_SAFE_INTEGER)
     .map(selectedId => ({ targetId: selectedId, anchorPoint: { x: center.x, y: center.y } }))
 }

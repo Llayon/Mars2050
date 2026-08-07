@@ -275,12 +275,10 @@ export function resolveDefenseBatch(snapshot: DefenseBatchSnapshot, inputClaims:
       for (const event of shared.events) projected.set(event.targetExternalId, (projected.get(event.targetExternalId) ?? 0) - event.damage)
       const hpDamage = applyExecute(target, claim, damage, projected.get(target.externalId) ?? target.hp)
       projected.set(target.externalId, (projected.get(target.externalId) ?? target.hp) - hpDamage)
-      const sourceSnapshot = snapshot.targetsByExternalId.get(claim.sourceExternalId)
-      const sourceProjectedHp = sourceSnapshot ? (projected.get(claim.sourceExternalId) ?? sourceSnapshot.hp) : 0
       const lifesteal = resolveDamageLifesteal(snapshot, projected, claim, hpDamage + shared.total, modifiers.lifestealMult ?? 0)
       if (lifesteal > 0) {
         healingIntents.push({ targetExternalId: claim.sourceExternalId, sourceExternalId: claim.sourceExternalId, amount: lifesteal })
-        projected.set(claim.sourceExternalId, sourceProjectedHp + lifesteal)
+        projected.set(claim.sourceExternalId, (projected.get(claim.sourceExternalId) ?? 0) + lifesteal)
       }
       resolutions.push({ claim, targetExternalId: target.externalId, sourceExternalId: claim.sourceExternalId, rawDamage: raw, mitigatedDamage: beforeShield, hpDamage, bonusDamage: targetDefense.bonusDamage, damage: hpDamage, shieldDamage, barrierDamage, barrierBlockedDamage: barrierBlocked, blockedDamage: blocked, sharedDamage: shared.total, sharedDamageEvents: shared.events, shieldBroken, shieldHitBlock, shieldHitBlockedDamage, reactiveArmorBlockedDamage, barrierBreaks, lifesteal })
     } else {
@@ -288,7 +286,6 @@ export function resolveDefenseBatch(snapshot: DefenseBatchSnapshot, inputClaims:
       resolutions.push({ claim, targetExternalId: target.externalId, sourceExternalId: claim.sourceExternalId, rawDamage: raw, mitigatedDamage: damage, hpDamage: damage, bonusDamage: 0, damage, shieldDamage: 0, barrierDamage: 0, barrierBlockedDamage: 0, blockedDamage: 0, sharedDamage: 0, sharedDamageEvents: [], shieldBroken: false, shieldHitBlock: false, shieldHitBlockedDamage: 0, reactiveArmorBlockedDamage: 0, barrierBreaks: [], lifesteal: 0 })
     }
   }
-  for (const intent of healingIntents) projected.set(intent.targetExternalId, (projected.get(intent.targetExternalId) ?? 0) + intent.amount)
   return { claims: resolutions, projectedHpByExternalId: projected, healingIntents, shieldByExternalId: shields, shieldHitBlockChargesByExternalId: shieldCharges, reactiveArmorChargesByExternalId: reactiveCharges, barrierCapacityByExternalId: barriers }
 }
 

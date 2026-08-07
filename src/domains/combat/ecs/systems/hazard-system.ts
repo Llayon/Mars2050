@@ -5,6 +5,7 @@ import type { EntityId } from '../entity'
 import { applyEcsStatus } from './status-application-system'
 import { applyEcsCapturedDamage } from './damage-system'
 import { decrementBarrierDuration } from '../defense-resource-commit'
+import { compareEntityExternalIdsForMode } from '../authored-order'
 
 export type EcsHazardDeathHandler = (
   entityId: EntityId,
@@ -24,7 +25,7 @@ export function runHazardSystem(
     if (hazard.type === 'barrier_dome') decrementBarrierDuration(world, hazardId)
     else hazard.duration--
     if (hazard.duration <= 0) {
-      if (hazard.type === 'barrier_dome' && (hazard.capacity ?? 0) > 0) {
+      if (hazard.type === 'barrier_dome' && ((hazard.capacity ?? 0) > 0 || world.resources.get('defenseResolutionMode') === 'v9_snapshot')) {
         const group = world.resources.get('actionGroup')
         if (world.resources.get('defenseResolutionMode') === 'v9_snapshot' && group?.active) group.queueBarrierExpiration(hazard.id)
         else actions.push({ unitId: hazard.sourceUnitId ?? hazard.id, type: 'barrier_expire', hazardId: hazard.id })
@@ -67,7 +68,7 @@ function processMine(world: CombatWorld, hazardId: EntityId, actions: BattleActi
   const hazard = world.stores.hazard.require(hazardId)
   const targets = getTargetsInRadius(world, hazardId)
     .filter(entityId => world.stores.identity.require(entityId).team !== hazard.team)
-    .sort((left, right) => getExternalId(world, left).localeCompare(getExternalId(world, right)))
+    .sort((left, right) => compareEntityExternalIdsForMode(world, left, right))
   if (targets.length === 0) return false
   for (const [targetOrdinal, targetId] of targets.entries()) {
     const vitality = world.stores.vitality.require(targetId)
@@ -97,7 +98,7 @@ function processSmoke(world: CombatWorld, hazardId: EntityId, actions: BattleAct
   const hazard = world.stores.hazard.require(hazardId)
   if (hazard.duration % 10 !== 0 || !hazard.statusEffects?.length) return
   const targets = getTargetsInRadius(world, hazardId)
-    .sort((left, right) => getExternalId(world, left).localeCompare(getExternalId(world, right)))
+    .sort((left, right) => compareEntityExternalIdsForMode(world, left, right))
   for (const targetId of targets) {
     for (const effect of hazard.statusEffects) applyEcsStatus(world, targetId, {
       ...effect,

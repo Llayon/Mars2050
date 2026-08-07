@@ -119,12 +119,17 @@ export function fireEcsTrigger(
     }
     const queue = world.resources.get('v9FollowUps') ?? []
     world.resources.set('v9FollowUps', queue)
+    const eventTargetExternalId = getExternalId(world, eventTargetId)
+    const capturedAttribution = attribution ?? captureTriggerOwnerAttribution(world, ownerId)
     queue.push({
-      ownerId, targetId, eventTargetId, payload: structuredClone(trigger.payload), actions,
+      ownerExternalId,
+      targetExternalId: targetId === null ? undefined : getExternalId(world, targetId),
+      eventTargetExternalId,
+      payload: structuredClone(trigger.payload), actions,
       parentGroupKey: world.resources.get('actionGroup')?.groupKey,
-      followUpOrdinal: queue.length,
+      followUpOrdinal: stableFollowUpOrdinal(order),
       order,
-      attribution: attribution ? structuredClone(attribution) : undefined,
+      attribution: structuredClone(capturedAttribution),
       chainPath: [order.originExternalId],
     })
     return
@@ -137,6 +142,18 @@ export function fireEcsTrigger(
     trigger.payload,
     actions,
   )
+}
+
+function captureTriggerOwnerAttribution(world: CombatWorld, ownerId: EntityId): DamageAttribution {
+  const identity = world.stores.identity.require(ownerId)
+  return { sourceExternalId: identity.id, sourceEntityId: ownerId, sourceUnitType: identity.type, sourceTeam: identity.team }
+}
+
+function stableFollowUpOrdinal(order: DamageOrderKey): number {
+  const value = `${order.originExternalId}\u0000${order.position.programIndex}\u0000${order.position.groupIndex}\u0000${order.position.targetOrdinal}\u0000${order.position.effectIndex}\u0000${order.targetExternalId}\u0000${order.sourceExternalId}`
+  let hash = 2166136261
+  for (let index = 0; index < value.length; index += 1) hash = Math.imul(hash ^ value.charCodeAt(index), 16777619)
+  return hash >>> 0
 }
 
 function canFireTrigger(trigger: RuntimeTriggerEffect): boolean {

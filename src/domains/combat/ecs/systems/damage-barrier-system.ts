@@ -2,6 +2,7 @@ import { getDistance } from '../../combat.utils'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
 import { breakBarrier, consumeBarrierCapacity } from '../defense-resource-commit'
+import { compareExternalIdsForMode } from '../authored-order'
 
 export interface EcsBarrierResult {
   damage: number
@@ -18,7 +19,7 @@ export function applyEcsBarriers(world: CombatWorld, targetId: EntityId, incomin
       return hazard.type === 'barrier_dome' && hazard.team === team && hazard.duration > 0 &&
         getDistance(target.x, target.y, hazard.x, hazard.y) <= hazard.radius
     })
-    .sort((left, right) => world.stores.entityMeta.require(left).externalId.localeCompare(world.stores.entityMeta.require(right).externalId))
+    .sort((left, right) => compareExternalIdsForMode(world, world.stores.entityMeta.require(left).externalId, world.stores.entityMeta.require(right).externalId))
   let damage = incomingDamage
   const breaks: EcsBarrierResult['breaks'] = []
   for (const barrierId of barriers) {

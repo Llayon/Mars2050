@@ -7,6 +7,7 @@ import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
 import { applyEcsPeriodicAbilityPayload } from './periodic-ability-payload-system'
 import { getAbilityExecutionMode } from './ability-effect-system'
+import { compareEntityExternalIdsForMode } from '../authored-order'
 
 export function getEcsPeriodicAbilityEntities(world: CombatWorld): readonly EntityId[] {
   return world.query([
@@ -26,9 +27,7 @@ export function runEcsPeriodicAbilitySystem(
   actions: BattleAction[],
   entityIds = getEcsPeriodicAbilityEntities(world),
 ): void {
-  const sources = [...entityIds].sort((left, right) =>
-    getExternalId(world, left).localeCompare(getExternalId(world, right)),
-  )
+  const sources = [...entityIds].sort((left, right) => compareEntityExternalIdsForMode(world, left, right))
   for (const sourceId of sources) {
     if (world.stores.vitality.require(sourceId).isDead) continue
     const support = world.stores.support.require(sourceId)
@@ -143,7 +142,7 @@ function selectLowestHpAlly(
         rightVitality.hp / rightVitality.maxHp
       return ratio !== 0
         ? ratio
-        : getExternalId(world, left).localeCompare(getExternalId(world, right))
+        : compareEntityExternalIdsForMode(world, left, right)
     })[0] ?? null
 }
 
@@ -210,7 +209,7 @@ function selectNearest(
       getEntityDistance(world, sourceId, right)
     return distance !== 0
       ? distance
-      : getExternalId(world, left).localeCompare(getExternalId(world, right))
+      : compareEntityExternalIdsForMode(world, left, right)
   })[0] ?? null
 }
 

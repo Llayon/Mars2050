@@ -1,4 +1,5 @@
 import type { BattleAction } from '../../combat.actions'
+import { compareEntityExternalIdsForMode } from '../authored-order'
 import type { SideWeaponConfig } from '../../combat.primitives'
 import { getDistance, getSizeRadius } from '../../combat.utils'
 import type { CombatWorld } from '../combat-world'
@@ -73,5 +74,5 @@ function getDistanceTo(world: CombatWorld, leftId: EntityId, rightId: EntityId):
 }
 
 function compareIds(world: CombatWorld, leftId: EntityId, rightId: EntityId): number {
-  return world.stores.identity.require(leftId).id.localeCompare(world.stores.identity.require(rightId).id)
+  return compareEntityExternalIdsForMode(world, leftId, rightId)
 }

@@ -2,6 +2,7 @@ import type { BattleAction } from '../../combat.actions'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
 import { applyEcsHealing } from './healing-system'
+import { compareEntityExternalIdsForMode } from '../authored-order'
 
 export function runEcsBurrowRegenerationSystem(
   world: CombatWorld,
@@ -11,9 +12,7 @@ export function runEcsBurrowRegenerationSystem(
   const burrowed = entityIds
     .filter(entityId => world.stores.movement.require(entityId).isBurrowed)
     .sort((left, right) =>
-      world.stores.identity.require(left).id.localeCompare(
-        world.stores.identity.require(right).id,
-      ),
+      compareEntityExternalIdsForMode(world, left, right),
     )
 
   for (const entityId of burrowed) {

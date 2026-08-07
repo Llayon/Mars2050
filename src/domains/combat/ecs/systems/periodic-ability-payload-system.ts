@@ -8,6 +8,7 @@ import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
 import { grantShield } from '../defense-resource-commit'
 import { applyEcsSingleDamage } from './damage-system'
+import { getEcsGroupStartHp } from './damage-payload-system'
 import { resolveEcsDeath } from './death-system'
 import { applyEcsHealing } from './healing-system'
 import { applyEcsStatus } from './status-application-system'
@@ -15,6 +16,7 @@ import { cleanseEcsStatuses } from './trigger-field-system'
 import { spawnEcsPeriodicUnits } from './periodic-ability-spawn-system'
 import { applyEcsCapturedTargetMark } from './target-mark-system'
 import type { DamageOrderKey } from '../defense-batch'
+import { compareEntityExternalIdsForMode } from '../authored-order'
 
 export function applyEcsPeriodicAbilityPayload(
   world: CombatWorld,
@@ -205,9 +207,7 @@ function getPayloadTargets(
       return (payload.kind === 'heal' ? sameTeam : !sameTeam) &&
         getDistance(center.x, center.y, transform.x, transform.y) <= payload.radius!
     })
-    .sort((left, right) =>
-      getExternalId(world, left).localeCompare(getExternalId(world, right)),
-    )
+    .sort((left, right) => compareEntityExternalIdsForMode(world, left, right))
 }
 
 function getPercentDamage(
@@ -218,7 +218,7 @@ function getPercentDamage(
   if (!config) return 0
   const vitality = world.stores.vitality.require(targetId)
   const basis = (config.basis ?? 'max') === 'current'
-    ? vitality.hp
+    ? getEcsGroupStartHp(world, targetId) ?? vitality.hp
     : vitality.maxHp
   let damage = Math.max(0, Math.floor(basis * config.percent))
   if (config.minBonus !== undefined) damage = Math.max(damage, Math.floor(config.minBonus))

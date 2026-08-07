@@ -18,6 +18,13 @@ export function drainV9FollowUps(world: CombatWorld, context: RuntimePhaseContex
       throw new Error(`V9 follow-up trigger depth exceeded ${MAX_FOLLOW_UP_DEPTH}; chain=${path}`)
     }
     const job = queue.shift()!
+    const resolvedOwnerId = world.getEntityId(job.ownerExternalId)
+    const ownerId = resolvedOwnerId !== undefined && !world.stores.vitality.require(resolvedOwnerId).isDead
+      ? resolvedOwnerId
+      : undefined
+    const targetId = job.targetExternalId === undefined ? null : world.getEntityId(job.targetExternalId) ?? null
+    const eventTargetId = world.getEntityId(job.eventTargetExternalId)
+    if (eventTargetId === undefined || (targetId !== null && world.stores.vitality.require(targetId).isDead)) continue
     const ledger = new EcsActionGroupLedger()
     const previous = world.resources.get('actionGroup')
     world.resources.set('actionGroup', ledger)
@@ -27,7 +34,7 @@ export function drainV9FollowUps(world: CombatWorld, context: RuntimePhaseContex
         phaseId: 'trigger_follow_up',
         groupOrdinal: depth,
       })
-      applyEcsTriggerPayload(world, job.ownerId, job.targetId, job.eventTargetId, job.payload, job.actions, job.order)
+      applyEcsTriggerPayload(world, ownerId, targetId, eventTargetId, job.payload, job.actions, job.order, job.attribution)
       commitV9ResolutionGroup(world, ledger, job.actions)
     } finally {
       world.resources.set('actionGroup', previous)

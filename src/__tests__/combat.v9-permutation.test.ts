@@ -19,6 +19,14 @@ function shuffle<T>(items: readonly T[], state: { value: number }): T[] {
   return result
 }
 
+function compareCodeUnits(left: string, right: string): number {
+  return left < right ? -1 : left > right ? 1 : 0
+}
+
+function stableJson(value: unknown): string {
+  return JSON.stringify(value)
+}
+
 function claim(source: string, ordinal: number, target = 'target:0'): DamageClaim {
   return {
     order: { originExternalId: `ability:${source}`, position: { programIndex: 0, groupIndex: 0, targetOrdinal: 0, effectIndex: ordinal }, authoredOrdinal: ordinal, targetExternalId: target, sourceExternalId: source },
@@ -71,8 +79,8 @@ function integrationFingerprint(order: readonly string[], mode: 'v8_sequential' 
   const attackers = integrationRows(order.filter(id => id.startsWith('a')))
   const defenders = integrationRows(order.filter(id => id.startsWith('d')))
   const result = simulateBattle(attackers, defenders, 24680, [], [], [], { defenseResolutionMode: mode, maxTicks: 4 })
-  const normalizeUnits = (units: readonly unknown[]) => [...units].sort((left, right) => JSON.stringify(left).localeCompare(JSON.stringify(right)))
-  const normalizeLogs = result.logs.map(tick => ({ ...tick, actions: [...tick.actions].sort((left, right) => JSON.stringify(left).localeCompare(JSON.stringify(right))) }))
+  const normalizeUnits = (units: readonly unknown[]) => [...units].sort((left, right) => compareCodeUnits(stableJson(left), stableJson(right)))
+  const normalizeLogs = result.logs.map(tick => ({ ...tick, actions: [...tick.actions].sort((left, right) => compareCodeUnits(stableJson(left), stableJson(right))) }))
   return JSON.stringify({
     winner: result.winner,
     logs: normalizeLogs,

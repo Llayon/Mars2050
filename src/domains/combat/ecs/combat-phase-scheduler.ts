@@ -34,6 +34,7 @@ import {
   runProjectileImpactSystem,
 } from './systems'
 import { drainV9FollowUps } from './v9-follow-up-queue'
+import { compareEntityExternalIdsForMode } from './authored-order'
 
 interface EcsPhaseDefinition {
   id: CombatPhaseId
@@ -172,7 +173,7 @@ function runDefenseGroup(world: CombatWorld, context: RuntimePhaseContext, phase
 
 function runHpThresholdPhase(world: CombatWorld, context: RuntimePhaseContext): void {
   const ordered = [...world.query(['identity', 'vitality', 'lifecycle', 'triggerCapability'])]
-    .sort((left, right) => world.stores.identity.require(left).id.localeCompare(world.stores.identity.require(right).id))
+    .sort((left, right) => compareEntityExternalIdsForMode(world, left, right))
   for (const entityId of ordered) processEcsHpThresholdTriggers(world, entityId, context.actions)
 }
 

@@ -584,14 +584,15 @@ function checkImportRules(changedFiles?: Set<string>) {
 // This rule intentionally ignores --diff: combat ECS runtime is always scanned.
 function checkCombatDefenseMutations() {
   const combatPath = join(SRC, 'domains', 'combat', 'ecs')
-  const mutation = /(?:\.(?:shield|maxShield|capacity|shieldHitBlockCharges|reactiveArmorCharges)|\[['"](?:shield|maxShield|capacity|shieldHitBlockCharges|reactiveArmorCharges)['"]\]|\bbarrier\.duration)\s*(?:\+\+|--|(?:[+\-*/%]?=)(?!=))/g
+  const mutation = /(?:\.(?:shield|maxShield|capacity|shieldHitBlockCharges|reactiveArmorCharges)|\[['"](?:shield|maxShield|capacity|shieldHitBlockCharges|reactiveArmorCharges)['"]\]|\bbarrier\.duration)\s*(?:\+\+|--|(?:[+\-*/%]?=)(?!=))/gm
+  const destructuringMutation = /\(\s*\{[^}]*\b(?:shield|maxShield|capacity|shieldHitBlockCharges|reactiveArmorCharges)\b[^}]*\}\s*=\s*/gms
   const walk = (dir: string) => {
     for (const entry of readdirSync(dir, { withFileTypes: true })) {
       const fullPath = join(dir, entry.name)
       if (entry.isDirectory()) { walk(fullPath); continue }
       if (extname(entry.name) !== '.ts' || entry.name === 'defense-resource-commit.ts') continue
       const content = readFileContent(fullPath)
-      const matches = [...content.matchAll(mutation)]
+      const matches = [...content.matchAll(mutation), ...content.matchAll(destructuringMutation)]
       for (const match of matches) {
         const line = content.slice(0, match.index ?? 0).split('\n').length
         addViolation('COMBAT_DEFENSE_MUTATION', relPath(fullPath), 'defensive resource mutation must use defense-resource-commit.ts', line)

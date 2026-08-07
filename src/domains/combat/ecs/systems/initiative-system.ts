@@ -1,5 +1,6 @@
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
+import { compareEntityExternalIdsForMode } from '../authored-order'
 
 export interface EcsInitiativeGroup {
   speed: number
@@ -18,8 +19,7 @@ export function getEcsInitiativeGroups(world: CombatWorld): EcsInitiativeGroup[]
     .sort(([left], [right]) => right - left)
     .map(([speed, entityIds]) => ({
       speed,
-      entityIds: entityIds.sort((left, right) =>
-        world.stores.identity.require(left).id.localeCompare(world.stores.identity.require(right).id)),
+      entityIds: entityIds.sort((left, right) => compareEntityExternalIdsForMode(world, left, right)),
     }))
 }
 

@@ -2,6 +2,7 @@ import type { BattleAction } from '../../combat.actions'
 import type { CombatWorld } from '../combat-world'
 import { clearAllStatusDamageAttributions } from '../damage-source'
 import { cancelTemporalTimeline } from './temporal-attack-system'
+import { compareEntityExternalIdsForMode } from '../authored-order'
 
 export function runEcsReassemblySystem(
   world: CombatWorld,
@@ -10,9 +11,7 @@ export function runEcsReassemblySystem(
   const waiting = world.query(['identity', 'vitality', 'reassemblyCapability'], true)
     .filter(entityId => world.stores.vitality.require(entityId).reassemblyState)
     .sort((left, right) =>
-      world.stores.identity.require(left).id.localeCompare(
-        world.stores.identity.require(right).id,
-      ),
+      compareEntityExternalIdsForMode(world, left, right),
     )
 
   for (const entityId of waiting) {

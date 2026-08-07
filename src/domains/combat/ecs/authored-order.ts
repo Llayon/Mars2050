@@ -1,4 +1,6 @@
 import type { AuthoredEffectPosition, DamageOrderKey } from './defense-batch'
+import type { CombatWorld } from './combat-world'
+import type { EntityId } from './entity'
 
 export function compareAuthoredEffectPosition(left: AuthoredEffectPosition, right: AuthoredEffectPosition): number {
   return left.programIndex - right.programIndex ||
@@ -9,6 +11,20 @@ export function compareAuthoredEffectPosition(left: AuthoredEffectPosition, righ
 
 export function compareDamageOrderStrings(left: string, right: string): number {
   return left < right ? -1 : left > right ? 1 : 0
+}
+
+export function compareExternalIdsForMode(world: CombatWorld, left: string, right: string): number {
+  return world.resources.get('defenseResolutionMode') === 'v9_snapshot'
+    ? compareDamageOrderStrings(left, right)
+    : left.localeCompare(right)
+}
+
+export function compareEntityExternalIdsForMode(world: CombatWorld, left: EntityId, right: EntityId): number {
+  return compareExternalIdsForMode(
+    world,
+    world.stores.identity.require(left).id,
+    world.stores.identity.require(right).id,
+  )
 }
 
 export function legacyAuthoredPosition(authoredOrdinal = 0): AuthoredEffectPosition {

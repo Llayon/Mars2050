@@ -22,9 +22,9 @@ import type { TriggerPayload } from '../combat.sim.types'
 import type { DamageOrderKey } from './defense-batch'
 
 export interface V9FollowUpJob {
-  ownerId: EntityId
-  targetId: EntityId | null
-  eventTargetId: EntityId
+  ownerExternalId: string
+  targetExternalId: string | undefined
+  eventTargetExternalId: string
   payload: TriggerPayload
   actions: BattleAction[]
   parentGroupKey?: ResolutionGroupKey

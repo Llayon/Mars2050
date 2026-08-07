@@ -1,4 +1,5 @@
 import type { BattleAction } from '../../combat.actions'
+import { compareEntityExternalIdsForMode } from '../authored-order'
 import { getDistance } from '../../combat.utils'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
@@ -78,5 +79,5 @@ function getSweepHits(
 }
 
 function compareIds(world: CombatWorld, leftId: EntityId, rightId: EntityId): number {
-  return world.stores.identity.require(leftId).id.localeCompare(world.stores.identity.require(rightId).id)
+  return compareEntityExternalIdsForMode(world, leftId, rightId)
 }
