@@ -61,6 +61,7 @@ export interface CombatResourceMap {
   temporalAttacks: Map<EntityId, AttackTimelineState>
   defenseResolutionMode: DefenseResolutionMode
   v9FollowUps: V9FollowUpJob[]
+  v9FollowUpChainPath: readonly string[] | undefined
   statusDamageAttribution: Map<string, DamageAttribution>
 }
 

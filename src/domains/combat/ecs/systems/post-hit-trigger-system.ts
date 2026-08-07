@@ -70,11 +70,14 @@ export function recordEcsResolvedDamageTakenTriggers(
   actions: BattleAction[],
 ): void {
   if (damage <= 0) return
-  const attackerId = attribution.sourceEntityId ?? world.getEntityId(attribution.sourceExternalId)
-  if (attackerId === undefined) return
+  const capturedSourceId = attribution.sourceEntityId
+  const attackerId = capturedSourceId !== undefined &&
+    world.stores.identity.get(capturedSourceId)?.id === attribution.sourceExternalId
+    ? capturedSourceId
+    : world.getEntityId(attribution.sourceExternalId)
   for (const trigger of getTriggers(world, targetId, 'damage_taken')) {
     if (damage < Math.max(0, trigger.threshold ?? 0)) continue
-    fireEcsTrigger(world, targetId, trigger, attackerId, attackerId, actions, attribution)
+    fireEcsTrigger(world, targetId, trigger, attackerId, attackerId, actions, attribution, attribution.sourceExternalId)
   }
 }
 
@@ -91,10 +94,11 @@ export function fireEcsTrigger(
   world: CombatWorld,
   ownerId: EntityId,
   trigger: RuntimeTriggerEffect,
-  eventTargetId: EntityId,
+  eventTargetId: EntityId | undefined,
   actorId: EntityId | undefined,
   actions: BattleAction[],
   attribution?: DamageAttribution,
+  eventTargetExternalId?: string,
 ): void {
   if (!canFireTrigger(trigger)) return
   trigger.fired = true
@@ -103,17 +107,21 @@ export function fireEcsTrigger(
   if (trigger.triggersRemaining !== undefined) trigger.triggersRemaining--
 
   const targetId = resolveTarget(world, ownerId, eventTargetId, actorId, trigger.payload)
+  const causalExternalId = eventTargetExternalId ?? (eventTargetId === undefined ? undefined : getExternalId(world, eventTargetId))
+  const resolvedTargetExternalId = targetId === null
+    ? resolveMissingTargetExternalId(trigger.payload, causalExternalId)
+    : getExternalId(world, targetId)
   actions.push({
     unitId: getExternalId(world, ownerId),
     type: 'trigger_effect',
-    targetId: targetId === null ? undefined : getExternalId(world, targetId),
+    targetId: resolvedTargetExternalId,
     statusType: trigger.id,
     ...(attribution ? { sourceUnitId: attribution.sourceExternalId, ...getDamageAttributionMetadata(world, attribution) } : {}),
   })
   if (world.resources.get('defenseResolutionMode') === 'v9_snapshot' && !world.resources.get('actionGroup')?.active) {
     const ownerExternalId = getExternalId(world, ownerId)
-    const targetExternalId = targetId === null ? getExternalId(world, eventTargetId) : getExternalId(world, targetId)
-    const sourceExternalId = actorId === undefined ? ownerExternalId : getExternalId(world, actorId)
+    const targetExternalId = resolvedTargetExternalId ?? causalExternalId ?? ownerExternalId
+    const sourceExternalId = actorId === undefined ? causalExternalId ?? ownerExternalId : getExternalId(world, actorId)
     const order: DamageOrderKey = {
       originExternalId: `trigger:${ownerExternalId}:${trigger.id}`,
       position: { programIndex: 0, groupIndex: 0, targetOrdinal: 0, effectIndex: 0 },
@@ -122,22 +130,22 @@ export function fireEcsTrigger(
     }
     const queue = world.resources.get('v9FollowUps') ?? []
     world.resources.set('v9FollowUps', queue)
-    const eventTargetExternalId = getExternalId(world, eventTargetId)
+    const queuedEventTargetExternalId = causalExternalId ?? ownerExternalId
     const capturedAttribution = trigger.event === 'damage_taken'
       ? captureTriggerOwnerAttribution(world, ownerId)
       : attribution ?? captureTriggerOwnerAttribution(world, ownerId)
     const capturedSource = captureLiveDamageSource(world, ownerId)
     queue.push({
       ownerExternalId,
-      targetExternalId: targetId === null ? undefined : getExternalId(world, targetId),
-      eventTargetExternalId,
+      targetExternalId: resolvedTargetExternalId,
+      eventTargetExternalId: queuedEventTargetExternalId,
       payload: structuredClone(trigger.payload), actions,
       parentGroupKey: world.resources.get('actionGroup')?.groupKey,
       followUpOrdinal: stableFollowUpOrdinal(order),
       order,
       attribution: structuredClone(capturedAttribution),
       capturedSource: structuredClone(capturedSource),
-      chainPath: [order.originExternalId],
+      chainPath: [...(world.resources.get('v9FollowUpChainPath') ?? []), order.originExternalId],
     })
     return
   }
@@ -172,14 +180,21 @@ function canFireTrigger(trigger: RuntimeTriggerEffect): boolean {
 function resolveTarget(
   world: CombatWorld,
   ownerId: EntityId,
-  eventTargetId: EntityId,
+  eventTargetId: EntityId | undefined,
   actorId: EntityId | undefined,
   payload: TriggerPayload,
 ): EntityId | null {
   if (payload.target === 'self') return ownerId
-  if (payload.target === 'target' || payload.target === 'victim') return eventTargetId
+  if (payload.target === 'target' || payload.target === 'victim') return eventTargetId ?? null
   if (payload.target === 'attacker' || payload.target === 'killer') return actorId ?? null
   return selectNearestEnemy(world, ownerId)
+}
+
+function resolveMissingTargetExternalId(payload: TriggerPayload, eventTargetExternalId: string | undefined): string | undefined {
+  if (payload.target === 'target' || payload.target === 'victim' || payload.target === 'attacker' || payload.target === 'killer') {
+    return eventTargetExternalId
+  }
+  return undefined
 }
 
 function selectNearestEnemy(world: CombatWorld, ownerId: EntityId): EntityId | null {

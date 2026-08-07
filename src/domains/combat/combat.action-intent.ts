@@ -197,6 +197,7 @@ export class EcsActionGroupLedger {
   }
 
   getProjectedHp(world: CombatWorld, targetId: EntityId): number {
+    if (this.forcedDeaths.has(targetId)) return 0
     const startHp = this.startHp.get(targetId) ?? world.stores.vitality.require(targetId).hp
     const healing = (this.healing.get(targetId) ?? []).reduce((sum, entry) => sum + entry.amount, 0)
     const damage = (this.damage.get(targetId) ?? []).reduce((sum, entry) => sum + entry.amount, 0)

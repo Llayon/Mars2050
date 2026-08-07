@@ -6,7 +6,7 @@ import { CombatWorld } from '@/domains/combat/ecs/combat-world'
 import { EntitySpatialIndex } from '@/domains/combat/ecs/entity-spatial-index'
 import { drainV9FollowUps } from '@/domains/combat/ecs/v9-follow-up-queue'
 import { applyEcsSingleDamage } from '@/domains/combat/ecs/systems/damage-system'
-import { recordEcsDamageTakenTriggers } from '@/domains/combat/ecs/systems/post-hit-trigger-system'
+import { recordEcsDamageTakenTriggers, recordEcsResolvedDamageTakenTriggers } from '@/domains/combat/ecs/systems/post-hit-trigger-system'
 
 type DamageTakenTarget = 'self' | 'target' | 'victim' | 'attacker'
 
@@ -89,5 +89,45 @@ describe('V8/V9 damage-taken trigger semantics', () => {
     expect(actions.find(action => action.type === 'damage' && action.targetId === 'incoming-attacker')).toMatchObject({
       unitId: 'damage-taken-owner', damage: 20,
     })
+  })
+
+  it('fires a self-targeted damage-taken payload after the incoming source is removed', () => {
+    const world = createWorld('v9_snapshot', 'self', 20)
+    const actions: BattleAction[] = []
+
+    recordEcsResolvedDamageTakenTriggers(world, 1, {
+      sourceExternalId: 'removed-attacker',
+      sourceEntityId: 0,
+      sourceTeam: 'attacker',
+      sourceUnitType: 'marine',
+    }, 10, actions)
+    drainV9FollowUps(world, { tick: 0, actions })
+
+    expect(world.stores.vitality.require(1).hp).toBe(80)
+    expect(actions.find(action => action.type === 'trigger_effect')).toMatchObject({
+      unitId: 'damage-taken-owner',
+      targetId: 'damage-taken-owner',
+      sourceUnitId: 'removed-attacker',
+    })
+  })
+
+  it('retains causal routing but skips an attacker-targeted payload when the removed attacker is not live', () => {
+    const world = createWorld('v9_snapshot', 'attacker', 20)
+    const actions: BattleAction[] = []
+
+    recordEcsResolvedDamageTakenTriggers(world, 1, {
+      sourceExternalId: 'removed-attacker',
+      sourceTeam: 'attacker',
+      sourceUnitType: 'marine',
+    }, 10, actions)
+    drainV9FollowUps(world, { tick: 0, actions })
+
+    expect(world.stores.vitality.require(1).hp).toBe(100)
+    expect(actions.find(action => action.type === 'trigger_effect')).toMatchObject({
+      unitId: 'damage-taken-owner',
+      targetId: 'removed-attacker',
+      sourceUnitId: 'removed-attacker',
+    })
+    expect(actions.filter(action => action.type === 'damage')).toEqual([])
   })
 })

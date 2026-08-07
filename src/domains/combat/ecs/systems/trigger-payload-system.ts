@@ -16,7 +16,7 @@ export function applyEcsTriggerPayload(
   world: CombatWorld,
   ownerId: EntityId | undefined,
   targetId: EntityId | null,
-  eventTargetId: EntityId,
+  eventTargetId: EntityId | undefined,
   payload: TriggerPayload,
   actions: BattleAction[],
   authoredKey?: DamageOrderKey,
@@ -36,7 +36,8 @@ export function applyEcsTriggerPayload(
     return
   }
   if (payload.kind === 'spawn') {
-    spawnEcsTriggerUnits(world, ownerId, targetId ?? eventTargetId, payload, actions)
+    const spawnTargetId = targetId ?? eventTargetId
+    if (spawnTargetId !== undefined) spawnEcsTriggerUnits(world, ownerId, spawnTargetId, payload, actions)
     return
   }
   if (targetId === null) return
@@ -60,11 +61,13 @@ export function applyEcsTriggerPayload(
   } else if (payload.kind === 'shield') {
     applyShield(world, ownerId, targetId, payload.amount, actions)
   } else if (payload.kind === 'heal') {
+    const amount = getHealAmount(world, targetId, eventTargetId, payload)
+    if (amount === undefined) return
     applyEcsHealing(
       world,
       ownerId,
       targetId,
-      getHealAmount(world, targetId, eventTargetId, payload),
+      amount,
       actions,
     )
   } else if (payload.kind === 'cooldown_reset') {
@@ -93,11 +96,12 @@ function applyShield(
 function getHealAmount(
   world: CombatWorld,
   targetId: EntityId,
-  eventTargetId: EntityId,
+  eventTargetId: EntityId | undefined,
   payload: Extract<TriggerPayload, { kind: 'heal' }>,
-): number {
+): number | undefined {
   if (payload.amount !== undefined) return Math.max(0, Math.floor(payload.amount))
   if (payload.victimMaxHpPercent !== undefined) {
+    if (eventTargetId === undefined) return undefined
     return Math.max(1, Math.floor(
       world.stores.vitality.require(eventTargetId).maxHp * payload.victimMaxHpPercent,
     ))

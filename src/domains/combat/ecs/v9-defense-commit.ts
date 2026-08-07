@@ -95,6 +95,10 @@ export function commitV9ResolutionGroup(world: CombatWorld, ledger: EcsActionGro
 
     for (const entityId of affected) {
       const vitality = world.stores.vitality.require(entityId)
+      if (ledger.forcedDeaths.has(entityId)) {
+        vitality.hp = 0
+        continue
+      }
       const startHp = ledger.startHp.get(entityId) ?? vitality.hp
       const healing = (ledger.healing.get(entityId) ?? []).reduce((sum, item) => sum + item.amount, 0)
       const damage = (ledger.damage.get(entityId) ?? []).reduce((sum, item) => sum + item.amount, 0)
@@ -130,30 +134,20 @@ export function commitV9ResolutionGroup(world: CombatWorld, ledger: EcsActionGro
     }, intent.damage, actions)
   }
 
-  const forcedEntries = [...ledger.forcedDeaths.entries()]
-  for (const [entityId] of forcedEntries) {
-    world.stores.vitality.require(entityId).hp = 0
-    affected.add(entityId)
-  }
   const deaths = [...affected]
     .filter(entityId => !world.stores.vitality.require(entityId).isDead && world.stores.vitality.require(entityId).hp <= 0)
     .sort((left, right) => world.stores.identity.require(left).id < world.stores.identity.require(right).id ? -1 : world.stores.identity.require(left).id > world.stores.identity.require(right).id ? 1 : 0)
-  for (const [entityId] of forcedEntries) {
-    if (!world.stores.vitality.require(entityId).isDead) world.setEntityDead(entityId, true)
-  }
   for (const entityId of deaths) world.setEntityDead(entityId, true)
-  for (const [entityId, forced] of forcedEntries) {
-    resolveEcsDeath(world, entityId, forced.source, actions, forced.cause, { preMarked: true })
-  }
   for (const entityId of deaths) {
+    const forced = ledger.forcedDeaths.get(entityId)
     const pending = [...(ledger.damage.get(entityId) ?? [])]
       .sort((left, right) => right.amount - left.amount || (left.attribution.sourceExternalId < right.attribution.sourceExternalId ? -1 : left.attribution.sourceExternalId > right.attribution.sourceExternalId ? 1 : 0))[0]
     resolveEcsDeath(
       world,
       entityId,
-      pending?.attribution,
+      forced?.source ?? pending?.attribution,
       actions,
-      (pending?.cause ?? 'weapon') as DeathCause,
+      forced?.cause ?? (pending?.cause ?? 'weapon') as DeathCause,
       { preMarked: true },
     )
     world.stores.vitality.require(entityId).hp = 0

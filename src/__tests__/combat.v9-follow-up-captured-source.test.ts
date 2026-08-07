@@ -113,7 +113,7 @@ describe('V9 follow-up captured routing', () => {
     expect(world.stores.statusControl.require(2).targetMark?.sourceUnitId).toBe('removed-owner')
   })
 
-  it('uses a deterministic nearest-enemy tie-break and typed depth overflow', () => {
+  it('uses a deterministic nearest-enemy tie-break', () => {
     const owner = unit('owner', 'attacker', 100)
     owner.triggerEffects = [{
       id: 'nearest', event: 'attack_count', count: 1,
@@ -126,18 +126,69 @@ describe('V9 follow-up captured routing', () => {
     const actions: Parameters<typeof recordEcsAttackTriggers>[3] = []
     recordEcsAttackTriggers(world, 0, 1, actions)
     expect(world.resources.require('v9FollowUps')[0]?.targetExternalId).toBe('enemy:a')
+  })
 
-    const overflowWorld = createWorld([unit('overflow-owner', 'attacker', 100), unit('overflow-target', 'defender', 120)])
-    overflowWorld.resources.set('v9FollowUps', [])
-    const queue = overflowWorld.resources.require('v9FollowUps')
-    for (let index = 0; index < 33; index += 1) {
-      queue.push({
+  it('limits follow-up chain depth without limiting independent siblings', () => {
+    const siblingWorld = createWorld([unit('overflow-owner', 'attacker', 100), unit('overflow-target', 'defender', 120)])
+    siblingWorld.resources.set('v9FollowUps', [])
+    const siblingQueue = siblingWorld.resources.require('v9FollowUps')
+    for (let index = 0; index < 100; index += 1) {
+      siblingQueue.push({
         ownerExternalId: 'overflow-owner', targetExternalId: 'overflow-target', eventTargetExternalId: 'overflow-target',
         payload: { kind: 'status', target: 'target', status: { type: 'range_boost', duration: 1, value: 1 } }, actions: [],
         followUpOrdinal: index, order: { originExternalId: `overflow:${index}`, position: { programIndex: 0, groupIndex: 0, targetOrdinal: 0, effectIndex: index }, targetExternalId: 'overflow-target', sourceExternalId: 'overflow-owner' },
         attribution: { sourceExternalId: 'overflow-owner', sourceTeam: 'attacker', sourceUnitType: 'marine' }, chainPath: [`overflow:${index}`],
       })
     }
-    expect(() => drainV9FollowUps(overflowWorld, { tick: 0, actions: [] })).toThrow(CombatInvariantError)
+    expect(() => drainV9FollowUps(siblingWorld, { tick: 0, actions: [] })).not.toThrow()
+    expect(siblingQueue).toEqual([])
+
+    const depthWorld = createWorld([unit('depth-owner', 'attacker', 100), unit('depth-target', 'defender', 120)])
+    depthWorld.resources.set('v9FollowUps', [])
+    const depthQueue = depthWorld.resources.require('v9FollowUps')
+    depthQueue.push({
+      ownerExternalId: 'depth-owner', targetExternalId: 'depth-target', eventTargetExternalId: 'depth-target',
+      payload: { kind: 'status', target: 'target', status: { type: 'range_boost', duration: 1, value: 1 } }, actions: [],
+      followUpOrdinal: 0, order: { originExternalId: 'depth:32', position: { programIndex: 0, groupIndex: 0, targetOrdinal: 0, effectIndex: 0 }, targetExternalId: 'depth-target', sourceExternalId: 'depth-owner' },
+      attribution: { sourceExternalId: 'depth-owner', sourceTeam: 'attacker', sourceUnitType: 'marine' },
+      chainPath: Array.from({ length: 32 }, (_, index) => `depth:${index}`),
+    })
+    expect(() => drainV9FollowUps(depthWorld, { tick: 0, actions: [] })).not.toThrow()
+
+    depthQueue.push({
+      ownerExternalId: 'depth-owner', targetExternalId: 'depth-target', eventTargetExternalId: 'depth-target',
+      payload: { kind: 'status', target: 'target', status: { type: 'range_boost', duration: 1, value: 1 } }, actions: [],
+      followUpOrdinal: 0, order: { originExternalId: 'depth:33', position: { programIndex: 0, groupIndex: 0, targetOrdinal: 0, effectIndex: 0 }, targetExternalId: 'depth-target', sourceExternalId: 'depth-owner' },
+      attribution: { sourceExternalId: 'depth-owner', sourceTeam: 'attacker', sourceUnitType: 'marine' },
+      chainPath: Array.from({ length: 33 }, (_, index) => `depth:${index}`),
+    })
+    expect(() => drainV9FollowUps(depthWorld, { tick: 0, actions: [] })).toThrow(CombatInvariantError)
+  })
+
+  it('extends the diagnostic path for nested follow-up chains', () => {
+    const attacker = unit('chain-attacker', 'attacker', 100)
+    const defender = unit('chain-defender', 'defender', 120)
+    for (const current of [attacker, defender]) {
+      current.hp = current.maxHp = 100
+      current.defense = 0
+      current.triggerEffects = [{
+        id: `counter:${current.id}`,
+        event: 'damage_taken',
+        threshold: 1,
+        repeatable: true,
+        payload: { kind: 'damage', target: 'attacker', amount: 1 },
+        fired: false,
+        counter: 0,
+        cooldownRemaining: 0,
+      }]
+    }
+    const world = createWorld([attacker, defender])
+    const actions: Parameters<typeof recordEcsAttackTriggers>[3] = []
+
+    applyEcsSingleDamage(world, 0, 1, 1, actions, { interceptable: false })
+
+    expect(() => drainV9FollowUps(world, { tick: 0, actions })).toThrowError(
+      /follow-up trigger depth exceeded 32; chain=trigger:chain-defender:counter:chain-defender > trigger:chain-attacker:counter:chain-attacker/,
+    )
   })
 })
