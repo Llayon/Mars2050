@@ -8,6 +8,7 @@ import type { BattleAction, BattleActionType, BattleResult, UnitRow } from '@/do
 
 function simulateProduction(...args: Parameters<typeof simulateBattleEngine>): ReturnType<typeof simulateBattleEngine> {
   const [attackers, defenders, seed, obstacles, attackerGlobals, defenderGlobals, options] = args
+  expect(options?.defenseResolutionMode, 'authoritative Tier 1 certification must use the production default').toBeUndefined()
   const result = simulateBattleEngine(attackers, defenders, seed, obstacles, attackerGlobals, defenderGlobals, options)
   expect(result.simulationVersion, 'production simulation version').toBe(V9_SIMULATION_VERSION)
   expect(result.simulationRevision, 'production simulation revision').toBe(V9_SIMULATION_REVISION)
