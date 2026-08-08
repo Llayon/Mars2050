@@ -283,9 +283,9 @@ function hasTargetSemanticDifference(baseline: ProbeRun, transformed: ProbeRun):
   const baselineTicks = actualTickMap(baseline.result)
   const transformedTicks = actualTickMap(transformed.result)
   const left = actualTickNumbers(baselineTicks, transformedTicks).flatMap(tick =>
-    (baselineTicks.get(tick) ?? []).map(action => targetSemanticKey(tick, action, baseline.probe.semanticByExternalId)))
+    (baselineTicks.get(tick) ?? []).map(action => targetSemanticKey(tick, action, baseline.probe.semanticByExternalId))).sort(compareCodeUnit)
   const right = actualTickNumbers(baselineTicks, transformedTicks).flatMap(tick =>
-    (transformedTicks.get(tick) ?? []).map(action => targetSemanticKey(tick, action, transformed.probe.semanticByExternalId)))
+    (transformedTicks.get(tick) ?? []).map(action => targetSemanticKey(tick, action, transformed.probe.semanticByExternalId))).sort(compareCodeUnit)
   return JSON.stringify(left) !== JSON.stringify(right)
 }
 

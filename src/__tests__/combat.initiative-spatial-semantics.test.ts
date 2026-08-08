@@ -25,7 +25,6 @@ describe('V9 same-initiative spatial and action semantics', () => {
     const peerDamage = sonicMove === undefined
       ? undefined
       : findActionAtTick(result, sonicMove.tick, action => action.unitId === 'b-goliath' && action.type === 'damage')
-
     expect(sonicMove?.action).toBeDefined()
     expect(sonicMove?.action.unitId).toBe('x-target')
     expect(peerDamage?.action).toBeDefined()
@@ -37,16 +36,18 @@ describe('V9 same-initiative spatial and action semantics', () => {
   })
   it('characterizes displacement into range for a later same-initiative peer', () => {
     const result = runScenario(displacementInScenario())
-    const peerMove = findActionWithTick(result, action => action.unitId === 'b-walker' && action.type === 'move')
-    const peerDamage = peerMove === undefined
-      ? undefined
-      : findActionAtTick(result, peerMove.tick, action => action.unitId === 'b-walker' && action.type === 'damage')
-
-    expect(peerMove?.action).toBeDefined()
-    expect(peerMove?.action.targetId).toBe('x-target')
+    const pull = findActionWithTick(result, action => action.unitId === 'x-pulled' && action.type === 'move')
+    const peerMove = findActionAtTick(result, pull?.tick ?? -1, action => action.unitId === 'b-peer' && action.type === 'move')
+    const peerDamage = findActionAtTick(result, pull?.tick ?? -1, action => action.unitId === 'b-peer' && action.type === 'damage')
+    expect(pull?.action).toBeDefined()
+    expect(peerMove?.action.targetId).toBe('x-pulled')
     expect(peerDamage?.action).toBeUndefined()
-    const initialEdgeDistance = getDistance(320, 300, 200, 490) - getSizeRadius('L') - getSizeRadius('L')
-    expect(initialEdgeDistance).toBeGreaterThan(UNIT_TYPES.light_walker.baseStats.range * 40)
+    if (pull?.action.toX === undefined || pull.action.toY === undefined) throw new Error('Expected pull destination')
+    const initialEdgeDistance = getDistance(400, 300, 200, 500) - getSizeRadius('S') - getSizeRadius('L')
+    const postPullEdgeDistance = getDistance(400, 300, pull.action.toX, pull.action.toY) - getSizeRadius('S') - getSizeRadius('L')
+    expect(initialEdgeDistance).toBeGreaterThan(UNIT_TYPES.bounty_hunter.baseStats.range * 40)
+    expect(postPullEdgeDistance).toBeLessThanOrEqual(UNIT_TYPES.bounty_hunter.baseStats.range * 40)
+    expect(firstDamageValue(runScenario(displacementInPositiveControlScenario()), 'b-peer')).toBeGreaterThan(0)
   })
   it('characterizes target mark visibility before same-group commit', () => {
     const unmarkedPeerDamage = firstDamageValue(runScenario(targetMarkUnmarkedScenario()), 'b-marine_')
@@ -191,49 +192,48 @@ function displacementOutScenario(): CombatBalanceScenario {
 function displacementInScenario(): CombatBalanceScenario {
   return scenario('micro-displacement-in', [
     row('a-gravity', 'attacker', 'gravity_manipulator', 200, 300),
-    row('b-walker', 'attacker', 'light_walker', 320, 300),
-  ], [row('x-target', 'defender', 'light_walker', 200, 490, 1000)])
+    row('b-peer', 'attacker', 'bounty_hunter', 400, 300),
+  ], [
+    row('x-anchor', 'defender', 'wall', 200, 420, 500),
+    row('x-pulled', 'defender', 'light_walker', 200, 500, 1000),
+  ])
 }
-
+function displacementInPositiveControlScenario(): CombatBalanceScenario {
+  return scenario('micro-displacement-in-positive-control', [row('b-peer', 'attacker', 'bounty_hunter', 400, 300)], [row('x-pulled', 'defender', 'light_walker', 200, 478, 1000)])
+}
 function targetMarkScenario(): CombatBalanceScenario {
   return scenario('micro-target-mark', [
     row('a-mark', 'attacker', 'bounty_hunter', 200, 300),
     row('b-marine', 'attacker', 'marine', 220, 300),
   ], [row('x-target', 'defender', 'light_walker', 200, 410, 1000)])
 }
-
 function targetMarkUnmarkedScenario(): CombatBalanceScenario {
   return scenario('micro-target-mark-unmarked', [
     row('b-marine', 'attacker', 'marine', 220, 200, UNIT_TYPES.marine.baseStats.hp, ['heavy_armor']),
   ], [row('x-target', 'defender', 'light_walker', 200, 410, 1000)])
 }
-
 function targetMarkSelfBaselineScenario(): CombatBalanceScenario {
   return scenario('micro-target-mark-self-baseline', [
     row('a-mark', 'attacker', 'bounty_hunter', 200, 300),
   ], [row('x-target', 'defender', 'light_walker', 200, 410, 1000)])
 }
-
 function targetMarkPreExistingScenario(): CombatBalanceScenario {
   return scenario('micro-target-mark-pre-existing', [
     row('a-mark', 'attacker', 'bounty_hunter', 200, 300),
     row('b-marine', 'attacker', 'marine', 220, 200, UNIT_TYPES.marine.baseStats.hp, ['heavy_armor']),
   ], [row('x-target', 'defender', 'light_walker', 200, 410, 1000)])
 }
-
 function ordinaryStatusScenario(): CombatBalanceScenario {
   return scenario('micro-ordinary-status', [
     row('a-ion', 'attacker', 'ion_crawler', 200, 300),
     row('b-sonic', 'attacker', 'sonic_devastator', 220, 300),
   ], [row('x-target', 'defender', 'light_walker', 200, 450, 1000)])
 }
-
 function ordinaryStatusBaselineScenario(): CombatBalanceScenario {
   return scenario('micro-ordinary-status-baseline', [
     row('b-sonic', 'attacker', 'sonic_devastator', 220, 200),
   ], [row('x-target', 'defender', 'light_walker', 200, 450, 1000)])
 }
-
 function ordinaryStatusPreExistingScenario(): CombatBalanceScenario {
   return scenario('micro-ordinary-status-pre-existing', [
     row('a-ion', 'attacker', 'ion_crawler', 200, 300),
