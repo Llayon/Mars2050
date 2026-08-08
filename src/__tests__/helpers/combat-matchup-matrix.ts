@@ -6,7 +6,10 @@ export interface MatchupSample {
   orientation: MatchupOrientation
   seed: number
   roleTeam: Team
-  result: BattleResult
+  winner: BattleResult['winner']
+  durationTicks: number
+  roleRemainingPower: number
+  roleRemainingHpRatio: number
 }
 
 export interface MatchupSideSummary {
@@ -19,6 +22,7 @@ export interface MatchupSideSummary {
   medianRoleRemainingPower: number | null
   medianRoleRemainingHpRatio: number | null
   medianWinningRemainingHpRatio: number | null
+  medianDurationTicks: number | null
 }
 
 export interface MatchupMatrixResult {
@@ -63,13 +67,14 @@ export function aggregateMatchupSamples(inputSamples: readonly MatchupSample[]):
 export const evaluateMatchupSamples = aggregateMatchupSamples
 
 function summarizeSamples(samples: readonly MatchupSample[]): MatchupSideSummary {
-  const rolePowers = samples.map(sample => roleRemainingPower(sample.result, sample.roleTeam))
-  const roleHpRatios = samples.map(sample => roleRemainingHpRatio(sample.result, sample.roleTeam))
+  const rolePowers = samples.map(sample => sample.roleRemainingPower)
+  const roleHpRatios = samples.map(sample => sample.roleRemainingHpRatio)
+  const durations = samples.map(sample => sample.durationTicks)
   const winningHpRatios = samples
-    .filter(sample => sample.result.winner === sample.roleTeam)
-    .map(sample => roleRemainingHpRatio(sample.result, sample.roleTeam))
-  const wins = samples.filter(sample => sample.result.winner === sample.roleTeam).length
-  const draws = samples.filter(sample => sample.result.winner === 'draw').length
+    .filter(sample => sample.winner === sample.roleTeam)
+    .map(sample => sample.roleRemainingHpRatio)
+  const wins = samples.filter(sample => sample.winner === sample.roleTeam).length
+  const draws = samples.filter(sample => sample.winner === 'draw').length
   const losses = samples.length - wins - draws
 
   return {
@@ -82,23 +87,8 @@ function summarizeSamples(samples: readonly MatchupSample[]): MatchupSideSummary
     medianRoleRemainingPower: median(rolePowers),
     medianRoleRemainingHpRatio: median(roleHpRatios),
     medianWinningRemainingHpRatio: upperMiddle(winningHpRatios),
+    medianDurationTicks: median(durations),
   }
-}
-
-function roleRemainingPower(result: BattleResult, roleTeam: Team): number {
-  return result.survivors
-    .filter(unit => unit.team === roleTeam)
-    .reduce((total, survivor) => total + survivor.hp / survivor.maxHp, 0)
-}
-
-function roleRemainingHpRatio(result: BattleResult, roleTeam: Team): number {
-  const initialRoleMaxHp = result.initialState
-    .filter(unit => unit.team === roleTeam)
-    .reduce((total, unit) => total + unit.maxHp, 0)
-  const remainingRoleHp = result.survivors
-    .filter(unit => unit.team === roleTeam)
-    .reduce((total, survivor) => total + survivor.hp, 0)
-  return initialRoleMaxHp === 0 ? 0 : remainingRoleHp / initialRoleMaxHp
 }
 
 function median(values: readonly number[]): number | null {
@@ -120,5 +110,5 @@ function compareSamples(left: MatchupSample, right: MatchupSample): number {
   return left.seed - right.seed
     || ORIENTATION_ORDER[left.orientation] - ORIENTATION_ORDER[right.orientation]
     || left.roleTeam.localeCompare(right.roleTeam)
-    || left.result.winner.localeCompare(right.result.winner)
+    || left.winner.localeCompare(right.winner)
 }

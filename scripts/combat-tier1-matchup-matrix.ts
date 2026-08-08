@@ -72,7 +72,7 @@ function toDiagnostic(scenarioId: string, name: string, matrix: MatchupMatrixRes
       seed: sample.seed,
       orientation: sample.orientation,
       roleTeam: sample.roleTeam,
-      winner: sample.result.winner,
+      winner: sample.winner,
     })),
   }
 }
@@ -82,7 +82,7 @@ function renderHuman(output: MatrixDiagnostic): string {
     'Tier 1 seeded mirrored matchup matrix',
     `Scenarios: ${output.scenarioCount} | Seeds: ${output.seeds.join(', ')} | Simulations: ${output.simulationCount}`,
     '',
-    'Scenario | Normal W/L/D | Mirrored W/L/D | Combined W/L/D | Normal WR | Mirrored WR | Delta | Combined median power | Combined median HP ratio | Winning HP ratio',
+    'Scenario | Normal W/L/D | Mirrored W/L/D | Combined W/L/D | Normal WR | Mirrored WR | Delta | Combined median duration | Combined median power | Combined median HP ratio | Winning HP ratio',
     ...output.scenarios.map(formatScenario),
     '',
     'Largest absolute orientation deltas (orientation-sensitive):',
@@ -107,6 +107,7 @@ function formatScenario(scenario: ScenarioDiagnostic): string {
     formatPercent(scenario.normal.winRate),
     formatPercent(scenario.mirrored.winRate),
     formatSignedPercent(scenario.orientationWinRateDelta),
+    formatNumber(scenario.combined.medianDurationTicks),
     formatNumber(scenario.combined.medianRoleRemainingPower),
     formatNumber(scenario.combined.medianRoleRemainingHpRatio),
     formatNumber(scenario.combined.medianWinningRemainingHpRatio),

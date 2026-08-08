@@ -37,17 +37,23 @@ export function evaluateTier1MatchupAcrossSeeds({
       orientation: 'normal',
       seed,
       roleTeam: 'attacker',
-      result: runBattle(cloneRows(scenario.attackers), cloneRows(scenario.defenders), seed, []),
+      ...normalizeBattleResult(
+        runBattle(cloneRows(scenario.attackers), cloneRows(scenario.defenders), seed, []),
+        'attacker',
+      ),
     })
     samples.push({
       orientation: 'mirrored',
       seed,
       roleTeam: 'defender',
-      result: runBattle(
-        mirrorTier1Rows(scenario.defenders, 'attacker'),
-        mirrorTier1Rows(scenario.attackers, 'defender'),
-        seed,
-        [],
+      ...normalizeBattleResult(
+        runBattle(
+          mirrorTier1Rows(scenario.defenders, 'attacker'),
+          mirrorTier1Rows(scenario.attackers, 'defender'),
+          seed,
+          [],
+        ),
+        'defender',
       ),
     })
   }
@@ -58,6 +64,24 @@ export function evaluateTier1MatchupAcrossSeeds({
     throw new Error(`Tier 1 matchup run count mismatch for ${scenario.id}`)
   }
   return matrix
+}
+
+function normalizeBattleResult(result: BattleResult, roleTeam: Team): Omit<MatchupSample, 'orientation' | 'seed' | 'roleTeam'> {
+  const initialRoleMaxHp = result.initialState
+    .filter(unit => unit.team === roleTeam)
+    .reduce((total, unit) => total + unit.maxHp, 0)
+  const roleRemainingHp = result.survivors
+    .filter(unit => unit.team === roleTeam)
+    .reduce((total, survivor) => total + survivor.hp, 0)
+
+  return {
+    winner: result.winner,
+    durationTicks: result.elapsedTicks,
+    roleRemainingPower: result.survivors
+      .filter(unit => unit.team === roleTeam)
+      .reduce((total, survivor) => total + survivor.hp / survivor.maxHp, 0),
+    roleRemainingHpRatio: initialRoleMaxHp === 0 ? 0 : roleRemainingHp / initialRoleMaxHp,
+  }
 }
 
 export function mirrorTier1Rows(rows: readonly UnitRow[], team: Team): UnitRow[] {

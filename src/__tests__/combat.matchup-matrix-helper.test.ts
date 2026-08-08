@@ -21,16 +21,27 @@ describe('combat matchup matrix helpers', () => {
 
   it('uses standard medians for new metrics and upper-middle for winning ratios', () => {
     const samples = [
-      sampleWithStats('normal', 1, 'attacker', 'attacker', 1, 0.1),
-      sampleWithStats('normal', 2, 'attacker', 'attacker', 2, 0.3),
-      sampleWithStats('normal', 3, 'attacker', 'attacker', 3, 0.5),
-      sampleWithStats('normal', 4, 'attacker', 'defender', 4, 0.7),
+      sampleWithStats('normal', 1, 'attacker', 'attacker', 1, 0.1, 10),
+      sampleWithStats('normal', 2, 'attacker', 'attacker', 2, 0.3, 20),
+      sampleWithStats('normal', 3, 'attacker', 'attacker', 3, 0.5, 30),
+      sampleWithStats('normal', 4, 'attacker', 'defender', 4, 0.7, 40),
     ]
     const summary = aggregateMatchupSamples(samples).normal
 
     expect(summary.medianRoleRemainingPower).toBe(2.5)
     expect(summary.medianRoleRemainingHpRatio).toBe(0.4)
     expect(summary.medianWinningRemainingHpRatio).toBe(0.3)
+    expect(summary.medianDurationTicks).toBe(25)
+  })
+
+  it('uses the middle value for an odd duration median', () => {
+    const summary = aggregateMatchupSamples([
+      sampleWithStats('normal', 1, 'attacker', 'attacker', 1, 0.1, 9),
+      sampleWithStats('normal', 2, 'attacker', 'attacker', 2, 0.2, 3),
+      sampleWithStats('normal', 3, 'attacker', 'attacker', 3, 0.3, 7),
+    ]).normal
+
+    expect(summary.medianDurationTicks).toBe(7)
   })
 
   it('returns null for a matrix with zero wins', () => {
@@ -41,6 +52,24 @@ describe('combat matchup matrix helpers', () => {
 
     expect(summary.wins).toBe(0)
     expect(summary.medianWinningRemainingHpRatio).toBeNull()
+  })
+
+  it('handles an all-draw matrix', () => {
+    const summary = aggregateMatchupSamples([
+      sample('normal', 1, 'attacker', 'draw', 8),
+      sample('normal', 2, 'attacker', 'draw', 12),
+      sample('mirrored', 1, 'defender', 'draw', 10),
+    ]).combined
+
+    expect(summary).toMatchObject({
+      runs: 3,
+      wins: 0,
+      losses: 0,
+      draws: 3,
+      winRate: 0,
+      medianWinningRemainingHpRatio: null,
+      medianDurationTicks: 10,
+    })
   })
 
   it('calculates a signed normal-minus-mirrored orientation delta', () => {
@@ -78,16 +107,19 @@ describe('combat matchup matrix helpers', () => {
   })
 })
 
-function sample(orientation: 'normal' | 'mirrored', seed: number, roleTeam: 'attacker' | 'defender', winner: BattleResult['winner']): MatchupSample {
-  return { orientation, seed, roleTeam, result: result(winner, seed) }
+function sample(orientation: 'normal' | 'mirrored', seed: number, roleTeam: 'attacker' | 'defender', winner: BattleResult['winner'], durationTicks = 1): MatchupSample {
+  return { orientation, seed, roleTeam, winner, durationTicks, roleRemainingPower: 0, roleRemainingHpRatio: 0 }
 }
 
-function sampleWithStats(orientation: 'normal' | 'mirrored', seed: number, roleTeam: 'attacker' | 'defender', winner: BattleResult['winner'], power: number, hpRatio: number): MatchupSample {
+function sampleWithStats(orientation: 'normal' | 'mirrored', seed: number, roleTeam: 'attacker' | 'defender', winner: BattleResult['winner'], power: number, hpRatio: number, durationTicks = 1): MatchupSample {
   return {
     orientation,
     seed,
     roleTeam,
-    result: result(winner, seed, power, hpRatio),
+    winner,
+    durationTicks,
+    roleRemainingPower: power,
+    roleRemainingHpRatio: hpRatio,
   }
 }
 
