@@ -20,6 +20,13 @@ interface SemanticDivergence {
   target: string | null
 }
 
+interface CanonicalEvent {
+  key: string
+  type: string
+  source: string
+  target: string | null
+}
+
 interface ProbeRun {
   seed: number
   transform: OrientationProbeTransform
@@ -167,41 +174,63 @@ function classifyWinner(winner: Winner, roleTeam: Team): 'wins' | 'losses' | 'dr
 }
 
 function firstOrderedDivergence(baseline: ProbeRun, transformed: ProbeRun): SemanticDivergence | null {
-  const baselineTicks = baseline.result.logs
-  const transformedTicks = transformed.result.logs
-  const tickCount = Math.max(baselineTicks.length, transformedTicks.length)
-  for (let tickIndex = 0; tickIndex < tickCount; tickIndex++) {
-    const left = baselineTicks[tickIndex]?.actions ?? []
-    const right = transformedTicks[tickIndex]?.actions ?? []
+  const baselineTicks = actualTickMap(baseline.result)
+  const transformedTicks = actualTickMap(transformed.result)
+  for (const tick of actualTickNumbers(baselineTicks, transformedTicks)) {
+    const left = baselineTicks.get(tick) ?? []
+    const right = transformedTicks.get(tick) ?? []
     const actionCount = Math.max(left.length, right.length)
     for (let actionIndex = 0; actionIndex < actionCount; actionIndex++) {
-      const leftKey = left[actionIndex] === undefined ? null : semanticActionKey(left[actionIndex], baseline.probe.semanticByExternalId)
-      const rightKey = right[actionIndex] === undefined ? null : semanticActionKey(right[actionIndex], transformed.probe.semanticByExternalId)
-      if (leftKey !== rightKey) return divergenceFromAction(transformed.seed, tickIndex, actionIndex, right[actionIndex] ?? left[actionIndex], transformed.probe.semanticByExternalId)
+      const leftEvent = left[actionIndex] === undefined ? null : normalizeSemanticEvent(left[actionIndex], baseline.probe.semanticByExternalId)
+      const rightEvent = right[actionIndex] === undefined ? null : normalizeSemanticEvent(right[actionIndex], transformed.probe.semanticByExternalId)
+      if (leftEvent?.key !== rightEvent?.key) {
+        return divergenceFromEvent(transformed.seed, tick, actionIndex, rightEvent ?? leftEvent)
+      }
     }
   }
   return null
 }
 
 function firstCanonicalDivergence(baseline: ProbeRun, transformed: ProbeRun): SemanticDivergence | null {
-  const tickCount = Math.max(baseline.result.logs.length, transformed.result.logs.length)
-  for (let tickIndex = 0; tickIndex < tickCount; tickIndex++) {
-    const left = (baseline.result.logs[tickIndex]?.actions ?? [])
-      .map(action => semanticActionKey(action, baseline.probe.semanticByExternalId))
-      .sort(compareCodeUnit)
-    const right = (transformed.result.logs[tickIndex]?.actions ?? [])
-      .map(action => semanticActionKey(action, transformed.probe.semanticByExternalId))
-      .sort(compareCodeUnit)
+  const baselineTicks = actualTickMap(baseline.result)
+  const transformedTicks = actualTickMap(transformed.result)
+  for (const tick of actualTickNumbers(baselineTicks, transformedTicks)) {
+    const left = (baselineTicks.get(tick) ?? [])
+      .map(action => normalizeSemanticEvent(action, baseline.probe.semanticByExternalId))
+      .sort((a, b) => compareCodeUnit(a.key, b.key))
+    const right = (transformedTicks.get(tick) ?? [])
+      .map(action => normalizeSemanticEvent(action, transformed.probe.semanticByExternalId))
+      .sort((a, b) => compareCodeUnit(a.key, b.key))
     const actionCount = Math.max(left.length, right.length)
     for (let actionIndex = 0; actionIndex < actionCount; actionIndex++) {
-      if (left[actionIndex] !== right[actionIndex]) {
-        const action = transformed.result.logs[tickIndex]?.actions[actionIndex]
-          ?? baseline.result.logs[tickIndex]?.actions[actionIndex]
-        return divergenceFromAction(transformed.seed, tickIndex, actionIndex, action, transformed.probe.semanticByExternalId)
+      if (left[actionIndex]?.key !== right[actionIndex]?.key) {
+        return divergenceFromEvent(transformed.seed, tick, actionIndex, right[actionIndex] ?? left[actionIndex])
       }
     }
   }
   return null
+}
+
+function actualTickMap(result: BattleResult): Map<number, BattleAction[]> {
+  return new Map(result.logs.map(item => [item.tick, item.actions]))
+}
+
+function actualTickNumbers(...maps: Map<number, BattleAction[]>[]): number[] {
+  return [...new Set(maps.flatMap(map => [...map.keys()]))].sort((left, right) => left - right)
+}
+
+function normalizeSemanticEvent(
+  action: BattleAction,
+  mapping: ReadonlyMap<string, SemanticUnitIdentity>,
+): CanonicalEvent {
+  const source = normalizeExternalId(action.unitId, mapping)
+  const target = action.targetId === undefined ? null : normalizeExternalId(action.targetId, mapping)
+  return {
+    key: semanticActionKey(action, mapping),
+    type: action.type,
+    source,
+    target,
+  }
 }
 
 function semanticActionKey(action: BattleAction, mapping: ReadonlyMap<string, SemanticUnitIdentity>): string {
@@ -239,33 +268,29 @@ function normalizeTeam(id: string, team: Team, mapping: ReadonlyMap<string, Sema
   return mapping.get(id)?.originalRole ?? team
 }
 
-function divergenceFromAction(
-  seed: number,
-  tick: number,
-  actionIndex: number,
-  action: BattleAction | undefined,
-  mapping: ReadonlyMap<string, SemanticUnitIdentity>,
-): SemanticDivergence {
+function divergenceFromEvent(seed: number, tick: number, actionIndex: number, event: CanonicalEvent | null | undefined): SemanticDivergence {
   return {
     seed,
     tick,
     actionIndex,
-    type: action?.type ?? 'missing',
-    source: action === undefined ? 'missing' : normalizeExternalId(action.unitId, mapping),
-    target: action?.targetId === undefined ? null : normalizeExternalId(action.targetId, mapping),
+    type: event?.type ?? 'missing',
+    source: event?.source ?? 'missing',
+    target: event?.target ?? null,
   }
 }
 
 function hasTargetSemanticDifference(baseline: ProbeRun, transformed: ProbeRun): boolean {
-  const left = baseline.result.logs
-    .flatMap(tick => tick.actions)
-    .map(action => `${action.type}|${normalizeExternalId(action.unitId, baseline.probe.semanticByExternalId)}|${action.targetId === undefined ? '' : normalizeExternalId(action.targetId, baseline.probe.semanticByExternalId)}`)
-    .sort(compareCodeUnit)
-  const right = transformed.result.logs
-    .flatMap(tick => tick.actions)
-    .map(action => `${action.type}|${normalizeExternalId(action.unitId, transformed.probe.semanticByExternalId)}|${action.targetId === undefined ? '' : normalizeExternalId(action.targetId, transformed.probe.semanticByExternalId)}`)
-    .sort(compareCodeUnit)
+  const baselineTicks = actualTickMap(baseline.result)
+  const transformedTicks = actualTickMap(transformed.result)
+  const left = actualTickNumbers(baselineTicks, transformedTicks).flatMap(tick =>
+    (baselineTicks.get(tick) ?? []).map(action => targetSemanticKey(tick, action, baseline.probe.semanticByExternalId)))
+  const right = actualTickNumbers(baselineTicks, transformedTicks).flatMap(tick =>
+    (transformedTicks.get(tick) ?? []).map(action => targetSemanticKey(tick, action, transformed.probe.semanticByExternalId)))
   return JSON.stringify(left) !== JSON.stringify(right)
+}
+
+function targetSemanticKey(tick: number, action: BattleAction, mapping: ReadonlyMap<string, SemanticUnitIdentity>): string {
+  return `${tick}|${action.type}|${normalizeExternalId(action.unitId, mapping)}|${action.targetId === undefined ? '' : normalizeExternalId(action.targetId, mapping)}`
 }
 
 function earliestDivergence(left: SemanticDivergence | null, right: SemanticDivergence | null): SemanticDivergence | null {
@@ -305,6 +330,7 @@ function renderHuman(report: DiagnosticReport): string {
     'Tier 1 orientation and initiative characterization',
     `Scenarios: ${report.scenarioCount} | Seeds: ${report.seeds.join(', ')} | Transforms: ${report.transformCount} | Simulations: ${report.simulationCount}`,
     'All classifications are preliminary; orientation-sensitive does not mean proven spatial side bias.',
+    'External-ID identity/order sensitivity is evidence; lexical canonical ordering remains a leading hypothesis, not proven.',
     '',
   ]
   for (const scenario of report.scenarios) {
