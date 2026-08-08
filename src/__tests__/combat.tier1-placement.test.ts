@@ -1,28 +1,17 @@
 import { describe, expect, it } from 'vitest'
 import { UNIT_TYPES } from '@/domains/combat/combat.config'
-import { simulateBattle as simulateBattleEngine } from '@/domains/combat/combat.engine'
 import { TIER1_BALANCE_SCENARIOS, type CombatBalanceScenario } from '@/domains/combat/combat.tier1-scenarios'
-import { V9_SIMULATION_REVISION, V9_SIMULATION_VERSION } from '@/domains/combat/combat.version'
 import type { BattleResult, Team, UnitRow } from '@/domains/combat/combat.types'
-import { FIELD_HEIGHT, generateObstacles } from '@/domains/combat/combat.utils'
-
-function simulateProduction(...args: Parameters<typeof simulateBattleEngine>): ReturnType<typeof simulateBattleEngine> {
-  const [attackers, defenders, seed, obstacles, attackerGlobals, defenderGlobals, options] = args
-  expect(options?.defenseResolutionMode, 'authoritative Tier 1 certification must use the production default').toBeUndefined()
-  const result = simulateBattleEngine(attackers, defenders, seed, obstacles, attackerGlobals, defenderGlobals, options)
-  expect(result.simulationVersion, 'production simulation version').toBe(V9_SIMULATION_VERSION)
-  expect(result.simulationRevision, 'production simulation revision').toBe(V9_SIMULATION_REVISION)
-  return result
-}
-
-const SEEDS = [101, 202, 303, 404, 505]
+import { generateObstacles } from '@/domains/combat/combat.utils'
+import { runCertifiedProductionCombat } from './helpers/combat-production-runner'
+import { evaluateTier1MatchupAcrossSeeds, mirrorTier1Rows, TIER1_MATCHUP_SEEDS } from './helpers/combat-tier1-matchup'
 
 describe('Tier 1 placement and support value', () => {
   it('changes explosive-drone and jetpack outcomes through matchup and deployment', () => {
-    const droneBreach = mirroredWins(findScenario('tier1_explosive_drone_vs_walker'))
-    const droneScreened = mirroredWins(findScenario('tier1_explosive_drone_screened_out'))
-    const jetpackFlank = mirroredRolePower(findScenario('tier1_jetpack_open_flank'))
-    const jetpackCenter = mirroredRolePower(findScenario('tier1_jetpack_center_lane'))
+    const droneBreach = evaluateMatchup(findScenario('tier1_explosive_drone_vs_walker')).combined.wins
+    const droneScreened = evaluateMatchup(findScenario('tier1_explosive_drone_screened_out')).combined.wins
+    const jetpackFlank = evaluateMatchup(findScenario('tier1_jetpack_open_flank')).combined.totalRoleRemainingPower
+    const jetpackCenter = evaluateMatchup(findScenario('tier1_jetpack_center_lane')).combined.totalRoleRemainingPower
 
     expect(droneBreach).toBeGreaterThanOrEqual(droneScreened + 6)
     expect(jetpackFlank).toBeGreaterThan(jetpackCenter * 1.5)
@@ -31,7 +20,7 @@ describe('Tier 1 placement and support value', () => {
   it('makes a medic materially improve a five-squad line', () => {
     const scenario = findScenario('tier1_medic_sustain_check')
     const medic = simulateScenario(scenario, 101, true)
-    const control = simulateProduction(
+    const control = runCertifiedProductionCombat(
       cloneRows(scenario.attackers.filter(unit => unit.unit_type !== 'medic')),
       cloneRows(scenario.defenders),
       101,
@@ -49,12 +38,12 @@ describe('Tier 1 placement and support value', () => {
   it('keeps scout marking useful but answerable by the heavy gunner', () => {
     const focusScenario = findScenario('tier1_scout_focus_fire')
     const focus = simulateScenario(focusScenario, 101, true)
-    const focusGate = mirroredRoleResults(focusScenario)
+    const focusGate = evaluateMatchup(focusScenario).combined
     const defaultObstacles = generateObstacles(12345)
-    const defaultSetup = simulateProduction(cloneRows(focusScenario.attackers), cloneRows(focusScenario.defenders), 12345, defaultObstacles)
-    const mirroredSetup = simulateProduction(
-      mirrorRows(focusScenario.defenders, 'attacker'),
-      mirrorRows(focusScenario.attackers, 'defender'),
+    const defaultSetup = runCertifiedProductionCombat(cloneRows(focusScenario.attackers), cloneRows(focusScenario.defenders), 12345, defaultObstacles)
+    const mirroredSetup = runCertifiedProductionCombat(
+      mirrorTier1Rows(focusScenario.defenders, 'attacker'),
+      mirrorTier1Rows(focusScenario.attackers, 'defender'),
       12345,
       defaultObstacles,
     )
@@ -64,8 +53,8 @@ describe('Tier 1 placement and support value', () => {
     expect(focusActions.filter(action => action.type === 'target_mark').length).toBeGreaterThan(5)
     expect(focusGate.wins).toBeGreaterThanOrEqual(7)
     expect(focusGate.wins).toBeLessThanOrEqual(10)
-    expect(focusGate.medianRemainingHpRatio).toBeGreaterThanOrEqual(0.1)
-    expect(focusGate.medianRemainingHpRatio).toBeLessThanOrEqual(0.25)
+    expect(focusGate.medianWinningRemainingHpRatio ?? 0).toBeGreaterThanOrEqual(0.1)
+    expect(focusGate.medianWinningRemainingHpRatio ?? 0).toBeLessThanOrEqual(0.25)
     expect(focus.winner).toBe('attacker')
     expect(focus.metrics?.mark.markUtilization ?? 0).toBeGreaterThan(0.25)
     expect(focus.metrics?.mark.bonusDamageFromMarks ?? 0).toBeGreaterThan(0)
@@ -85,7 +74,7 @@ describe('Tier 1 placement and support value', () => {
       .map((x, index) => positionedRow(`screenshot-d-${index}`, 'marine', 'defender', x, 570))
     defenders.push(positionedRow('screenshot-scout', 'scout_drone', 'defender', 270, 510))
 
-    const result = simulateProduction(attackers, defenders, 12345, [])
+    const result = runCertifiedProductionCombat(attackers, defenders, 12345, [])
 
     expect(result.winner).toBe('attacker')
     expect(result.survivors.some(unit => unit.team === 'attacker' && unit.type === 'marine')).toBe(true)
@@ -98,10 +87,10 @@ describe('Tier 1 placement and support value', () => {
         positionedRow(`grenadier-a-${index}`, 'grenadier', 'attacker', x, 900))
       const defenders = xs.map((x, index) =>
         positionedRow(`${counter}-d-${index}`, counter, 'defender', x, 300))
-      const normal = simulateProduction(grenadiers, defenders, 101, [])
-      const mirrored = simulateProduction(
-        mirrorRows(defenders, 'attacker'),
-        mirrorRows(grenadiers, 'defender'),
+      const normal = runCertifiedProductionCombat(grenadiers, defenders, 101, [])
+      const mirrored = runCertifiedProductionCombat(
+        mirrorTier1Rows(defenders, 'attacker'),
+        mirrorTier1Rows(grenadiers, 'defender'),
         101,
         [],
       )
@@ -115,94 +104,22 @@ describe('Tier 1 placement and support value', () => {
   })
 })
 
-function mirroredWins(scenario: CombatBalanceScenario): number {
-  let wins = 0
-  for (const seed of SEEDS) {
-    const normal = simulateScenario(scenario, seed)
-    if (normal.winner === 'attacker') wins++
-
-    const mirrored = simulateProduction(
-      mirrorRows(scenario.defenders, 'attacker'),
-      mirrorRows(scenario.attackers, 'defender'),
-      seed,
-      [],
-    )
-    if (mirrored.winner === 'defender') wins++
-  }
-  return wins
-}
-
-function mirroredRolePower(scenario: CombatBalanceScenario): number {
-  let power = 0
-  for (const seed of SEEDS) {
-    power += remainingPower(simulateScenario(scenario, seed), 'attacker')
-    const mirrored = simulateProduction(
-      mirrorRows(scenario.defenders, 'attacker'),
-      mirrorRows(scenario.attackers, 'defender'),
-      seed,
-      [],
-    )
-    power += remainingPower(mirrored, 'defender')
-  }
-  return power
-}
-
-function mirroredRoleResults(scenario: CombatBalanceScenario): {
-  wins: number
-  medianRemainingHpRatio: number
-} {
-  const ratios: number[] = []
-  for (const seed of SEEDS) {
-    const normal = simulateScenario(scenario, seed)
-    collectWinningRatio(normal, 'attacker', ratios)
-    const mirrored = simulateProduction(
-      mirrorRows(scenario.defenders, 'attacker'),
-      mirrorRows(scenario.attackers, 'defender'),
-      seed,
-      [],
-    )
-    collectWinningRatio(mirrored, 'defender', ratios)
-  }
-  ratios.sort((left, right) => left - right)
-  return {
-    wins: ratios.length,
-    medianRemainingHpRatio: ratios[Math.floor(ratios.length / 2)] ?? 0,
-  }
-}
-
-function collectWinningRatio(
-  result: BattleResult,
-  roleTeam: Team,
-  ratios: number[],
-): void {
-  if (result.winner !== roleTeam) return
-  const initialHp = result.initialState
-    .filter(unit => unit.team === roleTeam)
-    .reduce((total, unit) => total + unit.maxHp, 0)
-  const remainingHp = result.survivors
-    .filter(unit => unit.team === roleTeam)
-    .reduce((total, unit) => total + unit.hp, 0)
-  ratios.push(remainingHp / initialHp)
-}
-
 function simulateScenario(scenario: CombatBalanceScenario, seed: number, trackMetrics = false): BattleResult {
-  return simulateProduction(cloneRows(scenario.attackers), cloneRows(scenario.defenders), seed, [], [], [], { trackMetrics })
+  return runCertifiedProductionCombat(cloneRows(scenario.attackers), cloneRows(scenario.defenders), seed, [], [], [], { trackMetrics })
+}
+
+function evaluateMatchup(scenario: CombatBalanceScenario) {
+  return evaluateTier1MatchupAcrossSeeds({
+    scenario,
+    seeds: TIER1_MATCHUP_SEEDS,
+    runBattle: runCertifiedProductionCombat,
+  })
 }
 
 function findScenario(scenarioId: string): CombatBalanceScenario {
   const scenario = TIER1_BALANCE_SCENARIOS.find(candidate => candidate.id === scenarioId)
   if (!scenario) throw new Error(`Missing Tier 1 scenario: ${scenarioId}`)
   return scenario
-}
-
-function mirrorRows(rows: UnitRow[], team: Team): UnitRow[] {
-  return rows.map(unit => ({
-    ...unit,
-    id: `mirror-${unit.id}`,
-    colony_id: team,
-    upgrade_path: [...(unit.upgrade_path ?? [])],
-    grid_y: String(FIELD_HEIGHT - Number(unit.grid_y)),
-  }))
 }
 
 function cloneRows(rows: UnitRow[]): UnitRow[] {
