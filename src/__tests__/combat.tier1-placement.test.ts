@@ -2,12 +2,16 @@ import { describe, expect, it } from 'vitest'
 import { UNIT_TYPES } from '@/domains/combat/combat.config'
 import { simulateBattle as simulateBattleEngine } from '@/domains/combat/combat.engine'
 import { TIER1_BALANCE_SCENARIOS, type CombatBalanceScenario } from '@/domains/combat/combat.tier1-scenarios'
+import { V9_SIMULATION_REVISION, V9_SIMULATION_VERSION } from '@/domains/combat/combat.version'
 import type { BattleResult, Team, UnitRow } from '@/domains/combat/combat.types'
 import { FIELD_HEIGHT, generateObstacles } from '@/domains/combat/combat.utils'
 
-function simulateBattle(...args: Parameters<typeof simulateBattleEngine>): ReturnType<typeof simulateBattleEngine> {
+function simulateProduction(...args: Parameters<typeof simulateBattleEngine>): ReturnType<typeof simulateBattleEngine> {
   const [attackers, defenders, seed, obstacles, attackerGlobals, defenderGlobals, options] = args
-  return simulateBattleEngine(attackers, defenders, seed, obstacles, attackerGlobals, defenderGlobals, { ...options, defenseResolutionMode: 'v8_sequential' })
+  const result = simulateBattleEngine(attackers, defenders, seed, obstacles, attackerGlobals, defenderGlobals, options)
+  expect(result.simulationVersion, 'production simulation version').toBe(V9_SIMULATION_VERSION)
+  expect(result.simulationRevision, 'production simulation revision').toBe(V9_SIMULATION_REVISION)
+  return result
 }
 
 const SEEDS = [101, 202, 303, 404, 505]
@@ -26,7 +30,7 @@ describe('Tier 1 placement and support value', () => {
   it('makes a medic materially improve a five-squad line', () => {
     const scenario = findScenario('tier1_medic_sustain_check')
     const medic = simulateScenario(scenario, 101, true)
-    const control = simulateBattle(
+    const control = simulateProduction(
       cloneRows(scenario.attackers.filter(unit => unit.unit_type !== 'medic')),
       cloneRows(scenario.defenders),
       101,
@@ -46,8 +50,8 @@ describe('Tier 1 placement and support value', () => {
     const focus = simulateScenario(focusScenario, 101, true)
     const focusGate = mirroredRoleResults(focusScenario)
     const defaultObstacles = generateObstacles(12345)
-    const defaultSetup = simulateBattle(cloneRows(focusScenario.attackers), cloneRows(focusScenario.defenders), 12345, defaultObstacles)
-    const mirroredSetup = simulateBattle(
+    const defaultSetup = simulateProduction(cloneRows(focusScenario.attackers), cloneRows(focusScenario.defenders), 12345, defaultObstacles)
+    const mirroredSetup = simulateProduction(
       mirrorRows(focusScenario.defenders, 'attacker'),
       mirrorRows(focusScenario.attackers, 'defender'),
       12345,
@@ -80,7 +84,7 @@ describe('Tier 1 placement and support value', () => {
       .map((x, index) => positionedRow(`screenshot-d-${index}`, 'marine', 'defender', x, 570))
     defenders.push(positionedRow('screenshot-scout', 'scout_drone', 'defender', 270, 510))
 
-    const result = simulateBattle(attackers, defenders, 12345, [])
+    const result = simulateProduction(attackers, defenders, 12345, [])
 
     expect(result.winner).toBe('attacker')
     expect(result.survivors.some(unit => unit.team === 'attacker' && unit.type === 'marine')).toBe(true)
@@ -93,8 +97,8 @@ describe('Tier 1 placement and support value', () => {
         positionedRow(`grenadier-a-${index}`, 'grenadier', 'attacker', x, 900))
       const defenders = xs.map((x, index) =>
         positionedRow(`${counter}-d-${index}`, counter, 'defender', x, 300))
-      const normal = simulateBattle(grenadiers, defenders, 101, [])
-      const mirrored = simulateBattle(
+      const normal = simulateProduction(grenadiers, defenders, 101, [])
+      const mirrored = simulateProduction(
         mirrorRows(defenders, 'attacker'),
         mirrorRows(grenadiers, 'defender'),
         101,
@@ -116,7 +120,7 @@ function mirroredWins(scenario: CombatBalanceScenario): number {
     const normal = simulateScenario(scenario, seed)
     if (normal.winner === 'attacker') wins++
 
-    const mirrored = simulateBattle(
+    const mirrored = simulateProduction(
       mirrorRows(scenario.defenders, 'attacker'),
       mirrorRows(scenario.attackers, 'defender'),
       seed,
@@ -131,7 +135,7 @@ function mirroredRolePower(scenario: CombatBalanceScenario): number {
   let power = 0
   for (const seed of SEEDS) {
     power += remainingPower(simulateScenario(scenario, seed), 'attacker')
-    const mirrored = simulateBattle(
+    const mirrored = simulateProduction(
       mirrorRows(scenario.defenders, 'attacker'),
       mirrorRows(scenario.attackers, 'defender'),
       seed,
@@ -150,7 +154,7 @@ function mirroredRoleResults(scenario: CombatBalanceScenario): {
   for (const seed of SEEDS) {
     const normal = simulateScenario(scenario, seed)
     collectWinningRatio(normal, 'attacker', ratios)
-    const mirrored = simulateBattle(
+    const mirrored = simulateProduction(
       mirrorRows(scenario.defenders, 'attacker'),
       mirrorRows(scenario.attackers, 'defender'),
       seed,
@@ -181,7 +185,7 @@ function collectWinningRatio(
 }
 
 function simulateScenario(scenario: CombatBalanceScenario, seed: number, trackMetrics = false): BattleResult {
-  return simulateBattle(cloneRows(scenario.attackers), cloneRows(scenario.defenders), seed, [], [], [], { trackMetrics })
+  return simulateProduction(cloneRows(scenario.attackers), cloneRows(scenario.defenders), seed, [], [], [], { trackMetrics })
 }
 
 function findScenario(scenarioId: string): CombatBalanceScenario {
