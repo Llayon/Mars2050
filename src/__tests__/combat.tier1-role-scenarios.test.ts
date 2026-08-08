@@ -3,11 +3,16 @@ import { MAX_TICKS } from '@/domains/combat/combat.config'
 import { simulateBattle as simulateBattleEngine } from '@/domains/combat/combat.engine'
 import { getTier1CommandCost } from '@/domains/combat/combat.tier1.config'
 import { TIER1_BALANCE_SCENARIOS, type CombatBalanceScenario } from '@/domains/combat/combat.tier1-scenarios'
+import { V9_SIMULATION_REVISION, V9_SIMULATION_VERSION } from '@/domains/combat/combat.version'
 import type { BattleAction, BattleActionType, BattleResult, UnitRow } from '@/domains/combat/combat.types'
 
-function simulateBattle(...args: Parameters<typeof simulateBattleEngine>): ReturnType<typeof simulateBattleEngine> {
+function simulateProduction(...args: Parameters<typeof simulateBattleEngine>): ReturnType<typeof simulateBattleEngine> {
   const [attackers, defenders, seed, obstacles, attackerGlobals, defenderGlobals, options] = args
-  return simulateBattleEngine(attackers, defenders, seed, obstacles, attackerGlobals, defenderGlobals, { ...options, defenseResolutionMode: 'v8_sequential' })
+  expect(options?.defenseResolutionMode, 'authoritative Tier 1 certification must use the production default').toBeUndefined()
+  const result = simulateBattleEngine(attackers, defenders, seed, obstacles, attackerGlobals, defenderGlobals, options)
+  expect(result.simulationVersion, 'production simulation version').toBe(V9_SIMULATION_VERSION)
+  expect(result.simulationRevision, 'production simulation revision').toBe(V9_SIMULATION_REVISION)
+  return result
 }
 
 const SEED = 24680
@@ -83,6 +88,13 @@ describe('Tier 1 combat role scenarios', () => {
     }
   }, 60000)
 
+  it('certifies the production default as the current V9 contract', () => {
+    const result = simulateScenario(findScenario('tier1_marine_baseline_duel'))
+
+    expect(result.simulationVersion).toBe(V9_SIMULATION_VERSION)
+    expect(result.simulationRevision).toBe(V9_SIMULATION_REVISION)
+  })
+
   it('keeps high-signal Tier 1 mechanics replay-visible', () => {
     for (const gate of ROLE_SIGNAL_GATES) {
       const result = simulateScenario(findScenario(gate.scenarioId))
@@ -153,7 +165,7 @@ describe('Tier 1 combat role scenarios', () => {
 })
 
 function simulateScenario(scenario: CombatBalanceScenario): BattleResult {
-  return simulateBattle(
+  return simulateProduction(
     cloneRows(scenario.attackers),
     cloneRows(scenario.defenders),
     SEED,
