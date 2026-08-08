@@ -34,6 +34,7 @@ interface ScenarioComparison {
   v9: OutcomeSummary
   derived: {
     winnerChanged: boolean
+    replayChanged: boolean
     durationDeltaTicks: number
     attackerRemainingPowerDelta: number
     defenderRemainingPowerDelta: number
@@ -81,6 +82,7 @@ function compareScenario(scenario: CombatBalanceScenario): ScenarioComparison {
     v9,
     derived: {
       winnerChanged: v8.winner !== v9.winner,
+      replayChanged: JSON.stringify(v8Result.logs) !== JSON.stringify(v9Result.logs),
       durationDeltaTicks: v9.elapsedTicks - v8.elapsedTicks,
       attackerRemainingPowerDelta: round(v9.attackerRemainingPower - v8.attackerRemainingPower),
       defenderRemainingPowerDelta: round(v9.defenderRemainingPower - v8.defenderRemainingPower),
@@ -122,14 +124,15 @@ function summarizeRoleSignals(result: BattleResult): RoleSignals {
 }
 
 function renderHuman(report: CharacterizationReport): string {
-  const lines = ['scenario | v8 winner | v9 winner | winner changed | v8 ticks | v9 ticks | attacker power delta | defender power delta']
-  lines.push('--- | --- | --- | --- | ---: | ---: | ---: | ---:')
+  const lines = ['scenario | v8 winner | v9 winner | winner changed | replay changed | v8 ticks | v9 ticks | attacker power delta | defender power delta']
+  lines.push('--- | --- | --- | --- | --- | ---: | ---: | ---: | ---:')
   for (const scenario of report.scenarios) {
     lines.push([
       scenario.scenarioId,
       scenario.v8.winner,
       scenario.v9.winner,
       scenario.derived.winnerChanged ? 'yes' : 'no',
+      scenario.derived.replayChanged ? 'yes' : 'no',
       scenario.v8.elapsedTicks,
       scenario.v9.elapsedTicks,
       scenario.derived.attackerRemainingPowerDelta,
