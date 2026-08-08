@@ -42,7 +42,7 @@ function createWorld(targets: SimUnit[]): CombatWorld {
   return world
 }
 
-function runProjectileImpactSystem(world: CombatWorld, context: RuntimePhaseContext): void {
+function runScheduledProjectileImpact(world: CombatWorld, context: RuntimePhaseContext): void {
   new EcsCombatPhaseScheduler(world).runPhase('projectile_impact', context)
 }
 
@@ -70,7 +70,7 @@ describe('combat temporal contract regressions', () => {
     })
     const actions: RuntimePhaseContext['actions'] = []
 
-    runProjectileImpactSystem(world, { tick: 1, actions } as RuntimePhaseContext)
+    runScheduledProjectileImpact(world, { tick: 1, actions } as RuntimePhaseContext)
 
     expect(world.stores.vitality.require(1).hp).toBe(target.maxHp - 20)
     expect(actions.filter(action => action.type === 'damage')).toHaveLength(1)
@@ -104,7 +104,7 @@ describe('combat temporal contract regressions', () => {
     })
     const actions: RuntimePhaseContext['actions'] = []
 
-    runProjectileImpactSystem(world, { tick: 1, actions } as RuntimePhaseContext)
+    runScheduledProjectileImpact(world, { tick: 1, actions } as RuntimePhaseContext)
 
     expect(actions).toContainEqual(expect.objectContaining({ type: 'projectile_miss', impactId: 1 }))
     expect(actions).not.toContainEqual(expect.objectContaining({ type: 'projectile_intercept', impactId: 1 }))
@@ -144,7 +144,7 @@ describe('combat temporal contract regressions', () => {
       }],
     })
 
-    runProjectileImpactSystem(world, { tick: 1, actions: [] } as RuntimePhaseContext)
+    runScheduledProjectileImpact(world, { tick: 1, actions: [] } as RuntimePhaseContext)
 
     expect(world.stores.vitality.require(1).hp).toBe(first.maxHp - 5)
     expect(world.stores.vitality.require(2).hp).toBe(second.maxHp)
@@ -182,7 +182,7 @@ describe('combat temporal contract regressions', () => {
       }],
     })
 
-    runProjectileImpactSystem(world, { tick: 1, actions: [] } as RuntimePhaseContext)
+    runScheduledProjectileImpact(world, { tick: 1, actions: [] } as RuntimePhaseContext)
 
     expect(world.stores.vitality.require(1).hp).toBe(primary.maxHp)
     expect(world.stores.vitality.require(2).hp).toBe(neighbor.maxHp - 5)
@@ -218,7 +218,7 @@ describe('combat temporal contract regressions', () => {
       }],
     })
 
-    runProjectileImpactSystem(world, { tick: 1, actions: [] } as RuntimePhaseContext)
+    runScheduledProjectileImpact(world, { tick: 1, actions: [] } as RuntimePhaseContext)
 
     expect(world.stores.vitality.require(1).hp).toBe(target.maxHp)
   })

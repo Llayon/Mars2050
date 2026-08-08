@@ -42,7 +42,7 @@ function createWorld(targets: SimUnit[]): CombatWorld {
   return world
 }
 
-function runProjectileImpactSystem(world: CombatWorld, context: RuntimePhaseContext): void {
+function runScheduledProjectileImpact(world: CombatWorld, context: RuntimePhaseContext): void {
   new EcsCombatPhaseScheduler(world).runPhase('projectile_impact', context)
 }
 
@@ -85,7 +85,7 @@ describe('immutable temporal impact packets', () => {
     })
 
     const actions: RuntimePhaseContext['actions'] = []
-    runProjectileImpactSystem(world, { tick: 1, actions } as RuntimePhaseContext)
+    runScheduledProjectileImpact(world, { tick: 1, actions } as RuntimePhaseContext)
 
     expect(world.stores.vitality.require(1).hp).toBe(first.maxHp - 5)
     expect(world.stores.vitality.require(2).hp).toBe(second.maxHp - 5)
@@ -117,7 +117,7 @@ describe('immutable temporal impact packets', () => {
       interceptable: false,
     })
     const actions: RuntimePhaseContext['actions'] = []
-    runProjectileImpactSystem(world, { tick: 1, actions } as RuntimePhaseContext)
+    runScheduledProjectileImpact(world, { tick: 1, actions } as RuntimePhaseContext)
 
     expect(world.stores.vitality.require(1).hp).toBe(target.maxHp)
     expect(actions).toContainEqual(expect.objectContaining({ type: 'projectile_miss', impactId: 1 }))
@@ -152,7 +152,7 @@ describe('immutable temporal impact packets', () => {
       }],
     })
     const actions: RuntimePhaseContext['actions'] = []
-    runProjectileImpactSystem(world, { tick: 1, actions } as RuntimePhaseContext)
+    runScheduledProjectileImpact(world, { tick: 1, actions } as RuntimePhaseContext)
 
     expect(world.stores.vitality.require(1).isDead).toBe(true)
     expect(world.stores.statusControl.require(1).statusEffects.some(effect => effect.type === 'burn')).toBe(false)
@@ -179,7 +179,7 @@ describe('immutable temporal impact packets', () => {
       interceptable: false,
     })
     const actions: RuntimePhaseContext['actions'] = []
-    runProjectileImpactSystem(world, { tick: 1, actions } as RuntimePhaseContext)
+    runScheduledProjectileImpact(world, { tick: 1, actions } as RuntimePhaseContext)
 
     expect(world.stores.vitality.require(0).hp).toBe(target.maxHp - 20)
     expect(actions).toContainEqual(expect.objectContaining({ sourceUnitType: 'missile_buggy', sourceTeam: 'attacker', type: 'damage' }))
@@ -208,7 +208,7 @@ describe('immutable temporal impact packets', () => {
       interceptable: false,
     })
     const actions: RuntimePhaseContext['actions'] = []
-    runProjectileImpactSystem(world, { tick: 1, actions } as RuntimePhaseContext)
+    runScheduledProjectileImpact(world, { tick: 1, actions } as RuntimePhaseContext)
 
     expect(world.stores.vitality.require(1).hp).toBe(target.maxHp)
     expect(actions).toContainEqual(expect.objectContaining({ type: 'projectile_miss', impactId: 1 }))
@@ -237,7 +237,7 @@ describe('immutable temporal impact packets', () => {
       interceptable: false,
     })
     const actions: RuntimePhaseContext['actions'] = []
-    runProjectileImpactSystem(world, { tick: 1, actions } as RuntimePhaseContext)
+    runScheduledProjectileImpact(world, { tick: 1, actions } as RuntimePhaseContext)
 
     expect(world.stores.vitality.require(1).hp).toBe(target.maxHp - 20)
     expect(actions).toContainEqual(expect.objectContaining({ type: 'projectile_impact', toX: 130 }))

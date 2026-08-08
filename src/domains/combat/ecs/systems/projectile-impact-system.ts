@@ -8,6 +8,8 @@ import { executeCapturedImpactPrograms, freezeImpactTargets } from './temporal-i
 
 /** Resolves launched impacts transactionally after movement and timeline launch. */
 export function runProjectileImpactSystem(world: CombatWorld, context: RuntimePhaseContext): void {
+  const ledger = world.resources.get('actionGroup')
+  if (!ledger?.active) throw new CombatInvariantError('Projectile impact system requires an active defense group')
   const impacts = world.resources.require('pendingImpacts').take(context.tick)
   if (impacts.length === 0) return
   const points: TemporalImpactPoint[] = []
@@ -25,8 +27,6 @@ export function runProjectileImpactSystem(world: CombatWorld, context: RuntimePh
     const defense = world.stores.defense.require(entityId)
     defense.projectileInterceptCooldown = defense.projectileInterceptCooldownMax ?? 0
   }
-  const ledger = world.resources.get('actionGroup')
-  if (!ledger?.active) throw new CombatInvariantError('Projectile impact system requires an active defense group')
   for (const point of points) {
     const { impact, x, y } = point
     const targetId = impact.payload.kind === 'direct' ? impact.payload.targetId ?? impact.targetId : undefined
