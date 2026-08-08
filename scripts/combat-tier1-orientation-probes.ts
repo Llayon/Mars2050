@@ -330,7 +330,7 @@ function renderHuman(report: DiagnosticReport): string {
     'Tier 1 orientation and initiative characterization',
     `Scenarios: ${report.scenarioCount} | Seeds: ${report.seeds.join(', ')} | Transforms: ${report.transformCount} | Simulations: ${report.simulationCount}`,
     'All classifications are preliminary; orientation-sensitive does not mean proven spatial side bias.',
-    'External-ID identity/order sensitivity is evidence; lexical canonical ordering remains a leading hypothesis, not proven.',
+    'External-ID-derived semantics are the leading area: canonical ordering/ties and deterministic ID-derived spatial hashing remain separate candidate mechanisms.',
     '',
   ]
   for (const scenario of report.scenarios) {
