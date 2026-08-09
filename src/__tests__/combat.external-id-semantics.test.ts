@@ -6,7 +6,7 @@ import type { SimUnit } from '@/domains/combat/combat.sim.types'
 import { createRuntimeUnitFromConfig } from '@/domains/combat/combat.unit-factory'
 import { getEcsInitiativeGroups } from '@/domains/combat/ecs/systems'
 import { CombatWorld } from '@/domains/combat/ecs/combat-world'
-import { getEcsPositioningDecision } from '@/domains/combat/ecs/movement-positioning'
+import { getEcsPositioningDecision, type EcsPositioningDecision } from '@/domains/combat/ecs/movement-positioning'
 import { getSizeRadius } from '@/domains/combat/combat.utils'
 import { runCertifiedProductionCombat } from './helpers/combat-production-runner'
 import {
@@ -39,16 +39,19 @@ describe('combat external-ID semantics', () => {
     expect(firstDamageSemantic(permuted)).toBe('target-right')
   })
 
-  it('changes melee waiting destination for rank-preserving raw-ID content', () => {
-    const baseline = waitingDestination('base-attacker', 'base-target', true)
-    const renamed = waitingDestination('probe-a-0000-base-attacker', 'probe-a-0001-base-target', true)
-    const noWaitingBaseline = waitingDestination('base-attacker', 'base-target', false)
-    const noWaitingRenamed = waitingDestination('probe-a-0000-base-attacker', 'probe-a-0001-base-target', false)
+  it('keeps V9 waiting decisions ID-independent while preserving V8 legacy geometry', () => {
+    const baseline = waitingDecision('base-attacker', 'base-target', true, 'v9_snapshot')
+    const renamed = waitingDecision('probe-a-0000-base-attacker', 'probe-a-0001-base-target', true, 'v9_snapshot')
+    const noWaitingBaseline = waitingDecision('base-attacker', 'base-target', false, 'v9_snapshot')
+    const noWaitingRenamed = waitingDecision('probe-a-0000-base-attacker', 'probe-a-0001-base-target', false, 'v9_snapshot')
+    const v8Baseline = waitingDecision('base-attacker', 'base-target', true, 'v8_sequential')
+    const v8Renamed = waitingDecision('probe-a-0000-base-attacker', 'probe-a-0001-base-target', true, 'v8_sequential')
 
     expect('base-attacker' < 'base-target').toBe(true)
     expect('probe-a-0000-base-attacker' < 'probe-a-0001-base-target').toBe(true)
-    expect(renamed).not.toEqual(baseline)
+    expect(renamed).toEqual(baseline)
     expect(noWaitingRenamed).toEqual(noWaitingBaseline)
+    expect(v8Renamed.point).not.toEqual(v8Baseline.point)
   })
 })
 
@@ -77,11 +80,16 @@ function firstDamageSemantic(probe: ReturnType<typeof applyExternalIdProbe>): st
   return identity.originalRowId
 }
 
-function waitingDestination(attackerId: string, targetId: string, waiting: boolean): { x: number; y: number } {
+function waitingDecision(
+  attackerId: string,
+  targetId: string,
+  waiting: boolean,
+  defenseResolutionMode: 'v8_sequential' | 'v9_snapshot',
+): EcsPositioningDecision {
   const attacker = createRuntimeUnitFromConfig({ id: attackerId, team: 'attacker', type: 'shock_trooper', x: 100, y: 100, currentAngle: 0 })
   const target = createRuntimeUnitFromConfig({ id: targetId, team: 'defender', type: 'light_walker', x: 300, y: 300, currentAngle: Math.PI })
   if (!attacker || !target) throw new Error('Expected waiting-position fixture units')
-  const world = createWorld([attacker, target])
+  const world = createWorld([attacker, target], defenseResolutionMode)
   const attackerEntity = world.getEntityId(attackerId)
   const targetEntity = world.getEntityId(targetId)
   if (attackerEntity === undefined || targetEntity === undefined) throw new Error('Expected waiting-position fixture entities')
@@ -95,12 +103,12 @@ function waitingDestination(attackerId: string, targetId: string, waiting: boole
     100,
     getSizeRadius(targetTransform.size),
     getSizeRadius(attackerTransform.size),
-  ).point
+  )
 }
 
-function createWorld(units: SimUnit[]): CombatWorld {
+function createWorld(units: SimUnit[], defenseResolutionMode: 'v8_sequential' | 'v9_snapshot' = 'v9_snapshot'): CombatWorld {
   const world = new CombatWorld(units)
-  world.resources.set('defenseResolutionMode', 'v9_snapshot')
+  world.resources.set('defenseResolutionMode', defenseResolutionMode)
   return world
 }
 
