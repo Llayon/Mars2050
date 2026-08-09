@@ -115,9 +115,12 @@ function row(id: string, unitType: UnitTypeKey, x: number, y: number): UnitRow {
 }
 
 function rowToSimUnit(source: UnitRow): SimUnit {
+  const id = source.id
+  if (!id) throw new Error('External-ID micro fixture requires row IDs')
+  const team = source.colony_id === 'defender' ? 'defender' : 'attacker'
   const unit = createRuntimeUnitFromConfig({
-    id: source.id,
-    team: source.colony_id,
+    id,
+    team,
     type: source.unit_type,
     x: Number(source.grid_x),
     y: Number(source.grid_y),
