@@ -128,6 +128,33 @@ export function firstPlanningDivergence(
   return null
 }
 
+export function firstSemanticPlanningDivergence(
+  baseline: InitialPlanningSnapshot,
+  candidate: InitialPlanningSnapshot,
+): PlanningDivergence | null {
+  const candidateByActor = new Map(candidate.records.map(record => [record.semanticActor, record]))
+  const fields: (keyof InitialPlanningRecord)[] = [
+    'semanticTarget', 'reservationSucceeded', 'meleeSlotIndex', 'semanticWaitingTarget', 'disposition',
+  ]
+  for (const left of baseline.records) {
+    const right = candidateByActor.get(left.semanticActor)
+    if (!right) return planningDivergence(left, 'semanticActor', 'missing')
+    for (const field of fields) {
+      if (left[field] !== right[field]) {
+        return {
+          group: left.groupOrdinal,
+          ordinal: left.processingOrdinal,
+          semanticActor: left.semanticActor,
+          field,
+          baselineValue: scalar(left[field]),
+          candidateValue: scalar(right[field]),
+        }
+      }
+    }
+  }
+  return null
+}
+
 function planningDivergence(
   record: InitialPlanningRecord,
   field: string,

@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 import { TIER1_BALANCE_SCENARIOS, type CombatBalanceScenario } from '@/domains/combat/combat.tier1-scenarios'
 import {
   ORDERING_COHORTS,
-  ORDERING_TRANSFORMS,
   applyOrderingProbe,
   canonicalSemanticOrder,
   compiledIdsForRow,
@@ -148,4 +147,3 @@ function semanticOwnership(probe: OrderingProbeResult): Map<string, string> {
 function compareCodeUnit(left: string, right: string): number {
   return left < right ? -1 : left > right ? 1 : 0
 }
-

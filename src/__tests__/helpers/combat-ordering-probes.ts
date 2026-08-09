@@ -218,13 +218,6 @@ function compiledExternalIdsForRows(rows: readonly UnitRow[]): string[] {
   return rows.flatMap(compiledIdsForRow).sort(compareCodeUnit)
 }
 
-function validateUniqueCompiledIds(probe: OrderingProbeResult): void {
-  const ids = compiledExternalIdsForRows([...probe.attackers, ...probe.defenders])
-  if (new Set(ids).size !== ids.length || probe.semanticByExternalId.size !== ids.length) {
-    throw new Error(`${probe.transform}: compiled semantic ID mapping is invalid`)
-  }
-}
-
 function compareCodeUnit(left: string, right: string): number {
   return left < right ? -1 : left > right ? 1 : 0
 }
