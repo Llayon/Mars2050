@@ -1,14 +1,14 @@
 {
   "simulationVersion": 9,
-  "simulationRevision": "combat-ecs-v9-defense-snapshot-r1",
+  "simulationRevision": "combat-ecs-v9-defense-snapshot-r2",
   "seed": 24680,
   "presets": {
     "control_status": "9af5a009a687c9859a13059e82e658fd92a750c2db6b0aec3488669c265f1980",
     "qa_primitive_events": "3f6790bdc6ede60ff56390e6cbee1774c345f6ae2c8fb17d3aeecb6efb30e4c4",
     "ranged_duel": "6d89576e3d6aec2bfc8a7322ff76b902d8c4741b614b5d7d6caab61a6e295d4e",
     "summon_caps": "807ded92c97f8aee5d062b55352c34c97e6666e0b29fa984d138ca4cd26173c7",
-    "transform_modes": "76fac084c613ca2cc24ff1cde032675373e2987896573ea5a53896372cac91fa",
-    "zerg_rush": "9f306bf4ae27413ca1bf42bf92dcaba9505517069d02d2e0ea48c4d5190ada6b",
+    "transform_modes": "6f246949534a08326d31869f5bbbe596377a7a850b5c8c0ad1bc74982e3995a3",
+    "zerg_rush": "8a382f4a04083486e627ada165effd8112a3da84cafa76a8190f84e6371286ab",
     "projectile_barrier": "e218d470561e6b45563b47bb735e99320ec8ca1a23215fa85a38600898aca119"
   }
 }

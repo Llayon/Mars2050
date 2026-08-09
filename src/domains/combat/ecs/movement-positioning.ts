@@ -9,6 +9,7 @@ const GRID_TO_PIXELS = 40
 const MELEE_RANGE = 60
 const MELEE_SLOT_TOLERANCE = 12
 const RANGED_APPROACH_RANGE_RATIO = 0.72
+const WAITING_DIRECTION_EPSILON = 1e-9
 
 export interface EcsPositioningDecision {
   point: { x: number; y: number }
@@ -175,19 +176,42 @@ function isMeleeWaitingReady(world: CombatWorld, entityId: EntityId, targetId: E
 }
 
 function getWaitingPoint(world: CombatWorld, entityId: EntityId, targetId: EntityId): { x: number; y: number } {
-  const identity = world.stores.identity.require(entityId)
-  const targetIdentity = world.stores.identity.require(targetId)
   const transform = world.stores.transform.require(entityId)
   const target = world.stores.transform.require(targetId)
   const range = world.stores.combat.require(entityId).range
   const radius = getSizeRadius(target.size) + getSizeRadius(transform.size) + Math.max(36, range * 1.35)
+  const direction = world.resources.get('defenseResolutionMode') === 'v8_sequential'
+    ? getLegacyWaitingDirection(world, entityId, targetId)
+    : getV9WaitingDirection(transform, target)
+  return { x: target.x + direction.x * radius, y: target.y + direction.y * radius }
+}
+
+function getLegacyWaitingDirection(world: CombatWorld, entityId: EntityId, targetId: EntityId): { x: number; y: number } {
+  const identity = world.stores.identity.require(entityId)
+  const targetIdentity = world.stores.identity.require(targetId)
   let hash = 2166136261
   for (const char of `${identity.id}:${targetIdentity.id}:wait`) {
     hash ^= char.charCodeAt(0)
     hash = Math.imul(hash, 16777619)
   }
   const angle = ((hash >>> 0) / 4294967295) * Math.PI * 2
-  return { x: target.x + Math.cos(angle) * radius, y: target.y + Math.sin(angle) * radius }
+  return { x: Math.cos(angle), y: Math.sin(angle) }
+}
+
+function getV9WaitingDirection(
+  transform: { x: number; y: number; currentAngle: number; initialAngle?: number },
+  target: { x: number; y: number },
+): { x: number; y: number } {
+  const dx = transform.x - target.x
+  const dy = transform.y - target.y
+  const distance = Math.hypot(dx, dy)
+  if (distance > WAITING_DIRECTION_EPSILON) return { x: dx / distance, y: dy / distance }
+  const angle = Number.isFinite(transform.currentAngle)
+    ? transform.currentAngle
+    : Number.isFinite(transform.initialAngle)
+      ? transform.initialAngle!
+      : 0
+  return { x: Math.cos(angle), y: Math.sin(angle) }
 }
 
 function getPreferredPoint(unit: { x: number; y: number }, target: { x: number; y: number }, targetRadius: number, myRadius: number, range: number, ratio: number): { x: number; y: number } {
