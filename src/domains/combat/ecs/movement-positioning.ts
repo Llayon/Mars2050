@@ -2,11 +2,11 @@ import type { ConditionalRangeConfig, RuntimeStatusEffect } from '../combat.sim.
 import { getSizeRadius } from '../combat.utils'
 import type { CombatWorld } from './combat-world'
 import type { EntityId } from './entity'
+import { getMeleeSectorSpan, getMeleeSlotCenterAngle, MELEE_ARC_QUANTA } from './melee-arc'
 import { getEcsCombatTags } from './targeting-evaluation'
 
 const GRID_TO_PIXELS = 40
 const MELEE_RANGE = 60
-const MELEE_ARC_QUANTA = 24
 const MELEE_SLOT_TOLERANCE = 12
 const RANGED_APPROACH_RANGE_RATIO = 0.72
 
@@ -155,7 +155,7 @@ function getMeleePoint(world: CombatWorld, entityId: EntityId, targetId: EntityI
   const slot = world.stores.targeting.require(entityId).meleeSlotIndex
   if (refs.meleeTarget !== targetId || slot === undefined || slot < 0 || slot >= MELEE_ARC_QUANTA) return { x: target.x, y: target.y }
   const span = getMeleeSectorSpan(getSizeRadius(transform.size), getSizeRadius(target.size))
-  const angle = ((slot + span / 2) / MELEE_ARC_QUANTA) * Math.PI * 2
+  const angle = getMeleeSlotCenterAngle(slot, span)
   const radius = getSizeRadius(target.size) + getSizeRadius(transform.size) + Math.max(2, combat.range * 0.65)
   return { x: target.x + Math.cos(angle) * radius, y: target.y + Math.sin(angle) * radius }
 }
@@ -188,13 +188,6 @@ function getWaitingPoint(world: CombatWorld, entityId: EntityId, targetId: Entit
   }
   const angle = ((hash >>> 0) / 4294967295) * Math.PI * 2
   return { x: target.x + Math.cos(angle) * radius, y: target.y + Math.sin(angle) * radius }
-}
-
-function getMeleeSectorSpan(unitRadius: number, targetRadius: number): number {
-  const raw = Math.floor((2 * Math.PI * (targetRadius + unitRadius)) / (unitRadius * 2))
-  const desired = Math.max(4, Math.min(12, raw))
-  const slots = Math.floor(MELEE_ARC_QUANTA / Math.ceil(MELEE_ARC_QUANTA / desired))
-  return Math.max(1, Math.ceil(MELEE_ARC_QUANTA / slots))
 }
 
 function getPreferredPoint(unit: { x: number; y: number }, target: { x: number; y: number }, targetRadius: number, myRadius: number, range: number, ratio: number): { x: number; y: number } {

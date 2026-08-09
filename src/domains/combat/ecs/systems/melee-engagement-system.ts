@@ -1,10 +1,7 @@
 import { getSizeRadius } from '../../combat.utils'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
-
-const ARC_QUANTA = 24
-const MIN_SLOTS = 4
-const MAX_SLOTS = 12
+import { getMeleeSectorSpan, getPreferredMeleeSlot, MELEE_ARC_QUANTA } from '../melee-arc'
 
 export interface EcsMeleeEngagementState {
   sectors: Map<EntityId, number>
@@ -53,12 +50,12 @@ function findSlot(world: CombatWorld, unitId: EntityId, targetId: EntityId, stat
   const assigned = world.stores.targeting.require(unitId).meleeSlotIndex
   const sectors = state.sectors.get(targetId) ?? 0
   if (refs.meleeTarget === targetId && assigned !== undefined && assigned >= 0 &&
-      assigned < ARC_QUANTA && isAvailable(sectors, assigned, span)) return assigned
+      assigned < MELEE_ARC_QUANTA && isAvailable(sectors, assigned, span)) return assigned
   const preferred = getPreferredSlot(world, unitId, targetId, span)
-  for (let offset = 0; offset < ARC_QUANTA; offset++) {
-    const clockwise = (preferred + offset) % ARC_QUANTA
+  for (let offset = 0; offset < MELEE_ARC_QUANTA; offset++) {
+    const clockwise = (preferred + offset) % MELEE_ARC_QUANTA
     if (isAvailable(sectors, clockwise, span)) return clockwise
-    const counter = (preferred - offset + ARC_QUANTA) % ARC_QUANTA
+    const counter = (preferred - offset + MELEE_ARC_QUANTA) % MELEE_ARC_QUANTA
     if (isAvailable(sectors, counter, span)) return counter
   }
   return null
@@ -68,15 +65,13 @@ function getPreferredSlot(world: CombatWorld, unitId: EntityId, targetId: Entity
   const unit = world.stores.transform.require(unitId)
   const target = world.stores.transform.require(targetId)
   const angle = Math.atan2(unit.y - target.y, unit.x - target.x)
-  const normalized = angle < 0 ? angle + Math.PI * 2 : angle
-  const center = Math.floor((normalized / (Math.PI * 2)) * ARC_QUANTA)
-  return (center - Math.floor(span / 2) + ARC_QUANTA) % ARC_QUANTA
+  return getPreferredMeleeSlot(angle, span)
 }
 
 function getSectorSpan(world: CombatWorld, unitId: EntityId, targetId: EntityId): number {
   const unitSize = world.stores.transform.require(unitId).size
   const targetSize = world.stores.transform.require(targetId).size
-  return SECTOR_SPANS[unitSize][targetSize]
+  return getMeleeSectorSpan(getSizeRadius(unitSize), getSizeRadius(targetSize))
 }
 
 function isAvailable(sectors: number, start: number, span: number): boolean {
@@ -101,20 +96,5 @@ function isMelee(world: CombatWorld, entityId: EntityId): boolean {
 function getSectorMask(start: number, span: number): number {
   const base = (1 << span) - 1
   const shifted = base << start
-  return (shifted | (shifted >>> ARC_QUANTA)) & ((1 << ARC_QUANTA) - 1)
+  return (shifted | (shifted >>> MELEE_ARC_QUANTA)) & ((1 << MELEE_ARC_QUANTA) - 1)
 }
-
-const SIZES = ['S', 'M', 'L', 'XL'] as const
-const SECTOR_SPANS = Object.fromEntries(SIZES.map(unitSize => [
-  unitSize,
-  Object.fromEntries(SIZES.map(targetSize => {
-    const unitRadius = getSizeRadius(unitSize)
-    const targetRadius = getSizeRadius(targetSize)
-    const rawSlots = Math.floor(
-      (2 * Math.PI * (targetRadius + unitRadius)) / (unitRadius * 2),
-    )
-    const desired = Math.max(MIN_SLOTS, Math.min(MAX_SLOTS, rawSlots))
-    const slotCount = Math.floor(ARC_QUANTA / Math.ceil(ARC_QUANTA / desired))
-    return [targetSize, Math.max(1, Math.ceil(ARC_QUANTA / slotCount))]
-  })),
-])) as Record<typeof SIZES[number], Record<typeof SIZES[number], number>>
