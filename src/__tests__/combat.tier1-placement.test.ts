@@ -99,8 +99,9 @@ describe('Tier 1 placement and support value', () => {
       expect(mirrored.winner, counter).toBe('attacker')
     }
 
+    // V9 r2 removes raw-ID-dependent melee waiting geometry; the clumped shock screen is now consistently punished by grenadiers.
     expect(simulateScenario(findScenario('tier1_grenadier_vs_clump'), 101).winner)
-      .toBe('defender')
+      .toBe('attacker')
   })
 })
 
