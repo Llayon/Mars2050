@@ -70,7 +70,7 @@ function firstDamageSemantic(probe: ReturnType<typeof applyExternalIdProbe>): st
   const result = runCertifiedProductionCombat(probe.attackers, probe.defenders, 101, [], [], [], { maxTicks: 40 })
   const attackerId = probe.attackers[0].id
   const action = result.logs.flatMap(tick => tick.actions)
-    .find(item => item.unitId.startsWith(`${attackerId}_`) || item.unitId === attackerId)
+    .find(item => item.type === 'damage' && (item.unitId.startsWith(`${attackerId}_`) || item.unitId === attackerId))
   if (!action?.targetId) throw new Error(`Expected target action from ${attackerId}`)
   const identity = probe.semanticByExternalId.get(action.targetId)
   if (!identity) throw new Error(`Missing target semantic identity for ${action.targetId}`)
@@ -82,13 +82,16 @@ function waitingDestination(attackerId: string, targetId: string, waiting: boole
   const target = createRuntimeUnitFromConfig({ id: targetId, team: 'defender', type: 'light_walker', x: 300, y: 300, currentAngle: Math.PI })
   if (!attacker || !target) throw new Error('Expected waiting-position fixture units')
   const world = createWorld([attacker, target])
-  if (waiting) world.stores.entityTargets.require(0).meleeWaitingTarget = 1
-  const attackerTransform = world.stores.transform.require(0)
-  const targetTransform = world.stores.transform.require(1)
+  const attackerEntity = world.getEntityId(attackerId)
+  const targetEntity = world.getEntityId(targetId)
+  if (attackerEntity === undefined || targetEntity === undefined) throw new Error('Expected waiting-position fixture entities')
+  if (waiting) world.stores.entityTargets.require(attackerEntity).meleeWaitingTarget = targetEntity
+  const attackerTransform = world.stores.transform.require(attackerEntity)
+  const targetTransform = world.stores.transform.require(targetEntity)
   return getEcsPositioningDecision(
     world,
-    0,
-    1,
+    attackerEntity,
+    targetEntity,
     100,
     getSizeRadius(targetTransform.size),
     getSizeRadius(attackerTransform.size),
