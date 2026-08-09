@@ -12,7 +12,7 @@ import {
   type ExternalIdProbeTransform,
 } from '@/__tests__/helpers/combat-external-id-probes'
 
-type Classification = 'ORDER_ONLY' | 'RAW_ID_SPATIAL' | 'BOTH' | 'NEITHER' | 'UNRESOLVED'
+type Classification = 'ORDER_ONLY' | 'RAW_ID_DERIVED' | 'RAW_ID_AND_ORDER_COUPLED' | 'NEITHER' | 'UNRESOLVED'
 
 interface ProbeRun {
   seed: number
@@ -166,8 +166,8 @@ function classifyDiagnostics(items: readonly SchemeDiagnostic[]): Classification
   const rankChangedOutcome = items.find(item => item.transform === 'rank_permuted')?.winnerChanges > 0
   const allExpectedOrderInvariants = rankPreserving.every(item => !item.canonicalOrderChanged)
   if (!allExpectedOrderInvariants || !orderChanged) return 'UNRESOLVED'
-  if (rawChangedOutcome && rankChangedOutcome) return 'BOTH'
-  if (rawChangedOutcome) return 'RAW_ID_SPATIAL'
+  if (rawChangedOutcome && rankChangedOutcome) return 'RAW_ID_AND_ORDER_COUPLED'
+  if (rawChangedOutcome) return 'RAW_ID_DERIVED'
   if (rankChangedOutcome) return 'ORDER_ONLY'
   return 'NEITHER'
 }
@@ -208,8 +208,25 @@ function firstCanonicalDivergence(reference: ProbeRun, candidate: ProbeRun): Div
 }
 
 function firstCategoryDivergence(reference: ProbeRun, candidate: ProbeRun, category: string): Divergence | null {
-  const divergence = firstCanonicalDivergence(reference, candidate)
-  return divergence?.category === category ? divergence : null
+  const leftTicks = actualTickMap(reference.result)
+  const rightTicks = actualTickMap(candidate.result)
+  for (const tick of actualTickNumbers(leftTicks, rightTicks)) {
+    const left = (leftTicks.get(tick) ?? [])
+      .map(action => normalizeEvent(action, reference.probe))
+      .filter(event => event.category === category)
+      .sort(compareEvent)
+    const right = (rightTicks.get(tick) ?? [])
+      .map(action => normalizeEvent(action, candidate.probe))
+      .filter(event => event.category === category)
+      .sort(compareEvent)
+    const count = Math.max(left.length, right.length)
+    for (let actionIndex = 0; actionIndex < count; actionIndex++) {
+      if (left[actionIndex]?.key !== right[actionIndex]?.key) {
+        return divergence(candidate.seed, tick, actionIndex, right[actionIndex] ?? left[actionIndex])
+      }
+    }
+  }
+  return null
 }
 
 function hasTargetSemanticDifference(reference: ProbeRun, candidate: ProbeRun): boolean {
@@ -219,7 +236,7 @@ function hasTargetSemanticDifference(reference: ProbeRun, candidate: ProbeRun): 
 }
 
 function targetKeys(run: ProbeRun): string[] {
-  return [...run.result.logs.flatMap(tick => tick.actions.map(action => `${action.type}|${semanticId(action.unitId, run.probe)}|${action.targetId ? semanticId(action.targetId, run.probe) : ''}`))]
+  return [...run.result.logs.flatMap(tick => tick.actions.map(action => `${tick.tick}|${action.type}|${semanticId(action.unitId, run.probe)}|${action.targetId ? semanticId(action.targetId, run.probe) : ''}`))]
 }
 
 function normalizeEvent(action: BattleAction, probe: ExternalIdProbeResult): { key: string; type: string; category: string; source: string; target: string | null } {
@@ -299,7 +316,7 @@ function compareDivergence(left: Divergence, right: Divergence): number {
 
 function renderHuman(report: DiagnosticReport): string {
   const lines = [
-    'Tier 1 external-ID ordering versus spatial-hashing characterization',
+    'Tier 1 external-ID ordering versus raw-ID-derived behavior characterization',
     `Scenarios: ${report.scenarios.length} | Seeds: ${report.seeds.join(', ')} | Transforms: ${report.transformCount} | Simulations: ${report.simulationCount}`,
     'All results are diagnostic; no winner outcome is a hard expectation.',
     'Rank-preserving schemes must keep canonical compiled-ID order unchanged.',
