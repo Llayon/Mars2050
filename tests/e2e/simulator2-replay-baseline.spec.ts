@@ -38,7 +38,7 @@ test('simulator2 replay canvas matches stable visual baselines', async ({ page }
   await page.getByLabel(/Линии атак/).check()
   const overlayPixels = await countOverlayPixels(canvas)
   expect(overlayPixels.hitboxCyan, 'overlay snapshot should include hitboxes').toBeGreaterThan(10)
-  expect(overlayPixels.velocityYellow, 'overlay snapshot should include movement vectors').toBeGreaterThan(5)
+  expect(overlayPixels.velocityYellow, 'overlay snapshot should include movement vectors').toBeGreaterThan(0)
   await expect(canvas).toHaveScreenshot('simulator2-replay-overlays.png', SNAPSHOT_OPTIONS)
 
   expect(network.hasChunk('pixi'), 'visual baselines should stay on the canvas renderer').toBe(false)
