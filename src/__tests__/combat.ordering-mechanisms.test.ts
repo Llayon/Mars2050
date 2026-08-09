@@ -79,6 +79,7 @@ describe('ordering mechanism probe transforms', () => {
       defenders: ['t1-heavy-shock-d-0'],
     })).toThrow(/one unit_type/)
   })
+
 })
 
 function selectedScenarios(): CombatBalanceScenario[] {
@@ -147,3 +148,4 @@ function semanticOwnership(probe: OrderingProbeResult): Map<string, string> {
 function compareCodeUnit(left: string, right: string): number {
   return left < right ? -1 : left > right ? 1 : 0
 }
+
