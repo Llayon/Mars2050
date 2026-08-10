@@ -1,0 +1,11 @@
+import type { BattleAction } from '@/domains/combat/combat.actions'
+import type { OrderingProbeResult } from './combat-ordering-probes'
+import type { MovementIntent, MovementRequest } from '@/domains/combat/ecs/movement-batch.types'
+
+export type MovementCell = 'BB' | 'BC' | 'CB' | 'CC'
+export interface Stage0Entity { semanticActor: string; internalEntityId: number; transform: Record<string, unknown>; vitality: Record<string, unknown>; combat: Record<string, unknown>; movement: Record<string, unknown>; targeting: Record<string, unknown>; entityTargets: Record<string, unknown>; statusControl: Record<string, unknown>; weapon: Record<string, unknown>; runtimeRules: Record<string, unknown> }
+export interface Stage0Checkpoint { entities: Stage0Entity[]; clock: { dt: number; tick: number }; obstacles: readonly { x: number; y: number; radius: number }[]; dirtyEntities: string[] }
+export interface MovementRequestRecord { productionArrayOrdinal: number; executionArrayOrdinal: number; semanticActor: string; kind: MovementRequest['kind']; semanticTarget: string | null; payload: Record<string, unknown>; initiativeIndex: number }
+export interface PhysicalMovementIntent { semanticActor: string; semanticTarget: string | null; requestKind: MovementRequest['kind']; fromX: number; fromY: number; toX: number; toY: number; velocityX: number; velocityY: number; facingAngle: number; angleDifference: number; isWalking: boolean; motionKind: MovementIntent['motionKind'] }
+export interface CollisionPairRecord { semanticPair: [string, string]; externalIdPair: [string, string]; internalEntityIdPair: [number, number]; x1: number; y1: number; x2: number; y2: number; distanceSquared: number; pairOrder: number; fallbackReachable: boolean }
+export interface PipelineCellResult { cell: MovementCell; probe: OrderingProbeResult; stage0: Stage0Checkpoint; requests: MovementRequestRecord[]; intents: PhysicalMovementIntent[]; collisionPairs: CollisionPairRecord[]; exactSteeringPairs: CollisionPairRecord[]; exactCollisionPairs: CollisionPairRecord[]; correctedEntities: string[]; committedActions: BattleAction[]; committedTransforms: Record<string, { x: number; y: number; velocityX: number; velocityY: number; angle: number }>; recovery: Record<string, Record<string, unknown>> }
