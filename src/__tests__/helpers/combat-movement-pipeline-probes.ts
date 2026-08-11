@@ -10,7 +10,7 @@ import { createBatchMovementIntent } from '@/domains/combat/ecs/systems/batch-mo
 import type { EntityId } from '@/domains/combat/ecs/entity'
 import type { MovementIntent, MovementRequest } from '@/domains/combat/ecs/movement-batch.types'
 import type { OrderingProbeResult } from './combat-ordering-probes'
-import { captureCollisionPairs, captureRecovery, captureSteeringExactPairs } from './combat-movement-pipeline-diagnostics'
+import { captureCollisionPairs, captureCollisionResult, captureRecovery, captureSteeringExactPairs, normalizeCommittedActions } from './combat-movement-pipeline-diagnostics'
 import type { MovementCell, MovementRequestRecord, PhysicalMovementIntent, PipelineCellResult, Stage0Checkpoint, Stage0Entity } from './combat-movement-pipeline-types'
 
 interface PreparedWorld {
@@ -46,16 +46,27 @@ export function captureMovementPipelineCell(
     return intent ? [intent] : []
   })
   const dirty = new Set(diagnostic.runtime.world.resources.require('dirtySpatialEntities'))
+  const preSolverX: number[] = []
+  const preSolverY: number[] = []
+  for (const entityId of frame.entityIds) {
+    preSolverX[entityId] = frame.transforms[entityId]!.x
+    preSolverY[entityId] = frame.transforms[entityId]!.y
+  }
+  for (const intent of intents) {
+    preSolverX[intent.entityId] = intent.toX
+    preSolverY[intent.entityId] = intent.toY
+  }
+  const preSolverCollisionPairs = captureCollisionPairs(diagnostic.runtime, frame, preSolverX, preSolverY, dirty, probe)
   const collision = solveBatchMovementCollisions(diagnostic.runtime.world, frame, intents, dirty)
-  const collisionPairs = captureCollisionPairs(diagnostic.runtime, frame, collision.x, collision.y, dirty, probe)
-  const exactCollisionPairs = collisionPairs.filter(pair => pair.distanceSquared === 0)
+  const preSolverExactCollisionPairs = preSolverCollisionPairs.filter(pair => pair.distanceSquared === 0)
   const exactSteeringPairs = captureSteeringExactPairs(diagnostic.runtime, frame, graph, probe)
+  const collisionResultBySemanticActor = captureCollisionResult(diagnostic.runtime, collision, frame, probe)
   const recovery = captureRecovery(diagnostic.runtime, probe)
-  const committed = captureCommittedStage(scenario, seed, probe, requests)
+  const committed = captureCommittedStage(scenario, seed, probe, requests, diagnostic.runtime)
   return {
     cell, probe, stage0, requests: describeRequests(productionRequests, requests, diagnostic.runtime, probe),
-    intents: intents.map(intent => describeIntent(diagnostic.runtime, intent, probe)), collisionPairs,
-    exactSteeringPairs, exactCollisionPairs,
+    intents: intents.map(intent => describeIntent(diagnostic.runtime, intent, probe)), preSolverCollisionPairs,
+    preSolverExactCollisionPairs, exactSteeringPairs, collisionResultBySemanticActor,
     correctedEntities: [...collision.corrected].map(id => semanticId(diagnostic.runtime, id, probe)).sort(compareCodeUnit),
     committedActions: committed.actions, committedTransforms: committed.transforms, recovery,
   }
@@ -127,12 +138,14 @@ function captureCommittedStage(
   seed: number,
   probe: OrderingProbeResult,
   requests: readonly MovementRequest[],
-): { actions: BattleAction[]; transforms: PipelineCellResult['committedTransforms'] } {
+  sourceRuntime: EcsCombatRuntime,
+): { actions: Record<string, unknown>[]; transforms: PipelineCellResult['committedTransforms'] } {
   const prepared = prepareWorld(scenario, seed, probe)
   const context = { tick: 0, actions: prepared.actions, rng: prepared.rng, activeGlobals: [] }
   prepared.runtime.runStage('pre_action', context)
   prepared.runtime.runStage('action', context)
-  prepared.runtime.world.resources.set('movementRequests', requests.map(request => ({ ...request })))
+  assertFreshSemanticMapping(sourceRuntime, prepared.runtime, probe)
+  prepared.runtime.world.resources.set('movementRequests', requests.map(request => remapRequest(request, sourceRuntime, prepared.runtime, probe)))
   prepared.runtime.runPhase('batch_movement', context)
   const transforms: PipelineCellResult['committedTransforms'] = {}
   for (const entityId of prepared.runtime.world.query(['identity', 'transform'])) {
@@ -144,7 +157,28 @@ function captureCommittedStage(
       angle: prepared.runtime.world.stores.transform.require(entityId).currentAngle,
     }
   }
-  return { actions: prepared.actions, transforms }
+  return { actions: normalizeCommittedActions(prepared.actions, probe), transforms }
+}
+
+function remapRequest(request: MovementRequest, sourceRuntime: EcsCombatRuntime, targetRuntime: EcsCombatRuntime, probe: OrderingProbeResult): MovementRequest {
+  const entityId = findEntityBySemantic(sourceRuntime, request.entityId, targetRuntime, probe)
+  if (request.kind === 'turn') return { ...request, entityId }
+  return { ...request, entityId, targetId: findEntityBySemantic(sourceRuntime, request.targetId, targetRuntime, probe) }
+}
+
+function findEntityBySemantic(sourceRuntime: EcsCombatRuntime, sourceEntityId: EntityId, targetRuntime: EcsCombatRuntime, probe: OrderingProbeResult): EntityId {
+  const key = semanticId(sourceRuntime, sourceEntityId, probe)
+  const target = targetRuntime.world.query(['identity']).find(entityId => semanticId(targetRuntime, entityId, probe) === key)
+  if (target === undefined) throw new Error(`ENTITY_ID_MAPPING_CONTAMINATED:${key}`)
+  return target
+}
+
+function assertFreshSemanticMapping(sourceRuntime: EcsCombatRuntime, targetRuntime: EcsCombatRuntime, probe: OrderingProbeResult): void {
+  const source = new Map(sourceRuntime.world.query(['identity']).map(entityId => [semanticId(sourceRuntime, entityId, probe), entityId]))
+  const target = new Map(targetRuntime.world.query(['identity']).map(entityId => [semanticId(targetRuntime, entityId, probe), entityId]))
+  if (JSON.stringify([...source.keys()].sort(compareCodeUnit)) !== JSON.stringify([...target.keys()].sort(compareCodeUnit))) {
+    throw new Error('ENTITY_ID_MAPPING_CONTAMINATED')
+  }
 }
 
 function describeRequests(production: readonly MovementRequest[], execution: readonly MovementRequest[], runtime: EcsCombatRuntime, probe: OrderingProbeResult): MovementRequestRecord[] {

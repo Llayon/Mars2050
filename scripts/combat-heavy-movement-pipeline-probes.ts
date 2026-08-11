@@ -63,7 +63,7 @@ function selectMechanism(assessments: MovementPipelineAssessment[]): string {
 function summarizeRepeatability(reports: readonly ScenarioSeedReport[]): { logicalCells: number; allStagesPresent: boolean; seedSet: readonly number[] } {
   return {
     logicalCells: reports.length * CELLS.length,
-    allStagesPresent: reports.every(report => Object.keys(report.cells).length === 4 && Object.values(report.cells).every(cell => cell.stage0 && cell.requests && cell.intents && cell.collisionPairs && cell.committedTransforms)),
+    allStagesPresent: reports.every(report => Object.keys(report.cells).length === 4 && Object.values(report.cells).every(cell => cell.stage0 && cell.requests && cell.intents && cell.preSolverCollisionPairs && cell.collisionResultBySemanticActor && cell.committedTransforms)),
     seedSet: SEEDS,
   }
 }
@@ -74,9 +74,14 @@ function renderHuman(value: typeof output): string {
     lines.push(`${report.scenarioId} seed ${report.seed} | mechanism: ${report.mechanism}`)
     for (const cell of CELLS) {
       const result = report.cells[cell]
-      lines.push(`  ${cell}: requests=${result.requests.length} intents=${result.intents.length} collisions=${result.collisionPairs.length} steeringExact=${result.exactSteeringPairs.length} collisionExact=${result.exactCollisionPairs.length}`)
+      lines.push(`  ${cell}: requests=${result.requests.length} intents=${result.intents.length} preSolverCollisions=${result.preSolverCollisionPairs.length} steeringExact=${result.exactSteeringPairs.length} preSolverCollisionExact=${result.preSolverExactCollisionPairs.length}`)
     }
-    for (const [key, assessment] of Object.entries(report.comparisons)) lines.push(`  ${key}: ${assessment.earliestCausalLayer} / ${assessment.stageSpecificEffect} / ${assessment.mechanism}`)
+    for (const [key, assessment] of Object.entries(report.comparisons)) {
+      const stage = assessment.stageComparison
+      lines.push(`  ${key}: ${assessment.earliestCausalLayer} / ${assessment.stageSpecificEffect} / ${assessment.mechanism}`)
+      lines.push(`    stage0=${stage.stage0Equivalent ? 'equal' : 'DIFF'} requests=${stage.requestPayloadEquivalent ? 'equal' : 'DIFF'} orderChanged=${stage.requestOrderChanged} intents=${stage.intentEquivalent ? 'equal' : 'DIFF'}`)
+      lines.push(`    preCollisionPairs=${stage.collisionPairSetEquivalent ? 'equal' : 'DIFF'} pairOrder=${stage.collisionPairOrderEquivalent ? 'equal' : 'DIFF'} solverResult=${stage.collisionEquivalent ? 'equal' : 'DIFF'} commit=${stage.committedEquivalent ? 'equal' : 'DIFF'} recovery=${assessment.recoveryActivated}`)
+    }
   }
   return `${lines.join('\n')}\n`
 }

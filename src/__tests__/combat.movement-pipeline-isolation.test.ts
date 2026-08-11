@@ -75,7 +75,7 @@ describe('combat movement pipeline isolation', () => {
         expect(Number.isFinite(intent.toX)).toBe(true)
         expect(Number.isFinite(intent.facingAngle)).toBe(true)
       }
-      for (const overlap of cell.exactCollisionPairs) expect(overlap.distanceSquared).toBe(0)
+      for (const overlap of cell.preSolverExactCollisionPairs) expect(overlap.distanceSquared).toBe(0)
       for (const overlap of cell.exactSteeringPairs) expect(overlap.distanceSquared).toBe(0)
     }
   })

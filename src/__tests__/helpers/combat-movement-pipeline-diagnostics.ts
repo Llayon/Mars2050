@@ -1,22 +1,23 @@
-import type { PipelineCellResult, PhysicalMovementIntent, Stage0Checkpoint } from './combat-movement-pipeline-types'
+import type { CollisionPairRecord, PipelineCellResult, PhysicalMovementIntent, Stage0Checkpoint } from './combat-movement-pipeline-types'
+import type { BattleAction } from '@/domains/combat/combat.actions'
 import { buildMovementCollisionPairs } from '@/domains/combat/ecs/movement-collision-pairs'
 import type { EcsCombatRuntime } from '@/domains/combat/ecs/combat-ecs-runtime'
 import type { EntityId } from '@/domains/combat/ecs/entity'
 import type { MovementFrame, MovementNeighborGraph } from '@/domains/combat/ecs/movement-batch.types'
 import type { OrderingProbeResult } from './combat-ordering-probes'
-
 export type MovementMechanism =
   | 'NO_DIVERGENCE' | 'REQUEST_ITERATION_ORDER_SUPPORTED' | 'ID_DERIVED_INTENT_SUPPORTED'
   | 'STEERING_EXACT_OVERLAP_SUPPORTED' | 'ID_DERIVED_RECOVERY_SUPPORTED' | 'STUCK_RECOVERY_DOWNSTREAM'
   | 'COLLISION_EXACT_OVERLAP_SUPPORTED' | 'COLLISION_OTHER_UNRESOLVED' | 'COMMIT_LAYER_UNRESOLVED'
   | 'ENTITY_ID_MAPPING_CONTAMINATED' | 'MIXED' | 'UNRESOLVED'
-
 export interface StageComparison {
   stage0Equivalent: boolean
   requestPayloadEquivalent: boolean
   requestOrderChanged: boolean
   intentEquivalent: boolean
   collisionEquivalent: boolean
+  collisionPairSetEquivalent: boolean
+  collisionPairOrderEquivalent: boolean
   committedEquivalent: boolean
   firstIntentDivergence: { actor: string; field: string } | null
   firstCommitDivergence: { actor: string; field: string } | null
@@ -49,10 +50,12 @@ export function comparePipelineCells(left: PipelineCellResult, right: PipelineCe
   const requestOrderChanged = JSON.stringify(left.requests.map(request => request.semanticActor)) !== JSON.stringify(right.requests.map(request => request.semanticActor))
   const intentDivergence = firstIntentDivergence(left.intents, right.intents)
   const intentEquivalent = intentDivergence === null
-  const collisionEquivalent = JSON.stringify(normalizeCollisionPairs(left)) === JSON.stringify(normalizeCollisionPairs(right))
+  const collisionEquivalent = JSON.stringify(normalizeCollisionResults(left)) === JSON.stringify(normalizeCollisionResults(right))
+  const collisionPairSetEquivalent = JSON.stringify(normalizeCollisionPairSet(left)) === JSON.stringify(normalizeCollisionPairSet(right))
+  const collisionPairOrderEquivalent = JSON.stringify(normalizeCollisionPairOrder(left)) === JSON.stringify(normalizeCollisionPairOrder(right))
   const commitDivergence = firstCommitDivergence(left, right)
   const committedEquivalent = commitDivergence === null
-  const stageComparison = { stage0Equivalent, requestPayloadEquivalent, requestOrderChanged, intentEquivalent, collisionEquivalent, committedEquivalent, firstIntentDivergence: intentDivergence, firstCommitDivergence: commitDivergence }
+  const stageComparison = { stage0Equivalent, requestPayloadEquivalent, requestOrderChanged, intentEquivalent, collisionEquivalent, collisionPairSetEquivalent, collisionPairOrderEquivalent, committedEquivalent, firstIntentDivergence: intentDivergence, firstCommitDivergence: commitDivergence }
   const earliestCausalLayer = !stage0Equivalent ? 'stage1' : !requestPayloadEquivalent || (requestOrderChanged && !intentEquivalent) ? 'stage2' : !collisionEquivalent ? 'stage3' : !committedEquivalent ? 'stage4' : 'none'
   const stageSpecificEffect = classifyStageEffect(left, right, stageComparison)
   return {
@@ -60,7 +63,7 @@ export function comparePipelineCells(left: PipelineCellResult, right: PipelineCe
     mechanism: classifyMechanism(left, right, stageComparison, mappingStatus, stageSpecificEffect),
     mappingStatus,
     exactSteeringPairs: left.exactSteeringPairs.length + right.exactSteeringPairs.length,
-    exactCollisionPairs: left.exactCollisionPairs.length + right.exactCollisionPairs.length,
+    exactCollisionPairs: left.preSolverExactCollisionPairs.length + right.preSolverExactCollisionPairs.length,
     recoveryActivated: Object.values(left.recovery).some(isRecovery) || Object.values(right.recovery).some(isRecovery),
   }
 }
@@ -80,11 +83,16 @@ function compareRequestPayload(left: PipelineCellResult, right: PipelineCellResu
   return JSON.stringify(normalize(left)) === JSON.stringify(normalize(right))
 }
 
-function normalizeCollisionPairs(cell: PipelineCellResult): unknown[] {
-  return cell.collisionPairs.map(pair => ({
-    semanticPair: pair.semanticPair, x1: pair.x1, y1: pair.y1, x2: pair.x2, y2: pair.y2,
-    distanceSquared: pair.distanceSquared, pairOrder: pair.pairOrder, fallbackReachable: pair.fallbackReachable,
-  }))
+function normalizeCollisionPairSet(cell: PipelineCellResult): string[] {
+  return cell.preSolverCollisionPairs.map(pair => pair.semanticPair.join('|')).sort(compareString)
+}
+
+function normalizeCollisionPairOrder(cell: PipelineCellResult): string[] {
+  return cell.preSolverCollisionPairs.map(pair => `${pair.semanticPair.join('|')}:${pair.pairOrder}`)
+}
+
+function normalizeCollisionResults(cell: PipelineCellResult): unknown[] {
+  return Object.entries(cell.collisionResultBySemanticActor).sort(([left], [right]) => compareString(left, right)).map(([semanticActor, result]) => ({ semanticActor, ...result }))
 }
 
 function firstIntentDivergence(left: readonly PhysicalMovementIntent[], right: readonly PhysicalMovementIntent[]): StageComparison['firstIntentDivergence'] {
@@ -105,7 +113,11 @@ function firstCommitDivergence(left: PipelineCellResult, right: PipelineCellResu
     if (!a || !b) return { actor, field: 'missing' }
     for (const field of ['x', 'y', 'velocityX', 'velocityY', 'angle'] as const) if (a[field] !== b[field]) return { actor, field }
   }
-  return JSON.stringify(left.committedActions) === JSON.stringify(right.committedActions) ? null : { actor: 'actions', field: 'sequence' }
+  return JSON.stringify(normalizeCommittedActionSet(left)) === JSON.stringify(normalizeCommittedActionSet(right)) ? null : { actor: 'actions', field: 'semanticSet' }
+}
+
+function normalizeCommittedActionSet(cell: PipelineCellResult): string[] {
+  return cell.committedActions.map(action => JSON.stringify(action)).sort(compareString)
 }
 
 function classifyStageEffect(left: PipelineCellResult, right: PipelineCellResult, comparison: StageComparison): MovementPipelineAssessment['stageSpecificEffect'] {
@@ -132,16 +144,20 @@ function classifyMechanism(
     return 'ID_DERIVED_INTENT_SUPPORTED'
   }
   if (effect === 'REQUEST_ITERATION_COLLISION_EFFECT') return 'REQUEST_ITERATION_ORDER_SUPPORTED'
-  if (effect === 'ID_CONTENT_COLLISION_EFFECT') return left.exactCollisionPairs.length + right.exactCollisionPairs.length > 0 ? 'COLLISION_EXACT_OVERLAP_SUPPORTED' : 'COLLISION_OTHER_UNRESOLVED'
+  if (effect === 'ID_CONTENT_COLLISION_EFFECT') {
+    const exactOverlap = left.preSolverExactCollisionPairs.length + right.preSolverExactCollisionPairs.length > 0
+    return exactOverlap && comparison.collisionPairSetEquivalent && comparison.intentEquivalent
+      ? 'COLLISION_EXACT_OVERLAP_SUPPORTED' : 'COLLISION_OTHER_UNRESOLVED'
+  }
   if (effect === 'COMMIT_LAYER_EFFECT') return comparison.committedEquivalent ? 'UNRESOLVED' : 'COMMIT_LAYER_UNRESOLVED'
   return 'UNRESOLVED'
 }
 
-function isRecovery(value: Record<string, unknown>): boolean { return value.isRecovering === true }
+function isRecovery(value: Record<string, unknown>): boolean { return value.recoveryEligible === true }
 function comparePair(left: readonly [string, number], right: readonly [string, number]): number { return compareString(left[0], right[0]) }
 function compareString(left: string, right: string): number { return left < right ? -1 : left > right ? 1 : 0 }
 
-export function captureCollisionPairs(runtime: EcsCombatRuntime, frame: MovementFrame, x: readonly number[], y: readonly number[], dirty: ReadonlySet<EntityId>, probe: OrderingProbeResult): PipelineCellResult['collisionPairs'] {
+export function captureCollisionPairs(runtime: EcsCombatRuntime, frame: MovementFrame, x: readonly number[], y: readonly number[], dirty: ReadonlySet<EntityId>, probe: OrderingProbeResult): CollisionPairRecord[] {
   const pairs = buildMovementCollisionPairs(frame.entityIds, x, y, dirty, 201.6)
   return pairs.map(([firstId, secondId], pairOrder) => {
     const first = runtime.world.stores.entityMeta.require(firstId).externalId
@@ -154,6 +170,31 @@ export function captureCollisionPairs(runtime: EcsCombatRuntime, frame: Movement
       distanceSquared: dx * dx + dy * dy, pairOrder, fallbackReachable: dx === 0 && dy === 0,
     }
   })
+}
+
+export function normalizeCommittedActions(actions: readonly BattleAction[], probe: OrderingProbeResult): Record<string, unknown>[] {
+  return actions.map(action => {
+    const normalized = cloneAction(action), { unitId, targetId, sourceUnitId } = action
+    delete normalized.unitId; delete normalized.targetId; delete normalized.sourceUnitId
+    return {
+      semanticActor: semanticExternalId(unitId, probe),
+      semanticTarget: targetId === undefined ? null : semanticExternalId(targetId, probe),
+      semanticSource: sourceUnitId === undefined ? null : semanticExternalId(sourceUnitId, probe),
+      ...normalized,
+    }
+  })
+}
+
+export function captureCollisionResult(runtime: EcsCombatRuntime, collision: { x: readonly number[]; y: readonly number[]; velocityX: readonly number[]; velocityY: readonly number[]; corrected: ReadonlySet<EntityId> }, frame: MovementFrame, probe: OrderingProbeResult): PipelineCellResult['collisionResultBySemanticActor'] {
+  const result: PipelineCellResult['collisionResultBySemanticActor'] = {}
+  for (const entityId of frame.entityIds) {
+    result[semanticId(runtime, entityId, probe)] = {
+      x: collision.x[entityId]!, y: collision.y[entityId]!,
+      velocityX: collision.velocityX[entityId]!, velocityY: collision.velocityY[entityId]!,
+      corrected: collision.corrected.has(entityId),
+    }
+  }
+  return result
 }
 
 export function captureSteeringExactPairs(runtime: EcsCombatRuntime, frame: MovementFrame, graph: MovementNeighborGraph, probe: OrderingProbeResult): PipelineCellResult['exactSteeringPairs'] {
@@ -172,18 +213,22 @@ export function captureRecovery(runtime: EcsCombatRuntime, probe: OrderingProbeR
   const result: PipelineCellResult['recovery'] = {}
   for (const entityId of runtime.world.query(['identity', 'movement'])) {
     const movement = runtime.world.stores.movement.require(entityId)
+    const transform = runtime.world.stores.transform.require(entityId)
+    const stuckObserved = (movement.stuckTicks ?? 0) > 0
+    const avoidanceActive = (movement.avoidanceTicks ?? 0) > 0
     result[semanticId(runtime, entityId, probe)] = {
       stuckTicks: movement.stuckTicks ?? 0, avoidanceTicks: movement.avoidanceTicks ?? 0, avoidanceSide: movement.avoidanceSide ?? null,
       progressTarget: typeof runtime.world.stores.entityTargets.require(entityId).progressTarget === 'number'
         ? semanticId(runtime, runtime.world.stores.entityTargets.require(entityId).progressTarget!, probe) : null,
       lastTargetDistance: movement.lastTargetDistance ?? null, lastProgressX: movement.lastProgressX ?? null,
-      lastProgressY: movement.lastProgressY ?? null, isRecovering: (movement.stuckTicks ?? 0) > 0,
+      lastProgressY: movement.lastProgressY ?? null, stuckObserved, avoidanceActive,
+      recoveryEligible: avoidanceActive && !transform.isFlying,
     }
   }
   return result
 }
 
-function capturePair(runtime: EcsCombatRuntime, firstId: EntityId, secondId: EntityId, x1: number, y1: number, x2: number, y2: number, pairOrder: number, probe: OrderingProbeResult): PipelineCellResult['collisionPairs'][number] {
+function capturePair(runtime: EcsCombatRuntime, firstId: EntityId, secondId: EntityId, x1: number, y1: number, x2: number, y2: number, pairOrder: number, probe: OrderingProbeResult): CollisionPairRecord {
   const first = runtime.world.stores.entityMeta.require(firstId).externalId, second = runtime.world.stores.entityMeta.require(secondId).externalId
   return { semanticPair: [semanticId(runtime, firstId, probe), semanticId(runtime, secondId, probe)].sort(compareString) as [string, string], externalIdPair: [first, second].sort(compareString) as [string, string], internalEntityIdPair: [firstId, secondId], x1, y1, x2, y2, distanceSquared: (x2 - x1) ** 2 + (y2 - y1) ** 2, pairOrder, fallbackReachable: x1 === x2 && y1 === y2 }
 }
@@ -192,4 +237,13 @@ function semanticId(runtime: EcsCombatRuntime, entityId: EntityId, probe: Orderi
   const externalId = runtime.world.stores.identity.require(entityId).id
   const identity = probe.semanticByExternalId.get(externalId)
   return identity ? `${identity.originalRole}:${identity.originalRowId}:${identity.memberOrdinal}` : externalId
+}
+
+function semanticExternalId(externalId: string, probe: OrderingProbeResult): string {
+  const identity = probe.semanticByExternalId.get(externalId)
+  return identity ? `${identity.originalRole}:${identity.originalRowId}:${identity.memberOrdinal}` : externalId
+}
+
+function cloneAction(action: BattleAction): Record<string, unknown> {
+  return JSON.parse(JSON.stringify(action)) as Record<string, unknown>
 }
