@@ -1,15 +1,16 @@
-import type { CollisionPairRecord, PipelineCellResult, PhysicalMovementIntent, Stage0Checkpoint } from './combat-movement-pipeline-types'
+import type { CollisionPairRecord, FirstCollisionResultDivergence, PipelineCellResult, PhysicalMovementIntent, Stage0Checkpoint, SupportingExactOverlapPair } from './combat-movement-pipeline-types'
 import type { BattleAction } from '@/domains/combat/combat.actions'
-import { buildMovementCollisionPairs } from '@/domains/combat/ecs/movement-collision-pairs'
 import type { EcsCombatRuntime } from '@/domains/combat/ecs/combat-ecs-runtime'
 import type { EntityId } from '@/domains/combat/ecs/entity'
 import type { MovementFrame, MovementNeighborGraph } from '@/domains/combat/ecs/movement-batch.types'
 import type { OrderingProbeResult } from './combat-ordering-probes'
+import { findSupportingExactOverlapPairs, firstCollisionDivergence } from './combat-movement-pipeline-collision'
 export type MovementMechanism =
   | 'NO_DIVERGENCE' | 'REQUEST_ITERATION_ORDER_SUPPORTED' | 'ID_DERIVED_INTENT_SUPPORTED'
   | 'STEERING_EXACT_OVERLAP_SUPPORTED' | 'ID_DERIVED_RECOVERY_SUPPORTED' | 'STUCK_RECOVERY_DOWNSTREAM'
   | 'COLLISION_EXACT_OVERLAP_SUPPORTED' | 'COLLISION_OTHER_UNRESOLVED' | 'COMMIT_LAYER_UNRESOLVED'
-  | 'ENTITY_ID_MAPPING_CONTAMINATED' | 'MIXED' | 'UNRESOLVED'
+  | 'ENTITY_ID_MAPPING_CONTAMINATED' | 'PRE_TARGET_STATE_DIVERGENCE' | 'REQUEST_GENERATION_DIVERGENCE'
+  | 'MIXED' | 'UNRESOLVED'
 export interface StageComparison {
   stage0Equivalent: boolean
   requestPayloadEquivalent: boolean
@@ -20,18 +21,20 @@ export interface StageComparison {
   collisionPairOrderEquivalent: boolean
   committedEquivalent: boolean
   firstIntentDivergence: { actor: string; field: string } | null
+  firstCollisionResultDivergence: FirstCollisionResultDivergence | null
   firstCommitDivergence: { actor: string; field: string } | null
 }
 
 export interface MovementPipelineAssessment {
   stageComparison: StageComparison
-  earliestCausalLayer: 'none' | 'stage1' | 'stage2' | 'stage3' | 'stage4'
-  stageSpecificEffect: 'none' | 'REQUEST_ITERATION_INTENT_EFFECT' | 'ID_CONTENT_INTENT_EFFECT' | 'REQUEST_ITERATION_COLLISION_EFFECT' | 'ID_CONTENT_COLLISION_EFFECT' | 'COMMIT_LAYER_EFFECT'
+  earliestCausalLayer: 'none' | 'pre_target_state' | 'request_generation' | 'intent' | 'collision' | 'commit'
+  stageSpecificEffect: 'none' | 'PRE_TARGET_STATE_DIVERGENCE' | 'REQUEST_GENERATION_DIVERGENCE' | 'REQUEST_ITERATION_INTENT_EFFECT' | 'ID_CONTENT_INTENT_EFFECT' | 'REQUEST_ITERATION_COLLISION_EFFECT' | 'ID_CONTENT_COLLISION_EFFECT' | 'COMMIT_LAYER_EFFECT'
   mechanism: MovementMechanism
   mappingStatus: 'equivalent' | 'ENTITY_ID_MAPPING_CONTAMINATED'
   exactSteeringPairs: number
   exactCollisionPairs: number
   recoveryActivated: boolean
+  supportingExactOverlapPairs: SupportingExactOverlapPair[]
 }
 
 export function assertSemanticIdentityMapping(left: PipelineCellResult, right: PipelineCellResult): void {
@@ -53,18 +56,21 @@ export function comparePipelineCells(left: PipelineCellResult, right: PipelineCe
   const collisionEquivalent = JSON.stringify(normalizeCollisionResults(left)) === JSON.stringify(normalizeCollisionResults(right))
   const collisionPairSetEquivalent = JSON.stringify(normalizeCollisionPairSet(left)) === JSON.stringify(normalizeCollisionPairSet(right))
   const collisionPairOrderEquivalent = JSON.stringify(normalizeCollisionPairOrder(left)) === JSON.stringify(normalizeCollisionPairOrder(right))
+  const firstCollisionResultDivergence = firstCollisionDivergence(left, right)
   const commitDivergence = firstCommitDivergence(left, right)
   const committedEquivalent = commitDivergence === null
-  const stageComparison = { stage0Equivalent, requestPayloadEquivalent, requestOrderChanged, intentEquivalent, collisionEquivalent, collisionPairSetEquivalent, collisionPairOrderEquivalent, committedEquivalent, firstIntentDivergence: intentDivergence, firstCommitDivergence: commitDivergence }
-  const earliestCausalLayer = !stage0Equivalent ? 'stage1' : !requestPayloadEquivalent || (requestOrderChanged && !intentEquivalent) ? 'stage2' : !collisionEquivalent ? 'stage3' : !committedEquivalent ? 'stage4' : 'none'
+  const stageComparison = { stage0Equivalent, requestPayloadEquivalent, requestOrderChanged, intentEquivalent, collisionEquivalent, collisionPairSetEquivalent, collisionPairOrderEquivalent, committedEquivalent, firstIntentDivergence: intentDivergence, firstCollisionResultDivergence, firstCommitDivergence: commitDivergence }
+  const earliestCausalLayer = !stage0Equivalent ? 'pre_target_state' : !requestPayloadEquivalent ? 'request_generation' : !intentEquivalent ? 'intent' : !collisionEquivalent ? 'collision' : !committedEquivalent ? 'commit' : 'none'
   const stageSpecificEffect = classifyStageEffect(left, right, stageComparison)
+  const supportingExactOverlapPairs = findSupportingExactOverlapPairs(left, right, stageComparison)
   return {
     stageComparison, earliestCausalLayer, stageSpecificEffect,
-    mechanism: classifyMechanism(left, right, stageComparison, mappingStatus, stageSpecificEffect),
+    mechanism: classifyMechanism(left, right, stageComparison, mappingStatus, stageSpecificEffect, supportingExactOverlapPairs),
     mappingStatus,
     exactSteeringPairs: left.exactSteeringPairs.length + right.exactSteeringPairs.length,
     exactCollisionPairs: left.preSolverExactCollisionPairs.length + right.preSolverExactCollisionPairs.length,
     recoveryActivated: Object.values(left.recovery).some(isRecovery) || Object.values(right.recovery).some(isRecovery),
+    supportingExactOverlapPairs,
   }
 }
 
@@ -72,13 +78,14 @@ export function compareStage0(left: Stage0Checkpoint, right: Stage0Checkpoint): 
   const normalize = (checkpoint: Stage0Checkpoint) => checkpoint.entities.map(entity => {
     return Object.fromEntries(Object.entries(entity).filter(([key]) => key !== 'internalEntityId'))
   })
-  return JSON.stringify(normalize(left)) === JSON.stringify(normalize(right)) && left.clock.dt === right.clock.dt && JSON.stringify(left.obstacles) === JSON.stringify(right.obstacles) && JSON.stringify(left.dirtyEntities) === JSON.stringify(right.dirtyEntities)
+  return JSON.stringify(normalize(left)) === JSON.stringify(normalize(right)) && left.clock.tick === right.clock.tick && left.clock.dt === right.clock.dt && JSON.stringify(left.obstacles) === JSON.stringify(right.obstacles) && JSON.stringify(left.dirtyEntities) === JSON.stringify(right.dirtyEntities)
 }
 
 function compareRequestPayload(left: PipelineCellResult, right: PipelineCellResult): boolean {
   const normalize = (cell: PipelineCellResult) => cell.requests.map(request => ({
     actor: request.semanticActor, kind: request.kind, target: request.semanticTarget,
-    payload: request.payload, initiativeIndex: request.initiativeIndex,
+    payload: Object.fromEntries(Object.entries(request.payload).filter(([key]) => key !== 'entityId' && key !== 'targetId')),
+    initiativeIndex: request.initiativeIndex,
   })).sort((a, b) => compareString(JSON.stringify(a), JSON.stringify(b)))
   return JSON.stringify(normalize(left)) === JSON.stringify(normalize(right))
 }
@@ -121,7 +128,8 @@ function normalizeCommittedActionSet(cell: PipelineCellResult): string[] {
 }
 
 function classifyStageEffect(left: PipelineCellResult, right: PipelineCellResult, comparison: StageComparison): MovementPipelineAssessment['stageSpecificEffect'] {
-  if (!comparison.stage0Equivalent) return 'ID_CONTENT_INTENT_EFFECT'
+  if (!comparison.stage0Equivalent) return 'PRE_TARGET_STATE_DIVERGENCE'
+  if (!comparison.requestPayloadEquivalent) return 'REQUEST_GENERATION_DIVERGENCE'
   if (!comparison.intentEquivalent && comparison.requestOrderChanged) return left.cell[0] === right.cell[0] ? 'REQUEST_ITERATION_INTENT_EFFECT' : 'ID_CONTENT_INTENT_EFFECT'
   if (!comparison.collisionEquivalent && comparison.intentEquivalent) return comparison.requestOrderChanged ? 'REQUEST_ITERATION_COLLISION_EFFECT' : 'ID_CONTENT_COLLISION_EFFECT'
   if (!comparison.committedEquivalent && comparison.collisionEquivalent) return 'COMMIT_LAYER_EFFECT'
@@ -134,8 +142,11 @@ function classifyMechanism(
   comparison: StageComparison,
   mappingStatus: MovementPipelineAssessment['mappingStatus'],
   effect: MovementPipelineAssessment['stageSpecificEffect'],
+  supportingExactOverlapPairs: readonly SupportingExactOverlapPair[],
 ): MovementMechanism {
   if (mappingStatus !== 'equivalent') return 'ENTITY_ID_MAPPING_CONTAMINATED'
+  if (effect === 'PRE_TARGET_STATE_DIVERGENCE') return 'PRE_TARGET_STATE_DIVERGENCE'
+  if (effect === 'REQUEST_GENERATION_DIVERGENCE') return 'REQUEST_GENERATION_DIVERGENCE'
   if (effect === 'none') return 'NO_DIVERGENCE'
   if (effect === 'REQUEST_ITERATION_INTENT_EFFECT') return 'REQUEST_ITERATION_ORDER_SUPPORTED'
   if (effect === 'ID_CONTENT_INTENT_EFFECT') {
@@ -145,8 +156,7 @@ function classifyMechanism(
   }
   if (effect === 'REQUEST_ITERATION_COLLISION_EFFECT') return 'REQUEST_ITERATION_ORDER_SUPPORTED'
   if (effect === 'ID_CONTENT_COLLISION_EFFECT') {
-    const exactOverlap = left.preSolverExactCollisionPairs.length + right.preSolverExactCollisionPairs.length > 0
-    return exactOverlap && comparison.collisionPairSetEquivalent && comparison.intentEquivalent
+    return supportingExactOverlapPairs.length > 0 && comparison.collisionPairSetEquivalent && comparison.collisionPairOrderEquivalent && comparison.intentEquivalent && !comparison.collisionEquivalent
       ? 'COLLISION_EXACT_OVERLAP_SUPPORTED' : 'COLLISION_OTHER_UNRESOLVED'
   }
   if (effect === 'COMMIT_LAYER_EFFECT') return comparison.committedEquivalent ? 'UNRESOLVED' : 'COMMIT_LAYER_UNRESOLVED'
@@ -156,21 +166,6 @@ function classifyMechanism(
 function isRecovery(value: Record<string, unknown>): boolean { return value.recoveryEligible === true }
 function comparePair(left: readonly [string, number], right: readonly [string, number]): number { return compareString(left[0], right[0]) }
 function compareString(left: string, right: string): number { return left < right ? -1 : left > right ? 1 : 0 }
-
-export function captureCollisionPairs(runtime: EcsCombatRuntime, frame: MovementFrame, x: readonly number[], y: readonly number[], dirty: ReadonlySet<EntityId>, probe: OrderingProbeResult): CollisionPairRecord[] {
-  const pairs = buildMovementCollisionPairs(frame.entityIds, x, y, dirty, 201.6)
-  return pairs.map(([firstId, secondId], pairOrder) => {
-    const first = runtime.world.stores.entityMeta.require(firstId).externalId
-    const second = runtime.world.stores.entityMeta.require(secondId).externalId
-    const dx = x[secondId] - x[firstId], dy = y[secondId] - y[firstId]
-    return {
-      semanticPair: [semanticId(runtime, firstId, probe), semanticId(runtime, secondId, probe)].sort(compareString) as [string, string],
-      externalIdPair: [first, second].sort(compareString) as [string, string],
-      internalEntityIdPair: [firstId, secondId], x1: x[firstId], y1: y[firstId], x2: x[secondId], y2: y[secondId],
-      distanceSquared: dx * dx + dy * dy, pairOrder, fallbackReachable: dx === 0 && dy === 0,
-    }
-  })
-}
 
 export function normalizeCommittedActions(actions: readonly BattleAction[], probe: OrderingProbeResult): Record<string, unknown>[] {
   return actions.map(action => {

@@ -1,8 +1,5 @@
-import { createPathfindingMap } from '@/domains/combat/combat.pathfinding'
-import type { BattleAction } from '@/domains/combat/combat.actions'
 import type { CombatBalanceScenario } from '@/domains/combat/combat.tier1-scenarios'
-import { PRNG } from '@/domains/combat/combat.utils'
-import { createEcsCombatRuntime, type EcsCombatRuntime } from '@/domains/combat/ecs/combat-ecs-runtime'
+import type { EcsCombatRuntime } from '@/domains/combat/ecs/combat-ecs-runtime'
 import { createMovementFrame } from '@/domains/combat/ecs/movement-frame'
 import { buildMovementNeighborGraph } from '@/domains/combat/ecs/movement-neighbor-graph'
 import { solveBatchMovementCollisions } from '@/domains/combat/ecs/movement-collision-solver'
@@ -10,26 +7,20 @@ import { createBatchMovementIntent } from '@/domains/combat/ecs/systems/batch-mo
 import type { EntityId } from '@/domains/combat/ecs/entity'
 import type { MovementIntent, MovementRequest } from '@/domains/combat/ecs/movement-batch.types'
 import type { OrderingProbeResult } from './combat-ordering-probes'
-import { captureCollisionPairs, captureCollisionResult, captureRecovery, captureSteeringExactPairs, normalizeCommittedActions } from './combat-movement-pipeline-diagnostics'
+import { captureCollisionResult, captureRecovery, captureSteeringExactPairs, normalizeCommittedActions } from './combat-movement-pipeline-diagnostics'
+import { captureCollisionPairs } from './combat-movement-pipeline-collision'
+import { advanceToPreBatchCheckpoint } from './combat-movement-pipeline-advancement'
 import type { MovementCell, MovementRequestRecord, PhysicalMovementIntent, PipelineCellResult, Stage0Checkpoint, Stage0Entity } from './combat-movement-pipeline-types'
-
-interface PreparedWorld {
-  runtime: EcsCombatRuntime
-  rng: PRNG
-  actions: BattleAction[]
-}
 
 export function captureMovementPipelineCell(
   scenario: CombatBalanceScenario,
   seed: number,
   cell: MovementCell,
   probe: OrderingProbeResult,
+  targetTick: number,
   executionSemanticOrder?: readonly string[],
 ): PipelineCellResult {
-  const diagnostic = prepareWorld(scenario, seed, probe)
-  const context = { tick: 0, actions: diagnostic.actions, rng: diagnostic.rng, activeGlobals: [] }
-  diagnostic.runtime.runStage('pre_action', context)
-  diagnostic.runtime.runStage('action', context)
+  const diagnostic = advanceToPreBatchCheckpoint(scenario, seed, probe, targetTick)
   const stage0 = captureStage0(diagnostic.runtime, probe)
   const productionRequests = diagnostic.runtime.world.resources.require('movementRequests').map(request => ({ ...request }))
   const requests = reorderRequests(productionRequests, diagnostic.runtime, probe, executionSemanticOrder)
@@ -62,9 +53,9 @@ export function captureMovementPipelineCell(
   const exactSteeringPairs = captureSteeringExactPairs(diagnostic.runtime, frame, graph, probe)
   const collisionResultBySemanticActor = captureCollisionResult(diagnostic.runtime, collision, frame, probe)
   const recovery = captureRecovery(diagnostic.runtime, probe)
-  const committed = captureCommittedStage(scenario, seed, probe, requests, diagnostic.runtime)
+  const committed = captureCommittedStage(scenario, seed, probe, targetTick, requests, diagnostic.runtime, stage0)
   return {
-    cell, probe, stage0, requests: describeRequests(productionRequests, requests, diagnostic.runtime, probe),
+    cell, targetTick, probe, stage0, requests: describeRequests(productionRequests, requests, diagnostic.runtime, probe),
     intents: intents.map(intent => describeIntent(diagnostic.runtime, intent, probe)), preSolverCollisionPairs,
     preSolverExactCollisionPairs, exactSteeringPairs, collisionResultBySemanticActor,
     correctedEntities: [...collision.corrected].map(id => semanticId(diagnostic.runtime, id, probe)).sort(compareCodeUnit),
@@ -73,7 +64,7 @@ export function captureMovementPipelineCell(
 }
 
 export function compareStage0(left: Stage0Checkpoint, right: Stage0Checkpoint): boolean {
-  return JSON.stringify(stripInternalIds(left)) === JSON.stringify(stripInternalIds(right))
+  return JSON.stringify(stripInternalIds(left)) === JSON.stringify(stripInternalIds(right)) && left.clock.tick === right.clock.tick
 }
 
 export function reorderRequests(
@@ -88,24 +79,6 @@ export function reorderRequests(
     (rank.get(semanticRequestActor(left, runtime, probe)) ?? Number.MAX_SAFE_INTEGER) -
     (rank.get(semanticRequestActor(right, runtime, probe)) ?? Number.MAX_SAFE_INTEGER),
   )
-}
-
-function prepareWorld(scenario: CombatBalanceScenario, seed: number, probe: OrderingProbeResult): PreparedWorld {
-  const runtime = createEcsCombatRuntime({ defenseResolutionMode: 'v9_snapshot' })
-  const rng = new PRNG(seed)
-  for (const row of probe.attackers) runtime.addSquad(row, 'attacker', rng)
-  for (const row of probe.defenders) runtime.addSquad(row, 'defender', rng)
-  const actions: BattleAction[] = []
-  runtime.world.resources.set('clock', { tick: 0, dt: 0.1, maxTicks: 2000, timeoutPolicy: 'draw' })
-  runtime.world.resources.set('rng', rng)
-  runtime.world.resources.set('actions', actions)
-  runtime.world.resources.set('obstacles', [])
-  runtime.world.resources.set('flowField', createPathfindingMap([]))
-  runtime.world.resources.set('globals', [])
-  runtime.world.resources.set('metrics', undefined)
-  runtime.flushStructuralCommands()
-  if (scenario.id.length === 0) throw new Error('Movement probe scenario ID is required')
-  return { runtime, rng, actions }
 }
 
 function captureStage0(runtime: EcsCombatRuntime, probe: OrderingProbeResult): Stage0Checkpoint {
@@ -137,16 +110,18 @@ function captureCommittedStage(
   scenario: CombatBalanceScenario,
   seed: number,
   probe: OrderingProbeResult,
+  targetTick: number,
   requests: readonly MovementRequest[],
   sourceRuntime: EcsCombatRuntime,
+  sourceStage0: Stage0Checkpoint,
 ): { actions: Record<string, unknown>[]; transforms: PipelineCellResult['committedTransforms'] } {
-  const prepared = prepareWorld(scenario, seed, probe)
-  const context = { tick: 0, actions: prepared.actions, rng: prepared.rng, activeGlobals: [] }
-  prepared.runtime.runStage('pre_action', context)
-  prepared.runtime.runStage('action', context)
+  const prepared = advanceToPreBatchCheckpoint(scenario, seed, probe, targetTick)
+  const freshStage0 = captureStage0(prepared.runtime, probe)
+  if (!compareStage0(sourceStage0, freshStage0)) throw new Error('FRESH_PRE_BATCH_CHECKPOINT_DIVERGENCE')
   assertFreshSemanticMapping(sourceRuntime, prepared.runtime, probe)
   prepared.runtime.world.resources.set('movementRequests', requests.map(request => remapRequest(request, sourceRuntime, prepared.runtime, probe)))
-  prepared.runtime.runPhase('batch_movement', context)
+  const committedActionStart = prepared.actions.length
+  prepared.runtime.runPhase('batch_movement', prepared.context)
   const transforms: PipelineCellResult['committedTransforms'] = {}
   for (const entityId of prepared.runtime.world.query(['identity', 'transform'])) {
     transforms[semanticId(prepared.runtime, entityId, probe)] = {
@@ -157,7 +132,7 @@ function captureCommittedStage(
       angle: prepared.runtime.world.stores.transform.require(entityId).currentAngle,
     }
   }
-  return { actions: normalizeCommittedActions(prepared.actions, probe), transforms }
+  return { actions: normalizeCommittedActions(prepared.actions.slice(committedActionStart), probe), transforms }
 }
 
 function remapRequest(request: MovementRequest, sourceRuntime: EcsCombatRuntime, targetRuntime: EcsCombatRuntime, probe: OrderingProbeResult): MovementRequest {
