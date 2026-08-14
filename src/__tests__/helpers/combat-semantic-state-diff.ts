@@ -180,7 +180,7 @@ function findValueDifference(
       const difference = findValueDifference(baselineValue[index], candidateValue[index], `${fieldPath}[${index}]`)
       if (difference) return difference
     }
-    return { fieldPath, baselineValue, candidateValue }
+    return null
   }
   if (isRecord(baselineValue) && isRecord(candidateValue)) {
     const keys = [...new Set([...Object.keys(baselineValue), ...Object.keys(candidateValue)])].sort(compareCodeUnit)
@@ -188,7 +188,7 @@ function findValueDifference(
       const difference = findValueDifference(baselineValue[key], candidateValue[key], fieldPath ? `${fieldPath}.${key}` : key)
       if (difference) return difference
     }
-    return { fieldPath, baselineValue, candidateValue }
+    return null
   }
   return { fieldPath, baselineValue, candidateValue }
 }
