@@ -197,4 +197,3 @@ function checkTerminal(baseline: ScanWorld, candidate: ScanWorld): TerminalCheck
     candidateOutcome,
   }
 }
-

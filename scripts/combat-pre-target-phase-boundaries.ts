@@ -1,4 +1,5 @@
 import { TIER1_BALANCE_SCENARIOS, type CombatBalanceScenario } from '@/domains/combat/combat.tier1-scenarios'
+import { writeFileSync } from 'node:fs'
 import { applyOrderingProbe } from '@/__tests__/helpers/combat-ordering-probes'
 import { captureMovementPipelineCell } from '@/__tests__/helpers/combat-movement-pipeline-probes'
 import {
@@ -43,7 +44,9 @@ const output = {
 }
 
 const rendered = jsonMode ? `${JSON.stringify(output, null, 2)}\n` : renderHuman(output)
-process.stdout.write(rendered)
+const outputPath = process.argv.find(arg => arg.startsWith('--out='))?.slice('--out='.length)
+if (outputPath) writeFileSync(outputPath, rendered, 'utf8')
+else process.stdout.write(rendered)
 
 function scanScenario(scenario: CombatBalanceScenario, seed: number): PhaseBoundaryScanResult {
   return scanPreTargetPhaseBoundaries(

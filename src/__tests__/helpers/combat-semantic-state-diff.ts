@@ -16,7 +16,6 @@ export const SEMANTIC_COMPONENT_ORDER = [
   'runtimeRules',
 ] as const
 
-type SemanticComponent = typeof SEMANTIC_COMPONENT_ORDER[number]
 type CanonicalValue = null | boolean | number | string | CanonicalValue[] | { [key: string]: CanonicalValue }
 
 export interface SemanticEntityIdMapping {

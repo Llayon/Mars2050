@@ -98,6 +98,55 @@ describe('combat pre-target state isolation', () => {
     expect(canonicalSerialize(before)).toBe(canonicalSerialize(after))
     expect(afterResources).toBe(beforeResources)
   })
+
+  it('reproduces the seed-101 transition across all certified seeds', () => {
+    const primary = scanPrimary()
+    const previousOrdinal = primary.firstDivergentBoundary?.previous?.ordinal
+    const currentOrdinal = primary.firstDivergentBoundary?.current.ordinal
+    expect(previousOrdinal).toBeDefined()
+    expect(currentOrdinal).toBeDefined()
+    for (const seed of [101, 202, 303, 404, 505]) {
+      const result = scanPreTargetPhaseBoundaries(
+        scenarioById('tier1_heavy_gunner_sustained_line'),
+        seed,
+        applyOrderingProbe(scenarioById('tier1_heavy_gunner_sustained_line'), 'baseline'),
+        applyOrderingProbe(scenarioById('tier1_heavy_gunner_sustained_line'), 'defender_cohort_rank_reassigned'),
+      )
+      expect(result.boundaries[previousOrdinal!]?.equivalentToCandidate).toBe(true)
+      expect(result.boundaries[currentOrdinal!]?.equivalentToCandidate).toBe(false)
+      expect(result.firstDivergentBoundary?.current.ordinal).toBe(currentOrdinal)
+    }
+  })
+
+  it('keeps Heavy exposed and Marine controls equivalent at the Heavy boundary', () => {
+    const primary = scanPrimary()
+    const previousOrdinal = primary.firstDivergentBoundary?.previous?.ordinal
+    const currentOrdinal = primary.firstDivergentBoundary?.current.ordinal
+    for (const scenarioId of ['tier1_heavy_gunner_exposed', 'tier1_marine_baseline_duel'] as const) {
+      const scenario = scenarioById(scenarioId)
+      const result = scanPreTargetPhaseBoundaries(
+        scenario,
+        101,
+        applyOrderingProbe(scenario, 'baseline'),
+        applyOrderingProbe(scenario, 'defender_cohort_rank_reassigned'),
+      )
+      expect(result.boundaries[previousOrdinal!]?.equivalentToCandidate).toBe(true)
+      expect(result.boundaries[currentOrdinal!]?.equivalentToCandidate).toBe(true)
+      expect(result.firstDivergentBoundary).toBeNull()
+    }
+  })
+
+  it('reports the first transition as a deterministic semantic field change', () => {
+    const first = scanPrimary().firstDivergentBoundary
+    expect(first?.current.label).toBe('tick1.action.after.actor_turn')
+    expect(first?.firstSemanticStateDivergence).toEqual({
+      semanticActor: 'defender:t1-heavy-shock-d-0:6',
+      component: 'entityTargets',
+      fieldPath: 'meleeTarget',
+      baselineValue: 'attacker:t1-heavy-screen-a-0:2',
+      candidateValue: 'attacker:t1-heavy-screen-a-0:1',
+    })
+  })
 })
 
 function scanPrimary() {
