@@ -77,6 +77,29 @@ export interface SemanticActorBehaviorDivergence {
   candidateBefore: ActorTraceRecord['before']
 }
 
+export interface SectorPrefixDivergence {
+  groupOrdinal: number
+  speed: number
+  processingOrdinal: number
+  stage: 'before_actor' | 'after_targeting' | 'after_reservation'
+  baselineSemanticActor: string
+  candidateSemanticActor: string
+  baselineValue: SemanticSector[]
+  candidateValue: SemanticSector[]
+}
+
+export interface SharedOrderTraceComparison {
+  equivalent: boolean
+  firstDifference: {
+    scope: 'prelude' | 'actor' | 'group' | 'endpoint'
+    groupOrdinal?: number
+    semanticActor?: string
+    field: string
+    baselineValue: unknown
+    candidateValue: unknown
+  } | null
+}
+
 export interface GroupEndpointDivergence {
   groupOrdinal: number
   speed: number
@@ -108,7 +131,9 @@ export interface ActorTurnComparison {
   preActorStateEquivalent: boolean
   preludeEquivalent: boolean
   initiativeGroupMembershipEquivalent: boolean
+  initiativeGroupStructureEquivalent: boolean
   productionOrder: ProcessingOrderDivergence | null
+  sectorPrefix: SectorPrefixDivergence | null
   semanticActorBehavior: SemanticActorBehaviorDivergence | null
   targetingDivergence: SemanticActorBehaviorDivergence | null
   reservationDivergence: SemanticActorBehaviorDivergence | null
@@ -131,7 +156,16 @@ export interface CounterfactualResult {
     baselineOrder: boolean
     candidateOrder: boolean
   }
+  traceComparisons: {
+    baselineOrder: SharedOrderTraceComparison
+    candidateOrder: SharedOrderTraceComparison
+  }
+  idContentTraceEffects: {
+    baselineOrder: boolean
+    candidateOrder: boolean
+  }
   candidateBaselineOrderConverges: boolean
+  candidateBaselineOrderTraceConverges: boolean
 }
 
 export interface ActorTurnDiagnosticResult {

@@ -52,13 +52,17 @@ function buildDiagnostic() {
       preActorEquivalent: result.comparison.preActorStateEquivalent,
       preludeEquivalent: result.comparison.preludeEquivalent,
       groupMembershipEquivalent: result.comparison.initiativeGroupMembershipEquivalent,
+      groupStructureEquivalent: result.comparison.initiativeGroupStructureEquivalent,
       firstProcessingOrderDivergence: result.comparison.productionOrder,
+      firstSectorPrefixDivergence: result.comparison.sectorPrefix,
       firstSemanticActorBehaviorDivergence: result.comparison.semanticActorBehavior,
       firstTargetingDivergence: result.comparison.targetingDivergence,
       firstReservationDivergence: result.comparison.reservationDivergence,
       firstGroupEndpointStateDivergence: result.comparison.groupEndpoint,
       firstPersistentDivergence: result.comparison.persistentDivergence,
       candidateBaselineOrderConverges: result.counterfactual?.candidateBaselineOrderConverges ?? false,
+      candidateBaselineOrderTraceConverges: result.counterfactual?.candidateBaselineOrderTraceConverges ?? false,
+      idContentTraceEffects: result.counterfactual?.idContentTraceEffects ?? null,
       classification: classify(result.comparison, result.counterfactual),
     }
   })
@@ -69,7 +73,9 @@ function buildDiagnostic() {
       preActorEquivalent: result.comparison.preActorStateEquivalent,
       preludeEquivalent: result.comparison.preludeEquivalent,
       groupMembershipEquivalent: result.comparison.initiativeGroupMembershipEquivalent,
+      groupStructureEquivalent: result.comparison.initiativeGroupStructureEquivalent,
       firstProcessingOrderDivergence: result.comparison.productionOrder,
+      firstSectorPrefixDivergence: result.comparison.sectorPrefix,
       firstSemanticActorBehaviorDivergence: result.comparison.semanticActorBehavior,
       firstTargetingDivergence: result.comparison.targetingDivergence,
       firstReservationDivergence: result.comparison.reservationDivergence,
@@ -112,9 +118,10 @@ function classify(comparison: ActorTurnComparison, counterfactual?: Counterfactu
     return 'MELEE_SECTOR_STATE_DIVERGENCE'
   }
   const behavior = comparison.semanticActorBehavior
-  const converges = counterfactual?.candidateBaselineOrderConverges === true
+  const converges = counterfactual?.candidateBaselineOrderTraceConverges === true
   const fullReservationChain = converges &&
     behavior?.field === 'before.meleeSectors' &&
+    comparison.sectorPrefix !== null &&
     comparison.targetingDivergence !== null &&
     comparison.reservationDivergence !== null &&
     comparison.groupEndpoint !== null &&
@@ -139,12 +146,14 @@ function printHuman(result: ReturnType<typeof buildDiagnostic>): void {
   console.log(`pre-actor: ${comparison.preActorStateEquivalent ? 'SAME' : 'DIFFERENT'}`)
   console.log(`prelude: ${comparison.preludeEquivalent ? 'SAME' : 'DIFFERENT'}`)
   console.log(`first processing order divergence: ${order ? `${order.groupOrdinal}/${order.processingOrdinal} ${order.baselineSemanticActor} -> ${order.candidateSemanticActor}` : 'NONE'}`)
+  console.log(`first sector-prefix divergence: ${comparison.sectorPrefix ? `${comparison.sectorPrefix.groupOrdinal}/${comparison.sectorPrefix.processingOrdinal} ${comparison.sectorPrefix.stage} ${comparison.sectorPrefix.baselineSemanticActor} -> ${comparison.sectorPrefix.candidateSemanticActor}` : 'NONE'}`)
   console.log(`first semantic actor behavior divergence: ${behavior ? `${behavior.semanticActor} ${behavior.field}` : 'NONE'}`)
   console.log(`first targeting divergence: ${comparison.targetingDivergence ? `${comparison.targetingDivergence.semanticActor} ${comparison.targetingDivergence.field}` : 'NONE'}`)
   console.log(`first reservation divergence: ${comparison.reservationDivergence ? `${comparison.reservationDivergence.semanticActor} ${comparison.reservationDivergence.field}` : 'NONE'}`)
   console.log(`first group endpoint divergence: ${comparison.groupEndpoint?.groupOrdinal ?? 'NONE'}`)
   console.log(`first persistent divergence: ${comparison.persistentDivergence?.semanticActor ?? 'NONE'}`)
-  console.log(`counterfactual candidate + baseline order: ${result.counterfactual?.candidateBaselineOrderConverges ? 'CONVERGED' : 'DIVERGED'}`)
+  console.log(`counterfactual candidate + baseline order endpoint: ${result.counterfactual?.candidateBaselineOrderConverges ? 'CONVERGED' : 'DIVERGED'}`)
+  console.log(`counterfactual candidate + baseline order trace: ${result.counterfactual?.candidateBaselineOrderTraceConverges ? 'CONVERGED' : 'DIVERGED'}`)
   console.log(`classification: ${result.classification}`)
   console.log('five-seed repeatability:')
   for (const seed of result.fiveSeedRepeatability) console.log(`  ${seed.seed}: ${seed.classification}`)

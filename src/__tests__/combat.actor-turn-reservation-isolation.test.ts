@@ -61,6 +61,10 @@ describe('combat actor-turn melee reservation isolation', () => {
     expect(result.cells.map(cell => cell.label)).toEqual(['BB', 'BC', 'CB', 'CC'])
     expect(result.cells.every(cell => cell.trace.groups.length === baseline.trace.groups.length)).toBe(true)
     expect(compareSemanticStates(result.cells[0]!.trace.endpoint, baseline.trace.endpoint).equivalent).toBe(true)
+    expect(result.candidateBaselineOrderConverges).toBe(true)
+    expect(result.candidateBaselineOrderTraceConverges).toBe(false)
+    expect(result.traceComparisons.baselineOrder.firstDifference?.field).toBe('group[0].movementRequests')
+    expect(result.idContentTraceEffects.baselineOrder).toBe(true)
   })
 
   it('is deterministic across fresh primary reconstructions', () => {

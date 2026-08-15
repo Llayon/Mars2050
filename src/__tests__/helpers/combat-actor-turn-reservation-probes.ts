@@ -7,18 +7,16 @@ import {
   captureSemanticStateSnapshot,
   compareSemanticEntityIdMappings,
   compareSemanticStates,
-  type FirstSemanticStateDivergence,
 } from './combat-semantic-state-diff'
 import type { OrderingProbeResult } from './combat-ordering-probes'
 import { replayActorTurn, type ActorTurnOrderOverride } from './combat-actor-turn-reservation-execution'
+import { compareSharedOrderTraces } from './combat-actor-turn-reservation-comparison'
+export { compareActorTurnCells } from './combat-actor-turn-reservation-comparison'
 import type {
   ActorTurnCell,
   ActorTurnComparison,
   ActorTurnTrace,
   CounterfactualResult,
-  GroupEndpointDivergence,
-  ProcessingOrderDivergence,
-  SemanticActorBehaviorDivergence,
 } from './combat-actor-turn-reservation-types'
 
 export interface ActorTurnPrepared {
@@ -93,25 +91,6 @@ export function runDefaultActorTurnCell(
   }
 }
 
-export function compareActorTurnCells(baseline: ActorTurnCell, candidate: ActorTurnCell): ActorTurnComparison {
-  const preludeEquivalent = baseline.trace.prelude.length === candidate.trace.prelude.length &&
-    baseline.trace.prelude.every((item, index) => item.label === candidate.trace.prelude[index]?.label &&
-      compareSemanticStates(item.state, candidate.trace.prelude[index]!.state).equivalent)
-  const initiativeGroupMembershipEquivalent = baseline.trace.groups.length === candidate.trace.groups.length &&
-    baseline.trace.groups.every((group, index) => JSON.stringify(group.semanticMembers) === JSON.stringify(candidate.trace.groups[index]?.semanticMembers))
-  return {
-    preActorStateEquivalent: compareSemanticStates(baseline.trace.prelude[0]!.state, candidate.trace.prelude[0]!.state).equivalent,
-    preludeEquivalent,
-    initiativeGroupMembershipEquivalent,
-    productionOrder: firstProcessingOrderDivergence(baseline.trace, candidate.trace),
-    semanticActorBehavior: firstSemanticActorBehaviorDivergence(baseline.trace, candidate.trace),
-    targetingDivergence: firstSemanticActorBehaviorDivergence(baseline.trace, candidate.trace, ['targeting.semanticTarget']),
-    reservationDivergence: firstSemanticActorBehaviorDivergence(baseline.trace, candidate.trace, ['reservation.succeeded', 'reservation.slot', 'reservation.meleeSectors', 'reservation.state']),
-    groupEndpoint: firstGroupEndpointDivergence(baseline.trace, candidate.trace),
-    persistentDivergence: firstPersistentDivergence(baseline.trace.endpoint, candidate.trace.endpoint),
-  }
-}
-
 export function runCounterfactual(
   scenario: CombatBalanceScenario,
   seed: number,
@@ -128,11 +107,16 @@ export function runCounterfactual(
   ]
   const bb = cells[0]!, bc = cells[1]!, cb = cells[2]!, cc = cells[3]!
   const endpointEqual = (left: ActorTurnCell, right: ActorTurnCell) => compareSemanticStates(left.trace.endpoint, right.trace.endpoint).equivalent
+  const baselineOrderTrace = compareSharedOrderTraces(bb.trace, cb.trace)
+  const candidateOrderTrace = compareSharedOrderTraces(bc.trace, cc.trace)
   return {
     cells,
     orderEffects: { baselineIds: !endpointEqual(bb, bc), candidateIds: !endpointEqual(cb, cc) },
     idContentEffects: { baselineOrder: !endpointEqual(bb, cb), candidateOrder: !endpointEqual(bc, cc) },
+    traceComparisons: { baselineOrder: baselineOrderTrace, candidateOrder: candidateOrderTrace },
+    idContentTraceEffects: { baselineOrder: !baselineOrderTrace.equivalent, candidateOrder: !candidateOrderTrace.equivalent },
     candidateBaselineOrderConverges: endpointEqual(bb, cb),
+    candidateBaselineOrderTraceConverges: baselineOrderTrace.equivalent,
   }
 }
 
@@ -146,65 +130,6 @@ function runCounterfactualCell(scenario: CombatBalanceScenario, seed: number, pr
   const groupOrders = orderSource.groups.map(group => group.productionOrder)
   const trace = runTracedActorTurn(source, { groups: groupOrders })
   return { label, ids: probe.transform === 'baseline' ? 'baseline' : 'candidate', order: label.endsWith('B') ? 'baseline' : 'candidate', trace, endpointEquivalentToProduction: false, endpointEquivalentToPr12: false }
-}
-
-function firstProcessingOrderDivergence(baseline: ActorTurnTrace, candidate: ActorTurnTrace): ProcessingOrderDivergence | null {
-  for (let group = 0; group < Math.min(baseline.groups.length, candidate.groups.length); group++) {
-    const left = baseline.groups[group]!.productionOrder
-    const right = candidate.groups[group]!.productionOrder
-    for (let index = 0; index < Math.min(left.length, right.length); index++) {
-      if (left[index] === right[index]) continue
-      const baselineActor = baseline.actors.find(actor => actor.semanticActor === left[index])!
-      const candidateActor = candidate.actors.find(actor => actor.semanticActor === right[index])!
-      return {
-        groupOrdinal: group, speed: baseline.groups[group]!.speed, processingOrdinal: baselineActor.processingOrdinal,
-        baselineSemanticActor: left[index]!, candidateSemanticActor: right[index]!,
-        baselineExternalId: baselineActor.productionExternalId, candidateExternalId: candidateActor.productionExternalId,
-      }
-    }
-  }
-  return null
-}
-
-function firstSemanticActorBehaviorDivergence(baseline: ActorTurnTrace, candidate: ActorTurnTrace, fields?: readonly string[]): SemanticActorBehaviorDivergence | null {
-  const actors = [...new Set(baseline.actors.map(actor => actor.semanticActor))]
-    .map(semanticActor => ({ semanticActor, baseline: baseline.actors.find(actor => actor.semanticActor === semanticActor), candidate: candidate.actors.find(actor => actor.semanticActor === semanticActor) }))
-    .filter(item => item.baseline && item.candidate)
-    .sort((left, right) => Math.min(left.baseline!.processingOrdinal, left.candidate!.processingOrdinal) - Math.min(right.baseline!.processingOrdinal, right.candidate!.processingOrdinal))
-  for (const semanticActor of actors) {
-    const left = semanticActor.baseline!
-    const right = semanticActor.candidate!
-    const pairs: Array<[string, unknown, unknown]> = [
-      ['before.meleeSectors', left.before.meleeSectors, right.before.meleeSectors],
-      ['targeting.semanticTarget', left.targeting.semanticTarget, right.targeting.semanticTarget],
-      ['reservation.succeeded', left.reservation.succeeded, right.reservation.succeeded],
-      ['reservation.slot', left.reservation.slot, right.reservation.slot],
-      ['reservation.meleeSectors', left.reservation.meleeSectors, right.reservation.meleeSectors],
-      ['reservation.state', left.reservation.state, right.reservation.state],
-    ]
-    const difference = pairs.filter(([field]) => !fields || fields.includes(field)).find(([, a, b]) => canonicalSerialize(a) !== canonicalSerialize(b))
-    if (difference) return { semanticActor: semanticActor.semanticActor, baselineOrdinal: left.processingOrdinal, candidateOrdinal: right.processingOrdinal, field: difference[0], baselineValue: difference[1], candidateValue: difference[2], baselineBefore: left.before, candidateBefore: right.before }
-  }
-  return null
-}
-
-function firstGroupEndpointDivergence(baseline: ActorTurnTrace, candidate: ActorTurnTrace): GroupEndpointDivergence | null {
-  for (let index = 0; index < Math.min(baseline.groups.length, candidate.groups.length); index++) {
-    const comparison = compareSemanticStates(baseline.groups[index]!.endpoint, candidate.groups[index]!.endpoint)
-    if (comparison.equivalent) continue
-    const difference = comparison.firstSemanticStateDivergence
-    return difference ? { groupOrdinal: index, speed: baseline.groups[index]!.speed, field: formatDifference(difference), baselineValue: difference.baselineValue, candidateValue: difference.candidateValue } : null
-  }
-  return null
-}
-
-function firstPersistentDivergence(baseline: ReturnType<typeof captureSemanticStateSnapshot>, candidate: ReturnType<typeof captureSemanticStateSnapshot>): ActorTurnComparison['persistentDivergence'] {
-  const difference = compareSemanticStates(baseline, candidate).firstSemanticStateDivergence
-  return difference ? { semanticActor: difference.semanticActor, field: `${difference.component}.${difference.fieldPath}`, baselineValue: difference.baselineValue, candidateValue: difference.candidateValue } : null
-}
-
-function formatDifference(difference: FirstSemanticStateDivergence): string {
-  return `${difference.semanticActor}.${difference.component}.${difference.fieldPath}`
 }
 
 function describeMovementRequests(requests: readonly { kind: string; entityId: number; targetId?: number; targetX?: number; targetY?: number; initiativeIndex: number }[], world: Parameters<typeof captureSemanticStateSnapshot>[0]['world'], probe: OrderingProbeResult): Record<string, unknown>[] {
