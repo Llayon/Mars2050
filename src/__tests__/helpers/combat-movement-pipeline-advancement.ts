@@ -54,3 +54,27 @@ export function advanceToPreBatchCheckpoint(scenario: CombatBalanceScenario, see
   prepared.runtime.runStage('action', context)
   return { ...prepared, actions, context }
 }
+
+export function advanceToPreActorTurnCheckpoint(scenario: CombatBalanceScenario, seed: number, probe: OrderingProbeResult, targetTick: number): PreparedWorld & { context: RuntimePhaseContext } {
+  if (!Number.isInteger(targetTick) || targetTick < 0) throw new Error('TARGET_TICK_UNREACHABLE')
+  const prepared = prepareMovementProbeWorld(scenario, seed, probe)
+  if (targetTick >= prepared.runtime.world.resources.require('clock').maxTicks) throw new Error('TARGET_TICK_UNREACHABLE')
+  const activeGlobals: NonNullable<RuntimePhaseContext['activeGlobals']> = []
+  for (let tick = 0; tick < targetTick; tick++) {
+    const actions: BattleAction[] = []
+    prepared.runtime.world.resources.require('clock').tick = tick
+    prepared.runtime.world.resources.set('actions', actions)
+    const context: RuntimePhaseContext = { tick, actions, rng: prepared.rng, activeGlobals }
+    prepared.runtime.runStage('pre_action', context)
+    if (prepared.runtime.getTerminalOutcome()) throw new Error('TARGET_TICK_UNREACHABLE')
+    prepared.runtime.runStage('action', context)
+    prepared.runtime.runStage('post_action', context)
+  }
+  const actions: BattleAction[] = []
+  prepared.runtime.world.resources.require('clock').tick = targetTick
+  prepared.runtime.world.resources.set('actions', actions)
+  const context: RuntimePhaseContext = { tick: targetTick, actions, rng: prepared.rng, activeGlobals }
+  prepared.runtime.runStage('pre_action', context)
+  if (prepared.runtime.getTerminalOutcome()) throw new Error('TARGET_TICK_UNREACHABLE')
+  return { ...prepared, actions, context }
+}
