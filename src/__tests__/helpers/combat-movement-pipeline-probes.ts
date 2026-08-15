@@ -81,7 +81,7 @@ export function reorderRequests(
   )
 }
 
-function captureStage0(runtime: EcsCombatRuntime, probe: OrderingProbeResult): Stage0Checkpoint {
+export function captureStage0(runtime: EcsCombatRuntime, probe: OrderingProbeResult): Stage0Checkpoint {
   const entities = runtime.world.query(['identity', 'transform', 'vitality', 'combat', 'movement'])
     .map(entityId => ({ entityId, key: semanticId(runtime, entityId, probe) }))
     .sort((left, right) => compareCodeUnit(left.key, right.key))
