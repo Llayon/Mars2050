@@ -11,6 +11,7 @@ import type { MapLocation } from '@/domains/map/map.types'
 import type { ResourceRow } from '@/domains/resource/resource.types'
 import { BattleReplayModal } from '@/components/game/BattleReplayModal'
 import type { AttackResult } from '@/domains/pvp/pvp.types'
+import { MarsMapCanvas } from '@/components/map/MarsMapCanvas'
 
 interface MapScreenProps {
   colonyId: string
@@ -22,6 +23,7 @@ export const MapScreen = memo(function MapScreen({ colonyId, resources, resource
   const { locations, loading, discoverLocation } = useMap()
   const { toast } = useToast()
   const [selected, setSelected] = useState<MapLocation | null>(null)
+  const [viewMode, setViewMode] = useState<'2.5d' | 'grid'>('2.5d')
   const [exploring, setExploring] = useState(false)
   const [replayData, setReplayData] = useState<AttackResult | null>(null)
 
@@ -46,8 +48,35 @@ export const MapScreen = memo(function MapScreen({ colonyId, resources, resource
       </div>
 
       <div className="flex-1 p-3 pb-24 overflow-y-auto">
-        <h2 className="text-lg font-bold text-white mb-2">Карта Марса</h2>
-        <p className="text-xs text-gray-400 mb-3">{locations.length} локаций</p>
+        <div className="flex items-center justify-between mb-2">
+          <div>
+            <h2 className="text-lg font-bold text-white">Карта Марса</h2>
+            <p className="text-xs text-gray-400">{locations.length} локаций</p>
+          </div>
+
+          <div className="flex bg-gray-800/80 p-0.5 rounded-lg border border-gray-700">
+            <button
+              onClick={() => setViewMode('2.5d')}
+              className={`px-3 py-1 rounded text-xs font-semibold transition-all ${
+                viewMode === '2.5d'
+                  ? 'bg-mars-red text-white shadow'
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              2.5D Карта
+            </button>
+            <button
+              onClick={() => setViewMode('grid')}
+              className={`px-3 py-1 rounded text-xs font-semibold transition-all ${
+                viewMode === 'grid'
+                  ? 'bg-mars-red text-white shadow'
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              Сетка
+            </button>
+          </div>
+        </div>
 
         {loading ? (
           <div className="grid grid-cols-8 gap-1.5">
@@ -61,7 +90,16 @@ export const MapScreen = memo(function MapScreen({ colonyId, resources, resource
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-8 gap-1.5">
+            {viewMode === '2.5d' ? (
+              <div className="mb-3">
+                <MarsMapCanvas
+                  locations={locations}
+                  selectedLocation={selected}
+                  onSelectLocation={setSelected}
+                />
+              </div>
+            ) : (
+              <div className="grid grid-cols-8 gap-1.5">
               {locations.map(loc => (
                 <button
                   key={loc.id}
@@ -82,6 +120,7 @@ export const MapScreen = memo(function MapScreen({ colonyId, resources, resource
                 </button>
               ))}
             </div>
+            )}
 
             {selected && (
               <div className="mt-3 glass-panel rounded-xl p-4 animate-float-up">
