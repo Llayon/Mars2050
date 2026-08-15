@@ -11,6 +11,7 @@ import {
 import type { OrderingProbeResult } from './combat-ordering-probes'
 import { replayActorTurn, type ActorTurnOrderOverride } from './combat-actor-turn-reservation-execution'
 import { compareSharedOrderTraces } from './combat-actor-turn-reservation-comparison'
+import { normalizeCommittedActions } from './combat-movement-pipeline-diagnostics'
 export { compareActorTurnCells } from './combat-actor-turn-reservation-comparison'
 import type {
   ActorTurnCell,
@@ -56,7 +57,7 @@ export function runProductionActorTurn(source: ActorTurnPrepared): ProductionAct
   drainV9FollowUps(prepared.runtime.world, prepared.context)
   return {
     endpoint: captureSemanticStateSnapshot(prepared.runtime, source.probe),
-    actions: prepared.actions.map(action => ({ ...action })),
+    actions: normalizeCommittedActions(prepared.actions, source.probe),
     movementRequests: describeMovementRequests(prepared.runtime.world.resources.require('movementRequests'), prepared.runtime.world, source.probe),
   }
 }

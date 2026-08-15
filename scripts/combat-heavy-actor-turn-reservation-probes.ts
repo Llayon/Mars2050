@@ -34,12 +34,14 @@ function runScenario(scenarioId: string, seed: number, includeCounterfactual: bo
   const baseline = runDefaultActorTurnCell(scenario, seed, baselineProbe, 'BP', baselinePr12)
   const candidate = runDefaultActorTurnCell(scenario, seed, candidateProbe, 'CP', candidatePr12)
   const comparison = compareActorTurnCells(baseline, candidate)
-  return {
+  const result: ScenarioRun = {
     baseline,
     candidate,
     comparison,
     ...(includeCounterfactual ? { counterfactual: runCounterfactual(scenario, seed, baselineProbe, candidateProbe, baseline.trace, candidate.trace) } : {}),
   }
+  assertScenarioHarnessCertified(result)
+  return result
 }
 
 function buildDiagnostic() {
@@ -103,6 +105,11 @@ function buildDiagnostic() {
 }
 
 function assertPrimaryGuards(result: ScenarioRun): void {
+  assertScenarioHarnessCertified(result)
+  if (!result.comparison.preActorStateEquivalent) throw new Error('PR12_PRE_ACTOR_CHECKPOINT_REPRODUCTION_FAILED')
+}
+
+function assertScenarioHarnessCertified(result: ScenarioRun): void {
   if (!result.baseline.endpointEquivalentToProduction || !result.candidate.endpointEquivalentToProduction) throw new Error('ACTOR_TURN_HARNESS_EQUIVALENCE_FAILED')
   if (!result.baseline.endpointEquivalentToPr12 || !result.candidate.endpointEquivalentToPr12) throw new Error('PR12_ENDPOINT_REPRODUCTION_FAILED')
   if (!result.comparison.preActorStateEquivalent) throw new Error('PR12_PRE_ACTOR_CHECKPOINT_REPRODUCTION_FAILED')
@@ -118,7 +125,10 @@ function classify(comparison: ActorTurnComparison, counterfactual?: Counterfactu
     return 'MELEE_SECTOR_STATE_DIVERGENCE'
   }
   const behavior = comparison.semanticActorBehavior
-  const converges = counterfactual?.candidateBaselineOrderTraceConverges === true
+  const noFixedOrderIdEffect = counterfactual !== undefined &&
+    !counterfactual.idContentTraceEffects.baselineOrder &&
+    !counterfactual.idContentTraceEffects.candidateOrder
+  const converges = counterfactual?.candidateBaselineOrderTraceConverges === true && noFixedOrderIdEffect
   const fullReservationChain = converges &&
     behavior?.field === 'before.meleeSectors' &&
     comparison.sectorPrefix !== null &&
