@@ -1,15 +1,38 @@
 import { describe, it, expect } from 'vitest'
 import { generateMarsMap, getDefaultMapConfig } from '@/domains/map/map.generator'
+import { DEFAULT_MAP_SEED } from '@/domains/map/map.config'
 
-describe('map.generator', () => {
-  it('generates the configured number of locations', () => {
+describe('map.generator (Deterministic Seeded Generation)', () => {
+  it('uses DEFAULT_MAP_SEED (2050) in default config', () => {
     const config = getDefaultMapConfig()
-    const locations = generateMarsMap(config)
-    expect(locations.length).toBe(config.locationsCount)
+    expect(config.seed).toBe(DEFAULT_MAP_SEED)
+    expect(config.locationsCount).toBe(50)
   })
 
-  it('each location has required fields', () => {
+  it('generates byte-for-byte identical locations for identical seeds', () => {
+    const configA = { width: 20, height: 20, locationsCount: 50, seed: 42 }
+    const configB = { width: 20, height: 20, locationsCount: 50, seed: 42 }
+
+    const locationsA = generateMarsMap(configA)
+    const locationsB = generateMarsMap(configB)
+
+    expect(locationsA).toEqual(locationsB)
+  })
+
+  it('generates different layouts for different seeds', () => {
+    const locationsA = generateMarsMap({ width: 20, height: 20, locationsCount: 30, seed: 100 })
+    const locationsB = generateMarsMap({ width: 20, height: 20, locationsCount: 30, seed: 200 })
+
+    const coordsA = locationsA.map(l => `${l.x},${l.y}`)
+    const coordsB = locationsB.map(l => `${l.x},${l.y}`)
+
+    expect(coordsA).not.toEqual(coordsB)
+  })
+
+  it('each location has required fields and valid difficulty', () => {
     const locations = generateMarsMap(getDefaultMapConfig())
+    expect(locations.length).toBe(50)
+
     for (const loc of locations) {
       expect(loc.name).toBeTypeOf('string')
       expect(loc.name.length).toBeGreaterThan(0)
@@ -27,25 +50,15 @@ describe('map.generator', () => {
       const resources = loc.resources as Record<string, number>
       expect(Object.keys(resources).length).toBeGreaterThan(0)
       for (const [key, value] of Object.entries(resources)) {
-        if (key === '_cleared') continue;
+        if (key === '_cleared') continue
         expect(value, `${loc.name}.${key} should be positive`).toBeGreaterThan(0)
       }
     }
   })
 
-  it('locations have different positions', () => {
+  it('all generated locations have unique positions', () => {
     const locations = generateMarsMap(getDefaultMapConfig())
     const positions = new Set(locations.map(l => `${l.x},${l.y}`))
     expect(positions.size).toBe(locations.length)
-  })
-
-  it('custom config works', () => {
-    const config = { width: 5, height: 5, locationsCount: 3 }
-    const locations = generateMarsMap(config)
-    expect(locations.length).toBe(3)
-    for (const loc of locations) {
-      expect(loc.x).toBeLessThan(5)
-      expect(loc.y).toBeLessThan(5)
-    }
   })
 })

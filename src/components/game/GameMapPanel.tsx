@@ -4,7 +4,8 @@ import { memo, useState, useCallback } from 'react'
 import { useMap, getExplorationCost } from '@/hooks/useMap'
 import { useToast } from '@/components/ui/toast'
 import { RESOURCE_NAMES } from '@/domains/resource/resource.types'
-import { LOCATION_COLORS, LOCATION_LABELS } from '@/domains/map/map.config'
+import { LOCATION_LABELS } from '@/domains/map/map.config'
+import { LOCATION_COLORS } from '@/components/map/map-ui.constants'
 import type { MapLocation } from '@/domains/map/map.types'
 
 interface GameMapPanelProps {

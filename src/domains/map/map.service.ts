@@ -123,19 +123,16 @@ export async function discoverLocation(
     }
   }
 
-  // 5. Determine if it's an alien nest (30% chance for diff > 1, 10% for diff 1)
-  const isNest = Math.random() < (location.difficulty > 1 ? 0.3 : 0.1)
-  const locationResources = location.resources as Record<string, number> || {}
+  // 5. Check if pre-generated location contains an active alien nest
+  const locationResources = (location.resources as Record<string, number>) || {}
+  const isNest = locationResources['_alien_nest'] === 1 && locationResources['_cleared'] !== 1
   const rewards: Record<string, number> = {}
 
-  if (isNest) {
-    locationResources['_alien_nest'] = 1
-    locationResources['_cleared'] = 0
-  } else {
-    // 5. Calculate and grant resource rewards
+  if (!isNest) {
+    // Calculate and grant resource rewards
     for (const [resourceType, multiplier] of Object.entries(locationResources)) {
       if (resourceType.startsWith('_')) continue
-      const reward = Math.round(multiplier * EXPLORATION_BASE_REWARD / 100)
+      const reward = Math.round((multiplier * EXPLORATION_BASE_REWARD) / 100)
       if (reward > 0) {
         const currentAmount = resourceMap[resourceType] || 0
         const capacity = capacityMap[resourceType] ?? currentAmount

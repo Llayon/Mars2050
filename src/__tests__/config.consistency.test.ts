@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
-import { EXPLORATION_COST, EXPLORATION_BASE_REWARD } from '@/domains/map/map.config'
+import { EXPLORATION_COST, EXPLORATION_BASE_REWARD, LOCATION_LABELS } from '@/domains/map/map.config'
 import { RESOURCE_NAMES, RESOURCE_TYPES } from '@/domains/resource/resource.types'
-import { LOCATION_COLORS, LOCATION_LABELS } from '@/domains/map/map.config'
+import { LOCATION_COLORS } from '@/components/map/map-ui.constants'
 
 describe('map.config', () => {
   it('exploration costs exist for levels 1-5', () => {
