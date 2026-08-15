@@ -1,10 +1,16 @@
 /** Map location type keys. */
 export type MapLocationType = 'plains' | 'mountains' | 'canyon' | 'crater' | 'ice_cap'
 
-/** Axial hexagonal coordinate (pointy-top). */
-export interface HexCoord {
-  q: number
-  r: number
+/** Rectangular grid coordinate. */
+export interface GridCoord {
+  x: number
+  y: number
+}
+
+/** Rectangular grid dimensions. */
+export interface GridSize {
+  width: number
+  height: number
 }
 
 /** Difficulty level 1-5. */

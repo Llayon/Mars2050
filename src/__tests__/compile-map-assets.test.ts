@@ -28,8 +28,8 @@ describe('compile-map-assets (Stage 2 End-to-End Compiler Pipeline)', () => {
 
   function writeTestProfile(filePath: string) {
     fs.writeFileSync(filePath, JSON.stringify({
-      version: 1, projection: 'orthographic', hexOrientation: 'pointy',
-      cameraPitch: 60, cameraYaw: 30, orthoScale: 12, tileWorldRadius: 64, pixelsPerWorldUnit: 2,
+      version: 2, projection: 'orthographic',
+      cameraPitch: 60, cameraYaw: 30, orthoScale: 12, cellWorldSize: 128, pixelsPerWorldUnit: 2,
       sunAzimuth: 135, sunElevation: 35, atlasPageSize: 512, padding: 4, extrude: 2, mipmaps: false
     }))
   }
@@ -54,12 +54,11 @@ describe('compile-map-assets (Stage 2 End-to-End Compiler Pipeline)', () => {
     writeTestProfile(profilePath)
 
     const rawManifest: RawAssetManifest = {
-      version: 1,
+      version: 2,
       assets: [{
         id: 'crater-01', layer: 'macro',
         source: { albedo: 'crater.albedo.png', normal: 'crater.normal.png', data: 'crater.data.png' },
-        anchorPx: { x: 100, y: 90 }, footprint: [{ q: 0, r: 0 }],
-        sockets: ['cliff', 'ground', 'ground', 'cliff', 'ground', 'ground'],
+        anchorPx: { x: 100, y: 90 }, footprint: [{ x: 0, y: 0 }],
         overhangPx: { top: 20, right: 10, bottom: 5, left: 10 }
       }]
     }
@@ -78,6 +77,7 @@ describe('compile-map-assets (Stage 2 End-to-End Compiler Pipeline)', () => {
     const parsed = MapAssetManifestSchema.safeParse(JSON.parse(fs.readFileSync(path.join(outputDirA, 'terrain-manifest.json'), 'utf-8')))
     expect(parsed.success).toBe(true)
     if (parsed.success) {
+      expect(parsed.data.version).toBe(2)
       expect(parsed.data.assets['crater-01'].anchor).toEqual({ x: 0.5, y: 0.5 })
     }
   })
@@ -91,7 +91,7 @@ describe('compile-map-assets (Stage 2 End-to-End Compiler Pipeline)', () => {
     writeTestProfile(profilePath)
 
     const rawManifestPath = path.join(rawRendersDir, 'raw_manifest.json')
-    fs.writeFileSync(rawManifestPath, JSON.stringify({ version: 1, assets: [{ id: 'empty-sprite', layer: 'ground', source: { albedo: 'empty.albedo.png' }, anchorPx: { x: 50, y: 50 } }] }))
+    fs.writeFileSync(rawManifestPath, JSON.stringify({ version: 2, assets: [{ id: 'empty-sprite', layer: 'ground', source: { albedo: 'empty.albedo.png' }, anchorPx: { x: 50, y: 50 } }] }))
 
     const result = await compileMapAssets({ inputManifestPath: rawManifestPath, profilePath, outputDir: path.join(tmpDir, 'out') })
     expect(result.success).toBe(false)
@@ -114,7 +114,7 @@ describe('compile-map-assets (Stage 2 End-to-End Compiler Pipeline)', () => {
     writeTestProfile(profilePath)
 
     const rawManifestPath = path.join(rawRendersDir, 'raw_manifest.json')
-    fs.writeFileSync(rawManifestPath, JSON.stringify({ version: 1, assets: [{ id: 'bad-anchor-sprite', layer: 'macro', source: { albedo: 'box.albedo.png' }, anchorPx: { x: 20, y: 20 } }] }))
+    fs.writeFileSync(rawManifestPath, JSON.stringify({ version: 2, assets: [{ id: 'bad-anchor-sprite', layer: 'macro', source: { albedo: 'box.albedo.png' }, anchorPx: { x: 20, y: 20 } }] }))
 
     const result = await compileMapAssets({ inputManifestPath: rawManifestPath, profilePath, outputDir: path.join(tmpDir, 'out') })
     expect(result.success).toBe(false)
@@ -131,7 +131,7 @@ describe('compile-map-assets (Stage 2 End-to-End Compiler Pipeline)', () => {
     writeTestProfile(profilePath)
 
     const rawManifestPath = path.join(rawRendersDir, 'raw_manifest.json')
-    fs.writeFileSync(rawManifestPath, JSON.stringify({ version: 1, assets: [{ id: 'bad-tile', layer: 'ground', source: { albedo: 'tile.albedo.png', normal: 'tile.normal.png' }, anchorPx: { x: 50, y: 50 } }] }))
+    fs.writeFileSync(rawManifestPath, JSON.stringify({ version: 2, assets: [{ id: 'bad-tile', layer: 'ground', source: { albedo: 'tile.albedo.png', normal: 'tile.normal.png' }, anchorPx: { x: 50, y: 50 } }] }))
 
     const result = await compileMapAssets({ inputManifestPath: rawManifestPath, profilePath, outputDir: path.join(tmpDir, 'out') })
     expect(result.success).toBe(false)
@@ -147,7 +147,7 @@ describe('compile-map-assets (Stage 2 End-to-End Compiler Pipeline)', () => {
     writeTestProfile(profilePath)
 
     const rawManifestPath = path.join(rawRendersDir, 'raw_manifest.json')
-    fs.writeFileSync(rawManifestPath, JSON.stringify({ version: 1, assets: [{ id: 'empty-sprite', layer: 'ground', source: { albedo: 'empty.albedo.png' }, anchorPx: { x: 50, y: 50 } }] }))
+    fs.writeFileSync(rawManifestPath, JSON.stringify({ version: 2, assets: [{ id: 'empty-sprite', layer: 'ground', source: { albedo: 'empty.albedo.png' }, anchorPx: { x: 50, y: 50 } }] }))
 
     const result = await compileMapAssets({ inputManifestPath: rawManifestPath, profilePath, outputDir: path.join(tmpDir, 'out'), validateOnly: true })
     expect(result.success).toBe(false)

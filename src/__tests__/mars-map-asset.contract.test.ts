@@ -2,24 +2,21 @@ import { describe, it, expect } from 'vitest'
 import fs from 'fs'
 import path from 'path'
 import {
-  HEX_SOCKET_DIRECTIONS,
   ASSET_RENDER_LAYERS,
   MapRenderProfileSchema,
   VisualAssetFrameSchema,
   MapAssetManifestSchema,
   type MapAssetManifest
 } from '@/components/map/mars-map-asset.types'
-import { HEX_DIRECTION_NAMES } from '@/domains/map/map.hex'
 
-describe('mars-map-asset.contract (Stage 1 Asset Contract & Invariants)', () => {
+describe('mars-map-asset.contract (Stage 2 Square Grid Asset Contract & Invariants)', () => {
   const baseProfile = {
-    version: 1,
+    version: 2 as const,
     projection: 'orthographic' as const,
-    hexOrientation: 'pointy' as const,
     cameraPitch: 60,
     cameraYaw: 30,
     orthoScale: 12,
-    tileWorldRadius: 64,
+    cellWorldSize: 128,
     pixelsPerWorldUnit: 2,
     sunAzimuth: 135,
     sunElevation: 35,
@@ -38,7 +35,7 @@ describe('mars-map-asset.contract (Stage 1 Asset Contract & Invariants)', () => 
     height: 2048
   }
 
-  it('validates checked-in map-render-profile.json against schema', () => {
+  it('validates checked-in map-render-profile.json against Version 2 schema', () => {
     const profilePath = path.join(process.cwd(), 'assets', 'pipeline', 'map-render-profile.json')
     const raw = fs.readFileSync(profilePath, 'utf-8')
     const parsedJson = JSON.parse(raw)
@@ -46,7 +43,8 @@ describe('mars-map-asset.contract (Stage 1 Asset Contract & Invariants)', () => 
     const result = MapRenderProfileSchema.safeParse(parsedJson)
     expect(result.success).toBe(true)
     if (result.success) {
-      expect(result.data.hexOrientation).toBe('pointy')
+      expect(result.data.version).toBe(2)
+      expect(result.data.cellWorldSize).toBe(128)
       expect(result.data.cameraPitch).toBe(60)
       expect(result.data.cameraYaw).toBe(30)
       expect(result.data.atlasPageSize).toBe(2048)
@@ -55,49 +53,23 @@ describe('mars-map-asset.contract (Stage 1 Asset Contract & Invariants)', () => 
     }
   })
 
-  it('shares single source of truth for hex direction names with map.hex', () => {
-    expect(HEX_SOCKET_DIRECTIONS).toBe(HEX_DIRECTION_NAMES)
-    expect(HEX_SOCKET_DIRECTIONS).toEqual(['E', 'NE', 'NW', 'W', 'SW', 'SE'])
-  })
-
   it('defines 5 visual render layers', () => {
     expect(ASSET_RENDER_LAYERS).toEqual(['ground', 'macro', 'scatter', 'infrastructure', 'entity'])
   })
 
-  it('validates a complete VisualAssetFrame with overhang, footprint, and 6 sockets', () => {
+  it('validates a complete VisualAssetFrame with overhang and square footprint', () => {
     const validFrame = {
       id: 'crater-medium-03',
       page: 0,
       frame: { x: 512, y: 256, w: 320, h: 240 },
       anchor: { x: 0.5, y: 0.72 },
       overhang: { top: 80, right: 50, bottom: 20, left: 50 },
-      footprint: [{ q: 0, r: 0 }, { q: 1, r: 0 }],
-      sockets: ['cliff', 'ground', 'ground', 'cliff', 'ground', 'ground'] as [string, string, string, string, string, string],
+      footprint: [{ x: 0, y: 0 }, { x: 1, y: 0 }],
       layer: 'macro' as const
     }
 
     const result = VisualAssetFrameSchema.safeParse(validFrame)
     expect(result.success).toBe(true)
-  })
-
-  it('rejects VisualAssetFrame with invalid socket count (5 or 7)', () => {
-    expect(VisualAssetFrameSchema.safeParse({
-      id: 'crater-5',
-      page: 0,
-      frame: { x: 0, y: 0, w: 100, h: 100 },
-      anchor: { x: 0.5, y: 0.5 },
-      sockets: ['g', 'g', 'g', 'g', 'g'],
-      layer: 'macro'
-    }).success).toBe(false)
-
-    expect(VisualAssetFrameSchema.safeParse({
-      id: 'crater-7',
-      page: 0,
-      frame: { x: 0, y: 0, w: 100, h: 100 },
-      anchor: { x: 0.5, y: 0.5 },
-      sockets: ['g', 'g', 'g', 'g', 'g', 'g', 'g'],
-      layer: 'macro'
-    }).success).toBe(false)
   })
 
   it('rejects duplicate footprint coordinates in frame schema', () => {
@@ -106,7 +78,7 @@ describe('mars-map-asset.contract (Stage 1 Asset Contract & Invariants)', () => 
       page: 0,
       frame: { x: 0, y: 0, w: 100, h: 100 },
       anchor: { x: 0.5, y: 0.5 },
-      footprint: [{ q: 0, r: 0 }, { q: 1, r: 0 }, { q: 0, r: 0 }],
+      footprint: [{ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 0, y: 0 }],
       layer: 'macro'
     })
     expect(result.success).toBe(false)
@@ -125,7 +97,7 @@ describe('mars-map-asset.contract (Stage 1 Asset Contract & Invariants)', () => 
 
   it('rejects manifest with out-of-bounds page reference or frame dimensions', () => {
     const badPageManifest: MapAssetManifest = {
-      version: 1,
+      version: 2,
       profile: baseProfile,
       pages: [basePage],
       assets: {
@@ -141,7 +113,7 @@ describe('mars-map-asset.contract (Stage 1 Asset Contract & Invariants)', () => 
     expect(MapAssetManifestSchema.safeParse(badPageManifest).success).toBe(false)
 
     const overflowFrameManifest: MapAssetManifest = {
-      version: 1,
+      version: 2,
       profile: baseProfile,
       pages: [basePage],
       assets: {
@@ -159,7 +131,7 @@ describe('mars-map-asset.contract (Stage 1 Asset Contract & Invariants)', () => 
 
   it('rejects manifest with duplicate page IDs or mismatched map key', () => {
     const dupPageManifest: MapAssetManifest = {
-      version: 1,
+      version: 2,
       profile: baseProfile,
       pages: [basePage, { ...basePage }], // Duplicate id 'terrain-0'
       assets: {}
@@ -167,7 +139,7 @@ describe('mars-map-asset.contract (Stage 1 Asset Contract & Invariants)', () => 
     expect(MapAssetManifestSchema.safeParse(dupPageManifest).success).toBe(false)
 
     const keyMismatchManifest: MapAssetManifest = {
-      version: 1,
+      version: 2,
       profile: baseProfile,
       pages: [basePage],
       assets: {
@@ -183,9 +155,9 @@ describe('mars-map-asset.contract (Stage 1 Asset Contract & Invariants)', () => 
     expect(MapAssetManifestSchema.safeParse(keyMismatchManifest).success).toBe(false)
   })
 
-  it('validates a complete multi-page MapAssetManifest', () => {
+  it('validates a complete multi-page MapAssetManifest with Version 2', () => {
     const manifest: MapAssetManifest = {
-      version: 1,
+      version: 2,
       profile: baseProfile,
       pages: [
         basePage,

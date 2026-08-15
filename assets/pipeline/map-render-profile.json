@@ -1,11 +1,10 @@
 {
-  "version": 1,
+  "version": 2,
   "projection": "orthographic",
-  "hexOrientation": "pointy",
   "cameraPitch": 60,
   "cameraYaw": 30,
   "orthoScale": 12,
-  "tileWorldRadius": 64,
+  "cellWorldSize": 128,
   "pixelsPerWorldUnit": 2,
   "sunAzimuth": 135,
   "sunElevation": 35,

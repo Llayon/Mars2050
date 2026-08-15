@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "assets": [
     {
       "id": "regolith_plain_01",
@@ -15,17 +15,9 @@
       },
       "footprint": [
         {
-          "q": 0,
-          "r": 0
+          "x": 0,
+          "y": 0
         }
-      ],
-      "sockets": [
-        "ground",
-        "ground",
-        "ground",
-        "ground",
-        "ground",
-        "ground"
       ]
     },
     {
@@ -42,17 +34,9 @@
       },
       "footprint": [
         {
-          "q": 0,
-          "r": 0
+          "x": 0,
+          "y": 0
         }
-      ],
-      "sockets": [
-        "cliff",
-        "ground",
-        "ground",
-        "cliff",
-        "ground",
-        "ground"
       ],
       "overhangPx": {
         "top": 15,
@@ -75,17 +59,9 @@
       },
       "footprint": [
         {
-          "q": 0,
-          "r": 0
+          "x": 0,
+          "y": 0
         }
-      ],
-      "sockets": [
-        "cliff",
-        "cliff",
-        "ground",
-        "ground",
-        "ground",
-        "cliff"
       ]
     },
     {

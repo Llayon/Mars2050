@@ -139,7 +139,7 @@ async function generateSampleRawAssets() {
   })
 
   const rawManifest: RawAssetManifest = {
-    version: 1,
+    version: 2,
     assets: [
       {
         id: 'regolith_plain_01',
@@ -150,8 +150,7 @@ async function generateSampleRawAssets() {
           data: 'regolith_plain_01.data.png'
         },
         anchorPx: { x: 128, y: 128 },
-        footprint: [{ q: 0, r: 0 }],
-        sockets: ['ground', 'ground', 'ground', 'ground', 'ground', 'ground']
+        footprint: [{ x: 0, y: 0 }]
       },
       {
         id: 'crater_medium_01',
@@ -162,8 +161,7 @@ async function generateSampleRawAssets() {
           data: 'crater_medium_01.data.png'
         },
         anchorPx: { x: 128, y: 128 },
-        footprint: [{ q: 0, r: 0 }],
-        sockets: ['cliff', 'ground', 'ground', 'cliff', 'ground', 'ground'],
+        footprint: [{ x: 0, y: 0 }],
         overhangPx: { top: 15, right: 10, bottom: 5, left: 10 }
       },
       {
@@ -175,8 +173,7 @@ async function generateSampleRawAssets() {
           data: 'cliff_ridge_01.data.png'
         },
         anchorPx: { x: 128, y: 130 },
-        footprint: [{ q: 0, r: 0 }],
-        sockets: ['cliff', 'cliff', 'ground', 'ground', 'ground', 'cliff']
+        footprint: [{ x: 0, y: 0 }]
       },
       {
         id: 'rock_scatter_01',

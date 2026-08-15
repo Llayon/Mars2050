@@ -19,18 +19,14 @@ export const RawAssetEntrySchema = z.object({
     x: z.number().nonnegative(),
     y: z.number().nonnegative()
   }),
-  footprint: z.array(z.object({ q: z.number().int(), r: z.number().int() })).optional(),
-  sockets: z.tuple([
-    z.string().min(1), z.string().min(1), z.string().min(1),
-    z.string().min(1), z.string().min(1), z.string().min(1)
-  ]).optional(),
+  footprint: z.array(z.object({ x: z.number().int(), y: z.number().int() })).optional(),
   overhangPx: VisualAssetOverhangSchema.optional()
 })
 export type RawAssetEntry = z.infer<typeof RawAssetEntrySchema>
 
 /** Input raw manifest consumed by compiler (authoritative profile is loaded separately). */
 export const RawAssetManifestSchema = z.object({
-  version: z.number().int().positive(),
+  version: z.literal(2),
   assets: z.array(RawAssetEntrySchema).min(1)
 }).superRefine((manifest, ctx) => {
   const ids = new Set<string>()

@@ -1,13 +1,12 @@
 {
-  "version": 1,
+  "version": 2,
   "profile": {
-    "version": 1,
+    "version": 2,
     "projection": "orthographic",
-    "hexOrientation": "pointy",
     "cameraPitch": 60,
     "cameraYaw": 30,
     "orthoScale": 12,
-    "tileWorldRadius": 64,
+    "cellWorldSize": 128,
     "pixelsPerWorldUnit": 2,
     "sunAzimuth": 135,
     "sunElevation": 35,
@@ -42,17 +41,9 @@
       },
       "footprint": [
         {
-          "q": 0,
-          "r": 0
+          "x": 0,
+          "y": 0
         }
-      ],
-      "sockets": [
-        "ground",
-        "ground",
-        "ground",
-        "ground",
-        "ground",
-        "ground"
       ],
       "layer": "ground"
     },
@@ -77,17 +68,9 @@
       },
       "footprint": [
         {
-          "q": 0,
-          "r": 0
+          "x": 0,
+          "y": 0
         }
-      ],
-      "sockets": [
-        "cliff",
-        "ground",
-        "ground",
-        "cliff",
-        "ground",
-        "ground"
       ],
       "layer": "macro"
     },
@@ -106,17 +89,9 @@
       },
       "footprint": [
         {
-          "q": 0,
-          "r": 0
+          "x": 0,
+          "y": 0
         }
-      ],
-      "sockets": [
-        "cliff",
-        "cliff",
-        "ground",
-        "ground",
-        "ground",
-        "cliff"
       ],
       "layer": "macro"
     },

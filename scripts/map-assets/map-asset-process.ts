@@ -11,7 +11,6 @@ export interface ProcessedAsset {
   anchor: { x: number; y: number }
   overhang?: VisualAssetFrame['overhang']
   footprint?: VisualAssetFrame['footprint']
-  sockets?: VisualAssetFrame['sockets']
   albedoExtruded: Buffer
   normalExtruded: Buffer
   dataExtruded: Buffer
@@ -118,7 +117,6 @@ export async function processRawAssets(
       },
       overhang: item.raw.overhangPx,
       footprint: item.raw.footprint,
-      sockets: item.raw.sockets,
       albedoExtruded: albedoExt.buffer,
       normalExtruded: normalExt.buffer,
       dataExtruded: dataExt.buffer

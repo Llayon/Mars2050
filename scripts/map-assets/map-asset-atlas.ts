@@ -82,7 +82,6 @@ export async function buildAtlasAndManifest(options: BuildAtlasOptions): Promise
         anchor: asset.anchor,
         overhang: asset.overhang,
         footprint: asset.footprint,
-        sockets: asset.sockets,
         layer: asset.layer
       }
     }
@@ -143,7 +142,7 @@ export async function buildAtlasAndManifest(options: BuildAtlasOptions): Promise
   }
 
   const finalManifest: MapAssetManifest = {
-    version: 1,
+    version: 2,
     profile,
     pages: pagesMetadata,
     assets: compiledAssets
