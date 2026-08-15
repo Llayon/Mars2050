@@ -48,10 +48,6 @@ export async function compileMapAssets(options: CompileMapAssetsOptions): Promis
 
   const { profile, validatedAssets } = inputResult
 
-  if (validateOnly) {
-    return { success: true, assetsCount: validatedAssets.length }
-  }
-
   // Step 2: Synchronous Alpha Trim, Anchor Verification, and Edge Extrusion
   const processResult = await processRawAssets(validatedAssets, profile.extrude)
   if (!processResult.success || !processResult.processedAssets) {
@@ -60,6 +56,10 @@ export async function compileMapAssets(options: CompileMapAssetsOptions): Promis
       errors: processResult.errors,
       assetsCount: validatedAssets.length
     }
+  }
+
+  if (validateOnly) {
+    return { success: true, assetsCount: processResult.processedAssets.length }
   }
 
   // Step 3: Deterministic Bin Packing & Multi-Channel Atlas Page Compositing
