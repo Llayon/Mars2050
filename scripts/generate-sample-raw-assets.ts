@@ -140,22 +140,6 @@ async function generateSampleRawAssets() {
 
   const rawManifest: RawAssetManifest = {
     version: 1,
-    profile: {
-      version: 1,
-      projection: 'orthographic',
-      hexOrientation: 'pointy',
-      cameraPitch: 60,
-      cameraYaw: 30,
-      orthoScale: 12,
-      tileWorldRadius: 64,
-      pixelsPerWorldUnit: 2,
-      sunAzimuth: 135,
-      sunElevation: 35,
-      atlasPageSize: 2048,
-      padding: 4,
-      extrude: 2,
-      mipmaps: false
-    },
     assets: [
       {
         id: 'regolith_plain_01',

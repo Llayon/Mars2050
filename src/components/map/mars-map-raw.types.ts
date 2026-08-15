@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { ASSET_RENDER_LAYERS, MapRenderProfileSchema, VisualAssetOverhangSchema } from './mars-map-asset.types'
+import { ASSET_RENDER_LAYERS, VisualAssetOverhangSchema } from './mars-map-asset.types'
 
 /** Source companion texture files for a raw un-trimmed asset. */
 export const RawAssetSourceSchema = z.object({
@@ -28,10 +28,9 @@ export const RawAssetEntrySchema = z.object({
 })
 export type RawAssetEntry = z.infer<typeof RawAssetEntrySchema>
 
-/** Input manifest consumed by compiler (scripts/compile-map-assets.ts). */
+/** Input raw manifest consumed by compiler (authoritative profile is loaded separately). */
 export const RawAssetManifestSchema = z.object({
   version: z.number().int().positive(),
-  profile: MapRenderProfileSchema,
   assets: z.array(RawAssetEntrySchema).min(1)
 }).superRefine((manifest, ctx) => {
   const ids = new Set<string>()

@@ -31,8 +31,9 @@ interface FreeRect {
 
 /**
  * Computes bounding box of non-transparent pixels (alpha > 0) from an RGBA image buffer.
+ * Returns null if the image is completely transparent.
  */
-export async function computeAlphaTrim(imageBuffer: Buffer): Promise<BoundingBox> {
+export async function computeAlphaTrim(imageBuffer: Buffer): Promise<BoundingBox | null> {
   const { data, info } = await sharp(imageBuffer).raw().toBuffer({ resolveWithObject: true })
   const { width, height, channels } = info
 
@@ -59,8 +60,7 @@ export async function computeAlphaTrim(imageBuffer: Buffer): Promise<BoundingBox
   }
 
   if (maxX < minX || maxY < minY) {
-    // Completely empty transparent image
-    return { left: 0, top: 0, width: 1, height: 1 }
+    return null // Fully transparent image
   }
 
   return {
@@ -153,7 +153,6 @@ export function packRectangles(
     const nextFree: FreeRect[] = []
 
     for (const r of freeRects) {
-      // Check intersection
       if (
         used.x >= r.x + r.width ||
         used.x + used.width <= r.x ||
@@ -164,7 +163,6 @@ export function packRectangles(
         continue
       }
 
-      // Split in up to 4 sub-rectangles
       if (used.x > r.x && used.x < r.x + r.width) {
         nextFree.push({ x: r.x, y: r.y, width: used.x - r.x, height: r.height })
       }
@@ -179,7 +177,6 @@ export function packRectangles(
       }
     }
 
-    // Prune contained rects
     return nextFree.filter((a, i) => !nextFree.some((b, j) => i !== j && b.x <= a.x && b.y <= a.y && b.x + b.width >= a.x + a.width && b.y + b.height >= a.y + a.height))
   }
 
@@ -211,7 +208,6 @@ export function packRectangles(
     }
 
     if (!placed) {
-      // Allocate new page
       const newPageIdx = pages.length
       const initialFree: FreeRect[] = [{ x: 0, y: 0, width: pageSize, height: pageSize }]
       pages.push(splitFreeRects(initialFree, { x: 0, y: 0, width: totalSlotW, height: totalSlotH }))
@@ -226,5 +222,6 @@ export function packRectangles(
     }
   }
 
-  return results
+  // Sort results by ID for deterministic output
+  return results.sort((a, b) => a.id.localeCompare(b.id))
 }
