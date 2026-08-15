@@ -52,7 +52,7 @@ next-env.d.ts
 temp_*.txt
 
 # local agent / QA scratch
-/.tmp/
+/.tmp*/
 /check-db.ts
 /pixellab-*.png
 /Sci-fi_*.png

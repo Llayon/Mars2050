@@ -25,7 +25,8 @@ describe('mars-map-asset.contract (Stage 1 Asset Contract & Invariants)', () => 
     sunElevation: 35,
     atlasPageSize: 2048,
     padding: 4,
-    extrude: 2
+    extrude: 2,
+    mipmaps: false
   }
 
   const basePage = {

@@ -16,6 +16,8 @@
     "combat:qa:artifacts": "tsx scripts/combat-qa-artifacts.ts",
     "replay:visuals": "tsx scripts/check-replay-visual-assets.ts",
     "prebuild": "tsx scripts/check-limits.ts",
+    "map:assets:validate": "tsx scripts/compile-map-assets.ts --validate",
+    "map:assets:compile": "tsx scripts/compile-map-assets.ts --compile",
     "generate:types": "tsx scripts/generate-types.ts",
     "scaffold": "tsx scripts/scaffold.ts",
     "test": "vitest run",

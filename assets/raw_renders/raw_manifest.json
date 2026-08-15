@@ -1,0 +1,121 @@
+{
+  "version": 1,
+  "profile": {
+    "version": 1,
+    "projection": "orthographic",
+    "hexOrientation": "pointy",
+    "cameraPitch": 60,
+    "cameraYaw": 30,
+    "orthoScale": 12,
+    "tileWorldRadius": 64,
+    "pixelsPerWorldUnit": 2,
+    "sunAzimuth": 135,
+    "sunElevation": 35,
+    "atlasPageSize": 2048,
+    "padding": 4,
+    "extrude": 2,
+    "mipmaps": false
+  },
+  "assets": [
+    {
+      "id": "regolith_plain_01",
+      "layer": "ground",
+      "source": {
+        "albedo": "regolith_plain_01.albedo.png",
+        "normal": "regolith_plain_01.normal.png",
+        "data": "regolith_plain_01.data.png"
+      },
+      "anchorPx": {
+        "x": 128,
+        "y": 128
+      },
+      "footprint": [
+        {
+          "q": 0,
+          "r": 0
+        }
+      ],
+      "sockets": [
+        "ground",
+        "ground",
+        "ground",
+        "ground",
+        "ground",
+        "ground"
+      ]
+    },
+    {
+      "id": "crater_medium_01",
+      "layer": "macro",
+      "source": {
+        "albedo": "crater_medium_01.albedo.png",
+        "normal": "crater_medium_01.normal.png",
+        "data": "crater_medium_01.data.png"
+      },
+      "anchorPx": {
+        "x": 128,
+        "y": 128
+      },
+      "footprint": [
+        {
+          "q": 0,
+          "r": 0
+        }
+      ],
+      "sockets": [
+        "cliff",
+        "ground",
+        "ground",
+        "cliff",
+        "ground",
+        "ground"
+      ],
+      "overhangPx": {
+        "top": 15,
+        "right": 10,
+        "bottom": 5,
+        "left": 10
+      }
+    },
+    {
+      "id": "cliff_ridge_01",
+      "layer": "macro",
+      "source": {
+        "albedo": "cliff_ridge_01.albedo.png",
+        "normal": "cliff_ridge_01.normal.png",
+        "data": "cliff_ridge_01.data.png"
+      },
+      "anchorPx": {
+        "x": 128,
+        "y": 130
+      },
+      "footprint": [
+        {
+          "q": 0,
+          "r": 0
+        }
+      ],
+      "sockets": [
+        "cliff",
+        "cliff",
+        "ground",
+        "ground",
+        "ground",
+        "cliff"
+      ]
+    },
+    {
+      "id": "rock_scatter_01",
+      "layer": "scatter",
+      "source": {
+        "albedo": "rock_scatter_01.albedo.png",
+        "normal": "rock_scatter_01.normal.png",
+        "data": "rock_scatter_01.data.png"
+      },
+      "anchorPx": {
+        "x": 64,
+        "y": 64
+      }
+    }
+  ]
+}

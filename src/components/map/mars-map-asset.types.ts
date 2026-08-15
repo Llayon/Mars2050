@@ -10,19 +10,15 @@ export const MapRenderProfileSchema = z.object({
   version: z.number().int().positive(),
   projection: z.literal('orthographic'),
   hexOrientation: z.literal('pointy'),
-  cameraPitch: z.number(),
-  cameraYaw: z.number(),
-  orthoScale: z.number().positive(),
-  tileWorldRadius: z.number().positive(),
-  pixelsPerWorldUnit: z.number().positive(),
-  sunAzimuth: z.number(),
-  sunElevation: z.number(),
-  atlasPageSize: z.number().int().positive(),
-  padding: z.number().int().nonnegative(),
-  extrude: z.number().int().nonnegative()
+  cameraPitch: z.number(), cameraYaw: z.number(), orthoScale: z.number().positive(),
+  tileWorldRadius: z.number().positive(), pixelsPerWorldUnit: z.number().positive(),
+  sunAzimuth: z.number(), sunElevation: z.number(), atlasPageSize: z.number().int().positive(),
+  padding: z.number().int().nonnegative(), extrude: z.number().int().nonnegative(),
+  mipmaps: z.boolean().default(false)
 })
 export type MapRenderProfile = z.infer<typeof MapRenderProfileSchema>
 
+/** Pixel extension outside logical footprint bounds at reference render scale (pixelsPerWorldUnit * tileWorldRadius). */
 export const VisualAssetOverhangSchema = z.object({
   top: z.number().nonnegative(), right: z.number().nonnegative(),
   bottom: z.number().nonnegative(), left: z.number().nonnegative()
@@ -33,6 +29,7 @@ export const VisualAssetFrameSchema = z.object({
   id: z.string().min(1),
   page: z.number().int().nonnegative(),
   frame: z.object({ x: z.number().int().nonnegative(), y: z.number().int().nonnegative(), w: z.number().int().positive(), h: z.number().int().positive() }),
+  /** Normalized [0..1] pivot relative to FINAL TRIMMED sprite frame. (0,0)=top-left, (1,1)=bottom-right. */
   anchor: z.object({ x: z.number().min(0).max(1), y: z.number().min(0).max(1) }),
   overhang: VisualAssetOverhangSchema.optional(),
   footprint: z.array(z.object({ q: z.number().int(), r: z.number().int() })).optional(),
@@ -53,8 +50,8 @@ export type VisualAssetFrame = z.infer<typeof VisualAssetFrameSchema>
 export const MapAssetPageSchema = z.object({
   id: z.string().min(1),
   albedo: z.string().min(1),
-  normal: z.string().min(1),
-  data: z.string().min(1),
+  normal: z.string().min(1), // RGBA lossless PNG
+  data: z.string().min(1),   // RGBA lossless PNG: R=Height, G=AO, B=Emissive
   width: z.number().int().positive(),
   height: z.number().int().positive()
 })

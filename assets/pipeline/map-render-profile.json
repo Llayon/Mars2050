@@ -11,5 +11,6 @@
   "sunElevation": 35,
   "atlasPageSize": 2048,
   "padding": 4,
-  "extrude": 2
+  "extrude": 2,
+  "mipmaps": false
 }

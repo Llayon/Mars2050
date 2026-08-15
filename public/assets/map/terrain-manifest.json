@@ -1,0 +1,139 @@
+{
+  "version": 1,
+  "profile": {
+    "version": 1,
+    "projection": "orthographic",
+    "hexOrientation": "pointy",
+    "cameraPitch": 60,
+    "cameraYaw": 30,
+    "orthoScale": 12,
+    "tileWorldRadius": 64,
+    "pixelsPerWorldUnit": 2,
+    "sunAzimuth": 135,
+    "sunElevation": 35,
+    "atlasPageSize": 2048,
+    "padding": 4,
+    "extrude": 2,
+    "mipmaps": false
+  },
+  "pages": [
+    {
+      "id": "terrain-0",
+      "albedo": "/assets/map/terrain-albedo-0.webp",
+      "normal": "/assets/map/terrain-normal-0.png",
+      "data": "/assets/map/terrain-data-0.png",
+      "width": 2048,
+      "height": 2048
+    }
+  ],
+  "assets": {
+    "regolith_plain_01": {
+      "id": "regolith_plain_01",
+      "page": 0,
+      "frame": {
+        "x": 2,
+        "y": 2,
+        "w": 199,
+        "h": 159
+      },
+      "anchor": {
+        "x": 0.4975,
+        "y": 0.4969
+      },
+      "footprint": [
+        {
+          "q": 0,
+          "r": 0
+        }
+      ],
+      "sockets": [
+        "ground",
+        "ground",
+        "ground",
+        "ground",
+        "ground",
+        "ground"
+      ],
+      "layer": "ground"
+    },
+    "crater_medium_01": {
+      "id": "crater_medium_01",
+      "page": 0,
+      "frame": {
+        "x": 209,
+        "y": 2,
+        "w": 181,
+        "h": 141
+      },
+      "anchor": {
+        "x": 0.4972,
+        "y": 0.4965
+      },
+      "overhang": {
+        "top": 15,
+        "right": 10,
+        "bottom": 5,
+        "left": 10
+      },
+      "footprint": [
+        {
+          "q": 0,
+          "r": 0
+        }
+      ],
+      "sockets": [
+        "cliff",
+        "ground",
+        "ground",
+        "cliff",
+        "ground",
+        "ground"
+      ],
+      "layer": "macro"
+    },
+    "cliff_ridge_01": {
+      "id": "cliff_ridge_01",
+      "page": 0,
+      "frame": {
+        "x": 398,
+        "y": 2,
+        "w": 221,
+        "h": 139
+      },
+      "anchor": {
+        "x": 0.4977,
+        "y": 0.4964
+      },
+      "footprint": [
+        {
+          "q": 0,
+          "r": 0
+        }
+      ],
+      "sockets": [
+        "cliff",
+        "cliff",
+        "ground",
+        "ground",
+        "ground",
+        "cliff"
+      ],
+      "layer": "macro"
+    },
+    "rock_scatter_01": {
+      "id": "rock_scatter_01",
+      "page": 0,
+      "frame": {
+        "x": 627,
+        "y": 2,
+        "w": 81,
+        "h": 61
+      },
+      "anchor": {
+        "x": 0.4938,
+        "y": 0.4918
+      },
+      "layer": "scatter"
+    }
+  }
+}
