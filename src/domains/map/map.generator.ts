@@ -1,4 +1,4 @@
-import type { MapLocationType, MapLocation } from './map.types'
+import type { MapLocationType, MapLocation, GeneratedMapLocation } from './map.types'
 import { DEFAULT_MAP_SEED } from './map.config'
 
 /** Configuration options for generating a Mars map grid. */
@@ -46,11 +46,11 @@ function createMulberry32(seed: number): () => number {
 /**
  * Generate a deterministic Mars map with locations from a seed.
  * @param config - Map configuration (width, height, location count, seed)
- * @returns Array of map locations without DB IDs
+ * @returns Array of procedurally generated locations (pure world state without persistence metadata)
  */
-export function generateMarsMap(config: MapConfig): Omit<MapLocation, 'id'>[] {
+export function generateMarsMap(config: MapConfig): GeneratedMapLocation[] {
   const rand = createMulberry32(config.seed)
-  const locations: Omit<MapLocation, 'id'>[] = []
+  const locations: GeneratedMapLocation[] = []
   const usedPositions = new Set<string>()
   const maxPossible = config.width * config.height
   const targetCount = Math.min(config.locationsCount, maxPossible)
@@ -88,8 +88,7 @@ export function generateMarsMap(config: MapConfig): Omit<MapLocation, 'id'>[] {
       y,
       difficulty,
       resources,
-      is_discovered: false,
-      created_at: new Date(1735689600000).toISOString()
+      is_discovered: false
     })
   }
 

@@ -24,6 +24,9 @@ export interface MapLocation {
   created_at: string
 }
 
+/** Location payload generated deterministically by procedural generator (before persistence). */
+export type GeneratedMapLocation = Omit<MapLocation, 'id' | 'created_at'>
+
 /** DTO for discovering a location. */
 export interface DiscoverLocationDTO {
   locationId: string

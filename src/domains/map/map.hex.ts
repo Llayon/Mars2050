@@ -1,8 +1,22 @@
 import type { HexCoord, MapLocation } from './map.types'
 
 /**
- * Canonical 6 axial directions for pointy-top hexagons:
+ * Canonical 6 axial direction names for pointy-top hexagons.
  * Order: E -> NE -> NW -> W -> SW -> SE
+ */
+export const HEX_DIRECTION_NAMES = [
+  'E',
+  'NE',
+  'NW',
+  'W',
+  'SW',
+  'SE'
+] as const
+export type HexDirection = typeof HEX_DIRECTION_NAMES[number]
+
+/**
+ * Canonical 6 axial direction vectors for pointy-top hexagons:
+ * Order matches HEX_DIRECTION_NAMES: E -> NE -> NW -> W -> SW -> SE
  */
 export const HEX_DIRECTIONS: readonly HexCoord[] = [
   { q: 1, r: 0 },   // E

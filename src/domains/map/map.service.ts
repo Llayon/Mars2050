@@ -23,7 +23,12 @@ export async function getMapLocations(): Promise<MapLocation[]> {
 
   if (!data || data.length === 0) {
     const config = getDefaultMapConfig()
-    const locations = generateMarsMap(config)
+    const generated = generateMarsMap(config)
+    const createdAt = new Date().toISOString()
+    const locations = generated.map(loc => ({
+      ...loc,
+      created_at: createdAt
+    }))
 
     const { error: insertError } = await supabase
       .from('map_locations')

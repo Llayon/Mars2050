@@ -9,8 +9,34 @@ import {
   MapAssetManifestSchema,
   type MapAssetManifest
 } from '@/components/map/mars-map-asset.types'
+import { HEX_DIRECTION_NAMES } from '@/domains/map/map.hex'
 
-describe('mars-map-asset.contract (Stage 1 Asset Contract)', () => {
+describe('mars-map-asset.contract (Stage 1 Asset Contract & Invariants)', () => {
+  const baseProfile = {
+    version: 1,
+    projection: 'orthographic' as const,
+    hexOrientation: 'pointy' as const,
+    cameraPitch: 60,
+    cameraYaw: 30,
+    orthoScale: 12,
+    tileWorldRadius: 64,
+    pixelsPerWorldUnit: 2,
+    sunAzimuth: 135,
+    sunElevation: 35,
+    atlasPageSize: 2048,
+    padding: 4,
+    extrude: 2
+  }
+
+  const basePage = {
+    id: 'terrain-0',
+    albedo: '/assets/map/terrain-albedo-0.webp',
+    normal: '/assets/map/terrain-normal-0.png',
+    data: '/assets/map/terrain-data-0.png',
+    width: 2048,
+    height: 2048
+  }
+
   it('validates checked-in map-render-profile.json against schema', () => {
     const profilePath = path.join(process.cwd(), 'assets', 'pipeline', 'map-render-profile.json')
     const raw = fs.readFileSync(profilePath, 'utf-8')
@@ -28,9 +54,9 @@ describe('mars-map-asset.contract (Stage 1 Asset Contract)', () => {
     }
   })
 
-  it('maintains canonical 6 socket directions in E -> NE -> NW -> W -> SW -> SE order', () => {
+  it('shares single source of truth for hex direction names with map.hex', () => {
+    expect(HEX_SOCKET_DIRECTIONS).toBe(HEX_DIRECTION_NAMES)
     expect(HEX_SOCKET_DIRECTIONS).toEqual(['E', 'NE', 'NW', 'W', 'SW', 'SE'])
-    expect(HEX_SOCKET_DIRECTIONS.length).toBe(6)
   })
 
   it('defines 5 visual render layers', () => {
@@ -53,62 +79,120 @@ describe('mars-map-asset.contract (Stage 1 Asset Contract)', () => {
     expect(result.success).toBe(true)
   })
 
-  it('rejects VisualAssetFrame with invalid socket count', () => {
-    const invalidFrame = {
-      id: 'crater-invalid',
+  it('rejects VisualAssetFrame with invalid socket count (5 or 7)', () => {
+    expect(VisualAssetFrameSchema.safeParse({
+      id: 'crater-5',
       page: 0,
       frame: { x: 0, y: 0, w: 100, h: 100 },
       anchor: { x: 0.5, y: 0.5 },
-      sockets: ['ground', 'ground', 'ground'], // Only 3 instead of 6
+      sockets: ['g', 'g', 'g', 'g', 'g'],
       layer: 'macro'
-    }
+    }).success).toBe(false)
 
-    const result = VisualAssetFrameSchema.safeParse(invalidFrame)
+    expect(VisualAssetFrameSchema.safeParse({
+      id: 'crater-7',
+      page: 0,
+      frame: { x: 0, y: 0, w: 100, h: 100 },
+      anchor: { x: 0.5, y: 0.5 },
+      sockets: ['g', 'g', 'g', 'g', 'g', 'g', 'g'],
+      layer: 'macro'
+    }).success).toBe(false)
+  })
+
+  it('rejects duplicate footprint coordinates in frame schema', () => {
+    const result = VisualAssetFrameSchema.safeParse({
+      id: 'canyon-dup',
+      page: 0,
+      frame: { x: 0, y: 0, w: 100, h: 100 },
+      anchor: { x: 0.5, y: 0.5 },
+      footprint: [{ q: 0, r: 0 }, { q: 1, r: 0 }, { q: 0, r: 0 }],
+      layer: 'macro'
+    })
     expect(result.success).toBe(false)
   })
 
-  it('rejects VisualAssetFrame with invalid anchor or dimensions', () => {
+  it('rejects negative overhang coordinates', () => {
     expect(VisualAssetFrameSchema.safeParse({
-      id: 'bad-anchor',
+      id: 'crater-neg-overhang',
       page: 0,
       frame: { x: 0, y: 0, w: 100, h: 100 },
-      anchor: { x: 1.5, y: 0.5 }, // > 1
-      layer: 'ground'
-    }).success).toBe(false)
-
-    expect(VisualAssetFrameSchema.safeParse({
-      id: 'bad-dim',
-      page: 0,
-      frame: { x: 0, y: 0, w: 0, h: 100 }, // w <= 0
       anchor: { x: 0.5, y: 0.5 },
-      layer: 'ground'
+      overhang: { top: -10, right: 0, bottom: 0, left: 0 },
+      layer: 'macro'
     }).success).toBe(false)
+  })
+
+  it('rejects manifest with out-of-bounds page reference or frame dimensions', () => {
+    const badPageManifest: MapAssetManifest = {
+      version: 1,
+      profile: baseProfile,
+      pages: [basePage],
+      assets: {
+        'crater-out': {
+          id: 'crater-out',
+          page: 1, // Only page 0 exists
+          frame: { x: 0, y: 0, w: 100, h: 100 },
+          anchor: { x: 0.5, y: 0.5 },
+          layer: 'macro'
+        }
+      }
+    }
+    expect(MapAssetManifestSchema.safeParse(badPageManifest).success).toBe(false)
+
+    const overflowFrameManifest: MapAssetManifest = {
+      version: 1,
+      profile: baseProfile,
+      pages: [basePage],
+      assets: {
+        'crater-overflow': {
+          id: 'crater-overflow',
+          page: 0,
+          frame: { x: 2000, y: 0, w: 100, h: 100 }, // 2000 + 100 > 2048
+          anchor: { x: 0.5, y: 0.5 },
+          layer: 'macro'
+        }
+      }
+    }
+    expect(MapAssetManifestSchema.safeParse(overflowFrameManifest).success).toBe(false)
+  })
+
+  it('rejects manifest with duplicate page IDs or mismatched map key', () => {
+    const dupPageManifest: MapAssetManifest = {
+      version: 1,
+      profile: baseProfile,
+      pages: [basePage, { ...basePage }], // Duplicate id 'terrain-0'
+      assets: {}
+    }
+    expect(MapAssetManifestSchema.safeParse(dupPageManifest).success).toBe(false)
+
+    const keyMismatchManifest: MapAssetManifest = {
+      version: 1,
+      profile: baseProfile,
+      pages: [basePage],
+      assets: {
+        'wrong-key': {
+          id: 'crater-01',
+          page: 0,
+          frame: { x: 0, y: 0, w: 100, h: 100 },
+          anchor: { x: 0.5, y: 0.5 },
+          layer: 'macro'
+        }
+      }
+    }
+    expect(MapAssetManifestSchema.safeParse(keyMismatchManifest).success).toBe(false)
   })
 
   it('validates a complete multi-page MapAssetManifest', () => {
     const manifest: MapAssetManifest = {
       version: 1,
-      profile: {
-        version: 1,
-        projection: 'orthographic',
-        hexOrientation: 'pointy',
-        cameraPitch: 60,
-        cameraYaw: 30,
-        orthoScale: 12,
-        tileWorldRadius: 64,
-        pixelsPerWorldUnit: 2,
-        sunAzimuth: 135,
-        sunElevation: 35,
-        atlasPageSize: 2048,
-        padding: 4,
-        extrude: 2
-      },
+      profile: baseProfile,
       pages: [
+        basePage,
         {
-          id: 'terrain-0',
-          albedo: '/assets/map/terrain-albedo-0.webp',
-          normal: '/assets/map/terrain-normal-0.png',
-          data: '/assets/map/terrain-data-0.png',
+          id: 'terrain-1',
+          albedo: '/assets/map/terrain-albedo-1.webp',
+          normal: '/assets/map/terrain-normal-1.png',
+          data: '/assets/map/terrain-data-1.png',
           width: 2048,
           height: 2048
         }
@@ -120,6 +204,13 @@ describe('mars-map-asset.contract (Stage 1 Asset Contract)', () => {
           frame: { x: 0, y: 0, w: 256, h: 256 },
           anchor: { x: 0.5, y: 0.5 },
           layer: 'macro'
+        },
+        'dune-large-01': {
+          id: 'dune-large-01',
+          page: 1,
+          frame: { x: 0, y: 0, w: 512, h: 256 },
+          anchor: { x: 0.5, y: 0.75 },
+          layer: 'ground'
         }
       }
     }
