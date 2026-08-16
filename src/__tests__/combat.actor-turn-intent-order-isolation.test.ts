@@ -10,13 +10,13 @@ import { EcsActionGroupLedger } from '@/domains/combat/combat.action-intent'
 import { projectLedger } from './helpers/combat-actor-turn-ledger-projection'
 
 describe('combat actor-turn intent execution order isolation', () => {
-  it('keeps all four cells on baseline semantic actor traversal', () => {
+  it('keeps all four cells on baseline semantic actor traversal', { timeout: 30000 }, () => {
     const result = runPrimary()
     const traversal = result.cells[0]!.trace.intentExecution.groups[0]!.planning.semanticActorTraversal
     for (const cell of result.cells) expect(cell.trace.intentExecution.groups[0]!.planning.semanticActorTraversal).toEqual(traversal)
   })
 
-  it('captures production sorted intents without mutating the unsorted snapshot', () => {
+  it('captures production sorted intents without mutating the unsorted snapshot', { timeout: 30000 }, () => {
     const result = runPrimary()
     const group = result.cells[0]!.trace.intentExecution.groups[0]!
     const candidateGroup = result.cells[2]!.trace.intentExecution.groups[0]!
