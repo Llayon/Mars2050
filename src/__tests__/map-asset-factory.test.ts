@@ -82,4 +82,17 @@ describe('map-asset-factory (Blender Factory Configuration & Pipeline)', () => {
     const bin = findBlenderExecutable()
     expect(bin === null || typeof bin === 'string').toBe(true)
   })
+
+  it('correctly decodes neutral normal 128,128,255 to unit-Z vector', () => {
+    const r = 128, g = 128, b = 255
+    const nx = (r / 255) * 2 - 1
+    const ny = (g / 255) * 2 - 1
+    const nz = (b / 255) * 2 - 1
+    const len = Math.sqrt(nx * nx + ny * ny + nz * nz)
+
+    expect(nx).toBeCloseTo(0.0039, 2)
+    expect(ny).toBeCloseTo(0.0039, 2)
+    expect(nz).toBeCloseTo(1.0, 4)
+    expect(len).toBeCloseTo(1.0, 2)
+  })
 })

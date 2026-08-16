@@ -76,6 +76,20 @@ def get_max_z(obj):
             max_z = cz
     return max_z
 
+def set_color_management(scene, view_transform='Standard'):
+    if not hasattr(scene, 'view_settings'):
+        return
+    settings = scene.view_settings
+    settings.view_transform = view_transform
+    settings.exposure = 0.0
+    settings.gamma = 1.0
+    try:
+        settings.look = 'None'
+    except (TypeError, ValueError, AttributeError):
+        pass
+    if view_transform == 'Raw':
+        assert scene.view_settings.view_transform == 'Raw', "Failed to set Raw view transform for linear pass"
+
 def run_factory():
     if not bpy:
         print("Error: bpy (Blender Python API) is not available. Run inside Blender via --python.")
@@ -148,17 +162,20 @@ def run_factory():
         normal_path = os.path.join(args.output_dir, normal_filename)
         data_path = os.path.join(args.output_dir, data_filename)
 
-        # 1. Albedo Pass
+        # 1. Albedo Pass (Standard Display/Render Transform)
+        set_color_management(bpy.context.scene, 'Standard')
         assign_material_recursive(obj, albedo_mat)
         bpy.context.scene.render.filepath = albedo_path
         bpy.ops.render.render(write_still=True)
 
-        # 2. View-Space Normal Pass
+        # 2. View-Space Normal Pass (Raw / Non-Color Linear)
+        set_color_management(bpy.context.scene, 'Raw')
         assign_material_recursive(obj, normal_mat)
         bpy.context.scene.render.filepath = normal_path
         bpy.ops.render.render(write_still=True)
 
-        # 3. Packed Data Pass
+        # 3. Packed Data Pass (Raw / Non-Color Linear)
+        set_color_management(bpy.context.scene, 'Raw')
         assign_material_recursive(obj, data_mat)
         bpy.context.scene.render.filepath = data_path
         bpy.ops.render.render(write_still=True)

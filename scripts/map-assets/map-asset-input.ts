@@ -22,7 +22,120 @@ export interface InputLoadResult {
 }
 
 /**
- * Loads authoritative profile and raw manifest, verifying file existence and companion dimensions.
+ * Validates normal map pixel semantics: unit length on opaque pixels and variance on non-flat assets.
+ */
+async function validateNormalSemantics(
+  assetId: string,
+  normalBuf: Buffer,
+  errors: string[]
+): Promise<void> {
+  const { data, info } = await sharp(normalBuf).ensureAlpha().raw().toBuffer({ resolveWithObject: true })
+  const totalPixels = info.width * info.height
+
+  let opaqueCount = 0
+  let validUnitCount = 0
+  let minNx = 1.0, maxNx = -1.0
+  let minNy = 1.0, maxNy = -1.0
+
+  // Deterministically sample every 4th pixel to remain performant yet thorough
+  const step = 4
+  for (let i = 0; i < totalPixels; i += step) {
+    const offset = i * 4
+    const a = data[offset + 3]
+    if (a < 254) continue // Skip anti-aliased edge pixels
+
+    opaqueCount++
+    const r = data[offset]
+    const g = data[offset + 1]
+    const b = data[offset + 2]
+
+    const nx = (r / 255) * 2 - 1
+    const ny = (g / 255) * 2 - 1
+    const nz = (b / 255) * 2 - 1
+
+    const len = Math.sqrt(nx * nx + ny * ny + nz * nz)
+    if (len >= 0.80 && len <= 1.20) {
+      validUnitCount++
+    }
+
+    if (nx < minNx) minNx = nx
+    if (nx > maxNx) maxNx = nx
+    if (ny < minNy) minNy = ny
+    if (ny > maxNy) maxNy = ny
+  }
+
+  if (opaqueCount > 10) {
+    const validRatio = validUnitCount / opaqueCount
+    if (validRatio < 0.98) {
+      errors.push(
+        `Asset "${assetId}": Normal map failed unit-vector validation (${(validRatio * 100).toFixed(1)}% valid, expected >= 98.0%). Ensure Raw/Non-Color color management is used.`
+      )
+    }
+
+    // Check non-flat assets have normal variation
+    const nonFlatAssets = ['crater_medium_02', 'ridge_01', 'boulder_cluster_01']
+    if (nonFlatAssets.includes(assetId)) {
+      const variation = (maxNx - minNx) + (maxNy - minNy)
+      if (variation < 0.05) {
+        errors.push(`Asset "${assetId}": Normal map is flat/constant (${variation.toFixed(3)} variation), expected 3D relief.`)
+      }
+    }
+  }
+}
+
+/**
+ * Validates data map pixel semantics: height/AO variation on non-flat assets, emissive approx 0.
+ */
+async function validateDataSemantics(
+  assetId: string,
+  dataBuf: Buffer,
+  errors: string[]
+): Promise<void> {
+  const { data, info } = await sharp(dataBuf).ensureAlpha().raw().toBuffer({ resolveWithObject: true })
+  const totalPixels = info.width * info.height
+
+  let opaqueCount = 0
+  let maxEmissive = 0
+  let minHeight = 255, maxHeight = 0
+  let minAo = 255, maxAo = 0
+
+  const step = 4
+  for (let i = 0; i < totalPixels; i += step) {
+    const offset = i * 4
+    const a = data[offset + 3]
+    if (a < 254) continue // Skip anti-aliased edge pixels
+
+    opaqueCount++
+    const r = data[offset]     // Height
+    const g = data[offset + 1] // AO
+    const b = data[offset + 2] // Emissive
+
+    if (b > maxEmissive) maxEmissive = b
+    if (r < minHeight) minHeight = r
+    if (r > maxHeight) maxHeight = r
+    if (g < minAo) minAo = g
+    if (g > maxAo) maxAo = g
+  }
+
+  if (opaqueCount > 10) {
+    if (maxEmissive > 15) {
+      errors.push(`Asset "${assetId}": Data map has unexpected emissive values in terrain (max B=${maxEmissive}, expected <= 15).`)
+    }
+
+    const nonFlatAssets = ['crater_medium_02', 'ridge_01']
+    if (nonFlatAssets.includes(assetId)) {
+      if (maxHeight - minHeight < 10) {
+        errors.push(`Asset "${assetId}": Data map height channel lacks variation (range ${maxHeight - minHeight}).`)
+      }
+      if (maxAo - minAo < 10) {
+        errors.push(`Asset "${assetId}": Data map AO channel lacks variation (range ${maxAo - minAo}).`)
+      }
+    }
+  }
+}
+
+/**
+ * Loads authoritative profile and raw manifest, verifying file existence, companion dimensions, and pixel semantics.
  */
 export async function loadAndValidateInputs(
   profilePath: string,
@@ -89,6 +202,8 @@ export async function loadAndValidateInputs(
         const normalMeta = await sharp(normalBuf).metadata()
         if (normalMeta.width !== width || normalMeta.height !== height) {
           errors.push(`Asset "${asset.id}": Normal dimensions (${normalMeta.width}x${normalMeta.height}) mismatch Albedo (${width}x${height})`)
+        } else {
+          await validateNormalSemantics(asset.id, normalBuf, errors)
         }
       }
     }
@@ -103,6 +218,8 @@ export async function loadAndValidateInputs(
         const dataMeta = await sharp(dataBuf).metadata()
         if (dataMeta.width !== width || dataMeta.height !== height) {
           errors.push(`Asset "${asset.id}": Data dimensions (${dataMeta.width}x${dataMeta.height}) mismatch Albedo (${width}x${height})`)
+        } else {
+          await validateDataSemantics(asset.id, dataBuf, errors)
         }
       }
     }

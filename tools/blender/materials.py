@@ -70,18 +70,24 @@ def create_view_space_normal_material(name='Mat_ViewSpaceNormal'):
     vec_trans.location = (-200, 0)
     tree.links.new(geom.outputs['Normal'], vec_trans.inputs['Vector'])
 
+    # Explicitly normalize vector in camera space
+    vec_norm = tree.nodes.new('ShaderNodeVectorMath')
+    vec_norm.operation = 'NORMALIZE'
+    vec_norm.location = (-50, 0)
+    tree.links.new(vec_trans.outputs['Vector'], vec_norm.inputs[0])
+
     # Multiply by 0.5
     vec_mul = tree.nodes.new('ShaderNodeVectorMath')
     vec_mul.operation = 'MULTIPLY'
     vec_mul.inputs[1].default_value = (0.5, 0.5, 0.5)
-    vec_mul.location = (0, 0)
-    tree.links.new(vec_trans.outputs['Vector'], vec_mul.inputs[0])
+    vec_mul.location = (100, 0)
+    tree.links.new(vec_norm.outputs['Vector'], vec_mul.inputs[0])
 
     # Add 0.5
     vec_add = tree.nodes.new('ShaderNodeVectorMath')
     vec_add.operation = 'ADD'
     vec_add.inputs[1].default_value = (0.5, 0.5, 0.5)
-    vec_add.location = (200, 0)
+    vec_add.location = (250, 0)
     tree.links.new(vec_mul.outputs['Vector'], vec_add.inputs[0])
 
     emit = tree.nodes.new('ShaderNodeEmission')
