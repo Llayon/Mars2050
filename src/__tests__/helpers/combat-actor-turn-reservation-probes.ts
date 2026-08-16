@@ -9,7 +9,7 @@ import {
   compareSemanticStates,
 } from './combat-semantic-state-diff'
 import type { OrderingProbeResult } from './combat-ordering-probes'
-import { replayActorTurn, type ActorTurnOrderOverride } from './combat-actor-turn-reservation-execution'
+import { replayActorTurn, type ActorTurnOrderOverride, type ActorTurnReplayOverrides } from './combat-actor-turn-reservation-execution'
 import { compareSharedOrderTraces } from './combat-actor-turn-reservation-comparison'
 import { normalizeCommittedActions } from './combat-movement-pipeline-diagnostics'
 export { compareActorTurnCells } from './combat-actor-turn-reservation-comparison'
@@ -19,6 +19,7 @@ import type {
   ActorTurnTrace,
   CounterfactualResult,
 } from './combat-actor-turn-reservation-types'
+import type { ActorTurnIntentTrace } from './combat-actor-turn-intent-order-types'
 
 export interface ActorTurnPrepared {
   prepared: ReturnType<typeof advanceToPreActorTurnCheckpoint>
@@ -62,9 +63,12 @@ export function runProductionActorTurn(source: ActorTurnPrepared): ProductionAct
   }
 }
 
-export function runTracedActorTurn(source: ActorTurnPrepared, orderOverride?: ActorTurnOrderOverride): ActorTurnTrace {
-  const trace = replayActorTurn(source.prepared, source.probe, orderOverride)
-  drainV9FollowUps(source.prepared.runtime.world, source.prepared.context)
+export function runTracedActorTurn(
+  source: ActorTurnPrepared,
+  replayOptions?: ActorTurnReplayOverrides | ActorTurnOrderOverride,
+): ActorTurnTrace & { intentExecution?: ActorTurnIntentTrace } {
+  const trace = replayActorTurn(source.prepared, source.probe, replayOptions)
+  if (!trace.intentExecution?.stoppedBeforePhaseDrain) drainV9FollowUps(source.prepared.runtime.world, source.prepared.context)
   return { ...trace, endpoint: captureSemanticStateSnapshot(source.prepared.runtime, source.probe) }
 }
 
