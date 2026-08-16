@@ -79,14 +79,20 @@ describe('combat actor-turn intent execution order isolation', () => {
     const result = runPrimary()
     const scenario = primaryScenario()
     const probe = applyOrderingProbe(scenario, 'defender_cohort_rank_reassigned')
+    const baselineGroup0Order = result.baselineDefault.trace.groups[0]!.processedOrder
+    const candidateDefaultOrders = result.candidateDefault.trace.groups.map(group => group.processedOrder)
     const downstream = runDownstreamExperiment(
       scenario,
       101,
       probe,
-      result.baselineDefault.trace.groups.map(group => group.processedOrder),
+      [baselineGroup0Order],
       result.baselineProductionOrder,
       result.candidateProductionOrder,
     )
+    for (const cell of downstream.cells) {
+      expect(cell.actorProcessingOrders[0]).toEqual(baselineGroup0Order)
+      expect(cell.actorProcessingOrders.slice(1)).toEqual(candidateDefaultOrders.slice(1))
+    }
     expect(downstream.precondition.requestOnlyDifference).toBe(true)
     expect(downstream.effect).toBe('REPLAY_ORDER_ONLY')
     expect(downstream.collisionEquivalent).toBe(true)

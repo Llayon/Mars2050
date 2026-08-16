@@ -16,6 +16,7 @@ export interface DownstreamCell {
   actorTurnEndpoint: Stage0Checkpoint
   actorTurnActions: DiagnosticRecord[]
   actedResults: DiagnosticRecord[]
+  actorProcessingOrders: string[][]
   movementRequests: DiagnosticRecord[]
   batchEndpoint: Stage0Checkpoint
   batchActions: DiagnosticRecord[]
@@ -99,6 +100,7 @@ function runCell(
     actorTurnEndpoint: trace.endpoint,
     actorTurnActions: trace.normalizedActions,
     actedResults,
+    actorProcessingOrders: trace.groups.map(group => group.processedOrder),
     movementRequests: trace.movementRequests,
     batchEndpoint: snapshot,
     batchActions: normalizeCommittedActions(source.prepared.context.actions.slice(batchActionStart), probe),
