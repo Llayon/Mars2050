@@ -95,4 +95,25 @@ describe('map-asset-factory (Blender Factory Configuration & Pipeline)', () => {
     expect(nz).toBeCloseTo(1.0, 4)
     expect(len).toBeCloseTo(1.0, 2)
   })
+
+  it('rejects companion maps with insufficient opaque pixel samples', async () => {
+    const sharp = (await import('sharp')).default
+    const transparentPng = await sharp({
+      create: {
+        width: 32,
+        height: 32,
+        channels: 4,
+        background: { r: 0, g: 0, b: 0, alpha: 0 }
+      }
+    }).png().toBuffer()
+
+    const { validateNormalSemantics, validateDataSemantics } = await import('../../scripts/map-assets/map-asset-input')
+    const normalErrors: string[] = []
+    await validateNormalSemantics('blank_test', transparentPng, normalErrors)
+    expect(normalErrors.some(e => e.includes('insufficient opaque pixel samples'))).toBe(true)
+
+    const dataErrors: string[] = []
+    await validateDataSemantics('blank_test', transparentPng, dataErrors)
+    expect(dataErrors.some(e => e.includes('insufficient opaque pixel samples'))).toBe(true)
+  })
 })

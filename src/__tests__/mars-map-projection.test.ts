@@ -2,7 +2,8 @@ import { describe, it, expect } from 'vitest'
 import {
   calculateGridWorldBounds,
   screenPosToGridCoord,
-  enumerateGridCells
+  enumerateGridCells,
+  getMapRenderResolution
 } from '@/components/map/mars-map-projection'
 
 describe('mars-map-projection', () => {
@@ -41,5 +42,22 @@ describe('mars-map-projection', () => {
     expect(cells).toHaveLength(400)
     expect(cells[0]).toEqual({ x: 0, y: 0 })
     expect(cells[399]).toEqual({ x: 19, y: 19 })
+  })
+
+  it('caps map render resolution at 2.0 to protect mobile TMA performance', () => {
+    // Standard desktop / 1x screen
+    expect(getMapRenderResolution(1)).toBe(1)
+    // 1.5x intermediate screen
+    expect(getMapRenderResolution(1.5)).toBe(1.5)
+    // 2x Retina / standard high-DPI mobile
+    expect(getMapRenderResolution(2)).toBe(2)
+    // 3x high-end mobile flagship -> must be capped at 2.0
+    expect(getMapRenderResolution(3)).toBe(2)
+    // 4x extreme mobile screen -> capped at 2.0
+    expect(getMapRenderResolution(4)).toBe(2)
+    // Fallbacks for missing or invalid window.devicePixelRatio
+    expect(getMapRenderResolution(0)).toBe(1)
+    expect(getMapRenderResolution(NaN)).toBe(1)
+    expect(getMapRenderResolution(undefined)).toBe(1)
   })
 })

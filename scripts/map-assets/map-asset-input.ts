@@ -24,7 +24,7 @@ export interface InputLoadResult {
 /**
  * Validates normal map pixel semantics: unit length on opaque pixels and variance on non-flat assets.
  */
-async function validateNormalSemantics(
+export async function validateNormalSemantics(
   assetId: string,
   normalBuf: Buffer,
   errors: string[]
@@ -64,21 +64,26 @@ async function validateNormalSemantics(
     if (ny > maxNy) maxNy = ny
   }
 
-  if (opaqueCount > 10) {
-    const validRatio = validUnitCount / opaqueCount
-    if (validRatio < 0.98) {
-      errors.push(
-        `Asset "${assetId}": Normal map failed unit-vector validation (${(validRatio * 100).toFixed(1)}% valid, expected >= 98.0%). Ensure Raw/Non-Color color management is used.`
-      )
-    }
+  if (opaqueCount <= 10) {
+    errors.push(
+      `Asset "${assetId}": Normal map has insufficient opaque pixel samples for validation (${opaqueCount} found).`
+    )
+    return
+  }
 
-    // Check non-flat assets have normal variation
-    const nonFlatAssets = ['crater_medium_02', 'ridge_01', 'boulder_cluster_01']
-    if (nonFlatAssets.includes(assetId)) {
-      const variation = (maxNx - minNx) + (maxNy - minNy)
-      if (variation < 0.05) {
-        errors.push(`Asset "${assetId}": Normal map is flat/constant (${variation.toFixed(3)} variation), expected 3D relief.`)
-      }
+  const validRatio = validUnitCount / opaqueCount
+  if (validRatio < 0.98) {
+    errors.push(
+      `Asset "${assetId}": Normal map failed unit-vector validation (${(validRatio * 100).toFixed(1)}% valid, expected >= 98.0%). Ensure Raw/Non-Color color management is used.`
+    )
+  }
+
+  // Check non-flat assets have normal variation
+  const nonFlatAssets = ['crater_medium_02', 'ridge_01', 'boulder_cluster_01']
+  if (nonFlatAssets.includes(assetId)) {
+    const variation = (maxNx - minNx) + (maxNy - minNy)
+    if (variation < 0.05) {
+      errors.push(`Asset "${assetId}": Normal map is flat/constant (${variation.toFixed(3)} variation), expected 3D relief.`)
     }
   }
 }
@@ -86,7 +91,7 @@ async function validateNormalSemantics(
 /**
  * Validates data map pixel semantics: height/AO variation on non-flat assets, emissive approx 0.
  */
-async function validateDataSemantics(
+export async function validateDataSemantics(
   assetId: string,
   dataBuf: Buffer,
   errors: string[]
@@ -117,19 +122,24 @@ async function validateDataSemantics(
     if (g > maxAo) maxAo = g
   }
 
-  if (opaqueCount > 10) {
-    if (maxEmissive > 15) {
-      errors.push(`Asset "${assetId}": Data map has unexpected emissive values in terrain (max B=${maxEmissive}, expected <= 15).`)
-    }
+  if (opaqueCount <= 10) {
+    errors.push(
+      `Asset "${assetId}": Data map has insufficient opaque pixel samples for validation (${opaqueCount} found).`
+    )
+    return
+  }
 
-    const nonFlatAssets = ['crater_medium_02', 'ridge_01']
-    if (nonFlatAssets.includes(assetId)) {
-      if (maxHeight - minHeight < 10) {
-        errors.push(`Asset "${assetId}": Data map height channel lacks variation (range ${maxHeight - minHeight}).`)
-      }
-      if (maxAo - minAo < 10) {
-        errors.push(`Asset "${assetId}": Data map AO channel lacks variation (range ${maxAo - minAo}).`)
-      }
+  if (maxEmissive > 15) {
+    errors.push(`Asset "${assetId}": Data map has unexpected emissive values in terrain (max B=${maxEmissive}, expected <= 15).`)
+  }
+
+  const nonFlatAssets = ['crater_medium_02', 'ridge_01']
+  if (nonFlatAssets.includes(assetId)) {
+    if (maxHeight - minHeight < 10) {
+      errors.push(`Asset "${assetId}": Data map height channel lacks variation (range ${maxHeight - minHeight}).`)
+    }
+    if (maxAo - minAo < 10) {
+      errors.push(`Asset "${assetId}": Data map AO channel lacks variation (range ${maxAo - minAo}).`)
     }
   }
 }

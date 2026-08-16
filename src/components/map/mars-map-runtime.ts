@@ -2,7 +2,7 @@ import { Application, Container } from 'pixi.js'
 import { Viewport } from 'pixi-viewport'
 import { DEFAULT_MAP_SEED } from '@/domains/map/map.config'
 import type { MapLocation, GridSize } from '@/domains/map/map.types'
-import { calculateGridWorldBounds } from './mars-map-projection'
+import { calculateGridWorldBounds, getMapRenderResolution } from './mars-map-projection'
 import { loadMapAssets } from './mars-map-assets'
 import { buildContinuousGround, populateGroundDecals } from './mars-map-ground'
 import { populateMacroTerrain, populateScatterTerrain } from './mars-map-terrain'
@@ -44,7 +44,7 @@ export async function createMarsMapRuntime(
     resizeTo: container,
     backgroundColor: 0x110a08,
     antialias: true,
-    resolution: window.devicePixelRatio || 1,
+    resolution: getMapRenderResolution(typeof window !== 'undefined' ? window.devicePixelRatio : 1),
     autoDensity: true
   })
   container.appendChild(app.canvas)

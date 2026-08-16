@@ -70,3 +70,13 @@ export function enumerateGridCells(width: number, height: number): GridCoord[] {
   }
   return cells
 }
+
+/**
+ * Computes capped render resolution for optimal mobile/TMA performance and texture memory.
+ * Capped at 2.0 to prevent 3x+ DPR mobile devices from over-allocating render buffers.
+ */
+export function getMapRenderResolution(devicePixelRatio: number = 1): number {
+  const dpr = Number.isFinite(devicePixelRatio) && devicePixelRatio > 0 ? devicePixelRatio : 1
+  return Math.min(Math.max(dpr, 1), 2)
+}
+
