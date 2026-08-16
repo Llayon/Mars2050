@@ -159,7 +159,9 @@ function requireIntentOrder(trace: ActorTurnTrace & { intentExecution: ActorTurn
 
 function comparePreIntent(left: IntentGroupTrace | undefined, right: IntentGroupTrace | undefined): boolean {
   if (!left || !right) return false
-  return canonicalSerialize(left.planning.preIntentPersistentState) === canonicalSerialize(right.planning.preIntentPersistentState) &&
+  return left.groupOrdinal === right.groupOrdinal &&
+    left.speed === right.speed &&
+    canonicalSerialize(left.planning.preIntentPersistentState) === canonicalSerialize(right.planning.preIntentPersistentState) &&
     canonicalSerialize(left.planning.semanticMeleeSectors) === canonicalSerialize(right.planning.semanticMeleeSectors) &&
     canonicalSerialize(left.planning.semanticActorTraversal) === canonicalSerialize(right.planning.semanticActorTraversal) &&
     canonicalSerialize(left.planning.preIntentMovementRequests) === canonicalSerialize(right.planning.preIntentMovementRequests) &&

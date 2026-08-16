@@ -164,6 +164,7 @@ export function replayActorTurn(
         options.intentExecutionOrder?.groups[groupOrdinal],
         probe,
       )
+      const preIntentMovementRequests = groupMovement.map(request => describeMovementRequest(world, request, probe))
       const planning = captureIntentPlanningCheckpoint(
         world,
         runtime,
@@ -203,7 +204,6 @@ export function replayActorTurn(
         intentRecords.push(record)
         options.instrumentation?.onIntent?.(structuredClone(record))
       }
-      const preIntentMovementRequests = groupMovement.map(request => describeMovementRequest(world, request, probe))
       movementRequests.push(...groupMovement)
       commitActionGroup(world, ledger, context.actions)
       world.flushStructuralCommands()

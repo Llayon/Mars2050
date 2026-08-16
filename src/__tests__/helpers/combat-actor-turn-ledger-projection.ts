@@ -42,6 +42,23 @@ export function projectLedger(world: CombatWorld, ledger: EcsActionGroupLedger, 
   }
 }
 
+export function semanticizeExternalReference(value: string, probe: OrderingProbeResult): string {
+  const direct = probe.semanticByExternalId.get(value)
+  if (direct) return semanticIdentity(direct)
+  const externalIds = [...probe.semanticByExternalId.keys()].sort((left, right) => right.length - left.length)
+  for (const externalId of externalIds) {
+    const identity = probe.semanticByExternalId.get(externalId)
+    if (!identity) continue
+    const semantic = semanticIdentity(identity)
+    if (value === `unit:${externalId}`) return `unit:${semantic}`
+    if (value.startsWith(`unit:${externalId}:`)) return `unit:${semantic}:${value.slice(`unit:${externalId}:`.length)}`
+    if (value === `pending:${externalId}`) return `pending:${semantic}`
+    if (value.startsWith(`trigger:${externalId}:`)) return `trigger:${semantic}:${value.slice(`trigger:${externalId}:`.length)}`
+    if (value.startsWith('ability:') && value.endsWith(`:${externalId}`)) return `${value.slice(0, -externalId.length)}${semantic}`
+  }
+  return value
+}
+
 export function captureLedgerFrameGuard(world: CombatWorld, ledger: EcsActionGroupLedger, probe: OrderingProbeResult): unknown {
   return semanticize({ frame: ledger.frame, groupKey: ledger.groupKey, active: ledger.active }, world, probe)
 }
@@ -85,9 +102,10 @@ function semanticize(value: unknown, world: CombatWorld, probe: OrderingProbeRes
     const identity = world.stores.identity.get(value)
     return identity ? semanticId(world, value, probe) : value
   }
-  if (typeof value === 'string' && (probe.semanticByExternalId.has(value) || /(?:ExternalId|externalId|sourceId|targetId|unitId)$/.test(key ?? ''))) {
-    const identity = probe.semanticByExternalId.get(value)
-    return identity ? `${identity.originalRole}:${identity.originalRowId}:${identity.memberOrdinal}` : value
-  }
+  if (typeof value === 'string' && (probe.semanticByExternalId.has(value) || /(?:ExternalId|externalId|sourceId|targetId|unitId)$/.test(key ?? ''))) return semanticizeExternalReference(value, probe)
   return value
+}
+
+function semanticIdentity(identity: { originalRole: string; originalRowId: string; memberOrdinal: number }): string {
+  return `${identity.originalRole}:${identity.originalRowId}:${identity.memberOrdinal}`
 }

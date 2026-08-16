@@ -42,8 +42,8 @@ export interface ActorTurnPairResult {
   preActorStateEquivalent: boolean
 }
 
-export function prepareActorTurn(scenario: CombatBalanceScenario, seed: number, probe: OrderingProbeResult): ActorTurnPrepared {
-  const prepared = advanceToPreActorTurnCheckpoint(scenario, seed, probe, 1)
+export function prepareActorTurn(scenario: CombatBalanceScenario, seed: number, probe: OrderingProbeResult, profile = false): ActorTurnPrepared {
+  const prepared = advanceToPreActorTurnCheckpoint(scenario, seed, probe, 1, profile)
   return {
     prepared,
     probe,

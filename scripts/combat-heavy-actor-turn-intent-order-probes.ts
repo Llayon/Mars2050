@@ -6,6 +6,7 @@ import {
   runIntentOrderExperiment,
   type IntentOrderExperiment,
 } from '@/__tests__/helpers/combat-actor-turn-intent-order-probes'
+import { runDownstreamExperiment } from '@/__tests__/helpers/combat-actor-turn-intent-order-downstream'
 
 const PRIMARY_SCENARIO = 'tier1_heavy_gunner_sustained_line'
 const CERTIFIED_SEEDS = [101, 202, 303, 404, 505]
@@ -75,6 +76,10 @@ function summarize(scenario: string, seed: number, result: IntentOrderExperiment
 
 function buildDiagnostic() {
   const primaryExperiment = runScenario(PRIMARY_SCENARIO, 101)
+  const primaryScenario = getScenario(PRIMARY_SCENARIO)
+  const candidateProbe = applyOrderingProbe(primaryScenario, 'defender_cohort_rank_reassigned')
+  const baselineActorOrder = primaryExperiment.baselineDefault.trace.groups.map(group => group.processedOrder)
+  const downstream = runDownstreamExperiment(primaryScenario, 101, candidateProbe, baselineActorOrder, primaryExperiment.baselineProductionOrder, primaryExperiment.candidateProductionOrder)
   const repeatability = CERTIFIED_SEEDS.map(seed => summarize(PRIMARY_SCENARIO, seed, runScenario(PRIMARY_SCENARIO, seed)))
   const controls = CONTROLS.map(scenario => summarize(scenario, 101, runScenario(scenario, 101)))
   return {
@@ -101,7 +106,8 @@ function buildDiagnostic() {
     firstExecutionDivergence: primaryExperiment.firstExecutionDivergence,
     intentExecutionEffect: primaryExperiment.intentExecutionEffect,
     fixedOrderIdContentEffect: primaryExperiment.fixedOrderIdContentEffect,
-    downstreamEffect: 'NOT_TESTED',
+    downstream,
+    downstreamEffect: downstream.effect,
     overall: primaryExperiment.overall,
     fiveSeedRepeatability: repeatability,
     controls,
@@ -121,6 +127,7 @@ else {
   console.log(`IntentExecutionEffect: ${result.intentExecutionEffect}`)
   console.log(`FixedOrderIdContentEffect: ${result.fixedOrderIdContentEffect ? 'PRESENT' : 'NONE'}`)
   console.log(`Overall: ${result.overall}`)
+  console.log(`Downstream ICB↔ICC: ${result.downstream.effect}`)
   console.log('five-seed repeatability:')
   for (const item of result.fiveSeedRepeatability) console.log(`  ${item.seed}: ${item.overall}`)
 }
