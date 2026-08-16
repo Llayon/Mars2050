@@ -1,14 +1,46 @@
 import { describe, it, expect } from 'vitest'
-import { Container, Texture } from 'pixi.js'
+import { Container, Texture, type Sprite } from 'pixi.js'
 import { DEFAULT_MAP_SEED } from '@/domains/map/map.config'
 import type { MapLocation } from '@/domains/map/map.types'
 import { generateTerrainVisualField } from '@/components/map/mars-terrain-field'
 import { populateMacroTerrain, populateScatterTerrain } from '@/components/map/mars-map-terrain'
+import { populateGroundDecals } from '@/components/map/mars-map-ground'
+import { calculateGridWorldBounds } from '@/components/map/mars-map-projection'
 import type { LoadedMapAssets } from '@/components/map/mars-map-render.types'
-import type { MapAssetManifest } from '@/components/map/mars-map-asset.types'
+import type { MapAssetManifest, VisualAssetFrame } from '@/components/map/mars-map-asset.types'
+
+const MOCK_ASSET_IDS = [
+  { id: 'regolith_patch_01', layer: 'ground' },
+  { id: 'regolith_patch_02', layer: 'ground' },
+  { id: 'basalt_patch_01', layer: 'ground' },
+  { id: 'dust_patch_01', layer: 'ground' },
+  { id: 'crater_medium_02', layer: 'macro' },
+  { id: 'crater_small_01', layer: 'macro' },
+  { id: 'ridge_01', layer: 'macro' },
+  { id: 'ridge_02', layer: 'macro' },
+  { id: 'rocks_small_01', layer: 'scatter' },
+  { id: 'rocks_small_02', layer: 'scatter' },
+  { id: 'boulder_cluster_01', layer: 'scatter' }
+] as const
 
 function createMockAssets(): LoadedMapAssets {
   const dummyTexture = Texture.WHITE
+  const assetsDict: Record<string, VisualAssetFrame> = {}
+  const runtimeMap = new Map<string, { texture: Texture; frame: VisualAssetFrame }>()
+
+  for (const def of MOCK_ASSET_IDS) {
+    const frame: VisualAssetFrame = {
+      id: def.id,
+      page: 0,
+      frame: { x: 0, y: 0, w: 100, h: 80 },
+      anchor: { x: 0.5, y: 0.5 },
+      layer: def.layer,
+      footprint: [{ x: 0, y: 0 }]
+    }
+    assetsDict[def.id] = frame
+    runtimeMap.set(def.id, { texture: dummyTexture, frame })
+  }
+
   const manifest: MapAssetManifest = {
     version: 2,
     profile: {
@@ -34,78 +66,13 @@ function createMockAssets(): LoadedMapAssets {
       width: 2048,
       height: 2048
     }],
-    assets: {
-      crater_medium_02: {
-        id: 'crater_medium_02',
-        page: 0,
-        frame: { x: 0, y: 0, w: 200, h: 160 },
-        anchor: { x: 0.5, y: 0.5 },
-        layer: 'macro',
-        footprint: [{ x: 0, y: 0 }]
-      },
-      crater_small_01: {
-        id: 'crater_small_01',
-        page: 0,
-        frame: { x: 200, y: 0, w: 150, h: 130 },
-        anchor: { x: 0.5, y: 0.5 },
-        layer: 'macro',
-        footprint: [{ x: 0, y: 0 }]
-      },
-      ridge_01: {
-        id: 'ridge_01',
-        page: 0,
-        frame: { x: 350, y: 0, w: 200, h: 160 },
-        anchor: { x: 0.5, y: 0.5 },
-        layer: 'macro',
-        footprint: [{ x: 0, y: 0 }]
-      },
-      ridge_02: {
-        id: 'ridge_02',
-        page: 0,
-        frame: { x: 550, y: 0, w: 200, h: 160 },
-        anchor: { x: 0.5, y: 0.5 },
-        layer: 'macro',
-        footprint: [{ x: 0, y: 0 }]
-      },
-      rocks_small_01: {
-        id: 'rocks_small_01',
-        page: 0,
-        frame: { x: 750, y: 0, w: 80, h: 60 },
-        anchor: { x: 0.5, y: 0.5 },
-        layer: 'scatter',
-        footprint: [{ x: 0, y: 0 }]
-      },
-      rocks_small_02: {
-        id: 'rocks_small_02',
-        page: 0,
-        frame: { x: 830, y: 0, w: 80, h: 60 },
-        anchor: { x: 0.5, y: 0.5 },
-        layer: 'scatter',
-        footprint: [{ x: 0, y: 0 }]
-      },
-      boulder_cluster_01: {
-        id: 'boulder_cluster_01',
-        page: 0,
-        frame: { x: 910, y: 0, w: 80, h: 60 },
-        anchor: { x: 0.5, y: 0.5 },
-        layer: 'scatter',
-        footprint: [{ x: 0, y: 0 }]
-      }
-    }
+    assets: assetsDict
   }
 
   return {
     manifest,
     albedoPages: [dummyTexture],
-    assets: new Map([
-      ['crater_medium_02', { texture: dummyTexture, frame: manifest.assets['crater_medium_02'] }],
-      ['crater_small_01', { texture: dummyTexture, frame: manifest.assets['crater_small_01'] }],
-      ['ridge_01', { texture: dummyTexture, frame: manifest.assets['ridge_01'] }],
-      ['ridge_02', { texture: dummyTexture, frame: manifest.assets['ridge_02'] }],
-      ['rocks_small_01', { texture: dummyTexture, frame: manifest.assets['rocks_small_01'] }],
-      ['rocks_small_02', { texture: dummyTexture, frame: manifest.assets['rocks_small_02'] }],
-      ['boulder_cluster_01', { texture: dummyTexture, frame: manifest.assets['boulder_cluster_01'] }]
-    ])
+    assets: runtimeMap
   }
 }
 
@@ -123,6 +90,53 @@ describe('mars-map-composition (Terrain Composition & Occupancy)', () => {
       created_at: new Date().toISOString()
     }
   ]
+
+  it('populates continuous ground decals with zero rotation and bounded count', () => {
+    const assets = createMockAssets()
+    const worldBounds = calculateGridWorldBounds(20, 20, 128)
+    const field = generateTerrainVisualField({ width: 20, height: 20, seed: DEFAULT_MAP_SEED })
+    const decalLayer = new Container()
+
+    populateGroundDecals(decalLayer, worldBounds, field, assets, 128)
+
+    // Verify 15-30 ground decals populated across default 7 macro regions
+    expect(decalLayer.children.length).toBeGreaterThanOrEqual(15)
+    expect(decalLayer.children.length).toBeLessThanOrEqual(35)
+
+    for (const child of decalLayer.children) {
+      const sprite = child as Sprite
+      expect(sprite.rotation).toBe(0)
+      expect(sprite.position.x).toBeGreaterThanOrEqual(worldBounds.minX)
+      expect(sprite.position.x).toBeLessThanOrEqual(worldBounds.maxX)
+      expect(sprite.position.y).toBeGreaterThanOrEqual(worldBounds.minY)
+      expect(sprite.position.y).toBeLessThanOrEqual(worldBounds.maxY)
+      expect(sprite.scale.x).toBeGreaterThan(0.4)
+      expect(sprite.scale.x).toBeLessThan(0.6)
+    }
+  })
+
+  it('produces deterministic ground decal placement for identical seeds', () => {
+    const assets = createMockAssets()
+    const worldBounds = calculateGridWorldBounds(20, 20, 128)
+    const field1 = generateTerrainVisualField({ width: 20, height: 20, seed: 12345 })
+    const field2 = generateTerrainVisualField({ width: 20, height: 20, seed: 12345 })
+    const fieldDiff = generateTerrainVisualField({ width: 20, height: 20, seed: 99999 })
+
+    const layer1 = new Container()
+    const layer2 = new Container()
+    const layerDiff = new Container()
+
+    populateGroundDecals(layer1, worldBounds, field1, assets, 128)
+    populateGroundDecals(layer2, worldBounds, field2, assets, 128)
+    populateGroundDecals(layerDiff, worldBounds, fieldDiff, assets, 128)
+
+    expect(layer1.children.length).toBe(layer2.children.length)
+    expect(layer1.children.map(c => ({ x: c.position.x, y: c.position.y })))
+      .toEqual(layer2.children.map(c => ({ x: c.position.x, y: c.position.y })))
+
+    expect(layer1.children.map(c => ({ x: c.position.x, y: c.position.y })))
+      .not.toEqual(layerDiff.children.map(c => ({ x: c.position.x, y: c.position.y })))
+  })
 
   it('places MapLocation POI and marks cell as occupied', () => {
     const assets = createMockAssets()
@@ -144,7 +158,6 @@ describe('mars-map-composition (Terrain Composition & Occupancy)', () => {
 
     populateScatterTerrain(scatterLayer, field, assets, 128, occupiedCells)
 
-    // Verify no scatter placed at world center of (3,3)
     const worldCenter33 = { x: 3 * 128 + 64, y: 3 * 128 + 64 }
     for (const child of scatterLayer.children) {
       const dist = Math.hypot(child.position.x - worldCenter33.x, child.position.y - worldCenter33.y)

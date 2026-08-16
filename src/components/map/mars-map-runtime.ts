@@ -4,7 +4,7 @@ import { DEFAULT_MAP_SEED } from '@/domains/map/map.config'
 import type { MapLocation, GridSize } from '@/domains/map/map.types'
 import { calculateGridWorldBounds } from './mars-map-projection'
 import { loadMapAssets } from './mars-map-assets'
-import { buildContinuousGround } from './mars-map-ground'
+import { buildContinuousGround, populateGroundDecals } from './mars-map-ground'
 import { populateMacroTerrain, populateScatterTerrain } from './mars-map-terrain'
 import { generateTerrainVisualField } from './mars-terrain-field'
 import { setupMapInteraction } from './mars-map-interaction'
@@ -36,52 +36,47 @@ export async function createMarsMapRuntime(
     onSelectLocation
   } = options
 
+  const assets = await loadMapAssets()
+  const cellWorldSize = assets.manifest.profile.cellWorldSize
+
   const app = new Application()
   await app.init({
-    width: container.clientWidth || 800,
-    height: container.clientHeight || 600,
-    background: '#0d0d11',
+    resizeTo: container,
+    backgroundColor: 0x110a08,
     antialias: true,
-    autoDensity: true,
-    resolution: Math.min(typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1, 2)
+    resolution: window.devicePixelRatio || 1,
+    autoDensity: true
   })
-
   container.appendChild(app.canvas)
 
-  const assets = await loadMapAssets('/assets/map/terrain-manifest.json')
-  const cellWorldSize = assets.manifest.profile.cellWorldSize
   const worldBounds = calculateGridWorldBounds(mapSize.width, mapSize.height, cellWorldSize)
 
   const viewport = new Viewport({
-    screenWidth: app.screen.width,
-    screenHeight: app.screen.height,
+    screenWidth: container.clientWidth,
+    screenHeight: container.clientHeight,
     worldWidth: worldBounds.width,
     worldHeight: worldBounds.height,
     events: app.renderer.events
   })
+
   app.stage.addChild(viewport)
 
   viewport
-    .drag({ pressDrag: true })
+    .drag()
     .pinch()
     .wheel()
     .decelerate()
+    .clamp({
+      left: worldBounds.minX - 256,
+      top: worldBounds.minY - 256,
+      right: worldBounds.maxX + 256,
+      bottom: worldBounds.maxY + 256
+    })
+    .clampZoom({
+      minScale: 0.35,
+      maxScale: 2.5
+    })
 
-  viewport.clampZoom({
-    minScale: 0.25,
-    maxScale: 2.0
-  })
-
-  viewport.clamp({
-    left: -200,
-    right: worldBounds.width + 200,
-    top: -200,
-    bottom: worldBounds.height + 200,
-    underflow: 'center'
-  })
-
-  // Fit and center world in view
-  viewport.fitWorld(true)
   viewport.moveCenter(worldBounds.width / 2, worldBounds.height / 2)
 
   // Layer hierarchy under worldRoot
@@ -89,6 +84,7 @@ export async function createMarsMapRuntime(
   viewport.addChild(worldRoot)
 
   const groundLayer = new Container()
+  const groundDecalLayer = new Container()
   const macroLayer = new Container()
   macroLayer.sortableChildren = true
   const scatterLayer = new Container()
@@ -96,6 +92,7 @@ export async function createMarsMapRuntime(
   const interactionLayer = new Container()
 
   worldRoot.addChild(groundLayer)
+  worldRoot.addChild(groundDecalLayer)
   worldRoot.addChild(macroLayer)
   worldRoot.addChild(scatterLayer)
   worldRoot.addChild(interactionLayer)
@@ -111,6 +108,7 @@ export async function createMarsMapRuntime(
 
   // Populate terrain layers
   buildContinuousGround(groundLayer, worldBounds, terrainField, cellWorldSize)
+  populateGroundDecals(groundDecalLayer, worldBounds, terrainField, assets, cellWorldSize)
   populateMacroTerrain(macroLayer, locations, terrainField, assets, cellWorldSize, occupiedCells)
   populateScatterTerrain(scatterLayer, terrainField, assets, cellWorldSize, occupiedCells)
 

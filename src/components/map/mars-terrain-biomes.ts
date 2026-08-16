@@ -11,7 +11,10 @@ export const TERRAIN_SALTS = {
   DUST: 0x27d4eb2d,
   MACRO: 0x715476a3,
   SCATTER: 0x09e3779b,
-  VARIANT: 0x1b873593
+  VARIANT: 0x1b873593,
+  GROUND_DECAL_POSITION: 0x6d2a819b,
+  GROUND_DECAL_VARIANT: 0x4e12c583,
+  GROUND_DECAL_SCALE: 0x3f5b72e1
 } as const
 
 export interface BiomeTrait {

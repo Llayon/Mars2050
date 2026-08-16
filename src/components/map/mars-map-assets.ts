@@ -9,7 +9,9 @@ import type { LoadedMapAssets, RuntimeMapAsset } from './mars-map-render.types'
 /**
  * Loads map asset manifest and Albedo atlas textures, producing sub-textures for all frames.
  */
-export async function loadMapAssets(manifestUrl: string): Promise<LoadedMapAssets> {
+export async function loadMapAssets(
+  manifestUrl: string = '/assets/map/terrain-manifest.json'
+): Promise<LoadedMapAssets> {
   const res = await fetch(manifestUrl)
   if (!res.ok) {
     throw new Error(`Failed to load map manifest from ${manifestUrl}: ${res.statusText}`)
