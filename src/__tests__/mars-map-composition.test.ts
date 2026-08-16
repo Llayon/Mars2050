@@ -72,6 +72,9 @@ function createMockAssets(): LoadedMapAssets {
   return {
     manifest,
     albedoPages: [dummyTexture],
+    normalPages: [dummyTexture],
+    dataPages: [dummyTexture],
+    lightingAvailable: true,
     assets: runtimeMap
   }
 }

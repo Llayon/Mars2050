@@ -3,13 +3,19 @@ import type { MapAssetManifest, VisualAssetFrame } from './mars-map-asset.types'
 import type { MapLocation } from '@/domains/map/map.types'
 
 export interface RuntimeMapAsset {
+  /** Stage-4 / baked fallback Albedo subtexture */
   texture: Texture
+  normalTexture?: Texture
+  dataTexture?: Texture
   frame: VisualAssetFrame
 }
 
 export interface LoadedMapAssets {
   manifest: MapAssetManifest
   albedoPages: Texture[]
+  normalPages: Texture[]
+  dataPages: Texture[]
+  lightingAvailable: boolean
   assets: ReadonlyMap<string, RuntimeMapAsset>
 }
 
