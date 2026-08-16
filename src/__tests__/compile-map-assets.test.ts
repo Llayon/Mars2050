@@ -138,8 +138,8 @@ describe('compile-map-assets (Stage 2 End-to-End Compiler Pipeline)', () => {
     expect(result.errors?.[0]).toContain('Normal dimensions (80x80) mismatch Albedo (100x100)')
   })
 
-  it('detects transparent albedo and invalid anchor even in validateOnly mode', async () => {
-    const rawRendersDir = path.join(tmpDir, 'raw_validate_only')
+  it('detects transparent albedo even in validateOnly mode', async () => {
+    const rawRendersDir = path.join(tmpDir, 'raw_validate_empty')
     fs.mkdirSync(rawRendersDir, { recursive: true })
     fs.writeFileSync(path.join(rawRendersDir, 'empty.albedo.png'), await sharp({ create: { width: 100, height: 100, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } } }).png().toBuffer())
 
@@ -152,5 +152,28 @@ describe('compile-map-assets (Stage 2 End-to-End Compiler Pipeline)', () => {
     const result = await compileMapAssets({ inputManifestPath: rawManifestPath, profilePath, outputDir: path.join(tmpDir, 'out'), validateOnly: true })
     expect(result.success).toBe(false)
     expect(result.errors?.[0]).toContain('Albedo contains no visible (alpha > 0) pixels')
+  })
+
+  it('detects invalid anchor even in validateOnly mode', async () => {
+    const rawRendersDir = path.join(tmpDir, 'raw_validate_anchor')
+    fs.mkdirSync(rawRendersDir, { recursive: true })
+
+    const albedoData = Buffer.alloc(100 * 100 * 4)
+    for (let y = 40; y < 80; y++) {
+      for (let x = 40; x < 80; x++) {
+        albedoData[(y * 100 + x) * 4] = 255; albedoData[(y * 100 + x) * 4 + 3] = 255
+      }
+    }
+    fs.writeFileSync(path.join(rawRendersDir, 'box.albedo.png'), await sharp(albedoData, { raw: { width: 100, height: 100, channels: 4 } }).png().toBuffer())
+
+    const profilePath = path.join(tmpDir, 'profile.json')
+    writeTestProfile(profilePath)
+
+    const rawManifestPath = path.join(rawRendersDir, 'raw_manifest.json')
+    fs.writeFileSync(rawManifestPath, JSON.stringify({ version: 2, assets: [{ id: 'bad-anchor-sprite', layer: 'macro', source: { albedo: 'box.albedo.png' }, anchorPx: { x: 20, y: 20 } }] }))
+
+    const result = await compileMapAssets({ inputManifestPath: rawManifestPath, profilePath, outputDir: path.join(tmpDir, 'out'), validateOnly: true })
+    expect(result.success).toBe(false)
+    expect(result.errors?.[0]).toContain('raw anchorPx (20, 20) is outside trimmed sprite bbox')
   })
 })

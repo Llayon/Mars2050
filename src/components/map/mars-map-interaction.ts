@@ -1,7 +1,7 @@
 import { Container, Graphics } from 'pixi.js'
 import type { Viewport } from 'pixi-viewport'
 import type { MapLocation, GridCoord, GridSize } from '@/domains/map/map.types'
-import { screenPosToGridCoord } from './mars-map-projection'
+import { isCellInBounds, worldToCell } from '@/domains/map/map.grid'
 
 export interface InteractionManager {
   setSelectedLocation(loc: MapLocation | null): void
@@ -30,7 +30,6 @@ export function setupMapInteraction(
   interactionLayer.addChild(highlightGraphic)
 
   let selectedCoord: GridCoord | null = null
-  let isDragging = false
 
   function redrawHighlight() {
     highlightGraphic.clear()
@@ -45,21 +44,9 @@ export function setupMapInteraction(
       .stroke({ color: 0xffaa22, width: 2, alpha: 0.85 })
   }
 
-  const onDragStart = () => { isDragging = true }
-  const onDragEnd = () => {
-    // Release drag flag on next tick to prevent pointerup from picking
-    setTimeout(() => { isDragging = false }, 50)
-  }
-
-  const onPointerTap = (e: PointerEvent) => {
-    if (isDragging) return
-
-    const rect = viewport.options.events?.domElement?.getBoundingClientRect?.()
-    const screenX = rect ? e.clientX - rect.left : e.clientX
-    const screenY = rect ? e.clientY - rect.top : e.clientY
-
-    const cell = screenPosToGridCoord(viewport, screenX, screenY, cellWorldSize, mapSize)
-    if (!cell) {
+  const onViewportClicked = (event: { world: { x: number; y: number } }) => {
+    const cell = worldToCell(event.world.x, event.world.y, cellWorldSize)
+    if (!isCellInBounds(cell, mapSize)) {
       selectedCoord = null
       redrawHighlight()
       onSelect(null)
@@ -69,15 +56,11 @@ export function setupMapInteraction(
     selectedCoord = cell
     redrawHighlight()
 
-    const loc = locationMap.get(`${cell.x},${cell.y}`) || null
+    const loc = locationMap.get(`${cell.x},${cell.y}`) ?? null
     onSelect(loc)
   }
 
-  viewport.on('drag-start', onDragStart)
-  viewport.on('drag-end', onDragEnd)
-
-  const domElement = viewport.options.events?.domElement as HTMLElement | undefined
-  domElement?.addEventListener('pointerup', onPointerTap)
+  viewport.on('clicked', onViewportClicked)
 
   return {
     setSelectedLocation(loc: MapLocation | null) {
@@ -92,9 +75,7 @@ export function setupMapInteraction(
       rebuildMap(newLocs)
     },
     destroy() {
-      viewport.off('drag-start', onDragStart)
-      viewport.off('drag-end', onDragEnd)
-      domElement?.removeEventListener('pointerup', onPointerTap)
+      viewport.off('clicked', onViewportClicked)
       highlightGraphic.destroy()
     }
   }

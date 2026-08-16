@@ -21,7 +21,7 @@ const LOCATION_VISUALS: Record<MapLocationType, string | null> = {
  */
 export function hashCell(seed: number, x: number, y: number): number {
   let h = (seed ^ (x * 374761393) ^ (y * 668265263)) >>> 0
-  h = (h ^ (h >>> 13)) * 1274126177
+  h = Math.imul(h ^ (h >>> 13), 1274126177) >>> 0
   return (h ^ (h >>> 16)) >>> 0
 }
 
