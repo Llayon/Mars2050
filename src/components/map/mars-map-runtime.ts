@@ -162,12 +162,16 @@ export async function createMarsMapRuntime(
     destroy() {
       resizeObserver.disconnect()
       interaction.destroy()
-      viewport.destroy({ children: true })
+      const canvas = app.canvas
       try {
-        app.destroy(true, { children: true, texture: false })
+        app.ticker.stop()
+        app.ticker.destroy()
+        app.destroy(true, { children: true, texture: false, textureSource: false })
       } catch {}
-      if (container.contains(app.canvas)) {
-        container.removeChild(app.canvas)
+      if (canvas && container.contains(canvas)) {
+        try {
+          container.removeChild(canvas)
+        } catch {}
       }
     }
   }

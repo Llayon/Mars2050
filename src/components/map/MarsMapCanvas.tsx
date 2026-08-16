@@ -69,7 +69,10 @@ export const MarsMapCanvas = memo(function MarsMapCanvas({
   }, [selectedLocation, loading])
 
   return (
-    <div className="relative w-full h-[520px] rounded-xl overflow-hidden bg-[#0d0d11] border border-gray-800/80 shadow-2xl">
+    <div
+      data-testid="mars-map-canvas-host"
+      className="relative w-full h-[520px] rounded-xl overflow-hidden bg-[#0d0d11] border border-gray-800/80 shadow-2xl"
+    >
       <div ref={containerRef} className="w-full h-full" />
 
       {loading && (

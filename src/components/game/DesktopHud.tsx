@@ -16,7 +16,7 @@ import { CommandDock } from '@/components/game/hud/CommandDock'
 import { PlacementActionBar } from '@/components/game/hud/PlacementActionBar'
 import { ResumeSyncStatus } from '@/components/game/hud/ResumeSyncStatus'
 
-const GameMapPanel = dynamic(() => import('@/components/game/GameMapPanel').then(mod => mod.GameMapPanel), {
+const MapScreen = dynamic(() => import('@/components/screens/MapScreen').then(mod => mod.MapScreen), {
   ssr: false,
   loading: () => <div className="text-gray-300">Загрузка карты...</div>
 })
@@ -155,7 +155,11 @@ export function DesktopHud({
         <ColonyScreen {...colonyScreenProps} />
         {viewMode === 'map' && (
           <div className="absolute inset-0 z-10 bg-black/60 backdrop-blur-md p-4 pt-24 overflow-y-auto pointer-events-auto">
-             <GameMapPanel colonyId={colonyId} />
+            <MapScreen
+              colonyId={colonyId}
+              resources={resources}
+              resourcesLoading={resourcesLoading}
+            />
           </div>
         )}
       </div>

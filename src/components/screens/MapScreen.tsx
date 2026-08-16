@@ -84,10 +84,6 @@ export const MapScreen = memo(function MapScreen({ colonyId, resources, resource
               <div key={i} className="aspect-square bg-gray-800/50 rounded-lg animate-pulse" />
             ))}
           </div>
-        ) : locations.length === 0 ? (
-          <div className="glass-panel rounded-xl p-6 text-center">
-            <p className="text-gray-400 text-sm">Карта пуста</p>
-          </div>
         ) : (
           <>
             {viewMode === '2.5d' ? (
@@ -98,28 +94,32 @@ export const MapScreen = memo(function MapScreen({ colonyId, resources, resource
                   onSelectLocation={setSelected}
                 />
               </div>
+            ) : locations.length === 0 ? (
+              <div className="glass-panel rounded-xl p-6 text-center">
+                <p className="text-gray-400 text-sm">Карта пуста</p>
+              </div>
             ) : (
               <div className="grid grid-cols-8 gap-1.5">
-              {locations.map(loc => (
-                <button
-                  key={loc.id}
-                  onClick={() => setSelected(loc)}
-                  className={`aspect-square rounded-lg border transition-all duration-200 flex items-center justify-center text-sm font-bold
-                    ${loc.is_discovered
-                      ? (LOCATION_COLORS[loc.type] || 'bg-mars-teal/40') + ' border-mars-border hover:scale-105'
-                      : 'bg-black/40 border-gray-700/30 hover:border-mars-red/50'
-                    }
-                    ${selected?.id === loc.id ? 'ring-2 ring-mars-gold scale-105' : ''}
-                  `}
-                >
-                  {loc.is_discovered ? (
-                    <span className="text-lg">{loc.name.charAt(0)}</span>
-                  ) : (
-                    <span className="text-gray-600 text-lg">?</span>
-                  )}
-                </button>
-              ))}
-            </div>
+                {locations.map(loc => (
+                  <button
+                    key={loc.id}
+                    onClick={() => setSelected(loc)}
+                    className={`aspect-square rounded-lg border transition-all duration-200 flex items-center justify-center text-sm font-bold
+                      ${loc.is_discovered
+                        ? (LOCATION_COLORS[loc.type] || 'bg-mars-teal/40') + ' border-mars-border hover:scale-105'
+                        : 'bg-black/40 border-gray-700/30 hover:border-mars-red/50'
+                      }
+                      ${selected?.id === loc.id ? 'ring-2 ring-mars-gold scale-105' : ''}
+                    `}
+                  >
+                    {loc.is_discovered ? (
+                      <span className="text-lg">{loc.name.charAt(0)}</span>
+                    ) : (
+                      <span className="text-gray-600 text-lg">?</span>
+                    )}
+                  </button>
+                ))}
+              </div>
             )}
 
             {selected && (
