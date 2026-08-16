@@ -4,6 +4,8 @@ import {
   calculateViewSpaceSunDirection,
   CANONICAL_VIEW_SPACE_SUN,
   DEFAULT_TERRAIN_LIGHTING,
+  readTerrainCertificationOptions,
+  terrainDebugModeToShaderId,
   type ViewSpaceDirection
 } from '@/components/map/mars-map-lighting'
 import type { MapRenderProfile } from '@/components/map/mars-map-asset.types'
@@ -97,5 +99,17 @@ describe('mars-map-lighting', () => {
     expect(TERRAIN_FRAGMENT_SHADER).toContain('uniform vec4 uColor;')
     expect(TERRAIN_FRAGMENT_SHADER).toContain('finalRGB * uColor.rgb')
     expect(TERRAIN_FRAGMENT_SHADER).toContain('albedo.a * uColor.a')
+  })
+
+  it('maps TerrainDebugMode values to correct shader debugMode IDs', () => {
+    expect(terrainDebugModeToShaderId('off')).toBe(0)
+    expect(terrainDebugModeToShaderId('normal')).toBe(2)
+    expect(terrainDebugModeToShaderId('data')).toBe(3)
+  })
+
+  it('validates whitelist and fallbacks for readTerrainCertificationOptions', () => {
+    // In Node (non-browser or test env), returns safe defaults
+    const defaults = readTerrainCertificationOptions()
+    expect(defaults).toEqual({ lightingMode: 'enhanced', debugMode: 'off' })
   })
 })

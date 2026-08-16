@@ -16,6 +16,47 @@ export interface TerrainLightingSettings {
 }
 
 export type TerrainLightingMode = 'baked' | 'enhanced'
+export type TerrainDebugMode = 'off' | 'normal' | 'data'
+
+export interface TerrainCertificationOptions {
+  lightingMode: TerrainLightingMode
+  debugMode: TerrainDebugMode
+}
+
+export function isTerrainCertificationEnabled(): boolean {
+  if (typeof window === 'undefined') return false
+  return (
+    process.env.NEXT_PUBLIC_TERRAIN_CERTIFICATION === '1' ||
+    process.env.NODE_ENV !== 'production' ||
+    process.env.NEXT_PUBLIC_E2E_AUTH_BYPASS === '1'
+  )
+}
+
+export function terrainDebugModeToShaderId(mode: TerrainDebugMode): number {
+  if (mode === 'normal') return 2
+  if (mode === 'data') return 3
+  return 0
+}
+
+export function readTerrainCertificationOptions(): TerrainCertificationOptions {
+  if (!isTerrainCertificationEnabled()) {
+    return { lightingMode: 'enhanced', debugMode: 'off' }
+  }
+  try {
+    const params = new URLSearchParams(window.location.search)
+    const rawLighting = params.get('terrainLighting')
+    const rawDebug = params.get('terrainDebug')
+
+    const lightingMode: TerrainLightingMode =
+      rawLighting === 'baked' || rawLighting === 'enhanced' ? rawLighting : 'enhanced'
+    const debugMode: TerrainDebugMode =
+      rawDebug === 'normal' || rawDebug === 'data' || rawDebug === 'off' ? rawDebug : 'off'
+
+    return { lightingMode, debugMode }
+  } catch {
+    return { lightingMode: 'enhanced', debugMode: 'off' }
+  }
+}
 
 export const DEFAULT_TERRAIN_LIGHTING: TerrainLightingSettings = {
   normalStrength: 0.25,

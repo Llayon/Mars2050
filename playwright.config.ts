@@ -25,12 +25,22 @@ export default defineConfig({
     env: {
       E2E_AUTH_BYPASS: '1',
       NEXT_PUBLIC_E2E_AUTH_BYPASS: '1',
+      NEXT_PUBLIC_TERRAIN_CERTIFICATION: '1',
     },
   },
   projects: [
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
+    },
+    {
+      name: 'mobile-chromium',
+      use: {
+        viewport: { width: 390, height: 844 },
+        deviceScaleFactor: 3,
+        hasTouch: true,
+        isMobile: true,
+      },
     },
   ],
 })

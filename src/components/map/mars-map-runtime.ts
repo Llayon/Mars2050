@@ -8,7 +8,13 @@ import { buildContinuousGround, populateGroundDecals } from './mars-map-ground'
 import { populateMacroTerrain, populateScatterTerrain } from './mars-map-terrain'
 import { generateTerrainVisualField } from './mars-terrain-field'
 import { setupMapInteraction } from './mars-map-interaction'
-import type { TerrainLightingMode } from './mars-map-lighting'
+import {
+  DEFAULT_TERRAIN_LIGHTING,
+  isTerrainCertificationEnabled,
+  terrainDebugModeToShaderId,
+  type TerrainDebugMode,
+  type TerrainLightingMode
+} from './mars-map-lighting'
 import { TerrainLightingContext } from './mars-map-lit-mesh'
 
 export interface MarsMapRuntimeOptions {
@@ -18,6 +24,7 @@ export interface MarsMapRuntimeOptions {
   mapSize?: GridSize
   terrainSeed?: number
   terrainLightingMode?: TerrainLightingMode
+  terrainDebugMode?: TerrainDebugMode
   onSelectLocation: (loc: MapLocation | null) => void
 }
 
@@ -37,6 +44,7 @@ export async function createMarsMapRuntime(
     mapSize = { width: 20, height: 20 },
     terrainSeed = DEFAULT_MAP_SEED,
     terrainLightingMode = 'enhanced',
+    terrainDebugMode = 'off',
     onSelectLocation
   } = options
 
@@ -112,9 +120,10 @@ export async function createMarsMapRuntime(
   const occupiedCells = new Set<string>()
 
   // Instantiate shared lighting context if enhanced lighting is active and assets available
+  const debugShaderId = terrainDebugModeToShaderId(terrainDebugMode)
   const lightingContext =
     terrainLightingMode !== 'baked' && assets.lightingAvailable
-      ? new TerrainLightingContext(assets.manifest.profile)
+      ? new TerrainLightingContext(assets.manifest.profile, DEFAULT_TERRAIN_LIGHTING, debugShaderId)
       : null
 
   // Populate terrain layers
@@ -122,6 +131,22 @@ export async function createMarsMapRuntime(
   populateGroundDecals(groundDecalLayer, worldBounds, terrainField, assets, cellWorldSize, lightingContext, terrainLightingMode)
   populateMacroTerrain(macroLayer, locations, terrainField, assets, cellWorldSize, occupiedCells, lightingContext, terrainLightingMode)
   populateScatterTerrain(scatterLayer, terrainField, assets, cellWorldSize, occupiedCells, lightingContext, terrainLightingMode)
+
+  // Attach diagnostic state for certification when explicitly enabled
+  const certEnabled = isTerrainCertificationEnabled()
+  if (certEnabled) {
+    (window as unknown as Record<string, unknown>).__MARS_MAP_DIAGNOSTICS__ = {
+      lightingMode: terrainLightingMode,
+      debugMode: terrainDebugMode,
+      lightingAvailable: assets.lightingAvailable,
+      rendererResolution: app.renderer.resolution,
+      rendererType: app.renderer.name,
+      atlasPages: assets.albedoPages.length,
+      groundDecals: groundDecalLayer.children.length,
+      macroCount: macroLayer.children.length,
+      scatterCount: scatterLayer.children.length
+    }
+  }
 
   // Setup interaction
   const interaction = setupMapInteraction(
@@ -160,6 +185,9 @@ export async function createMarsMapRuntime(
       interaction.setSelectedLocation(loc)
     },
     destroy() {
+      if (certEnabled) {
+        delete (window as unknown as Record<string, unknown>).__MARS_MAP_DIAGNOSTICS__
+      }
       resizeObserver.disconnect()
       interaction.destroy()
       const canvas = app.canvas

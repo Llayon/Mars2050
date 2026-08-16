@@ -3,6 +3,7 @@
 import { memo, useEffect, useRef, useState } from 'react'
 import type { MapLocation } from '@/domains/map/map.types'
 import { createMarsMapRuntime, type MarsMapRuntime } from './mars-map-runtime'
+import { readTerrainCertificationOptions } from './mars-map-lighting'
 
 interface MarsMapCanvasProps {
   locations: MapLocation[]
@@ -19,6 +20,7 @@ export const MarsMapCanvas = memo(function MarsMapCanvas({
   const runtimeRef = useRef<MarsMapRuntime | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [certOptions] = useState(() => readTerrainCertificationOptions())
 
   useEffect(() => {
     if (!containerRef.current) return
@@ -28,6 +30,8 @@ export const MarsMapCanvas = memo(function MarsMapCanvas({
       container: containerRef.current,
       locations,
       selectedLocation,
+      terrainLightingMode: certOptions.lightingMode,
+      terrainDebugMode: certOptions.debugMode,
       onSelectLocation
     })
       .then((runtime) => {
@@ -71,6 +75,8 @@ export const MarsMapCanvas = memo(function MarsMapCanvas({
   return (
     <div
       data-testid="mars-map-canvas-host"
+      data-terrain-lighting={certOptions.lightingMode}
+      data-terrain-debug={certOptions.debugMode}
       className="relative w-full h-[520px] rounded-xl overflow-hidden bg-[#0d0d11] border border-gray-800/80 shadow-2xl"
     >
       <div ref={containerRef} className="w-full h-full" />
