@@ -8,6 +8,8 @@ import { buildContinuousGround, populateGroundDecals } from './mars-map-ground'
 import { populateMacroTerrain, populateScatterTerrain } from './mars-map-terrain'
 import { generateTerrainVisualField } from './mars-terrain-field'
 import { setupMapInteraction } from './mars-map-interaction'
+import type { TerrainLightingMode } from './mars-map-lighting'
+import { TerrainLightingContext } from './mars-map-lit-mesh'
 
 export interface MarsMapRuntimeOptions {
   container: HTMLElement
@@ -15,6 +17,7 @@ export interface MarsMapRuntimeOptions {
   selectedLocation: MapLocation | null
   mapSize?: GridSize
   terrainSeed?: number
+  terrainLightingMode?: TerrainLightingMode
   onSelectLocation: (loc: MapLocation | null) => void
 }
 
@@ -33,6 +36,7 @@ export async function createMarsMapRuntime(
     selectedLocation,
     mapSize = { width: 20, height: 20 },
     terrainSeed = DEFAULT_MAP_SEED,
+    terrainLightingMode = 'enhanced',
     onSelectLocation
   } = options
 
@@ -41,6 +45,7 @@ export async function createMarsMapRuntime(
 
   const app = new Application()
   await app.init({
+    preference: 'webgl',
     resizeTo: container,
     backgroundColor: 0x110a08,
     antialias: true,
@@ -106,11 +111,17 @@ export async function createMarsMapRuntime(
 
   const occupiedCells = new Set<string>()
 
+  // Instantiate shared lighting context if enhanced lighting is active and assets available
+  const lightingContext =
+    terrainLightingMode !== 'baked' && assets.lightingAvailable
+      ? new TerrainLightingContext(assets.manifest.profile)
+      : null
+
   // Populate terrain layers
   buildContinuousGround(groundLayer, worldBounds, terrainField, cellWorldSize)
-  populateGroundDecals(groundDecalLayer, worldBounds, terrainField, assets, cellWorldSize)
-  populateMacroTerrain(macroLayer, locations, terrainField, assets, cellWorldSize, occupiedCells)
-  populateScatterTerrain(scatterLayer, terrainField, assets, cellWorldSize, occupiedCells)
+  populateGroundDecals(groundDecalLayer, worldBounds, terrainField, assets, cellWorldSize, lightingContext, terrainLightingMode)
+  populateMacroTerrain(macroLayer, locations, terrainField, assets, cellWorldSize, occupiedCells, lightingContext, terrainLightingMode)
+  populateScatterTerrain(scatterLayer, terrainField, assets, cellWorldSize, occupiedCells, lightingContext, terrainLightingMode)
 
   // Setup interaction
   const interaction = setupMapInteraction(
@@ -143,7 +154,7 @@ export async function createMarsMapRuntime(
       interaction.updateLocations(newLocs)
       macroLayer.removeChildren()
       const refreshedOccupied = new Set<string>()
-      populateMacroTerrain(macroLayer, newLocs, terrainField, assets, cellWorldSize, refreshedOccupied)
+      populateMacroTerrain(macroLayer, newLocs, terrainField, assets, cellWorldSize, refreshedOccupied, lightingContext, terrainLightingMode)
     },
     setSelectedLocation(loc: MapLocation | null) {
       interaction.setSelectedLocation(loc)

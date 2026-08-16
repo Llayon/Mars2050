@@ -1,11 +1,12 @@
-import { Container, Graphics, Sprite } from 'pixi.js'
+import { Container, Graphics } from 'pixi.js'
 import type { WorldBounds } from './mars-map-projection'
 import type { TerrainVisualField } from './mars-terrain.types'
 import { TERRAIN_BIOME_CATALOG, selectWeightedAsset } from './mars-terrain-catalog'
 import type { LoadedMapAssets } from './mars-map-render.types'
-import { applyMapAssetTransform } from './mars-map-assets'
 import { TERRAIN_SALTS } from './mars-terrain-biomes'
 import { hashCoord } from './mars-terrain-field'
+import { createTerrainRenderable, type TerrainLightingContext } from './mars-map-lit-mesh'
+import type { TerrainLightingMode } from './mars-map-lighting'
 
 /**
  * Builds a continuous seamless Mars multi-biome ground surface.
@@ -66,7 +67,9 @@ export function populateGroundDecals(
   bounds: WorldBounds,
   field: TerrainVisualField,
   assets: LoadedMapAssets,
-  cellWorldSize: number
+  cellWorldSize: number,
+  lightingContext?: TerrainLightingContext | null,
+  lightingMode?: TerrainLightingMode
 ): void {
   for (const region of field.regions) {
     const rule = TERRAIN_BIOME_CATALOG[region.biome]
@@ -103,23 +106,24 @@ export function populateGroundDecals(
       const runtimeAsset = assets.assets.get(assetId)
       if (!runtimeAsset) continue
 
-      const sprite = new Sprite(runtimeAsset.texture)
-      applyMapAssetTransform(sprite, runtimeAsset.frame, assets.manifest.profile)
-
       // Small uniform scale variation (0.90..1.10) preserving PPU ratio
       const scaleHash = hashCoord(field.seed, region.centerX - i, region.centerY + i, TERRAIN_SALTS.GROUND_DECAL_SCALE)
       const scaleMultiplier = 0.90 + (scaleHash % 200) / 1000
-      sprite.scale.x *= scaleMultiplier
-      sprite.scale.y *= scaleMultiplier
+
+      const renderable = createTerrainRenderable({
+        asset: runtimeAsset,
+        assets,
+        lightingContext,
+        lightingMode,
+        alpha: 0.70,
+        scaleMultiplier
+      })
 
       // Strictly zero rotation to preserve universal sun azimuth
-      sprite.rotation = 0
+      renderable.rotation = 0
+      renderable.position.set(posX, posY)
 
-      // Smooth blending into bedrock
-      sprite.alpha = 0.70
-      sprite.position.set(posX, posY)
-
-      groundDecalLayer.addChild(sprite)
+      groundDecalLayer.addChild(renderable)
     }
   }
 }

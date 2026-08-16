@@ -16,7 +16,10 @@ import {
   type TerrainLightingSettings,
   type ViewSpaceDirection
 } from './mars-map-lighting'
-import { getTerrainGlProgram } from './mars-map-lighting.shader'
+import {
+  TERRAIN_FRAGMENT_SHADER,
+  TERRAIN_VERTEX_SHADER
+} from './mars-map-lighting.shader'
 import type { LoadedMapAssets, RuntimeMapAsset } from './mars-map-render.types'
 
 /**
@@ -109,7 +112,10 @@ export class TerrainLightingContext {
     }
 
     const shader = Shader.from({
-      gl: getTerrainGlProgram(),
+      gl: {
+        vertex: TERRAIN_VERTEX_SHADER,
+        fragment: TERRAIN_FRAGMENT_SHADER
+      },
       resources: {
         uAlbedoTexture: albedoPage.source,
         uNormalTexture: normalPage.source,

@@ -93,7 +93,6 @@ describe('mars-map-assets (loadMapAssets)', () => {
       pages: [
         {
           id: 'page_0',
-          index: 0,
           albedo: '/assets/map/atlas_0.albedo.png',
           normal: '/assets/map/atlas_0.normal.png',
           data: '/assets/map/atlas_0.data.png',
@@ -176,7 +175,6 @@ describe('mars-map-assets (loadMapAssets)', () => {
       pages: [
         {
           id: 'page_0',
-          index: 0,
           albedo: '/assets/map/atlas_0.albedo.png',
           normal: '/assets/map/atlas_0.normal.png',
           data: '/assets/map/atlas_0.data.png',

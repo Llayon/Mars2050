@@ -1,8 +1,8 @@
-import { Container, Sprite } from 'pixi.js'
+import { Container } from 'pixi.js'
 import type { MapLocation } from '@/domains/map/map.types'
 import { cellToWorld } from '@/domains/map/map.grid'
 import type { LoadedMapAssets } from './mars-map-render.types'
-import { applyMapAssetTransform, terrainSortKey } from './mars-map-assets'
+import { terrainSortKey } from './mars-map-assets'
 import type { TerrainVisualField } from './mars-terrain.types'
 import {
   TERRAIN_BIOME_CATALOG,
@@ -11,6 +11,8 @@ import {
 } from './mars-terrain-catalog'
 import { hashCoord } from './mars-terrain-field'
 import { TERRAIN_SALTS } from './mars-terrain-biomes'
+import { createTerrainRenderable, type TerrainLightingContext } from './mars-map-lit-mesh'
+import type { TerrainLightingMode } from './mars-map-lighting'
 
 /**
  * Places macro formations (MapLocation POIs and biome macro features)
@@ -22,7 +24,9 @@ export function populateMacroTerrain(
   field: TerrainVisualField,
   assets: LoadedMapAssets,
   cellWorldSize: number,
-  occupiedCells: Set<string>
+  occupiedCells: Set<string>,
+  lightingContext?: TerrainLightingContext | null,
+  lightingMode?: TerrainLightingMode
 ): void {
   // 1. Primary Priority: MapLocation POI Features
   for (const loc of locations) {
@@ -36,14 +40,18 @@ export function populateMacroTerrain(
     const runtimeAsset = assets.assets.get(visualId)
     if (!runtimeAsset) continue
 
-    const sprite = new Sprite(runtimeAsset.texture)
-    applyMapAssetTransform(sprite, runtimeAsset.frame, assets.manifest.profile)
+    const renderable = createTerrainRenderable({
+      asset: runtimeAsset,
+      assets,
+      lightingContext,
+      lightingMode
+    })
 
     const worldPos = cellToWorld({ x: loc.x, y: loc.y }, cellWorldSize)
-    sprite.position.set(worldPos.x, worldPos.y)
-    sprite.zIndex = terrainSortKey(worldPos.y, 10)
+    renderable.position.set(worldPos.x, worldPos.y)
+    renderable.zIndex = terrainSortKey(worldPos.y, 10)
 
-    parentLayer.addChild(sprite)
+    parentLayer.addChild(renderable)
     occupiedCells.add(`${loc.x},${loc.y}`)
   }
 
@@ -75,14 +83,18 @@ export function populateMacroTerrain(
       const runtimeAsset = assets.assets.get(assetId)
       if (!runtimeAsset) continue
 
-      const sprite = new Sprite(runtimeAsset.texture)
-      applyMapAssetTransform(sprite, runtimeAsset.frame, assets.manifest.profile)
+      const renderable = createTerrainRenderable({
+        asset: runtimeAsset,
+        assets,
+        lightingContext,
+        lightingMode
+      })
 
       const worldPos = cellToWorld({ x: cell.x, y: cell.y }, cellWorldSize)
-      sprite.position.set(worldPos.x, worldPos.y)
-      sprite.zIndex = terrainSortKey(worldPos.y, 8)
+      renderable.position.set(worldPos.x, worldPos.y)
+      renderable.zIndex = terrainSortKey(worldPos.y, 8)
 
-      parentLayer.addChild(sprite)
+      parentLayer.addChild(renderable)
       occupiedCells.add(key)
     }
   }
@@ -96,7 +108,9 @@ export function populateScatterTerrain(
   field: TerrainVisualField,
   assets: LoadedMapAssets,
   cellWorldSize: number,
-  occupiedCells: Set<string>
+  occupiedCells: Set<string>,
+  lightingContext?: TerrainLightingContext | null,
+  lightingMode?: TerrainLightingMode
 ): void {
   for (const cell of field.cells) {
     const key = `${cell.x},${cell.y}`
@@ -119,18 +133,22 @@ export function populateScatterTerrain(
       const runtimeAsset = assets.assets.get(assetId)
       if (!runtimeAsset) continue
 
-      const sprite = new Sprite(runtimeAsset.texture)
-      applyMapAssetTransform(sprite, runtimeAsset.frame, assets.manifest.profile)
+      const renderable = createTerrainRenderable({
+        asset: runtimeAsset,
+        assets,
+        lightingContext,
+        lightingMode
+      })
 
       const centerPos = cellToWorld({ x: cell.x, y: cell.y }, cellWorldSize)
       // Slight deterministic sub-cell jitter
       const offsetX = ((scatterHash % 17) - 8) * (cellWorldSize / 64)
       const offsetY = (((scatterHash >>> 8) % 17) - 8) * (cellWorldSize / 64)
 
-      sprite.position.set(centerPos.x + offsetX, centerPos.y + offsetY)
-      sprite.zIndex = terrainSortKey(centerPos.y + offsetY, 4)
+      renderable.position.set(centerPos.x + offsetX, centerPos.y + offsetY)
+      renderable.zIndex = terrainSortKey(centerPos.y + offsetY, 4)
 
-      parentLayer.addChild(sprite)
+      parentLayer.addChild(renderable)
     }
   }
 }

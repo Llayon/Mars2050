@@ -84,7 +84,7 @@ describe('mars-map-lit-mesh (Geometry & Factory)', () => {
           extrude: 2,
           mipmaps: false
         },
-        pages: [{ id: 'p0', index: 0, albedo: 'a.png', normal: 'n.png', data: 'd.png', width: 2048, height: 2048 }],
+        pages: [{ id: 'p0', albedo: 'a.png', normal: 'n.png', data: 'd.png', width: 2048, height: 2048 }],
         assets: { [frame.id]: frame }
       },
       albedoPages: [dummyTexture],

@@ -185,4 +185,35 @@ describe('mars-map-composition (Terrain Composition & Occupancy)', () => {
     expect(macroLayer1.children.map(c => ({ x: c.position.x, y: c.position.y, z: c.zIndex })))
       .toEqual(macroLayer2.children.map(c => ({ x: c.position.x, y: c.position.y, z: c.zIndex })))
   })
+
+  it('preserves exact spatial positions, scales, and zIndices when switching baked vs enhanced lighting', async () => {
+    const assets = createMockAssets()
+    const field = generateTerrainVisualField({ width: 20, height: 20, seed: DEFAULT_MAP_SEED })
+    const { TerrainLightingContext } = await import('@/components/map/mars-map-lit-mesh')
+    const lightingContext = new TerrainLightingContext(assets.manifest.profile)
+
+    // Baked mode
+    const macroBaked = new Container()
+    const occupiedBaked = new Set<string>()
+    populateMacroTerrain(macroBaked, sampleLocations, field, assets, 128, occupiedBaked, null, 'baked')
+
+    // Enhanced mode
+    const macroEnhanced = new Container()
+    const occupiedEnhanced = new Set<string>()
+    populateMacroTerrain(macroEnhanced, sampleLocations, field, assets, 128, occupiedEnhanced, lightingContext, 'enhanced')
+
+    expect(macroBaked.children.length).toBe(macroEnhanced.children.length)
+
+    for (let i = 0; i < macroBaked.children.length; i++) {
+      const b = macroBaked.children[i]
+      const e = macroEnhanced.children[i]
+
+      expect(e.position.x).toBe(b.position.x)
+      expect(e.position.y).toBe(b.position.y)
+      expect(e.scale.x).toBe(b.scale.x)
+      expect(e.scale.y).toBe(b.scale.y)
+      expect(e.rotation).toBe(b.rotation)
+      expect(e.zIndex).toBe(b.zIndex)
+    }
+  })
 })
