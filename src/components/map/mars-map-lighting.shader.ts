@@ -6,12 +6,13 @@ attribute vec2 aUV;
 
 uniform mat3 uProjectionMatrix;
 uniform mat3 uWorldTransformMatrix;
+uniform mat3 uTransformMatrix;
 
 varying vec2 vUV;
 
 void main(void) {
     vUV = aUV;
-    mat3 mvp = uProjectionMatrix * uWorldTransformMatrix;
+    mat3 mvp = uProjectionMatrix * uWorldTransformMatrix * uTransformMatrix;
     gl_Position = vec4((mvp * vec3(aPosition, 1.0)).xy, 0.0, 1.0);
 }
 `
@@ -33,6 +34,7 @@ uniform float uEmissiveStrength;
 uniform float uMinLightFactor;
 uniform float uMaxLightFactor;
 uniform int uDebugMode;
+uniform vec4 uColor;
 
 void main(void) {
     vec4 albedo = texture2D(uAlbedoTexture, vUV);
@@ -42,7 +44,7 @@ void main(void) {
 
     if (uDebugMode == 1) {
         // Mode 1: Baked Albedo Only
-        gl_FragColor = albedo;
+        gl_FragColor = vec4(albedo.rgb * uColor.rgb, albedo.a * uColor.a);
         return;
     }
 
@@ -51,13 +53,13 @@ void main(void) {
 
     if (uDebugMode == 2) {
         // Mode 2: View-Space Normal Debug
-        gl_FragColor = vec4(normalRaw.rgb, albedo.a);
+        gl_FragColor = vec4(normalRaw.rgb * uColor.rgb, albedo.a * uColor.a);
         return;
     }
 
     if (uDebugMode == 3) {
         // Mode 3: Data Channels Debug (R=Height, G=AO, B=Emissive)
-        gl_FragColor = vec4(dataRaw.rgb, albedo.a);
+        gl_FragColor = vec4(dataRaw.rgb * uColor.rgb, albedo.a * uColor.a);
         return;
     }
 
@@ -85,7 +87,7 @@ void main(void) {
 
     vec3 finalRGB = albedo.rgb * normalFactor * aoFactor + emissive * uEmissiveStrength;
 
-    gl_FragColor = vec4(finalRGB, albedo.a);
+    gl_FragColor = vec4(finalRGB * uColor.rgb, albedo.a * uColor.a);
 }
 `
 

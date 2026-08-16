@@ -83,4 +83,19 @@ describe('mars-map-lighting', () => {
     const minFactor = calculateNormalFactor({ x: -sunDir.x, y: -sunDir.y, z: -sunDir.z }, sunDir, settings)
     expect(minFactor).toBe(0.7)
   })
+
+  it('verifies vertex shader honors Pixi local transform matrix in MVP chain', async () => {
+    const { TERRAIN_VERTEX_SHADER } = await import('@/components/map/mars-map-lighting.shader')
+
+    expect(TERRAIN_VERTEX_SHADER).toContain('uniform mat3 uTransformMatrix;')
+    expect(TERRAIN_VERTEX_SHADER).toContain('uProjectionMatrix * uWorldTransformMatrix * uTransformMatrix')
+  })
+
+  it('verifies fragment shader honors Pixi uColor for alpha and tint modulation', async () => {
+    const { TERRAIN_FRAGMENT_SHADER } = await import('@/components/map/mars-map-lighting.shader')
+
+    expect(TERRAIN_FRAGMENT_SHADER).toContain('uniform vec4 uColor;')
+    expect(TERRAIN_FRAGMENT_SHADER).toContain('finalRGB * uColor.rgb')
+    expect(TERRAIN_FRAGMENT_SHADER).toContain('albedo.a * uColor.a')
+  })
 })
