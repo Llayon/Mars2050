@@ -12,7 +12,7 @@ import { captureLedgerFrameGuard, ledgerDelta, projectLedger } from './combat-ac
 import type { DiagnosticRecord, IntentExecutionRecord, IntentGroupTrace, IntentPlanningCheckpoint, SemanticIntentKey } from './combat-actor-turn-intent-order-types'
 import type { PreparedWorld } from './combat-movement-pipeline-advancement'
 import type { ActorTurnOrderOverride, ActorTurnReplayOverrides } from './combat-actor-turn-intent-order-types'
-import { compareCodeUnit, describeMovementRequest, getActionKind, getSlot, getTarget, semanticId } from './combat-actor-turn-reservation-utils'
+import { compareCodeUnit, describeMovementRequest, getSlot, getTarget, semanticId } from './combat-actor-turn-reservation-utils'
 
 export function normalizeReplayOptions(options: ActorTurnReplayOverrides | ActorTurnOrderOverride | undefined): ActorTurnReplayOverrides {
   if (!options) return {}

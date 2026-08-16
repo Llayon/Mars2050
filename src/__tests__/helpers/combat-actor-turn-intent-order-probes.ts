@@ -1,7 +1,7 @@
 import type { CombatBalanceScenario } from '@/domains/combat/combat.tier1-scenarios'
 import { captureMovementPipelineCell } from './combat-movement-pipeline-probes'
 import { applyOrderingProbe, type OrderingProbeResult } from './combat-ordering-probes'
-import { canonicalSerialize, compareSemanticStates, type FirstSemanticStateDivergence } from './combat-semantic-state-diff'
+import { canonicalSerialize } from './combat-semantic-state-diff'
 import {
   assertActorTurnMapping,
   prepareActorTurn,

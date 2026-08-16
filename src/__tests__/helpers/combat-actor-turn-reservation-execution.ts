@@ -1,6 +1,5 @@
 import type { RuntimePhaseContext } from '@/domains/combat/combat.phase'
 import { EcsActionGroupLedger, type EcsActionIntent } from '@/domains/combat/combat.action-intent'
-import type { EntityId } from '@/domains/combat/ecs/entity'
 import type { MovementRequest } from '@/domains/combat/ecs/movement-batch.types'
 import { compareEntityExternalIdsForMode } from '@/domains/combat/ecs/authored-order'
 import {
