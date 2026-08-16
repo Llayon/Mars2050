@@ -1,18 +1,20 @@
 import { Application, Container } from 'pixi.js'
 import { Viewport } from 'pixi-viewport'
+import { DEFAULT_MAP_SEED } from '@/domains/map/map.config'
 import type { MapLocation, GridSize } from '@/domains/map/map.types'
 import { calculateGridWorldBounds } from './mars-map-projection'
 import { loadMapAssets } from './mars-map-assets'
 import { buildContinuousGround } from './mars-map-ground'
 import { populateMacroTerrain, populateScatterTerrain } from './mars-map-terrain'
-import { setupMapInteraction, type InteractionManager } from './mars-map-interaction'
-import type { MapRenderScene } from './mars-map-render.types'
+import { generateTerrainVisualField } from './mars-terrain-field'
+import { setupMapInteraction } from './mars-map-interaction'
 
 export interface MarsMapRuntimeOptions {
   container: HTMLElement
   locations: MapLocation[]
   selectedLocation: MapLocation | null
   mapSize?: GridSize
+  terrainSeed?: number
   onSelectLocation: (loc: MapLocation | null) => void
 }
 
@@ -30,6 +32,7 @@ export async function createMarsMapRuntime(
     locations,
     selectedLocation,
     mapSize = { width: 20, height: 20 },
+    terrainSeed = DEFAULT_MAP_SEED,
     onSelectLocation
   } = options
 
@@ -97,10 +100,19 @@ export async function createMarsMapRuntime(
   worldRoot.addChild(scatterLayer)
   worldRoot.addChild(interactionLayer)
 
+  // Generate deterministic visual terrain field
+  const terrainField = generateTerrainVisualField({
+    width: mapSize.width,
+    height: mapSize.height,
+    seed: terrainSeed
+  })
+
+  const occupiedCells = new Set<string>()
+
   // Populate terrain layers
-  buildContinuousGround(groundLayer, worldBounds)
-  populateMacroTerrain(macroLayer, locations, assets, cellWorldSize)
-  populateScatterTerrain(scatterLayer, mapSize.width, mapSize.height, assets, cellWorldSize)
+  buildContinuousGround(groundLayer, worldBounds, terrainField, cellWorldSize)
+  populateMacroTerrain(macroLayer, locations, terrainField, assets, cellWorldSize, occupiedCells)
+  populateScatterTerrain(scatterLayer, terrainField, assets, cellWorldSize, occupiedCells)
 
   // Setup interaction
   const interaction = setupMapInteraction(
@@ -132,7 +144,8 @@ export async function createMarsMapRuntime(
     updateLocations(newLocs: MapLocation[]) {
       interaction.updateLocations(newLocs)
       macroLayer.removeChildren()
-      populateMacroTerrain(macroLayer, newLocs, assets, cellWorldSize)
+      const refreshedOccupied = new Set<string>()
+      populateMacroTerrain(macroLayer, newLocs, terrainField, assets, cellWorldSize, refreshedOccupied)
     },
     setSelectedLocation(loc: MapLocation | null) {
       interaction.setSelectedLocation(loc)

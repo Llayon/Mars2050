@@ -1,41 +1,36 @@
 import { Container, Sprite } from 'pixi.js'
-import type { MapLocation, MapLocationType } from '@/domains/map/map.types'
+import type { MapLocation } from '@/domains/map/map.types'
 import { cellToWorld } from '@/domains/map/map.grid'
 import type { LoadedMapAssets } from './mars-map-render.types'
 import { applyMapAssetTransform, terrainSortKey } from './mars-map-assets'
-import { enumerateGridCells } from './mars-map-projection'
+import type { TerrainVisualField } from './mars-terrain.types'
+import {
+  TERRAIN_BIOME_CATALOG,
+  LOCATION_FEATURE_VISUALS,
+  selectWeightedAsset
+} from './mars-terrain-catalog'
+import { hashCoord } from './mars-terrain-field'
+import { TERRAIN_SALTS } from './mars-terrain-biomes'
 
 /**
- * Visual asset mapping for location types.
- */
-const LOCATION_VISUALS: Record<MapLocationType, string | null> = {
-  plains: null,
-  mountains: 'cliff_ridge_01',
-  canyon: 'cliff_ridge_01',
-  crater: 'crater_medium_01',
-  ice_cap: null
-}
-
-/**
- * Simple 32-bit deterministic integer hash for decor placement.
- */
-export function hashCell(seed: number, x: number, y: number): number {
-  let h = (seed ^ (x * 374761393) ^ (y * 668265263)) >>> 0
-  h = Math.imul(h ^ (h >>> 13), 1274126177) >>> 0
-  return (h ^ (h >>> 16)) >>> 0
-}
-
-/**
- * Places macro formations (craters, cliffs) for MapLocations.
+ * Places macro formations (MapLocation POIs and biome macro features)
+ * respecting strict occupancy priority: MapLocation Feature > Biome Macro.
  */
 export function populateMacroTerrain(
   parentLayer: Container,
   locations: MapLocation[],
+  field: TerrainVisualField,
   assets: LoadedMapAssets,
-  cellWorldSize: number
+  cellWorldSize: number,
+  occupiedCells: Set<string>
 ): void {
+  // 1. Primary Priority: MapLocation POI Features
   for (const loc of locations) {
-    const visualId = LOCATION_VISUALS[loc.type]
+    const refs = LOCATION_FEATURE_VISUALS[loc.type]
+    if (!refs || refs.length === 0) continue
+
+    const variantHash = hashCoord(field.seed, loc.x, loc.y, TERRAIN_SALTS.VARIANT)
+    const visualId = selectWeightedAsset(refs, variantHash)
     if (!visualId) continue
 
     const runtimeAsset = assets.assets.get(visualId)
@@ -49,38 +44,91 @@ export function populateMacroTerrain(
     sprite.zIndex = terrainSortKey(worldPos.y, 10)
 
     parentLayer.addChild(sprite)
+    occupiedCells.add(`${loc.x},${loc.y}`)
+  }
+
+  // 2. Secondary Priority: Biome Macro Formations with spacing constraints
+  for (const cell of field.cells) {
+    const key = `${cell.x},${cell.y}`
+    if (occupiedCells.has(key)) continue
+
+    const rule = TERRAIN_BIOME_CATALOG[cell.biome]
+    if (!rule || rule.macroAssets.length === 0 || rule.macroDensity <= 0) continue
+
+    // Check spacing: no macro on adjacent 4-way neighbors
+    const hasAdjacentMacro =
+      occupiedCells.has(`${cell.x + 1},${cell.y}`) ||
+      occupiedCells.has(`${cell.x - 1},${cell.y}`) ||
+      occupiedCells.has(`${cell.x},${cell.y + 1}`) ||
+      occupiedCells.has(`${cell.x},${cell.y - 1}`)
+
+    if (hasAdjacentMacro) continue
+
+    const macroHash = hashCoord(field.seed, cell.x, cell.y, TERRAIN_SALTS.MACRO)
+    const threshold = Math.floor(rule.macroDensity * 1000)
+
+    if ((macroHash % 1000) < threshold) {
+      const variantHash = hashCoord(field.seed, cell.x, cell.y, TERRAIN_SALTS.VARIANT)
+      const assetId = selectWeightedAsset(rule.macroAssets, variantHash)
+      if (!assetId) continue
+
+      const runtimeAsset = assets.assets.get(assetId)
+      if (!runtimeAsset) continue
+
+      const sprite = new Sprite(runtimeAsset.texture)
+      applyMapAssetTransform(sprite, runtimeAsset.frame, assets.manifest.profile)
+
+      const worldPos = cellToWorld({ x: cell.x, y: cell.y }, cellWorldSize)
+      sprite.position.set(worldPos.x, worldPos.y)
+      sprite.zIndex = terrainSortKey(worldPos.y, 8)
+
+      parentLayer.addChild(sprite)
+      occupiedCells.add(key)
+    }
   }
 }
 
 /**
- * Places deterministic rock scatter across empty or general terrain cells.
+ * Places deterministic scatter across cells governed by biome rules and density.
  */
 export function populateScatterTerrain(
   parentLayer: Container,
-  width: number,
-  height: number,
+  field: TerrainVisualField,
   assets: LoadedMapAssets,
   cellWorldSize: number,
-  seed: number = 42
+  occupiedCells: Set<string>
 ): void {
-  const rockAsset = assets.assets.get('rock_scatter_01')
-  if (!rockAsset) return
+  for (const cell of field.cells) {
+    const key = `${cell.x},${cell.y}`
+    // Do not crowd POIs or large macro formations with heavy scatter
+    if (occupiedCells.has(key)) continue
 
-  const allCells = enumerateGridCells(width, height)
-  for (const cell of allCells) {
-    const hash = hashCell(seed, cell.x, cell.y)
-    // Place a rock on roughly 18% of cells
-    if (hash % 100 < 18) {
-      const sprite = new Sprite(rockAsset.texture)
-      applyMapAssetTransform(sprite, rockAsset.frame, assets.manifest.profile)
+    const rule = TERRAIN_BIOME_CATALOG[cell.biome]
+    if (!rule || rule.scatterAssets.length === 0 || rule.scatterDensity <= 0) continue
 
-      const centerPos = cellToWorld(cell, cellWorldSize)
-      // Slight sub-cell jitter for organic distribution
-      const offsetX = ((hash % 17) - 8) * (cellWorldSize / 64)
-      const offsetY = (((hash >>> 8) % 17) - 8) * (cellWorldSize / 64)
+    // Modulate scatter density by roughness and dust
+    const effectiveDensity = rule.scatterDensity * (0.6 + cell.roughness * 0.8) * (1.2 - cell.dust * 0.4)
+    const threshold = Math.floor(effectiveDensity * 1000)
+
+    const scatterHash = hashCoord(field.seed, cell.x, cell.y, TERRAIN_SALTS.SCATTER)
+    if ((scatterHash % 1000) < threshold) {
+      const variantHash = hashCoord(field.seed, cell.x, cell.y, TERRAIN_SALTS.VARIANT)
+      const assetId = selectWeightedAsset(rule.scatterAssets, variantHash)
+      if (!assetId) continue
+
+      const runtimeAsset = assets.assets.get(assetId)
+      if (!runtimeAsset) continue
+
+      const sprite = new Sprite(runtimeAsset.texture)
+      applyMapAssetTransform(sprite, runtimeAsset.frame, assets.manifest.profile)
+
+      const centerPos = cellToWorld({ x: cell.x, y: cell.y }, cellWorldSize)
+      // Slight deterministic sub-cell jitter
+      const offsetX = ((scatterHash % 17) - 8) * (cellWorldSize / 64)
+      const offsetY = (((scatterHash >>> 8) % 17) - 8) * (cellWorldSize / 64)
 
       sprite.position.set(centerPos.x + offsetX, centerPos.y + offsetY)
-      sprite.zIndex = terrainSortKey(centerPos.y + offsetY, 5)
+      sprite.zIndex = terrainSortKey(centerPos.y + offsetY, 4)
 
       parentLayer.addChild(sprite)
     }
