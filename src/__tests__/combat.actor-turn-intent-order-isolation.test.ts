@@ -6,6 +6,8 @@ import { loadPr12Endpoint, runIntentOrderExperiment } from './helpers/combat-act
 import { prepareActorTurn, runTracedActorTurn } from './helpers/combat-actor-turn-reservation-probes'
 import { semanticizeExternalReference } from './helpers/combat-actor-turn-ledger-projection'
 import { runDownstreamExperiment } from './helpers/combat-actor-turn-intent-order-downstream'
+import { EcsActionGroupLedger } from '@/domains/combat/combat.action-intent'
+import { projectLedger } from './helpers/combat-actor-turn-ledger-projection'
 
 describe('combat actor-turn intent execution order isolation', () => {
   it('keeps all four cells on baseline semantic actor traversal', () => {
@@ -49,12 +51,20 @@ describe('combat actor-turn intent execution order isolation', () => {
     expect(canonicalSerialize(runPrimary())).toBe(canonicalSerialize(runPrimary()))
   })
 
-  it('semanticizes composite claim origins without losing raw evidence', () => {
+  it('semanticizes composite claim projections without losing raw evidence', () => {
     const identity = { originalRole: 'attacker' as const, originalRowId: 'unit-a', semanticSquad: 'attacker:unit-a_squad', memberOrdinal: 0 }
-    const baseline = { transform: 'baseline' as const, attackers: [], defenders: [], semanticByExternalId: new Map([['abc', identity]]) }
-    const candidate = { transform: 'defender_cohort_rank_reassigned' as const, attackers: [], defenders: [], semanticByExternalId: new Map([['xyz', identity]]) }
+    const runtimeProbe = applyOrderingProbe(primaryScenario(), 'baseline')
+    const baseline = { ...runtimeProbe, semanticByExternalId: new Map([...runtimeProbe.semanticByExternalId, ['abc', identity]]) }
+    const candidate = { ...runtimeProbe, transform: 'defender_cohort_rank_reassigned' as const, semanticByExternalId: new Map([...runtimeProbe.semanticByExternalId, ['xyz', identity]]) }
+    const source = prepareActorTurn(primaryScenario(), 101, runtimeProbe)
+    const baselineLedger = createClaimLedger(source.prepared.runtime.world, 'abc')
+    const candidateLedger = createClaimLedger(source.prepared.runtime.world, 'xyz')
+    const baselineProjection = projectLedger(source.prepared.runtime.world, baselineLedger, baseline)
+    const candidateProjection = projectLedger(source.prepared.runtime.world, candidateLedger, candidate)
+    expect(baselineProjection.semanticClaimSequence).toEqual(candidateProjection.semanticClaimSequence)
+    expect(baselineProjection.semanticClaimMultiset).toEqual(candidateProjection.semanticClaimMultiset)
+    expect(baselineProjection.rawClaimOrderEvidence).not.toEqual(candidateProjection.rawClaimOrderEvidence)
     expect(semanticizeExternalReference('unit:abc:attack', baseline)).toBe(semanticizeExternalReference('unit:xyz:attack', candidate))
-    expect('unit:abc:attack').not.toBe('unit:xyz:attack')
   })
 
   it('keeps the trace pre-intent request projection before fallback requests', { timeout: 30000 }, () => {
@@ -82,10 +92,31 @@ describe('combat actor-turn intent execution order isolation', () => {
     expect(downstream.collisionEquivalent).toBe(true)
     expect(downstream.committedTransformsEquivalent).toBe(true)
     expect(downstream.movementStateEquivalent).toBe(true)
+    expect(downstream.dirtyEntitiesEquivalent).toBe(true)
     expect(downstream.moveActionMultisetEquivalent).toBe(true)
     expect(downstream.moveActionSequenceEquivalent).toBe(false)
   })
 })
+
+function createClaimLedger(world: ReturnType<typeof prepareActorTurn>['prepared']['runtime']['world'], externalId: string): EcsActionGroupLedger {
+  const ledger = new EcsActionGroupLedger()
+  ledger.begin(world, [], { tick: 1, phaseId: 'actor_turn', groupOrdinal: 0 })
+  ledger.captureClaim({
+    order: {
+      originExternalId: `unit:${externalId}:attack`,
+      position: { programIndex: 0, groupIndex: 0, targetOrdinal: 0, effectIndex: 0 },
+      targetExternalId: `unit:${externalId}:target`,
+      sourceExternalId: `unit:${externalId}:source`,
+    },
+    targetExternalId: `unit:${externalId}:target`,
+    sourceExternalId: `unit:${externalId}:source`,
+    originExternalId: `unit:${externalId}:attack`,
+    authoredOrdinal: 0,
+    authoredPosition: { programIndex: 0, groupIndex: 0, targetOrdinal: 0, effectIndex: 0 },
+    rawDamage: 10,
+  })
+  return ledger
+}
 
 function runPrimary() {
   const scenario = primaryScenario()

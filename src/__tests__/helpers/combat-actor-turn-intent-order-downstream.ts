@@ -31,12 +31,14 @@ export interface DownstreamComparison {
     actedEquivalent: boolean
     requestMultisetEquivalent: boolean
     requestSequenceEquivalent: boolean
-    requestInitiativeIndexEquivalent: boolean
+    requestInitiativeIndexValueSequenceEquivalent: boolean
+    requestInitiativeAssignmentEquivalent: boolean
     requestOnlyDifference: boolean
   }
   collisionEquivalent: boolean
   committedTransformsEquivalent: boolean
   movementStateEquivalent: boolean
+  dirtyEntitiesEquivalent: boolean
   moveActionMultisetEquivalent: boolean
   moveActionSequenceEquivalent: boolean
   effect: DownstreamEffect
@@ -61,16 +63,17 @@ export function runDownstreamExperiment(
   const collisionEquivalent = canonicalSerialize(left.collisionProfile) === canonicalSerialize(right.collisionProfile)
   const committedTransformsEquivalent = canonicalSerialize(left.transforms) === canonicalSerialize(right.transforms)
   const movementStateEquivalent = compareSemanticStates(left.batchEndpoint, right.batchEndpoint).equivalent
+  const dirtyEntitiesEquivalent = canonicalSerialize(left.dirtyEntities) === canonicalSerialize(right.dirtyEntities)
   const moveActionMultisetEquivalent = canonicalSerialize(sortRecords(left.batchActions)) === canonicalSerialize(sortRecords(right.batchActions))
   const moveActionSequenceEquivalent = canonicalSerialize(left.batchActions) === canonicalSerialize(right.batchActions)
   const effect = !precondition.requestOnlyDifference
     ? 'NOT_ELIGIBLE'
-    : !collisionEquivalent || !committedTransformsEquivalent || !movementStateEquivalent
+    : !collisionEquivalent || !committedTransformsEquivalent || !movementStateEquivalent || !dirtyEntitiesEquivalent
       ? 'MOVEMENT_STATE'
       : !moveActionMultisetEquivalent || !moveActionSequenceEquivalent
         ? 'REPLAY_ORDER_ONLY'
         : 'NO_STATE_EFFECT'
-  return { precondition, collisionEquivalent, committedTransformsEquivalent, movementStateEquivalent, moveActionMultisetEquivalent, moveActionSequenceEquivalent, effect, cells }
+  return { precondition, collisionEquivalent, committedTransformsEquivalent, movementStateEquivalent, dirtyEntitiesEquivalent, moveActionMultisetEquivalent, moveActionSequenceEquivalent, effect, cells }
 }
 
 function runCell(
@@ -119,9 +122,10 @@ function comparePrecondition(left: DownstreamCell, right: DownstreamCell): Downs
   const rightRequests = right.movementRequests
   const requestMultisetEquivalent = canonicalSerialize(sortRecords(leftRequests.map(stripInitiative))) === canonicalSerialize(sortRecords(rightRequests.map(stripInitiative)))
   const requestSequenceEquivalent = canonicalSerialize(leftRequests) === canonicalSerialize(rightRequests)
-  const requestInitiativeIndexEquivalent = canonicalSerialize(leftRequests.map(request => request.initiativeIndex)) === canonicalSerialize(rightRequests.map(request => request.initiativeIndex))
-  const requestOnlyDifference = actorTurnStateEquivalent && actorTurnActionsEquivalent && actedEquivalent && requestMultisetEquivalent && (!requestSequenceEquivalent || !requestInitiativeIndexEquivalent)
-  return { actorTurnStateEquivalent, actorTurnActionsEquivalent, actedEquivalent, requestMultisetEquivalent, requestSequenceEquivalent, requestInitiativeIndexEquivalent, requestOnlyDifference }
+  const requestInitiativeIndexValueSequenceEquivalent = canonicalSerialize(leftRequests.map(request => request.initiativeIndex)) === canonicalSerialize(rightRequests.map(request => request.initiativeIndex))
+  const requestInitiativeAssignmentEquivalent = canonicalSerialize(sortInitiativeAssignments(leftRequests)) === canonicalSerialize(sortInitiativeAssignments(rightRequests))
+  const requestOnlyDifference = actorTurnStateEquivalent && actorTurnActionsEquivalent && actedEquivalent && requestMultisetEquivalent && (!requestSequenceEquivalent || !requestInitiativeAssignmentEquivalent)
+  return { actorTurnStateEquivalent, actorTurnActionsEquivalent, actedEquivalent, requestMultisetEquivalent, requestSequenceEquivalent, requestInitiativeIndexValueSequenceEquivalent, requestInitiativeAssignmentEquivalent, requestOnlyDifference }
 }
 
 function stripInitiative(value: DiagnosticRecord): DiagnosticRecord {
@@ -132,4 +136,10 @@ function stripInitiative(value: DiagnosticRecord): DiagnosticRecord {
 
 function sortRecords(values: readonly DiagnosticRecord[]): DiagnosticRecord[] {
   return [...values].sort((left, right) => canonicalSerialize(left).localeCompare(canonicalSerialize(right)))
+}
+
+function sortInitiativeAssignments(values: readonly DiagnosticRecord[]): DiagnosticRecord[] {
+  return [...values]
+    .map(value => ({ request: stripInitiative(value), initiativeIndex: value.initiativeIndex }))
+    .sort((left, right) => canonicalSerialize(left).localeCompare(canonicalSerialize(right)))
 }
