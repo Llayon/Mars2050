@@ -35,26 +35,58 @@ function createMockAssets(): LoadedMapAssets {
       height: 2048
     }],
     assets: {
-      crater_medium_01: {
-        id: 'crater_medium_01',
+      crater_medium_02: {
+        id: 'crater_medium_02',
         page: 0,
         frame: { x: 0, y: 0, w: 200, h: 160 },
         anchor: { x: 0.5, y: 0.5 },
         layer: 'macro',
         footprint: [{ x: 0, y: 0 }]
       },
-      cliff_ridge_01: {
-        id: 'cliff_ridge_01',
+      crater_small_01: {
+        id: 'crater_small_01',
         page: 0,
-        frame: { x: 200, y: 0, w: 200, h: 160 },
+        frame: { x: 200, y: 0, w: 150, h: 130 },
         anchor: { x: 0.5, y: 0.5 },
         layer: 'macro',
         footprint: [{ x: 0, y: 0 }]
       },
-      rock_scatter_01: {
-        id: 'rock_scatter_01',
+      ridge_01: {
+        id: 'ridge_01',
         page: 0,
-        frame: { x: 400, y: 0, w: 80, h: 60 },
+        frame: { x: 350, y: 0, w: 200, h: 160 },
+        anchor: { x: 0.5, y: 0.5 },
+        layer: 'macro',
+        footprint: [{ x: 0, y: 0 }]
+      },
+      ridge_02: {
+        id: 'ridge_02',
+        page: 0,
+        frame: { x: 550, y: 0, w: 200, h: 160 },
+        anchor: { x: 0.5, y: 0.5 },
+        layer: 'macro',
+        footprint: [{ x: 0, y: 0 }]
+      },
+      rocks_small_01: {
+        id: 'rocks_small_01',
+        page: 0,
+        frame: { x: 750, y: 0, w: 80, h: 60 },
+        anchor: { x: 0.5, y: 0.5 },
+        layer: 'scatter',
+        footprint: [{ x: 0, y: 0 }]
+      },
+      rocks_small_02: {
+        id: 'rocks_small_02',
+        page: 0,
+        frame: { x: 830, y: 0, w: 80, h: 60 },
+        anchor: { x: 0.5, y: 0.5 },
+        layer: 'scatter',
+        footprint: [{ x: 0, y: 0 }]
+      },
+      boulder_cluster_01: {
+        id: 'boulder_cluster_01',
+        page: 0,
+        frame: { x: 910, y: 0, w: 80, h: 60 },
         anchor: { x: 0.5, y: 0.5 },
         layer: 'scatter',
         footprint: [{ x: 0, y: 0 }]
@@ -66,18 +98,13 @@ function createMockAssets(): LoadedMapAssets {
     manifest,
     albedoPages: [dummyTexture],
     assets: new Map([
-      ['crater_medium_01', {
-        texture: dummyTexture,
-        frame: manifest.assets['crater_medium_01']
-      }],
-      ['cliff_ridge_01', {
-        texture: dummyTexture,
-        frame: manifest.assets['cliff_ridge_01']
-      }],
-      ['rock_scatter_01', {
-        texture: dummyTexture,
-        frame: manifest.assets['rock_scatter_01']
-      }]
+      ['crater_medium_02', { texture: dummyTexture, frame: manifest.assets['crater_medium_02'] }],
+      ['crater_small_01', { texture: dummyTexture, frame: manifest.assets['crater_small_01'] }],
+      ['ridge_01', { texture: dummyTexture, frame: manifest.assets['ridge_01'] }],
+      ['ridge_02', { texture: dummyTexture, frame: manifest.assets['ridge_02'] }],
+      ['rocks_small_01', { texture: dummyTexture, frame: manifest.assets['rocks_small_01'] }],
+      ['rocks_small_02', { texture: dummyTexture, frame: manifest.assets['rocks_small_02'] }],
+      ['boulder_cluster_01', { texture: dummyTexture, frame: manifest.assets['boulder_cluster_01'] }]
     ])
   }
 }

@@ -1,7 +1,7 @@
 """
 Headless entrypoint for Mars2050 Blender Asset Factory.
 Reads authoritative map-render-profile.json and map-asset-factory.json.
-Generates Albedo, Normal (view-space), and Data maps into staging directory.
+Renders Albedo, View-Space Normal, and Packed Data maps into staging directory.
 """
 
 import sys
@@ -16,12 +16,14 @@ if script_dir not in sys.path:
 
 try:
     import bpy
-    from scene_setup import setup_render_engine, setup_camera, setup_lighting, setup_compositor_nodes
+    from scene_setup import setup_render_engine, setup_camera, setup_lighting
     from materials import (
         create_regolith_material,
         create_basalt_material,
         create_dust_material,
-        create_rock_material
+        create_rock_material,
+        create_view_space_normal_material,
+        create_data_pass_material
     )
     from generators.crater import generate_crater
     from generators.ridge import generate_ridge
@@ -53,14 +55,26 @@ def clear_mesh_objects():
     for mesh in list(bpy.data.meshes):
         bpy.data.meshes.remove(mesh, do_unlink=True)
 
-def assign_material(obj, mat):
+def assign_material_recursive(obj, mat):
     if obj.type == 'MESH':
         if obj.data.materials:
             obj.data.materials[0] = mat
         else:
             obj.data.materials.append(mat)
     for child in obj.children:
-        assign_material(child, mat)
+        assign_material_recursive(child, mat)
+
+def get_max_z(obj):
+    max_z = 0.5
+    if obj.type == 'MESH' and obj.data.vertices:
+        for v in obj.data.vertices:
+            if v.co.z > max_z:
+                max_z = v.co.z
+    for child in obj.children:
+        cz = get_max_z(child)
+        if cz > max_z:
+            max_z = cz
+    return max_z
 
 def run_factory():
     if not bpy:
@@ -86,37 +100,44 @@ def run_factory():
     setup_lighting(profile)
 
     manifest_assets = []
+    total_assets = len(factory_config.get('assets', []))
+    print(f"Starting Blender factory render for {total_assets} assets...")
 
-    for asset_def in factory_config.get('assets', []):
+    for idx, asset_def in enumerate(factory_config.get('assets', [])):
         asset_id = asset_def['id']
         generator_kind = asset_def['generator']
         seed = asset_def.get('seed', 101)
         params = asset_def.get('params', {})
 
-        print(f"Generating asset [{asset_id}] (kind: {generator_kind}, seed: {seed})...")
+        print(f"[{idx + 1}/{total_assets}] Generating asset [{asset_id}] (kind: {generator_kind}, seed: {seed})...")
         clear_mesh_objects()
 
         # Build mesh
         if generator_kind == 'crater':
             obj = generate_crater(params, seed)
-            mat = create_regolith_material()
+            albedo_mat = create_regolith_material()
         elif generator_kind == 'ridge':
             obj = generate_ridge(params, seed)
-            mat = create_regolith_material()
+            albedo_mat = create_regolith_material()
         elif generator_kind == 'rocks':
             obj = generate_rocks(params, seed)
-            mat = create_rock_material()
+            albedo_mat = create_rock_material()
         elif generator_kind == 'dune':
             obj = generate_dune(params, seed)
-            mat = create_dust_material()
+            albedo_mat = create_dust_material()
         elif generator_kind == 'basalt':
             obj = generate_rocks(params, seed)
-            mat = create_basalt_material()
+            albedo_mat = create_basalt_material()
+        elif generator_kind == 'dust':
+            obj = generate_dune(params, seed)
+            albedo_mat = create_dust_material()
         else:
             obj = generate_rocks(params, seed)
-            mat = create_regolith_material()
+            albedo_mat = create_regolith_material()
 
-        assign_material(obj, mat)
+        max_height = get_max_z(obj)
+        normal_mat = create_view_space_normal_material()
+        data_mat = create_data_pass_material(max_height=max_height)
 
         # Output filenames
         albedo_filename = f"{asset_id}.albedo.png"
@@ -127,8 +148,19 @@ def run_factory():
         normal_path = os.path.join(args.output_dir, normal_filename)
         data_path = os.path.join(args.output_dir, data_filename)
 
-        # Render pass
+        # 1. Albedo Pass
+        assign_material_recursive(obj, albedo_mat)
         bpy.context.scene.render.filepath = albedo_path
+        bpy.ops.render.render(write_still=True)
+
+        # 2. View-Space Normal Pass
+        assign_material_recursive(obj, normal_mat)
+        bpy.context.scene.render.filepath = normal_path
+        bpy.ops.render.render(write_still=True)
+
+        # 3. Packed Data Pass
+        assign_material_recursive(obj, data_mat)
+        bpy.context.scene.render.filepath = data_path
         bpy.ops.render.render(write_still=True)
 
         manifest_assets.append({
@@ -151,7 +183,7 @@ def run_factory():
     with open(os.path.join(args.output_dir, 'raw_manifest.json'), 'w', encoding='utf-8') as f:
         json.dump(raw_manifest, f, indent=2)
 
-    print(f"Factory execution complete. Staged {len(manifest_assets)} assets in {args.output_dir}")
+    print(f"Factory execution complete. Generated {len(manifest_assets)} multi-channel assets in {args.output_dir}")
 
 if __name__ == '__main__':
     run_factory()

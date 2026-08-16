@@ -2,16 +2,16 @@
   "version": 2,
   "assets": [
     {
-      "id": "regolith_plain_01",
+      "id": "regolith_patch_01",
       "layer": "ground",
       "source": {
-        "albedo": "regolith_plain_01.albedo.png",
-        "normal": "regolith_plain_01.normal.png",
-        "data": "regolith_plain_01.data.png"
+        "albedo": "regolith_patch_01.albedo.png",
+        "normal": "regolith_patch_01.normal.png",
+        "data": "regolith_patch_01.data.png"
       },
       "anchorPx": {
-        "x": 128,
-        "y": 128
+        "x": 256,
+        "y": 256
       },
       "footprint": [
         {
@@ -21,41 +21,16 @@
       ]
     },
     {
-      "id": "crater_medium_01",
-      "layer": "macro",
+      "id": "regolith_patch_02",
+      "layer": "ground",
       "source": {
-        "albedo": "crater_medium_01.albedo.png",
-        "normal": "crater_medium_01.normal.png",
-        "data": "crater_medium_01.data.png"
+        "albedo": "regolith_patch_02.albedo.png",
+        "normal": "regolith_patch_02.normal.png",
+        "data": "regolith_patch_02.data.png"
       },
       "anchorPx": {
-        "x": 128,
-        "y": 128
-      },
-      "footprint": [
-        {
-          "x": 0,
-          "y": 0
-        }
-      ],
-      "overhangPx": {
-        "top": 15,
-        "right": 10,
-        "bottom": 5,
-        "left": 10
-      }
-    },
-    {
-      "id": "cliff_ridge_01",
-      "layer": "macro",
-      "source": {
-        "albedo": "cliff_ridge_01.albedo.png",
-        "normal": "cliff_ridge_01.normal.png",
-        "data": "cliff_ridge_01.data.png"
-      },
-      "anchorPx": {
-        "x": 128,
-        "y": 130
+        "x": 256,
+        "y": 256
       },
       "footprint": [
         {
@@ -65,17 +40,213 @@
       ]
     },
     {
-      "id": "rock_scatter_01",
+      "id": "basalt_patch_01",
+      "layer": "ground",
+      "source": {
+        "albedo": "basalt_patch_01.albedo.png",
+        "normal": "basalt_patch_01.normal.png",
+        "data": "basalt_patch_01.data.png"
+      },
+      "anchorPx": {
+        "x": 256,
+        "y": 256
+      },
+      "footprint": [
+        {
+          "x": 0,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "id": "dust_patch_01",
+      "layer": "ground",
+      "source": {
+        "albedo": "dust_patch_01.albedo.png",
+        "normal": "dust_patch_01.normal.png",
+        "data": "dust_patch_01.data.png"
+      },
+      "anchorPx": {
+        "x": 256,
+        "y": 256
+      },
+      "footprint": [
+        {
+          "x": 0,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "id": "crater_small_01",
+      "layer": "macro",
+      "source": {
+        "albedo": "crater_small_01.albedo.png",
+        "normal": "crater_small_01.normal.png",
+        "data": "crater_small_01.data.png"
+      },
+      "anchorPx": {
+        "x": 256,
+        "y": 256
+      },
+      "footprint": [
+        {
+          "x": 0,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "id": "crater_medium_02",
+      "layer": "macro",
+      "source": {
+        "albedo": "crater_medium_02.albedo.png",
+        "normal": "crater_medium_02.normal.png",
+        "data": "crater_medium_02.data.png"
+      },
+      "anchorPx": {
+        "x": 256,
+        "y": 256
+      },
+      "footprint": [
+        {
+          "x": 0,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "id": "ridge_01",
+      "layer": "macro",
+      "source": {
+        "albedo": "ridge_01.albedo.png",
+        "normal": "ridge_01.normal.png",
+        "data": "ridge_01.data.png"
+      },
+      "anchorPx": {
+        "x": 256,
+        "y": 260
+      },
+      "footprint": [
+        {
+          "x": 0,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "id": "ridge_02",
+      "layer": "macro",
+      "source": {
+        "albedo": "ridge_02.albedo.png",
+        "normal": "ridge_02.normal.png",
+        "data": "ridge_02.data.png"
+      },
+      "anchorPx": {
+        "x": 256,
+        "y": 260
+      },
+      "footprint": [
+        {
+          "x": 0,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "id": "dune_ridge_01",
+      "layer": "macro",
+      "source": {
+        "albedo": "dune_ridge_01.albedo.png",
+        "normal": "dune_ridge_01.normal.png",
+        "data": "dune_ridge_01.data.png"
+      },
+      "anchorPx": {
+        "x": 256,
+        "y": 256
+      },
+      "footprint": [
+        {
+          "x": 0,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "id": "rocks_small_01",
       "layer": "scatter",
       "source": {
-        "albedo": "rock_scatter_01.albedo.png",
-        "normal": "rock_scatter_01.normal.png",
-        "data": "rock_scatter_01.data.png"
+        "albedo": "rocks_small_01.albedo.png",
+        "normal": "rocks_small_01.normal.png",
+        "data": "rocks_small_01.data.png"
       },
       "anchorPx": {
-        "x": 64,
-        "y": 64
-      }
+        "x": 256,
+        "y": 256
+      },
+      "footprint": [
+        {
+          "x": 0,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "id": "rocks_small_02",
+      "layer": "scatter",
+      "source": {
+        "albedo": "rocks_small_02.albedo.png",
+        "normal": "rocks_small_02.normal.png",
+        "data": "rocks_small_02.data.png"
+      },
+      "anchorPx": {
+        "x": 256,
+        "y": 256
+      },
+      "footprint": [
+        {
+          "x": 0,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "id": "boulder_cluster_01",
+      "layer": "scatter",
+      "source": {
+        "albedo": "boulder_cluster_01.albedo.png",
+        "normal": "boulder_cluster_01.normal.png",
+        "data": "boulder_cluster_01.data.png"
+      },
+      "anchorPx": {
+        "x": 256,
+        "y": 256
+      },
+      "footprint": [
+        {
+          "x": 0,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "id": "boulder_cluster_02",
+      "layer": "scatter",
+      "source": {
+        "albedo": "boulder_cluster_02.albedo.png",
+        "normal": "boulder_cluster_02.normal.png",
+        "data": "boulder_cluster_02.data.png"
+      },
+      "anchorPx": {
+        "x": 256,
+        "y": 256
+      },
+      "footprint": [
+        {
+          "x": 0,
+          "y": 0
+        }
+      ]
     }
   ]
 }

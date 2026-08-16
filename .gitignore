@@ -56,3 +56,9 @@ temp_*.txt
 /check-db.ts
 /pixellab-*.png
 /Sci-fi_*.png
+
+# Python / Blender factory
+__pycache__/
+*.py[cod]
+/assets/raw_renders.next/
+/assets/raw_renders.prev/

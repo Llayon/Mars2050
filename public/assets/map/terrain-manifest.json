@@ -26,18 +26,18 @@
     }
   ],
   "assets": {
-    "regolith_plain_01": {
-      "id": "regolith_plain_01",
+    "regolith_patch_01": {
+      "id": "regolith_patch_01",
       "page": 0,
       "frame": {
-        "x": 2,
+        "x": 1162,
         "y": 2,
-        "w": 199,
-        "h": 159
+        "w": 62,
+        "h": 55
       },
       "anchor": {
-        "x": 0.4975,
-        "y": 0.4969
+        "x": 0.371,
+        "y": 0.6182
       },
       "footprint": [
         {
@@ -47,24 +47,81 @@
       ],
       "layer": "ground"
     },
-    "crater_medium_01": {
-      "id": "crater_medium_01",
+    "regolith_patch_02": {
+      "id": "regolith_patch_02",
       "page": 0,
       "frame": {
-        "x": 209,
+        "x": 1289,
         "y": 2,
-        "w": 181,
-        "h": 141
+        "w": 49,
+        "h": 37
       },
       "anchor": {
-        "x": 0.4972,
-        "y": 0.4965
+        "x": 0.6122,
+        "y": 0.6486
       },
-      "overhang": {
-        "top": 15,
-        "right": 10,
-        "bottom": 5,
-        "left": 10
+      "footprint": [
+        {
+          "x": 0,
+          "y": 0
+        }
+      ],
+      "layer": "ground"
+    },
+    "basalt_patch_01": {
+      "id": "basalt_patch_01",
+      "page": 0,
+      "frame": {
+        "x": 956,
+        "y": 2,
+        "w": 45,
+        "h": 66
+      },
+      "anchor": {
+        "x": 0.4889,
+        "y": 0.4848
+      },
+      "footprint": [
+        {
+          "x": 0,
+          "y": 0
+        }
+      ],
+      "layer": "ground"
+    },
+    "dust_patch_01": {
+      "id": "dust_patch_01",
+      "page": 0,
+      "frame": {
+        "x": 675,
+        "y": 2,
+        "w": 137,
+        "h": 111
+      },
+      "anchor": {
+        "x": 0.4964,
+        "y": 0.5946
+      },
+      "footprint": [
+        {
+          "x": 0,
+          "y": 0
+        }
+      ],
+      "layer": "ground"
+    },
+    "crater_small_01": {
+      "id": "crater_small_01",
+      "page": 0,
+      "frame": {
+        "x": 216,
+        "y": 2,
+        "w": 155,
+        "h": 137
+      },
+      "anchor": {
+        "x": 0.4968,
+        "y": 0.5036
       },
       "footprint": [
         {
@@ -74,18 +131,18 @@
       ],
       "layer": "macro"
     },
-    "cliff_ridge_01": {
-      "id": "cliff_ridge_01",
+    "crater_medium_02": {
+      "id": "crater_medium_02",
       "page": 0,
       "frame": {
-        "x": 398,
+        "x": 2,
         "y": 2,
-        "w": 221,
-        "h": 139
+        "w": 206,
+        "h": 180
       },
       "anchor": {
-        "x": 0.4977,
-        "y": 0.4964
+        "x": 0.4951,
+        "y": 0.5056
       },
       "footprint": [
         {
@@ -95,19 +152,151 @@
       ],
       "layer": "macro"
     },
-    "rock_scatter_01": {
-      "id": "rock_scatter_01",
+    "ridge_01": {
+      "id": "ridge_01",
       "page": 0,
       "frame": {
-        "x": 627,
+        "x": 820,
         "y": 2,
-        "w": 81,
-        "h": 61
+        "w": 128,
+        "h": 104
       },
       "anchor": {
-        "x": 0.4938,
-        "y": 0.4918
+        "x": 0.5,
+        "y": 0.5385
       },
+      "footprint": [
+        {
+          "x": 0,
+          "y": 0
+        }
+      ],
+      "layer": "macro"
+    },
+    "ridge_02": {
+      "id": "ridge_02",
+      "page": 0,
+      "frame": {
+        "x": 523,
+        "y": 2,
+        "w": 144,
+        "h": 112
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5357
+      },
+      "footprint": [
+        {
+          "x": 0,
+          "y": 0
+        }
+      ],
+      "layer": "macro"
+    },
+    "dune_ridge_01": {
+      "id": "dune_ridge_01",
+      "page": 0,
+      "frame": {
+        "x": 379,
+        "y": 2,
+        "w": 136,
+        "h": 113
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5752
+      },
+      "footprint": [
+        {
+          "x": 0,
+          "y": 0
+        }
+      ],
+      "layer": "macro"
+    },
+    "rocks_small_01": {
+      "id": "rocks_small_01",
+      "page": 0,
+      "frame": {
+        "x": 1346,
+        "y": 2,
+        "w": 55,
+        "h": 33
+      },
+      "anchor": {
+        "x": 0.2364,
+        "y": 0.5152
+      },
+      "footprint": [
+        {
+          "x": 0,
+          "y": 0
+        }
+      ],
+      "layer": "scatter"
+    },
+    "rocks_small_02": {
+      "id": "rocks_small_02",
+      "page": 0,
+      "frame": {
+        "x": 1077,
+        "y": 2,
+        "w": 77,
+        "h": 58
+      },
+      "anchor": {
+        "x": 0.5844,
+        "y": 0.5
+      },
+      "footprint": [
+        {
+          "x": 0,
+          "y": 0
+        }
+      ],
+      "layer": "scatter"
+    },
+    "boulder_cluster_01": {
+      "id": "boulder_cluster_01",
+      "page": 0,
+      "frame": {
+        "x": 1009,
+        "y": 2,
+        "w": 60,
+        "h": 59
+      },
+      "anchor": {
+        "x": 0.7,
+        "y": 0.678
+      },
+      "footprint": [
+        {
+          "x": 0,
+          "y": 0
+        }
+      ],
+      "layer": "scatter"
+    },
+    "boulder_cluster_02": {
+      "id": "boulder_cluster_02",
+      "page": 0,
+      "frame": {
+        "x": 1232,
+        "y": 2,
+        "w": 49,
+        "h": 51
+      },
+      "anchor": {
+        "x": 0.5306,
+        "y": 0.451
+      },
+      "footprint": [
+        {
+          "x": 0,
+          "y": 0
+        }
+      ],
       "layer": "scatter"
     }
   }

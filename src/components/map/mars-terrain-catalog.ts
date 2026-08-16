@@ -28,75 +28,108 @@ export interface TerrainBiomeVisualRule {
 }
 
 /**
- * Authoritative visual rules per Martian biome.
+ * Authoritative visual rules per Martian biome using 13 MVP production asset IDs.
  */
 export const TERRAIN_BIOME_CATALOG: Record<TerrainBiome, TerrainBiomeVisualRule> = {
   regolith: {
     baseColor: 0xb4532a,
-    groundDecals: [{ id: 'regolith_plain_01', weight: 1.0 }],
+    groundDecals: [
+      { id: 'regolith_patch_01', weight: 1.0 },
+      { id: 'regolith_patch_02', weight: 1.0 }
+    ],
     macroAssets: [],
-    scatterAssets: [{ id: 'rock_scatter_01', weight: 1.0 }],
+    scatterAssets: [
+      { id: 'rocks_small_01', weight: 1.0 },
+      { id: 'boulder_cluster_01', weight: 0.5 }
+    ],
     scatterDensity: 0.12,
     macroDensity: 0.04
   },
   dust_basin: {
     baseColor: 0xc87137,
-    groundDecals: [{ id: 'regolith_plain_01', weight: 1.0 }],
+    groundDecals: [{ id: 'dust_patch_01', weight: 1.0 }],
     macroAssets: [],
-    scatterAssets: [{ id: 'rock_scatter_01', weight: 1.0 }],
+    scatterAssets: [{ id: 'rocks_small_02', weight: 1.0 }],
     scatterDensity: 0.05,
     macroDensity: 0.02
   },
   dunes: {
     baseColor: 0xc47b3b,
-    groundDecals: [],
-    macroAssets: [{ id: 'cliff_ridge_01', weight: 0.5 }],
-    scatterAssets: [{ id: 'rock_scatter_01', weight: 0.3 }],
+    groundDecals: [{ id: 'dust_patch_01', weight: 0.8 }],
+    macroAssets: [{ id: 'dune_ridge_01', weight: 1.0 }],
+    scatterAssets: [{ id: 'rocks_small_01', weight: 0.4 }],
     scatterDensity: 0.03,
     macroDensity: 0.08
   },
   basalt: {
     baseColor: 0x3d271d,
-    groundDecals: [],
-    macroAssets: [{ id: 'cliff_ridge_01', weight: 1.0 }],
-    scatterAssets: [{ id: 'rock_scatter_01', weight: 1.0 }],
+    groundDecals: [{ id: 'basalt_patch_01', weight: 1.0 }],
+    macroAssets: [
+      { id: 'ridge_01', weight: 1.0 },
+      { id: 'ridge_02', weight: 0.8 }
+    ],
+    scatterAssets: [
+      { id: 'boulder_cluster_01', weight: 1.0 },
+      { id: 'boulder_cluster_02', weight: 1.0 }
+    ],
     scatterDensity: 0.28,
     macroDensity: 0.14
   },
   highlands: {
     baseColor: 0x7c2d1b,
-    groundDecals: [],
-    macroAssets: [{ id: 'cliff_ridge_01', weight: 1.0 }],
-    scatterAssets: [{ id: 'rock_scatter_01', weight: 1.0 }],
+    groundDecals: [{ id: 'regolith_patch_02', weight: 1.0 }],
+    macroAssets: [
+      { id: 'ridge_01', weight: 1.0 },
+      { id: 'ridge_02', weight: 1.0 }
+    ],
+    scatterAssets: [
+      { id: 'rocks_small_01', weight: 1.0 },
+      { id: 'boulder_cluster_02', weight: 0.8 }
+    ],
     scatterDensity: 0.24,
     macroDensity: 0.18
   },
   canyon: {
     baseColor: 0x5a2314,
-    groundDecals: [],
-    macroAssets: [{ id: 'cliff_ridge_01', weight: 1.0 }],
-    scatterAssets: [{ id: 'rock_scatter_01', weight: 0.8 }],
+    groundDecals: [{ id: 'basalt_patch_01', weight: 0.8 }],
+    macroAssets: [
+      { id: 'ridge_01', weight: 1.0 },
+      { id: 'ridge_02', weight: 1.0 }
+    ],
+    scatterAssets: [
+      { id: 'boulder_cluster_01', weight: 1.0 },
+      { id: 'rocks_small_02', weight: 1.0 }
+    ],
     scatterDensity: 0.16,
     macroDensity: 0.20
   },
   polar: {
     baseColor: 0xd6b7a5,
-    groundDecals: [],
-    macroAssets: [],
-    scatterAssets: [{ id: 'rock_scatter_01', weight: 0.5 }],
+    groundDecals: [{ id: 'dust_patch_01', weight: 1.0 }],
+    macroAssets: [{ id: 'dune_ridge_01', weight: 0.5 }],
+    scatterAssets: [{ id: 'rocks_small_01', weight: 0.5 }],
     scatterDensity: 0.06,
     macroDensity: 0.05
   }
 }
 
 /**
- * Declarative mapping of MapLocation POI gameplay types to visual features.
+ * Declarative mapping of MapLocation POI gameplay types to production visual features.
  */
 export const LOCATION_FEATURE_VISUALS: Record<MapLocationType, readonly WeightedAssetRef[]> = {
   plains: [],
-  mountains: [{ id: 'cliff_ridge_01', weight: 1.0 }],
-  canyon: [{ id: 'cliff_ridge_01', weight: 1.0 }],
-  crater: [{ id: 'crater_medium_01', weight: 1.0 }],
+  mountains: [
+    { id: 'ridge_01', weight: 1.0 },
+    { id: 'ridge_02', weight: 1.0 }
+  ],
+  canyon: [
+    { id: 'ridge_01', weight: 1.0 },
+    { id: 'ridge_02', weight: 1.0 }
+  ],
+  crater: [
+    { id: 'crater_small_01', weight: 1.0 },
+    { id: 'crater_medium_02', weight: 1.0 }
+  ],
   ice_cap: []
 }
 

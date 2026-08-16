@@ -25,10 +25,12 @@ export function findBlenderExecutable(): string | null {
   // Common default install paths on Windows
   if (process.platform === 'win32') {
     const defaultPaths = [
+      'D:\\Programms\\Blender\\blender.exe',
+      'D:\\Programms\\Blender\\5.2\\blender.exe',
+      'C:\\Program Files\\Blender Foundation\\Blender 5.2\\blender.exe',
+      'C:\\Program Files\\Blender Foundation\\Blender 5.1\\blender.exe',
       'C:\\Program Files\\Blender Foundation\\Blender 4.2\\blender.exe',
-      'C:\\Program Files\\Blender Foundation\\Blender 4.1\\blender.exe',
-      'C:\\Program Files\\Blender Foundation\\Blender 4.0\\blender.exe',
-      'C:\\Program Files\\Blender Foundation\\Blender 3.6\\blender.exe'
+      'C:\\Program Files\\Blender Foundation\\Blender 4.1\\blender.exe'
     ]
     for (const p of defaultPaths) {
       if (fs.existsSync(p)) return p
@@ -43,8 +45,9 @@ async function runMapAssetFactory() {
   const configPath = path.join(rootDir, 'assets', 'pipeline', 'map-asset-factory.json')
   const profilePath = path.join(rootDir, 'assets', 'pipeline', 'map-render-profile.json')
   const pythonScript = path.join(rootDir, 'tools', 'blender', 'map_asset_factory.py')
-  const targetDir = path.join(rootDir, 'assets', 'raw_renders')
-  const stagingDir = path.join(targetDir, '.factory-staging')
+  const canonicalDir = path.join(rootDir, 'assets', 'raw_renders')
+  const stagingDir = path.join(rootDir, 'assets', 'raw_renders.next')
+  const prevDir = path.join(rootDir, 'assets', 'raw_renders.prev')
 
   console.log('=== Mars2050 Blender Terrain Asset Factory ===')
 
@@ -57,22 +60,24 @@ async function runMapAssetFactory() {
   }
   console.log('✅ Factory configuration validated successfully.')
 
-  // 2. Discover Blender binary
+  // 2. Discover Blender binary (fail if not found)
   const blenderBin = findBlenderExecutable()
   if (!blenderBin) {
-    console.warn('\n⚠️ [MapFactory] Blender runtime unavailable — source rendering not executed.')
-    console.warn('   (Checked BLENDER_BIN and standard system PATH).')
-    console.warn('   Static validation and TypeScript pipelines remain operational.')
-    return
+    console.error('\n❌ [MapFactory] Blender executable not found.')
+    console.error('   Please ensure Blender is installed or specify BLENDER_BIN environment variable.')
+    console.error('   Example: BLENDER_BIN="D:\\Programms\\Blender\\blender.exe" npm run map:assets:factory')
+    process.exit(1)
   }
 
   console.log(`Found Blender executable at: ${blenderBin}`)
+
+  // Prepare staging directory
   if (fs.existsSync(stagingDir)) {
     fs.rmSync(stagingDir, { recursive: true, force: true })
   }
   fs.mkdirSync(stagingDir, { recursive: true })
 
-  // 3. Execute Headless Blender Rendering to Staging Directory
+  // 3. Execute Headless Blender Rendering to raw_renders.next
   console.log(`Rendering assets into staging directory: ${stagingDir}...`)
   const result = spawnSync(
     blenderBin,
@@ -97,7 +102,7 @@ async function runMapAssetFactory() {
     process.exit(result.status || 1)
   }
 
-  // 4. Validate Staged raw_manifest.json
+  // 4. Verify all 13 assets x 3 channels exist and are non-empty
   const stagedManifestPath = path.join(stagingDir, 'raw_manifest.json')
   if (!fs.existsSync(stagedManifestPath)) {
     console.error('❌ Blender run completed without generating raw_manifest.json')
@@ -105,6 +110,28 @@ async function runMapAssetFactory() {
     process.exit(1)
   }
 
+  const factoryConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'))
+  const expectedAssetCount = factoryConfig.assets.length
+
+  for (const assetDef of factoryConfig.assets) {
+    const id = assetDef.id
+    for (const ch of ['albedo.png', 'normal.png', 'data.png']) {
+      const filePath = path.join(stagingDir, `${id}.${ch}`)
+      if (!fs.existsSync(filePath)) {
+        console.error(`❌ Missing rendered channel: ${id}.${ch}`)
+        fs.rmSync(stagingDir, { recursive: true, force: true })
+        process.exit(1)
+      }
+      const stat = fs.statSync(filePath)
+      if (stat.size < 100) {
+        console.error(`❌ Corrupted or empty rendered channel (${stat.size} bytes): ${id}.${ch}`)
+        fs.rmSync(stagingDir, { recursive: true, force: true })
+        process.exit(1)
+      }
+    }
+  }
+
+  // Validate using companion input validator
   const inputValidation = await loadAndValidateInputs(profilePath, stagedManifestPath, stagingDir)
   if (!inputValidation.success) {
     console.error('❌ Staged Raw Asset Manifest Validation Failed:')
@@ -113,17 +140,27 @@ async function runMapAssetFactory() {
     process.exit(1)
   }
 
-  // 5. Atomic Promotion: Copy all staged outputs to canonical assets/raw_renders/
-  console.log(`Atomically promoting renders from staging to ${targetDir}...`)
-  const files = fs.readdirSync(stagingDir)
-  for (const file of files) {
-    const src = path.join(stagingDir, file)
-    const dst = path.join(targetDir, file)
-    fs.copyFileSync(src, dst)
+  // 5. True Transactional Promotion with Rollback Protection
+  console.log(`Atomically promoting ${expectedAssetCount} assets (${expectedAssetCount * 3} images) to canonical directory...`)
+  try {
+    if (fs.existsSync(prevDir)) {
+      fs.rmSync(prevDir, { recursive: true, force: true })
+    }
+    if (fs.existsSync(canonicalDir)) {
+      fs.renameSync(canonicalDir, prevDir)
+    }
+    fs.renameSync(stagingDir, canonicalDir)
+    if (fs.existsSync(prevDir)) {
+      fs.rmSync(prevDir, { recursive: true, force: true })
+    }
+    console.log(`✅ Factory Run Succeeded. ${expectedAssetCount} production assets published to assets/raw_renders/`)
+  } catch (promotionError) {
+    console.error('❌ Atomic promotion failed, rolling back:', promotionError)
+    if (fs.existsSync(prevDir) && !fs.existsSync(canonicalDir)) {
+      fs.renameSync(prevDir, canonicalDir)
+    }
+    process.exit(1)
   }
-
-  fs.rmSync(stagingDir, { recursive: true, force: true })
-  console.log(`✅ Factory Run Succeeded. Promoted ${files.length} assets to assets/raw_renders/`)
 }
 
 if (require.main === module || process.argv[1]?.includes('run-map-asset-factory')) {
