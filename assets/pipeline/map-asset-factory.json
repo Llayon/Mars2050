@@ -1,0 +1,185 @@
+{
+  "version": 1,
+  "renderSettings": {
+    "engine": "CYCLES",
+    "samples": 64,
+    "resolution": 512,
+    "transparentBackground": true,
+    "denoising": true
+  },
+  "assets": [
+    {
+      "id": "regolith_patch_01",
+      "layer": "ground",
+      "generator": "regolith",
+      "seed": 101,
+      "footprint": [{ "x": 0, "y": 0 }],
+      "anchorPx": { "x": 256, "y": 256 },
+      "params": {
+        "scale": 1.0,
+        "roughness": 0.4,
+        "craterFrequency": 0.2
+      }
+    },
+    {
+      "id": "regolith_patch_02",
+      "layer": "ground",
+      "generator": "regolith",
+      "seed": 102,
+      "footprint": [{ "x": 0, "y": 0 }],
+      "anchorPx": { "x": 256, "y": 256 },
+      "params": {
+        "scale": 1.1,
+        "roughness": 0.5,
+        "craterFrequency": 0.3
+      }
+    },
+    {
+      "id": "basalt_patch_01",
+      "layer": "ground",
+      "generator": "basalt",
+      "seed": 201,
+      "footprint": [{ "x": 0, "y": 0 }],
+      "anchorPx": { "x": 256, "y": 256 },
+      "params": {
+        "scale": 1.0,
+        "crackDepth": 0.6,
+        "rockDarkness": 0.8
+      }
+    },
+    {
+      "id": "dust_patch_01",
+      "layer": "ground",
+      "generator": "dust",
+      "seed": 301,
+      "footprint": [{ "x": 0, "y": 0 }],
+      "anchorPx": { "x": 256, "y": 256 },
+      "params": {
+        "scale": 1.2,
+        "rippleScale": 0.5,
+        "dustBrightness": 0.7
+      }
+    },
+    {
+      "id": "crater_small_01",
+      "layer": "macro",
+      "generator": "crater",
+      "seed": 401,
+      "footprint": [{ "x": 0, "y": 0 }],
+      "anchorPx": { "x": 256, "y": 256 },
+      "params": {
+        "radius": 1.2,
+        "depth": 0.6,
+        "rimHeight": 0.35,
+        "ejectaRadius": 1.8
+      }
+    },
+    {
+      "id": "crater_medium_02",
+      "layer": "macro",
+      "generator": "crater",
+      "seed": 402,
+      "footprint": [{ "x": 0, "y": 0 }],
+      "anchorPx": { "x": 256, "y": 256 },
+      "params": {
+        "radius": 1.6,
+        "depth": 0.8,
+        "rimHeight": 0.45,
+        "centralPeak": true
+      }
+    },
+    {
+      "id": "ridge_01",
+      "layer": "macro",
+      "generator": "ridge",
+      "seed": 501,
+      "footprint": [{ "x": 0, "y": 0 }],
+      "anchorPx": { "x": 256, "y": 260 },
+      "params": {
+        "length": 2.4,
+        "height": 1.1,
+        "steepness": 0.7,
+        "erosion": 0.3
+      }
+    },
+    {
+      "id": "ridge_02",
+      "layer": "macro",
+      "generator": "ridge",
+      "seed": 502,
+      "footprint": [{ "x": 0, "y": 0 }],
+      "anchorPx": { "x": 256, "y": 260 },
+      "params": {
+        "length": 2.8,
+        "height": 1.4,
+        "steepness": 0.85,
+        "erosion": 0.4
+      }
+    },
+    {
+      "id": "dune_ridge_01",
+      "layer": "macro",
+      "generator": "dune",
+      "seed": 601,
+      "footprint": [{ "x": 0, "y": 0 }],
+      "anchorPx": { "x": 256, "y": 256 },
+      "params": {
+        "wavelength": 1.5,
+        "crestHeight": 0.7,
+        "asymmetry": 0.6
+      }
+    },
+    {
+      "id": "rocks_small_01",
+      "layer": "scatter",
+      "generator": "rocks",
+      "seed": 701,
+      "footprint": [{ "x": 0, "y": 0 }],
+      "anchorPx": { "x": 256, "y": 256 },
+      "params": {
+        "count": 6,
+        "maxSize": 0.3,
+        "dispersion": 0.8
+      }
+    },
+    {
+      "id": "rocks_small_02",
+      "layer": "scatter",
+      "generator": "rocks",
+      "seed": 702,
+      "footprint": [{ "x": 0, "y": 0 }],
+      "anchorPx": { "x": 256, "y": 256 },
+      "params": {
+        "count": 9,
+        "maxSize": 0.25,
+        "dispersion": 1.0
+      }
+    },
+    {
+      "id": "boulder_cluster_01",
+      "layer": "scatter",
+      "generator": "rocks",
+      "seed": 801,
+      "footprint": [{ "x": 0, "y": 0 }],
+      "anchorPx": { "x": 256, "y": 256 },
+      "params": {
+        "count": 3,
+        "maxSize": 0.7,
+        "dispersion": 0.5
+      }
+    },
+    {
+      "id": "boulder_cluster_02",
+      "layer": "scatter",
+      "generator": "rocks",
+      "seed": 802,
+      "footprint": [{ "x": 0, "y": 0 }],
+      "anchorPx": { "x": 256, "y": 256 },
+      "params": {
+        "count": 4,
+        "maxSize": 0.6,
+        "dispersion": 0.6
+      }
+    }
+  ]
+}
