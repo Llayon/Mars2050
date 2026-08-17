@@ -16,10 +16,7 @@ import { CommandDock } from '@/components/game/hud/CommandDock'
 import { PlacementActionBar } from '@/components/game/hud/PlacementActionBar'
 import { ResumeSyncStatus } from '@/components/game/hud/ResumeSyncStatus'
 
-const MapScreen = dynamic(() => import('@/components/screens/MapScreen').then(mod => mod.MapScreen), {
-  ssr: false,
-  loading: () => <div className="text-gray-300">Загрузка карты...</div>
-})
+import { MapScreen } from '@/components/screens/MapScreen'
 
 const BattleReplayModal = dynamic(() => import('@/components/game/BattleReplayModal').then(mod => mod.BattleReplayModal), {
   ssr: false,

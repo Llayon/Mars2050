@@ -25,11 +25,18 @@ export interface TerrainCertificationOptions {
 
 export function isTerrainCertificationEnabled(): boolean {
   if (typeof window === 'undefined') return false
-  return (
+  if (
     process.env.NEXT_PUBLIC_TERRAIN_CERTIFICATION === '1' ||
-    process.env.NODE_ENV !== 'production' ||
-    process.env.NEXT_PUBLIC_E2E_AUTH_BYPASS === '1'
-  )
+    process.env.NEXT_PUBLIC_E2E_AUTH_BYPASS === '1' ||
+    process.env.NODE_ENV !== 'production'
+  ) {
+    return true
+  }
+  try {
+    return window.location.search.includes('terrainLighting') || window.location.search.includes('terrainDebug')
+  } catch {
+    return false
+  }
 }
 
 export function terrainDebugModeToShaderId(mode: TerrainDebugMode): number {

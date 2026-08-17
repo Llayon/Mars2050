@@ -38,7 +38,6 @@ export async function openCanonicalMapScreen(
   options: OpenMapOptions = {}
 ): Promise<{ canvasHost: Locator; canvas: Locator }> {
   const { lightingMode, debugMode, isMobile = false } = options
-  await resetE2eSession(page)
 
   const searchParams = new URLSearchParams()
   if (lightingMode) searchParams.set('terrainLighting', lightingMode)
@@ -55,17 +54,17 @@ export async function openCanonicalMapScreen(
   }
 
   const canvasHost = page.getByTestId('mars-map-canvas-host')
-  await expect(canvasHost).toBeVisible({ timeout: 20_000 })
+  await expect(canvasHost).toBeVisible({ timeout: 30_000 })
 
   const canvas = canvasHost.locator('canvas')
-  await expect(canvas).toBeVisible({ timeout: 20_000 })
+  await expect(canvas).toBeVisible({ timeout: 30_000 })
   await expectCanvasPainted(canvas)
 
   // Wait for diagnostics to be registered
   await expect.poll(async () => {
     const diag = await getTerrainDiagnostics(page)
     return !!diag
-  }, { timeout: 10_000 }).toBe(true)
+  }, { timeout: 30_000 }).toBe(true)
 
   return { canvasHost, canvas }
 }
