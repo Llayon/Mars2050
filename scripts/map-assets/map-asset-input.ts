@@ -34,6 +34,8 @@ export async function validateNormalSemantics(
 
   let opaqueCount = 0
   let validUnitCount = 0
+  let positiveZCount = 0
+  let sumNz = 0
   let minNx = 1.0, maxNx = -1.0
   let minNy = 1.0, maxNy = -1.0
 
@@ -58,6 +60,11 @@ export async function validateNormalSemantics(
       validUnitCount++
     }
 
+    if (nz >= -0.05) {
+      positiveZCount++
+    }
+    sumNz += nz
+
     if (nx < minNx) minNx = nx
     if (nx > maxNx) maxNx = nx
     if (ny < minNy) minNy = ny
@@ -75,6 +82,15 @@ export async function validateNormalSemantics(
   if (validRatio < 0.98) {
     errors.push(
       `Asset "${assetId}": Normal map failed unit-vector validation (${(validRatio * 100).toFixed(1)}% valid, expected >= 98.0%). Ensure Raw/Non-Color color management is used.`
+    )
+  }
+
+  const positiveZRatio = positiveZCount / opaqueCount
+  const meanNz = sumNz / opaqueCount
+  if (positiveZRatio < 0.95 || meanNz < 0.20) {
+    errors.push(
+      `Asset "${assetId}": Normal map failed toward-camera (+Z) orientation calibration (positiveZRatio: ${(positiveZRatio * 100).toFixed(1)}%, meanNz: ${meanNz.toFixed(3)}). ` +
+      `Expected normals pointing toward camera (+Z, neutral 128,128,255). Ensure view-space Z inversion is applied in Blender factory.`
     )
   }
 

@@ -67,14 +67,21 @@ def create_view_space_normal_material(name='Mat_ViewSpaceNormal'):
     vec_trans.vector_type = 'VECTOR'
     vec_trans.convert_from = 'WORLD'
     vec_trans.convert_to = 'CAMERA'
-    vec_trans.location = (-200, 0)
+    vec_trans.location = (-300, 0)
     tree.links.new(geom.outputs['Normal'], vec_trans.inputs['Vector'])
+
+    # Invert Z component: Blender camera looks along -Z, while runtime contract expects +Z toward camera
+    vec_inv_z = tree.nodes.new('ShaderNodeVectorMath')
+    vec_inv_z.operation = 'MULTIPLY'
+    vec_inv_z.inputs[1].default_value = (1.0, 1.0, -1.0)
+    vec_inv_z.location = (-150, 0)
+    tree.links.new(vec_trans.outputs['Vector'], vec_inv_z.inputs[0])
 
     # Explicitly normalize vector in camera space
     vec_norm = tree.nodes.new('ShaderNodeVectorMath')
     vec_norm.operation = 'NORMALIZE'
-    vec_norm.location = (-50, 0)
-    tree.links.new(vec_trans.outputs['Vector'], vec_norm.inputs[0])
+    vec_norm.location = (0, 0)
+    tree.links.new(vec_inv_z.outputs['Vector'], vec_norm.inputs[0])
 
     # Multiply by 0.5
     vec_mul = tree.nodes.new('ShaderNodeVectorMath')

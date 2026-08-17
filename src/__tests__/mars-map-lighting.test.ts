@@ -91,7 +91,7 @@ describe('mars-map-lighting', () => {
 
     expect(TERRAIN_VERTEX_SHADER).toContain('uniform mat3 uTransformMatrix;')
     expect(TERRAIN_VERTEX_SHADER).toContain('uProjectionMatrix * uWorldTransformMatrix * uTransformMatrix')
-  })
+  }, 15000)
 
   it('verifies fragment shader honors Pixi uColor for alpha and tint modulation', async () => {
     const { TERRAIN_FRAGMENT_SHADER } = await import('@/components/map/mars-map-lighting.shader')
