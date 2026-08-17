@@ -34,10 +34,19 @@ test.describe('Terrain Visual & GPU Pipeline Certification', () => {
     expect(diagnostics?.scatterCount).toBeGreaterThan(0)
 
     // Verify network single-atlas bundle contract
-    const atlasRequests = network.requests.filter(u => u.includes('mars-terrain-atlas') || u.includes('terrain-atlas'))
-    expect(atlasRequests.length).toBeLessThanOrEqual(3) // 1 albedo, 1 normal, 1 data max
+    const albedo = network.requests.filter(u => u.includes('/assets/map/terrain-albedo-0.webp'))
+    const normal = network.requests.filter(u => u.includes('/assets/map/terrain-normal-0.png'))
+    const data = network.requests.filter(u => u.includes('/assets/map/terrain-data-0.png'))
 
-    // Capture certification golden screenshot
+    expect(albedo).toHaveLength(1)
+    expect(normal).toHaveLength(1)
+    expect(data).toHaveLength(1)
+
+    // Exclude standalone raw tile / scatter requests
+    const rawTiles = network.requests.filter(u => u.includes('/assets/map/tiles/') || u.includes('/assets/map/scatter/'))
+    expect(rawTiles).toHaveLength(0)
+
+    // Capture certification screenshot for human review
     const screenshotPath = path.join(CERT_DIR, 'desktop-enhanced.png')
     await canvas.screenshot({ path: screenshotPath })
     expect(fs.existsSync(screenshotPath)).toBe(true)
@@ -113,28 +122,39 @@ test.describe('Terrain Visual & GPU Pipeline Certification', () => {
     network.assertClean()
   })
 
-  test('certifies Mobile DPR 3 cap downscaling renderer resolution to <= 2.0', async ({ page }) => {
-    // Emulate mobile device with DPR 3
-    await page.setViewportSize({ width: 390, height: 844 })
-    await resetE2eSession(page)
-    const network = collectNetwork(page)
-
-    const { canvas } = await openCanonicalMapScreen(page, {
-      lightingMode: 'enhanced',
-      debugMode: 'off',
-      isMobile: true
+  test('certifies Mobile DPR 3 cap downscaling renderer resolution to 2.0', async ({ browser }) => {
+    const context = await browser.newContext({
+      viewport: { width: 390, height: 844 },
+      deviceScaleFactor: 3,
+      isMobile: true,
+      hasTouch: true
     })
+    const page = await context.newPage()
+    try {
+      await resetE2eSession(page)
+      const network = collectNetwork(page)
 
-    const diagnostics = await getTerrainDiagnostics(page)
-    expect(diagnostics).not.toBeNull()
-    expect(diagnostics?.lightingMode).toBe('enhanced')
-    // Invariant: devicePixelRatio is 3 in mobile project, rendererResolution must be capped at 2
-    expect(diagnostics?.rendererResolution).toBeLessThanOrEqual(2)
+      const { canvas } = await openCanonicalMapScreen(page, {
+        lightingMode: 'enhanced',
+        debugMode: 'off',
+        isMobile: true
+      })
 
-    const screenshotPath = path.join(CERT_DIR, 'mobile-enhanced.png')
-    await canvas.screenshot({ path: screenshotPath })
-    expect(fs.existsSync(screenshotPath)).toBe(true)
+      const dpr = await page.evaluate(() => window.devicePixelRatio)
+      expect(dpr).toBe(3)
 
-    network.assertClean()
+      const diagnostics = await getTerrainDiagnostics(page)
+      expect(diagnostics).not.toBeNull()
+      expect(diagnostics?.lightingMode).toBe('enhanced')
+      expect(diagnostics?.rendererResolution).toBe(2)
+
+      const screenshotPath = path.join(CERT_DIR, 'mobile-enhanced.png')
+      await canvas.screenshot({ path: screenshotPath })
+      expect(fs.existsSync(screenshotPath)).toBe(true)
+
+      network.assertClean()
+    } finally {
+      await context.close()
+    }
   })
 })

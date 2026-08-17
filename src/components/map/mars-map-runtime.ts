@@ -132,9 +132,10 @@ export async function createMarsMapRuntime(
   populateMacroTerrain(macroLayer, locations, terrainField, assets, cellWorldSize, occupiedCells, lightingContext, terrainLightingMode)
   populateScatterTerrain(scatterLayer, terrainField, assets, cellWorldSize, occupiedCells, lightingContext, terrainLightingMode)
 
-  // Attach diagnostic state for certification when in browser environment
+  // Attach diagnostic state for certification when explicitly enabled
+  const certEnabled = isTerrainCertificationEnabled()
   const instanceId = Symbol('MarsMapRuntime')
-  if (typeof window !== 'undefined') {
+  if (certEnabled && typeof window !== 'undefined') {
     (window as unknown as Record<string, unknown>).__MARS_MAP_DIAGNOSTICS__ = {
       _instanceId: instanceId,
       lightingMode: terrainLightingMode,
@@ -186,7 +187,7 @@ export async function createMarsMapRuntime(
       interaction.setSelectedLocation(loc)
     },
     destroy() {
-      if (typeof window !== 'undefined') {
+      if (certEnabled && typeof window !== 'undefined') {
         const currentDiag = (window as unknown as Record<string, unknown>).__MARS_MAP_DIAGNOSTICS__ as { _instanceId?: symbol } | undefined
         if (currentDiag?._instanceId === instanceId) {
           delete (window as unknown as Record<string, unknown>).__MARS_MAP_DIAGNOSTICS__

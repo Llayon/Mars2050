@@ -48,7 +48,7 @@ test.describe('Terrain Interaction Suite', () => {
     network.assertClean()
   })
 
-  test('supports touch drag panning on mobile viewport', async ({ page }) => {
+  test('supports drag panning under mobile viewport', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 })
     await resetE2eSession(page)
     const network = collectNetwork(page)
