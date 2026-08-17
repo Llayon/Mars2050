@@ -12,8 +12,8 @@ export interface PreparedWorld {
   actions: BattleAction[]
 }
 
-export function prepareMovementProbeWorld(scenario: CombatBalanceScenario, seed: number, probe: OrderingProbeResult): PreparedWorld {
-  const runtime = createEcsCombatRuntime({ defenseResolutionMode: 'v9_snapshot' })
+export function prepareMovementProbeWorld(scenario: CombatBalanceScenario, seed: number, probe: OrderingProbeResult, profile = false): PreparedWorld {
+  const runtime = createEcsCombatRuntime({ defenseResolutionMode: 'v9_snapshot', profile })
   const rng = new PRNG(seed)
   for (const row of probe.attackers) runtime.addSquad(row, 'attacker', rng)
   for (const row of probe.defenders) runtime.addSquad(row, 'defender', rng)
@@ -55,9 +55,9 @@ export function advanceToPreBatchCheckpoint(scenario: CombatBalanceScenario, see
   return { ...prepared, actions, context }
 }
 
-export function advanceToPreActorTurnCheckpoint(scenario: CombatBalanceScenario, seed: number, probe: OrderingProbeResult, targetTick: number): PreparedWorld & { context: RuntimePhaseContext } {
+export function advanceToPreActorTurnCheckpoint(scenario: CombatBalanceScenario, seed: number, probe: OrderingProbeResult, targetTick: number, profile = false): PreparedWorld & { context: RuntimePhaseContext } {
   if (!Number.isInteger(targetTick) || targetTick < 0) throw new Error('TARGET_TICK_UNREACHABLE')
-  const prepared = prepareMovementProbeWorld(scenario, seed, probe)
+  const prepared = prepareMovementProbeWorld(scenario, seed, probe, profile)
   if (targetTick >= prepared.runtime.world.resources.require('clock').maxTicks) throw new Error('TARGET_TICK_UNREACHABLE')
   const activeGlobals: NonNullable<RuntimePhaseContext['activeGlobals']> = []
   for (let tick = 0; tick < targetTick; tick++) {
