@@ -56,7 +56,7 @@ export async function openCanonicalMapScreen(
   const canvasHost = page.getByTestId('mars-map-canvas-host')
   await expect(canvasHost).toBeVisible({ timeout: 30_000 })
 
-  const canvas = canvasHost.locator('canvas')
+  const canvas = canvasHost.locator('canvas').last()
   await expect(canvas).toBeVisible({ timeout: 30_000 })
   await expectCanvasPainted(canvas)
 

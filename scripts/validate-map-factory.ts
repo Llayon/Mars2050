@@ -7,7 +7,21 @@ export interface FactoryValidationResult {
 }
 
 const ALLOWED_LAYERS = new Set(['ground', 'macro', 'scatter', 'infrastructure', 'entity'])
-const ALLOWED_GENERATORS = new Set(['regolith', 'basalt', 'dust', 'crater', 'ridge', 'rocks', 'dune'])
+const ALLOWED_GENERATORS = new Set([
+  'regolith',
+  'basalt',
+  'dust',
+  'crater',
+  'ridge',
+  'rocks',
+  'dune',
+  'mesa',
+  'ridge_chain',
+  'dust_drift',
+  'erosion_strip',
+  'rock_field',
+  'cracked_ground'
+])
 
 /**
  * Validates the structure and constraints of map-asset-factory.json.

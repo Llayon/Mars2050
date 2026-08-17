@@ -4,8 +4,8 @@ import { DEFAULT_MAP_SEED } from '@/domains/map/map.config'
 import type { MapLocation, GridSize } from '@/domains/map/map.types'
 import { calculateGridWorldBounds, getMapRenderResolution } from './mars-map-projection'
 import { loadMapAssets } from './mars-map-assets'
-import { buildContinuousGround, populateGroundDecals } from './mars-map-ground'
-import { populateMacroTerrain, populateScatterTerrain } from './mars-map-terrain'
+import { buildContinuousGround } from './mars-map-ground'
+import { populateTerrainLayers } from './mars-map-terrain'
 import { generateTerrainVisualField } from './mars-terrain-field'
 import { setupMapInteraction } from './mars-map-interaction'
 import {
@@ -16,6 +16,8 @@ import {
   type TerrainLightingMode
 } from './mars-map-lighting'
 import { TerrainLightingContext } from './mars-map-lit-mesh'
+
+import { createTerrainLayerStack, setupMapCullingAndLod } from './mars-map-culling'
 
 export interface MarsMapRuntimeOptions {
   container: HTMLElement
@@ -48,18 +50,21 @@ export async function createMarsMapRuntime(
     onSelectLocation
   } = options
 
+  const cellWorldSize = 128
   const assets = await loadMapAssets()
-  const cellWorldSize = assets.manifest.profile.cellWorldSize
 
   const app = new Application()
   await app.init({
-    preference: 'webgl',
     resizeTo: container,
-    backgroundColor: 0x110a08,
+    backgroundColor: 0x22130d,
     antialias: true,
+    powerPreference: 'high-performance',
     resolution: getMapRenderResolution(typeof window !== 'undefined' ? window.devicePixelRatio : 1),
     autoDensity: true
   })
+  while (container.firstChild) {
+    container.removeChild(container.firstChild)
+  }
   container.appendChild(app.canvas)
 
   const worldBounds = calculateGridWorldBounds(mapSize.width, mapSize.height, cellWorldSize)
@@ -92,23 +97,17 @@ export async function createMarsMapRuntime(
 
   viewport.moveCenter(worldBounds.width / 2, worldBounds.height / 2)
 
-  // Layer hierarchy under worldRoot
-  const worldRoot = new Container()
-  viewport.addChild(worldRoot)
-
-  const groundLayer = new Container()
-  const groundDecalLayer = new Container()
-  const macroLayer = new Container()
-  macroLayer.sortableChildren = true
-  const scatterLayer = new Container()
-  scatterLayer.sortableChildren = true
-  const interactionLayer = new Container()
-
-  worldRoot.addChild(groundLayer)
-  worldRoot.addChild(groundDecalLayer)
-  worldRoot.addChild(macroLayer)
-  worldRoot.addChild(scatterLayer)
-  worldRoot.addChild(interactionLayer)
+  // 8-tier Layer hierarchy under worldRoot
+  const {
+    groundLayer,
+    surfaceDetailLayer,
+    formationGroundLayer,
+    macroLayer,
+    heroLayer,
+    scatterLayer,
+    microLayer,
+    interactionLayer
+  } = createTerrainLayerStack(viewport)
 
   // Generate deterministic visual terrain field
   const terrainField = generateTerrainVisualField({
@@ -126,11 +125,33 @@ export async function createMarsMapRuntime(
       ? new TerrainLightingContext(assets.manifest.profile, DEFAULT_TERRAIN_LIGHTING, debugShaderId)
       : null
 
-  // Populate terrain layers
+  // Populate continuous ground and all geological layers
   buildContinuousGround(groundLayer, worldBounds, terrainField, cellWorldSize)
-  populateGroundDecals(groundDecalLayer, worldBounds, terrainField, assets, cellWorldSize, lightingContext, terrainLightingMode)
-  populateMacroTerrain(macroLayer, locations, terrainField, assets, cellWorldSize, occupiedCells, lightingContext, terrainLightingMode)
-  populateScatterTerrain(scatterLayer, terrainField, assets, cellWorldSize, occupiedCells, lightingContext, terrainLightingMode)
+  populateTerrainLayers(
+    {
+      surfaceDetailLayer,
+      formationGroundLayer,
+      macroLayer,
+      heroLayer,
+      scatterLayer,
+      microLayer
+    },
+    locations,
+    terrainField,
+    assets,
+    cellWorldSize,
+    occupiedCells,
+    lightingContext,
+    terrainLightingMode
+  )
+
+  // Lightweight TMA Viewport Culling & Micro Zoom LOD
+  setupMapCullingAndLod(
+    viewport,
+    [surfaceDetailLayer, formationGroundLayer, macroLayer, heroLayer, scatterLayer, microLayer],
+    microLayer,
+    cellWorldSize
+  )
 
   // Attach diagnostic state for certification when explicitly enabled
   const certEnabled = isTerrainCertificationEnabled()
@@ -144,9 +165,10 @@ export async function createMarsMapRuntime(
       rendererResolution: app.renderer.resolution,
       rendererType: app.renderer.name,
       atlasPages: assets.albedoPages.length,
-      groundDecals: groundDecalLayer.children.length,
-      macroCount: macroLayer.children.length,
-      scatterCount: scatterLayer.children.length
+      groundDecals: surfaceDetailLayer.children.length,
+      surfaceDetailCount: surfaceDetailLayer.children.length,
+      macroCount: macroLayer.children.length + heroLayer.children.length,
+      scatterCount: scatterLayer.children.length + microLayer.children.length
     }
   }
 
@@ -180,8 +202,22 @@ export async function createMarsMapRuntime(
     updateLocations(newLocs: MapLocation[]) {
       interaction.updateLocations(newLocs)
       macroLayer.removeChildren()
+      heroLayer.removeChildren()
+      surfaceDetailLayer.removeChildren()
+      formationGroundLayer.removeChildren()
+      scatterLayer.removeChildren()
+      microLayer.removeChildren()
       const refreshedOccupied = new Set<string>()
-      populateMacroTerrain(macroLayer, newLocs, terrainField, assets, cellWorldSize, refreshedOccupied, lightingContext, terrainLightingMode)
+      populateTerrainLayers(
+        { surfaceDetailLayer, formationGroundLayer, macroLayer, heroLayer, scatterLayer, microLayer },
+        newLocs,
+        terrainField,
+        assets,
+        cellWorldSize,
+        refreshedOccupied,
+        lightingContext,
+        terrainLightingMode
+      )
     },
     setSelectedLocation(loc: MapLocation | null) {
       interaction.setSelectedLocation(loc)

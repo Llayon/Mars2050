@@ -29,6 +29,14 @@ try:
     from generators.ridge import generate_ridge
     from generators.rocks import generate_rocks
     from generators.dune import generate_dune
+    from generators.mesa import generate_mesa
+    from generators.ridge_chain import generate_ridge_chain
+    from generators.meso_decal import (
+        generate_dust_drift,
+        generate_erosion_strip,
+        generate_rock_field,
+        generate_cracked_ground
+    )
 except ImportError:
     # Allows module inspection outside Blender environment
     bpy = None
@@ -129,6 +137,24 @@ def run_factory():
         # Build mesh
         if generator_kind == 'crater':
             obj = generate_crater(params, seed)
+            albedo_mat = create_regolith_material()
+        elif generator_kind == 'mesa':
+            obj = generate_mesa(params, seed)
+            albedo_mat = create_regolith_material()
+        elif generator_kind == 'ridge_chain':
+            obj = generate_ridge_chain(params, seed)
+            albedo_mat = create_rock_material()
+        elif generator_kind == 'dust_drift':
+            obj = generate_dust_drift(params, seed)
+            albedo_mat = create_dust_material()
+        elif generator_kind == 'erosion_strip':
+            obj = generate_erosion_strip(params, seed)
+            albedo_mat = create_regolith_material()
+        elif generator_kind == 'rock_field':
+            obj = generate_rock_field(params, seed)
+            albedo_mat = create_rock_material()
+        elif generator_kind == 'cracked_ground':
+            obj = generate_cracked_ground(params, seed)
             albedo_mat = create_regolith_material()
         elif generator_kind == 'ridge':
             obj = generate_ridge(params, seed)

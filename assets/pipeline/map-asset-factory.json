@@ -180,6 +180,98 @@
         "maxSize": 0.6,
         "dispersion": 0.6
       }
+    },
+    {
+      "id": "crater_large_01",
+      "layer": "macro",
+      "generator": "crater",
+      "seed": 403,
+      "footprint": [{ "x": 0, "y": 0 }],
+      "anchorPx": { "x": 256, "y": 256 },
+      "params": {
+        "radius": 2.1,
+        "depth": 0.95,
+        "rimHeight": 0.55,
+        "centralPeak": true
+      }
+    },
+    {
+      "id": "mesa_medium_01",
+      "layer": "macro",
+      "generator": "mesa",
+      "seed": 5201,
+      "footprint": [{ "x": 0, "y": 0 }],
+      "anchorPx": { "x": 256, "y": 256 },
+      "params": {
+        "radiusTop": 1.2,
+        "radiusBase": 2.0,
+        "height": 1.8,
+        "steepness": 0.85
+      }
+    },
+    {
+      "id": "ridge_chain_01",
+      "layer": "macro",
+      "generator": "ridge_chain",
+      "seed": 5202,
+      "footprint": [{ "x": 0, "y": 0 }],
+      "anchorPx": { "x": 256, "y": 256 },
+      "params": {
+        "length": 3.4,
+        "width": 1.6,
+        "height": 1.5,
+        "segments": 3
+      }
+    },
+    {
+      "id": "dust_drift_01",
+      "layer": "ground",
+      "generator": "dust_drift",
+      "seed": 5203,
+      "footprint": [{ "x": 0, "y": 0 }],
+      "anchorPx": { "x": 256, "y": 256 },
+      "params": {
+        "length": 2.8,
+        "width": 1.8,
+        "height": 0.4
+      }
+    },
+    {
+      "id": "erosion_strip_01",
+      "layer": "ground",
+      "generator": "erosion_strip",
+      "seed": 5204,
+      "footprint": [{ "x": 0, "y": 0 }],
+      "anchorPx": { "x": 256, "y": 256 },
+      "params": {
+        "length": 3.0,
+        "width": 1.2,
+        "depth": 0.35
+      }
+    },
+    {
+      "id": "rock_field_01",
+      "layer": "ground",
+      "generator": "rock_field",
+      "seed": 5205,
+      "footprint": [{ "x": 0, "y": 0 }],
+      "anchorPx": { "x": 256, "y": 256 },
+      "params": {
+        "radius": 2.2,
+        "count": 12
+      }
+    },
+    {
+      "id": "cracked_ground_01",
+      "layer": "ground",
+      "generator": "cracked_ground",
+      "seed": 5206,
+      "footprint": [{ "x": 0, "y": 0 }],
+      "anchorPx": { "x": 256, "y": 256 },
+      "params": {
+        "radius": 2.0,
+        "height": 0.25
+      }
     }
   ]
 }

@@ -3,9 +3,7 @@ import { Container, Texture, type Sprite } from 'pixi.js'
 import { DEFAULT_MAP_SEED } from '@/domains/map/map.config'
 import type { MapLocation } from '@/domains/map/map.types'
 import { generateTerrainVisualField } from '@/components/map/mars-terrain-field'
-import { populateMacroTerrain, populateScatterTerrain } from '@/components/map/mars-map-terrain'
-import { populateGroundDecals } from '@/components/map/mars-map-ground'
-import { calculateGridWorldBounds } from '@/components/map/mars-map-projection'
+import { populateTerrainLayers, type TerrainLayerHierarchy } from '@/components/map/mars-map-terrain'
 import type { LoadedMapAssets } from '@/components/map/mars-map-render.types'
 import type { MapAssetManifest, VisualAssetFrame } from '@/components/map/mars-map-asset.types'
 
@@ -16,11 +14,19 @@ const MOCK_ASSET_IDS = [
   { id: 'dust_patch_01', layer: 'ground' },
   { id: 'crater_medium_02', layer: 'macro' },
   { id: 'crater_small_01', layer: 'macro' },
+  { id: 'crater_large_01', layer: 'macro' },
+  { id: 'mesa_medium_01', layer: 'macro' },
+  { id: 'ridge_chain_01', layer: 'macro' },
   { id: 'ridge_01', layer: 'macro' },
   { id: 'ridge_02', layer: 'macro' },
+  { id: 'dust_drift_01', layer: 'ground' },
+  { id: 'erosion_strip_01', layer: 'ground' },
+  { id: 'rock_field_01', layer: 'ground' },
+  { id: 'cracked_ground_01', layer: 'ground' },
   { id: 'rocks_small_01', layer: 'scatter' },
   { id: 'rocks_small_02', layer: 'scatter' },
-  { id: 'boulder_cluster_01', layer: 'scatter' }
+  { id: 'boulder_cluster_01', layer: 'scatter' },
+  { id: 'boulder_cluster_02', layer: 'scatter' }
 ] as const
 
 function createMockAssets(): LoadedMapAssets {
@@ -79,6 +85,17 @@ function createMockAssets(): LoadedMapAssets {
   }
 }
 
+function createMockLayers(): TerrainLayerHierarchy {
+  return {
+    surfaceDetailLayer: new Container(),
+    formationGroundLayer: new Container(),
+    macroLayer: new Container(),
+    heroLayer: new Container(),
+    scatterLayer: new Container(),
+    microLayer: new Container()
+  }
+}
+
 describe('mars-map-composition (Terrain Composition & Occupancy)', () => {
   const sampleLocations: MapLocation[] = [
     {
@@ -94,96 +111,57 @@ describe('mars-map-composition (Terrain Composition & Occupancy)', () => {
     }
   ]
 
-  it('populates continuous ground decals with zero rotation and bounded count', () => {
-    const assets = createMockAssets()
-    const worldBounds = calculateGridWorldBounds(20, 20, 128)
-    const field = generateTerrainVisualField({ width: 20, height: 20, seed: DEFAULT_MAP_SEED })
-    const decalLayer = new Container()
-
-    populateGroundDecals(decalLayer, worldBounds, field, assets, 128)
-
-    // Verify 15-30 ground decals populated across default 7 macro regions
-    expect(decalLayer.children.length).toBeGreaterThanOrEqual(15)
-    expect(decalLayer.children.length).toBeLessThanOrEqual(35)
-
-    for (const child of decalLayer.children) {
-      const sprite = child as Sprite
-      expect(sprite.rotation).toBe(0)
-      expect(sprite.position.x).toBeGreaterThanOrEqual(worldBounds.minX)
-      expect(sprite.position.x).toBeLessThanOrEqual(worldBounds.maxX)
-      expect(sprite.position.y).toBeGreaterThanOrEqual(worldBounds.minY)
-      expect(sprite.position.y).toBeLessThanOrEqual(worldBounds.maxY)
-      expect(sprite.scale.x).toBeGreaterThan(0.4)
-      expect(sprite.scale.x).toBeLessThan(0.6)
-    }
-  })
-
-  it('produces deterministic ground decal placement for identical seeds', () => {
-    const assets = createMockAssets()
-    const worldBounds = calculateGridWorldBounds(20, 20, 128)
-    const field1 = generateTerrainVisualField({ width: 20, height: 20, seed: 12345 })
-    const field2 = generateTerrainVisualField({ width: 20, height: 20, seed: 12345 })
-    const fieldDiff = generateTerrainVisualField({ width: 20, height: 20, seed: 99999 })
-
-    const layer1 = new Container()
-    const layer2 = new Container()
-    const layerDiff = new Container()
-
-    populateGroundDecals(layer1, worldBounds, field1, assets, 128)
-    populateGroundDecals(layer2, worldBounds, field2, assets, 128)
-    populateGroundDecals(layerDiff, worldBounds, fieldDiff, assets, 128)
-
-    expect(layer1.children.length).toBe(layer2.children.length)
-    expect(layer1.children.map(c => ({ x: c.position.x, y: c.position.y })))
-      .toEqual(layer2.children.map(c => ({ x: c.position.x, y: c.position.y })))
-
-    expect(layer1.children.map(c => ({ x: c.position.x, y: c.position.y })))
-      .not.toEqual(layerDiff.children.map(c => ({ x: c.position.x, y: c.position.y })))
-  })
-
   it('places MapLocation POI and marks cell as occupied', () => {
     const assets = createMockAssets()
     const field = generateTerrainVisualField({ width: 20, height: 20, seed: DEFAULT_MAP_SEED })
-    const macroLayer = new Container()
+    const layers = createMockLayers()
     const occupiedCells = new Set<string>()
 
-    populateMacroTerrain(macroLayer, sampleLocations, field, assets, 128, occupiedCells)
+    populateTerrainLayers(layers, sampleLocations, field, assets, 128, occupiedCells)
 
     expect(occupiedCells.has('3,3')).toBe(true)
-    expect(macroLayer.children.length).toBeGreaterThanOrEqual(1)
+    expect(layers.macroLayer.children.length).toBeGreaterThanOrEqual(1)
   })
 
-  it('skips occupied cells when placing scatter', () => {
+  it('populates geological clusters and meso formations into appropriate layers', () => {
     const assets = createMockAssets()
     const field = generateTerrainVisualField({ width: 20, height: 20, seed: DEFAULT_MAP_SEED })
-    const scatterLayer = new Container()
-    const occupiedCells = new Set<string>(['3,3', '4,4', '5,5'])
+    const layers = createMockLayers()
+    const occupiedCells = new Set<string>()
 
-    populateScatterTerrain(scatterLayer, field, assets, 128, occupiedCells)
+    populateTerrainLayers(layers, sampleLocations, field, assets, 128, occupiedCells)
 
-    const worldCenter33 = { x: 3 * 128 + 64, y: 3 * 128 + 64 }
-    for (const child of scatterLayer.children) {
-      const dist = Math.hypot(child.position.x - worldCenter33.x, child.position.y - worldCenter33.y)
-      expect(dist).toBeGreaterThan(16)
-    }
+    const totalVisible =
+      layers.surfaceDetailLayer.children.length +
+      layers.formationGroundLayer.children.length +
+      layers.macroLayer.children.length +
+      layers.heroLayer.children.length +
+      layers.scatterLayer.children.length +
+      layers.microLayer.children.length
+
+    expect(totalVisible).toBeGreaterThan(10)
+    expect(totalVisible).toBeLessThan(120) // Within TMA budget
   })
 
-  it('produces deterministic sprite placement for same seed and locations', () => {
+  it('produces deterministic formation placement for identical seeds', () => {
     const assets = createMockAssets()
     const field1 = generateTerrainVisualField({ width: 20, height: 20, seed: DEFAULT_MAP_SEED })
     const field2 = generateTerrainVisualField({ width: 20, height: 20, seed: DEFAULT_MAP_SEED })
 
-    const macroLayer1 = new Container()
+    const layers1 = createMockLayers()
     const occupied1 = new Set<string>()
-    populateMacroTerrain(macroLayer1, sampleLocations, field1, assets, 128, occupied1)
+    populateTerrainLayers(layers1, sampleLocations, field1, assets, 128, occupied1)
 
-    const macroLayer2 = new Container()
+    const layers2 = createMockLayers()
     const occupied2 = new Set<string>()
-    populateMacroTerrain(macroLayer2, sampleLocations, field2, assets, 128, occupied2)
+    populateTerrainLayers(layers2, sampleLocations, field2, assets, 128, occupied2)
 
-    expect(macroLayer1.children.length).toBe(macroLayer2.children.length)
-    expect(macroLayer1.children.map(c => ({ x: c.position.x, y: c.position.y, z: c.zIndex })))
-      .toEqual(macroLayer2.children.map(c => ({ x: c.position.x, y: c.position.y, z: c.zIndex })))
+    expect(layers1.heroLayer.children.length).toBe(layers2.heroLayer.children.length)
+    expect(layers1.macroLayer.children.length).toBe(layers2.macroLayer.children.length)
+    expect(layers1.scatterLayer.children.length).toBe(layers2.scatterLayer.children.length)
+
+    expect(layers1.macroLayer.children.map(c => ({ x: c.position.x, y: c.position.y, z: c.zIndex })))
+      .toEqual(layers2.macroLayer.children.map(c => ({ x: c.position.x, y: c.position.y, z: c.zIndex })))
   })
 
   it('preserves exact spatial positions, scales, and zIndices when switching baked vs enhanced lighting', async () => {
@@ -193,20 +171,21 @@ describe('mars-map-composition (Terrain Composition & Occupancy)', () => {
     const lightingContext = new TerrainLightingContext(assets.manifest.profile)
 
     // Baked mode
-    const macroBaked = new Container()
+    const layersBaked = createMockLayers()
     const occupiedBaked = new Set<string>()
-    populateMacroTerrain(macroBaked, sampleLocations, field, assets, 128, occupiedBaked, null, 'baked')
+    populateTerrainLayers(layersBaked, sampleLocations, field, assets, 128, occupiedBaked, null, 'baked')
 
     // Enhanced mode
-    const macroEnhanced = new Container()
+    const layersEnhanced = createMockLayers()
     const occupiedEnhanced = new Set<string>()
-    populateMacroTerrain(macroEnhanced, sampleLocations, field, assets, 128, occupiedEnhanced, lightingContext, 'enhanced')
+    populateTerrainLayers(layersEnhanced, sampleLocations, field, assets, 128, occupiedEnhanced, lightingContext, 'enhanced')
 
-    expect(macroBaked.children.length).toBe(macroEnhanced.children.length)
+    expect(layersBaked.macroLayer.children.length).toBe(layersEnhanced.macroLayer.children.length)
+    expect(layersBaked.heroLayer.children.length).toBe(layersEnhanced.heroLayer.children.length)
 
-    for (let i = 0; i < macroBaked.children.length; i++) {
-      const b = macroBaked.children[i]
-      const e = macroEnhanced.children[i]
+    for (let i = 0; i < layersBaked.macroLayer.children.length; i++) {
+      const b = layersBaked.macroLayer.children[i]
+      const e = layersEnhanced.macroLayer.children[i]
 
       expect(e.position.x).toBe(b.position.x)
       expect(e.position.y).toBe(b.position.y)

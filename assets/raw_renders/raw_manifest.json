@@ -247,6 +247,139 @@
           "y": 0
         }
       ]
+    },
+    {
+      "id": "crater_large_01",
+      "layer": "macro",
+      "source": {
+        "albedo": "crater_large_01.albedo.png",
+        "normal": "crater_large_01.normal.png",
+        "data": "crater_large_01.data.png"
+      },
+      "anchorPx": {
+        "x": 256,
+        "y": 256
+      },
+      "footprint": [
+        {
+          "x": 0,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "id": "mesa_medium_01",
+      "layer": "macro",
+      "source": {
+        "albedo": "mesa_medium_01.albedo.png",
+        "normal": "mesa_medium_01.normal.png",
+        "data": "mesa_medium_01.data.png"
+      },
+      "anchorPx": {
+        "x": 256,
+        "y": 256
+      },
+      "footprint": [
+        {
+          "x": 0,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "id": "ridge_chain_01",
+      "layer": "macro",
+      "source": {
+        "albedo": "ridge_chain_01.albedo.png",
+        "normal": "ridge_chain_01.normal.png",
+        "data": "ridge_chain_01.data.png"
+      },
+      "anchorPx": {
+        "x": 256,
+        "y": 256
+      },
+      "footprint": [
+        {
+          "x": 0,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "id": "dust_drift_01",
+      "layer": "ground",
+      "source": {
+        "albedo": "dust_drift_01.albedo.png",
+        "normal": "dust_drift_01.normal.png",
+        "data": "dust_drift_01.data.png"
+      },
+      "anchorPx": {
+        "x": 256,
+        "y": 256
+      },
+      "footprint": [
+        {
+          "x": 0,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "id": "erosion_strip_01",
+      "layer": "ground",
+      "source": {
+        "albedo": "erosion_strip_01.albedo.png",
+        "normal": "erosion_strip_01.normal.png",
+        "data": "erosion_strip_01.data.png"
+      },
+      "anchorPx": {
+        "x": 256,
+        "y": 256
+      },
+      "footprint": [
+        {
+          "x": 0,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "id": "rock_field_01",
+      "layer": "ground",
+      "source": {
+        "albedo": "rock_field_01.albedo.png",
+        "normal": "rock_field_01.normal.png",
+        "data": "rock_field_01.data.png"
+      },
+      "anchorPx": {
+        "x": 256,
+        "y": 256
+      },
+      "footprint": [
+        {
+          "x": 0,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "id": "cracked_ground_01",
+      "layer": "ground",
+      "source": {
+        "albedo": "cracked_ground_01.albedo.png",
+        "normal": "cracked_ground_01.normal.png",
+        "data": "cracked_ground_01.data.png"
+      },
+      "anchorPx": {
+        "x": 256,
+        "y": 256
+      },
+      "footprint": [
+        {
+          "x": 0,
+          "y": 0
+        }
+      ]
     }
   ]
 }

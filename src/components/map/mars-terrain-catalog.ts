@@ -35,9 +35,14 @@ export const TERRAIN_BIOME_CATALOG: Record<TerrainBiome, TerrainBiomeVisualRule>
     baseColor: 0xb4532a,
     groundDecals: [
       { id: 'regolith_patch_01', weight: 1.0 },
-      { id: 'regolith_patch_02', weight: 1.0 }
+      { id: 'regolith_patch_02', weight: 1.0 },
+      { id: 'dust_drift_01', weight: 0.8 },
+      { id: 'cracked_ground_01', weight: 0.7 }
     ],
-    macroAssets: [],
+    macroAssets: [
+      { id: 'crater_small_01', weight: 1.0 },
+      { id: 'crater_large_01', weight: 0.6 }
+    ],
     scatterAssets: [
       { id: 'rocks_small_01', weight: 1.0 },
       { id: 'boulder_cluster_01', weight: 0.5 }
@@ -47,25 +52,40 @@ export const TERRAIN_BIOME_CATALOG: Record<TerrainBiome, TerrainBiomeVisualRule>
   },
   dust_basin: {
     baseColor: 0xc87137,
-    groundDecals: [{ id: 'dust_patch_01', weight: 1.0 }],
-    macroAssets: [],
+    groundDecals: [
+      { id: 'dust_patch_01', weight: 1.0 },
+      { id: 'dust_drift_01', weight: 1.2 }
+    ],
+    macroAssets: [
+      { id: 'crater_large_01', weight: 0.5 }
+    ],
     scatterAssets: [{ id: 'rocks_small_02', weight: 1.0 }],
     scatterDensity: 0.05,
     macroDensity: 0.02
   },
   dunes: {
     baseColor: 0xc47b3b,
-    groundDecals: [{ id: 'dust_patch_01', weight: 0.8 }],
-    macroAssets: [{ id: 'dune_ridge_01', weight: 1.0 }],
+    groundDecals: [
+      { id: 'dust_patch_01', weight: 0.8 },
+      { id: 'dust_drift_01', weight: 1.0 }
+    ],
+    macroAssets: [
+      { id: 'dune_ridge_01', weight: 1.0 },
+      { id: 'ridge_chain_01', weight: 0.6 }
+    ],
     scatterAssets: [{ id: 'rocks_small_01', weight: 0.4 }],
     scatterDensity: 0.03,
     macroDensity: 0.08
   },
   basalt: {
     baseColor: 0x3d271d,
-    groundDecals: [{ id: 'basalt_patch_01', weight: 1.0 }],
+    groundDecals: [
+      { id: 'basalt_patch_01', weight: 1.0 },
+      { id: 'rock_field_01', weight: 1.2 }
+    ],
     macroAssets: [
-      { id: 'ridge_01', weight: 1.0 },
+      { id: 'ridge_chain_01', weight: 1.0 },
+      { id: 'ridge_01', weight: 0.8 },
       { id: 'ridge_02', weight: 0.8 }
     ],
     scatterAssets: [
@@ -77,10 +97,16 @@ export const TERRAIN_BIOME_CATALOG: Record<TerrainBiome, TerrainBiomeVisualRule>
   },
   highlands: {
     baseColor: 0x7c2d1b,
-    groundDecals: [{ id: 'regolith_patch_02', weight: 1.0 }],
+    groundDecals: [
+      { id: 'regolith_patch_02', weight: 1.0 },
+      { id: 'erosion_strip_01', weight: 0.9 },
+      { id: 'rock_field_01', weight: 0.8 }
+    ],
     macroAssets: [
-      { id: 'ridge_01', weight: 1.0 },
-      { id: 'ridge_02', weight: 1.0 }
+      { id: 'mesa_medium_01', weight: 1.0 },
+      { id: 'ridge_chain_01', weight: 1.0 },
+      { id: 'ridge_01', weight: 0.8 },
+      { id: 'crater_large_01', weight: 0.6 }
     ],
     scatterAssets: [
       { id: 'rocks_small_01', weight: 1.0 },
@@ -91,10 +117,15 @@ export const TERRAIN_BIOME_CATALOG: Record<TerrainBiome, TerrainBiomeVisualRule>
   },
   canyon: {
     baseColor: 0x5a2314,
-    groundDecals: [{ id: 'basalt_patch_01', weight: 0.8 }],
+    groundDecals: [
+      { id: 'basalt_patch_01', weight: 0.8 },
+      { id: 'erosion_strip_01', weight: 1.2 },
+      { id: 'rock_field_01', weight: 1.0 }
+    ],
     macroAssets: [
-      { id: 'ridge_01', weight: 1.0 },
-      { id: 'ridge_02', weight: 1.0 }
+      { id: 'mesa_medium_01', weight: 1.0 },
+      { id: 'ridge_chain_01', weight: 1.0 },
+      { id: 'ridge_01', weight: 0.8 }
     ],
     scatterAssets: [
       { id: 'boulder_cluster_01', weight: 1.0 },
@@ -105,7 +136,10 @@ export const TERRAIN_BIOME_CATALOG: Record<TerrainBiome, TerrainBiomeVisualRule>
   },
   polar: {
     baseColor: 0xd6b7a5,
-    groundDecals: [{ id: 'dust_patch_01', weight: 1.0 }],
+    groundDecals: [
+      { id: 'dust_patch_01', weight: 1.0 },
+      { id: 'dust_drift_01', weight: 0.8 }
+    ],
     macroAssets: [{ id: 'dune_ridge_01', weight: 0.5 }],
     scatterAssets: [{ id: 'rocks_small_01', weight: 0.5 }],
     scatterDensity: 0.06,
