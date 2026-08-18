@@ -14,7 +14,7 @@ export function compareBatchCells(left: BatchMovementCell, right: BatchMovementC
   const transformsEquivalent = canonicalSerialize(left.transforms) === canonicalSerialize(right.transforms)
   const collisionEquivalent = canonicalSerialize(left.collisionProfile) === canonicalSerialize(right.collisionProfile)
   const dirtyEntitiesEquivalent = canonicalSerialize(left.dirtyEntities) === canonicalSerialize(right.dirtyEntities)
-  const orderEffect = !stateEquivalent || !transformsEquivalent || !collisionEquivalent
+  const orderEffect = !stateEquivalent || !transformsEquivalent || !collisionEquivalent || !dirtyEntitiesEquivalent
     ? 'MOVEMENT_STATE'
     : !planningActionSequenceEquivalent || !moveActionSequenceEquivalent
       ? 'PLANNING_ACTION_ORDER'
