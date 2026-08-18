@@ -78,7 +78,7 @@ void main(void) {
         vec4 reg = uRegions[i];
         float d = length(warpedPos - reg.xy);
         float radius = reg.z * 1.8;
-        float w = smoothstep(radius, radius * 0.25, d);
+        float w = 1.0 - smoothstep(radius * 0.25, radius, d);
 
         if (w > 0.001) {
             int bType = int(reg.w + 0.5);

@@ -15,6 +15,9 @@ import { createTerrainRenderable, type TerrainLightingContext } from './mars-map
 import type { TerrainLightingMode } from './mars-map-lighting'
 import { TERRAIN_FORMATION_RECIPES } from './mars-formation-recipes'
 import { generateTerrainFlowField } from './mars-terrain-flow'
+import { populateFormationClusters } from './mars-terrain-cluster'
+import { populateGroundDecals } from './mars-map-ground'
+import { calculateGridWorldBounds } from './mars-map-projection'
 
 export interface TerrainLayerHierarchy {
   surfaceDetailLayer: Container
@@ -64,8 +67,6 @@ function populatePOIs(
     occupiedCells.add(`${loc.x},${loc.y}`)
   }
 }
-
-import { populateFormationClusters } from './mars-terrain-cluster'
 
 /**
  * Populates natural scatter rocks across non-reserved cells.
@@ -130,6 +131,8 @@ export function populateTerrainLayers(
   lightingContext?: TerrainLightingContext | null,
   lightingMode?: TerrainLightingMode
 ): void {
+  const bounds = calculateGridWorldBounds(20, 20, cellWorldSize)
+  populateGroundDecals(layers.surfaceDetailLayer, bounds, field, assets, cellWorldSize, lightingContext, lightingMode)
   populatePOIs(layers.macroLayer, locations, field, assets, cellWorldSize, occupiedCells, lightingContext, lightingMode)
   populateFormationClusters(layers, field, assets, cellWorldSize, occupiedCells, lightingContext, lightingMode)
   populateScatter(layers, field, assets, cellWorldSize, occupiedCells, lightingContext, lightingMode)

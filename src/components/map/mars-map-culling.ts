@@ -57,16 +57,43 @@ export function createTerrainLayerStack(viewport: Viewport): RuntimeTerrainLayer
   }
 }
 
+export interface TerrainCullBounds {
+  halfWidth: number
+  halfHeight: number
+}
+
 /**
- * Attaches lightweight viewport AABB culling and micro-scatter zoom LOD to the viewport.
+ * Pure helper for testing AABB intersection between an object with conservative extents
+ * and an expanded viewport rectangle.
+ */
+export function isItemInViewportAabb(
+  x: number,
+  y: number,
+  halfW: number,
+  halfH: number,
+  minX: number,
+  minY: number,
+  maxX: number,
+  maxY: number
+): boolean {
+  const left = x - halfW
+  const right = x + halfW
+  const top = y - halfH
+  const bottom = y + halfH
+  return right >= minX && left <= maxX && bottom >= minY && top <= maxY
+}
+
+/**
+ * Attaches lightweight viewport conservative AABB culling and micro-scatter zoom LOD to the viewport.
+ * Returns an update function allowing manual cull state recalculation after layer repopulation.
  */
 export function setupMapCullingAndLod(
   viewport: Viewport,
   layersToCull: Container[],
   microLayer: Container,
   cellWorldSize: number
-): void {
-  const cullMargin = cellWorldSize * 1.5
+): () => void {
+  const cullMargin = cellWorldSize * 0.75
 
   const update = () => {
     // Micro scatter LOD: cut fine pebbles at low zoom
@@ -81,9 +108,19 @@ export function setupMapCullingAndLod(
     for (const layer of layersToCull) {
       if (!layer.visible) continue
       for (const child of layer.children) {
-        const cx = child.position.x
-        const cy = child.position.y
-        child.renderable = cx >= minX && cx <= maxX && cy >= minY && cy <= maxY
+        const bounds = (child as unknown as { cullBounds?: TerrainCullBounds }).cullBounds
+        const halfW = bounds ? bounds.halfWidth : (cellWorldSize * 0.5)
+        const halfH = bounds ? bounds.halfHeight : (cellWorldSize * 0.5)
+        child.renderable = isItemInViewportAabb(
+          child.position.x,
+          child.position.y,
+          halfW,
+          halfH,
+          minX,
+          minY,
+          maxX,
+          maxY
+        )
       }
     }
   }
@@ -91,4 +128,6 @@ export function setupMapCullingAndLod(
   viewport.on('moved', update)
   viewport.on('zoomed', update)
   update()
+
+  return update
 }

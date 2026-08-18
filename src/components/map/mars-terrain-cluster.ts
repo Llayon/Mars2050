@@ -34,7 +34,7 @@ export function populateFormationClusters(
     if (matchingRecipes.length === 0) continue
 
     const clusterHash = hashCoord(field.seed, cell.x, cell.y, TERRAIN_SALTS.MACRO)
-    if ((clusterHash % 1000) > 65) continue
+    if ((clusterHash % 1000) > 110) continue // ~11% candidate rate per cell
 
     const recipeIdx = clusterHash % matchingRecipes.length
     const recipe = matchingRecipes[recipeIdx]
@@ -118,11 +118,21 @@ export function populateFormationClusters(
         if (!satAsset) return
 
         const dist = (sat.distanceMin + ((satHash % 1000) / 1000) * (sat.distanceMax - sat.distanceMin)) * cellWorldSize
-        const ang = sat.relativeToFlow ? baseAngle + (((satHash >>> 8) % 60) - 30) * (Math.PI / 180) : ((satHash >>> 8) % 360) * (Math.PI / 180)
+        const minDeg = sat.angleMinDeg ?? (sat.relativeToFlow ? -30 : 0)
+        const maxDeg = sat.angleMaxDeg ?? (sat.relativeToFlow ? 30 : 360)
+        const degSpan = maxDeg - minDeg
+        const degOffset = minDeg + (((satHash >>> 8) % 1000) / 1000) * degSpan
+        const ang = sat.relativeToFlow ? baseAngle + degOffset * (Math.PI / 180) : degOffset * (Math.PI / 180)
 
         const satPos = {
           x: worldPos.x + Math.cos(ang) * dist,
           y: worldPos.y + Math.sin(ang) * dist
+        }
+
+        let scaleMultiplier: number | undefined
+        if (sat.scaleRange) {
+          const [minScale, maxScale] = sat.scaleRange
+          scaleMultiplier = minScale + (((satHash >>> 16) % 1000) / 1000) * (maxScale - minScale)
         }
 
         const satRenderable = createTerrainRenderable({
@@ -130,7 +140,8 @@ export function populateFormationClusters(
           assets,
           lightingContext,
           lightingMode,
-          alpha: sat.alpha ?? 0.85
+          alpha: sat.alpha ?? 0.85,
+          scaleMultiplier
         })
         satRenderable.position.set(satPos.x, satPos.y)
         satRenderable.zIndex = terrainSortKey(satPos.y, sat.targetLayer === 'scatter' ? 4 : 2)

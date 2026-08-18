@@ -183,5 +183,13 @@ export function createTerrainRenderable(options: CreateTerrainRenderableOptions)
     renderable.scale.y *= scaleMultiplier
   }
 
+  // Attach conservative world-space half-extents for AABB culling
+  const halfW = (asset.frame.frame.w * Math.abs(renderable.scale.x)) * 0.5
+  const halfH = (asset.frame.frame.h * Math.abs(renderable.scale.y)) * 0.5
+  ;(renderable as unknown as { cullBounds?: { halfWidth: number; halfHeight: number } }).cullBounds = {
+    halfWidth: Math.max(16, halfW),
+    halfHeight: Math.max(16, halfH)
+  }
+
   return renderable
 }

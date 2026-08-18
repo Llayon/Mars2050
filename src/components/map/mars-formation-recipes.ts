@@ -28,6 +28,10 @@ export interface TerrainFormationRecipe {
   biomes: readonly TerrainBiome[]
   primaryAssets: readonly WeightedAssetRef[]
   exclusionRadiusCells: number
+  /**
+   * Reserved for selecting authored directional asset variants (e.g. ridge_chain_01_a/b/c).
+   * Runtime rotation of primary formations is strictly prohibited to preserve universal sun azimuth.
+   */
   alignToFlow?: boolean
   groundDecals?: readonly WeightedAssetRef[]
   satellites?: readonly FormationSatelliteRule[]

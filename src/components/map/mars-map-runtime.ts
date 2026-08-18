@@ -146,7 +146,7 @@ export async function createMarsMapRuntime(
   )
 
   // Lightweight TMA Viewport Culling & Micro Zoom LOD
-  setupMapCullingAndLod(
+  const updateCullState = setupMapCullingAndLod(
     viewport,
     [surfaceDetailLayer, formationGroundLayer, macroLayer, heroLayer, scatterLayer, microLayer],
     microLayer,
@@ -201,23 +201,20 @@ export async function createMarsMapRuntime(
   return {
     updateLocations(newLocs: MapLocation[]) {
       interaction.updateLocations(newLocs)
-      macroLayer.removeChildren()
-      heroLayer.removeChildren()
-      surfaceDetailLayer.removeChildren()
-      formationGroundLayer.removeChildren()
-      scatterLayer.removeChildren()
-      microLayer.removeChildren()
-      const refreshedOccupied = new Set<string>()
+      for (const l of [macroLayer, heroLayer, surfaceDetailLayer, formationGroundLayer, scatterLayer, microLayer]) {
+        l.removeChildren()
+      }
       populateTerrainLayers(
         { surfaceDetailLayer, formationGroundLayer, macroLayer, heroLayer, scatterLayer, microLayer },
         newLocs,
         terrainField,
         assets,
         cellWorldSize,
-        refreshedOccupied,
+        new Set<string>(),
         lightingContext,
         terrainLightingMode
       )
+      updateCullState()
     },
     setSelectedLocation(loc: MapLocation | null) {
       interaction.setSelectedLocation(loc)
