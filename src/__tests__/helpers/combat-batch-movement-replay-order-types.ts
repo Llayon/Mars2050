@@ -32,6 +32,7 @@ export interface BatchMovementCell {
 
 export interface BatchPairComparison {
   requestOrderEquivalent: boolean
+  semanticRequestSequenceEquivalent: boolean
   requestContentEquivalent: boolean
   initiativeAssignmentEquivalent: boolean
   planningActionMultisetEquivalent: boolean

@@ -29,14 +29,16 @@ export function runBatch2x2Experiment(
     runCell(scenario, seed, candidateProbe, 'RCB', baselineActorOrder, baselineIntentOrder, candidateIntentOrder, 'candidate', 'baseline'),
     runCell(scenario, seed, candidateProbe, 'RCC', baselineActorOrder, baselineIntentOrder, candidateIntentOrder, 'candidate', 'candidate'),
   ]
+  const comparisons = {
+    fixedBaselineAssignment: compareBatchCells(cells[0]!, cells[2]!),
+    fixedCandidateAssignment: compareBatchCells(cells[1]!, cells[3]!),
+    fixedBaselineOrder: compareBatchCells(cells[0]!, cells[1]!),
+    fixedCandidateOrder: compareBatchCells(cells[2]!, cells[3]!),
+  }
+  assertFactorOrthogonality(comparisons)
   return {
     cells,
-    comparisons: {
-      fixedBaselineAssignment: compareBatchCells(cells[0]!, cells[2]!),
-      fixedCandidateAssignment: compareBatchCells(cells[1]!, cells[3]!),
-      fixedBaselineOrder: compareBatchCells(cells[0]!, cells[1]!),
-      fixedCandidateOrder: compareBatchCells(cells[2]!, cells[3]!),
-    },
+    comparisons,
     reference: {
       ...reference,
       baselineIntentOrder: [...baselineIntentOrder],
@@ -86,12 +88,20 @@ function runCell(
   const referenceSource = prepareActorTurn(scenario, seed, probe, true)
   const referenceTrace = runTracedActorTurn(referenceSource, { actorOrder: { groups: [actorOrder] }, intentExecutionOrder: { groups: [candidateIntentOrder] } }) as ActorTurnTrace
   const candidateRequests = describeRequests(referenceSource.prepared.runtime.world.resources.require('movementRequests'), referenceSource.prepared.runtime.world, probe)
+  assertUniqueRequestKeys(baseRequests)
+  assertUniqueRequestKeys(candidateRequests)
+  if (canonicalSerialize(sortRequests(baseRequests)) !== canonicalSerialize(sortRequests(candidateRequests))) throw new Error('PR15_REQUEST_FACTOR_CONTAMINATED')
   const requestByKey = new Map(baseRequests.map((request, index) => [requestKey(request), source.prepared.runtime.world.resources.require('movementRequests')[index]!]))
   const candidateOrderKeys = candidateRequests.map(request => requestKey(request))
   const baselineOrderKeys = baseRequests.map(request => requestKey(request))
   const assignmentSource = assignmentFactor === 'baseline' ? baseRequests : candidateRequests
   const assignment = new Map(assignmentSource.map(request => [requestKey(request), request.initiativeIndex]))
   const selectedKeys = requestOrderFactor === 'baseline' ? baselineOrderKeys : candidateOrderKeys
+  if (selectedKeys.length !== baselineOrderKeys.length ||
+      new Set(selectedKeys).size !== selectedKeys.length ||
+      canonicalSerialize([...selectedKeys].sort()) !== canonicalSerialize([...baselineOrderKeys].sort())) {
+    throw new Error('PR15_REQUEST_FACTOR_CONTAMINATED')
+  }
   const requests = selectedKeys.map(key => {
     const raw = requestByKey.get(key)
     const initiativeIndex = assignment.get(key)
@@ -146,4 +156,18 @@ function requestKey(request: SemanticMovementRequest): string {
 function assignments(requests: readonly SemanticMovementRequest[]): unknown[] {
   return requests.map(request => ({ key: requestKey(request), initiativeIndex: request.initiativeIndex }))
     .sort((left, right) => canonicalSerialize(left).localeCompare(canonicalSerialize(right)))
+}
+
+function assertUniqueRequestKeys(requests: readonly SemanticMovementRequest[]): void {
+  const keys = requests.map(requestKey)
+  if (new Set(keys).size !== keys.length) throw new Error('PR15_REQUEST_FACTOR_CONTAMINATED')
+}
+
+function assertFactorOrthogonality(comparisons: Batch2x2Experiment['comparisons']): void {
+  const fixedAssignmentPairs = [comparisons.fixedBaselineAssignment, comparisons.fixedCandidateAssignment]
+  const fixedOrderPairs = [comparisons.fixedBaselineOrder, comparisons.fixedCandidateOrder]
+  if (fixedAssignmentPairs.some(pair => pair.semanticRequestSequenceEquivalent || !pair.initiativeAssignmentEquivalent) ||
+      fixedOrderPairs.some(pair => !pair.semanticRequestSequenceEquivalent || pair.initiativeAssignmentEquivalent)) {
+    throw new Error('PR15_REQUEST_FACTOR_CONTAMINATED')
+  }
 }

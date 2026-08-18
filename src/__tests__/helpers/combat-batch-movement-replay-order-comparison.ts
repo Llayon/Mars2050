@@ -3,6 +3,7 @@ import type { BatchMovementCell, BatchPairComparison } from './combat-batch-move
 
 export function compareBatchCells(left: BatchMovementCell, right: BatchMovementCell): BatchPairComparison {
   const requestOrderEquivalent = canonicalSerialize(left.requests) === canonicalSerialize(right.requests)
+  const semanticRequestSequenceEquivalent = canonicalSerialize(semanticRequestSequence(left.requests)) === canonicalSerialize(semanticRequestSequence(right.requests))
   const requestContentEquivalent = canonicalSerialize(sortRequests(left.requests)) === canonicalSerialize(sortRequests(right.requests))
   const initiativeAssignmentEquivalent = canonicalSerialize(assignments(left)) === canonicalSerialize(assignments(right))
   const planningActionMultisetEquivalent = canonicalSerialize(sortRecords(left.planningActions)) === canonicalSerialize(sortRecords(right.planningActions))
@@ -18,13 +19,18 @@ export function compareBatchCells(left: BatchMovementCell, right: BatchMovementC
     : !planningActionSequenceEquivalent || !moveActionSequenceEquivalent
       ? 'PLANNING_ACTION_ORDER'
       : 'NONE'
-  const initiativeEffect = !stateEquivalent || !transformsEquivalent || !collisionEquivalent
+  const movementStateEquivalent = stateEquivalent && transformsEquivalent && collisionEquivalent && dirtyEntitiesEquivalent
+  const replayOnly = movementStateEquivalent && planningActionMultisetEquivalent && planningActionSequenceEquivalent &&
+    moveActionMultisetEquivalent && !moveActionSequenceEquivalent
+  const initiativeEffect = !movementStateEquivalent
     ? 'STATE_EFFECT'
-    : !moveActionSequenceEquivalent && moveActionMultisetEquivalent
+    : replayOnly
       ? 'MOVE_REPLAY_ORDER_ONLY'
-      : 'NONE'
+      : !planningActionSequenceEquivalent || !moveActionSequenceEquivalent
+        ? 'UNRESOLVED'
+        : 'NONE'
   return {
-    requestOrderEquivalent, requestContentEquivalent, initiativeAssignmentEquivalent,
+    requestOrderEquivalent, semanticRequestSequenceEquivalent, requestContentEquivalent, initiativeAssignmentEquivalent,
     planningActionMultisetEquivalent, planningActionSequenceEquivalent,
     moveActionMultisetEquivalent, moveActionSequenceEquivalent, stateEquivalent,
     transformsEquivalent, collisionEquivalent, dirtyEntitiesEquivalent,
@@ -33,8 +39,18 @@ export function compareBatchCells(left: BatchMovementCell, right: BatchMovementC
 }
 
 export function sortRequests(requests: readonly BatchMovementCell['requests'][number][]): unknown[] {
-  return [...requests].map(request => ({ ...request, initiativeIndex: undefined }))
+  return semanticRequestSequence(requests)
     .sort((left, right) => canonicalSerialize(left).localeCompare(canonicalSerialize(right)))
+}
+
+export function semanticRequestSequence(requests: readonly BatchMovementCell['requests'][number][]): unknown[] {
+  return requests.map(request => ({
+    kind: request.kind,
+    semanticActor: request.semanticActor,
+    semanticTarget: request.semanticTarget,
+    targetX: request.targetX,
+    targetY: request.targetY,
+  }))
 }
 
 function assignments(cell: BatchMovementCell): unknown[] {
