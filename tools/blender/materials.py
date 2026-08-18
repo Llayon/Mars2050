@@ -48,6 +48,95 @@ def create_rock_material(name='Mat_Rock'):
         bsdf.inputs['Roughness'].default_value = 0.75
     return mat
 
+def create_mesa_material(name='Mat_Mesa'):
+    """
+    Slope-dependent material:
+    Top flat plateaus are bright iron-oxide regolith.
+    Steep cliff walls are darker weathered basalt rock.
+    """
+    mat = bpy.data.materials.new(name=name)
+    mat.use_nodes = True
+    tree = mat.node_tree
+    tree.nodes.clear()
+
+    geom = tree.nodes.new('ShaderNodeNewGeometry')
+    geom.location = (-400, 0)
+
+    sep_norm = tree.nodes.new('ShaderNodeSeparateXYZ')
+    sep_norm.location = (-200, 0)
+    tree.links.new(geom.outputs['Normal'], sep_norm.inputs['Vector'])
+
+    # Color ramp / mix based on upward Normal Z
+    mix_rgb = tree.nodes.new('ShaderNodeMix')
+    mix_rgb.data_type = 'RGBA'
+    mix_rgb.location = (0, 0)
+    # Factor based on Z normal: steep sides (<0.6) = A, flat top (>0.75) = B
+    map_range = tree.nodes.new('ShaderNodeMapRange')
+    map_range.location = (-100, 150)
+    map_range.inputs['From Min'].default_value = 0.35
+    map_range.inputs['From Max'].default_value = 0.75
+    tree.links.new(sep_norm.outputs['Z'], map_range.inputs['Value'])
+    tree.links.new(map_range.outputs['Result'], mix_rgb.inputs['Factor'])
+
+    # Color A: Dark cliff rock
+    mix_rgb.inputs[6].default_value = (0.35, 0.22, 0.16, 1.0)
+    # Color B: Bright plateau regolith
+    mix_rgb.inputs[7].default_value = (0.68, 0.30, 0.16, 1.0)
+
+    bsdf = tree.nodes.new('ShaderNodeBsdfPrincipled')
+    bsdf.location = (200, 0)
+    bsdf.inputs['Roughness'].default_value = 0.85
+    tree.links.new(mix_rgb.outputs[2], bsdf.inputs['Base Color'])
+
+    out = tree.nodes.new('ShaderNodeOutputMaterial')
+    out.location = (450, 0)
+    tree.links.new(bsdf.outputs['BSDF'], out.inputs['Surface'])
+
+    return mat
+
+def create_cliff_material(name='Mat_Cliff'):
+    """
+    Dark fractured rock material for sheer escarpments and basalt formations.
+    """
+    mat = bpy.data.materials.new(name=name)
+    mat.use_nodes = True
+    tree = mat.node_tree
+    tree.nodes.clear()
+
+    geom = tree.nodes.new('ShaderNodeNewGeometry')
+    geom.location = (-400, 0)
+
+    sep_norm = tree.nodes.new('ShaderNodeSeparateXYZ')
+    sep_norm.location = (-200, 0)
+    tree.links.new(geom.outputs['Normal'], sep_norm.inputs['Vector'])
+
+    map_range = tree.nodes.new('ShaderNodeMapRange')
+    map_range.location = (-100, 150)
+    map_range.inputs['From Min'].default_value = 0.25
+    map_range.inputs['From Max'].default_value = 0.80
+    tree.links.new(sep_norm.outputs['Z'], map_range.inputs['Value'])
+
+    mix_rgb = tree.nodes.new('ShaderNodeMix')
+    mix_rgb.data_type = 'RGBA'
+    mix_rgb.location = (0, 0)
+    tree.links.new(map_range.outputs['Result'], mix_rgb.inputs['Factor'])
+
+    # Dark basalt cliff face
+    mix_rgb.inputs[6].default_value = (0.28, 0.18, 0.14, 1.0)
+    # Dust cap on flat shelf
+    mix_rgb.inputs[7].default_value = (0.58, 0.28, 0.18, 1.0)
+
+    bsdf = tree.nodes.new('ShaderNodeBsdfPrincipled')
+    bsdf.location = (200, 0)
+    bsdf.inputs['Roughness'].default_value = 0.80
+    tree.links.new(mix_rgb.outputs[2], bsdf.inputs['Base Color'])
+
+    out = tree.nodes.new('ShaderNodeOutputMaterial')
+    out.location = (450, 0)
+    tree.links.new(bsdf.outputs['BSDF'], out.inputs['Surface'])
+
+    return mat
+
 def create_view_space_normal_material(name='Mat_ViewSpaceNormal'):
     """
     Renders camera/view-space normal vectors:

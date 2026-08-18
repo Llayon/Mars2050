@@ -170,3 +170,42 @@ def generate_cracked_ground(params, seed=5206):
     mesh.from_pydata(verts, [], faces)
     mesh.update()
     return obj
+
+def generate_talus_field(params, seed=5304):
+    rng = random.Random(seed)
+    length = params.get('length', 3.2)
+    width = params.get('width', 1.8)
+    rock_count = params.get('count', 18)
+
+    mesh = bpy.data.meshes.new('TalusFieldMesh')
+    obj = bpy.data.objects.new('TalusFieldObject', mesh)
+    bpy.context.scene.collection.objects.link(obj)
+
+    verts = []
+    faces = []
+
+    # Asymmetric fan of scree / rubble blocks
+    for i in range(rock_count):
+        t_x = (rng.random() - 0.5) * length
+        # Fan distribution: concentrated near top cliff edge (y ~ 0) and spreading out (y > 0)
+        t_y = rng.random() ** 1.5 * width - (width * 0.2)
+
+        r_size = 0.15 + rng.random() * 0.30
+        r_height = r_size * (0.5 + rng.random() * 0.4)
+
+        base_idx = len(verts)
+        verts.append((t_x, t_y, r_height))
+        sub_segs = 6
+        for s in range(sub_segs):
+            sa = (s / sub_segs) * 2.0 * math.pi
+            sx = t_x + (r_size + (rng.random() - 0.5) * 0.04) * math.cos(sa)
+            sy = t_y + (r_size + (rng.random() - 0.5) * 0.04) * math.sin(sa)
+            verts.append((sx, sy, 0.0))
+
+        for s in range(sub_segs):
+            next_s = (s + 1) % sub_segs
+            faces.append((base_idx, base_idx + 1 + s, base_idx + 1 + next_s))
+
+    mesh.from_pydata(verts, [], faces)
+    mesh.update()
+    return obj

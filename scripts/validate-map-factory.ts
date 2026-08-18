@@ -17,9 +17,13 @@ const ALLOWED_GENERATORS = new Set([
   'dune',
   'mesa',
   'ridge_chain',
+  'escarpment',
+  'cliff_chain',
+  'basalt_outcrop',
   'dust_drift',
   'erosion_strip',
   'rock_field',
+  'talus_field',
   'cracked_ground'
 ])
 

@@ -272,6 +272,115 @@
         "radius": 2.0,
         "height": 0.25
       }
+    },
+    {
+      "id": "mesa_large_01",
+      "layer": "macro",
+      "generator": "mesa",
+      "seed": 5301,
+      "footprint": [{ "x": 0, "y": 0 }],
+      "anchorPx": { "x": 256, "y": 256 },
+      "params": {
+        "radiusTop": 2.2,
+        "radiusBase": 3.2,
+        "height": 2.4,
+        "steepness": 0.92
+      }
+    },
+    {
+      "id": "escarpment_01",
+      "layer": "macro",
+      "generator": "escarpment",
+      "seed": 5302,
+      "footprint": [{ "x": 0, "y": 0 }],
+      "anchorPx": { "x": 256, "y": 256 },
+      "params": {
+        "length": 4.2,
+        "width": 2.4,
+        "height": 2.2,
+        "cliffSteepness": 0.92
+      }
+    },
+    {
+      "id": "cliff_chain_01",
+      "layer": "macro",
+      "generator": "cliff_chain",
+      "seed": 5303,
+      "footprint": [{ "x": 0, "y": 0 }],
+      "anchorPx": { "x": 256, "y": 256 },
+      "params": {
+        "length": 3.8,
+        "width": 2.0,
+        "height": 2.0,
+        "tiers": 3
+      }
+    },
+    {
+      "id": "ridge_chain_02",
+      "layer": "macro",
+      "generator": "ridge_chain",
+      "seed": 5304,
+      "footprint": [{ "x": 0, "y": 0 }],
+      "anchorPx": { "x": 256, "y": 256 },
+      "params": {
+        "length": 4.2,
+        "width": 2.0,
+        "height": 1.8,
+        "segments": 4
+      }
+    },
+    {
+      "id": "basalt_outcrop_large_01",
+      "layer": "macro",
+      "generator": "basalt_outcrop",
+      "seed": 5305,
+      "footprint": [{ "x": 0, "y": 0 }],
+      "anchorPx": { "x": 256, "y": 256 },
+      "params": {
+        "radius": 2.4,
+        "height": 2.2,
+        "columns": 16
+      }
+    },
+    {
+      "id": "crater_large_02",
+      "layer": "macro",
+      "generator": "crater",
+      "seed": 5306,
+      "footprint": [{ "x": 0, "y": 0 }],
+      "anchorPx": { "x": 256, "y": 256 },
+      "params": {
+        "radius": 2.3,
+        "depth": 1.1,
+        "rimHeight": 0.65,
+        "centralPeak": true
+      }
+    },
+    {
+      "id": "talus_field_01",
+      "layer": "ground",
+      "generator": "talus_field",
+      "seed": 5307,
+      "footprint": [{ "x": 0, "y": 0 }],
+      "anchorPx": { "x": 256, "y": 256 },
+      "params": {
+        "length": 3.2,
+        "width": 1.8,
+        "count": 16
+      }
+    },
+    {
+      "id": "dust_drift_02",
+      "layer": "ground",
+      "generator": "dust_drift",
+      "seed": 5308,
+      "footprint": [{ "x": 0, "y": 0 }],
+      "anchorPx": { "x": 256, "y": 256 },
+      "params": {
+        "length": 3.2,
+        "width": 2.0,
+        "height": 0.45
+      }
     }
   ]
 }

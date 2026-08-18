@@ -380,6 +380,158 @@
           "y": 0
         }
       ]
+    },
+    {
+      "id": "mesa_large_01",
+      "layer": "macro",
+      "source": {
+        "albedo": "mesa_large_01.albedo.png",
+        "normal": "mesa_large_01.normal.png",
+        "data": "mesa_large_01.data.png"
+      },
+      "anchorPx": {
+        "x": 256,
+        "y": 256
+      },
+      "footprint": [
+        {
+          "x": 0,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "id": "escarpment_01",
+      "layer": "macro",
+      "source": {
+        "albedo": "escarpment_01.albedo.png",
+        "normal": "escarpment_01.normal.png",
+        "data": "escarpment_01.data.png"
+      },
+      "anchorPx": {
+        "x": 256,
+        "y": 256
+      },
+      "footprint": [
+        {
+          "x": 0,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "id": "cliff_chain_01",
+      "layer": "macro",
+      "source": {
+        "albedo": "cliff_chain_01.albedo.png",
+        "normal": "cliff_chain_01.normal.png",
+        "data": "cliff_chain_01.data.png"
+      },
+      "anchorPx": {
+        "x": 256,
+        "y": 256
+      },
+      "footprint": [
+        {
+          "x": 0,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "id": "ridge_chain_02",
+      "layer": "macro",
+      "source": {
+        "albedo": "ridge_chain_02.albedo.png",
+        "normal": "ridge_chain_02.normal.png",
+        "data": "ridge_chain_02.data.png"
+      },
+      "anchorPx": {
+        "x": 256,
+        "y": 256
+      },
+      "footprint": [
+        {
+          "x": 0,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "id": "basalt_outcrop_large_01",
+      "layer": "macro",
+      "source": {
+        "albedo": "basalt_outcrop_large_01.albedo.png",
+        "normal": "basalt_outcrop_large_01.normal.png",
+        "data": "basalt_outcrop_large_01.data.png"
+      },
+      "anchorPx": {
+        "x": 256,
+        "y": 256
+      },
+      "footprint": [
+        {
+          "x": 0,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "id": "crater_large_02",
+      "layer": "macro",
+      "source": {
+        "albedo": "crater_large_02.albedo.png",
+        "normal": "crater_large_02.normal.png",
+        "data": "crater_large_02.data.png"
+      },
+      "anchorPx": {
+        "x": 256,
+        "y": 256
+      },
+      "footprint": [
+        {
+          "x": 0,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "id": "talus_field_01",
+      "layer": "ground",
+      "source": {
+        "albedo": "talus_field_01.albedo.png",
+        "normal": "talus_field_01.normal.png",
+        "data": "talus_field_01.data.png"
+      },
+      "anchorPx": {
+        "x": 256,
+        "y": 256
+      },
+      "footprint": [
+        {
+          "x": 0,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "id": "dust_drift_02",
+      "layer": "ground",
+      "source": {
+        "albedo": "dust_drift_02.albedo.png",
+        "normal": "dust_drift_02.normal.png",
+        "data": "dust_drift_02.data.png"
+      },
+      "anchorPx": {
+        "x": 256,
+        "y": 256
+      },
+      "footprint": [
+        {
+          "x": 0,
+          "y": 0
+        }
+      ]
     }
   ]
 }

@@ -22,6 +22,8 @@ try:
         create_basalt_material,
         create_dust_material,
         create_rock_material,
+        create_mesa_material,
+        create_cliff_material,
         create_view_space_normal_material,
         create_data_pass_material
     )
@@ -31,11 +33,15 @@ try:
     from generators.dune import generate_dune
     from generators.mesa import generate_mesa
     from generators.ridge_chain import generate_ridge_chain
+    from generators.escarpment import generate_escarpment
+    from generators.cliff_chain import generate_cliff_chain
+    from generators.basalt_outcrop import generate_basalt_outcrop
     from generators.meso_decal import (
         generate_dust_drift,
         generate_erosion_strip,
         generate_rock_field,
-        generate_cracked_ground
+        generate_cracked_ground,
+        generate_talus_field
     )
 except ImportError:
     # Allows module inspection outside Blender environment
@@ -140,10 +146,19 @@ def run_factory():
             albedo_mat = create_regolith_material()
         elif generator_kind == 'mesa':
             obj = generate_mesa(params, seed)
-            albedo_mat = create_regolith_material()
+            albedo_mat = create_mesa_material()
         elif generator_kind == 'ridge_chain':
             obj = generate_ridge_chain(params, seed)
             albedo_mat = create_rock_material()
+        elif generator_kind == 'escarpment':
+            obj = generate_escarpment(params, seed)
+            albedo_mat = create_cliff_material()
+        elif generator_kind == 'cliff_chain':
+            obj = generate_cliff_chain(params, seed)
+            albedo_mat = create_cliff_material()
+        elif generator_kind == 'basalt_outcrop':
+            obj = generate_basalt_outcrop(params, seed)
+            albedo_mat = create_basalt_material()
         elif generator_kind == 'dust_drift':
             obj = generate_dust_drift(params, seed)
             albedo_mat = create_dust_material()
@@ -153,12 +168,15 @@ def run_factory():
         elif generator_kind == 'rock_field':
             obj = generate_rock_field(params, seed)
             albedo_mat = create_rock_material()
+        elif generator_kind == 'talus_field':
+            obj = generate_talus_field(params, seed)
+            albedo_mat = create_cliff_material()
         elif generator_kind == 'cracked_ground':
             obj = generate_cracked_ground(params, seed)
             albedo_mat = create_regolith_material()
         elif generator_kind == 'ridge':
             obj = generate_ridge(params, seed)
-            albedo_mat = create_regolith_material()
+            albedo_mat = create_rock_material()
         elif generator_kind == 'rocks':
             obj = generate_rocks(params, seed)
             albedo_mat = create_rock_material()

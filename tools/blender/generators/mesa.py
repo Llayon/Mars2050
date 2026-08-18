@@ -1,6 +1,6 @@
 """
 Procedural Mesa / Plateau generator for Blender Asset Factory.
-Generates flat-topped table mountain with cliff walls and talus skirt.
+Generates flat-topped table mountain with sharp cliff walls, stepped ledges, and talus skirt.
 """
 
 import math
@@ -9,10 +9,10 @@ import bpy
 
 def generate_mesa(params, seed=5201):
     rng = random.Random(seed)
-    radius_top = params.get('radiusTop', 1.2)
-    radius_base = params.get('radiusBase', 2.0)
-    height = params.get('height', 1.8)
-    steepness = params.get('steepness', 0.85)
+    radius_top = params.get('radiusTop', 1.8)
+    radius_base = params.get('radiusBase', 2.8)
+    height = params.get('height', 2.2)
+    steepness = params.get('steepness', 0.90)
 
     mesh = bpy.data.meshes.new('MesaMesh')
     obj = bpy.data.objects.new('MesaObject', mesh)
@@ -21,40 +21,51 @@ def generate_mesa(params, seed=5201):
     verts = []
     faces = []
 
-    rings = 14
-    segments = 32
+    rings = 18
+    segments = 36
+
+    # Generate asymmetric polygon distortion vectors for top and base
+    top_poly_radii = [1.0 + (rng.random() - 0.5) * 0.35 for _ in range(segments)]
+    base_poly_radii = [1.0 + (rng.random() - 0.5) * 0.40 for _ in range(segments)]
 
     # Top center vertex
-    top_center_noise = (rng.random() - 0.5) * 0.05
+    top_center_noise = (rng.random() - 0.5) * 0.04
     verts.append((0.0, 0.0, height + top_center_noise))
 
     for r in range(1, rings + 1):
         norm_r = r / rings
 
-        # Plateau profile:
-        # norm_r 0.0 .. 0.5: flat top with micro-undulation
-        # norm_r 0.5 .. 0.8: steep cliff wall falloff
-        # norm_r 0.8 .. 1.0: talus / scree skirt tapering into ground
-        if norm_r < 0.5:
-            cur_rad = (norm_r / 0.5) * radius_top
-            z = height + ((rng.random() - 0.5) * 0.06)
-        elif norm_r < 0.8:
-            t = (norm_r - 0.5) / 0.3
-            cur_rad = radius_top + t * (radius_base * 0.7 - radius_top)
-            # Smooth cosine cliff wall falloff
-            cliff_factor = math.cos(t * math.pi * 0.5)
-            z = height * cliff_factor
+        # Profile:
+        # norm_r 0.0 .. 0.45: Flat top plateau with micro-erosion
+        # norm_r 0.45 .. 0.75: Sheer vertical cliff wall with stepped ledge
+        # norm_r 0.75 .. 1.0: Talus / rubble skirt tapering to 0
+        if norm_r < 0.45:
+            t = norm_r / 0.45
+            cur_rad_factor = t
+            cur_base_rad = radius_top
+            z = height + ((rng.random() - 0.5) * 0.04)
+        elif norm_r < 0.75:
+            t = (norm_r - 0.45) / 0.30
+            cur_base_rad = radius_top + t * (radius_base * 0.75 - radius_top)
+            cur_rad_factor = 1.0
+            # Stepped cosine cliff with middle ledge notch
+            cliff_factor = math.cos(t * math.pi * 0.5) ** (1.0 / steepness)
+            ledge_bump = math.sin(t * math.pi * 3.0) * 0.07 if (0.3 < t < 0.7) else 0.0
+            z = height * cliff_factor + ledge_bump
         else:
-            t = (norm_r - 0.8) / 0.2
-            cur_rad = (radius_base * 0.7) + t * (radius_base * 0.3)
-            # Talus apron softly meeting zero
+            t = (norm_r - 0.75) / 0.25
+            cur_base_rad = (radius_base * 0.75) + t * (radius_base * 0.25)
+            cur_rad_factor = 1.0
+            # Talus apron meeting zero smoothly
             z = (height * 0.15) * math.cos(t * math.pi * 0.5)
 
         for s in range(segments):
             angle = (s / segments) * 2.0 * math.pi
-            # Asymmetric angular warping
-            warp = math.sin(angle * 3.0 + rng.random()) * 0.10 * cur_rad
-            rad = max(0.1, cur_rad + warp)
+            poly_t = top_poly_radii[s] if norm_r < 0.45 else (
+                top_poly_radii[s] * (1.0 - (norm_r - 0.45) / 0.55) +
+                base_poly_radii[s] * ((norm_r - 0.45) / 0.55)
+            )
+            rad = max(0.1, cur_base_rad * cur_rad_factor * poly_t)
             x = rad * math.cos(angle)
             y = rad * math.sin(angle)
             verts.append((x, y, max(0.0, z)))
