@@ -93,17 +93,17 @@ void main(void) {
     }
 
     // Meso geological variation & oxide patches
-    float meso = smoothNoise(p * 0.004);
-    col = mix(col, uOxideColor, smoothstep(0.48, 0.75, meso) * 0.35);
+    float meso = smoothNoise(p * 0.0035);
+    col = mix(col, uOxideColor, smoothstep(0.44, 0.76, meso) * 0.40);
 
     // Directional wind / erosion streaks aligned with geological flow
     vec2 dir = vec2(cos(uFlowAngle), sin(uFlowAngle));
-    float streakCoord = dot(p, dir) * 0.006;
-    float streak = smoothNoise(vec2(streakCoord, dot(p, vec2(-dir.y, dir.x)) * 0.0015));
-    col = mix(col, uDustColor, (streak - 0.5) * 0.25);
+    float streakCoord = dot(p, dir) * 0.005;
+    float streak = smoothNoise(vec2(streakCoord, dot(p, vec2(-dir.y, dir.x)) * 0.0012));
+    col = mix(col, uDustColor, (streak - 0.5) * 0.28);
 
-    // Micro grain (subtle surface tooth)
-    float grain = hash21(p * 0.1) * 0.06 - 0.03;
+    // Micro grain (subtle surface tooth - tuned to prevent noise dominance)
+    float grain = (hash21(p * 0.08) - 0.5) * 0.032;
     col += grain;
 
     gl_FragColor = vec4(clamp(col, 0.0, 1.0), 1.0);

@@ -15,13 +15,21 @@ const MOCK_ASSET_IDS = [
   { id: 'crater_medium_02', layer: 'macro' },
   { id: 'crater_small_01', layer: 'macro' },
   { id: 'crater_large_01', layer: 'macro' },
+  { id: 'crater_large_02', layer: 'macro' },
   { id: 'mesa_medium_01', layer: 'macro' },
+  { id: 'mesa_large_01', layer: 'macro' },
+  { id: 'escarpment_01', layer: 'macro' },
+  { id: 'cliff_chain_01', layer: 'macro' },
   { id: 'ridge_chain_01', layer: 'macro' },
+  { id: 'ridge_chain_02', layer: 'macro' },
+  { id: 'basalt_outcrop_large_01', layer: 'macro' },
   { id: 'ridge_01', layer: 'macro' },
   { id: 'ridge_02', layer: 'macro' },
   { id: 'dust_drift_01', layer: 'ground' },
+  { id: 'dust_drift_02', layer: 'ground' },
   { id: 'erosion_strip_01', layer: 'ground' },
   { id: 'rock_field_01', layer: 'ground' },
+  { id: 'talus_field_01', layer: 'ground' },
   { id: 'cracked_ground_01', layer: 'ground' },
   { id: 'rocks_small_01', layer: 'scatter' },
   { id: 'rocks_small_02', layer: 'scatter' },
@@ -29,16 +37,29 @@ const MOCK_ASSET_IDS = [
   { id: 'boulder_cluster_02', layer: 'scatter' }
 ] as const
 
+function getMockDimensions(id: string): { w: number; h: number } {
+  if (id === 'mesa_large_01') return { w: 306, h: 274 }
+  if (id === 'crater_large_02') return { w: 296, h: 258 }
+  if (id === 'crater_large_01') return { w: 271, h: 237 }
+  if (id === 'escarpment_01') return { w: 208, h: 157 }
+  if (id === 'ridge_chain_02') return { w: 200, h: 143 }
+  if (id === 'mesa_medium_01') return { w: 194, h: 166 }
+  if (id === 'cliff_chain_01') return { w: 184, h: 136 }
+  if (id === 'basalt_outcrop_large_01') return { w: 179, h: 162 }
+  return { w: 120, h: 100 }
+}
+
 function createMockAssets(): LoadedMapAssets {
   const dummyTexture = Texture.WHITE
   const assetsDict: Record<string, VisualAssetFrame> = {}
   const runtimeMap = new Map<string, { texture: Texture; frame: VisualAssetFrame }>()
 
   for (const def of MOCK_ASSET_IDS) {
+    const dims = getMockDimensions(def.id)
     const frame: VisualAssetFrame = {
       id: def.id,
       page: 0,
-      frame: { x: 0, y: 0, w: 100, h: 80 },
+      frame: { x: 0, y: 0, w: dims.w, h: dims.h },
       anchor: { x: 0.5, y: 0.5 },
       layer: def.layer,
       footprint: [{ x: 0, y: 0 }]
@@ -193,6 +214,28 @@ describe('mars-map-composition (Terrain Composition & Occupancy)', () => {
       expect(e.scale.y).toBe(b.scale.y)
       expect(e.rotation).toBe(b.rotation)
       expect(e.zIndex).toBe(b.zIndex)
+    }
+  })
+
+  it('guarantees 2 to 4 dominant hero formations with proper scale multiplier', () => {
+    const assets = createMockAssets()
+    const field = generateTerrainVisualField({ width: 20, height: 20, seed: DEFAULT_MAP_SEED })
+    const layers = createMockLayers()
+    const occupiedCells = new Set<string>()
+
+    populateTerrainLayers(layers, sampleLocations, field, assets, 128, occupiedCells)
+
+    const heroCount = layers.heroLayer.children.length
+    expect(heroCount).toBeGreaterThanOrEqual(2)
+    expect(heroCount).toBeLessThanOrEqual(4)
+
+    // Verify each hero formation has visible world width in target hero range (2.0 .. 4.0 cells)
+    for (const hero of layers.heroLayer.children) {
+      const cullBounds = (hero as unknown as { cullBounds: { halfWidth: number; halfHeight: number } }).cullBounds
+      expect(cullBounds).toBeDefined()
+      const visibleWidthCells = (cullBounds.halfWidth * 2) / 128
+      expect(visibleWidthCells).toBeGreaterThanOrEqual(2.0)
+      expect(visibleWidthCells).toBeLessThanOrEqual(4.0)
     }
   })
 })
