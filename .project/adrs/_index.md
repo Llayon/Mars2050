@@ -26,6 +26,7 @@
 | 012 | Server vs Client Components | accepted | architecture, components, react, nextjs, performance | app/**/*.tsx, components/**/*.tsx, hooks/*.ts |
 | 013 | Combat Simulation Determinism | accepted | combat, simulation, determinism, replay | combat runtime |
 | 014 | Combat ECS V9 Defense Snapshots | accepted | combat, ecs, damage, determinism, replay | domains/combat/ecs |
+| 015 | Combat Core Package Boundary | accepted | combat, package, boundary, architecture, determinism, replay | packages/combat-core, domains/combat, scripts/check-limits.ts |
 
 ## Быстрый поиск по тегам
 - `architecture`: 001, 006, 007, 008, 011, 012
