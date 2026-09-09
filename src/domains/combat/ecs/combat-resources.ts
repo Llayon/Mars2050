@@ -63,6 +63,7 @@ export interface CombatResourceMap {
   v9FollowUps: V9FollowUpJob[]
   v9FollowUpChainPath: readonly string[] | undefined
   statusDamageAttribution: Map<string, DamageAttribution>
+  catalog?: import('../combat.catalog.types').CombatCatalog
 }
 
 export class CombatResourceStore {

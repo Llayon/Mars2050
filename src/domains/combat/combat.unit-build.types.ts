@@ -64,6 +64,7 @@ export interface UnitBuildSpec {
     isTemporary?: boolean
     temporaryDuration?: number
   }
+  catalog?: import('./combat.catalog.types').CombatCatalog
 }
 
 export interface UnitRuntimeRules {

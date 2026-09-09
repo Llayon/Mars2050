@@ -132,4 +132,34 @@ describe('combat baseline matrix', () => {
     const summonAction = res1.logs.flatMap(l => l.actions).find(a => a.type === 'spawn')
     expect(summonAction).toBeDefined()
   })
+
+  it('preserves input rows as deeply frozen/immutable during battle simulation', () => {
+    const attackerRow = Object.freeze({
+      id: 'att-frozen',
+      colony_id: 'colony_1',
+      unit_type: 'marine',
+      hp_current: 100,
+      tier: 1,
+      upgrade_path: Object.freeze([]),
+      grid_x: undefined,
+      grid_y: undefined,
+    }) as unknown as UnitRow
+    const defenderRow = Object.freeze({
+      id: 'def-frozen',
+      colony_id: 'colony_1',
+      unit_type: 'marine',
+      hp_current: 100,
+      tier: 1,
+      upgrade_path: Object.freeze([]),
+      grid_x: undefined,
+      grid_y: undefined,
+    }) as unknown as UnitRow
+
+    // Calling simulateBattle with frozen rows with undefined coordinates must not throw
+    expect(() => simulateBattle([attackerRow], [defenderRow], 12345)).not.toThrow()
+    expect(attackerRow.grid_x).toBeUndefined()
+    expect(attackerRow.grid_y).toBeUndefined()
+    expect(defenderRow.grid_x).toBeUndefined()
+    expect(defenderRow.grid_y).toBeUndefined()
+  })
 })

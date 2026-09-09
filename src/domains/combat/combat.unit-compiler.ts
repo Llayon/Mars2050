@@ -2,16 +2,10 @@ import { prepareRuntimePrimitives } from './combat.runtime-primitives'
 import type { SimUnit } from './combat.sim.types'
 import { getUnitSupportAuras } from './combat.support-aura-config'
 import { DEFAULT_TARGETING_PROFILE } from './combat.targeting.config'
-import type {
-  UnitBuildSpec,
-  UnitRuntimeRules,
-} from './combat.unit-build.types'
+import type { UnitBuildSpec, UnitRuntimeRules } from './combat.unit-build.types'
 import type { UnitBaseStats } from './combat.types'
 import type { SupportAura } from './combat.primitives'
-import {
-  compileUnitStats,
-  resolveUnitUpgradeIds,
-} from './combat.unit-stat-compiler'
+import { compileUnitStats, resolveUnitUpgradeIds } from './combat.unit-stat-compiler'
 import { assertValidWeaponLoadout } from './combat.weapon-validation'
 import { compileAbilityDefinitions } from './combat.ability-compiler'
 import { compileTemporalWeaponPlan } from './combat.temporal-compiler'
@@ -59,6 +53,7 @@ export function compileUnitSnapshot(spec: UnitBuildSpec): SimUnit | null {
   const resolvedSupportAuras = getUnitSupportAuras(
     [...(primitives.supportAuras ?? []), ...authoredSupportAuras],
     resolvedUpgradeIds,
+    spec.catalog?.upgrades,
   )
   const upgradeSupportPrograms = compileAbilityDefinitions((resolvedSupportAuras ?? [])
     .filter(aura => !authoredSupportAuras.some(authored => sameSupportAura(authored, aura)))

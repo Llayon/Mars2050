@@ -51,6 +51,7 @@ export function spawnEcsPeriodicUnits(
       },
       spawn: { inheritance: 'base' },
       overrides: { hpPercent: payload.hpPercent },
+      catalog: world.resources.get('catalog'),
     })
     if (!unit) continue
     world.queueCompiledUnitCreation(unit)

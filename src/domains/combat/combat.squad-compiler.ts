@@ -12,8 +12,9 @@ export function compileSquadBundles(
   row: UnitRow,
   team: Team,
   rng: PRNG,
+  catalog?: import('./combat.catalog.types').CombatCatalog,
 ): UnitEntityBundle[] {
-  return createSquadBuildSpecs(row, team, rng).flatMap(spec => {
+  return createSquadBuildSpecs(row, team, rng, catalog).flatMap(spec => {
     const compiled = compileUnit(spec)
     return compiled ? [compiled] : []
   })
@@ -23,8 +24,10 @@ export function createSquadBuildSpecs(
   row: UnitRow,
   team: Team,
   rng: PRNG,
+  catalog?: import('./combat.catalog.types').CombatCatalog,
 ): UnitBuildSpec[] {
-  const config = UNIT_TYPES[row.unit_type]
+  const unitCatalog = catalog?.unitTypes ?? UNIT_TYPES
+  const config = unitCatalog[row.unit_type]
   if (!config) return []
   const squadSize = config.squadSize || 1
   const spacing = getFormationSpacing(
@@ -32,15 +35,14 @@ export function createSquadBuildSpecs(
     config.baseStats,
   )
   const rowSize = Math.ceil(Math.sqrt(squadSize))
-  if (row.grid_x == null) {
-    row.grid_x = String(Math.floor(rng.next() * FIELD_WIDTH))
-  }
-  if (row.grid_y == null) {
-    row.grid_y = String(Math.floor(rng.next() * 320) +
-      (team === 'attacker' ? FIELD_HEIGHT - 320 : 0))
-  }
-  const centerX = Number(row.grid_x)
-  const centerY = Number(row.grid_y)
+  const rawX = row.grid_x != null
+    ? row.grid_x
+    : String(Math.floor(rng.next() * FIELD_WIDTH))
+  const rawY = row.grid_y != null
+    ? row.grid_y
+    : String(Math.floor(rng.next() * 320) + (team === 'attacker' ? FIELD_HEIGHT - 320 : 0))
+  const centerX = Number(rawX)
+  const centerY = Number(rawY)
   const squadId = squadSize > 1 ? `${row.id}_squad` : undefined
   const rank = getUnitRank(row)
   return Array.from({ length: squadSize }, (_, index) => {
@@ -72,6 +74,7 @@ export function createSquadBuildSpecs(
         offsetY: offset.y,
       },
       overrides: { currentHp: row.hp_current ?? undefined },
+      catalog,
     }
   })
 }

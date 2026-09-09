@@ -41,10 +41,12 @@ export interface CompiledUnitStats {
 }
 
 export function compileUnitStats(spec: UnitBuildSpec): CompiledUnitStats | null {
-  const definition = UNIT_TYPES[spec.definitionId]
+  const unitCatalog = spec.catalog?.unitTypes ?? UNIT_TYPES
+  const upgradesCatalog = spec.catalog?.upgrades ?? UPGRADES
+  const definition = unitCatalog[spec.definitionId]
   if (!definition) return null
   const upgradeIds = resolveUnitUpgradeIds(spec)
-  const primitives = getRuntimePrimitiveStats(definition.baseStats, upgradeIds)
+  const primitives = getRuntimePrimitiveStats(definition.baseStats, upgradeIds, upgradesCatalog)
   const base = definition.baseStats
   let hp = base.hp
   let attack = base.attack
@@ -73,7 +75,7 @@ export function compileUnitStats(spec: UnitBuildSpec): CompiledUnitStats | null 
     : undefined
 
   for (const upgradeId of upgradeIds) {
-    const modifiers = UPGRADES[upgradeId]?.modifiers
+    const modifiers = upgradesCatalog[upgradeId]?.modifiers
     if (!modifiers) continue
     if (modifiers.hpMult) hp *= modifiers.hpMult
     if (modifiers.attackMult) attack *= modifiers.attackMult

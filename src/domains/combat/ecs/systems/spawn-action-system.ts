@@ -135,6 +135,7 @@ function createSpawnedUnit(
       isTemporary: overrides?.isTemporary,
       temporaryDuration: overrides?.duration,
     },
+    catalog: world.resources.get('catalog'),
   })
   return unit
     ? { unit, spawnMaxHp: unit.components.vitality.maxHp }

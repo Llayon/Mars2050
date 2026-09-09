@@ -1,7 +1,11 @@
 import type { UnitBaseStats } from './combat.types'
 import { UPGRADES } from './combat.upgrades'
 
-export function getRuntimePrimitiveStats(baseStats: UnitBaseStats, upgradePath: unknown): UnitBaseStats {
+export function getRuntimePrimitiveStats(
+  baseStats: UnitBaseStats,
+  upgradePath: unknown,
+  upgradesCatalog: Record<string, import('./combat.upgrades').UpgradeConfig> = UPGRADES,
+): UnitBaseStats {
   const periodicAbilities = baseStats.periodicAbilities?.map(ability => ({ ...ability })) ?? []
   const triggerEffects = baseStats.triggerEffects?.map(trigger => ({ ...trigger })) ?? []
   const transformMode = baseStats.transformMode?.map(mode => ({ ...mode })) ?? []
@@ -30,7 +34,7 @@ export function getRuntimePrimitiveStats(baseStats: UnitBaseStats, upgradePath: 
   if (Array.isArray(upgradePath)) {
     for (const upgradeId of upgradePath) {
       if (typeof upgradeId !== 'string') continue
-      const modifiers = UPGRADES[upgradeId]?.modifiers
+      const modifiers = upgradesCatalog[upgradeId]?.modifiers
       if (!modifiers) continue
 
       if (modifiers.periodicAbilities) periodicAbilities.push(...modifiers.periodicAbilities.map(ability => ({ ...ability })))

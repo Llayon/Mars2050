@@ -9,6 +9,7 @@ import type { EntityId } from './entity'
 
 export function createConfiguredUnitEntity(world: CombatWorld, input: RuntimeUnitFactoryInput): EntityId | null {
   const hp = input.hp === undefined ? undefined : Math.max(1, Math.floor(input.hp))
+  const catalog = world.resources.get('catalog')
   const unit = compileUnit({
     definitionId: input.type as UnitTypeKey,
     identity: {
@@ -27,6 +28,7 @@ export function createConfiguredUnitEntity(world: CombatWorld, input: RuntimeUni
       isTemporary: input.isTemporary,
       temporaryDuration: input.temporaryDuration,
     },
+    catalog,
   })
   if (!unit) return null
   world.queueCompiledUnitCreation(unit)
@@ -35,7 +37,8 @@ export function createConfiguredUnitEntity(world: CombatWorld, input: RuntimeUni
 }
 
 export function createSquadEntities(world: CombatWorld, row: UnitRow, team: Team, rng: PRNG): EntityId[] {
-  const units = compileSquadBundles(row, team, rng)
+  const catalog = world.resources.get('catalog')
+  const units = compileSquadBundles(row, team, rng, catalog)
   world.queueCompiledUnitCreation(...units)
   world.flushStructuralCommands()
   return units.flatMap(unit => {

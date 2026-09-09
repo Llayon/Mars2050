@@ -1,5 +1,5 @@
-import { MAX_TICKS } from './combat.config'
-import { GLOBAL_UPGRADES, type GlobalUpgradeConfig } from './combat.upgrades'
+import { MAX_TICKS, UNIT_TYPES } from './combat.config'
+import { GLOBAL_UPGRADES, UPGRADES, type GlobalUpgradeConfig } from './combat.upgrades'
 import type { UnitRow, BattleAction, BattleTick, BattleResult } from './combat.types'
 import type { Team, Obstacle } from './combat.sim.types'
 import { createCombatMetrics, finalizeCombatMetrics, recordCombatActions, recordCombatTick, type BattleSimulationOptions } from './combat.metrics'
@@ -19,6 +19,7 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
   defenderGlobals.forEach(id => { if (GLOBAL_UPGRADES[id]) activeGlobals.push({ team: 'defender', upg: GLOBAL_UPGRADES[id] }) })
   const obstacles: Obstacle[] = providedObstacles || generateObstacles(seed);
   const flowFieldMap = createPathfindingMap(obstacles)
+  runtime.world.resources.set('catalog', { unitTypes: UNIT_TYPES, upgrades: UPGRADES })
   attackerUnits.forEach(row => runtime.addSquad(row, 'attacker', rng))
   defenderUnits.forEach(row => runtime.addSquad(row, 'defender', rng))
 

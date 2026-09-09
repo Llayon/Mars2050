@@ -69,10 +69,18 @@
 | 2026-09-09 21:20 UTC / E1 snapshot | `npx tsx scripts/check-limits.ts --diff HEAD --json` / `D:\Max\Mars2050` | 0 | `PASS` | status: passed, 0 violations |
 | 2026-09-09 21:20 UTC / E1 snapshot | `npx tsx scripts/combat-ecs-golden.ts --v9` / `D:\Max\Mars2050` | 0 | `PASS` | Golden replay contract is stable for 7 preset(s) |
 | 2026-09-09 21:20 UTC / E1 snapshot | `npx tsx scripts/combat-ecs-golden.ts` / `D:\Max\Mars2050` | 0 | `PASS` | Golden replay contract is stable for 7 preset(s) |
+| 2026-09-09 21:26 UTC / E2 snapshot | `npx tsc --noEmit --pretty false` / `D:\Max\Mars2050` | 0 | `PASS` | 0 errors |
+| 2026-09-09 21:26 UTC / E2 snapshot | `npx tsx scripts/combat-ecs-golden.ts` / `D:\Max\Mars2050` | 0 | `PASS` | Golden replay contract is stable for 7 preset(s) |
+| 2026-09-09 21:26 UTC / E2 snapshot | `npx tsx scripts/combat-ecs-golden.ts --v9` / `D:\Max\Mars2050` | 0 | `PASS` | Golden replay contract is stable for 7 preset(s) |
+| 2026-09-09 21:30 UTC / E2 snapshot | `npm test` / `D:\Max\Mars2050` | 0 | `PASS` | 199 test files passed (799 tests passed) |
+| 2026-09-09 21:30 UTC / E2 snapshot | `npx tsx scripts/check-limits.ts --diff HEAD --json` / `D:\Max\Mars2050` | 0 | `PASS` | status: passed, 0 violations |
+| 2026-09-09 21:31 UTC / E2 snapshot | `npm run combat:core:build` / `D:\Max\Mars2050` | 0 | `PASS` | @mars2050/combat-core built to dist/ |
+| 2026-09-09 21:31 UTC / E2 snapshot | `npm run test:combat:package` / `D:\Max\Mars2050` | 0 | `PASS` | Archive smoke passed (sha256: 570c56d2...), consumer ts/node ok |
+| 2026-09-09 21:31 UTC / E2 snapshot | `npx vitest run src/__tests__/combat.baseline-matrix.test.ts` / `D:\Max\Mars2050` | 0 | `PASS` | 7 tests passed (includes frozen/immutable input test) |
 
 ## Независимое ревью
 
-- Reviewer / отдельная сессия / UTC: Independent Read-Only Architecture Reviewer (subagent `a8254614-0ce6-40db-af7f-d6b1e4f5e39e`) / 2026-09-09 21:22 UTC.
+- Reviewer / отдельная сессия / UTC: Independent Read-Only Architecture Reviewer (subagent `a8254614-0ce6-40db-af7f-d6b1e4f5e39e`) / 2026-09-09 21:22 UTC (E1).
 - Проверенные критерии и snapshot: чистый commit E0 + `packages/combat-core` scaffold + contracts + wire codec + archive smoke.
 - Вердикт: `PASS`.
 
@@ -87,19 +95,20 @@
 
 ## Решения, блокеры и восстановление
 
-- Новые подтверждённые факты последней попытки: E1 полностью принят независимым ревьюером, package smoke и architecture guards активны.
+- Новые подтверждённые факты последней попытки: E2 завершён — каталоги определений юнитов и улучшений отделены через CombatCatalog, передаваемый через контекст боя / world resources. Входные ряды юнитов больше не мутируются при отсутствующих grid_x/grid_y; последовательность PRNG строго сохранена. Все 199 файлов тестов и goldens V8/V9 стабильны.
 - Последовательных попыток без прогресса: 0.
 - Открытые blockers: нет.
 - Одобренные пользователем изменения scope/полномочий/бюджета: получено подтверждение пользователя на начало реализации.
-- Последний принятый checkpoint: Milestone E1 checkpoint.
+- Последний принятый checkpoint: Milestone E1 checkpoint (`60c55e3`).
 - Устаревшие проверки после изменений / что повторить: нет.
-- Следующий точный шаг: переход к срезу E2-S1 (развязка UNIT_TYPES и squad compiler).
+- Следующий точный шаг: проведение независимого ревью для E2 и коммит E2.
 
 ## Итог запуска
 
-- Статус: `implementing` (E2 content decoupling).
-- Реально принятые этапы и коммиты: E0 (commit `5dafddf`), E1 (в процессе фиксации).
-- Незавершённые критерии / невыполненные проверки / риски: переход к E2–E4 и рубежу B1.
+- Статус: `verifying` (E2 content decoupling review).
+- Реально принятые этапы и коммиты: E0 (commit `5dafddf`), E1 (commit `60c55e3`).
+- Незавершённые критерии / невыполненные проверки / риски: независимое ревью E2, затем переход к рубежу B1 (автономный бой с собственным контентом).
 - Финальная интеграционная проверка и независимое ревью: `NOT_RUN` (запланировано на E7).
 - Разрешённые и фактически выполненные внешние действия: нет.
-- Что нужно следующей сессии или пользователю: продолжение выполнения срезов E2–E4 и раннего рубежа B1.
+- Что нужно следующей сессии или пользователю: фиксация E2 и переход к B1.
+

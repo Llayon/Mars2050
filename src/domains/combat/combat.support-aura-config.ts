@@ -4,12 +4,13 @@ import { UPGRADES } from './combat.upgrades'
 export function getUnitSupportAuras(
   baseAuras: SupportAura[] | undefined,
   upgradePath: unknown,
+  upgradesCatalog: Record<string, import('./combat.upgrades').UpgradeConfig> = UPGRADES,
 ): SupportAura[] | undefined {
   const auras = baseAuras?.map(aura => ({ ...aura })) ?? []
   if (Array.isArray(upgradePath)) {
     for (const upgradeId of upgradePath) {
       if (typeof upgradeId !== 'string') continue
-      const revealAura = UPGRADES[upgradeId]?.modifiers.grantRevealAura
+      const revealAura = upgradesCatalog[upgradeId]?.modifiers.grantRevealAura
       if (!revealAura) continue
       auras.push({
         type: 'reveal',
