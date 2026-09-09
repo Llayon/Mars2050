@@ -2,12 +2,17 @@
   "name": "mars2050-temp",
   "version": "0.1.0",
   "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
     "lint:limits": "tsx scripts/check-limits.ts",
+    "combat:core:build": "npm --workspace=@mars2050/combat-core run build",
+    "combat:core:check": "npm --workspace=@mars2050/combat-core run check",
     "combat:snapshot": "tsx scripts/combat-snapshot.ts",
     "combat:ecs:golden": "tsx scripts/combat-ecs-golden.ts",
     "combat:ecs:v9:golden": "tsx scripts/combat-ecs-golden.ts --v9",
@@ -22,6 +27,7 @@
     "test:watch": "vitest",
     "test:combat:scenarios": "vitest run src/__tests__/combat.qa-presets.test.ts",
     "test:combat:tier1": "vitest run src/__tests__/combat.tier1-role-scenarios.test.ts",
+    "test:combat:package": "tsx scripts/test-combat-package.ts",
     "test:e2e": "playwright test",
     "test:e2e:qa": "playwright test tests/e2e/simulator2-load.spec.ts tests/e2e/simulator2-replay.spec.ts --project=chromium",
     "test:e2e:replay": "playwright test tests/e2e/simulator2-replay.spec.ts --project=chromium",

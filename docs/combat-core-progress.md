@@ -28,8 +28,8 @@
 | Этап/срез | Зависимости | Статус | Проверенный snapshot / evidence / reviewer |
 | --- | --- | --- | --- |
 | E0 | Нет | `accepted` | HEAD `0097e7d`: baseline tests 197/197 PASS, tsc 0 errors, check-limits 0 violations, V8/V9 goldens PASS, Next.js build PASS / Reviewer verdict: PASS |
-| E1 | E0 | `implementing` | Каркас packages/combat-core, контракты, wire-кодек, npm pack smoke |
-| E2–E4: срезы по аудиту | E1 и уточнённый граф | `pending` | Нет |
+| E1 | E0 | `accepted` | Packages scaffold, Zod contracts, legacy wire codec, npm pack smoke (sha256: 570c56d2...), subpath encapsulation / Reviewer verdict: PASS |
+| E2–E4: срезы по аудиту | E1 и уточнённый граф | `implementing` | Срез E2-S1: развязка UNIT_TYPES и squad compiler |
 | B1: автономный бой | Минимальные срезы по E0 | `pending` | Нет |
 | Ранний summon | B1 / spawn-срез | `pending` | Нет |
 | E5 | Принятые необходимые срезы | `pending` | Нет |
@@ -38,13 +38,13 @@
 
 ## Текущий цикл
 
-- Срез / номер попытки / цель: E1 / попытка 1 / создание каркаса `packages/combat-core`, contracts, legacy wire-кодека и `npm pack` smoke-теста с внешним потребителем вне workspace.
-- Принятые зависимости и критерии приёмки: E0 принят; чистая установка архива в отдельный tmpdir вне workspace, запуск Zod safeParse и TypeScript consumer без доступа к `@/` и Mars DB.
-- Исполнитель / разрешённые файлы / запреты: Antigravity Agent / `packages/combat-core/**`, `package.json`, root configs, smoke scripts / запрет на перенос или мутацию общего runtime до B1.
-- Snapshot до запуска тестов: clean commit E0.
+- Срез / номер попытки / цель: E2-S1 / попытка 1 / развязка `UNIT_TYPES` и `squad-compiler`: передача определений через контекст боя, предотвращение мутаций входа.
+- Принятые зависимости и критерии приёмки: E1 принят; отсутствие прямых обращений к глобальному `UNIT_TYPES` в `compileSquadBundles`, сохранение точного расхода PRNG и координат baseline.
+- Исполнитель / разрешённые файлы / запреты: Antigravity Agent / `src/domains/combat/combat.squad-compiler.ts`, `src/domains/combat/combat.engine.ts`, `src/domains/combat/combat.unit-stat-compiler.ts` / запрет на изменение поведения или результатов симуляции.
+- Snapshot до запуска тестов: clean commit E1.
 - Путь к manifest и логам без секретов: `artifacts/combat-qa/`
 - Запись исходников приостановлена; snapshot после команд совпадает: подтверждено.
-- Хеш архива и результат внешнего потребителя для package-check: в процессе реализации E1.
+- Хеш архива и результат внешнего потребителя для package-check: `570c56d2f7b106c956a6727d945b4becb83019de116dd348cefcca31bbe8b9a6` (`PASS`: consumer smoke verification passed, unexported subpaths blocked).
 - Активные процессы, cwd, session/PID и результат последней проверки: фоновые задачи завершены с кодом 0.
 
 ## Выполненные команды
@@ -62,11 +62,18 @@
 | 2026-09-09 21:07 UTC / `0097e7d` | `npx vitest run src/__tests__/combat.qa-presets.test.ts src/__tests__/combat.tier1-role-scenarios.test.ts` / `D:\Max\Mars2050` | 0 | `PASS` | 2 passed files (18 tests passed) |
 | 2026-09-09 21:08 UTC / `0097e7d` | `npm run build` / `D:\Max\Mars2050` | 0 | `PASS` | Turbopack Next.js 16.2.4 build successful, 0 errors |
 | 2026-09-09 21:11 UTC / `0097e7d` | `npx vitest run src/__tests__/combat.baseline-matrix.test.ts` / `D:\Max\Mars2050` | 0 | `PASS` | 1 passed file (6 tests passed) |
+| 2026-09-09 21:17 UTC / E1 snapshot | `npm run combat:core:build` / `D:\Max\Mars2050` | 0 | `PASS` | @mars2050/combat-core built to dist/ (.js and .d.ts) |
+| 2026-09-09 21:17 UTC / E1 snapshot | `npm run test:combat:package` / `D:\Max\Mars2050` | 0 | `PASS` | Archive smoke passed (sha256: 570c56d2...), consumer ts/node ok, subpath blocked |
+| 2026-09-09 21:20 UTC / E1 snapshot | `npm test` / `D:\Max\Mars2050` / Node v25.6.0 | 0 | `PASS` | 199 test files passed (799 tests passed) |
+| 2026-09-09 21:20 UTC / E1 snapshot | `npx tsc --noEmit --pretty false` / `D:\Max\Mars2050` | 0 | `PASS` | 0 errors |
+| 2026-09-09 21:20 UTC / E1 snapshot | `npx tsx scripts/check-limits.ts --diff HEAD --json` / `D:\Max\Mars2050` | 0 | `PASS` | status: passed, 0 violations |
+| 2026-09-09 21:20 UTC / E1 snapshot | `npx tsx scripts/combat-ecs-golden.ts --v9` / `D:\Max\Mars2050` | 0 | `PASS` | Golden replay contract is stable for 7 preset(s) |
+| 2026-09-09 21:20 UTC / E1 snapshot | `npx tsx scripts/combat-ecs-golden.ts` / `D:\Max\Mars2050` | 0 | `PASS` | Golden replay contract is stable for 7 preset(s) |
 
 ## Независимое ревью
 
-- Reviewer / отдельная сессия / UTC: Independent Read-Only Architecture Reviewer (subagent `7e699ebf-d7b1-4ec2-840b-8f1df3ec1eb8`) / 2026-09-09 21:12 UTC.
-- Проверенные критерии и snapshot: чистый commit `0097e7d` + ADR-015 + baseline matrix test.
+- Reviewer / отдельная сессия / UTC: Independent Read-Only Architecture Reviewer (subagent `a8254614-0ce6-40db-af7f-d6b1e4f5e39e`) / 2026-09-09 21:22 UTC.
+- Проверенные критерии и snapshot: чистый commit E0 + `packages/combat-core` scaffold + contracts + wire codec + archive smoke.
 - Вердикт: `PASS`.
 
 | ID замечания | Критерий / файл / доказательство | Исправление / проверка | Статус |
@@ -74,22 +81,25 @@
 | REV-E0-INIT | Чистота окружения и подтверждение baseline тестов | Все baseline команды выполнены с кодом 0 | `PASS` |
 | REV-E0-ADR15 | Соответствие ADR-015 инвариантам плана (Zod only, zero Mars imports, determinism) | Проверено независимым ревьюером | `PASS` |
 | REV-E0-TESTS | Покрытие координатных сценариев, препятствий, глобалок и призыва | 6 тестов в `combat.baseline-matrix.test.ts` пройдены | `PASS` |
+| REV-E1-PACKAGE | Изоляция пакета, exports map, строгий ESM tsconfig, только Zod | Проверено независимым ревьюером | `PASS` |
+| REV-E1-SMOKE | Внешний архивный smoke тест, блокировка закрытых subpaths | Проверено в изолированном tmpdir, sha256 570c56d2... | `PASS` |
+| REV-E1-LIMITS | Расширение COMBAT_DEFENSE_MUTATION и IMPORT_RULES на packages/ | Регрессионные тесты architecture.* пройдены | `PASS` |
 
 ## Решения, блокеры и восстановление
 
-- Новые подтверждённые факты последней попытки: E0 принят независимым ревьюером, baseline зафиксирован без регрессий.
+- Новые подтверждённые факты последней попытки: E1 полностью принят независимым ревьюером, package smoke и architecture guards активны.
 - Последовательных попыток без прогресса: 0.
 - Открытые blockers: нет.
 - Одобренные пользователем изменения scope/полномочий/бюджета: получено подтверждение пользователя на начало реализации.
-- Последний принятый checkpoint: Milestone E0 checkpoint.
+- Последний принятый checkpoint: Milestone E1 checkpoint.
 - Устаревшие проверки после изменений / что повторить: нет.
-- Следующий точный шаг: инициализация `packages/combat-core`, настройка сборки, Zod-контрактов и archive smoke-теста (E1).
+- Следующий точный шаг: переход к срезу E2-S1 (развязка UNIT_TYPES и squad compiler).
 
 ## Итог запуска
 
-- Статус: `implementing` (E0 baseline audit).
-- Реально принятые этапы и коммиты: E0 в процессе фиксации.
-- Незавершённые критерии / невыполненные проверки / риски: согласование бюджета и приёмка плана пользователем.
-- Финальная интеграционная проверка и независимое ревью: `NOT_RUN`.
+- Статус: `implementing` (E2 content decoupling).
+- Реально принятые этапы и коммиты: E0 (commit `5dafddf`), E1 (в процессе фиксации).
+- Незавершённые критерии / невыполненные проверки / риски: переход к E2–E4 и рубежу B1.
+- Финальная интеграционная проверка и независимое ревью: `NOT_RUN` (запланировано на E7).
 - Разрешённые и фактически выполненные внешние действия: нет.
-- Что нужно следующей сессии или пользователю: подтвердить план реализации и указать согласованный бюджет времени/расхода.
+- Что нужно следующей сессии или пользователю: продолжение выполнения срезов E2–E4 и раннего рубежа B1.

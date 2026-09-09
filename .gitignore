@@ -56,3 +56,6 @@ temp_*.txt
 /check-db.ts
 /pixellab-*.png
 /Sci-fi_*.png
+*.tgz
+/packages/*/dist
+

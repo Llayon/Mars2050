@@ -134,7 +134,10 @@ function addViolation(rule: string, file: string, detail: string, line?: number)
 
 // ─── Helpers ───────────────────────────────────────────────────
 function relPath(fullPath: string) {
-  return relative(SRC, fullPath).replace(/\\/g, '/')
+  if (fullPath.startsWith(SRC)) {
+    return relative(SRC, fullPath).replace(/\\/g, '/')
+  }
+  return relative(ROOT, fullPath).replace(/\\/g, '/')
 }
 
 function countLines(filePath: string): number {
@@ -575,18 +578,34 @@ function checkImportRules(changedFiles?: Set<string>) {
       if (rel.startsWith('app/api/') && /from ['"]\.\.\/.*\/route['"]/.test(content)) {
         addViolation('IMPORT_RULES', rel, 'API route imports another API route — extract shared logic to service instead')
       }
+
+      // packages/combat-core must not import application code or frameworks
+      if (fullPath.includes('packages') && fullPath.includes('combat-core')) {
+        if (/from ['"]@\//.test(content)) {
+          addViolation('IMPORT_RULES', rel, 'packages/combat-core must not import application code (@/)')
+        }
+        if (/from ['"](?:next(?:\/|$)|react(?:\/|$)|@supabase)/.test(content)) {
+          addViolation('IMPORT_RULES', rel, 'packages/combat-core must not import Next.js, React, or Supabase')
+        }
+      }
     }
   }
   walkDir(SRC)
+  const packagesPath = join(ROOT, 'packages')
+  if (existsSync(packagesPath)) walkDir(packagesPath)
 }
 
 // ─── Rule 16: Combat defensive resource mutation gateway ────────
 // This rule intentionally ignores --diff: combat ECS runtime is always scanned.
 function checkCombatDefenseMutations() {
-  const combatPath = join(SRC, 'domains', 'combat', 'ecs')
+  const combatPaths = [
+    join(SRC, 'domains', 'combat', 'ecs'),
+    join(ROOT, 'packages', 'combat-core', 'src', 'ecs'),
+  ]
   const mutation = /(?:\.(?:shield|maxShield|capacity|shieldHitBlockCharges|reactiveArmorCharges)|\[['"](?:shield|maxShield|capacity|shieldHitBlockCharges|reactiveArmorCharges)['"]\]|\bbarrier\.duration)\s*(?:\+\+|--|(?:[+\-*/%]?=)(?!=))/gm
   const destructuringMutation = /\(\s*\{[^}]*\b(?:shield|maxShield|capacity|shieldHitBlockCharges|reactiveArmorCharges)\b[^}]*\}\s*=\s*/gms
   const walk = (dir: string) => {
+    if (!existsSync(dir)) return
     for (const entry of readdirSync(dir, { withFileTypes: true })) {
       const fullPath = join(dir, entry.name)
       if (entry.isDirectory()) { walk(fullPath); continue }
@@ -599,7 +618,9 @@ function checkCombatDefenseMutations() {
       }
     }
   }
-  try { walk(combatPath) } catch { /* combat domain may be absent in partial checkouts */ }
+  for (const p of combatPaths) {
+    try { walk(p) } catch { /* path may be absent */ }
+  }
 }
 
 // ─── Rule 14: Domain barrel export ─────────────────────────────
