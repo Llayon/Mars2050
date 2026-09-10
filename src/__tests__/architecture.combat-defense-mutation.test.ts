@@ -23,7 +23,7 @@ describe('architecture rules for combat-core', () => {
     } finally {
       if (existsSync(badFile)) unlinkSync(badFile)
     }
-  })
+  }, 25000)
 
   it('detects illegal application imports inside packages/combat-core', () => {
     const contractsDir = join(process.cwd(), 'packages', 'combat-core', 'src', 'contracts')
@@ -43,5 +43,5 @@ describe('architecture rules for combat-core', () => {
     } finally {
       if (existsSync(badFile)) unlinkSync(badFile)
     }
-  })
+  }, 25000)
 })

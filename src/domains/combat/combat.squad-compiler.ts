@@ -7,6 +7,7 @@ import { compileUnit } from './combat.unit-compiler'
 import type { UnitRow } from './combat.types'
 import { FIELD_HEIGHT, FIELD_WIDTH, type PRNG } from './combat.utils'
 import type { UnitEntityBundle } from './ecs/unit-entity-bundle'
+import { getFormationOffset } from '@mars2050/combat-core/math'
 
 export function compileSquadBundles(
   row: UnitRow,
@@ -78,30 +79,4 @@ export function createSquadBuildSpecs(
     }
   })
 }
-
-function getFormationOffset(
-  index: number,
-  squadSize: number,
-  rowSize: number,
-  spacing: number,
-  formation: string,
-  team: Team,
-): { x: number; y: number } {
-  let x = 0, y = 0
-  if (formation === 'line') {
-    x = (index - (squadSize - 1) / 2) * spacing
-  } else if (formation === 'wedge') {
-    if (index === 0) y = spacing
-    else {
-      const rank = Math.ceil(index / 2)
-      x = (index % 2 === 0 ? 1 : -1) * rank * spacing
-      y = spacing - rank * spacing
-    }
-  } else {
-    const row = Math.floor(index / rowSize)
-    const column = index % rowSize
-    x = (column - (rowSize - 1) / 2) * spacing
-    y = (row - (Math.ceil(squadSize / rowSize) - 1) / 2) * spacing
-  }
-  return { x, y: y * (team === 'attacker' ? 1 : -1) }
-}
+export { getFormationOffset } from '@mars2050/combat-core/math'

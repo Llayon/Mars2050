@@ -8,15 +8,23 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
     },
     "./contracts": {
       "types": "./dist/contracts/index.d.ts",
-      "import": "./dist/contracts/index.js"
+      "import": "./dist/contracts/index.js",
+      "default": "./dist/contracts/index.js"
     },
     "./replay": {
       "types": "./dist/replay/index.d.ts",
-      "import": "./dist/replay/index.js"
+      "import": "./dist/replay/index.js",
+      "default": "./dist/replay/index.js"
+    },
+    "./math": {
+      "types": "./dist/math/index.d.ts",
+      "import": "./dist/math/index.js",
+      "default": "./dist/math/index.js"
     }
   },
   "files": [

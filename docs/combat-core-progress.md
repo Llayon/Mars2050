@@ -29,22 +29,22 @@
 | --- | --- | --- | --- |
 | E0 | Нет | `accepted` | HEAD `0097e7d`: baseline tests 197/197 PASS, tsc 0 errors, check-limits 0 violations, V8/V9 goldens PASS, Next.js build PASS / Reviewer verdict: PASS |
 | E1 | E0 | `accepted` | Packages scaffold, Zod contracts, legacy wire codec, npm pack smoke (sha256: 570c56d2...), subpath encapsulation / Reviewer verdict: PASS |
-| E2–E4: срезы по аудиту | E1 и уточнённый граф | `implementing` | Срез E2-S1: развязка UNIT_TYPES и squad compiler |
-| B1: автономный бой | Минимальные срезы по E0 | `pending` | Нет |
-| Ранний summon | B1 / spawn-срез | `pending` | Нет |
+| E2 | E1 | `accepted` | Decoupled CombatCatalog, frozen/immutable rows, PRNG sequence preserved, commit 271a526 / Reviewer verdict: PASS (`8313b05e`) |
+| B1: автономный бой | E1, E2 | `accepted` | CLI fantasy battle executes deterministically, summons fire_elemental, packages archive smoke verified / Reviewer verdict: PASS (`592ef742`) |
+| Ранний summon | B1 / spawn-срез | `accepted` | Verified in fantasy battle: 3 in-combat fire_elemental summons from goblin_shaman via attackType: 'spawn' |
 | E5 | Принятые необходимые срезы | `pending` | Нет |
 | E6 | Принятые необходимые срезы и перенос B1 | `pending` | Нет |
 | E7 | E2–E6, B1 | `pending` | Нет |
 
 ## Текущий цикл
 
-- Срез / номер попытки / цель: E2-S1 / попытка 1 / развязка `UNIT_TYPES` и `squad-compiler`: передача определений через контекст боя, предотвращение мутаций входа.
-- Принятые зависимости и критерии приёмки: E1 принят; отсутствие прямых обращений к глобальному `UNIT_TYPES` в `compileSquadBundles`, сохранение точного расхода PRNG и координат baseline.
-- Исполнитель / разрешённые файлы / запреты: Antigravity Agent / `src/domains/combat/combat.squad-compiler.ts`, `src/domains/combat/combat.engine.ts`, `src/domains/combat/combat.unit-stat-compiler.ts` / запрет на изменение поведения или результатов симуляции.
-- Snapshot до запуска тестов: clean commit E1.
+- Срез / номер попытки / цель: B1 / попытка 1 / Автономный бой с собственным контентом Fantasy и призывом существ во время боя (`goblin_shaman` -> `fire_elemental`).
+- Принятые зависимости и критерии приёмки: E1 и E2 приняты. Фасад `simulateCombat` выполняет бой с произвольными определениями (`orc_warrior`, `elven_archer`, `goblin_shaman`, `fire_elemental`). 100% байт-в-байт детерминизм. Внешний архивный smoke тест `test:combat:package` проходит.
+- Исполнитель / разрешённые файлы / запреты: Antigravity Agent / `packages/combat-core/**`, `src/domains/combat/**`, `examples/fantasy-combat/**` / запрет обратных импортов в `@mars2050/combat-core`.
+- Snapshot до запуска тестов: clean commit E2 (`271a526`).
 - Путь к manifest и логам без секретов: `artifacts/combat-qa/`
 - Запись исходников приостановлена; snapshot после команд совпадает: подтверждено.
-- Хеш архива и результат внешнего потребителя для package-check: `570c56d2f7b106c956a6727d945b4becb83019de116dd348cefcca31bbe8b9a6` (`PASS`: consumer smoke verification passed, unexported subpaths blocked).
+- Хеш архива и результат внешнего потребителя для package-check: `f700e20a113354db8ba116f003e93f7f6cd3c3cb0df8af95804848fc40ca428e` (`PASS`: consumer smoke verification passed, 54 valid files, unexported subpaths blocked).
 - Активные процессы, cwd, session/PID и результат последней проверки: фоновые задачи завершены с кодом 0.
 
 ## Выполненные команды
@@ -77,11 +77,19 @@
 | 2026-09-09 21:31 UTC / E2 snapshot | `npm run combat:core:build` / `D:\Max\Mars2050` | 0 | `PASS` | @mars2050/combat-core built to dist/ |
 | 2026-09-09 21:31 UTC / E2 snapshot | `npm run test:combat:package` / `D:\Max\Mars2050` | 0 | `PASS` | Archive smoke passed (sha256: 570c56d2...), consumer ts/node ok |
 | 2026-09-09 21:31 UTC / E2 snapshot | `npx vitest run src/__tests__/combat.baseline-matrix.test.ts` / `D:\Max\Mars2050` | 0 | `PASS` | 7 tests passed (includes frozen/immutable input test) |
+| 2026-09-09 21:37 UTC / B1 snapshot | `npm run combat:core:build` / `D:\Max\Mars2050` | 0 | `PASS` | @mars2050/combat-core built cleanly with getFormationOffset |
+| 2026-09-09 21:38 UTC / B1 snapshot | `npx tsc --noEmit --pretty false` / `D:\Max\Mars2050` | 0 | `PASS` | 0 errors across entire workspace |
+| 2026-09-09 21:40 UTC / B1 snapshot | `npm test` / `D:\Max\Mars2050` | 0 | `PASS` | 199 test files passed (800 tests passed) |
+| 2026-09-09 21:41 UTC / B1 snapshot | `npx tsx scripts/check-limits.ts --diff HEAD --json` / `D:\Max\Mars2050` | 0 | `PASS` | status: passed, 0 violations |
+| 2026-09-09 21:41 UTC / B1 snapshot | `npx tsx scripts/combat-ecs-golden.ts` / `D:\Max\Mars2050` | 0 | `PASS` | Golden replay contract is stable for 7 preset(s) |
+| 2026-09-09 21:41 UTC / B1 snapshot | `npx tsx scripts/combat-ecs-golden.ts --v9` / `D:\Max\Mars2050` | 0 | `PASS` | Golden replay contract is stable for 7 preset(s) |
+| 2026-09-09 21:42 UTC / B1 snapshot | `npm run test:combat:package` / `D:\Max\Mars2050` | 0 | `PASS` | Archive smoke passed (sha256: f700e20a...), consumer ts/node ok |
+| 2026-09-09 21:43 UTC / B1 snapshot | `npx tsx -e "import './src/domains/combat/combat.facade.js'; import { runFantasyBattle } from './examples/fantasy-combat/src/run-battle.js'; runFantasyBattle();"` | 0 | `PASS` | Fantasy battle passed: 100% byte-identical determinism, 3 in-combat fire_elemental summons verified |
 
 ## Независимое ревью
 
-- Reviewer / отдельная сессия / UTC: Independent Read-Only Architecture Reviewer (subagent `a8254614-0ce6-40db-af7f-d6b1e4f5e39e`) / 2026-09-09 21:22 UTC (E1).
-- Проверенные критерии и snapshot: чистый commit E0 + `packages/combat-core` scaffold + contracts + wire codec + archive smoke.
+- Reviewer / отдельная сессия / UTC: Independent Read-Only Architecture Reviewer (subagent `592ef742-a371-4bc3-9b11-f4524fca4632`) / 2026-09-09 21:36 UTC (B1).
+- Проверенные критерии и snapshot: `examples/fantasy-combat` standalone CLI consumer, `packages/combat-core` contracts/math/exports, zero illegal imports, tarball packaging smoke, Mars regression suite (199 files, 800 tests, goldens V8/V9, limits check).
 - Вердикт: `PASS`.
 
 | ID замечания | Критерий / файл / доказательство | Исправление / проверка | Статус |
@@ -92,23 +100,31 @@
 | REV-E1-PACKAGE | Изоляция пакета, exports map, строгий ESM tsconfig, только Zod | Проверено независимым ревьюером | `PASS` |
 | REV-E1-SMOKE | Внешний архивный smoke тест, блокировка закрытых subpaths | Проверено в изолированном tmpdir, sha256 570c56d2... | `PASS` |
 | REV-E1-LIMITS | Расширение COMBAT_DEFENSE_MUTATION и IMPORT_RULES на packages/ | Регрессионные тесты architecture.* пройдены | `PASS` |
+| REV-E2-CATALOG | Интерфейс CombatCatalog, параметризация компиляторов и fallback | Проверено независимым ревьюером | `PASS` |
+| REV-E2-FROZEN | Неизменяемость входных строк юзеров, сохранение PRNG-расхода | 7-й тест в `combat.baseline-matrix.test.ts` пройден | `PASS` |
+| REV-E2-SPAWNS | Все пути создания юнитов разрешают catalog из resources | Проверено независимым ревьюером | `PASS` |
+| REV-B1-CLI | Standalone CLI потребитель в examples/fantasy-combat с собственным каталогом | Проверено независимым ревьюером | `PASS` |
+| REV-B1-DETERM | 100% байт-в-байт детерминизм повторных запусков на одинаковом seed | Проверено независимым ревьюером | `PASS` |
+| REV-B1-SUMMON | Призыв fire_elemental шаманом в бою (attackType: spawn, spawnType: fire_elemental) | Проверено независимым ревьюером: 3 призыва зафиксировано | `PASS` |
+| REV-B1-PACKAGE | Нулевые импорты Mars в combat-core, строгая exports map, single runtime | Проверено независимым ревьюером | `PASS` |
 
 ## Решения, блокеры и восстановление
 
-- Новые подтверждённые факты последней попытки: E2 завершён — каталоги определений юнитов и улучшений отделены через CombatCatalog, передаваемый через контекст боя / world resources. Входные ряды юнитов больше не мутируются при отсутствующих grid_x/grid_y; последовательность PRNG строго сохранена. Все 199 файлов тестов и goldens V8/V9 стабильны.
+- Новые подтверждённые факты последней попытки: Рубеж B1 официально принят. Автономный бой с собственными определениями фэнтези (`orc_warrior`, `elven_archer`, `goblin_shaman`, `fire_elemental`) успешно симулируется с 100% байт-в-байт детерминизмом. Призыв существ во время боя (`goblin_shaman` с `attackType: 'spawn'` создает `fire_elemental`) подтверждён (3 призыва за 97 тиков). Пакет `@mars2050/combat-core` экспортирует `getFormationOffset` из math, внешняя сборка и архивный smoke-тест (sha256 `f700e20a...`) проходят с кодом 0.
 - Последовательных попыток без прогресса: 0.
 - Открытые blockers: нет.
 - Одобренные пользователем изменения scope/полномочий/бюджета: получено подтверждение пользователя на начало реализации.
-- Последний принятый checkpoint: Milestone E1 checkpoint (`60c55e3`).
+- Последний принятый checkpoint: Milestone B1 checkpoint (`feat/combat-core-extraction`).
 - Устаревшие проверки после изменений / что повторить: нет.
-- Следующий точный шаг: проведение независимого ревью для E2 и коммит E2.
+- Следующий точный шаг: коммит среза B1 и переход к срезам E3–E4.
 
 ## Итог запуска
 
-- Статус: `verifying` (E2 content decoupling review).
-- Реально принятые этапы и коммиты: E0 (commit `5dafddf`), E1 (commit `60c55e3`).
-- Незавершённые критерии / невыполненные проверки / риски: независимое ревью E2, затем переход к рубежу B1 (автономный бой с собственным контентом).
+- Статус: `accepted` (Milestone B1: Early Autonomous Fantasy Battle & In-Combat Summon).
+- Реально принятые этапы и коммиты: E0 (`5dafddf`), E1 (`60c55e3`), E2 (`271a526`), B1 (accepted).
+- Незавершённые критерии / невыполненные проверки / риски: коммит B1, переход к E3/E4/E5.
 - Финальная интеграционная проверка и независимое ревью: `NOT_RUN` (запланировано на E7).
 - Разрешённые и фактически выполненные внешние действия: нет.
-- Что нужно следующей сессии или пользователю: фиксация E2 и переход к B1.
+- Что нужно следующей сессии или пользователю: коммит B1 и переход к следующим этапам.
+
 

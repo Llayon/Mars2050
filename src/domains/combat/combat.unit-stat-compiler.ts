@@ -41,7 +41,7 @@ export interface CompiledUnitStats {
 }
 
 export function compileUnitStats(spec: UnitBuildSpec): CompiledUnitStats | null {
-  const unitCatalog = spec.catalog?.unitTypes ?? UNIT_TYPES
+  const unitCatalog: Readonly<Record<string, UnitTypeConfig>> = spec.catalog?.unitTypes ?? UNIT_TYPES
   const upgradesCatalog = spec.catalog?.upgrades ?? UPGRADES
   const definition = unitCatalog[spec.definitionId]
   if (!definition) return null

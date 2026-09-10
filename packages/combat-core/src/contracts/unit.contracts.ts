@@ -6,7 +6,7 @@ export type Team = z.infer<typeof teamSchema>
 export const unitSizeSchema = z.enum(['S', 'M', 'L', 'XL'])
 export type UnitSize = z.infer<typeof unitSizeSchema>
 
-export const attackTypeSchema = z.enum(['single', 'aoe', 'beam', 'spread'])
+export const attackTypeSchema = z.enum(['single', 'aoe', 'beam', 'spread', 'spawn', 'heal'])
 export type AttackType = z.infer<typeof attackTypeSchema>
 
 export const formationSchema = z.enum(['grid', 'line', 'wedge'])
@@ -23,6 +23,8 @@ export const baseStatsSchema = z.object({
   turnSpeed: z.number().positive().default(5),
   size: unitSizeSchema.default('M'),
   combatTags: z.array(z.string()).default([]),
+  spawnType: z.string().optional(),
+  spawnCap: z.number().int().positive().optional(),
 })
 export type BaseStats = z.infer<typeof baseStatsSchema>
 

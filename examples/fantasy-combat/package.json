@@ -1,0 +1,16 @@
+{
+  "name": "fantasy-combat-example",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@mars2050/combat-core": "^0.1.0"
+  },
+  "devDependencies": {
+    "typescript": "^5"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/run-battle.js"
+  }
+}

@@ -58,4 +58,5 @@ temp_*.txt
 /Sci-fi_*.png
 *.tgz
 /packages/*/dist
+/examples/*/dist
 

@@ -32,7 +32,7 @@ export interface RuntimeUnitFactoryInput {
 }
 
 export interface UnitBuildSpec {
-  definitionId: UnitTypeKey
+  definitionId: string
   identity: {
     id: string
     team: Team
