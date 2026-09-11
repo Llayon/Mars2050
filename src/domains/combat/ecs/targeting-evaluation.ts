@@ -7,7 +7,8 @@ import type { EntityId } from './entity'
 const TAG_DISTANCE_RATIO_CAP = 3
 
 export function getEcsTargetingProfile(world: CombatWorld, entityId: EntityId): TargetingProfileConfig {
-  return TARGETING_PROFILES[getProfileKey(world, entityId)]
+  const key = getProfileKey(world, entityId)
+  return world.resources.get('catalog')?.targetingProfiles?.[key] ?? TARGETING_PROFILES[key]
 }
 
 export function getEcsMaxActionRange(world: CombatWorld, entityId: EntityId): number {

@@ -35,7 +35,8 @@ export function getEcsSteeringContext(
   const identity = world.stores.identity.require(entityId)
   const transform = getMovementTransform(world, entityId, frame)
   const combat = world.stores.combat.require(entityId)
-  const isBug = identity.type.startsWith('alien_')
+  const rulesStore = world.stores.runtimeRules
+  const stationaryAlignment = rulesStore.get(entityId)?.stationaryAlignment === true
   let squadCx = identity.squadId ? transform.x : 0
   let squadCy = identity.squadId ? transform.y : 0
   let squadCount = identity.squadId ? 1 : 0
@@ -85,7 +86,7 @@ export function getEcsSteeringContext(
         alignmentX += velocityX / speed
         alignmentY += velocityY / speed
         alignmentCount++
-      } else if (isBug && otherIdentity.type.startsWith('alien_')) {
+      } else if (stationaryAlignment && rulesStore.get(otherId)?.stationaryAlignment === true) {
         alignmentX += Math.cos(other.currentAngle)
         alignmentY += Math.sin(other.currentAngle)
         alignmentCount++
@@ -115,17 +116,17 @@ export function getEcsFormationForce(
   frame?: MovementFrame,
 ): { x: number; y: number } {
   if (squadCount <= 1) return { x: 0, y: 0 }
-  const identity = world.stores.identity.require(entityId)
   const transform = getMovementTransform(world, entityId, frame)
   const combat = world.stores.combat.require(entityId)
-  const isBug = identity.type.startsWith('alien_')
+  const rules = world.stores.runtimeRules.get(entityId)
+  const isCentroidAnchor = rules?.formationAnchorMode === 'centroid'
   const near = distEdge <= getEcsEffectiveActionRange(world, entityId) + Math.max(70, getSizeRadius(transform.size) * 2)
-  const threshold = isBug ? 60 : near ? 36 : 14
-  const anchor = getFormationAnchor(transform, targetPoint, squadCx, squadCy, isBug)
+  const threshold = isCentroidAnchor ? 60 : near ? 36 : 14
+  const anchor = getFormationAnchor(transform, targetPoint, squadCx, squadCy, isCentroidAnchor)
   const distance = getDistance(transform.x, transform.y, anchor.x, anchor.y)
   if (distance <= threshold) return { x: 0, y: 0 }
   const angle = Math.atan2(anchor.y - transform.y, anchor.x - transform.x)
-  const multiplier = navigating ? 0.1 : isBug ? 0.5 : near ? 0.18 : 0.75
+  const multiplier = navigating ? 0.1 : isCentroidAnchor ? 0.5 : near ? 0.18 : 0.75
   const pull = combat.speed * multiplier
   return { x: Math.cos(angle) * pull, y: Math.sin(angle) * pull }
 }
@@ -159,9 +160,9 @@ function getFormationAnchor(
   target: { x: number; y: number },
   squadCx: number,
   squadCy: number,
-  isBug: boolean,
+  isCentroidAnchor: boolean,
 ): { x: number; y: number } {
-  if (isBug || transform.offsetX === undefined || transform.offsetY === undefined || transform.initialAngle === undefined) return { x: squadCx, y: squadCy }
+  if (isCentroidAnchor || transform.offsetX === undefined || transform.offsetY === undefined || transform.initialAngle === undefined) return { x: squadCx, y: squadCy }
   const squadAngle = Math.atan2(target.y - squadCy, target.x - squadCx)
   const rotation = squadAngle - transform.initialAngle
   const rotatedX = transform.offsetX * Math.cos(rotation) - transform.offsetY * Math.sin(rotation)

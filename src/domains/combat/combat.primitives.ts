@@ -139,3 +139,18 @@ export interface AdvancedPrimitiveConfig {
 export interface RuntimeAdvancedPrimitiveState {
   statGrowth?: RuntimeStatGrowth; attackCharge?: RuntimeAttackCharge
 }
+
+export type ScheduledGlobalEffectKind = 'orbital_strike' | 'mass_heal' | 'mass_shield' | 'global_emp'
+
+export interface ScheduledGlobalEffect {
+  readonly id: string
+  readonly type: ScheduledGlobalEffectKind
+  readonly value: number
+  readonly tick?: number
+  readonly target?: 'allies' | 'enemies' | 'center'
+}
+
+export interface ActiveGlobalEffect {
+  readonly team: Team
+  readonly effect: ScheduledGlobalEffect
+}

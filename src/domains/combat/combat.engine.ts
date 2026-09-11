@@ -1,7 +1,8 @@
 import { MAX_TICKS, UNIT_TYPES } from './combat.config'
-import { GLOBAL_UPGRADES, UPGRADES, type GlobalUpgradeConfig } from './combat.upgrades'
+import { GLOBAL_UPGRADES, UPGRADES } from './combat.upgrades'
 import type { UnitRow, BattleAction, BattleTick, BattleResult } from './combat.types'
 import type { Team, Obstacle } from './combat.sim.types'
+import type { ActiveGlobalEffect } from './combat.primitives'
 import { createCombatMetrics, finalizeCombatMetrics, recordCombatActions, recordCombatTick, type BattleSimulationOptions } from './combat.metrics'
 import { PRNG, generateObstacles } from './combat.utils'
 import { createPathfindingMap } from './combat.pathfinding'
@@ -14,9 +15,15 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
   const timeoutPolicy = options.timeoutPolicy ?? 'draw'
   const defenseResolutionMode = options.defenseResolutionMode ?? 'v9_snapshot'
   const runtime = createEcsCombatRuntime({ profile: options.profile === true, defenseResolutionMode })
-  const activeGlobals: { team: Team, upg: GlobalUpgradeConfig }[] = []
-  attackerGlobals.forEach(id => { if (GLOBAL_UPGRADES[id]) activeGlobals.push({ team: 'attacker', upg: GLOBAL_UPGRADES[id] }) })
-  defenderGlobals.forEach(id => { if (GLOBAL_UPGRADES[id]) activeGlobals.push({ team: 'defender', upg: GLOBAL_UPGRADES[id] }) })
+  const activeGlobals: ActiveGlobalEffect[] = []
+  attackerGlobals.forEach(id => {
+    const upg = GLOBAL_UPGRADES[id]
+    if (upg) activeGlobals.push({ team: 'attacker', effect: { id: upg.id, type: upg.type, value: upg.value, target: upg.target } })
+  })
+  defenderGlobals.forEach(id => {
+    const upg = GLOBAL_UPGRADES[id]
+    if (upg) activeGlobals.push({ team: 'defender', effect: { id: upg.id, type: upg.type, value: upg.value, target: upg.target } })
+  })
   const obstacles: Obstacle[] = providedObstacles || generateObstacles(seed);
   const flowFieldMap = createPathfindingMap(obstacles)
   runtime.world.resources.set('catalog', { unitTypes: UNIT_TYPES, upgrades: UPGRADES })

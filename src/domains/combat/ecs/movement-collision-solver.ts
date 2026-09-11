@@ -179,8 +179,8 @@ function dampVelocity(
   turnLocked: ReadonlySet<EntityId>,
 ): void {
   const combat = world.stores.combat.get(entityId)!
-  const identity = world.stores.identity.get(entityId)!
-  if (!canDepenetrate(world, entityId, turnLocked) || (combat.range <= 60 && !identity.type.startsWith('alien_'))) return
+  const rules = world.stores.runtimeRules.get(entityId)
+  if (!canDepenetrate(world, entityId, turnLocked) || (combat.range <= 60 && rules?.velocityDamping !== true)) return
   const inwardSpeed = velocityX[entityId] * inwardX + velocityY[entityId] * inwardY
   if (inwardSpeed <= 0) return
   addVector(

@@ -25,10 +25,10 @@ function unit(
 }
 
 const activeGlobals = [
-  { team: 'attacker' as const, upg: GLOBAL_UPGRADES.mass_shield },
-  { team: 'attacker' as const, upg: GLOBAL_UPGRADES.global_emp },
-  { team: 'attacker' as const, upg: GLOBAL_UPGRADES.orbital_strike },
-  { team: 'attacker' as const, upg: GLOBAL_UPGRADES.mass_heal },
+  { team: 'attacker' as const, effect: { id: GLOBAL_UPGRADES.mass_shield.id, type: GLOBAL_UPGRADES.mass_shield.type, value: GLOBAL_UPGRADES.mass_shield.value, target: GLOBAL_UPGRADES.mass_shield.target } },
+  { team: 'attacker' as const, effect: { id: GLOBAL_UPGRADES.global_emp.id, type: GLOBAL_UPGRADES.global_emp.type, value: GLOBAL_UPGRADES.global_emp.value, target: GLOBAL_UPGRADES.global_emp.target } },
+  { team: 'attacker' as const, effect: { id: GLOBAL_UPGRADES.orbital_strike.id, type: GLOBAL_UPGRADES.orbital_strike.type, value: GLOBAL_UPGRADES.orbital_strike.value, target: GLOBAL_UPGRADES.orbital_strike.target } },
+  { team: 'attacker' as const, effect: { id: GLOBAL_UPGRADES.mass_heal.id, type: GLOBAL_UPGRADES.mass_heal.type, value: GLOBAL_UPGRADES.mass_heal.value, target: GLOBAL_UPGRADES.mass_heal.target } },
 ]
 
 describe('combat ECS global effect phase', () => {

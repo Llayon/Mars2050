@@ -63,8 +63,8 @@ function dampVelocity(world: CombatWorld, entityId: EntityId, inwardX: number, i
 
 function canDampVelocity(world: CombatWorld, entityId: EntityId): boolean {
   const combat = world.stores.combat.require(entityId)
-  const type = world.stores.identity.require(entityId).type
-  return canDepenetrate(world, entityId) && (combat.range > 60 || type.startsWith('alien_'))
+  const rules = world.stores.runtimeRules.get(entityId)
+  return canDepenetrate(world, entityId) && (combat.range > 60 || rules?.velocityDamping === true)
 }
 
 function canDepenetrate(world: CombatWorld, entityId: EntityId): boolean {

@@ -1,9 +1,8 @@
 import type { BattleAction } from '../combat.actions'
 import type { CombatMetricsCollector } from '../combat.metrics'
 import type { Obstacle } from '../combat.sim.types'
-import type { GlobalUpgradeConfig } from '../combat.upgrades'
+import type { ActiveGlobalEffect } from '../combat.primitives'
 import type { PRNG } from '../combat.utils'
-import type { Team } from '../combat.sim.types'
 import type { FlowFieldMap } from '../combat.pathfinding'
 import type { TimeoutPolicy } from '../combat.result'
 import type { CombatTag } from '../combat.primitives'
@@ -49,7 +48,7 @@ export interface CombatResourceMap {
   obstacles: Obstacle[]
   flowField: FlowFieldMap
   entitySpatial: EntitySpatialIndex
-  globals: { team: Team; upg: GlobalUpgradeConfig }[]
+  globals: ActiveGlobalEffect[]
   metrics: CombatMetricsCollector | undefined
   movementRequests: MovementRequest[]
   combatTagCache: Map<EntityId, { signature: number; tags: CombatTag[] }>

@@ -86,5 +86,8 @@ export interface UnitRuntimeRules {
     isTemporary?: boolean
     duration?: number
   }
+  stationaryAlignment?: boolean
+  formationAnchorMode?: 'leader' | 'centroid'
+  velocityDamping?: boolean
   temporalPlan?: CompiledTemporalWeaponPlan
 }

@@ -32,6 +32,8 @@
 | E2 | E1 | `accepted` | Decoupled CombatCatalog, frozen/immutable rows, PRNG sequence preserved, commit 271a526 / Reviewer verdict: PASS (`8313b05e`) |
 | B1: автономный бой | E1, E2 | `accepted` | CLI fantasy battle executes deterministically, summons fire_elemental, packages archive smoke verified / Reviewer verdict: PASS (`592ef742`) |
 | Ранний summon | B1 / spawn-срез | `accepted` | Verified in fantasy battle: 3 in-combat fire_elemental summons from goblin_shaman via attackType: 'spawn' |
+| E3: data-driven abilities & behaviors | E2, B1 | `accepted` | De-alienated ECS runtime (stationaryAlignment, formationAnchorMode, velocityDamping in UnitRuntimeRules), catalog targetingProfiles fallback, neutral ActiveGlobalEffect/ScheduledGlobalEffect, 199 files (800 tests) PASS, V8/V9 goldens 100% stable / Reviewer verdict: PASS (`b1561673`) |
+| E4 | E3 | `pending` | Нет |
 | E5 | Принятые необходимые срезы | `pending` | Нет |
 | E6 | Принятые необходимые срезы и перенос B1 | `pending` | Нет |
 | E7 | E2–E6, B1 | `pending` | Нет |
@@ -85,11 +87,16 @@
 | 2026-09-09 21:41 UTC / B1 snapshot | `npx tsx scripts/combat-ecs-golden.ts --v9` / `D:\Max\Mars2050` | 0 | `PASS` | Golden replay contract is stable for 7 preset(s) |
 | 2026-09-09 21:42 UTC / B1 snapshot | `npm run test:combat:package` / `D:\Max\Mars2050` | 0 | `PASS` | Archive smoke passed (sha256: f700e20a...), consumer ts/node ok |
 | 2026-09-09 21:43 UTC / B1 snapshot | `npx tsx -e "import './src/domains/combat/combat.facade.js'; import { runFantasyBattle } from './examples/fantasy-combat/src/run-battle.js'; runFantasyBattle();"` | 0 | `PASS` | Fantasy battle passed: 100% byte-identical determinism, 3 in-combat fire_elemental summons verified |
+| 2026-09-11 17:05 UTC / E3 snapshot | `npm test src/__tests__/combat.ecs-v8-golden.test.ts src/__tests__/combat.ecs-v9-golden.test.ts` / `D:\Max\Mars2050` | 0 | `PASS` | 16 tests passed, V8/V9 goldens 100% stable SHA-256 |
+| 2026-09-11 17:13 UTC / E3 snapshot | `npx tsc --noEmit --pretty false` / `D:\Max\Mars2050` | 0 | `PASS` | 0 errors across workspace |
+| 2026-09-11 17:15 UTC / E3 snapshot | `npm test` / `D:\Max\Mars2050` | 0 | `PASS` | 199 test files passed (800 tests passed) |
+| 2026-09-11 17:16 UTC / E3 snapshot | `npm run test:combat:package` / `D:\Max\Mars2050` | 0 | `PASS` | Archive smoke passed (sha256: f700e20a...), standalone consumer ok |
+| 2026-09-11 17:16 UTC / E3 snapshot | `npx tsx scripts/check-limits.ts --diff HEAD --json` / `D:\Max\Mars2050` | 0 | `PASS` | status: passed, 0 violations |
 
 ## Независимое ревью
 
-- Reviewer / отдельная сессия / UTC: Independent Read-Only Architecture Reviewer (subagent `592ef742-a371-4bc3-9b11-f4524fca4632`) / 2026-09-09 21:36 UTC (B1).
-- Проверенные критерии и snapshot: `examples/fantasy-combat` standalone CLI consumer, `packages/combat-core` contracts/math/exports, zero illegal imports, tarball packaging smoke, Mars regression suite (199 files, 800 tests, goldens V8/V9, limits check).
+- Reviewer / отдельная сессия / UTC: Independent Read-Only Architecture Reviewer (subagent `b1561673-4616-40d6-90e4-27bbe9ab4c7f`) / 2026-09-11 17:19 UTC (E3).
+- Проверенные критерии и snapshot: ECS runtime de-alienation (movement traits decoupled to UnitRuntimeRules), catalog targetingProfiles fallback, scheduled global effects decoupled to ActiveGlobalEffect/ScheduledGlobalEffect, outcome policies verified, 199 test files (800 tests) PASS, tsc 0 errors, check-limits 0 violations, V8/V9 goldens 100% identical.
 - Вердикт: `PASS`.
 
 | ID замечания | Критерий / файл / доказательство | Исправление / проверка | Статус |
@@ -107,6 +114,10 @@
 | REV-B1-DETERM | 100% байт-в-байт детерминизм повторных запусков на одинаковом seed | Проверено независимым ревьюером | `PASS` |
 | REV-B1-SUMMON | Призыв fire_elemental шаманом в бою (attackType: spawn, spawnType: fire_elemental) | Проверено независимым ревьюером: 3 призыва зафиксировано | `PASS` |
 | REV-B1-PACKAGE | Нулевые импорты Mars в combat-core, строгая exports map, single runtime | Проверено независимым ревьюером | `PASS` |
+| REV-E3-TRAITS | Удаление alien_ проверок из ECS runtime, перенос в UnitRuntimeRules | Проверено независимым ревьюером: movement-steering, collision-solver, depenetration | `PASS` |
+| REV-E3-TARGETING | Профили прицеливания из catalog с безопасным fallback | Проверено независимым ревьюером: targeting-evaluation.ts | `PASS` |
+| REV-E3-GLOBALS | Декаплинг GLOBAL_UPGRADES в нейтральные ActiveGlobalEffect | Проверено независимым ревьюером: phase, resources, global-effect-system | `PASS` |
+| REV-E3-OUTCOME | Политики завершения (elimination, mutual_elimination, stalemate, timeout) | Проверено независимым ревьюером: outcome-system.ts | `PASS` |
 
 ## Решения, блокеры и восстановление
 

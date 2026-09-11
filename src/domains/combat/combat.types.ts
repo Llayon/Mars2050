@@ -70,6 +70,9 @@ export interface UnitBaseStats {
   turnSpeed?: number // Radians per tick
   size?: 'S' | 'M' | 'L' | 'XL'
   delivery?: AttackDeliveryConfig
+  stationaryAlignment?: boolean
+  formationAnchorMode?: 'leader' | 'centroid'
+  velocityDamping?: boolean
   abilities?: AbilityDefinition[]
 }
 

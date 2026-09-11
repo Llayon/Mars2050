@@ -1,6 +1,5 @@
 import type { BattleAction } from './combat.actions'
-import type { Team } from './combat.sim.types'
-import type { GlobalUpgradeConfig } from './combat.upgrades'
+import type { ActiveGlobalEffect } from './combat.primitives'
 import type { PRNG } from './combat.utils'
 
 export const COMBAT_PHASE_IDS = [
@@ -31,5 +30,5 @@ export interface RuntimePhaseContext {
   tick: number
   actions: BattleAction[]
   rng?: PRNG
-  activeGlobals?: { team: Team; upg: GlobalUpgradeConfig }[]
+  activeGlobals?: ActiveGlobalEffect[]
 }

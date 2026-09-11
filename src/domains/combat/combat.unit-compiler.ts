@@ -4,8 +4,8 @@ import { getUnitSupportAuras } from './combat.support-aura-config'
 import { DEFAULT_TARGETING_PROFILE } from './combat.targeting.config'
 import type { UnitBuildSpec, UnitRuntimeRules } from './combat.unit-build.types'
 import type { UnitBaseStats } from './combat.types'
-import type { SupportAura } from './combat.primitives'
 import { compileUnitStats, resolveUnitUpgradeIds } from './combat.unit-stat-compiler'
+import { sameSupportAura } from './combat.unit-compiler-utils'
 import { assertValidWeaponLoadout } from './combat.weapon-validation'
 import { compileAbilityDefinitions } from './combat.ability-compiler'
 import { compileTemporalWeaponPlan } from './combat.temporal-compiler'
@@ -189,7 +189,7 @@ export function compileUnitSnapshot(spec: UnitBuildSpec): SimUnit | null {
     lifestealMult: runtimeSpawn && compiled.lifestealMult === 0
       ? undefined
       : compiled.lifestealMult,
-    runtimeRules: compileRuntimeRules(primitives, spec.executionMode ?? 'compiled', temporalPlan),
+    runtimeRules: compileRuntimeRules(primitives, spec.definitionId, spec.executionMode ?? 'compiled', temporalPlan),
   }
   prepareRuntimePrimitives(unit, primitives)
   if (!runtimeSpawn && periodicPrograms.length > 0) {
@@ -200,6 +200,7 @@ export function compileUnitSnapshot(spec: UnitBuildSpec): SimUnit | null {
 }
 function compileRuntimeRules(
   stats: UnitBaseStats,
+  definitionId: string,
   abilityExecutionMode: 'compiled' | 'legacy_mutable' = 'compiled',
   temporalPlan?: ReturnType<typeof compileTemporalWeaponPlan>,
 ): UnitRuntimeRules {
@@ -233,12 +234,8 @@ function compileRuntimeRules(
       ? { ...stats.spawnOverrides }
       : undefined,
     temporalPlan,
+    stationaryAlignment: stats.stationaryAlignment ?? (definitionId.startsWith('alien_') || undefined),
+    formationAnchorMode: stats.formationAnchorMode ?? (definitionId.startsWith('alien_') ? 'centroid' : 'leader'),
+    velocityDamping: stats.velocityDamping ?? (definitionId.startsWith('alien_') || (stats.range * 40 > 60) || undefined),
   }
-}
-
-function sameSupportAura(left: SupportAura, right: SupportAura): boolean {
-  return left.type === right.type && left.radius === right.radius &&
-    left.value === right.value && left.duration === right.duration &&
-    left.interval === right.interval && left.target === right.target &&
-    JSON.stringify(left.targetTags ?? []) === JSON.stringify(right.targetTags ?? [])
 }
