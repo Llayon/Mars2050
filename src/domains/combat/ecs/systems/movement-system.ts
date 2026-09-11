@@ -1,7 +1,8 @@
 import type { BattleAction } from '../../combat.actions'
 import { getFlowVector } from '../../combat.pathfinding'
 import type { RuntimeMovementContext } from '../../combat.runtime'
-import { FIELD_HEIGHT, FIELD_WIDTH, getDistance, getSizeRadius } from '../../combat.utils'
+import { getDistance, getSizeRadius } from '../../combat.utils'
+import { getCombatArena } from '../combat-resources'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
 import { getEcsPositioningDecision } from '../movement-positioning'
@@ -27,6 +28,7 @@ export function runMovementSystem(
 }
 
 function runMovementMath(world: CombatWorld, entityId: EntityId, targetId: EntityId, actions: BattleAction[], context: RuntimeMovementContext): void {
+  const arena = getCombatArena(world)
   const identity = world.stores.identity.require(entityId)
   const transform = world.stores.transform.require(entityId)
   const combat = world.stores.combat.require(entityId)
@@ -141,8 +143,8 @@ function runMovementMath(world: CombatWorld, entityId: EntityId, targetId: Entit
     const fromY = transform.y
     world.setEntityPosition(
       entityId,
-      clamp(transform.x + transform.velocity.x * context.dt, 0, FIELD_WIDTH),
-      clamp(transform.y + transform.velocity.y * context.dt, 0, FIELD_HEIGHT),
+      clamp(transform.x + transform.velocity.x * context.dt, 0, arena.width),
+      clamp(transform.y + transform.velocity.y * context.dt, 0, arena.height),
     )
     emitMove(world, entityId, targetId, actions, fromX, fromY, angleDiff, false)
     return
@@ -185,8 +187,8 @@ function runMovementMath(world: CombatWorld, entityId: EntityId, targetId: Entit
     transform.velocity.y *= 0.6
     clampVelocity(transform.velocity, maxSpeed)
   }
-  const nextX = clamp(transform.x + transform.velocity.x * context.dt, 0, FIELD_WIDTH)
-  const nextY = clamp(transform.y + transform.velocity.y * context.dt, 0, FIELD_HEIGHT)
+  const nextX = clamp(transform.x + transform.velocity.x * context.dt, 0, arena.width)
+  const nextY = clamp(transform.y + transform.velocity.y * context.dt, 0, arena.height)
   if (Math.hypot(nextX - transform.x, nextY - transform.y) > 0.1 || Math.abs(angleDiff) > 0.2) {
     const fromX = transform.x
     const fromY = transform.y

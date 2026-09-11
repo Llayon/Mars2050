@@ -4,7 +4,7 @@ import type { UnitRow, BattleAction, BattleTick, BattleResult } from './combat.t
 import type { Team, Obstacle } from './combat.sim.types'
 import type { ActiveGlobalEffect } from './combat.primitives'
 import { createCombatMetrics, finalizeCombatMetrics, recordCombatActions, recordCombatTick, type BattleSimulationOptions } from './combat.metrics'
-import { PRNG, generateObstacles } from './combat.utils'
+import { FIELD_HEIGHT, FIELD_WIDTH, PRNG, TILE_SIZE, generateObstacles } from './combat.utils'
 import { createPathfindingMap } from './combat.pathfinding'
 import { getTimeoutOutcome, type BattleOutcome } from './combat.outcome'
 import { V8_SIMULATION_REVISION, V8_SIMULATION_VERSION, V9_SIMULATION_REVISION, V9_SIMULATION_VERSION } from './combat.version'
@@ -24,9 +24,16 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
     const upg = GLOBAL_UPGRADES[id]
     if (upg) activeGlobals.push({ team: 'defender', effect: { id: upg.id, type: upg.type, value: upg.value, target: upg.target } })
   })
-  const obstacles: Obstacle[] = providedObstacles || generateObstacles(seed);
-  const flowFieldMap = createPathfindingMap(obstacles)
+  const obstacles: Obstacle[] = options.arena?.obstacles ?? providedObstacles ?? generateObstacles(seed);
+  const arena = {
+    width: options.arena?.width ?? FIELD_WIDTH,
+    height: options.arena?.height ?? FIELD_HEIGHT,
+    tileSize: options.arena?.tileSize ?? TILE_SIZE,
+    obstacles,
+  }
+  const flowFieldMap = createPathfindingMap(obstacles, arena)
   runtime.world.resources.set('catalog', { unitTypes: UNIT_TYPES, upgrades: UPGRADES })
+  runtime.world.resources.set('arena', arena)
   attackerUnits.forEach(row => runtime.addSquad(row, 'attacker', rng))
   defenderUnits.forEach(row => runtime.addSquad(row, 'defender', rng))
 
@@ -38,6 +45,7 @@ export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[
   resources.set('rng', rng)
   resources.set('actions', [])
   resources.set('obstacles', obstacles)
+  resources.set('arena', arena)
   resources.set('flowField', flowFieldMap)
   resources.set('globals', activeGlobals)
   resources.set('metrics', metrics)

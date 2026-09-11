@@ -1,5 +1,5 @@
 import type { Team } from '../combat.sim.types'
-import { TILE_SIZE } from '../combat.utils'
+import { getCombatArena } from './combat-resources'
 import type { CombatWorld } from './combat-world'
 import type { EntityId } from './entity'
 import {
@@ -39,6 +39,9 @@ export class TargetingRuntime {
 
   begin(world: CombatWorld): void {
     const startedAt = this.now()
+    const arena = getCombatArena(world)
+    this.teamCells.attacker.reconfigure(arena)
+    this.teamCells.defender.reconfigure(arena)
     this.clearDirty()
     const entityIds = world.query(TARGETABLE_QUERY)
     this.ensureEntityCapacity(world.captureEntityWatermark())
@@ -163,17 +166,18 @@ export class TargetingRuntime {
     radius: number,
     scratch: TargetingScratch,
   ): number {
-    const minCellX = Math.floor((x - radius) / TILE_SIZE)
-    const maxCellX = Math.floor((x + radius) / TILE_SIZE)
-    const minCellY = Math.floor((y - radius) / TILE_SIZE)
-    const maxCellY = Math.floor((y + radius) / TILE_SIZE)
+    const tileSize = cells.tileSize
+    const minCellX = Math.floor((x - radius) / tileSize)
+    const maxCellX = Math.floor((x + radius) / tileSize)
+    const minCellY = Math.floor((y - radius) / tileSize)
+    const maxCellY = Math.floor((y + radius) / tileSize)
     const radiusSq = radius * radius
     let bucketCandidates = 0
     for (let cellX = minCellX; cellX <= maxCellX; cellX++) {
       for (let cellY = minCellY; cellY <= maxCellY; cellY++) {
-        const cell = getTargetingCell(cellX, cellY)
+        const cell = getTargetingCell(cellX, cellY, cells.cellColumns, cells.cellRows)
         if (cell < 0 ||
-            !targetingCellIntersectsCircle(cellX, cellY, x, y, radiusSq)) continue
+            !targetingCellIntersectsCircle(cellX, cellY, x, y, radiusSq, tileSize)) continue
         for (let index = cells.offsets[cell]; index < cells.offsets[cell + 1]; index++) {
           const entityId = cells.entityIds[index]
           bucketCandidates++

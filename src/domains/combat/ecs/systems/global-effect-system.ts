@@ -1,6 +1,7 @@
 import type { BattleAction } from '../../combat.actions'
 import type { ActiveGlobalEffect, ScheduledGlobalEffectKind, Team } from '../../combat.primitives'
-import { FIELD_HEIGHT, FIELD_WIDTH, type PRNG } from '../../combat.utils'
+import type { PRNG } from '../../combat.utils'
+import { getCombatArena } from '../combat-resources'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
 import { applyEcsHealingFromSource } from './healing-system'
@@ -80,8 +81,9 @@ function createOrbitalStrike(
   actions: BattleAction[],
 ): void {
   const enemies = getTeamEntities(world, oppositeTeam(team))
-  let x = FIELD_WIDTH / 2
-  let y = FIELD_HEIGHT / 2
+  const arena = getCombatArena(world)
+  let x = arena.width / 2
+  let y = arena.height / 2
   if (enemies.length > 0) {
     x = 0
     y = 0

@@ -1,18 +1,17 @@
 import type { BattleAction } from './combat.actions'
 import { collectOverlapMetrics } from './combat.metrics-overlap'
-import {
-  MarkMetricsAccumulator,
-  type MarkCombatMetrics,
-} from './combat.mark-metrics'
+import { MarkMetricsAccumulator, type MarkCombatMetrics } from './combat.mark-metrics'
 import type { TimeoutPolicy } from './combat.result'
 import type { CombatWorld } from './ecs/combat-world'
 import { isEcsMeleeEngagementReady } from './ecs/movement-positioning'
+import type { ArenaSpec } from '@mars2050/combat-core/contracts'
 export interface BattleSimulationOptions {
   trackMetrics?: boolean
   maxTicks?: number
   timeoutPolicy?: TimeoutPolicy
   profile?: boolean
   defenseResolutionMode?: 'v8_sequential' | 'v9_snapshot'
+  arena?: ArenaSpec
 }
 
 export interface CombatMetrics {

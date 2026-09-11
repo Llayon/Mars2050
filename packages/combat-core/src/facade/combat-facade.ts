@@ -1,4 +1,4 @@
-import { BattleInput, CombatRunResult, battleInputSchema, combatRunResultSchema } from '../contracts/index.js'
+import { BattleInput, BattleInputSpec, CombatRunResult, battleInputSchema, combatRunResultSchema } from '../contracts/index.js'
 
 export type CombatSimulatorHandler = (input: BattleInput) => CombatRunResult
 
@@ -16,7 +16,7 @@ export function registerCombatSimulator(handler: CombatSimulatorHandler): void {
  * Simulates a battle deterministically using the registered simulation engine.
  * Validates inputs against BattleInput Zod contract and output against CombatRunResult.
  */
-export function simulateCombat(input: BattleInput): CombatRunResult {
+export function simulateCombat(input: BattleInputSpec): CombatRunResult {
   const parsedInput = battleInputSchema.parse(input)
   if (!activeSimulator) {
     throw new Error('Combat simulator engine is not registered. Ensure combat-core runtime is loaded.')

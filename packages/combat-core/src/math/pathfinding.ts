@@ -5,55 +5,77 @@ export const DEFAULT_TILE_SIZE = 40
 export const COLS = Math.ceil(DEFAULT_FIELD_WIDTH / DEFAULT_TILE_SIZE)
 export const ROWS = Math.ceil(DEFAULT_FIELD_HEIGHT / DEFAULT_TILE_SIZE)
 
+export interface PathfindingArenaOptions {
+  width?: number
+  height?: number
+  tileSize?: number
+}
+
 export interface FlowFieldMap {
   costField: Uint8Array
   vectorFields: Map<number, Float32Array>
+  cols?: number
+  rows?: number
+  tileSize?: number
 }
 
-export function createPathfindingMap(obstacles: { x: number; y: number; radius: number }[]): FlowFieldMap {
-  const costField = new Uint8Array(COLS * ROWS)
+export function createPathfindingMap(
+  obstacles: { x: number; y: number; radius: number }[],
+  arena?: PathfindingArenaOptions,
+): FlowFieldMap {
+  const width = arena?.width ?? DEFAULT_FIELD_WIDTH
+  const height = arena?.height ?? DEFAULT_FIELD_HEIGHT
+  const tileSize = arena?.tileSize ?? DEFAULT_TILE_SIZE
+  const cols = Math.ceil(width / tileSize)
+  const rows = Math.ceil(height / tileSize)
+
+  const costField = new Uint8Array(cols * rows)
   costField.fill(1)
 
   for (const obs of obstacles) {
-    const minX = Math.max(0, Math.floor((obs.x - obs.radius) / DEFAULT_TILE_SIZE))
-    const maxX = Math.min(COLS - 1, Math.floor((obs.x + obs.radius) / DEFAULT_TILE_SIZE))
-    const minY = Math.max(0, Math.floor((obs.y - obs.radius) / DEFAULT_TILE_SIZE))
-    const maxY = Math.min(ROWS - 1, Math.floor((obs.y + obs.radius) / DEFAULT_TILE_SIZE))
+    const minX = Math.max(0, Math.floor((obs.x - obs.radius) / tileSize))
+    const maxX = Math.min(cols - 1, Math.floor((obs.x + obs.radius) / tileSize))
+    const minY = Math.max(0, Math.floor((obs.y - obs.radius) / tileSize))
+    const maxY = Math.min(rows - 1, Math.floor((obs.y + obs.radius) / tileSize))
 
     for (let y = minY; y <= maxY; y++) {
       for (let x = minX; x <= maxX; x++) {
-        const cx = x * DEFAULT_TILE_SIZE + DEFAULT_TILE_SIZE / 2
-        const cy = y * DEFAULT_TILE_SIZE + DEFAULT_TILE_SIZE / 2
+        const cx = x * tileSize + tileSize / 2
+        const cy = y * tileSize + tileSize / 2
         const dist = Math.hypot(cx - obs.x, cy - obs.y)
-        if (dist <= obs.radius + DEFAULT_TILE_SIZE / 1.5) {
-          costField[y * COLS + x] = 255
+        if (dist <= obs.radius + tileSize / 1.5) {
+          costField[y * cols + x] = 255
         }
       }
     }
   }
 
-  return { costField, vectorFields: new Map() }
+  return { costField, vectorFields: new Map(), cols, rows, tileSize }
 }
 
 export function getFlowVector(map: FlowFieldMap, startX: number, startY: number, targetX: number, targetY: number): number | null {
-  const tx = Math.max(0, Math.min(COLS - 1, Math.floor(targetX / DEFAULT_TILE_SIZE)))
-  const ty = Math.max(0, Math.min(ROWS - 1, Math.floor(targetY / DEFAULT_TILE_SIZE)))
-  const tIndex = ty * COLS + tx
+  const cols = map.cols ?? COLS
+  const rows = map.rows ?? ROWS
+  const tileSize = map.tileSize ?? DEFAULT_TILE_SIZE
+
+  const tx = Math.max(0, Math.min(cols - 1, Math.floor(targetX / tileSize)))
+  const ty = Math.max(0, Math.min(rows - 1, Math.floor(targetY / tileSize)))
+  const tIndex = ty * cols + tx
 
   let vectorField = map.vectorFields.get(tIndex)
   if (!vectorField) {
-    vectorField = generateVectorField(map.costField, tx, ty)
+    vectorField = generateVectorField(map.costField, tx, ty, cols, rows)
     map.vectorFields.set(tIndex, vectorField)
   }
 
-  const sx = Math.max(0, Math.min(COLS - 1, Math.floor(startX / DEFAULT_TILE_SIZE)))
-  const sy = Math.max(0, Math.min(ROWS - 1, Math.floor(startY / DEFAULT_TILE_SIZE)))
+  const sx = Math.max(0, Math.min(cols - 1, Math.floor(startX / tileSize)))
+  const sy = Math.max(0, Math.min(rows - 1, Math.floor(startY / tileSize)))
 
   if (sx === tx && sy === ty) {
     return Math.atan2(targetY - startY, targetX - startX)
   }
 
-  const sIndex = sy * COLS + sx
+  const sIndex = sy * cols + sx
   const angle = vectorField[sIndex]
 
   if (isNaN(angle)) {
@@ -68,11 +90,11 @@ export function getFlowVector(map: FlowFieldMap, startX: number, startY: number,
     for (const n of neighbors) {
       const nx = sx + n.dx
       const ny = sy + n.dy
-      if (nx >= 0 && nx < COLS && ny >= 0 && ny < ROWS) {
-        const nIdx = ny * COLS + nx
+      if (nx >= 0 && nx < cols && ny >= 0 && ny < rows) {
+        const nIdx = ny * cols + nx
         const nCost = vectorField[nIdx]
         if (!isNaN(nCost)) {
-          const angleToNeighbor = Math.atan2((sy + n.dy) * DEFAULT_TILE_SIZE + DEFAULT_TILE_SIZE / 2 - startY, (sx + n.dx) * DEFAULT_TILE_SIZE + DEFAULT_TILE_SIZE / 2 - startX)
+          const angleToNeighbor = Math.atan2((sy + n.dy) * tileSize + tileSize / 2 - startY, (sx + n.dx) * tileSize + tileSize / 2 - startX)
           let diff = angleToNeighbor - directAngle
           while (diff > Math.PI) diff -= Math.PI * 2
           while (diff < -Math.PI) diff += Math.PI * 2
@@ -90,11 +112,11 @@ export function getFlowVector(map: FlowFieldMap, startX: number, startY: number,
   return angle
 }
 
-function generateVectorField(costField: Uint8Array, tx: number, ty: number): Float32Array {
-  const size = COLS * ROWS
+function generateVectorField(costField: Uint8Array, tx: number, ty: number, cols: number = COLS, rows: number = ROWS): Float32Array {
+  const size = cols * rows
   const integrationField = new Uint32Array(size)
   integrationField.fill(0xFFFFFFFF)
-  const targetIdx = ty * COLS + tx
+  const targetIdx = ty * cols + tx
   integrationField[targetIdx] = 0
 
   const queue: number[] = [targetIdx]
@@ -106,15 +128,15 @@ function generateVectorField(costField: Uint8Array, tx: number, ty: number): Flo
 
   while (head < queue.length) {
     const idx = queue[head++]
-    const cx = idx % COLS
-    const cy = Math.floor(idx / COLS)
+    const cx = idx % cols
+    const cy = Math.floor(idx / cols)
     const currentCost = integrationField[idx]
 
     for (const n of neighbors) {
       const nx = cx + n.dx
       const ny = cy + n.dy
-      if (nx >= 0 && nx < COLS && ny >= 0 && ny < ROWS) {
-        const nIdx = ny * COLS + nx
+      if (nx >= 0 && nx < cols && ny >= 0 && ny < rows) {
+        const nIdx = ny * cols + nx
         const cellCost = costField[nIdx]
         if (cellCost === 255) continue
         const moveCost = (n.dx !== 0 && n.dy !== 0) ? cellCost * 14 : cellCost * 10
@@ -129,9 +151,9 @@ function generateVectorField(costField: Uint8Array, tx: number, ty: number): Flo
   const vectorField = new Float32Array(size)
   vectorField.fill(NaN)
 
-  for (let y = 0; y < ROWS; y++) {
-    for (let x = 0; x < COLS; x++) {
-      const idx = y * COLS + x
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
+      const idx = y * cols + x
       if (costField[idx] === 255 && idx !== targetIdx) continue
 
       let minCost = integrationField[idx]
@@ -141,8 +163,8 @@ function generateVectorField(costField: Uint8Array, tx: number, ty: number): Flo
       for (const n of neighbors) {
         const nx = x + n.dx
         const ny = y + n.dy
-        if (nx >= 0 && nx < COLS && ny >= 0 && ny < ROWS) {
-          const nIdx = ny * COLS + nx
+        if (nx >= 0 && nx < cols && ny >= 0 && ny < rows) {
+          const nIdx = ny * cols + nx
           if (integrationField[nIdx] < minCost) {
             minCost = integrationField[nIdx]
             bestDx = n.dx

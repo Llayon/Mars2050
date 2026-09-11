@@ -1,7 +1,8 @@
 import type { BattleAction } from '../../combat.actions'
 import { getFlowVector } from '../../combat.pathfinding'
 import type { RuntimeMovementContext } from '../../combat.runtime'
-import { FIELD_HEIGHT, FIELD_WIDTH, getDistance, getSizeRadius } from '../../combat.utils'
+import { getDistance, getSizeRadius } from '../../combat.utils'
+import { getCombatArena } from '../combat-resources'
 import type { CombatWorld } from '../combat-world'
 import type {
   MovementIntent,
@@ -36,6 +37,7 @@ export function createBatchMovementIntent(
   actions: BattleAction[],
   context: RuntimeMovementContext,
 ): MovementIntent | null {
+  const arena = getCombatArena(world)
   const entityId = request.entityId
   const vitality = world.stores.vitality.get(entityId)
   const frozen = graph.frame.transforms[entityId]
@@ -151,8 +153,8 @@ export function createBatchMovementIntent(
       vy = (vy / magnitude) * maxSpeed
     }
     blendVelocity(transform.velocity, vx, vy, context.dt, maxSpeed)
-    transform.x = clamp(transform.x + transform.velocity.x * context.dt, 0, FIELD_WIDTH)
-    transform.y = clamp(transform.y + transform.velocity.y * context.dt, 0, FIELD_HEIGHT)
+    transform.x = clamp(transform.x + transform.velocity.x * context.dt, 0, arena.width)
+    transform.y = clamp(transform.y + transform.velocity.y * context.dt, 0, arena.height)
     return createIntent(request, identity.team, frozen.x, frozen.y, transform, angleDifference, false)
   }
 
@@ -199,8 +201,8 @@ export function createBatchMovementIntent(
     transform.velocity.y *= 0.6
     clampVelocity(transform.velocity, maxSpeed)
   }
-  transform.x = clamp(transform.x + transform.velocity.x * context.dt, 0, FIELD_WIDTH)
-  transform.y = clamp(transform.y + transform.velocity.y * context.dt, 0, FIELD_HEIGHT)
+  transform.x = clamp(transform.x + transform.velocity.x * context.dt, 0, arena.width)
+  transform.y = clamp(transform.y + transform.velocity.y * context.dt, 0, arena.height)
   return createIntent(
     request, identity.team, frozen.x, frozen.y, transform, angleDifference,
     movement.isMoving ?? false,

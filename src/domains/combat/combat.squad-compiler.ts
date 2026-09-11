@@ -14,8 +14,9 @@ export function compileSquadBundles(
   team: Team,
   rng: PRNG,
   catalog?: import('./combat.catalog.types').CombatCatalog,
+  arena?: { width: number; height: number },
 ): UnitEntityBundle[] {
-  return createSquadBuildSpecs(row, team, rng, catalog).flatMap(spec => {
+  return createSquadBuildSpecs(row, team, rng, catalog, arena).flatMap(spec => {
     const compiled = compileUnit(spec)
     return compiled ? [compiled] : []
   })
@@ -26,6 +27,7 @@ export function createSquadBuildSpecs(
   team: Team,
   rng: PRNG,
   catalog?: import('./combat.catalog.types').CombatCatalog,
+  arena?: { width: number; height: number },
 ): UnitBuildSpec[] {
   const unitCatalog = catalog?.unitTypes ?? UNIT_TYPES
   const config = unitCatalog[row.unit_type]
@@ -36,12 +38,14 @@ export function createSquadBuildSpecs(
     config.baseStats,
   )
   const rowSize = Math.ceil(Math.sqrt(squadSize))
+  const arenaWidth = arena?.width ?? FIELD_WIDTH
+  const arenaHeight = arena?.height ?? FIELD_HEIGHT
   const rawX = row.grid_x != null
     ? row.grid_x
-    : String(Math.floor(rng.next() * FIELD_WIDTH))
+    : String(Math.floor(rng.next() * arenaWidth))
   const rawY = row.grid_y != null
     ? row.grid_y
-    : String(Math.floor(rng.next() * 320) + (team === 'attacker' ? FIELD_HEIGHT - 320 : 0))
+    : String(Math.floor(rng.next() * 320) + (team === 'attacker' ? arenaHeight - 320 : 0))
   const centerX = Number(rawX)
   const centerY = Number(rawY)
   const squadId = squadSize > 1 ? `${row.id}_squad` : undefined

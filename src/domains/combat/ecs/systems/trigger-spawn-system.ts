@@ -2,7 +2,7 @@ import type { BattleAction } from '../../combat.actions'
 import type { TriggerPayload } from '../../combat.sim.types'
 import type { UnitTypeKey } from '../../combat.types'
 import { compileUnit } from '../../combat.unit-compiler'
-import { FIELD_HEIGHT, FIELD_WIDTH } from '../../combat.utils'
+import { getCombatArena } from '../combat-resources'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
 
@@ -25,10 +25,11 @@ export function spawnEcsTriggerUnits(
     return identity.summonSourceId === sourceKey
   }).length
   const count = Math.max(1, payload.count ?? 1)
+  const arena = getCombatArena(world)
   let spawned = 0
 
   for (let index = 0; index < count && existing + spawned < cap; index++) {
-    const position = getSpawnPosition(anchor)
+    const position = getSpawnPosition(anchor, arena)
     const unit = compileUnit({
       definitionId: payload.unitType as UnitTypeKey,
       identity: {
@@ -72,10 +73,11 @@ export function spawnEcsTriggerUnits(
 
 function getSpawnPosition(
   anchor: { x: number; y: number },
+  arena: { width: number; height: number },
 ): { x: number; y: number } {
   return {
-    x: clamp(anchor.x, FIELD_WIDTH),
-    y: clamp(anchor.y, FIELD_HEIGHT),
+    x: clamp(anchor.x, arena.width),
+    y: clamp(anchor.y, arena.height),
   }
 }
 

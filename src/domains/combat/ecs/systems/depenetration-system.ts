@@ -1,5 +1,6 @@
 import type { BattleAction } from '../../combat.actions'
-import { FIELD_HEIGHT, FIELD_WIDTH, getSizeMass, getSizeRadius } from '../../combat.utils'
+import { getSizeMass, getSizeRadius } from '../../combat.utils'
+import { getCombatArena } from '../combat-resources'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
 
@@ -80,13 +81,14 @@ function addCorrection(corrections: Map<EntityId, { x: number; y: number }>, ent
 
 function applyCorrection(world: CombatWorld, entityId: EntityId, correction: { x: number; y: number }, actions: BattleAction[]): void {
   if (Math.hypot(correction.x, correction.y) <= MIN_EMIT_DISTANCE) return
+  const arena = getCombatArena(world)
   const transform = world.stores.transform.require(entityId)
   const fromX = transform.x
   const fromY = transform.y
   world.setEntityPosition(
     entityId,
-    clamp(transform.x + correction.x, 0, FIELD_WIDTH),
-    clamp(transform.y + correction.y, 0, FIELD_HEIGHT),
+    clamp(transform.x + correction.x, 0, arena.width),
+    clamp(transform.y + correction.y, 0, arena.height),
   )
   if (Math.hypot(transform.x - fromX, transform.y - fromY) <= MIN_EMIT_DISTANCE) return
   actions.push({

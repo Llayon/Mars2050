@@ -19,6 +19,8 @@ import type { AttackTimelineState } from './pending-impacts'
 import type { DefenseResolutionMode } from './defense-batch'
 import type { TriggerPayload } from '../combat.sim.types'
 import type { DamageOrderKey } from './defense-batch'
+import type { ArenaSpec } from '@mars2050/combat-core/contracts'
+import { FIELD_HEIGHT, FIELD_WIDTH, TILE_SIZE } from '../combat.utils'
 
 export interface V9FollowUpJob {
   ownerExternalId: string
@@ -63,6 +65,7 @@ export interface CombatResourceMap {
   v9FollowUpChainPath: readonly string[] | undefined
   statusDamageAttribution: Map<string, DamageAttribution>
   catalog?: import('../combat.catalog.types').CombatCatalog
+  arena?: ArenaSpec
 }
 
 export class CombatResourceStore {
@@ -80,4 +83,15 @@ export class CombatResourceStore {
     if (!this.values.has(name)) throw new Error(`Missing combat resource: ${name}`)
     return this.values.get(name) as CombatResourceMap[Name]
   }
+}
+
+export function getCombatArena(world: { resources: CombatResourceStore }): ArenaSpec {
+  return (
+    world.resources.get('arena') ?? {
+      width: FIELD_WIDTH,
+      height: FIELD_HEIGHT,
+      tileSize: TILE_SIZE,
+      obstacles: world.resources.get('obstacles') ?? [],
+    }
+  )
 }

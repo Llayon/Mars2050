@@ -1,6 +1,7 @@
 import type { BattleAction } from '../../combat.actions'
 import { compareEntityExternalIdsForMode } from '../authored-order'
-import { FIELD_HEIGHT, FIELD_WIDTH, getDistance, getSizeRadius } from '../../combat.utils'
+import { getDistance, getSizeRadius } from '../../combat.utils'
+import { getCombatArena } from '../combat-resources'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
 
@@ -35,6 +36,7 @@ function applyPull(
 ): void {
   const config = override ?? world.stores.weapon.require(attackerId).pullOnHit
   if (!config) return
+  const arena = getCombatArena(world)
   const center = world.stores.transform.require(centerId)
   for (const targetId of getTargets(world, attackerId, centerId, config.radius, config.maxTargets, false)) {
     const target = world.stores.transform.require(targetId)
@@ -46,8 +48,8 @@ function applyPull(
     const fromY = target.y
     world.setEntityPosition(
       targetId,
-      clamp(target.x + ((center.x - target.x) / distance) * step, 0, FIELD_WIDTH),
-      clamp(target.y + ((center.y - target.y) / distance) * step, 0, FIELD_HEIGHT),
+      clamp(target.x + ((center.x - target.x) / distance) * step, 0, arena.width),
+      clamp(target.y + ((center.y - target.y) / distance) * step, 0, arena.height),
     )
     target.velocity = { x: 0, y: 0 }
     actions.push({
@@ -71,6 +73,7 @@ function applyKnockback(
 ): void {
   const config = override ?? world.stores.weapon.require(attackerId).knockbackOnHit
   if (!config || config.strength <= 0) return
+  const arena = getCombatArena(world)
   const source = world.stores.transform.require(attackerId)
   for (const targetId of getTargets(world, attackerId, centerId, config.radius, config.maxTargets, true)) {
     const target = world.stores.transform.require(targetId)
@@ -84,8 +87,8 @@ function applyKnockback(
     }
     const fromX = target.x
     const fromY = target.y
-    const toX = clamp(target.x + (dx / distance) * config.strength, 0, FIELD_WIDTH)
-    const toY = clamp(target.y + (dy / distance) * config.strength, 0, FIELD_HEIGHT)
+    const toX = clamp(target.x + (dx / distance) * config.strength, 0, arena.width)
+    const toY = clamp(target.y + (dy / distance) * config.strength, 0, arena.height)
     if (toX === fromX && toY === fromY) continue
     world.setEntityPosition(targetId, toX, toY)
     target.velocity = { x: 0, y: 0 }

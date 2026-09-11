@@ -62,7 +62,7 @@ export function createSpawnBuildSpecs(
       },
       loadout: {
         rank: spec.rank,
-        upgradeIds: [...spec.upgradeIds],
+        upgradeIds: spec.upgradeIds ? [...spec.upgradeIds] : [],
       },
       placement: {
         x: centerX + offset.x,

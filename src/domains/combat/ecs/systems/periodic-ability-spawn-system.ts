@@ -2,7 +2,7 @@ import type { BattleAction } from '../../combat.actions'
 import type { PeriodicAbilityPayload } from '../../combat.sim.types'
 import type { UnitTypeKey } from '../../combat.types'
 import { compileUnit } from '../../combat.unit-compiler'
-import { FIELD_HEIGHT, FIELD_WIDTH } from '../../combat.utils'
+import { getCombatArena } from '../combat-resources'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
 
@@ -27,6 +27,7 @@ export function spawnEcsPeriodicUnits(
     })
     .length
   const count = Math.max(1, payload.count ?? 1)
+  const arena = getCombatArena(world)
   let spawned = 0
   for (let index = 0; index < count && existing + spawned < cap; index++) {
     const position = getSpawnPosition(
@@ -34,6 +35,7 @@ export function spawnEcsPeriodicUnits(
       payload.spreadRadius ?? 0,
       index,
       count,
+      arena,
     )
     const unit = compileUnit({
       definitionId: payload.unitType as UnitTypeKey,
@@ -82,14 +84,15 @@ function getSpawnPosition(
   radius: number,
   index: number,
   count: number,
+  arena: { width: number; height: number },
 ): { x: number; y: number } {
   if (radius <= 0 || count <= 1) {
-    return { x: clamp(anchor.x, FIELD_WIDTH), y: clamp(anchor.y, FIELD_HEIGHT) }
+    return { x: clamp(anchor.x, arena.width), y: clamp(anchor.y, arena.height) }
   }
   const angle = (Math.PI * 2 * index) / count
   return {
-    x: clamp(anchor.x + Math.cos(angle) * radius, FIELD_WIDTH),
-    y: clamp(anchor.y + Math.sin(angle) * radius, FIELD_HEIGHT),
+    x: clamp(anchor.x + Math.cos(angle) * radius, arena.width),
+    y: clamp(anchor.y + Math.sin(angle) * radius, arena.height),
   }
 }
 

@@ -1,4 +1,3 @@
-import { TILE_SIZE } from '../combat.utils'
 import type { EntityId } from './entity'
 import {
   buildPackedMovementCells,
@@ -15,9 +14,10 @@ export function buildMovementCollisionPairs(
   y: readonly number[],
   dirtyEntities: ReadonlySet<EntityId>,
   searchDistance: number,
+  arena?: { width: number; height: number; tileSize?: number },
 ): [EntityId, EntityId][] {
-  const cells = buildPackedMovementCells(entityIds, x, y)
-  const reach = Math.ceil(searchDistance / TILE_SIZE)
+  const cells = buildPackedMovementCells(entityIds, x, y, arena)
+  const reach = Math.ceil(searchDistance / cells.tileSize)
   const radiusSquared = searchDistance * searchDistance
   if (dirtyEntities.size * 2 < entityIds.length) {
     return buildDirtyPairs(entityIds, x, y, dirtyEntities, cells, reach, radiusSquared)
@@ -39,13 +39,15 @@ function buildDirtyPairs(
   const span = (entityIds[entityIds.length - 1] ?? 0) + 1
   for (const firstId of [...dirtyEntities].sort((left, right) => left - right)) {
     if (x[firstId] === undefined) continue
-    const cellX = getPackedMovementCellX(x[firstId])
-    const cellY = getPackedMovementCellY(y[firstId])
+    const cellX = getPackedMovementCellX(x[firstId], cells.cellColumns, cells.tileSize)
+    const cellY = getPackedMovementCellY(y[firstId], cells.cellRows, cells.tileSize)
     for (let offsetX = -reach; offsetX <= reach; offsetX++) {
       for (let offsetY = -reach; offsetY <= reach; offsetY++) {
         const cell = getPackedMovementCellByCoordinates(
           cellX + offsetX,
           cellY + offsetY,
+          cells.cellColumns,
+          cells.cellRows,
         )
         if (cell < 0) continue
         for (let index = cells.offsets[cell]; index < cells.offsets[cell + 1]; index++) {
@@ -77,12 +79,14 @@ function buildAllPairs(
   for (let occupied = 0; occupied < cells.occupiedCount; occupied++) {
     const firstCell = cells.occupiedCells[occupied]
     addBucketPairs(pairs, cells, firstCell, firstCell, true, x, y, radiusSquared)
-    const { cellX, cellY } = getPackedMovementCellCoordinates(firstCell)
+    const { cellX, cellY } = getPackedMovementCellCoordinates(firstCell, cells.cellRows)
     for (let offsetX = -reach; offsetX <= reach; offsetX++) {
       for (let offsetY = -reach; offsetY <= reach; offsetY++) {
         const secondCell = getPackedMovementCellByCoordinates(
           cellX + offsetX,
           cellY + offsetY,
+          cells.cellColumns,
+          cells.cellRows,
         )
         if (secondCell <= firstCell ||
             cells.offsets[secondCell] === cells.offsets[secondCell + 1]) continue

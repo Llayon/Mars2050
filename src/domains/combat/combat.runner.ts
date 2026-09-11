@@ -29,9 +29,10 @@ export function executeCombatSimulation(input: BattleInput): CombatRunResult {
   const catalog: CombatCatalog = { unitTypes }
 
   const obstacles = arena.obstacles
-  const flowFieldMap = createPathfindingMap(obstacles)
+  const flowFieldMap = createPathfindingMap(obstacles, arena)
 
   runtime.world.resources.set('catalog', catalog)
+  runtime.world.resources.set('arena', arena)
 
   for (const spawnSpec of input.units) {
     const bundles = compileSpawnSpecBundles(spawnSpec, input.definitions, catalog, rng, arena.width, arena.height)
@@ -47,6 +48,7 @@ export function executeCombatSimulation(input: BattleInput): CombatRunResult {
   resources.set('rng', rng)
   resources.set('actions', [])
   resources.set('obstacles', obstacles)
+  resources.set('arena', arena)
   resources.set('flowField', flowFieldMap)
   resources.set('globals', [])
 

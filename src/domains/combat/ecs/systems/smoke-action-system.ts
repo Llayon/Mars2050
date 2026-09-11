@@ -2,7 +2,8 @@ import type { BattleAction } from '../../combat.actions'
 import type { RuntimeActionContext, RuntimeActionResult } from '../../combat.runtime'
 import type { StatusEffect } from '../../combat.sim.types'
 import type { UnitWeaponComponent } from '../../combat.unit-ability-components'
-import { FIELD_HEIGHT, FIELD_WIDTH, getDistance, getSizeRadius } from '../../combat.utils'
+import { getDistance, getSizeRadius } from '../../combat.utils'
+import { getCombatArena } from '../combat-resources'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
 import {
@@ -70,8 +71,9 @@ function deploySmoke(
   const dy = targetTransform.y - transform.y
   const distance = Math.hypot(dx, dy) || 1
   const placementDistance = Math.min(range, Math.max(24, distance * 0.75))
-  const x = clamp(transform.x + (dx / distance) * placementDistance, 0, FIELD_WIDTH)
-  const y = clamp(transform.y + (dy / distance) * placementDistance, 0, FIELD_HEIGHT)
+  const arena = getCombatArena(world)
+  const x = clamp(transform.x + (dx / distance) * placementDistance, 0, arena.width)
+  const y = clamp(transform.y + (dy / distance) * placementDistance, 0, arena.height)
   const id = world.allocateExternalId('smoke')
 
   world.queueHazardCreation({

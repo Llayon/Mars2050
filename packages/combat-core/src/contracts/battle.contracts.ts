@@ -48,6 +48,7 @@ export const battleInputSchema = z.object({
   scheduledEffects: z.array(scheduledEffectSchema).default([]),
 })
 export type BattleInput = z.infer<typeof battleInputSchema>
+export type BattleInputSpec = z.input<typeof battleInputSchema>
 
 export const combatWinnerSchema = z.enum(['attacker', 'defender', 'draw'])
 export type CombatWinner = z.infer<typeof combatWinnerSchema>

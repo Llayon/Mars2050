@@ -1,6 +1,6 @@
 import type { BattleAction } from '../../combat.actions'
 import type { TransformModeConfig } from '../../combat.sim.types'
-import { FIELD_HEIGHT } from '../../combat.utils'
+import { getCombatArena } from '../combat-resources'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
 import { compareEntityExternalIdsForMode } from '../authored-order'
@@ -90,12 +90,13 @@ function applyTransformMode(
   if (mode.isFlying !== undefined) transform.isFlying = mode.isFlying
   if (mode.canTargetAir !== undefined) combat.canTargetAir = mode.canTargetAir
   if (mode.mode === 'jump' && mode.jumpDistance) {
+    const arena = getCombatArena(world)
     const team = world.stores.identity.require(entityId).team
     const direction = team === 'attacker' ? -1 : 1
     world.setEntityPosition(
       entityId,
       transform.x,
-      Math.max(0, Math.min(FIELD_HEIGHT, transform.y + direction * mode.jumpDistance)),
+      Math.max(0, Math.min(arena.height, transform.y + direction * mode.jumpDistance)),
     )
   }
 

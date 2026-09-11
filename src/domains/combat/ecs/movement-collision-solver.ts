@@ -1,4 +1,5 @@
-import { FIELD_HEIGHT, FIELD_WIDTH, getSizeMass, getSizeRadius } from '../combat.utils'
+import { getSizeMass, getSizeRadius } from '../combat.utils'
+import { getCombatArena } from './combat-resources'
 import type { CombatWorld } from './combat-world'
 import type { EntityId } from './entity'
 import type { MovementFrame, MovementIntent } from './movement-batch.types'
@@ -47,12 +48,14 @@ export function solveBatchMovementCollisions(
     velocityY[intent.entityId] = intent.velocityY
   }
 
+  const arena = getCombatArena(world)
   const pairs = buildMovementCollisionPairs(
     frame.entityIds,
     x,
     y,
     dirtyEntities,
     PAIR_SEARCH_DISTANCE,
+    arena,
   )
   const corrected = new Set<EntityId>()
   let overlapPairCount = 0
@@ -107,8 +110,8 @@ export function solveBatchMovementCollisions(
       const moveX = rawX * scale
       const moveY = rawY * scale
       if (Math.hypot(moveX, moveY) > 0.1) corrected.add(entityId)
-      x[entityId] = clamp(x[entityId] + moveX, 0, FIELD_WIDTH)
-      y[entityId] = clamp(y[entityId] + moveY, 0, FIELD_HEIGHT)
+      x[entityId] = clamp(x[entityId] + moveX, 0, arena.width)
+      y[entityId] = clamp(y[entityId] + moveY, 0, arena.height)
       velocityX[entityId] += velocityDeltaX[entityId] ?? 0
       velocityY[entityId] += velocityDeltaY[entityId] ?? 0
     }

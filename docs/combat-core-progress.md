@@ -93,10 +93,16 @@
 | 2026-09-11 17:16 UTC / E3 snapshot | `npm run test:combat:package` / `D:\Max\Mars2050` | 0 | `PASS` | Archive smoke passed (sha256: f700e20a...), standalone consumer ok |
 | 2026-09-11 17:16 UTC / E3 snapshot | `npx tsx scripts/check-limits.ts --diff HEAD --json` / `D:\Max\Mars2050` | 0 | `PASS` | status: passed, 0 violations |
 
+| 2026-09-11 17:36 UTC / E4 snapshot | `npm run test:combat:package` / `D:\Max\Mars2050` | 0 | `PASS` | Archive smoke passed (sha256: f8955c96...), standalone consumer ok |
+| 2026-09-11 17:39 UTC / E4 snapshot | `npx tsc --noEmit` / `D:\Max\Mars2050` | 0 | `PASS` | 0 errors across workspace |
+| 2026-09-11 17:39 UTC / E4 snapshot | `npx tsx scripts/check-limits.ts --diff HEAD --json` / `D:\Max\Mars2050` | 0 | `PASS` | status: passed, 0 violations |
+| 2026-09-11 17:40 UTC / E4 snapshot | `npm test src/__tests__/combat.ecs-v8-golden.test.ts src/__tests__/combat.ecs-v9-golden.test.ts` / `D:\Max\Mars2050` | 0 | `PASS` | 16 tests passed, V8/V9 goldens 100% stable SHA-256 |
+| 2026-09-11 17:42 UTC / E4 snapshot | `npm test` / `D:\Max\Mars2050` | 0 | `PASS` | 200 test files passed (806 tests passed) |
+
 ## Независимое ревью
 
-- Reviewer / отдельная сессия / UTC: Independent Read-Only Architecture Reviewer (subagent `b1561673-4616-40d6-90e4-27bbe9ab4c7f`) / 2026-09-11 17:19 UTC (E3).
-- Проверенные критерии и snapshot: ECS runtime de-alienation (movement traits decoupled to UnitRuntimeRules), catalog targetingProfiles fallback, scheduled global effects decoupled to ActiveGlobalEffect/ScheduledGlobalEffect, outcome policies verified, 199 test files (800 tests) PASS, tsc 0 errors, check-limits 0 violations, V8/V9 goldens 100% identical.
+- Reviewer / отдельная сессия / UTC: Independent Read-Only Architecture Reviewer (subagent `9214800f-e847-4a50-b908-b66d4a1f798b`) / 2026-09-11 17:45 UTC (E4).
+- Проверенные критерии и snapshot: Pathfinding decoupling (FlowFieldMap dynamic cols/rows/tileSize with fallback to Martian 600x1200/40), Arena in ECS resources (getCombatArena), spatial cell dynamic reconfigure and bucketing in movement & targeting, ECS system boundary clamping across all 11 systems using arena width/height, non-standard arena execution & alternating arenas isolation (6 tests in combat.arena-decoupling.test.ts), 200 test files (806 tests) PASS, tsc 0 errors, check-limits 0 violations, V8/V9 goldens 100% identical.
 - Вердикт: `PASS`.
 
 | ID замечания | Критерий / файл / доказательство | Исправление / проверка | Статус |
@@ -118,24 +124,29 @@
 | REV-E3-TARGETING | Профили прицеливания из catalog с безопасным fallback | Проверено независимым ревьюером: targeting-evaluation.ts | `PASS` |
 | REV-E3-GLOBALS | Декаплинг GLOBAL_UPGRADES в нейтральные ActiveGlobalEffect | Проверено независимым ревьюером: phase, resources, global-effect-system | `PASS` |
 | REV-E3-OUTCOME | Политики завершения (elimination, mutual_elimination, stalemate, timeout) | Проверено независимым ревьюером: outcome-system.ts | `PASS` |
+| REV-E4-PATHFIND | Декаплинг FlowFieldMap, динамический расчет cols/rows/tileSize с марсианским fallback | Проверено независимым ревьюером: packages/combat-core/src/math/pathfinding.ts | `PASS` |
+| REV-E4-RESOURCES | Ресурс arena в ECS, вспомогательная функция getCombatArena(world) | Проверено независимым ревьюером: combat-resources.ts, combat.engine.ts, runner.ts | `PASS` |
+| REV-E4-CELLS | Динамические сетки movement и targeting под размеры арены | Проверено независимым ревьюером: movement-packed-cells, targeting-packed-cells | `PASS` |
+| REV-E4-CLAMPING | Клампинг границ по арене во всех 11 ECS-системах (0 жестких 600/1200) | Проверено независимым ревьюером: systems/*.ts | `PASS` |
+| REV-E4-ISOLATION | Изоляция симуляций на чередующихся аренах разного размера без утечки состояния | Проверено независимым ревьюером: combat.arena-decoupling.test.ts (6 тестов) | `PASS` |
 
 ## Решения, блокеры и восстановление
 
-- Новые подтверждённые факты последней попытки: Рубеж B1 официально принят. Автономный бой с собственными определениями фэнтези (`orc_warrior`, `elven_archer`, `goblin_shaman`, `fire_elemental`) успешно симулируется с 100% байт-в-байт детерминизмом. Призыв существ во время боя (`goblin_shaman` с `attackType: 'spawn'` создает `fire_elemental`) подтверждён (3 призыва за 97 тиков). Пакет `@mars2050/combat-core` экспортирует `getFormationOffset` из math, внешняя сборка и архивный smoke-тест (sha256 `f700e20a...`) проходят с кодом 0.
+- Новые подтверждённые факты последней попытки: Рубеж E4 (Arena and Physical Context Decoupling) официально принят. Размеры арены (`width`, `height`, `tileSize`), препятствия и физические ограничения передаются через контекст арены (`world.resources.set('arena', arena)`). Все 11 ECS-систем, пространственные структуры (movement/targeting packed cells) и алгоритмы волнового поля (flow field) используют динамические размеры арены с безопасным fallback к марсианским умолчаниям (`600x1200`, `tileSize=40`). Тестовый набор из 6 сценариев в `combat.arena-decoupling.test.ts` полностью пройден. Сохранена 100% байт-в-байт идентичность золотых слепков V8/V9. Все 200 файлов тестов (806 тестов) проходят успешно.
 - Последовательных попыток без прогресса: 0.
 - Открытые blockers: нет.
 - Одобренные пользователем изменения scope/полномочий/бюджета: получено подтверждение пользователя на начало реализации.
-- Последний принятый checkpoint: Milestone B1 checkpoint (`feat/combat-core-extraction`).
+- Последний принятый checkpoint: Milestone E4 checkpoint (`feat/combat-core-extraction`).
 - Устаревшие проверки после изменений / что повторить: нет.
-- Следующий точный шаг: коммит среза B1 и переход к срезам E3–E4.
+- Следующий точный шаг: коммит среза E4 и переход к этапу E5 (ECS Runtime Extraction to `@mars2050/combat-core`).
 
 ## Итог запуска
 
-- Статус: `accepted` (Milestone B1: Early Autonomous Fantasy Battle & In-Combat Summon).
-- Реально принятые этапы и коммиты: E0 (`5dafddf`), E1 (`60c55e3`), E2 (`271a526`), B1 (accepted).
-- Незавершённые критерии / невыполненные проверки / риски: коммит B1, переход к E3/E4/E5.
+- Статус: `accepted` (Milestone E4: Arena and Physical Context Decoupling).
+- Реально принятые этапы и коммиты: E0 (`5dafddf`), E1 (`60c55e3`), E2 (`271a526`), B1 (`b9665bc`), E3 (`aaac704`), E4 (accepted).
+- Незавершённые критерии / невыполненные проверки / риски: коммит E4, переход к E5.
 - Финальная интеграционная проверка и независимое ревью: `NOT_RUN` (запланировано на E7).
 - Разрешённые и фактически выполненные внешние действия: нет.
-- Что нужно следующей сессии или пользователю: коммит B1 и переход к следующим этапам.
+- Что нужно следующей сессии или пользователю: коммит E4 и переход к этапу E5.
 
 

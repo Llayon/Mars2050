@@ -1,4 +1,4 @@
-import { TILE_SIZE } from '../combat.utils'
+import { getCombatArena } from './combat-resources'
 import type { CombatWorld } from './combat-world'
 import {
   ECS_MOVEMENT_DENSE_NEIGHBOR_RADIUS,
@@ -18,7 +18,8 @@ export function buildMovementNeighborGraph(
   world: CombatWorld,
   frame: MovementFrame,
 ): MovementNeighborGraph {
-  const cells = buildPackedMovementCells(frame.entityIds, frame.x, frame.y)
+  const arena = getCombatArena(world)
+  const cells = buildPackedMovementCells(frame.entityIds, frame.x, frame.y, arena)
   const neighbors = new MovementNeighborTable(
     frame.x.length,
     ECS_MOVEMENT_MAX_NEIGHBORS,
@@ -28,19 +29,21 @@ export function buildMovementNeighborGraph(
     defender: getTeamRadius(world, 'defender'),
   }
   const maxRadius = Math.max(teamRadius.attacker, teamRadius.defender)
-  const reach = Math.ceil(maxRadius / TILE_SIZE)
+  const reach = Math.ceil(maxRadius / cells.tileSize)
   let candidatePairCount = 0
   let edgeCount = 0
 
   for (let occupied = 0; occupied < cells.occupiedCount; occupied++) {
     const firstCell = cells.occupiedCells[occupied]
     visitBucketPair(firstCell, firstCell, true)
-    const { cellX, cellY } = getPackedMovementCellCoordinates(firstCell)
+    const { cellX, cellY } = getPackedMovementCellCoordinates(firstCell, cells.cellRows)
     for (let offsetX = -reach; offsetX <= reach; offsetX++) {
       for (let offsetY = -reach; offsetY <= reach; offsetY++) {
         const secondCell = getPackedMovementCellByCoordinates(
           cellX + offsetX,
           cellY + offsetY,
+          cells.cellColumns,
+          cells.cellRows,
         )
         if (secondCell <= firstCell ||
             cells.offsets[secondCell] === cells.offsets[secondCell + 1]) continue

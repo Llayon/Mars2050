@@ -3,7 +3,7 @@ import type { RuntimeActionContext, RuntimeActionResult } from '../../combat.run
 import type { StatusEffect } from '../../combat.sim.types'
 import type { UnitTypeKey } from '../../combat.types'
 import { compileUnit } from '../../combat.unit-compiler'
-import { FIELD_HEIGHT, FIELD_WIDTH } from '../../combat.utils'
+import { getCombatArena } from '../combat-resources'
 import type { CombatWorld } from '../combat-world'
 import type { EntityId } from '../entity'
 import type { UnitEntityBundle } from '../unit-entity-bundle'
@@ -110,7 +110,8 @@ function createSpawnedUnit(
   const magnitude = Math.hypot(dx, dy) || 1
   let x = transform.x + (dx / magnitude) * 40
   let y = transform.y + (dy / magnitude) * 40
-  if (x < 0 || x >= FIELD_WIDTH || y < 0 || y >= FIELD_HEIGHT) {
+  const arena = getCombatArena(world)
+  if (x < 0 || x >= arena.width || y < 0 || y >= arena.height) {
     x = transform.x
     y = transform.y
   }

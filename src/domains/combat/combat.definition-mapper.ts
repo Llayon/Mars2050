@@ -28,7 +28,7 @@ export function mapDefinitionToUnitTypeConfig(def: UnitDefinition): UnitTypeConf
       actionCooldownMax: def.baseStats.actionCooldownMax,
       turnSpeed: def.baseStats.turnSpeed,
       size: def.baseStats.size,
-      combatTags: [...def.baseStats.combatTags] as CombatTag[],
+      combatTags: def.baseStats.combatTags ? ([...def.baseStats.combatTags] as CombatTag[]) : [],
     },
     hireCost: {},
     squadSize: def.squadSize,

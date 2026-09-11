@@ -38,7 +38,8 @@ export function createConfiguredUnitEntity(world: CombatWorld, input: RuntimeUni
 
 export function createSquadEntities(world: CombatWorld, row: UnitRow, team: Team, rng: PRNG): EntityId[] {
   const catalog = world.resources.get('catalog')
-  const units = compileSquadBundles(row, team, rng, catalog)
+  const arena = world.resources.get('arena')
+  const units = compileSquadBundles(row, team, rng, catalog, arena)
   world.queueCompiledUnitCreation(...units)
   world.flushStructuralCommands()
   return units.flatMap(unit => {
