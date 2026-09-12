@@ -129,24 +129,30 @@
 | REV-E4-CELLS | Динамические сетки movement и targeting под размеры арены | Проверено независимым ревьюером: movement-packed-cells, targeting-packed-cells | `PASS` |
 | REV-E4-CLAMPING | Клампинг границ по арене во всех 11 ECS-системах (0 жестких 600/1200) | Проверено независимым ревьюером: systems/*.ts | `PASS` |
 | REV-E4-ISOLATION | Изоляция симуляций на чередующихся аренах разного размера без утечки состояния | Проверено независимым ревьюером: combat.arena-decoupling.test.ts (6 тестов) | `PASS` |
+| REV-E5-FACADE | Регистрация executeCombatSimulation в registerCombatSimulator и экспорт simulateCombat | Проверено независимым ревьюером: combat.facade.ts | `PASS` |
+| REV-E5-WRAPPER | simulateBattle тонкая обертка через translateMarsBattleInput -> simulateCombat -> mapCombatRunResultToBattleResult | Проверено независимым ревьюером: combat.engine.ts (36 строк) | `PASS` |
+| REV-E5-BROWSER | Браузерная безопасность combat.engine.ts (0 node/fs/crypto/supabase импортов) | Проверено независимым ревьюером: client bundles & workers safe | `PASS` |
+| REV-E5-CONTRACTS | Валидация BattleInput/CombatRunResult через Zod, расширение battleRulesSchema (trackMetrics, profile) | Проверено независимым ревьюером: packages/combat-core | `PASS` |
+| REV-E5-DETERM | 100% байт-в-байт детерминизм золотых слепков V8/V9 через фасад | Проверено: 16/16 тестов в v8/v9 golden пройдены | `PASS` |
+| REV-E5-SUITE | Интеграционный набор тестов фасада и совместимости | combat.facade-compat.test.ts (4 теста) пройден | `PASS` |
 
 ## Решения, блокеры и восстановление
 
-- Новые подтверждённые факты последней попытки: Рубеж E4 (Arena and Physical Context Decoupling) официально принят. Размеры арены (`width`, `height`, `tileSize`), препятствия и физические ограничения передаются через контекст арены (`world.resources.set('arena', arena)`). Все 11 ECS-систем, пространственные структуры (movement/targeting packed cells) и алгоритмы волнового поля (flow field) используют динамические размеры арены с безопасным fallback к марсианским умолчаниям (`600x1200`, `tileSize=40`). Тестовый набор из 6 сценариев в `combat.arena-decoupling.test.ts` полностью пройден. Сохранена 100% байт-в-байт идентичность золотых слепков V8/V9. Все 200 файлов тестов (806 тестов) проходят успешно.
+- Новые подтверждённые факты последней попытки: Рубеж E5 (Connect Mars to Facade and Solidify Compatibility) официально принят. `simulateBattle(...)` в `combat.engine.ts` стал тонкой совместимой оберткой (36 строк), которая транслирует марсианские UnitRow/глобалы в чистый `BattleInput`, делегирует исполнение ядру через `simulateCombat(input)` фасада `@mars2050/combat-core` и маппит результат обратно через `mapCombatRunResultToBattleResult`. Достигнут 100% байт-в-байт детерминизм по SHA-256 хешам в золотых тестах V8 и V9. Пакетные проверки `test:combat:package`, `tsc --noEmit`, архитектурный лимитер `check-limits.ts` и модульные тесты пройдены без нарушений.
 - Последовательных попыток без прогресса: 0.
 - Открытые blockers: нет.
 - Одобренные пользователем изменения scope/полномочий/бюджета: получено подтверждение пользователя на начало реализации.
-- Последний принятый checkpoint: Milestone E4 checkpoint (`feat/combat-core-extraction`).
+- Последний принятый checkpoint: Milestone E5 checkpoint (`feat/combat-core-extraction`).
 - Устаревшие проверки после изменений / что повторить: нет.
-- Следующий точный шаг: коммит среза E4 и переход к этапу E5 (ECS Runtime Extraction to `@mars2050/combat-core`).
+- Следующий точный шаг: коммит среза E5 и переход к этапу E6 (завершить перенос единственной реализации и инфраструктуры пакета).
 
 ## Итог запуска
 
-- Статус: `accepted` (Milestone E4: Arena and Physical Context Decoupling).
-- Реально принятые этапы и коммиты: E0 (`5dafddf`), E1 (`60c55e3`), E2 (`271a526`), B1 (`b9665bc`), E3 (`aaac704`), E4 (accepted).
-- Незавершённые критерии / невыполненные проверки / риски: коммит E4, переход к E5.
+- Статус: `accepted` (Milestone E5: Connect Mars to Facade and Solidify Compatibility).
+- Реально принятые этапы и коммиты: E0 (`5dafddf`), E1 (`60c55e3`), E2 (`271a526`), B1 (`b9665bc`), E3 (`aaac704`), E4 (`4d70805`), E5 (accepted).
+- Незавершённые критерии / невыполненные проверки / риски: коммит E5, переход к E6.
 - Финальная интеграционная проверка и независимое ревью: `NOT_RUN` (запланировано на E7).
 - Разрешённые и фактически выполненные внешние действия: нет.
-- Что нужно следующей сессии или пользователю: коммит E4 и переход к этапу E5.
+- Что нужно следующей сессии или пользователю: коммит E5 и переход к этапу E6.
 
 

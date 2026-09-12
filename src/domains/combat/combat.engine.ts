@@ -1,101 +1,35 @@
-import { MAX_TICKS, UNIT_TYPES } from './combat.config'
-import { GLOBAL_UPGRADES, UPGRADES } from './combat.upgrades'
-import type { UnitRow, BattleAction, BattleTick, BattleResult } from './combat.types'
-import type { Team, Obstacle } from './combat.sim.types'
-import type { ActiveGlobalEffect } from './combat.primitives'
-import { createCombatMetrics, finalizeCombatMetrics, recordCombatActions, recordCombatTick, type BattleSimulationOptions } from './combat.metrics'
-import { FIELD_HEIGHT, FIELD_WIDTH, PRNG, TILE_SIZE, generateObstacles } from './combat.utils'
-import { createPathfindingMap } from './combat.pathfinding'
-import { getTimeoutOutcome, type BattleOutcome } from './combat.outcome'
-import { V8_SIMULATION_REVISION, V8_SIMULATION_VERSION, V9_SIMULATION_REVISION, V9_SIMULATION_VERSION } from './combat.version'
-import { createEcsCombatRuntime } from './ecs/combat-ecs-runtime'
-export function simulateBattle(attackerUnits: UnitRow[], defenderUnits: UnitRow[], providedSeed?: number, providedObstacles?: Obstacle[], attackerGlobals: string[] = [], defenderGlobals: string[] = [], options: BattleSimulationOptions = {}): BattleResult {
-  const seed = providedSeed ?? Date.now(), rng = new PRNG(seed), dt = 0.1
-  const maxTicks = normalizeMaxTicks(options.maxTicks)
-  const timeoutPolicy = options.timeoutPolicy ?? 'draw'
-  const defenseResolutionMode = options.defenseResolutionMode ?? 'v9_snapshot'
-  const runtime = createEcsCombatRuntime({ profile: options.profile === true, defenseResolutionMode })
-  const activeGlobals: ActiveGlobalEffect[] = []
-  attackerGlobals.forEach(id => {
-    const upg = GLOBAL_UPGRADES[id]
-    if (upg) activeGlobals.push({ team: 'attacker', effect: { id: upg.id, type: upg.type, value: upg.value, target: upg.target } })
-  })
-  defenderGlobals.forEach(id => {
-    const upg = GLOBAL_UPGRADES[id]
-    if (upg) activeGlobals.push({ team: 'defender', effect: { id: upg.id, type: upg.type, value: upg.value, target: upg.target } })
-  })
-  const obstacles: Obstacle[] = options.arena?.obstacles ?? providedObstacles ?? generateObstacles(seed);
-  const arena = {
-    width: options.arena?.width ?? FIELD_WIDTH,
-    height: options.arena?.height ?? FIELD_HEIGHT,
-    tileSize: options.arena?.tileSize ?? TILE_SIZE,
-    obstacles,
-  }
-  const flowFieldMap = createPathfindingMap(obstacles, arena)
-  runtime.world.resources.set('catalog', { unitTypes: UNIT_TYPES, upgrades: UPGRADES })
-  runtime.world.resources.set('arena', arena)
-  attackerUnits.forEach(row => runtime.addSquad(row, 'attacker', rng))
-  defenderUnits.forEach(row => runtime.addSquad(row, 'defender', rng))
+import type { UnitRow, BattleResult } from './combat.types'
+import type { Obstacle } from './combat.sim.types'
+import type { BattleSimulationOptions } from './combat.metrics'
+import { translateMarsBattleInput } from './combat.input-translator'
+import { mapCombatRunResultToBattleResult } from './combat.compat-mapper'
+import { simulateCombat } from './combat.facade'
 
-  const initialState = runtime.snapshotUnits()
-  const metrics = options.trackMetrics ? createCombatMetrics(runtime.world) : undefined
+/**
+ * Backward-compatible simulation entrypoint for Mars callers.
+ * Translates input rows/globals into clean BattleInput, delegates to
+ * simulateCombat facade, and maps the result back to BattleResult.
+ */
+export function simulateBattle(
+  attackerUnits: UnitRow[],
+  defenderUnits: UnitRow[],
+  providedSeed?: number,
+  providedObstacles?: Obstacle[],
+  attackerGlobals: string[] = [],
+  defenderGlobals: string[] = [],
+  options: BattleSimulationOptions = {},
+): BattleResult {
+  const input = translateMarsBattleInput(
+    attackerUnits,
+    defenderUnits,
+    providedSeed,
+    providedObstacles,
+    attackerGlobals,
+    defenderGlobals,
+    options,
+  )
 
-  const resources = runtime.world.resources
-  resources.set('clock', { tick: 0, dt, maxTicks, timeoutPolicy })
-  resources.set('rng', rng)
-  resources.set('actions', [])
-  resources.set('obstacles', obstacles)
-  resources.set('arena', arena)
-  resources.set('flowField', flowFieldMap)
-  resources.set('globals', activeGlobals)
-  resources.set('metrics', metrics)
-
-  const logs: BattleTick[] = []
-  let tick = 0, resolvedOutcome: BattleOutcome | null = null
-
-  while (tick < maxTicks) {
-    const actions: BattleAction[] = []
-    runtime.world.resources.require('clock').tick = tick
-    runtime.world.resources.set('actions', actions)
-    runtime.runStage('pre_action', { tick, actions, rng, activeGlobals })
-
-    const terminalOutcome = runtime.getTerminalOutcome()
-    if (terminalOutcome) { resolvedOutcome = terminalOutcome; break }
-
-    runtime.runStage('action', { tick, actions, rng, activeGlobals })
-
-    runtime.runStage('post_action', { tick, actions, rng, activeGlobals });
-    if (metrics) {
-      recordCombatActions(metrics, tick, actions, runtime.world)
-      recordCombatTick(metrics, runtime.world)
-    }
-    
-    if (actions.length > 0) logs.push({ tick, actions })
-    
-    tick++
-  }
-
-  const outcome = resolvedOutcome ?? getTimeoutOutcome(timeoutPolicy)
-
-  return {
-    winner: outcome.winner,
-    logs,
-    seed,
-    initialState,
-    survivors: runtime.getSurvivors(),
-    obstacles,
-    metrics: metrics ? finalizeCombatMetrics(metrics, tick) : undefined,
-    terminationReason: outcome.reason,
-    elapsedTicks: tick,
-    simulationVersion: defenseResolutionMode === 'v8_sequential' ? V8_SIMULATION_VERSION : V9_SIMULATION_VERSION,
-    simulationRevision: defenseResolutionMode === 'v8_sequential' ? V8_SIMULATION_REVISION : V9_SIMULATION_REVISION,
-    profile: options.profile
-      ? runtime.world.resources.require('entitySpatial').getProfile(runtime.world)
-      : undefined,
-  }
+  const combatResult = simulateCombat(input)
+  return mapCombatRunResultToBattleResult(combatResult, input.arena.obstacles)
 }
 
-function normalizeMaxTicks(value?: number): number {
-  if (value === undefined || !Number.isFinite(value)) return MAX_TICKS
-  return Math.max(1, Math.min(2000, Math.floor(value)))
-}

@@ -20,7 +20,7 @@ export const baseStatsSchema = z.object({
   range: z.number().nonnegative(),
   attackType: attackTypeSchema.default('single'),
   actionCooldownMax: z.number().int().positive().default(10),
-  turnSpeed: z.number().positive().default(5),
+  turnSpeed: z.number().nonnegative().default(5),
   size: unitSizeSchema.default('M'),
   combatTags: z.array(z.string()).default([]),
   spawnType: z.string().optional(),

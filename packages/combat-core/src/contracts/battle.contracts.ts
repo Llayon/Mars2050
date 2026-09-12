@@ -27,6 +27,8 @@ export const battleRulesSchema = z.object({
   maxTicks: z.number().int().min(1).max(5000).default(2000),
   timeoutPolicy: timeoutPolicySchema.default('draw'),
   defenseResolutionMode: defenseResolutionModeSchema.default('v9_snapshot'),
+  trackMetrics: z.boolean().optional(),
+  profile: z.boolean().optional(),
 })
 export type BattleRules = z.infer<typeof battleRulesSchema>
 
