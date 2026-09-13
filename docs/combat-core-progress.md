@@ -36,7 +36,7 @@
 | E4 | E3 | `accepted` | Arena decoupling in flow map, spatial cells and 11 ECS systems, non-standard arena tests PASS / Reviewer verdict: PASS (`9214800f`) |
 | E5 | Принятые необходимые срезы | `accepted` | Facade connection, simulateBattle thin wrapper, BattleInput translation, 100% byte-identical V8/V9 goldens / Reviewer verdict: PASS (`d07adf32`) |
 | E6 | Принятые необходимые срезы и перенос B1 | `accepted` | Full migration of single runtime & ECS to packages/combat-core, compatibility re-exports, 0 leaks, archive smoke PASS / Reviewer verdict: PASS (`c9e44c2c`) |
-| E7 | E2–E6, B1 | `implementing` | Fantasy matrix 7/7 PASS, tsc 0 errors, archive sha256: 5835ee08, 201 tests. Independent audit pending. |
+| E7 | E2–E6, B1 | `accepted` | Fantasy matrix 7/7 PASS, contract schema extended (statusOnHit, healTargetTags), 201 tests, archive sha256: 5835ee08 / Reviewer verdict: PASS (`3f7ec3ed`) |
 
 ## Текущий цикл
 
@@ -150,24 +150,32 @@
 | REV-E6-LEAKS | Полное отсутствие утечек @/, next, react, supabase, db types в packages/combat-core | Проверено независимым ревьюером: 0 совпадений, 1 runtime dep (zod) | `PASS` |
 | REV-E6-GOLDENS | 100% байт-в-байт детерминизм золотых слепков V8/V9 через пакетный runtime | Проверено: 16/16 тестов в v8/v9 golden пройдены | `PASS` |
 | REV-E6-PACKAGE-SMOKE | Standalone consumer вне воркспейса, компиляция и выполнение через npm pack | Проверено: test:combat:package пройден успешно | `PASS` |
+| REV-E7-CATALOG | 8 юнитов Fantasy: orc_warrior, elven_archer, goblin_shaman, fire_elemental, human_mage, forest_healer, necromancer, skeleton | Проверено независимым ревьюером: единственный импорт из @mars2050/combat-core/contracts | `PASS` |
+| REV-E7-SCHEMA | statusTypeSchema, statusEffectSchema, statusOnHit, healTargetTags в публичном baseStatsSchema | Проверено независимым ревьюером: строки 15, 22, 44, 45 unit.contracts.ts | `PASS` |
+| REV-E7-MATRIX | 7 контрактных сценариев с determinism + frozen-input + JSON round-trip в каждом | Проверено независимым ревьюером: все 3 assertion в каждом сценарии | `PASS` |
+| REV-E7-RUN | Запуск матрицы: 7/7 сценариев PASS, S6 timeout→defender_win, S5 dual-summon (4 fire+9 skeleton) | Проверено независимым ревьюером: exit code 0 | `PASS` |
+| REV-E7-ISOLATION | Package isolation: только @mars2050/combat-core, 0 утечек Mars в consumer | Проверено независимым ревьюером: package.json + grep src | `PASS` |
+| REV-E7-ARCHIVE | Archive smoke: sha256 5835ee08..., 774 файлов, subpath blocked, TypeScript consumer | Проверено независимым ревьюером: All archive smoke checks PASSED | `PASS` |
+| REV-E7-TSC | tsc --noEmit: 0 ошибок | Проверено независимым ревьюером: exit code 0 | `PASS` |
+| REV-E7-LIMITS | check-limits: 0 violations | Проверено независимым ревьюером: status passed, 0 violations | `PASS` |
+| REV-E7-GOLDENS | V8/V9 golden fingerprints стабильны 16/16 | Проверено независимым ревьюером | `PASS` |
+| REV-E7-LEAKS | Нулевые утечки @/, next, react, supabase в packages/combat-core | Проверено независимым ревьюером: 0 совпадений | `PASS` |
 
 ## Решения, блокеры и восстановление
 
-- Новые подтверждённые факты последней попытки: Рубеж E6 (Complete Migration of the Single Runtime & Package Infrastructure) официально принят независимым ревьюером `e6_reviewer` (`c9e44c2c`). Все decoupled модули компиляторов, исполнения, математики и ECS-систем перенесены в `packages/combat-core/src/`. Все файлы в `src/domains/combat/` и `src/domains/combat/ecs/` стали тонкими реэкспортами. Достигнута полная независимость пакета (0 импортов `@/`, Next, React, Supabase, DB-типов). Золотые слепки V8 и V9 стабильны и идентичны байт-в-байт. Внешний тест пакета `npm run test:combat:package`, `tsc --noEmit`, архитектурный чекер `check-limits.ts` и модульные тесты пройдены без замечаний.
+- Новые подтверждённые факты последней попытки: Milestone E7 принят независимым ревьюером `3f7ec3ed`. Fantasy-потребитель верифицирован со всей матрицей из 7 контрактных сценариев (melee, mage+burn, healer, dual-summon, timeout policy, small arena, B1 regression). Публичный контракт пакета расширен: `statusTypeSchema`, `statusEffectSchema`, `statusOnHit?`, `healTargetTags?` в `baseStatsSchema`. Изоляция пакета подтверждена: 0 Mars/Next/React/Supabase импортов. Archive SHA256: `5835ee08...`. Все 201 тест-файл (812 тестов) пройдены. tsc 0 ошибок, check-limits 0 violations. Это финальный milestone extraction.
 - Последовательных попыток без прогресса: 0.
 - Открытые blockers: нет.
-- Одобренные пользователем изменения scope/полномочий/бюджета: получено подтверждение пользователя на начало реализации.
-- Последний принятый checkpoint: Milestone E6 checkpoint (`feat/combat-core-extraction`).
+- Одобренные пользователем изменения scope/полномочий/бюджета: получено подтверждение пользователя на начало каждого milestone.
+- Последний принятый checkpoint: Milestone E7 accepted (`feat/combat-core-extraction`).
 - Устаревшие проверки после изменений / что повторить: нет.
-- Следующий точный шаг: коммит среза E6 и переход к этапу E7 (проверить независимого Fantasy-потребителя и завершить выделение).
+- Следующий точный шаг: финальный коммит E7 docs, опциональный merge в main.
 
 ## Итог запуска
 
-- Статус: `accepted` (Milestone E6: Complete Migration of the Single Runtime & Package Infrastructure).
-- Реально принятые этапы и коммиты: E0 (`5dafddf`), E1 (`60c55e3`), E2 (`271a526`), B1 (`b9665bc`), E3 (`aaac704`), E4 (`4d70805`), E5 (`d07adf3`), E6 (accepted).
-- Незавершённые критерии / невыполненные проверки / риски: коммит E6, переход к финальному E7.
-- Финальная интеграционная проверка и независимое ревью: `NOT_RUN` (запланировано на E7).
+- Статус: `accepted` (Milestone E7: Full Fantasy Consumer Verification & Extraction Finalization — ФИНАЛЬНЫЙ MILESTONE).
+- Реально принятые этапы и коммиты: E0 (`5dafddf`), E1 (`60c55e3`), E2 (`271a526`), B1 (`b9665bc`), E3 (`aaac704`), E4 (`4d70805`), E5 (`d07adf3`), E6 (`93038d7`), E7 (`ed4ec16` + docs).
+- Незавершённые критерии / невыполненные проверки / риски: нет.
+- Финальная интеграционная проверка и независимое ревью: E7 reviewer `3f7ec3ed` — PASS.
 - Разрешённые и фактически выполненные внешние действия: нет.
-- Что нужно следующей сессии или пользователю: коммит E6 и переход к этапу E7.
-
-
+- Что нужно следующей сессии или пользователю: merge ветки `feat/combat-core-extraction` в `main`, публикация `@mars2050/combat-core` при необходимости.
