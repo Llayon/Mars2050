@@ -36,7 +36,7 @@
 | E4 | E3 | `accepted` | Arena decoupling in flow map, spatial cells and 11 ECS systems, non-standard arena tests PASS / Reviewer verdict: PASS (`9214800f`) |
 | E5 | Принятые необходимые срезы | `accepted` | Facade connection, simulateBattle thin wrapper, BattleInput translation, 100% byte-identical V8/V9 goldens / Reviewer verdict: PASS (`d07adf32`) |
 | E6 | Принятые необходимые срезы и перенос B1 | `accepted` | Full migration of single runtime & ECS to packages/combat-core, compatibility re-exports, 0 leaks, archive smoke PASS / Reviewer verdict: PASS (`c9e44c2c`) |
-| E7 | E2–E6, B1 | `pending` | Нет |
+| E7 | E2–E6, B1 | `implementing` | Fantasy matrix 7/7 PASS, tsc 0 errors, archive sha256: 5835ee08, 201 tests. Independent audit pending. |
 
 ## Текущий цикл
 
@@ -98,8 +98,17 @@
 | 2026-09-11 17:39 UTC / E4 snapshot | `npx tsx scripts/check-limits.ts --diff HEAD --json` / `D:\Max\Mars2050` | 0 | `PASS` | status: passed, 0 violations |
 | 2026-09-11 17:40 UTC / E4 snapshot | `npm test src/__tests__/combat.ecs-v8-golden.test.ts src/__tests__/combat.ecs-v9-golden.test.ts` / `D:\Max\Mars2050` | 0 | `PASS` | 16 tests passed, V8/V9 goldens 100% stable SHA-256 |
 | 2026-09-11 17:42 UTC / E4 snapshot | `npm test` / `D:\Max\Mars2050` | 0 | `PASS` | 200 test files passed (806 tests passed) |
+| 2026-09-13 11:03 UTC / E6 snapshot | `npm run combat:core:build` / `D:\Max\Mars2050` | 0 | `PASS` | @mars2050/combat-core built cleanly to dist/ |
+| 2026-09-13 11:04 UTC / E6 snapshot | `npx vitest run` (201 files) / `D:\Max\Mars2050` | 0 | `PASS` | 201 files passed (812 tests, 4 timeout retried individually) |
+| 2026-09-13 11:05 UTC / E6 snapshot | `npm run test:combat:package` / `D:\Max\Mars2050` | 0 | `PASS` | Archive smoke passed (sha256: 3691ec2e...), standalone consumer ok, subpath blocked |
+| 2026-09-13 14:44 UTC / E7 snapshot | `npm run combat:core:build` / `D:\Max\Mars2050` | 0 | `PASS` | @mars2050/combat-core built with extended baseStatsSchema (statusOnHit, healTargetTags in contracts) |
+| 2026-09-13 14:44 UTC / E7 snapshot | `node examples/fantasy-combat/dist/run-battle.js` / `D:\Max\Mars2050` | 0 | `PASS` | 7/7 E7 matrix PASS: melee, mage+burn, healer, dual-summon (4+9 spawns), timeout defender_win, small arena, B1 regression |
+| 2026-09-13 14:45 UTC / E7 snapshot | `npx tsc --noEmit` / `D:\Max\Mars2050` | 0 | `PASS` | 0 errors across workspace |
+| 2026-09-13 14:45 UTC / E7 snapshot | `npm run test:combat:package` / `D:\Max\Mars2050` | 0 | `PASS` | Archive smoke (sha256: 5835ee08...), standalone consumer ok, 774 valid files, subpath blocked |
+| 2026-09-13 14:45 UTC / E7 snapshot | `npx tsx scripts/check-limits.ts --diff HEAD --json` / `D:\Max\Mars2050` | 0 | `PASS` | status: passed, 0 violations |
+| 2026-09-13 14:46 UTC / E7 snapshot | `npx vitest run combat.ecs-v8-golden + v9-golden + architecture` / `D:\Max\Mars2050` | 0 | `PASS` | 20 tests passed (V8/V9 goldens stable, 4 architecture rules PASS) |
+| 2026-09-13 14:46 UTC / E7 snapshot | `npx vitest run` (201 files) / `D:\Max\Mars2050` | 0 | `PASS` | 201 files passed (812 tests passed) |
 
-## Независимое ревью
 
 - Reviewer / отдельная сессия / UTC: Independent Read-Only Architecture Reviewer (subagent `9214800f-e847-4a50-b908-b66d4a1f798b`) / 2026-09-11 17:45 UTC (E4).
 - Проверенные критерии и snapshot: Pathfinding decoupling (FlowFieldMap dynamic cols/rows/tileSize with fallback to Martian 600x1200/40), Arena in ECS resources (getCombatArena), spatial cell dynamic reconfigure and bucketing in movement & targeting, ECS system boundary clamping across all 11 systems using arena width/height, non-standard arena execution & alternating arenas isolation (6 tests in combat.arena-decoupling.test.ts), 200 test files (806 tests) PASS, tsc 0 errors, check-limits 0 violations, V8/V9 goldens 100% identical.

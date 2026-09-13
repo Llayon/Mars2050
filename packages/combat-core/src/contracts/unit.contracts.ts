@@ -12,6 +12,22 @@ export type AttackType = z.infer<typeof attackTypeSchema>
 export const formationSchema = z.enum(['grid', 'line', 'wedge'])
 export type Formation = z.infer<typeof formationSchema>
 
+export const statusTypeSchema = z.enum([
+  'emp', 'slow', 'burn', 'acid', 'vulnerable', 'range_suppressed', 'revealed',
+  'hacked', 'damage_reduction', 'regen', 'output_suppressed', 'accuracy_reduced',
+  'armor_broken', 'degeneration', 'haste', 'range_boost', 'attack_boost', 'status_immunity',
+])
+export type StatusType = z.infer<typeof statusTypeSchema>
+
+export const statusEffectSchema = z.object({
+  type: statusTypeSchema,
+  duration: z.number().int().nonnegative(),
+  value: z.number().optional(),
+  sourceUnitId: z.string().optional(),
+  stackKey: z.string().optional(),
+})
+export type StatusEffect = z.infer<typeof statusEffectSchema>
+
 export const baseStatsSchema = z.object({
   hp: z.number().positive(),
   attack: z.number().nonnegative(),
@@ -25,6 +41,8 @@ export const baseStatsSchema = z.object({
   combatTags: z.array(z.string()).default([]),
   spawnType: z.string().optional(),
   spawnCap: z.number().int().positive().optional(),
+  statusOnHit: z.array(statusEffectSchema).optional(),
+  healTargetTags: z.array(z.string()).optional(),
 })
 export type BaseStats = z.infer<typeof baseStatsSchema>
 

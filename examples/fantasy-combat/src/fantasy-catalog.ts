@@ -1,6 +1,7 @@
 import type { UnitDefinition } from '@mars2050/combat-core/contracts'
 
 export const FANTASY_DEFINITIONS: Record<string, UnitDefinition> = {
+  // --- Original B1 units ---
   orc_warrior: {
     id: 'orc_warrior',
     name: 'Orc Warrior',
@@ -77,6 +78,90 @@ export const FANTASY_DEFINITIONS: Record<string, UnitDefinition> = {
     },
     squadSize: 1,
     squadSpacing: 10,
+    formation: 'grid',
+  },
+  // --- E7: Mage with status-on-hit (burn) ---
+  human_mage: {
+    id: 'human_mage',
+    name: 'Human Mage',
+    baseStats: {
+      hp: 55,
+      attack: 35,
+      defense: 1,
+      speed: 4,
+      range: 6,
+      attackType: 'single',
+      actionCooldownMax: 14,
+      turnSpeed: 6,
+      size: 'S',
+      combatTags: ['magic', 'ranged'],
+      statusOnHit: [{ type: 'burn', duration: 3, value: 5 }],
+    },
+    squadSize: 2,
+    squadSpacing: 30,
+    formation: 'line',
+  },
+  // --- E7: Healer (attackType 'heal', targets organic allies) ---
+  forest_healer: {
+    id: 'forest_healer',
+    name: 'Forest Healer',
+    baseStats: {
+      hp: 70,
+      attack: 18,
+      defense: 2,
+      speed: 5,
+      range: 4,
+      attackType: 'heal',
+      healTargetTags: ['organic'],
+      actionCooldownMax: 12,
+      turnSpeed: 7,
+      size: 'S',
+      combatTags: ['organic', 'healer', 'support'],
+    },
+    squadSize: 2,
+    squadSpacing: 25,
+    formation: 'grid',
+  },
+  // --- E7: Necromancer (in-combat summon of skeleton) ---
+  necromancer: {
+    id: 'necromancer',
+    name: 'Necromancer',
+    baseStats: {
+      hp: 65,
+      attack: 0,
+      defense: 2,
+      speed: 3,
+      range: 3,
+      attackType: 'spawn',
+      spawnType: 'skeleton',
+      spawnCap: 3,
+      actionCooldownMax: 18,
+      turnSpeed: 5,
+      size: 'S',
+      combatTags: ['magic', 'summoner'],
+    },
+    squadSize: 1,
+    squadSpacing: 20,
+    formation: 'grid',
+  },
+  // --- E7: Skeleton (summoned by necromancer) ---
+  skeleton: {
+    id: 'skeleton',
+    name: 'Skeleton (Summoned)',
+    baseStats: {
+      hp: 40,
+      attack: 15,
+      defense: 3,
+      speed: 5,
+      range: 1,
+      attackType: 'single',
+      actionCooldownMax: 10,
+      turnSpeed: 8,
+      size: 'S',
+      combatTags: ['organic', 'summoned'],
+    },
+    squadSize: 1,
+    squadSpacing: 15,
     formation: 'grid',
   },
 }
