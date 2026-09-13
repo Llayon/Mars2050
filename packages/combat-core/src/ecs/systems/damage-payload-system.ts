@@ -1,0 +1,52 @@
+import type { BattleAction } from '../../combat.actions.js'
+import type { CombatWorld } from '../combat-world.js'
+import type { EntityId } from '../entity.js'
+import { getDamageAttributionMetadata, type DamageSourceContext } from '../damage-source.js'
+
+export function buildEcsDamagePayload(
+  world: CombatWorld,
+  source: DamageSourceContext,
+  targetId: EntityId,
+  rawDamage: number,
+  actions: BattleAction[],
+  allowPercentHpDamage = true,
+  currentHpOverride?: number,
+): number {
+  const boost = source.modifiers.attackBoostValue
+  const boostMultiplier = boost >= 1 ? boost : 1 + boost
+  const baseRaw = boost > 0
+    ? Math.max(0, Math.floor(Math.floor(rawDamage) * Math.min(5, boostMultiplier)))
+    : Math.floor(rawDamage)
+  if (baseRaw <= 0) return 0
+  const percentDamage = allowPercentHpDamage
+    ? getPercentHpDamage(world, source, targetId, currentHpOverride)
+    : 0
+  if (percentDamage > 0) {
+    actions.push({
+      unitId: source.attribution.sourceExternalId,
+      ...getDamageAttributionMetadata(world, source.attribution),
+      type: 'percent_hp_damage',
+      targetId: world.stores.identity.require(targetId).id,
+      value: percentDamage,
+    })
+  }
+  return baseRaw + percentDamage
+}
+
+export function getEcsGroupStartHp(world: CombatWorld, targetId: EntityId): number | undefined {
+  if (world.resources.get('defenseResolutionMode') !== 'v9_snapshot') return undefined
+  const group = world.resources.get('actionGroup')
+  if (!group?.active || !group.frame) return undefined
+  return group.frame.defense.targetsByExternalId.get(world.stores.identity.require(targetId).id)?.hp
+}
+
+function getPercentHpDamage(world: CombatWorld, source: DamageSourceContext, targetId: EntityId, currentHpOverride?: number): number {
+  const config = source.modifiers.percentHpDamage
+  if (!config) return 0
+  const vitality = world.stores.vitality.require(targetId)
+  const basis = (config.basis ?? 'max') === 'current' ? currentHpOverride ?? vitality.hp : vitality.maxHp
+  let damage = Math.max(0, Math.floor(basis * config.percent))
+  if (config.minBonus !== undefined) damage = Math.max(damage, Math.floor(config.minBonus))
+  if (config.maxBonus !== undefined) damage = Math.min(damage, Math.floor(config.maxBonus))
+  return Math.max(0, damage)
+}

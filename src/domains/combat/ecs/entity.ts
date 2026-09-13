@@ -1,1 +1,1 @@
-export type EntityId = number
+export * from '@mars2050/combat-core/ecs/entity'

@@ -1,7 +1,1 @@
-export type {
-  BarrierDefenseSnapshot,
-  CombatDefenseFrame,
-  DefenseBatchSnapshot,
-  DefenseRoutingSnapshot,
-  TargetDefenseSnapshot,
-} from './defense-batch'
+export * from '@mars2050/combat-core/ecs/defense-snapshot'

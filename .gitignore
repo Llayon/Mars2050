@@ -59,4 +59,7 @@ temp_*.txt
 *.tgz
 /packages/*/dist
 /examples/*/dist
+__pycache__/
+*.pyc
+/playwright-report/
 

@@ -148,13 +148,13 @@ function readFileContent(filePath: string): string {
   return readFileSync(filePath, 'utf-8')
 }
 
-  function classifyFile(relPath: string): { type: string; limit: number } {
-    if (relPath.endsWith('domains/combat/ecs/defense-batch.ts')) return { type: 'Defense batch resolver', limit: 350 }
+function classifyFile(relPath: string): { type: string; limit: number } {
+  if (relPath.endsWith('defense-batch.ts')) return { type: 'Defense batch resolver', limit: 350 }
   if (isReplayRenderEngine(relPath)) return { type: 'Replay/render engine', limit: LIMITS['replayEngine'] }
   if (relPath.includes('/api/')) return { type: 'API route', limit: LIMITS['api'] }
   if (relPath.startsWith('hooks/')) return { type: 'Hook', limit: LIMITS['hook'] }
   if (relPath.endsWith('.service.ts')) return { type: 'Service', limit: LIMITS['service'] }
-  if (relPath.endsWith('.types.ts')) return { type: 'Types', limit: LIMITS['type'] }
+  if (relPath.endsWith('.types.ts') || relPath.endsWith('.contracts.ts')) return { type: 'Types', limit: LIMITS['type'] }
   if (relPath.endsWith('.schemas.ts')) return { type: 'Schema', limit: LIMITS['schema'] }
   if (relPath.endsWith('.config.ts')) return { type: 'Config', limit: LIMITS['config'] }
   if (relPath.endsWith('.tsx')) return { type: 'Component', limit: LIMITS['component'] }
@@ -172,7 +172,7 @@ function getChangedFiles(diffRef: string): Set<string> | undefined {
       cwd: ROOT,
       encoding: 'utf-8',
     })
-    const files = output.trim().split('\n').filter(f => f && f.startsWith('src/'))
+    const files = output.trim().split('\n').filter(f => f && (f.startsWith('src/') || f.startsWith('packages/')))
     return new Set(files)
   } catch {
     return undefined
@@ -181,15 +181,18 @@ function getChangedFiles(diffRef: string): Set<string> | undefined {
 
 // ─── Rule 1: File size limits ──────────────────────────────────
 function checkLineLimits(dir: string, changedFiles?: Set<string>) {
+  if (!existsSync(dir)) return
   const entries = readdirSync(dir, { withFileTypes: true })
   for (const entry of entries) {
+    if (entry.name === 'node_modules' || entry.name === 'dist' || entry.name === '.next') continue
     const fullPath = join(dir, entry.name)
     if (entry.isDirectory()) { checkLineLimits(fullPath, changedFiles); continue }
     if (!['.ts', '.tsx'].includes(extname(entry.name))) continue
 
     const rel = relPath(fullPath)
     if (rel === 'types/database.ts') continue // Ignore auto-generated schema types
-    if (changedFiles && !changedFiles.has(`src/${rel}`)) continue
+    const checkRel = fullPath.startsWith(SRC) ? `src/${rel}` : rel
+    if (changedFiles && !changedFiles.has(checkRel)) continue
 
     const { type, limit } = classifyFile(rel)
     const lines = countLines(fullPath)
@@ -203,14 +206,17 @@ function checkLineLimits(dir: string, changedFiles?: Set<string>) {
 // ─── Rule 2: kebab-case filenames ──────────────────────────────
 const KEBAB_RE = /^[a-z][a-z0-9]*([.-][a-z0-9]+)*\.(ts|tsx)$/
 function checkNaming(dir: string, changedFiles?: Set<string>) {
+  if (!existsSync(dir)) return
   const entries = readdirSync(dir, { withFileTypes: true })
   for (const entry of entries) {
+    if (entry.name === 'node_modules' || entry.name === 'dist' || entry.name === '.next') continue
     const fullPath = join(dir, entry.name)
     if (entry.isDirectory()) { checkNaming(fullPath, changedFiles); continue }
     if (!['.ts', '.tsx'].includes(extname(entry.name))) continue
 
     const rel = relPath(fullPath)
-    if (changedFiles && !changedFiles.has(`src/${rel}`)) continue
+    const checkRel = fullPath.startsWith(SRC) ? `src/${rel}` : rel
+    if (changedFiles && !changedFiles.has(checkRel)) continue
 
     if (entry.name.startsWith('use') && entry.name.endsWith('.ts')) continue
     if (entry.name.endsWith('.tsx')) continue
@@ -349,14 +355,17 @@ function checkPascalCaseComponents(changedFiles?: Set<string>) {
 // ─── Rule 7: No `: any` or `as any` ─────────────────────────────
 function checkAnyTypes(changedFiles?: Set<string>) {
   const walkDir = (d: string) => {
+    if (!existsSync(d)) return
     const entries = readdirSync(d, { withFileTypes: true })
     for (const entry of entries) {
+      if (entry.name === 'node_modules' || entry.name === 'dist' || entry.name === '.next') continue
       const fullPath = join(d, entry.name)
       if (entry.isDirectory()) { walkDir(fullPath); continue }
       if (!['.ts', '.tsx'].includes(extname(entry.name))) continue
 
       const rel = relPath(fullPath)
-      if (changedFiles && !changedFiles.has(`src/${rel}`)) continue
+      const checkRel = fullPath.startsWith(SRC) ? `src/${rel}` : rel
+      if (changedFiles && !changedFiles.has(checkRel)) continue
 
       if (rel.includes('__tests__')) continue
       if (rel.endsWith('.server.ts')) continue
@@ -384,6 +393,8 @@ function checkAnyTypes(changedFiles?: Set<string>) {
     }
   }
   walkDir(SRC)
+  const packagesPath = join(ROOT, 'packages')
+  if (existsSync(packagesPath)) walkDir(packagesPath)
 }
 
 // ─── Rule 7b: No manual validation in API routes ────────────────
@@ -560,12 +571,14 @@ function checkImportRules(changedFiles?: Set<string>) {
   const walkDir = (d: string) => {
     const entries = readdirSync(d, { withFileTypes: true })
     for (const entry of entries) {
+      if (entry.name === 'node_modules' || entry.name === 'dist' || entry.name === '.next') continue
       const fullPath = join(d, entry.name)
       if (entry.isDirectory()) { walkDir(fullPath); continue }
       if (!['.ts', '.tsx'].includes(extname(entry.name))) continue
 
       const rel = relPath(fullPath)
-      if (changedFiles && !changedFiles.has(`src/${rel}`)) continue
+      const checkRel = fullPath.startsWith(SRC) ? `src/${rel}` : rel
+      if (changedFiles && !changedFiles.has(checkRel)) continue
 
       const content = readFileContent(fullPath)
 
@@ -584,7 +597,7 @@ function checkImportRules(changedFiles?: Set<string>) {
         if (/from ['"]@\//.test(content)) {
           addViolation('IMPORT_RULES', rel, 'packages/combat-core must not import application code (@/)')
         }
-        if (/from ['"](?:next(?:\/|$)|react(?:\/|$)|@supabase)/.test(content)) {
+        if (/from ['"](?:next|react|@supabase)(?:['"\/]|$)/.test(content)) {
           addViolation('IMPORT_RULES', rel, 'packages/combat-core must not import Next.js, React, or Supabase')
         }
       }
@@ -720,7 +733,10 @@ if (changedFiles === undefined && diffRef) {
 }
 
 checkLineLimits(SRC, changedFiles)
+const packagesPath = join(ROOT, 'packages')
+if (existsSync(packagesPath)) checkLineLimits(packagesPath, changedFiles)
 checkNaming(SRC, changedFiles)
+if (existsSync(packagesPath)) checkNaming(packagesPath, changedFiles)
 checkNoServerKeyInClient(changedFiles)
 checkNoDirectDBInClient(changedFiles)
 checkApiZodValidation(changedFiles)

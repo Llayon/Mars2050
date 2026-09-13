@@ -33,9 +33,9 @@
 | B1: автономный бой | E1, E2 | `accepted` | CLI fantasy battle executes deterministically, summons fire_elemental, packages archive smoke verified / Reviewer verdict: PASS (`592ef742`) |
 | Ранний summon | B1 / spawn-срез | `accepted` | Verified in fantasy battle: 3 in-combat fire_elemental summons from goblin_shaman via attackType: 'spawn' |
 | E3: data-driven abilities & behaviors | E2, B1 | `accepted` | De-alienated ECS runtime (stationaryAlignment, formationAnchorMode, velocityDamping in UnitRuntimeRules), catalog targetingProfiles fallback, neutral ActiveGlobalEffect/ScheduledGlobalEffect, 199 files (800 tests) PASS, V8/V9 goldens 100% stable / Reviewer verdict: PASS (`b1561673`) |
-| E4 | E3 | `pending` | Нет |
-| E5 | Принятые необходимые срезы | `pending` | Нет |
-| E6 | Принятые необходимые срезы и перенос B1 | `pending` | Нет |
+| E4 | E3 | `accepted` | Arena decoupling in flow map, spatial cells and 11 ECS systems, non-standard arena tests PASS / Reviewer verdict: PASS (`9214800f`) |
+| E5 | Принятые необходимые срезы | `accepted` | Facade connection, simulateBattle thin wrapper, BattleInput translation, 100% byte-identical V8/V9 goldens / Reviewer verdict: PASS (`d07adf32`) |
+| E6 | Принятые необходимые срезы и перенос B1 | `accepted` | Full migration of single runtime & ECS to packages/combat-core, compatibility re-exports, 0 leaks, archive smoke PASS / Reviewer verdict: PASS (`c9e44c2c`) |
 | E7 | E2–E6, B1 | `pending` | Нет |
 
 ## Текущий цикл
@@ -135,24 +135,30 @@
 | REV-E5-CONTRACTS | Валидация BattleInput/CombatRunResult через Zod, расширение battleRulesSchema (trackMetrics, profile) | Проверено независимым ревьюером: packages/combat-core | `PASS` |
 | REV-E5-DETERM | 100% байт-в-байт детерминизм золотых слепков V8/V9 через фасад | Проверено: 16/16 тестов в v8/v9 golden пройдены | `PASS` |
 | REV-E5-SUITE | Интеграционный набор тестов фасада и совместимости | combat.facade-compat.test.ts (4 теста) пройден | `PASS` |
+| REV-E6-MIGRATION | Полный перенос единой реализации ядра и ECS в packages/combat-core/src/ | Проверено независимым ревьюером: 50 модулей ядра, 58 модулей ECS-инфраструктуры, 73 системы | `PASS` |
+| REV-E6-REEXPORTS | Тонкие совместимые реэкспорты в src/domains/combat/ и src/domains/combat/ecs/ без дублирования кода | Проверено независимым ревьюером: 0 дубликатов | `PASS` |
+| REV-E6-MARS-ISOLATION | Марсианские модули roster/economy/upgrades/service/schemas/engine изолированы в домене Mars | Проверено независимым ревьюером: 8 модулей строго в src/domains/combat/ | `PASS` |
+| REV-E6-LEAKS | Полное отсутствие утечек @/, next, react, supabase, db types в packages/combat-core | Проверено независимым ревьюером: 0 совпадений, 1 runtime dep (zod) | `PASS` |
+| REV-E6-GOLDENS | 100% байт-в-байт детерминизм золотых слепков V8/V9 через пакетный runtime | Проверено: 16/16 тестов в v8/v9 golden пройдены | `PASS` |
+| REV-E6-PACKAGE-SMOKE | Standalone consumer вне воркспейса, компиляция и выполнение через npm pack | Проверено: test:combat:package пройден успешно | `PASS` |
 
 ## Решения, блокеры и восстановление
 
-- Новые подтверждённые факты последней попытки: Рубеж E5 (Connect Mars to Facade and Solidify Compatibility) официально принят. `simulateBattle(...)` в `combat.engine.ts` стал тонкой совместимой оберткой (36 строк), которая транслирует марсианские UnitRow/глобалы в чистый `BattleInput`, делегирует исполнение ядру через `simulateCombat(input)` фасада `@mars2050/combat-core` и маппит результат обратно через `mapCombatRunResultToBattleResult`. Достигнут 100% байт-в-байт детерминизм по SHA-256 хешам в золотых тестах V8 и V9. Пакетные проверки `test:combat:package`, `tsc --noEmit`, архитектурный лимитер `check-limits.ts` и модульные тесты пройдены без нарушений.
+- Новые подтверждённые факты последней попытки: Рубеж E6 (Complete Migration of the Single Runtime & Package Infrastructure) официально принят независимым ревьюером `e6_reviewer` (`c9e44c2c`). Все decoupled модули компиляторов, исполнения, математики и ECS-систем перенесены в `packages/combat-core/src/`. Все файлы в `src/domains/combat/` и `src/domains/combat/ecs/` стали тонкими реэкспортами. Достигнута полная независимость пакета (0 импортов `@/`, Next, React, Supabase, DB-типов). Золотые слепки V8 и V9 стабильны и идентичны байт-в-байт. Внешний тест пакета `npm run test:combat:package`, `tsc --noEmit`, архитектурный чекер `check-limits.ts` и модульные тесты пройдены без замечаний.
 - Последовательных попыток без прогресса: 0.
 - Открытые blockers: нет.
 - Одобренные пользователем изменения scope/полномочий/бюджета: получено подтверждение пользователя на начало реализации.
-- Последний принятый checkpoint: Milestone E5 checkpoint (`feat/combat-core-extraction`).
+- Последний принятый checkpoint: Milestone E6 checkpoint (`feat/combat-core-extraction`).
 - Устаревшие проверки после изменений / что повторить: нет.
-- Следующий точный шаг: коммит среза E5 и переход к этапу E6 (завершить перенос единственной реализации и инфраструктуры пакета).
+- Следующий точный шаг: коммит среза E6 и переход к этапу E7 (проверить независимого Fantasy-потребителя и завершить выделение).
 
 ## Итог запуска
 
-- Статус: `accepted` (Milestone E5: Connect Mars to Facade and Solidify Compatibility).
-- Реально принятые этапы и коммиты: E0 (`5dafddf`), E1 (`60c55e3`), E2 (`271a526`), B1 (`b9665bc`), E3 (`aaac704`), E4 (`4d70805`), E5 (accepted).
-- Незавершённые критерии / невыполненные проверки / риски: коммит E5, переход к E6.
+- Статус: `accepted` (Milestone E6: Complete Migration of the Single Runtime & Package Infrastructure).
+- Реально принятые этапы и коммиты: E0 (`5dafddf`), E1 (`60c55e3`), E2 (`271a526`), B1 (`b9665bc`), E3 (`aaac704`), E4 (`4d70805`), E5 (`d07adf3`), E6 (accepted).
+- Незавершённые критерии / невыполненные проверки / риски: коммит E6, переход к финальному E7.
 - Финальная интеграционная проверка и независимое ревью: `NOT_RUN` (запланировано на E7).
 - Разрешённые и фактически выполненные внешние действия: нет.
-- Что нужно следующей сессии или пользователю: коммит E5 и переход к этапу E6.
+- Что нужно следующей сессии или пользователю: коммит E6 и переход к этапу E7.
 
 

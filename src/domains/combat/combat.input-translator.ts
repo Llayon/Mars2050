@@ -2,8 +2,8 @@ import type { BattleInput, UnitSpawnSpec, ScheduledEffect, ArenaSpec } from '@ma
 import type { UnitRow } from './combat.types'
 import type { Obstacle } from './combat.sim.types'
 import type { BattleSimulationOptions } from './combat.metrics'
-import { MAX_TICKS } from './combat.config'
-import { GLOBAL_UPGRADES } from './combat.upgrades'
+import { MAX_TICKS, UNIT_TYPES } from './combat.config'
+import { GLOBAL_UPGRADES, UPGRADES } from './combat.upgrades'
 import { FIELD_HEIGHT, FIELD_WIDTH, TILE_SIZE, generateObstacles } from './combat.utils'
 import { getUnitRank } from './combat.rank-scaling'
 import { buildMarsUnitDefinitions } from './combat.unit-definitions'
@@ -93,5 +93,9 @@ export function translateMarsBattleInput(
     definitions,
     units,
     scheduledEffects,
+    catalog: {
+      unitTypes: UNIT_TYPES,
+      upgrades: UPGRADES,
+    },
   }
 }

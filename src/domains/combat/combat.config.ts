@@ -71,4 +71,9 @@ export const GRID_WIDTH = 10
 export const GRID_HEIGHT = 18
 export const MAX_TICKS = 400
 
+import { registerDefaultCombatCatalog } from '@mars2050/combat-core/combat.catalog.types'
+import { UPGRADES } from './combat.upgrades'
+
+registerDefaultCombatCatalog({ unitTypes: UNIT_TYPES, upgrades: UPGRADES })
+
 

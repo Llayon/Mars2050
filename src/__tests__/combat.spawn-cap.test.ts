@@ -5,6 +5,7 @@ import { PRNG } from '@/domains/combat/combat.utils'
 import { CombatWorld } from '@/domains/combat/ecs/combat-world'
 import { EntitySpatialIndex } from '@/domains/combat/ecs/entity-spatial-index'
 import { runActionSystem } from '@/domains/combat/ecs/systems'
+import '@/domains/combat/combat.config'
 
 function makeUnit(overrides: Partial<SimUnit> & { id: string; team: Team }): SimUnit {
   return {

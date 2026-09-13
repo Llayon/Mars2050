@@ -48,6 +48,7 @@ export const battleInputSchema = z.object({
   definitions: z.record(z.string(), unitDefinitionSchema),
   units: z.array(unitSpawnSpecSchema),
   scheduledEffects: z.array(scheduledEffectSchema).default([]),
+  catalog: z.record(z.string(), z.unknown()).optional(),
 })
 export type BattleInput = z.infer<typeof battleInputSchema>
 export type BattleInputSpec = z.input<typeof battleInputSchema>

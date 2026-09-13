@@ -1,0 +1,215 @@
+import type { BattleAction } from '../../combat.actions.js'
+import type { ControlBeamConfig } from '../../combat.sim.types.js'
+import { getDistance } from '../../combat.utils.js'
+import { canEcsTarget } from '../targeting-evaluation.js'
+import type { CombatWorld } from '../combat-world.js'
+import { compareExternalIdsForMode } from '../authored-order.js'
+import type { EntityId } from '../entity.js'
+import { applyEcsHealing } from './healing-system.js'
+
+export function getEcsControlBeamEntities(world: CombatWorld): readonly EntityId[] {
+  return world.query([
+    'identity',
+    'transform',
+    'vitality',
+    'combat',
+    'targeting',
+    'controlBeamCapability',
+  ])
+}
+
+export function runEcsControlBeamSystem(
+  world: CombatWorld,
+  actions: BattleAction[],
+  entityIds = getEcsControlBeamEntities(world),
+): void {
+  const sources = [...entityIds].sort((left, right) =>
+    compareExternalIdsForMode(world, getExternalId(world, left), getExternalId(world, right)),
+  )
+  for (const sourceId of sources) {
+    if (world.stores.vitality.require(sourceId).isDead) continue
+    const config = world.stores.targeting.require(sourceId).controlBeam
+    if (!config) continue
+    const targets = selectTargets(world, sourceId, config)
+    breakStaleLinks(world, sourceId, config, targets, actions)
+    for (const targetId of targets) {
+      applyControlProgress(
+        world,
+        sourceId,
+        targetId,
+        config,
+        targets.length,
+        actions,
+      )
+    }
+  }
+  breakOrphanedLinks(world, actions)
+}
+
+function selectTargets(
+  world: CombatWorld,
+  sourceId: EntityId,
+  config: ControlBeamConfig,
+): EntityId[] {
+  const sourceIdentity = world.stores.identity.require(sourceId)
+  const source = world.stores.transform.require(sourceId)
+  const range = Math.max(
+    0,
+    config.range ?? world.stores.combat.require(sourceId).range,
+  )
+  return world.resources.require('entitySpatial')
+    .query(world, source.x, source.y, range)
+    .filter(targetId =>
+      targetId !== sourceId &&
+      world.stores.identity.require(targetId).team !== sourceIdentity.team &&
+      canEcsTarget(world, sourceId, targetId),
+    )
+    .sort((left, right) => {
+      const leftDistance = getEntityDistance(world, sourceId, left)
+      const rightDistance = getEntityDistance(world, sourceId, right)
+      return leftDistance !== rightDistance
+        ? leftDistance - rightDistance
+        : compareExternalIdsForMode(world, getExternalId(world, left), getExternalId(world, right))
+    })
+    .slice(0, Math.max(1, config.maxTargets ?? 1))
+}
+
+function breakStaleLinks(
+  world: CombatWorld,
+  sourceId: EntityId,
+  config: ControlBeamConfig,
+  targets: EntityId[],
+  actions: BattleAction[],
+): void {
+  if (config.breakOnRange === false) return
+  const activeTargets = new Set(targets)
+  for (const entityId of world.query(['identity', 'targeting', 'activeControlProgressCapability'], true)) {
+    const progress = world.stores.targeting.require(entityId).controlProgress
+    if (progress && world.stores.entitySources.require(entityId).controlProgressSource === sourceId &&
+        !activeTargets.has(entityId)) breakControlProgress(world, entityId, actions)
+  }
+}
+
+function applyControlProgress(
+  world: CombatWorld,
+  sourceId: EntityId,
+  targetId: EntityId,
+  config: ControlBeamConfig,
+  targetCount: number,
+  actions: BattleAction[],
+): void {
+  const source = world.stores.identity.require(sourceId)
+  const target = world.stores.identity.require(targetId)
+  const targeting = world.stores.targeting.require(targetId)
+  if (world.stores.entitySources.require(targetId).controlProgressSource !== sourceId) {
+    targeting.controlProgress = {
+      sourceUnitId: source.id,
+      sourceTeam: source.team,
+      progress: 0,
+      threshold: config.conversionThreshold,
+      breakOnCleanse: config.breakOnCleanse !== false,
+    }
+    world.stores.entitySources.require(targetId).controlProgressSource = sourceId
+    world.setUnitCapability(targetId, 'activeControlProgressCapability', true)
+    actions.push({
+      unitId: source.id,
+      type: 'control_link',
+      targetId: target.id,
+      value: 0,
+    })
+  }
+  const progress = targeting.controlProgress!
+  const multiplier = targetCount > 1
+    ? config.multiTargetProgressMultiplier ?? 1
+    : 1
+  progress.progress += Math.max(
+    0,
+    config.progressPerTick * multiplier,
+  )
+  actions.push({
+    unitId: source.id,
+    type: 'control_progress',
+    targetId: target.id,
+    value: Math.round(progress.progress * 100) / 100,
+  })
+  if (progress.progress < progress.threshold) return
+
+  world.setEntityTeam(targetId, source.team)
+  targeting.controlProgress = undefined
+  world.stores.entitySources.require(targetId).controlProgressSource = undefined
+  world.setUnitCapability(targetId, 'activeControlProgressCapability', false)
+  clearTargeting(world, targetId)
+  actions.push({
+    unitId: source.id,
+    type: 'control_convert',
+    targetId: target.id,
+  })
+  const vitality = world.stores.vitality.require(targetId)
+  if (config.healConvertedToMax && vitality.hp < vitality.maxHp) {
+    applyEcsHealing(
+      world,
+      sourceId,
+      targetId,
+      vitality.maxHp - vitality.hp,
+      actions,
+    )
+  }
+}
+
+function breakOrphanedLinks(
+  world: CombatWorld,
+  actions: BattleAction[],
+): void {
+  for (const entityId of world.query(['identity', 'vitality', 'targeting', 'activeControlProgressCapability'], true)) {
+    const vitality = world.stores.vitality.require(entityId)
+    const progress = world.stores.targeting.require(entityId).controlProgress
+    if (!progress) continue
+    const sourceId = world.stores.entitySources.require(entityId).controlProgressSource
+    if (sourceId === undefined ||
+        world.stores.vitality.require(sourceId).isDead ||
+        vitality.isDead) breakControlProgress(world, entityId, actions)
+  }
+}
+
+function breakControlProgress(
+  world: CombatWorld,
+  entityId: EntityId,
+  actions: BattleAction[],
+): void {
+  const targeting = world.stores.targeting.require(entityId)
+  const progress = targeting.controlProgress
+  if (!progress) return
+  targeting.controlProgress = undefined
+  world.stores.entitySources.require(entityId).controlProgressSource = undefined
+  world.setUnitCapability(entityId, 'activeControlProgressCapability', false)
+  actions.push({
+    unitId: progress.sourceUnitId,
+    type: 'control_break',
+    targetId: getExternalId(world, entityId),
+    value: progress.progress,
+  })
+}
+
+function clearTargeting(world: CombatWorld, entityId: EntityId): void {
+  const targeting = world.stores.targeting.require(entityId)
+  targeting.aggroLockTicks = 0
+  targeting.meleeSlotIndex = undefined
+  const refs = world.stores.entityTargets.require(entityId)
+  refs.attackTarget = undefined
+  refs.meleeTarget = undefined
+  refs.meleeWaitingTarget = undefined
+}
+
+function getEntityDistance(
+  world: CombatWorld,
+  leftId: EntityId,
+  rightId: EntityId,
+): number {
+  const left = world.stores.transform.require(leftId)
+  const right = world.stores.transform.require(rightId)
+  return getDistance(left.x, left.y, right.x, right.y)
+}
+
+function getExternalId(world: CombatWorld, entityId: EntityId): string {
+  return world.stores.identity.require(entityId).id
+}

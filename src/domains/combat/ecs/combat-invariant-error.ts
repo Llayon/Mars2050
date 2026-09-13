@@ -1,6 +1,1 @@
-export class CombatInvariantError extends Error {
-  constructor(message: string) {
-    super(message)
-    this.name = 'CombatInvariantError'
-  }
-}
+export * from '@mars2050/combat-core/ecs/combat-invariant-error'

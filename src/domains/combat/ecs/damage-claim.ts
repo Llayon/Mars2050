@@ -1,11 +1,1 @@
-export type {
-  CapturedAttackerModifiers,
-  AuthoredEffectPosition,
-  DamageClaim,
-  DamageOrderKey,
-  DefenseInteractionPolicy,
-  DefenseResolutionMode,
-  DefenseBatchResolution,
-  ResolvedDamageClaim,
-} from './defense-batch'
-export { compareDamageOrder, resolveDefenseBatch, sortDamageClaims } from './defense-batch'
+export * from '@mars2050/combat-core/ecs/damage-claim'
