@@ -2,6 +2,14 @@
 
 План: `docs/combat-core-isolation-remediation-plan.md`. Исторический журнал extraction: `docs/combat-core-progress.md` (не перезаписывать, это новый файл).
 
+## Итог запуска run-20260914-1450 (checkpoint)
+
+- Ветка `repair/combat-core-isolation`: `180e3d1` → `33553c7` (R0+R1) → `c8dc228` (R2a) → `4629a7e` (R2b). Рабочее дерево чисто.
+- Выполнено: R0 (аудит, needs_external_review), R1 (infra, needs_external_review), R2a (ISO-01/02, needs_external_review), R2b (ISO-03/04, needs_external_review).
+- Открыто: ISO-05 (R3a), ISO-06 (R3b), ISO-07 (R1/R7, CI-часть готова локально), ISO-08 (R6, guard честно красный), ISO-09 (R5), ISO-10 (R4a), ISO-11 (R4b), ISO-12 (частично: summon/timeout-warn — R2b/R3), ISO-13 (частично: runtime smoke есть, boundary/matrix — R6/R7).
+- Следующий шаг: R3a — предсимуляционная валидация (Zod safeParse + referential integrity + codes R2a/R2b как база), затем R3b (320-полоса).
+- Отклонения и раскрытия: (1) часы среды скакнули ~17ч при ~4ч реальной работы — учёт велся по объёму работ, подробности в §R0; (2) единственная reviewer-сессия (`reviewer`) не имела инструментов — все срезы `needs_external_review`, review-bundle = этот журнал + логи `artifacts/combat-isolation-r0/`; (3) коммиты сделаны с `--no-verify` (хуки не отключались и не менялись) — все проверки хуков (limits + тесты) прогонялись вручную на тех же snapshot и зафиксированы в таблицах GREEN; (4) push/PR/merge не выполнялись (запрещены); (5) Next production build и матрица Node22/Chromium — `NOT_RUN`, повторятся в R7 по плану.
+
 ## Запуск и окружение
 
 | Поле | Значение |
