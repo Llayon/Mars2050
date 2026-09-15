@@ -78,10 +78,10 @@ export function scenarioMageStatus(seed = 1002): ReturnType<typeof simulateComba
 
   // Verify burn status was applied at least once
   const burnEvents = result.logs.flatMap(tick =>
-    tick.actions.filter(a => a.type === 'status' && (a as { statusType?: string }).statusType === 'burn')
+    tick.actions.filter(a => (a.type === 'status_apply' || a.type === 'status_tick') && (a as { statusType?: string }).statusType === 'burn')
   )
   if (burnEvents.length === 0) {
-    console.warn('  [MageStatus] Notice: no burn status events observed (mage may not have attacked).')
+    throw new Error('[MageStatus] Expected burn status events from human_mage, observed none.')
   }
   return result
 }
@@ -96,7 +96,7 @@ export function scenarioHealer(seed = 1003): ReturnType<typeof simulateCombat> {
     definitions: FANTASY_DEFINITIONS,
     units: [
       { instanceId: 'att_warriors', definitionId: 'orc_warrior', team: 'attacker', placement: { x: 300, y: 1000 }, rank: 1, upgradeIds: [] },
-      { instanceId: 'att_healer', definitionId: 'forest_healer', team: 'attacker', placement: { x: 350, y: 1050 }, rank: 1, upgradeIds: [] },
+      { instanceId: 'att_healer', definitionId: 'forest_healer', team: 'attacker', placement: { x: 350, y: 1050 }, rank: 1, upgradeIds: [], currentHp: 25 },
       { instanceId: 'def_elves', definitionId: 'elven_archer', team: 'defender', placement: { x: 300, y: 200 }, rank: 1, upgradeIds: [] },
       { instanceId: 'def_mages', definitionId: 'human_mage', team: 'defender', placement: { x: 250, y: 250 }, rank: 1, upgradeIds: [] },
     ],
@@ -104,7 +104,24 @@ export function scenarioHealer(seed = 1003): ReturnType<typeof simulateCombat> {
   }
   assertFrozenInput(input, 'Healer')
   assertJsonRoundTrip(input, 'Healer')
-  return assertDeterminism(input, 'Healer')
+  const result = assertDeterminism(input, 'Healer')
+
+  // forest_healer targets 'organic': the two pre-damaged healers are organic
+  // and must be healed; non-organic orc allies must never receive heals.
+  // (Healers never target themselves; the pair heals each other.)
+  const heals = result.logs.flatMap(tick =>
+    tick.actions.filter(a => a.type === 'heal')
+  )
+  const targetOf = (a: unknown): string => (a as { targetId?: string }).targetId ?? ''
+  const healerHeals = heals.filter(a => targetOf(a).startsWith('att_healer')).length
+  const orcHeals = heals.filter(a => targetOf(a).startsWith('att_warriors')).length
+  if (healerHeals === 0) {
+    throw new Error('[Healer] Expected heals on the organic pre-damaged healers, observed none.')
+  }
+  if (orcHeals !== 0) {
+    throw new Error(`[Healer] Forbidden target healed: orc allies received ${orcHeals} heal(s).`)
+  }
+  return result
 }
 
 // ─── Scenario 4: In-combat Summon (Shaman + Necromancer) ─────────────────────

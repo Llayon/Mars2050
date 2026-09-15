@@ -22,8 +22,8 @@
 
 | ID | Статус | Срез | Evidence |
 | --- | --- | --- | --- |
-| ISO-01 | `open` | R2a | — |
-| ISO-02 | `open` | R2a | — |
+| ISO-01 | `needs_external_review` (код+тесты R2a) | R2a | `definitions.test.ts` 13/13, matrix 7/7, challenge 4 FAIL на реверте |
+| ISO-02 | `needs_external_review` (код+тесты R2a) | R2a | `UNSUPPORTED_ATTACK_TYPE`, coercion удалён, Mars не использует beam/spread |
 | ISO-03 | `open` | R2b | — |
 | ISO-04 | `open` | R2b | — |
 | ISO-05 | `open` | R3a | — |
@@ -76,6 +76,45 @@
 - ISO-11 FAIL: только legacy `engineVersion/engineRevision` (`version.ts`, V8/V9); отдельных contract/engine-build/ruleset/replay identities нет.
 - ISO-12 FAIL: `run-battle.ts:84` (`MageStatus` warn вместо assert), `:158-159` (`Timeout` warn), summon-сценарии только `console.log` без assert.
 - ISO-13 FAIL: `scripts/test-combat-package.ts` — только schema/round-trip smoke без боя; negative import проверяет несуществующий `@mars2050/combat-core/dist/contracts/unit.contracts.js` (даёт MODULE_NOT_FOUND вместо ERR_PACKAGE_PATH_NOT_EXPORTED); `npm.cmd`/`tsc.cmd` хардкод (`:18`,`:62`,`:182`).
+
+## R2a: публичные definitions исполняются (ISO-01, ISO-02, ISO-12 частично) — green, review pending
+
+Критерий: публичный фасад и архивный потребитель подтверждают реальные эффекты; локальный контрольный возврат потери поля ломает тест. Mars baseline не меняется.
+
+### RED
+
+- Новые `packages/combat-core/tests/definitions.test.ts` (7 тестов) на коде до фикса: 6/7 FAIL. Шестой (1:1 mapping single/aoe/spawn/heal) проходил и до — корректно, coercion касалась только beam/spread.
+- Важная находка RED-фазы: боевые события статусов называются `status_apply`/`status_tick`, а не `status` (`combat.actions.ts:9`, `status-application-system.ts:61`). Фильтр `type==='status'` в R0-репродусере и Fantasy-матрице был вакуозным (ноль при любом коде) — это и есть один из механизмов ISO-12. Исправлено в тесте, репродусере и матрице.
+
+### FIX
+
+- `combat.definition-mapper.ts`: `statusOnHit`/`healTargetTags` проводятся в `UnitTypeConfig.baseStats` (копии); beam/spread бросают типизированный `CombatDefinitionError('UNSUPPORTED_ATTACK_TYPE', definitionId, attackType)` вместо silent `single`. Runtime-представления beam/spread нет (только `beamAttack`-геометрия из конфигов, `combat.weapon-validation.ts:4-31`), нового движка не писалось, контрактная версия не менялась — отклонение явное и версионируется здесь решением + тестами.
+- `combat.definition-error.ts` (новый): код + definitionId + attackType; переиспользуется R3a-валидацией. Экспорт добавлен в корень пакета (facade/DTO-уровень, не ECS).
+- `examples/fantasy-combat/src/run-battle.ts`: MageStatus — фильтр `status_apply|status_tick` + throw вместо warn; Healer — пара pre-damaged healers (`currentHp: 25`) + asserts (organic heal >0, orc heals =0). Self-heal невозможен по дизайну (`support-targeting.ts:12` исключает себя) — сценарий это учитывает. Timeout/summon-warn оставлены срезам R2b/R3.
+- Mars не затронут: `buildMarsUnitDefinitions` проецирует те же поля, а в runner ключи definitions совпадают с ключами catalog (`UNIT_TYPES`), где полная статистика уже была. Mars не использует beam/spread (grep пуст).
+
+### GREEN (frozen snapshot)
+
+| Команда | Exit | Результат |
+| --- | --- | --- |
+| `npm run test:combat:core` | 0 | 13/13 (6 contracts + 7 definitions) |
+| `npm test` (full) | 0 | 201/812 — Mars без изменений |
+| `npm run typecheck` | 0 | rebuild core + tsc чист |
+| `check-limits --json` (full) | 0 | 0 violations |
+| goldens V8/V9 | 0 | 7+7 stable |
+| `test:combat:package:runtime` | 0 | melee+summon на новом tarball (sha 617163a6…) |
+| fantasy matrix (`tsc -p` + `node dist/run-battle.js`) | 0 | 7/7 со строгими burn/heal asserts |
+| repro `repro-iso01-06.ts` | 1 (ожидаемо) | ISO-01/ISO-02 PASS (burn 40/0, org 31/mech 0, explicit reject); ISO-03–06 FAIL — открытые R2b/R3a/R3b |
+
+### Challenge
+
+- Временная копия `artifacts/r2a-challenge` (удалена после проверки): убраны ровно 2 строки passthrough → 4 FAIL: оба mapper-теста + оба семантических battle-теста (burn, heal); beam/spread-тесты зелёные. Чувствительность семантики доказана, не только parse.
+- Негативный контроль синтаксической поломкой не подменялся; общая копия не трогалась.
+
+### Review / решение
+
+- Статус: `needs_external_review` (та же причина — нет capable-review; bundle = раздел + diff + команды).
+- ISO-01, ISO-02 закрыты кодом+тестами; ISO-12 частично (mage/healer asserts; summon/timeout — позже).
 
 ## R1: чистая сборка и ранний архивный runtime smoke — `implementing` → green, review pending
 

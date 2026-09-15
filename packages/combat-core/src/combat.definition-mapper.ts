@@ -1,19 +1,19 @@
 import type { UnitDefinition } from './contracts/index.js'
 import type { CombatTag } from './combat.sim.types.js'
 import type { UnitBaseStats, UnitTypeConfig } from './combat.types.js'
+import { CombatDefinitionError } from './combat.definition-error.js'
 
 /**
  * Converts a public contract UnitDefinition into internal UnitTypeConfig.
+ * Every accepted field is carried through; beam/spread have no runtime
+ * representation and are rejected explicitly instead of coerced to single.
  */
 export function mapDefinitionToUnitTypeConfig(def: UnitDefinition): UnitTypeConfig {
-  const attackType: UnitBaseStats['attackType'] =
-    def.baseStats.attackType === 'aoe'
-      ? 'aoe'
-      : def.baseStats.attackType === 'spawn'
-        ? 'spawn'
-        : def.baseStats.attackType === 'heal'
-          ? 'heal'
-          : 'single'
+  const attackType = def.baseStats.attackType
+  if (attackType !== 'single' && attackType !== 'aoe' && attackType !== 'spawn' && attackType !== 'heal') {
+    throw new CombatDefinitionError('UNSUPPORTED_ATTACK_TYPE', def.id, attackType)
+  }
+  const executableType: UnitBaseStats['attackType'] = attackType
   return {
     name: def.name,
     baseStats: {
@@ -22,9 +22,11 @@ export function mapDefinitionToUnitTypeConfig(def: UnitDefinition): UnitTypeConf
       defense: def.baseStats.defense,
       speed: def.baseStats.speed,
       range: def.baseStats.range,
-      attackType,
+      attackType: executableType,
       spawnType: def.baseStats.spawnType,
       spawnCap: def.baseStats.spawnCap,
+      statusOnHit: def.baseStats.statusOnHit?.map(status => ({ ...status })),
+      healTargetTags: def.baseStats.healTargetTags ? ([...def.baseStats.healTargetTags] as CombatTag[]) : undefined,
       actionCooldownMax: def.baseStats.actionCooldownMax,
       turnSpeed: def.baseStats.turnSpeed,
       size: def.baseStats.size,
