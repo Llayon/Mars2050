@@ -43,12 +43,24 @@ Starts the local Next.js development server.
 ```bash
 npm test
 ```
-Runs Vitest unit and combat simulation tests.
+Runs Vitest unit and combat simulation tests (builds `@mars2050/combat-core` first).
 
 ```bash
-npx tsc --noEmit --pretty false
+npm run typecheck
 ```
-Runs TypeScript type checking without emitting files.
+Builds `@mars2050/combat-core`, then runs TypeScript type checking without emitting files.
+Direct `npx tsc --noEmit` only checks an already prepared tree.
+
+```bash
+npm run test:combat:core
+```
+Runs the standalone combat-core contract tests (plain Node, no jsdom/Mars setup).
+
+```bash
+npm run test:combat:package:runtime
+```
+Packs the built package and runs a real melee + in-combat summon battle in an
+isolated consumer outside the workspace.
 
 ```bash
 npm run lint:limits

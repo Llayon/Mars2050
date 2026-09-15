@@ -8,6 +8,9 @@ function run(command: string, cwd: string): string {
   return execSync(command, { cwd, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] })
 }
 
+const NPM = process.platform === 'win32' ? 'npm.cmd' : 'npm'
+const TSCBIN = process.platform === 'win32' ? 'tsc.cmd' : 'tsc'
+
 function main(): void {
   const rootDir = process.cwd()
   const stageDir = join(tmpdir(), `combat-core-smoke-${Date.now()}`)
@@ -15,10 +18,10 @@ function main(): void {
 
   try {
     console.log('[1/6] Building @mars2050/combat-core...')
-    run('npm.cmd --workspace=@mars2050/combat-core run build', rootDir)
+    run(`${NPM} --workspace=@mars2050/combat-core run build`, rootDir)
 
     console.log('[2/6] Packaging tarball into isolated tmpdir...')
-    const packJson = run(`npm.cmd pack --workspace=@mars2050/combat-core --json --pack-destination="${stageDir}"`, rootDir)
+    const packJson = run(`${NPM} pack --workspace=@mars2050/combat-core --json --pack-destination="${stageDir}"`, rootDir)
     const packMeta = JSON.parse(packJson)[0]
     const tarballPath = join(stageDir, packMeta.filename)
 
@@ -59,7 +62,7 @@ function main(): void {
       'utf8'
     )
 
-    run(`npm.cmd install "${tarballPath}"`, consumerDir)
+    run(`${NPM} install "${tarballPath}"`, consumerDir)
 
     writeFileSync(
       join(consumerDir, 'tsconfig.json'),
@@ -178,21 +181,38 @@ console.log('Consumer smoke verification passed successfully.')
     writeFileSync(join(consumerDir, 'consumer.ts'), consumerTsCode, 'utf8')
 
     console.log('[5/6] Compiling and running TypeScript consumer...')
-    const localTsc = join(consumerDir, 'node_modules', '.bin', 'tsc.cmd')
-    const tscCmd = existsSync(localTsc) ? `"${localTsc}" -p tsconfig.json` : 'npx.cmd -p typescript tsc -p tsconfig.json'
+    const localTsc = join(consumerDir, 'node_modules', '.bin', TSCBIN)
+    const tscCmd = existsSync(localTsc) ? `"${localTsc}" -p tsconfig.json` : `${NPM} -p typescript tsc -p tsconfig.json`
     run(tscCmd, consumerDir)
     const stdout = run('node dist/consumer.js', consumerDir)
     console.log(stdout.trim())
 
     console.log('[6/6] Verifying subpath encapsulation...')
-    let subpathBlocked = false
-    try {
-      run('node -e "import(\'@mars2050/combat-core/dist/contracts/unit.contracts.js\')"', consumerDir)
-    } catch {
-      subpathBlocked = true
+    // Existing internal modules (not guessed paths): each must resolve to
+    // ERR_PACKAGE_PATH_NOT_EXPORTED. Any other outcome (resolves, or a
+    // different error) is a boundary FAIL. Known FAIL until R6 (ISO-08).
+    const privateSubpaths = [
+      '@mars2050/combat-core/combat.runner',
+      '@mars2050/combat-core/combat.unit-compiler',
+      '@mars2050/combat-core/ecs/combat-world',
+      '@mars2050/combat-core/ecs/defense-resource-commit',
+    ]
+    const leaks: string[] = []
+    for (const subpath of privateSubpaths) {
+      try {
+        run(`node --input-type=module -e "import('${subpath}')"`, consumerDir)
+        leaks.push(`${subpath}: RESOLVED (export is open)`)
+      } catch (err) {
+        const msg = String((err as { message?: string }).message ?? err)
+        if (!msg.includes('ERR_PACKAGE_PATH_NOT_EXPORTED')) {
+          leaks.push(`${subpath}: wrong error (expected ERR_PACKAGE_PATH_NOT_EXPORTED): ${msg.slice(0, 160)}`)
+        } else {
+          console.log(`  blocked as expected: ${subpath}`)
+        }
+      }
     }
-    if (!subpathBlocked) {
-      throw new Error('Unexported subpath import was not blocked by package exports!')
+    if (leaks.length > 0) {
+      throw new Error(`BOUNDARY FAIL (known ISO-08, closes in R6):\n  ${leaks.join('\n  ')}`)
     }
     console.log('Unexported internal subpaths correctly blocked by package exports.')
 
