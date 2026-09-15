@@ -70,7 +70,11 @@ export function translateMarsBattleInput(
   const maxTicks = options.maxTicks !== undefined && Number.isFinite(options.maxTicks)
     ? Math.max(1, Math.min(2000, Math.floor(options.maxTicks)))
     : MAX_TICKS
-  const timeoutPolicy = options.timeoutPolicy === 'defender_holds' ? 'defender_win' : (options.timeoutPolicy ?? 'draw')
+  const timeoutPolicy = options.timeoutPolicy === 'attacker_holds'
+    ? 'attacker_win'
+    : options.timeoutPolicy === 'defender_holds'
+      ? 'defender_win'
+      : 'draw'
   const defenseResolutionMode = options.defenseResolutionMode ?? 'v9_snapshot'
 
   const definitions = buildMarsUnitDefinitions()

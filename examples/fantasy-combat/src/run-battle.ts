@@ -181,6 +181,29 @@ export function scenarioTimeout(seed = 1005): ReturnType<typeof simulateCombat> 
   return result
 }
 
+// ─── Scenario 5b: Timeout Policy (attacker_win) ──────────────────────────
+
+export function scenarioTimeoutAttacker(seed = 1007): ReturnType<typeof simulateCombat> {
+  const input: BattleInput = {
+    seed,
+    arena: { width: 300, height: 600, tileSize: 40, obstacles: [] },
+    rules: { maxTicks: 10, timeoutPolicy: 'attacker_win', defenseResolutionMode: 'v9_snapshot' },
+    definitions: FANTASY_DEFINITIONS,
+    units: [
+      { instanceId: 'att_far', definitionId: 'orc_warrior', team: 'attacker', placement: { x: 150, y: 550 }, rank: 1, upgradeIds: [] },
+      { instanceId: 'def_far', definitionId: 'orc_warrior', team: 'defender', placement: { x: 150, y: 50 }, rank: 1, upgradeIds: [] },
+    ],
+    scheduledEffects: [],
+  }
+  assertFrozenInput(input, 'TimeoutAttacker')
+  assertJsonRoundTrip(input, 'TimeoutAttacker')
+  const result = assertDeterminism(input, 'TimeoutAttacker')
+  if (result.terminationReason !== 'timeout' || result.winner !== 'attacker' || result.elapsedTicks !== 10) {
+    throw new Error(`[TimeoutAttacker] Expected timeout/attacker/10, got: ${result.terminationReason}/${result.winner}/${result.elapsedTicks}`)
+  }
+  return result
+}
+
 // ─── Scenario 6: Alternate Arena (smaller) ───────────────────────────────────
 
 export function scenarioSmallArena(seed = 1006): ReturnType<typeof simulateCombat> {
@@ -270,6 +293,7 @@ function runE7Matrix() {
     ['S4: Healer Supporting Allies', () => scenarioHealer(1003)],
     ['S5: Dual Summon (shaman + necromancer)', () => scenarioSummon(1004)],
     ['S6: Timeout Policy (defender_win)', () => scenarioTimeout(1005)],
+    ['S6b: Timeout Policy (attacker_win)', () => scenarioTimeoutAttacker(1007)],
     ['S7: Small Arena (300×600, tileSize 20)', () => scenarioSmallArena(1006)],
   ]
 

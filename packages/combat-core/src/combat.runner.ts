@@ -10,8 +10,20 @@ import type { BattleAction, BattleTick } from './combat.actions.js'
 import type { CombatCatalog } from './combat.catalog.types.js'
 import type { UnitTypeConfig } from './combat.types.js'
 import { mapDefinitionToUnitTypeConfig } from './combat.definition-mapper.js'
-import type { ActiveGlobalEffect } from './combat.primitives.js'
+import type { ActiveGlobalEffect, ScheduledGlobalEffectKind } from './combat.primitives.js'
+import { CombatDefinitionError } from './combat.definition-error.js'
 import { createCombatMetrics, finalizeCombatMetrics, recordCombatActions, recordCombatTick } from './combat.metrics.js'
+
+const SUPPORTED_SCHEDULED_EFFECT_KINDS: readonly string[] = ['orbital_strike', 'mass_heal', 'mass_shield', 'global_emp']
+
+/**
+ * Guards the scheduled-effect boundary: only engine-supported kinds pass.
+ * @param type Raw effect type from BattleInput.
+ * @returns True when the engine can execute the kind.
+ */
+function isSupportedScheduledEffectKind(type: string): type is ScheduledGlobalEffectKind {
+  return SUPPORTED_SCHEDULED_EFFECT_KINDS.includes(type)
+}
 export function executeCombatSimulation(input: BattleInput): CombatRunResult {
   const seed = input.seed
   const rng = new PRNG(seed)
@@ -19,8 +31,24 @@ export function executeCombatSimulation(input: BattleInput): CombatRunResult {
   const arena = input.arena
   const rules = input.rules
   const maxTicks = rules.maxTicks
-  const timeoutPolicy = rules.timeoutPolicy === 'defender_win' ? 'defender_holds' : 'draw'
+  const timeoutPolicy = rules.timeoutPolicy === 'attacker_win'
+    ? 'attacker_holds'
+    : rules.timeoutPolicy === 'defender_win'
+      ? 'defender_holds'
+      : 'draw'
   const defenseResolutionMode = rules.defenseResolutionMode
+
+  // Validate scheduled effects before creating the world: unknown kinds are
+  // rejected, and the caller-supplied tick travels with the effect.
+  const activeGlobals: ActiveGlobalEffect[] = (input.scheduledEffects ?? []).map(effect => {
+    if (!isSupportedScheduledEffectKind(effect.type)) {
+      throw new CombatDefinitionError('UNSUPPORTED_SCHEDULED_EFFECT', '', '', { effectId: effect.id, effectType: effect.type })
+    }
+    return {
+      team: effect.team,
+      effect: { id: effect.id, type: effect.type, value: effect.value, tick: effect.tick },
+    }
+  })
 
   const runtime = createEcsCombatRuntime({ profile: rules.profile === true, defenseResolutionMode })
   const passedCatalog = input.catalog as unknown as CombatCatalog | undefined
@@ -30,10 +58,6 @@ export function executeCombatSimulation(input: BattleInput): CombatRunResult {
       unitTypes[key] = mapDefinitionToUnitTypeConfig(def)
     }
   }
-  const activeGlobals: ActiveGlobalEffect[] = (input.scheduledEffects ?? []).map(effect => ({
-    team: effect.team,
-    effect: { id: effect.id, type: effect.type as import('./combat.primitives.js').ScheduledGlobalEffectKind, value: effect.value },
-  }))
   const catalog: CombatCatalog = {
     unitTypes,
     upgrades: passedCatalog?.upgrades ?? {},

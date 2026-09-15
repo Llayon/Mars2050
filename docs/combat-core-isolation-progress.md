@@ -24,8 +24,8 @@
 | --- | --- | --- | --- |
 | ISO-01 | `needs_external_review` (код+тесты R2a) | R2a | `definitions.test.ts` 13/13, matrix 7/7, challenge 4 FAIL на реверте |
 | ISO-02 | `needs_external_review` (код+тесты R2a) | R2a | `UNSUPPORTED_ATTACK_TYPE`, coercion удалён, Mars не использует beam/spread |
-| ISO-03 | `open` | R2b | — |
-| ISO-04 | `open` | R2b | — |
+| ISO-03 | `needs_external_review` (код+тесты R2b) | R2b | timeout-матрица 3/3, terminal precedence, matrix S6+S6b 8/8 |
+| ISO-04 | `needs_external_review` (код+тесты R2b) | R2b | ticks 0/1/5, same-tick order, attribution, reject unknown kinds |
 | ISO-05 | `open` | R3a | — |
 | ISO-06 | `open` | R3b | — |
 | ISO-07 | `open` | R1,R7 | — |
@@ -76,6 +76,43 @@
 - ISO-11 FAIL: только legacy `engineVersion/engineRevision` (`version.ts`, V8/V9); отдельных contract/engine-build/ruleset/replay identities нет.
 - ISO-12 FAIL: `run-battle.ts:84` (`MageStatus` warn вместо assert), `:158-159` (`Timeout` warn), summon-сценарии только `console.log` без assert.
 - ISO-13 FAIL: `scripts/test-combat-package.ts` — только schema/round-trip smoke без боя; negative import проверяет несуществующий `@mars2050/combat-core/dist/contracts/unit.contracts.js` (даёт MODULE_NOT_FOUND вместо ERR_PACKAGE_PATH_NOT_EXPORTED); `npm.cmd`/`tsc.cmd` хардкод (`:18`,`:62`,`:182`).
+
+## R2b: timeout и scheduled effects как данные (ISO-03, ISO-04) — green, review pending
+
+Критерий: таймаутная матрица и точные effect ticks через публичный API/архив; Mars globals и outcome regression совпадают. Момент terminal checks, ожидание pending impacts/hazards/reassembly и порядок фаз не менялись.
+
+### RED
+
+- Новые `packages/combat-core/tests/rules.test.ts` (8 тестов): 4/7 FAIL на коде до фикса (attacker_win→draw; strike в 100 вместо 5; multi-tick эффекты не в срок; unknown kind — silent no-op). draw/defender_win, terminal-precedence и tick-0 shields уже были корректны и зафиксированы как lock-in.
+
+### FIX
+
+- `math/outcome.ts`: `TIMEOUT_POLICIES` расширен `attacker_holds`; `getTimeoutOutcome` возвращает attacker/defender/draw соответственно. Потребители политики ограничены runner + clock resource (проверено grep).
+- `combat.runner.ts`: явное 3-стороннее сопоставление (`attacker_win→attacker_holds`, `defender_win→defender_holds`, иначе `draw`); `tick` проводится в `ActiveGlobalEffect`; неизвестные kinds бросают `CombatDefinitionError('UNSUPPORTED_SCHEDULED_EFFECT', effectId, effectType)` до создания мира. Убран каст `as ScheduledGlobalEffectKind`.
+- `combat.definition-error.ts`: второй код + поля effectId/effectType (переиспользуется R3a).
+- `src/domains/combat/combat.input-translator.ts`: нормализация sim-имён (`attacker_holds→attacker_win`, `defender_holds→defender_win`, иначе `draw`). Поведение для всех существующих caller/test значений (draw/defender_holds) идентично;стройный тип опций contract-имена никогда не содержал, что подтвердил tsc в процессе.
+- `examples/fantasy-combat/src/run-battle.ts`: сценарий S6b `attacker_win` со строгим assert (timeout/attacker/10).
+
+### GREEN (frozen snapshot)
+
+| Команда | Exit | Результат |
+| --- | --- | --- |
+| `npm run test:combat:core` | 0 | 21/21 (6 contracts + 7 definitions + 8 rules) |
+| `npm test` (full, после правки транслятора) | 0 | 201/812 — Mars без изменений |
+| `npm run typecheck` | 0 | rebuild core + tsc чист (включая фикс транслятора) |
+| `check-limits --json` (full) | 0 | passed, 0 violations |
+| goldens V8/V9 | 0 | 7+7 stable (legacy-моменты 50/100/150 задаёт адаптер как и раньше) |
+| `test:combat:package:runtime` | 0 | новый tarball bab73cb8…, melee+summon |
+| fantasy matrix | 0 | 8/8 (S6 defender_win + S6b attacker_win) |
+
+### Challenge
+
+- Временная копия (удалена): возвращены старый 2-сторонний mapping и потеря `tick` → 3 FAIL (attacker_win, strike-tick, multi-effect). Unknown-kind класс доказан RED-прогоном (4-й FAIL до фикса). Валидация оставлена нетронутой намеренно — отдельный класс исправления.
+
+### Review / решение
+
+- Статус: `needs_external_review` (нет capable-review; bundle = раздел + diff + команды).
+- ISO-03, ISO-04 закрыты кодом+тестами. Mars legacy timing сохранён (transulator ticks + goldens).
 
 ## R2a: публичные definitions исполняются (ISO-01, ISO-02, ISO-12 частично) — green, review pending
 
