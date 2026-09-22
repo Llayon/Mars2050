@@ -7,8 +7,9 @@ import { join } from 'node:path'
 const NPM = process.platform === 'win32' ? 'npm.cmd' : 'npm'
 const TSCBIN = process.platform === 'win32' ? 'tsc.cmd' : 'tsc'
 
-function run(command: string, cwd: string): string {
-  return execSync(command, { cwd, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] })
+function run(command: string, cwd: string, extraEnv: Record<string, string> = {}): string {
+  const env = { ...process.env, NODE_PATH: '', ...extraEnv }
+  return execSync(command, { cwd, env, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] })
 }
 
 function main(): void {
@@ -62,16 +63,25 @@ function main(): void {
 
 const CONSUMER_CODE = `
 import { createRequire } from 'node:module'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { simulateCombat } from '@mars2050/combat-core'
 import type { BattleInput, UnitDefinition } from '@mars2050/combat-core/contracts'
 
-// 0. Verify package resolution is truly from installed node_modules, not workspace sources
+// 0. Verify package resolution is strictly from this consumer's isolated node_modules
+if (process.env.NODE_PATH) {
+  throw new Error(\`Isolation violation: NODE_PATH is not empty: \${process.env.NODE_PATH}\`)
+}
 const require = createRequire(import.meta.url)
 const resolvedPkg = require.resolve('@mars2050/combat-core')
-if (!resolvedPkg.includes('node_modules') || resolvedPkg.includes('packages/combat-core') || resolvedPkg.includes('packages\\\\combat-core')) {
-  throw new Error(\`Module resolution leak: resolved to \${resolvedPkg}\`)
+const consumerDir = resolve(dirname(fileURLToPath(import.meta.url)), '..')
+const expectedNodeModules = resolve(consumerDir, 'node_modules', '@mars2050', 'combat-core')
+const normResolved = resolve(resolvedPkg)
+const normExpected = resolve(expectedNodeModules)
+if (!normResolved.startsWith(normExpected)) {
+  throw new Error(\`Module resolution leak: expected within \${normExpected}, but resolved to \${normResolved}\`)
 }
-console.log(\`[consumer] Package resolved correctly from isolated node_modules: \${resolvedPkg}\`)
+console.log(\`[consumer] Package resolved correctly from isolated node_modules: \${normResolved}\`)
 
 function fp(v: unknown): string { return JSON.stringify(v) }
 
@@ -128,10 +138,37 @@ const s2 = simulateCombat(JSON.parse(fp(summon)) as BattleInput)
 if (fp(s1) !== fp(s2)) throw new Error('determinism violation in summon battle')
 const spawns = s1.logs.flatMap(t => t.actions).filter(a => a.type === 'spawn' && (a as { spawnType?: string }).spawnType === 'imp')
 if (spawns.length === 0) throw new Error('in-combat summon produced no imp spawns')
-if (!spawns.every(a => (a as { spawnTeam?: string }).spawnTeam === 'attacker')) throw new Error('summon team attribution wrong')
-const owned = [...s1.survivors, ...s1.initialState].filter(u => u.summonOwnerId !== undefined)
-if (owned.length === 0) throw new Error('no summoned unit carries summonOwnerId')
-console.log(\`summon: impSpawns=\${spawns.length} attributedSurvivors=\${owned.length}\`)
+const spawnedIds = new Set<string>()
+for (const a of spawns) {
+  const sa = a as { unitId?: string; sourceId?: string; targetId?: string; spawnTeam?: string; spawnType?: string }
+  if (sa.unitId !== 'shaman' && sa.sourceId !== 'shaman') {
+    throw new Error(\`spawn event attributed to unexpected summoner source: unitId=\${sa.unitId}, sourceId=\${sa.sourceId} (expected shaman)\`)
+  }
+  if (sa.spawnTeam !== 'attacker') {
+    throw new Error(\`summon team attribution wrong: \${sa.spawnTeam} (expected attacker)\`)
+  }
+  if (!sa.targetId) {
+    throw new Error('spawn event missing targetId of created creature')
+  }
+  spawnedIds.add(sa.targetId)
+}
+
+const spawnedCreatures = s1.survivors.filter(u => spawnedIds.has(u.id))
+if (spawnedCreatures.length !== spawns.length) {
+  throw new Error(\`mismatch between spawn events (\${spawns.length}) and created surviving creatures (\${spawnedCreatures.length})\`)
+}
+for (const creature of spawnedCreatures) {
+  if (creature.summonOwnerId !== 'shaman') {
+    throw new Error(\`spawned creature \${creature.id} has incorrect summonOwnerId: \${creature.summonOwnerId} (expected shaman)\`)
+  }
+}
+
+for (const initial of s1.survivors.filter(u => !spawnedIds.has(u.id))) {
+  if (initial.summonOwnerId !== undefined) {
+    throw new Error(\`initial non-summoned unit \${initial.id} unexpectedly carries summonOwnerId: \${initial.summonOwnerId}\`)
+  }
+}
+console.log(\`summon: impSpawns=\${spawns.length} attributedSurvivors=\${spawnedCreatures.length}\`)
 
 // 3. Burn with real subsequent periodic damage
 const pyromancer = def('pyromancer', { hp: 300, attack: 25, speed: 4, range: 6, combatTags: ['magic'], statusOnHit: [{ type: 'burn', duration: 25, value: 8 }] })
@@ -184,6 +221,10 @@ const healInput: BattleInput = {
   scheduledEffects: [],
 }
 const healRes = simulateCombat(healInput)
+const controlHealRes = simulateCombat({
+  ...healInput,
+  units: healInput.units.filter(u => u.instanceId !== 'cleric'),
+})
 const heals = healRes.logs.flatMap(t => t.actions).filter(a => a.type === 'heal')
 const orgHeals = heals.filter(a => (a as { targetId?: string }).targetId === 'org').length
 const mechHeals = heals.filter(a => (a as { targetId?: string }).targetId === 'mech').length
@@ -192,7 +233,24 @@ if (mechHeals !== 0) throw new Error(\`healTargetTags: mechanical ally received 
 for (const u of healRes.survivors) {
   if (u.hp > u.maxHp) throw new Error(\`healTargetTags: unit \${u.id} HP \${u.hp} exceeded maxHp \${u.maxHp}\`)
 }
-console.log(\`healTargetTags: orgHeals=\${orgHeals} mechHeals=\${mechHeals} maxHpCapEnforced=true\`)
+const orgSurvivor = healRes.survivors.find(u => u.id === 'org')
+const mechSurvivor = healRes.survivors.find(u => u.id === 'mech')
+const controlOrg = controlHealRes.survivors.find(u => u.id === 'org')
+const controlMech = controlHealRes.survivors.find(u => u.id === 'mech')
+
+if (!orgSurvivor || orgSurvivor.hp <= 30) {
+  throw new Error(\`healTargetTags: organic ally HP did not increase from healing (hp=\${orgSurvivor?.hp}, expected > 30)\`)
+}
+if (!controlOrg || orgSurvivor.hp <= controlOrg.hp) {
+  throw new Error(\`healTargetTags: organic ally HP (\${orgSurvivor.hp}) did not exceed unhealed control (\${controlOrg?.hp})\`)
+}
+if (!mechSurvivor || mechSurvivor.hp !== 30) {
+  throw new Error(\`healTargetTags: mechanical ally HP changed unexpectedly (hp=\${mechSurvivor?.hp}, expected 30)\`)
+}
+if (!controlMech || mechSurvivor.hp !== controlMech.hp) {
+  throw new Error(\`healTargetTags: mechanical ally HP (\${mechSurvivor.hp}) differed from control (\${controlMech?.hp})\`)
+}
+console.log(\`healTargetTags: orgHeals=\${orgHeals} mechHeals=\${mechHeals} orgHpRecovered=\${orgSurvivor.hp - 30} maxHpCapEnforced=true\`)
 
 // 5. All three timeout policies
 const farAttacker = def('fa', { speed: 0 })
@@ -270,21 +328,23 @@ const healEvt = tick3Actions[healIdx] as { targetId?: string; damage?: number }
 if (healEvt.targetId !== 'a' || healEvt.damage !== 40) throw new Error('simultaneous effects: heal attribution wrong')
 console.log('scheduledTicks: delayed mass_shield, bounds, single grant, and simultaneous effects verified')
 
-// 7. Explicit rejection of unsupported attack and effect kinds
-let rejectedAttack = false
-try {
-  simulateCombat({
-    seed: 4848,
-    arena: { width: 600, height: 1200, tileSize: 40, obstacles: [] },
-    rules: { maxTicks: 10, timeoutPolicy: 'draw', defenseResolutionMode: 'v9_snapshot' },
-    definitions: { bad: def('bad', { attackType: 'beam' as unknown as 'single' }) },
-    units: [{ instanceId: 'a', definitionId: 'bad', team: 'attacker', placement: { x: 300, y: 1000 }, rank: 1, upgradeIds: [] }],
-    scheduledEffects: [],
-  })
-} catch (err: unknown) {
-  if ((err as { code?: string }).code === 'UNSUPPORTED_ATTACK_TYPE') rejectedAttack = true
+// 7. Explicit rejection of unsupported attack (beam and spread) and scheduled effect kinds
+for (const badAttackType of ['beam', 'spread'] as const) {
+  let rejectedAttack = false
+  try {
+    simulateCombat({
+      seed: 4848,
+      arena: { width: 600, height: 1200, tileSize: 40, obstacles: [] },
+      rules: { maxTicks: 10, timeoutPolicy: 'draw', defenseResolutionMode: 'v9_snapshot' },
+      definitions: { bad: def('bad', { attackType: badAttackType as unknown as 'single' }) },
+      units: [{ instanceId: 'a', definitionId: 'bad', team: 'attacker', placement: { x: 300, y: 1000 }, rank: 1, upgradeIds: [] }],
+      scheduledEffects: [],
+    })
+  } catch (err: unknown) {
+    if ((err as { code?: string }).code === 'UNSUPPORTED_ATTACK_TYPE') rejectedAttack = true
+  }
+  if (!rejectedAttack) throw new Error(\`unsupported attackType \${badAttackType} was not rejected with UNSUPPORTED_ATTACK_TYPE\`)
 }
-if (!rejectedAttack) throw new Error('unsupported attackType beam was not rejected with UNSUPPORTED_ATTACK_TYPE')
 
 let rejectedEffect = false
 try {

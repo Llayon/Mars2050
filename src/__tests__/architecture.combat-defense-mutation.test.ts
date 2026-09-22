@@ -3,6 +3,19 @@ import { execSync } from 'node:child_process'
 import { writeFileSync, unlinkSync, mkdirSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
 
+interface LimitsOutput {
+  violations: Array<{ rule: string }>
+}
+
+function checkRuleInOutput(output: string, rule: string): boolean {
+  try {
+    const parsed = JSON.parse(output) as LimitsOutput
+    return Array.isArray(parsed.violations) && parsed.violations.some(v => v.rule === rule)
+  } catch {
+    return false
+  }
+}
+
 describe('architecture rules for combat-core', () => {
   it('detects uncommitted defense resource mutation in combat ecs path', () => {
     const ecsDir = join(process.cwd(), 'packages', 'combat-core', 'src', 'ecs')
@@ -12,14 +25,10 @@ describe('architecture rules for combat-core', () => {
     try {
       writeFileSync(badFile, 'export function bad(entity: any) { entity.shield += 10 }\n', 'utf8')
       const output = execSync('npx tsx scripts/check-limits.ts --json', { encoding: 'utf8' })
-      const parsed = JSON.parse(output)
-      const hasViolation = parsed.violations.some((v: any) => v.rule === 'COMBAT_DEFENSE_MUTATION')
-      expect(hasViolation).toBe(true)
-    } catch (err: any) {
-      const output = err.stdout?.toString() || ''
-      const parsed = JSON.parse(output)
-      const hasViolation = parsed.violations.some((v: any) => v.rule === 'COMBAT_DEFENSE_MUTATION')
-      expect(hasViolation).toBe(true)
+      expect(checkRuleInOutput(output, 'COMBAT_DEFENSE_MUTATION')).toBe(true)
+    } catch (err: unknown) {
+      const output = (err as { stdout?: Buffer | string }).stdout?.toString() || ''
+      expect(checkRuleInOutput(output, 'COMBAT_DEFENSE_MUTATION')).toBe(true)
     } finally {
       if (existsSync(badFile)) unlinkSync(badFile)
     }
@@ -32,14 +41,10 @@ describe('architecture rules for combat-core', () => {
     try {
       writeFileSync(badFile, "import { something } from '@/domains/resource'\nexport const x = 1\n", 'utf8')
       const output = execSync('npx tsx scripts/check-limits.ts --json', { encoding: 'utf8' })
-      const parsed = JSON.parse(output)
-      const hasViolation = parsed.violations.some((v: any) => v.rule === 'IMPORT_RULES')
-      expect(hasViolation).toBe(true)
-    } catch (err: any) {
-      const output = err.stdout?.toString() || ''
-      const parsed = JSON.parse(output)
-      const hasViolation = parsed.violations.some((v: any) => v.rule === 'IMPORT_RULES')
-      expect(hasViolation).toBe(true)
+      expect(checkRuleInOutput(output, 'IMPORT_RULES')).toBe(true)
+    } catch (err: unknown) {
+      const output = (err as { stdout?: Buffer | string }).stdout?.toString() || ''
+      expect(checkRuleInOutput(output, 'IMPORT_RULES')).toBe(true)
     } finally {
       if (existsSync(badFile)) unlinkSync(badFile)
     }
@@ -52,14 +57,10 @@ describe('architecture rules for combat-core', () => {
     try {
       writeFileSync(badFile, "import { useState } from 'react'\nexport const dummy = 1\n", 'utf8')
       const output = execSync('npx tsx scripts/check-limits.ts --json', { encoding: 'utf8' })
-      const parsed = JSON.parse(output)
-      const hasViolation = parsed.violations.some((v: any) => v.rule === 'IMPORT_RULES')
-      expect(hasViolation).toBe(true)
-    } catch (err: any) {
-      const output = err.stdout?.toString() || ''
-      const parsed = JSON.parse(output)
-      const hasViolation = parsed.violations.some((v: any) => v.rule === 'IMPORT_RULES')
-      expect(hasViolation).toBe(true)
+      expect(checkRuleInOutput(output, 'IMPORT_RULES')).toBe(true)
+    } catch (err: unknown) {
+      const output = (err as { stdout?: Buffer | string }).stdout?.toString() || ''
+      expect(checkRuleInOutput(output, 'IMPORT_RULES')).toBe(true)
     } finally {
       if (existsSync(badFile)) unlinkSync(badFile)
     }
@@ -72,14 +73,10 @@ describe('architecture rules for combat-core', () => {
     try {
       writeFileSync(badFile, 'export function mutate(barrier: any) { barrier.duration -= 1 }\n', 'utf8')
       const output = execSync('npx tsx scripts/check-limits.ts --json', { encoding: 'utf8' })
-      const parsed = JSON.parse(output)
-      const hasViolation = parsed.violations.some((v: any) => v.rule === 'COMBAT_DEFENSE_MUTATION')
-      expect(hasViolation).toBe(true)
-    } catch (err: any) {
-      const output = err.stdout?.toString() || ''
-      const parsed = JSON.parse(output)
-      const hasViolation = parsed.violations.some((v: any) => v.rule === 'COMBAT_DEFENSE_MUTATION')
-      expect(hasViolation).toBe(true)
+      expect(checkRuleInOutput(output, 'COMBAT_DEFENSE_MUTATION')).toBe(true)
+    } catch (err: unknown) {
+      const output = (err as { stdout?: Buffer | string }).stdout?.toString() || ''
+      expect(checkRuleInOutput(output, 'COMBAT_DEFENSE_MUTATION')).toBe(true)
     } finally {
       if (existsSync(badFile)) unlinkSync(badFile)
     }

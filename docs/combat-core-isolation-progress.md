@@ -156,8 +156,32 @@
 | `npx tsx scripts/combat-ecs-golden.ts --v9` | 0 | 7/7 presets stable (Mars baseline V9) |
 | `npm test` | 0 | 201 files, 812 tests PASS |
 | `npm run test:combat:package` | 1 | Честный известный ISO-08 BOUNDARY FAIL (4 внутренних пути разрешаются, норма до R6) |
-| `npm run test:combat:package:runtime` | 0 | Все 8 проверочных блоков в изолированном окружении PASS |
+| `npm run test:combat:package:runtime` | 0 | Все 8 проверочных блоков в изолированном окружении PASS (SHA256 da02b6...) |
 | `examples/fantasy-combat` сценарии | 0 | 8/8 сценариев PASS (включая S3 MageStatus с burn и S6b timeout attacker_win) |
+| `npm run lint` | 0 | 0 ошибок (12 no-explicit-any исправлены) |
+
+### Доработка по результатам повторного ревью коммита cfaee108 (3 пробела)
+
+По результатам проверки коммита `cfaee108` независимый ревьюер подтвердил исправления `mass_shield`, `burn`, маршрутизацию тестов и воспроизводимость архивного consumer (SHA256 совпал), но указал на 3 пробела в проверках и предупредил об ошибках lint в CI. Все замечания устранены:
+
+1. **[P2] Рост HP при лечении и отрицательный контроль:**
+   - В `packages/combat-core/tests/definitions.test.ts` и `scripts/test-combat-package-runtime.ts` добавлены обязательные строгие ассерты:
+     - Разрешенная органическая цель фактически восстанавливает здоровье (`orgSurvivor.hp > 30`, в тесте достигает 120).
+     - HP разрешенной цели строго превышает unhealed контрольный бой (`orgSurvivor.hp > controlOrg.hp`).
+     - Отрицательный контроль: механическая цель не получает лечения и сохраняет исходное здоровье (`mechSurvivor.hp === 30`, `mechSurvivor.hp === controlMech.hp`).
+   - **Targeted Challenge:** В `packages/combat-core/src/ecs/v9-defense-commit.ts` временно отключено прибавление `healing` к `vitality.hp`. Запуск `npm run test:combat:core` дал немедленный RED: `definitions.test.ts` упал с `AssertionError: expected 30 to be greater than 30` на строке 152. Мутант отменен, тест возвращен в чистый GREEN.
+2. **[P2] Проверка конкретного владельца (`summonOwnerId`) и источника призыва:**
+   - В `scripts/test-combat-package-runtime.ts` проверка призыва ужесточена:
+     - Все события призыва проверяются на авторство конкретного призывателя (`unitId === 'shaman'` и `sourceId === 'shaman'`), команду (`spawnTeam === 'attacker'`) и непустой `targetId`.
+     - Все созданные существа (`spawnedIds`) строго проверяются на `summonOwnerId === 'shaman'` (подмена на `wrong-owner` или `wrong-source` вызывает исключение).
+     - Число выживших созданных существ точно сопоставляется с числом событий спавна.
+     - Исходные непризванные юниты (`shaman`, `g1`, `d1`) гарантированно не имеют `summonOwnerId` (`undefined`).
+3. **[P2] Строгая изоляция разрешения пакета и очистка `NODE_PATH`:**
+   - В `scripts/test-combat-package-runtime.ts` функция `run()` запускает дочерние процессы с принудительно очищенным `NODE_PATH: ''`.
+   - Внутри архивного consumer проверяется отсутствие `process.env.NODE_PATH` и строгое совпадение префикса `require.resolve('@mars2050/combat-core')` с локальным `node_modules/@mars2050/combat-core` конкретной временной директории consumer (`normResolved.startsWith(normExpected)`).
+4. **Дополнительно:**
+   - В архивном consumer добавлена раздельная проверка отклонения обоих неподдерживаемых типов атак — `beam` и `spread` (оба дают `UNSUPPORTED_ATTACK_TYPE`).
+   - В `src/__tests__/architecture.combat-defense-mutation.test.ts` устранены 12 ошибок `no-explicit-any`, команда `npm run lint` теперь проходит с exit code 0 (0 ошибок, 103 предупреждения), что гарантирует прохождение шага lint в CI.
 
 - Статус: `needs_external_review`. Переход к R3a–R7 не производился.
 

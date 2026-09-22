@@ -119,13 +119,19 @@ describe('public definitions execute (ISO-01, ISO-02)', () => {
     const healer = def('healer', { hp: 300, attack: 20, speed: 4, range: 4, attackType: 'heal', healTargetTags: ['organic'], combatTags: ['healer'] })
     const organic = def('ally_org', { hp: 120, combatTags: ['organic'] })
     const mech = def('ally_mech', { hp: 120, combatTags: ['mechanical'] })
-    const foe = def('foe', { attack: 5 })
+    const foe = def('foe', { attack: 5, speed: 0 })
     const result = battle(102, { healer, ally_org: organic, ally_mech: mech, foe }, [
       { instanceId: 'healer', definitionId: 'healer', team: 'attacker', placement: { x: 300, y: 1000 }, rank: 1, upgradeIds: [] },
       { instanceId: 'org', definitionId: 'ally_org', team: 'attacker', placement: { x: 300, y: 950 }, rank: 1, upgradeIds: [], currentHp: 30 },
       { instanceId: 'mech', definitionId: 'ally_mech', team: 'attacker', placement: { x: 350, y: 1000 }, rank: 1, upgradeIds: [], currentHp: 30 },
       { instanceId: 'foe', definitionId: 'foe', team: 'defender', placement: { x: 300, y: 200 }, rank: 1, upgradeIds: [] },
     ], 300)
+    const controlResult = battle(102, { ally_org: organic, ally_mech: mech, foe }, [
+      { instanceId: 'org', definitionId: 'ally_org', team: 'attacker', placement: { x: 300, y: 950 }, rank: 1, upgradeIds: [], currentHp: 30 },
+      { instanceId: 'mech', definitionId: 'ally_mech', team: 'attacker', placement: { x: 350, y: 1000 }, rank: 1, upgradeIds: [], currentHp: 30 },
+      { instanceId: 'foe', definitionId: 'foe', team: 'defender', placement: { x: 300, y: 200 }, rank: 1, upgradeIds: [] },
+    ], 300)
+
     const heals = result.logs.flatMap(t => t.actions).filter(a => a.type === 'heal')
     const orgN = heals.filter(a => (a as { targetId?: string }).targetId === 'org').length
     const mechN = heals.filter(a => (a as { targetId?: string }).targetId === 'mech').length
@@ -134,6 +140,22 @@ describe('public definitions execute (ISO-01, ISO-02)', () => {
     for (const u of result.survivors) {
       expect(u.hp).toBeLessThanOrEqual(u.maxHp)
     }
+
+    // Actual health recovery assertion on allowed target:
+    const orgSurvivor = result.survivors.find(u => u.id === 'org')!
+    const mechSurvivor = result.survivors.find(u => u.id === 'mech')!
+    const controlOrg = controlResult.survivors.find(u => u.id === 'org')!
+    const controlMech = controlResult.survivors.find(u => u.id === 'mech')!
+
+    expect(orgSurvivor).toBeDefined()
+    expect(mechSurvivor).toBeDefined()
+    expect(orgSurvivor.hp).toBeGreaterThan(30)
+    expect(orgSurvivor.hp).toBe(120)
+    expect(orgSurvivor.hp).toBeGreaterThan(controlOrg.hp)
+
+    // Negative control: disallowed mechanical target never gained HP and matches control
+    expect(mechSurvivor.hp).toBe(30)
+    expect(mechSurvivor.hp).toBe(controlMech.hp)
   })
 
   it('rejects beam/spread battles before simulation with a typed error', () => {
