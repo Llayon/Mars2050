@@ -95,7 +95,7 @@ export const FANTASY_DEFINITIONS: Record<string, UnitDefinition> = {
       turnSpeed: 6,
       size: 'S',
       combatTags: ['magic', 'ranged'],
-      statusOnHit: [{ type: 'burn', duration: 3, value: 5 }],
+      statusOnHit: [{ type: 'burn', duration: 25, value: 5 }],
     },
     squadSize: 2,
     squadSpacing: 30,

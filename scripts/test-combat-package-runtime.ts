@@ -61,8 +61,17 @@ function main(): void {
 }
 
 const CONSUMER_CODE = `
+import { createRequire } from 'node:module'
 import { simulateCombat } from '@mars2050/combat-core'
 import type { BattleInput, UnitDefinition } from '@mars2050/combat-core/contracts'
+
+// 0. Verify package resolution is truly from installed node_modules, not workspace sources
+const require = createRequire(import.meta.url)
+const resolvedPkg = require.resolve('@mars2050/combat-core')
+if (!resolvedPkg.includes('node_modules') || resolvedPkg.includes('packages/combat-core') || resolvedPkg.includes('packages\\\\combat-core')) {
+  throw new Error(\`Module resolution leak: resolved to \${resolvedPkg}\`)
+}
+console.log(\`[consumer] Package resolved correctly from isolated node_modules: \${resolvedPkg}\`)
 
 function fp(v: unknown): string { return JSON.stringify(v) }
 
@@ -121,10 +130,179 @@ const spawns = s1.logs.flatMap(t => t.actions).filter(a => a.type === 'spawn' &&
 if (spawns.length === 0) throw new Error('in-combat summon produced no imp spawns')
 if (!spawns.every(a => (a as { spawnTeam?: string }).spawnTeam === 'attacker')) throw new Error('summon team attribution wrong')
 const owned = [...s1.survivors, ...s1.initialState].filter(u => u.summonOwnerId !== undefined)
-console.log(\`summon: impSpawns=\${spawns.length} attributedSurvivors=\${owned.length}\`)
 if (owned.length === 0) throw new Error('no summoned unit carries summonOwnerId')
+console.log(\`summon: impSpawns=\${spawns.length} attributedSurvivors=\${owned.length}\`)
 
-console.log('Archive runtime verification passed successfully.')
+// 3. Burn with real subsequent periodic damage
+const pyromancer = def('pyromancer', { hp: 300, attack: 25, speed: 4, range: 6, combatTags: ['magic'], statusOnHit: [{ type: 'burn', duration: 25, value: 8 }] })
+const plainMage = def('plainMage', { hp: 300, attack: 25, speed: 4, range: 6, combatTags: ['magic'] })
+const golem = def('golem', { hp: 3000, defense: 0, speed: 0 })
+const burnBattleInput = (attackerDef: string): BattleInput => ({
+  seed: 4444,
+  arena: { width: 600, height: 1200, tileSize: 40, obstacles: [] },
+  rules: { maxTicks: 250, timeoutPolicy: 'draw', defenseResolutionMode: 'v9_snapshot' },
+  definitions: { pyromancer, plainMage, golem },
+  units: [
+    { instanceId: 'att', definitionId: attackerDef, team: 'attacker', placement: { x: 300, y: 800 }, rank: 1, upgradeIds: [] },
+    { instanceId: 'def', definitionId: 'golem', team: 'defender', placement: { x: 300, y: 700 }, rank: 1, upgradeIds: [] },
+  ],
+  scheduledEffects: [],
+})
+const burnRes = simulateCombat(burnBattleInput('pyromancer'))
+const controlRes = simulateCombat(burnBattleInput('plainMage'))
+const burnApplies = burnRes.logs.flatMap(t => t.actions).filter(a => a.type === 'status_apply' && (a as { statusType?: string }).statusType === 'burn')
+const burnTicks = burnRes.logs.flatMap(t => t.actions).filter(a => a.type === 'status_tick' && (a as { statusType?: string }).statusType === 'burn')
+const burnDamages = burnRes.logs.flatMap(t => t.actions).filter(a => a.type === 'damage' && (a as { statusType?: string }).statusType === 'burn')
+if (burnApplies.length === 0) throw new Error('burn test: expected status_apply events, observed none')
+if (burnTicks.length === 0) throw new Error('burn test: expected status_tick events, observed none')
+if (burnDamages.length === 0) throw new Error('burn test: expected damage events with statusType burn, observed none')
+const totalBurnDmg = burnDamages.reduce((sum, a) => sum + ((a as { damage?: number }).damage ?? 0), 0)
+if (totalBurnDmg <= 0) throw new Error('burn test: expected positive periodic damage, observed none')
+const burnDefHpLoss = 3000 - (burnRes.survivors.find(u => u.id === 'def')?.hp ?? 0)
+const controlDefHpLoss = 3000 - (controlRes.survivors.find(u => u.id === 'def')?.hp ?? 0)
+if (burnDefHpLoss <= controlDefHpLoss) throw new Error('burn test: defender HP loss with burn must exceed control')
+const controlBurnEvents = controlRes.logs.flatMap(t => t.actions).filter(a => (a as { statusType?: string }).statusType === 'burn')
+if (controlBurnEvents.length !== 0) throw new Error('burn test: control battle contained unexpected burn events')
+console.log(\`burn: applies=\${burnApplies.length} ticks=\${burnTicks.length} burnDamage=\${totalBurnDmg} hpLossDiff=\${burnDefHpLoss - controlDefHpLoss}\`)
+
+// 4. healTargetTags: heals allowed target tags, never forbidden tags, respects maxHp
+const cleric = def('cleric', { hp: 300, attack: 20, speed: 4, range: 4, attackType: 'heal', healTargetTags: ['organic'], combatTags: ['healer'] })
+const allyOrg = def('ally_org', { hp: 120, combatTags: ['organic'] })
+const allyMech = def('ally_mech', { hp: 120, combatTags: ['mechanical'] })
+const dummyFoe = def('dummy_foe', { hp: 200, attack: 1, speed: 0 })
+const healInput: BattleInput = {
+  seed: 4545,
+  arena: { width: 600, height: 1200, tileSize: 40, obstacles: [] },
+  rules: { maxTicks: 250, timeoutPolicy: 'draw', defenseResolutionMode: 'v9_snapshot' },
+  definitions: { cleric, ally_org: allyOrg, ally_mech: allyMech, dummy_foe: dummyFoe },
+  units: [
+    { instanceId: 'cleric', definitionId: 'cleric', team: 'attacker', placement: { x: 300, y: 1000 }, rank: 1, upgradeIds: [] },
+    { instanceId: 'org', definitionId: 'ally_org', team: 'attacker', placement: { x: 300, y: 950 }, rank: 1, upgradeIds: [], currentHp: 30 },
+    { instanceId: 'mech', definitionId: 'ally_mech', team: 'attacker', placement: { x: 350, y: 1000 }, rank: 1, upgradeIds: [], currentHp: 30 },
+    { instanceId: 'foe', definitionId: 'dummy_foe', team: 'defender', placement: { x: 300, y: 200 }, rank: 1, upgradeIds: [] },
+  ],
+  scheduledEffects: [],
+}
+const healRes = simulateCombat(healInput)
+const heals = healRes.logs.flatMap(t => t.actions).filter(a => a.type === 'heal')
+const orgHeals = heals.filter(a => (a as { targetId?: string }).targetId === 'org').length
+const mechHeals = heals.filter(a => (a as { targetId?: string }).targetId === 'mech').length
+if (orgHeals === 0) throw new Error('healTargetTags: expected organic ally to receive heals, observed none')
+if (mechHeals !== 0) throw new Error(\`healTargetTags: mechanical ally received \${mechHeals} heals (expected 0)\`)
+for (const u of healRes.survivors) {
+  if (u.hp > u.maxHp) throw new Error(\`healTargetTags: unit \${u.id} HP \${u.hp} exceeded maxHp \${u.maxHp}\`)
+}
+console.log(\`healTargetTags: orgHeals=\${orgHeals} mechHeals=\${mechHeals} maxHpCapEnforced=true\`)
+
+// 5. All three timeout policies
+const farAttacker = def('fa', { speed: 0 })
+const farDefender = def('fd', { speed: 0 })
+for (const policy of ['draw', 'attacker_win', 'defender_win'] as const) {
+  const tRes = simulateCombat({
+    seed: 4646,
+    arena: { width: 600, height: 1200, tileSize: 40, obstacles: [] },
+    rules: { maxTicks: 10, timeoutPolicy: policy, defenseResolutionMode: 'v9_snapshot' },
+    definitions: { fa: farAttacker, fd: farDefender },
+    units: [
+      { instanceId: 'a', definitionId: 'fa', team: 'attacker', placement: { x: 300, y: 1000 }, rank: 1, upgradeIds: [] },
+      { instanceId: 'b', definitionId: 'fd', team: 'defender', placement: { x: 300, y: 200 }, rank: 1, upgradeIds: [] },
+    ],
+    scheduledEffects: [],
+  })
+  const expectedWinner = policy === 'attacker_win' ? 'attacker' : policy === 'defender_win' ? 'defender' : 'draw'
+  if (tRes.winner !== expectedWinner) throw new Error(\`timeout policy \${policy}: expected winner \${expectedWinner}, got \${tRes.winner}\`)
+  if (tRes.terminationReason !== 'timeout') throw new Error(\`timeout policy \${policy}: expected reason timeout, got \${tRes.terminationReason}\`)
+}
+console.log('timeoutPolicies: all 3 policies verified (draw, attacker_win, defender_win)')
+
+// 6. Scheduled ticks including delayed mass_shield and simultaneous effects
+const shieldAttacker = def('sa', { hp: 500 })
+const shieldDefender = def('sd', { hp: 500, speed: 0 })
+const runShield = (tick: number, maxTicks: number) => simulateCombat({
+  seed: 4747,
+  arena: { width: 600, height: 1200, tileSize: 40, obstacles: [] },
+  rules: { maxTicks, timeoutPolicy: 'draw', defenseResolutionMode: 'v9_snapshot' },
+  definitions: { sa: shieldAttacker, sd: shieldDefender },
+  units: [
+    { instanceId: 'a', definitionId: 'sa', team: 'attacker', placement: { x: 300, y: 1000 }, rank: 1, upgradeIds: [] },
+    { instanceId: 'b', definitionId: 'sd', team: 'defender', placement: { x: 300, y: 200 }, rank: 1, upgradeIds: [] },
+  ],
+  scheduledEffects: [{ id: 's1', tick, team: 'attacker', type: 'mass_shield', value: 60 }],
+})
+// Tick 0: applied at tick 0
+const sh0 = runShield(0, 1).survivors.find(u => u.id === 'a')
+if ((sh0?.maxShield ?? 0) !== 60) throw new Error('scheduled mass_shield at tick 0 not applied')
+// Tick 5: before tick 5, no shield
+const sh5Before = runShield(5, 5).survivors.find(u => u.id === 'a')
+if ((sh5Before?.maxShield ?? 0) !== 0) throw new Error(\`scheduled mass_shield at tick 5 applied prematurely (shield=\${sh5Before?.maxShield})\`)
+// Tick 5: at tick 5 (maxTicks 6), shield applied
+const sh5After = runShield(5, 6).survivors.find(u => u.id === 'a')
+if ((sh5After?.maxShield ?? 0) !== 60) throw new Error('scheduled mass_shield at tick 5 not applied after tick reached')
+// Tick 5: at tick 15, shield is still 60 (granted exactly once)
+const sh5Later = runShield(5, 15).survivors.find(u => u.id === 'a')
+if ((sh5Later?.maxShield ?? 0) !== 60) throw new Error(\`scheduled mass_shield granted multiple times: maxShield=\${sh5Later?.maxShield}\`)
+// Beyond battle: tick 100 with maxTicks 1 -> not applied
+const shBeyond = runShield(100, 1).survivors.find(u => u.id === 'a')
+if ((shBeyond?.maxShield ?? 0) !== 0) throw new Error('scheduled mass_shield beyond battle duration was applied')
+
+// Simultaneous effects sharing tick 3 with verified attribution
+const simRes = simulateCombat({
+  seed: 4748,
+  arena: { width: 600, height: 1200, tileSize: 40, obstacles: [] },
+  rules: { maxTicks: 20, timeoutPolicy: 'draw', defenseResolutionMode: 'v9_snapshot' },
+  definitions: { sa: shieldAttacker, sd: shieldDefender },
+  units: [
+    { instanceId: 'a', definitionId: 'sa', team: 'attacker', placement: { x: 300, y: 1000 }, rank: 1, upgradeIds: [], currentHp: 100 },
+    { instanceId: 'b', definitionId: 'sd', team: 'defender', placement: { x: 300, y: 200 }, rank: 1, upgradeIds: [] },
+  ],
+  scheduledEffects: [
+    { id: 'emp_same', tick: 3, team: 'attacker', type: 'global_emp', value: 3 },
+    { id: 'heal_same', tick: 3, team: 'attacker', type: 'mass_heal', value: 40 },
+  ],
+})
+const tick3Actions = simRes.logs.find(l => l.tick === 3)?.actions ?? []
+const empIdx = tick3Actions.findIndex(x => x.type === 'status_apply' && (x as { statusType?: string }).statusType === 'emp')
+const healIdx = tick3Actions.findIndex(x => x.type === 'heal')
+if (empIdx < 0 || healIdx < 0 || empIdx >= healIdx) throw new Error('simultaneous effects: order violation at tick 3')
+const empEvt = tick3Actions[empIdx] as { unitId?: string; statusType?: string }
+if (empEvt.unitId !== 'b' || empEvt.statusType !== 'emp') throw new Error('simultaneous effects: emp attribution wrong')
+const healEvt = tick3Actions[healIdx] as { targetId?: string; damage?: number }
+if (healEvt.targetId !== 'a' || healEvt.damage !== 40) throw new Error('simultaneous effects: heal attribution wrong')
+console.log('scheduledTicks: delayed mass_shield, bounds, single grant, and simultaneous effects verified')
+
+// 7. Explicit rejection of unsupported attack and effect kinds
+let rejectedAttack = false
+try {
+  simulateCombat({
+    seed: 4848,
+    arena: { width: 600, height: 1200, tileSize: 40, obstacles: [] },
+    rules: { maxTicks: 10, timeoutPolicy: 'draw', defenseResolutionMode: 'v9_snapshot' },
+    definitions: { bad: def('bad', { attackType: 'beam' as unknown as 'single' }) },
+    units: [{ instanceId: 'a', definitionId: 'bad', team: 'attacker', placement: { x: 300, y: 1000 }, rank: 1, upgradeIds: [] }],
+    scheduledEffects: [],
+  })
+} catch (err: unknown) {
+  if ((err as { code?: string }).code === 'UNSUPPORTED_ATTACK_TYPE') rejectedAttack = true
+}
+if (!rejectedAttack) throw new Error('unsupported attackType beam was not rejected with UNSUPPORTED_ATTACK_TYPE')
+
+let rejectedEffect = false
+try {
+  simulateCombat({
+    seed: 4849,
+    arena: { width: 600, height: 1200, tileSize: 40, obstacles: [] },
+    rules: { maxTicks: 10, timeoutPolicy: 'draw', defenseResolutionMode: 'v9_snapshot' },
+    definitions: { knight },
+    units: [{ instanceId: 'a', definitionId: 'knight', team: 'attacker', placement: { x: 300, y: 1000 }, rank: 1, upgradeIds: [] }],
+    scheduledEffects: [{ id: 'apoc', tick: 5, team: 'attacker', type: 'apocalypse_strike', value: 100 }],
+  })
+} catch (err: unknown) {
+  if ((err as { code?: string }).code === 'UNSUPPORTED_SCHEDULED_EFFECT') rejectedEffect = true
+}
+if (!rejectedEffect) throw new Error('unsupported scheduledEffect apocalypse_strike was not rejected with UNSUPPORTED_SCHEDULED_EFFECT')
+console.log('rejections: unsupported attack and scheduled effect kinds explicitly rejected')
+
+console.log('All archive runtime verification suites passed successfully.')
 `
 
 main()

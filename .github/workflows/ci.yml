@@ -54,6 +54,12 @@ jobs:
       - name: Tests
         run: npm t
 
+      - name: Combat core tests
+        run: npm run test:combat:core
+
+      - name: Combat core runtime smoke
+        run: npm run test:combat:package:runtime
+
       - name: Combat scenario metrics
         run: npm run test:combat:scenarios
 

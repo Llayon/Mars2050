@@ -20,8 +20,7 @@ export function hasEcsGlobalEffectAtTick(
 ): boolean {
   return activeGlobals.some(item => {
     const effect = resolveEffect(item)
-    return (tick === 0 && effect.type === 'mass_shield') ||
-      tick === (effect.tick ?? getTriggerTick(effect.type))
+    return tick === (effect.tick ?? getTriggerTick(effect.type))
   })
 }
 
@@ -32,12 +31,15 @@ export function runEcsGlobalEffectSystem(
   actions: BattleAction[],
   rng: PRNG,
 ): void {
-  if (tick === 0) applyMassShields(world, activeGlobals)
   for (const item of activeGlobals) {
     const effect = resolveEffect(item)
     const team = item.team
     if (tick !== (effect.tick ?? getTriggerTick(effect.type))) continue
-    if (effect.type === 'orbital_strike') {
+    if (effect.type === 'mass_shield') {
+      for (const targetId of getTeamEntities(world, team)) {
+        increaseShieldCapacity(world, targetId, effect.value)
+      }
+    } else if (effect.type === 'orbital_strike') {
       createOrbitalStrike(world, team, effect.value, actions)
     } else if (effect.type === 'global_emp') {
       for (const targetId of getTeamEntities(world, oppositeTeam(team))) {
@@ -57,19 +59,6 @@ export function runEcsGlobalEffectSystem(
           actions,
         )
       }
-    }
-  }
-}
-
-function applyMassShields(
-  world: CombatWorld,
-  activeGlobals: ActiveGlobal[],
-): void {
-  for (const item of activeGlobals) {
-    const effect = resolveEffect(item)
-    if (effect.type !== 'mass_shield') continue
-    for (const targetId of getTeamEntities(world, item.team)) {
-      increaseShieldCapacity(world, targetId, effect.value)
     }
   }
 }
@@ -120,6 +109,7 @@ function getTeamEntities(world: CombatWorld, team: Team): EntityId[] {
 }
 
 function getTriggerTick(type: ScheduledGlobalEffectKind): number {
+  if (type === 'mass_shield') return 0
   if (type === 'global_emp') return 50
   if (type === 'orbital_strike') return 100
   if (type === 'mass_heal') return 150

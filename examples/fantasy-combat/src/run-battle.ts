@@ -67,8 +67,7 @@ export function scenarioMageStatus(seed = 1002): ReturnType<typeof simulateComba
     definitions: FANTASY_DEFINITIONS,
     units: [
       { instanceId: 'att_mages', definitionId: 'human_mage', team: 'attacker', placement: { x: 300, y: 1000 }, rank: 1, upgradeIds: [] },
-      { instanceId: 'att_warriors', definitionId: 'orc_warrior', team: 'attacker', placement: { x: 250, y: 1050 }, rank: 1, upgradeIds: [] },
-      { instanceId: 'def_elves', definitionId: 'elven_archer', team: 'defender', placement: { x: 300, y: 200 }, rank: 1, upgradeIds: [] },
+      { instanceId: 'def_orcs', definitionId: 'orc_warrior', team: 'defender', placement: { x: 300, y: 200 }, rank: 1, upgradeIds: [] },
     ],
     scheduledEffects: [],
   }
@@ -76,13 +75,61 @@ export function scenarioMageStatus(seed = 1002): ReturnType<typeof simulateComba
   assertJsonRoundTrip(input, 'MageStatus')
   const result = assertDeterminism(input, 'MageStatus')
 
-  // Verify burn status was applied at least once
-  const burnEvents = result.logs.flatMap(tick =>
-    tick.actions.filter(a => (a.type === 'status_apply' || a.type === 'status_tick') && (a as { statusType?: string }).statusType === 'burn')
-  )
-  if (burnEvents.length === 0) {
-    throw new Error('[MageStatus] Expected burn status events from human_mage, observed none.')
+  // Control battle: identical input except mage has no burn statusOnHit
+  const controlDefs = {
+    ...FANTASY_DEFINITIONS,
+    human_mage: {
+      ...FANTASY_DEFINITIONS.human_mage,
+      baseStats: {
+        ...FANTASY_DEFINITIONS.human_mage.baseStats,
+        statusOnHit: undefined,
+      },
+    },
   }
+  const controlResult = simulateCombat({
+    ...input,
+    definitions: controlDefs,
+  })
+
+  // 1. Separately verify status_apply, status_tick, and positive burn damage
+  const burnApplies = result.logs.flatMap(tick =>
+    tick.actions.filter(a => a.type === 'status_apply' && (a as { statusType?: string }).statusType === 'burn')
+  )
+  if (burnApplies.length === 0) {
+    throw new Error('[MageStatus] Expected status_apply for burn from human_mage, observed none.')
+  }
+
+  const burnTicks = result.logs.flatMap(tick =>
+    tick.actions.filter(a => a.type === 'status_tick' && (a as { statusType?: string }).statusType === 'burn')
+  )
+  if (burnTicks.length === 0) {
+    throw new Error('[MageStatus] Expected status_tick for burn from human_mage, observed none.')
+  }
+
+  const burnDamages = result.logs.flatMap(tick =>
+    tick.actions.filter(a => a.type === 'damage' && (a as { statusType?: string }).statusType === 'burn')
+  )
+  const totalBurnDamage = burnDamages.reduce((sum, a) => sum + ((a as { damage?: number }).damage ?? 0), 0)
+  if (totalBurnDamage <= 0) {
+    throw new Error(`[MageStatus] Expected positive burn periodic damage, observed totalBurnDamage=${totalBurnDamage}.`)
+  }
+
+  // 2. Verified target entity: burn ticks and damage must target defender orcs
+  for (const a of burnTicks) {
+    const target = (a as { targetId?: string }).targetId ?? ''
+    if (!target.startsWith('def_orcs')) {
+      throw new Error(`[MageStatus] Expected burn tick to target def_orcs, observed target=${target}`)
+    }
+  }
+
+  // 3. Verify control battle has zero burn events
+  const controlBurns = controlResult.logs.flatMap(tick =>
+    tick.actions.filter(a => (a as { statusType?: string }).statusType === 'burn')
+  )
+  if (controlBurns.length !== 0) {
+    throw new Error(`[MageStatus] Control battle expected zero burn events, observed ${controlBurns.length}.`)
+  }
+
   return result
 }
 

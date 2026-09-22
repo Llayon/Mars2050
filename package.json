@@ -62,8 +62,11 @@
     "*.{ts,tsx}": [
       "npx tsx scripts/check-limits.ts --diff HEAD --json"
     ],
-    "*.test.ts": [
+    "{__tests__,src}/**/*.test.ts": [
       "vitest run --reporter=verbose"
+    ],
+    "packages/combat-core/tests/**/*.test.ts": [
+      "vitest run --reporter=verbose --config packages/combat-core/vitest.config.ts"
     ]
   },
   "devDependencies": {
