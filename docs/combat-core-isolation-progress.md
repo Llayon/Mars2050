@@ -178,10 +178,36 @@
      - Исходные непризванные юниты (`shaman`, `g1`, `d1`) гарантированно не имеют `summonOwnerId` (`undefined`).
 3. **[P2] Строгая изоляция разрешения пакета и очистка `NODE_PATH`:**
    - В `scripts/test-combat-package-runtime.ts` функция `run()` запускает дочерние процессы с принудительно очищенным `NODE_PATH: ''`.
-   - Внутри архивного consumer проверяется отсутствие `process.env.NODE_PATH` и строгое совпадение префикса `require.resolve('@mars2050/combat-core')` с локальным `node_modules/@mars2050/combat-core` конкретной временной директории consumer (`normResolved.startsWith(normExpected)`).
+   - Внутри архивного consumer проверяется отсутствие `process.env.NODE_PATH` и строгое совпадение префикса `require.resolve('@mars2050/combat-core')` с локальным `node_modules/@mars2050/combat-core` конкретной временной директории consumer.
 4. **Дополнительно:**
    - В архивном consumer добавлена раздельная проверка отклонения обоих неподдерживаемых типов атак — `beam` и `spread` (оба дают `UNSUPPORTED_ATTACK_TYPE`).
    - В `src/__tests__/architecture.combat-defense-mutation.test.ts` устранены 12 ошибок `no-explicit-any`, команда `npm run lint` теперь проходит с exit code 0 (0 ошибок, 103 предупреждения), что гарантирует прохождение шага lint в CI.
+
+### Доработка по результатам повторного ревью коммита 9e2d959 (2 замечания в архивном тесте)
+
+По результатам проверки коммита `9e2d959` независимый ревьюер подтвердил закрытие замечания к лечению, проверку `summonOwnerId`, очистку `NODE_PATH`, проверку типов `beam`/`spread`, совпадение SHA тарибала и прохождение core-тестов, typecheck, lint, architecture scan, V8/V9 goldens. Однако указал на 2 ошибки в проверках архивного теста:
+
+1. **[P2] Проверка источника summon (исключение ложного PASS при частичной мутации):**
+   - Условие `sa.unitId !== 'shaman' && sa.sourceId !== 'shaman'` заменено на функцию `assertSpawnEvent` с двумя независимыми строгими проверками:
+     - `if (sa.unitId !== 'shaman') throw ...`
+     - `if (sa.sourceId !== 'shaman') throw ...`
+   - В consumer добавлены два отрицательных контроля с независимой мутацией каждого поля:
+     - Отрицательный контроль 1: `{ unitId: 'wrong-unit', sourceId: 'shaman' }` обязан бросать исключение.
+     - Отрицательный контроль 2: `{ unitId: 'shaman', sourceId: 'wrong-source' }` обязан бросать исключение.
+   - **Targeted Challenge:**
+     - Отключение проверки `sourceId` в `assertSpawnEvent`: запуск `test:combat:package:runtime` дал немедленный RED: `Error: assertSpawnEvent failed to reject mutated wrong sourceId` (exit code 1).
+     - Отключение проверки `unitId` в `assertSpawnEvent`: запуск `test:combat:package:runtime` дал немедленный RED: `Error: assertSpawnEvent failed to reject mutated wrong unitId` (exit code 1).
+     - Оба мутанта отменены, тест возвращен в чистый GREEN.
+
+2. **[P2] Строгая проверка границы каталога и отрицательный контроль на соседний каталог:**
+   - Проверка пути `normResolved.startsWith(normExpected)` заменена на функцию `isPathInside(childPath, parentDir)`, проверяющую границу каталога через:
+     - `relative(normParent, normChild)` (не начинается с `..`, не пустой, не абсолютный);
+     - `normChild.startsWith(normParent + sep)` (строгий разделитель пути, предотвращающий ложное совпадение по общему префиксу имени каталога).
+   - В consumer добавлен отрицательный контроль на соседний каталог с идентичным префиксом:
+     - `siblingShadowPkg = .../node_modules/@mars2050/combat-core-shadow/dist/index.js` проверяется через `isPathInside(siblingShadowPkg, expectedNodeModules)`. Если функция вернёт `true`, тест падает с ошибкой `Isolation containment flaw`.
+   - **Targeted Challenge:**
+     - Временная замена `isPathInside` на наивный `normChild.startsWith(normParent)`: запуск `test:combat:package:runtime` дал немедленный RED: `Error: Isolation containment flaw: sibling directory ... combat-core-shadow ... was falsely accepted as inside ... combat-core` (exit code 1).
+     - Мутант отменен, тест возвращен в чистый GREEN.
 
 - Статус: `needs_external_review`. Переход к R3a–R7 не производился.
 

@@ -63,7 +63,7 @@ function main(): void {
 
 const CONSUMER_CODE = `
 import { createRequire } from 'node:module'
-import { dirname, resolve } from 'node:path'
+import { dirname, resolve, relative, isAbsolute, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { simulateCombat } from '@mars2050/combat-core'
 import type { BattleInput, UnitDefinition } from '@mars2050/combat-core/contracts'
@@ -77,9 +77,23 @@ const resolvedPkg = require.resolve('@mars2050/combat-core')
 const consumerDir = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const expectedNodeModules = resolve(consumerDir, 'node_modules', '@mars2050', 'combat-core')
 const normResolved = resolve(resolvedPkg)
-const normExpected = resolve(expectedNodeModules)
-if (!normResolved.startsWith(normExpected)) {
-  throw new Error(\`Module resolution leak: expected within \${normExpected}, but resolved to \${normResolved}\`)
+
+function isPathInside(childPath: string, parentDir: string): boolean {
+  const normChild = resolve(childPath)
+  const normParent = resolve(parentDir)
+  const rel = relative(normParent, normChild)
+  return !rel.startsWith('..') && !isAbsolute(rel) && rel !== '' && normChild.startsWith(normParent + sep)
+}
+
+// 0a. Negative control: verify containment check explicitly rejects sibling directory with matching prefix
+const siblingShadowPkg = resolve(consumerDir, 'node_modules', '@mars2050', 'combat-core-shadow', 'dist', 'index.js')
+if (isPathInside(siblingShadowPkg, expectedNodeModules)) {
+  throw new Error(\`Isolation containment flaw: sibling directory \${siblingShadowPkg} was falsely accepted as inside \${expectedNodeModules}\`)
+}
+
+// 0b. Verify actual resolved package is strictly inside expected package directory
+if (!isPathInside(normResolved, expectedNodeModules)) {
+  throw new Error(\`Module resolution leak: expected within \${expectedNodeModules}, but resolved to \${normResolved}\`)
 }
 console.log(\`[consumer] Package resolved correctly from isolated node_modules: \${normResolved}\`)
 
@@ -138,11 +152,12 @@ const s2 = simulateCombat(JSON.parse(fp(summon)) as BattleInput)
 if (fp(s1) !== fp(s2)) throw new Error('determinism violation in summon battle')
 const spawns = s1.logs.flatMap(t => t.actions).filter(a => a.type === 'spawn' && (a as { spawnType?: string }).spawnType === 'imp')
 if (spawns.length === 0) throw new Error('in-combat summon produced no imp spawns')
-const spawnedIds = new Set<string>()
-for (const a of spawns) {
-  const sa = a as { unitId?: string; sourceId?: string; targetId?: string; spawnTeam?: string; spawnType?: string }
-  if (sa.unitId !== 'shaman' && sa.sourceId !== 'shaman') {
-    throw new Error(\`spawn event attributed to unexpected summoner source: unitId=\${sa.unitId}, sourceId=\${sa.sourceId} (expected shaman)\`)
+function assertSpawnEvent(sa: { unitId?: string; sourceId?: string; targetId?: string; spawnTeam?: string; spawnType?: string }): void {
+  if (sa.unitId !== 'shaman') {
+    throw new Error(\`spawn event attributed to unexpected summoner unitId: \${sa.unitId} (expected shaman)\`)
+  }
+  if (sa.sourceId !== 'shaman') {
+    throw new Error(\`spawn event attributed to unexpected summoner sourceId: \${sa.sourceId} (expected shaman)\`)
   }
   if (sa.spawnTeam !== 'attacker') {
     throw new Error(\`summon team attribution wrong: \${sa.spawnTeam} (expected attacker)\`)
@@ -150,7 +165,30 @@ for (const a of spawns) {
   if (!sa.targetId) {
     throw new Error('spawn event missing targetId of created creature')
   }
-  spawnedIds.add(sa.targetId)
+}
+
+// Targeted negative controls for assertSpawnEvent: independent mutation of unitId and sourceId must each throw
+let rejectedWrongUnit = false
+try {
+  assertSpawnEvent({ unitId: 'wrong-unit', sourceId: 'shaman', targetId: 'imp_1', spawnTeam: 'attacker' })
+} catch {
+  rejectedWrongUnit = true
+}
+if (!rejectedWrongUnit) throw new Error('assertSpawnEvent failed to reject mutated wrong unitId')
+
+let rejectedWrongSource = false
+try {
+  assertSpawnEvent({ unitId: 'shaman', sourceId: 'wrong-source', targetId: 'imp_1', spawnTeam: 'attacker' })
+} catch {
+  rejectedWrongSource = true
+}
+if (!rejectedWrongSource) throw new Error('assertSpawnEvent failed to reject mutated wrong sourceId')
+
+const spawnedIds = new Set<string>()
+for (const a of spawns) {
+  const sa = a as { unitId?: string; sourceId?: string; targetId?: string; spawnTeam?: string; spawnType?: string }
+  assertSpawnEvent(sa)
+  spawnedIds.add(sa.targetId!)
 }
 
 const spawnedCreatures = s1.survivors.filter(u => spawnedIds.has(u.id))
