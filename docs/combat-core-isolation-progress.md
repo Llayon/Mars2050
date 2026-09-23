@@ -34,7 +34,7 @@
 | ISO-02 | `needs_external_review` (код+тесты R2a) | R2a | `UNSUPPORTED_ATTACK_TYPE`, coercion удалён, Mars не использует beam/spread |
 | ISO-03 | `needs_external_review` (код+тесты R2b) | R2b | timeout-матрица 3/3, terminal precedence, matrix S6+S6b 8/8 |
 | ISO-04 | `needs_external_review` (код+тесты R2b) | R2b | ticks 0/1/5, same-tick order, attribution, reject unknown kinds |
-| ISO-05 | `open` | R3a | — |
+| ISO-05 | `needs_external_review` (код+тесты R3a) | R3a | `validation.test.ts` (12), `validation-integrity.test.ts` (6), zero RNG, parity, challenge 3 FAIL |
 | ISO-06 | `open` | R3b | — |
 | ISO-07 | `open` | R1,R7 | — |
 | ISO-08 | `open` | R6 | — |
@@ -210,6 +210,72 @@
      - Мутант отменен, тест возвращен в чистый GREEN.
 
 - Статус: `needs_external_review`. Переход к R3a–R7 не производился.
+
+## R3a: валидация полного входа до симуляции и расхода RNG (ISO-05) — green, review pending
+
+Критерий: Zod safeParse + ссылочная целостность (definitions, instanceId uniqueness, projected squad member IDs, spawn references, summon cycles, bounds, currentHp <= maxHp) до создания world и первого обращения к PRNG. Machine-readable CombatDefinitionError c кодом, path и reference. Одинаковые коды и детали для исходного и JSON-stringified входа. Отсутствие расхода RNG при ошибке. Сохранение compatibility mapping для legacy Mars hp_current снаружи строгого ядра.
+
+### RED
+
+- Созданы `packages/combat-core/tests/validation.test.ts` и `packages/combat-core/tests/validation-integrity.test.ts` (18 тестов суммарно).
+- На коде до фикса: запуск `vitest run packages/combat-core/tests/validation.test.ts` дал немедленный RED: `Cannot find module '../src/combat.input-validator.js'`.
+
+### FIX
+
+- `packages/combat-core/src/combat.definition-error.ts`:
+  - Расширен список кодов: `SCHEMA_VALIDATION_ERROR`, `INVALID_DEFINITION_KEY`, `MISSING_DEFINITION`, `DUPLICATE_INSTANCE_ID`, `DUPLICATE_SQUAD_MEMBER_ID`, `MISSING_SPAWN_TYPE`, `MISSING_SPAWN_DEFINITION`, `UNCONSTRAINED_SUMMON_CYCLE`, `OUT_OF_BOUNDS_COORDINATES`, `INVALID_FIELD_RANGE`.
+  - Добавлены типизированные поля `path`, `reference`, `issues`. Сохранена 100% обратная совместимость со старыми конструкторами R2a/R2b.
+  - Размер файла оптимизирован до 96 строк (строго в пределах лимита).
+- `packages/combat-core/src/combat.input-validator.ts` (новый):
+  - `validateBattleInput(input: unknown): BattleInput`
+  - 1. Структурный Zod `safeParse` с преобразованием путей и сообщений ошибок в `SCHEMA_VALIDATION_ERROR`.
+  - 2. Проверка согласованности ключа `definitions[key]` с `def.id` (`INVALID_DEFINITION_KEY`).
+  - 3. Проверка attackType: `beam`/`spread` отклоняются (`UNSUPPORTED_ATTACK_TYPE`), `spawn` требует `spawnType` (`MISSING_SPAWN_TYPE`).
+  - 4-5. Ссылочная целостность: все `u.definitionId` обязаны существовать в `definitions` или `catalog.unitTypes` (`MISSING_DEFINITION`).
+  - 6. Уникальность `instanceId` всех юнитов (`DUPLICATE_INSTANCE_ID`).
+  - 7. Коллизии проецируемых ID членов отряда `${instanceId}_${s}` при `squadSize > 1` (`DUPLICATE_SQUAD_MEMBER_ID`).
+  - 8. Транзитивная проверка определений `spawnType` (`MISSING_SPAWN_DEFINITION`) и циклов призыва без `spawnCap` (`UNCONSTRAINED_SUMMON_CYCLE`).
+  - 9. Проверка координат препятствий и юнитов на непревышение границ арены (`OUT_OF_BOUNDS_COORDINATES`).
+  - 10. Диапазоны полей: `currentHp <= maxHp` (`INVALID_FIELD_RANGE`), допустимость запланированных типов эффектов (`UNSUPPORTED_SCHEDULED_EFFECT`).
+- `packages/combat-core/src/combat.runner.ts`:
+  - `executeCombatSimulation` вызывает `validateBattleInput(input)` строго до `new PRNG(seed)` и создания мира.
+  - Все дальнейшие обращения используют `validatedInput`.
+- `packages/combat-core/src/facade/combat-facade.ts`:
+  - `simulateCombat` вызывает `validateBattleInput(input)` до делегирования в симулятор.
+- `packages/combat-core/src/index.ts`:
+  - Экспорт `combat.input-validator.js`.
+- `src/domains/combat/combat.input-translator.ts`:
+  - Сохранение compatibility mapping для legacy Mars presets / DB: `mapUnitRowsToSpawnSpecs` выполняет безопасный clamp `row.hp_current` к `maxHp` определения снаружи строгого ядра, что гарантирует соблюдение строгого инварианта ядра без искажения исторических golden-слепков.
+
+### GREEN (frozen snapshot)
+
+| Команда | Exit code | Результат |
+| --- | --- | --- |
+| `npm run combat:core:build; npm run combat:core:check` | 0 | Сборка dist и tsc noEmit чисты |
+| `npm run test:combat:core` | 0 | 40/40 тестов PASS (contracts: 6, definitions: 7, rules: 9, validation: 12, validation-integrity: 6) |
+| `npx tsc --noEmit --pretty false` | 0 | Корневой typecheck чист |
+| `npx tsx scripts/check-limits.ts --json` | 0 | 0 violations (все файлы строго в пределах лимитов строк) |
+| `npx tsx scripts/combat-ecs-golden.ts` | 0 | 7/7 presets stable (Mars baseline V8) |
+| `npx tsx scripts/combat-ecs-golden.ts --v9` | 0 | 7/7 presets stable (Mars baseline V9) |
+| `npm run test:combat:package:runtime` | 0 | Все блоки в изолированном tmpdir PASS (SHA256: a0b64b12abf48f11b6393d32b21b2c36b9a18490cb05868247c7c95f8b4e342b) |
+| `npm run test:combat:package` | 1 | Честный известный ISO-08 BOUNDARY FAIL (4 внутренних пути, норма до R6) |
+| `npm run lint` | 0 | 0 ошибок, 103 предупреждения |
+| `npm test` | 0 | 201 files, 812 tests PASS |
+
+### Challenge (negative control)
+
+- Проверка чувствительности предсимуляционной проверки некорректного входа (по таблице негативных контролей плана):
+  - В `packages/combat-core/src/combat.input-validator.ts` временно отключена проверка неизвестного определения юнита (`if (false && !allDefIds.has(u.definitionId))`).
+  - Пересборка ядра и запуск `npm run test:combat:core` дал немедленный RED:
+    - `validation-integrity.test.ts > rejects missing definition reference in units with MISSING_DEFINITION`: `AssertionError: expected function to throw an error, but it didn't` (строка 42).
+    - `validation.test.ts > guarantees identical error codes and details for JSON-stringified input`: `AssertionError: expected undefined to be defined` (строка 178).
+    - `validation.test.ts > guarantees zero PRNG consumption or world creation when input validation fails`: `AssertionError: expected undefined to be 'MISSING_DEFINITION'` (строка 197).
+  - Мутант отменен, тест возвращен в чистый GREEN (40/40).
+
+### Review / решение
+
+- Статус: `needs_external_review`. Переход к R3b–R7 не производился.
+- ISO-05 закрыт кодом и тестами.
 
 ## R2b: timeout и scheduled effects как данные (ISO-03, ISO-04) — green, review pending
 

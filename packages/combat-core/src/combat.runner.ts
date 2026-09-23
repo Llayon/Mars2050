@@ -13,6 +13,7 @@ import { mapDefinitionToUnitTypeConfig } from './combat.definition-mapper.js'
 import type { ActiveGlobalEffect, ScheduledGlobalEffectKind } from './combat.primitives.js'
 import { CombatDefinitionError } from './combat.definition-error.js'
 import { createCombatMetrics, finalizeCombatMetrics, recordCombatActions, recordCombatTick } from './combat.metrics.js'
+import { validateBattleInput } from './combat.input-validator.js'
 
 const SUPPORTED_SCHEDULED_EFFECT_KINDS: readonly string[] = ['orbital_strike', 'mass_heal', 'mass_shield', 'global_emp']
 
@@ -25,11 +26,12 @@ function isSupportedScheduledEffectKind(type: string): type is ScheduledGlobalEf
   return SUPPORTED_SCHEDULED_EFFECT_KINDS.includes(type)
 }
 export function executeCombatSimulation(input: BattleInput): CombatRunResult {
-  const seed = input.seed
+  const validatedInput = validateBattleInput(input)
+  const seed = validatedInput.seed
   const rng = new PRNG(seed)
   const dt = 0.1
-  const arena = input.arena
-  const rules = input.rules
+  const arena = validatedInput.arena
+  const rules = validatedInput.rules
   const maxTicks = rules.maxTicks
   const timeoutPolicy = rules.timeoutPolicy === 'attacker_win'
     ? 'attacker_holds'
@@ -40,7 +42,7 @@ export function executeCombatSimulation(input: BattleInput): CombatRunResult {
 
   // Validate scheduled effects before creating the world: unknown kinds are
   // rejected, and the caller-supplied tick travels with the effect.
-  const activeGlobals: ActiveGlobalEffect[] = (input.scheduledEffects ?? []).map(effect => {
+  const activeGlobals: ActiveGlobalEffect[] = (validatedInput.scheduledEffects ?? []).map(effect => {
     if (!isSupportedScheduledEffectKind(effect.type)) {
       throw new CombatDefinitionError('UNSUPPORTED_SCHEDULED_EFFECT', '', '', { effectId: effect.id, effectType: effect.type })
     }
@@ -51,9 +53,9 @@ export function executeCombatSimulation(input: BattleInput): CombatRunResult {
   })
 
   const runtime = createEcsCombatRuntime({ profile: rules.profile === true, defenseResolutionMode })
-  const passedCatalog = input.catalog as unknown as CombatCatalog | undefined
+  const passedCatalog = validatedInput.catalog as unknown as CombatCatalog | undefined
   const unitTypes: Record<string, UnitTypeConfig> = { ...(passedCatalog?.unitTypes ?? {}) }
-  for (const [key, def] of Object.entries(input.definitions)) {
+  for (const [key, def] of Object.entries(validatedInput.definitions)) {
     if (!unitTypes[key]) {
       unitTypes[key] = mapDefinitionToUnitTypeConfig(def)
     }
@@ -70,8 +72,8 @@ export function executeCombatSimulation(input: BattleInput): CombatRunResult {
   runtime.world.resources.set('catalog', catalog)
   runtime.world.resources.set('arena', arena)
 
-  for (const spawnSpec of input.units) {
-    const bundles = compileSpawnSpecBundles(spawnSpec, input.definitions, catalog, rng, arena.width, arena.height)
+  for (const spawnSpec of validatedInput.units) {
+    const bundles = compileSpawnSpecBundles(spawnSpec, validatedInput.definitions, catalog, rng, arena.width, arena.height)
     runtime.world.queueCompiledUnitCreation(...bundles)
   }
   runtime.world.flushStructuralCommands()

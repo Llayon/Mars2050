@@ -1,4 +1,4 @@
-import type { BattleInput, UnitSpawnSpec, ScheduledEffect, ArenaSpec } from '@mars2050/combat-core/contracts'
+import type { BattleInput, UnitSpawnSpec, ScheduledEffect, ArenaSpec, UnitDefinition } from '@mars2050/combat-core/contracts'
 import type { UnitRow } from './combat.types'
 import type { Obstacle } from './combat.sim.types'
 import type { BattleSimulationOptions } from './combat.metrics'
@@ -12,20 +12,35 @@ export { buildMarsUnitDefinitions } from './combat.unit-definitions'
 
 /**
  * Maps a list of UnitRow objects into UnitSpawnSpec list for combat-core.
+ * Clamps legacy row.hp_current to definition maxHp for Mars backward compatibility.
  */
-export function mapUnitRowsToSpawnSpecs(rows: UnitRow[], team: 'attacker' | 'defender'): UnitSpawnSpec[] {
-  return rows.map(row => ({
-    instanceId: row.id!,
-    definitionId: row.unit_type,
-    team,
-    placement: {
-      x: row.grid_x != null ? Number(row.grid_x) : undefined,
-      y: row.grid_y != null ? Number(row.grid_y) : undefined,
-    },
-    currentHp: row.hp_current ?? undefined,
-    rank: getUnitRank(row),
-    upgradeIds: row.upgrade_path ? [...row.upgrade_path] : [],
-  }))
+export function mapUnitRowsToSpawnSpecs(
+  rows: UnitRow[],
+  team: 'attacker' | 'defender',
+  definitions?: Record<string, UnitDefinition>,
+): UnitSpawnSpec[] {
+  const defs = definitions ?? buildMarsUnitDefinitions()
+  return rows.map(row => {
+    let currentHp: number | undefined = row.hp_current ?? undefined
+    if (currentHp !== undefined && defs[row.unit_type]) {
+      const maxHp = defs[row.unit_type].baseStats.hp
+      if (currentHp > maxHp) {
+        currentHp = maxHp
+      }
+    }
+    return {
+      instanceId: row.id!,
+      definitionId: row.unit_type,
+      team,
+      placement: {
+        x: row.grid_x != null ? Number(row.grid_x) : undefined,
+        y: row.grid_y != null ? Number(row.grid_y) : undefined,
+      },
+      currentHp,
+      rank: getUnitRank(row),
+      upgradeIds: row.upgrade_path ? [...row.upgrade_path] : [],
+    }
+  })
 }
 
 /**
@@ -79,8 +94,8 @@ export function translateMarsBattleInput(
 
   const definitions = buildMarsUnitDefinitions()
   const units: UnitSpawnSpec[] = [
-    ...mapUnitRowsToSpawnSpecs(attackerUnits, 'attacker'),
-    ...mapUnitRowsToSpawnSpecs(defenderUnits, 'defender'),
+    ...mapUnitRowsToSpawnSpecs(attackerUnits, 'attacker', definitions),
+    ...mapUnitRowsToSpawnSpecs(defenderUnits, 'defender', definitions),
   ]
   const scheduledEffects = mapGlobalUpgradesToScheduledEffects(attackerGlobals, defenderGlobals)
 
