@@ -355,6 +355,76 @@
     - `validation-catalog.test.ts > rejects upgrade with periodicSpawn pointing to unknown definition with MISSING_SPAWN_DEFINITION`: `AssertionError: expected function to throw an error, but it didn't`.
   - Мутант отменен, возврат в чистый GREEN (55/55).
 
+### Доработка R3a по результатам независимого ревью коммита c243bba (4 замечания)
+
+По результатам проверки коммита `c243bba` независимый ревьюер указал на 4 замечания по полноте предсимуляционной валидации R3a и сохранению семантики Mars:
+
+1. **[P1] Сохранение состава отряда в spawn compiler (`definitions.squadSize` vs `catalog`):**
+   - Проблема: строка разрешения определения в `combat.spawn-spec-compiler.ts:32` предпочитала каталог публичным определениям. Если `definitions.unit.squadSize = 3`, а одноименный каталог содержал характеристики без `squadSize`, создавался 1 юнит вместо отряда из 3 (`a_0`, `a_1`, `a_2`).
+   - Исправление:
+     - В `combat.spawn-spec-compiler.ts:32` восстановлен приоритет: `const def = definitions[spec.definitionId] ?? catalog?.unitTypes?.[spec.definitionId]`.
+     - В `combat.input-validator.ts` расчет `squadSize` для проверки коллизий ID членов отряда берется из `parsed.definitions[u.definitionId] ?? catUnitTypes?.[u.definitionId]`.
+     - В `validation-r3a-spawns.test.ts` зафиксирован тест: при `definitions.marine.squadSize = 3` и одноименном юните в каталоге без `squadSize` создаются 3 сущности (`u1_0`, `u1_1`, `u1_2`).
+
+2. **[P2] Полная рекурсивная проверка вложенных ссылок позднего призыва (spawn payloads):**
+   - Проблема: `periodicSpawn.unit` и `onDeathSpawn` проверялись, но вложенный `payload.unitType` в `baseStats.periodicAbilities`, `upgrades[].modifiers.periodicAbilities`, `baseStats.triggerEffects`, `upgrades[].modifiers.triggerEffects`, а также в `abilities` пропускался. Несуществующий `ghost` принимался и молча производил 0 призывов.
+   - Исправление:
+     - Создан модуль `packages/combat-core/src/combat.payload-validator.ts`, рекурсивно валидирующий все `payload.kind === 'spawn'` во всех определениях и модификаторах улучшений против `allDefIds`.
+     - Несуществующая ссылка на `ghost` во всех четырех точках входа отклоняется до симуляции с кодом `MISSING_SPAWN_DEFINITION` и точным path/reference.
+     - Туда же вынесена проверка бесконечных циклов призыва `validateSummonCycles`.
+     - В `validation-r3a-spawns.test.ts` зафиксированы 4 раздельных теста для `baseStats.periodicAbilities`, `upgrades.modifiers.periodicAbilities`, `baseStats.triggerEffects` и `upgrades.modifiers.triggerEffects`.
+
+3. **[P2] Структурная валидация определений каталога и защита компилятора способностей:**
+   - Проблема: `baseStats: {}` (без hp) принимался валидатором и приводил к runtime crash с NaN после создания мира и 2 обращений к RNG; `attackType: 'magic'` пропускался; `abilities: [{}]` приводил к необработанному `TypeError`.
+   - Исправление:
+     - В `packages/combat-core/src/contracts/unit.contracts.ts` для `baseStatsSchema` и `unitDefinitionSchema` включен `.passthrough()` с поддержкой `abilities: z.array(z.unknown()).optional()`, предотвращая молчаливое срезание расширенных полей Zod-парсером.
+     - В `combat.input-validator.ts` каждое определение в `allDefs` (включая каталог) валидируется через `baseStatsSchema.passthrough().safeParse(def.baseStats)`. Отсутствие обязательных полей (`hp`, `attack`, `defense`, `speed`, `range`) или некорректный `attackType` ('magic') отклоняются с `SCHEMA_VALIDATION_ERROR`.
+     - В `packages/combat-core/src/combat.ability-compiler.ts` функции `compileAbilityDefinitions` и `validateDefinition` защищены от невалидных структур (не объект, отсутствие `id`, `trigger`, не-массив `effects`), выбрасывая типизированную `AbilityCompilationError('UNSUPPORTED_COMBINATION')`, трансформируемую валидатором в `SCHEMA_VALIDATION_ERROR`.
+     - Зафиксированы тесты в `validation-r3a-loadout.test.ts`: при `baseStats: {}` гарантировано 0 обращений к PRNG и 0 созданий мира, `attackType: 'magic'` и `abilities: [{}]` отклоняются с `SCHEMA_VALIDATION_ERROR`.
+
+4. **[P2] Валидация объединенного loadout до симуляции:**
+   - Проблема: способности проверялись изолированно, но не после объединения базовых характеристик и улучшений. Пропускались дублирующиеся ID периодических способностей (например, `id: 'heal'` в базе и в улучшении) и несовместимые геометрии (например, `cone` в базе + `line` в улучшении).
+   - Исправление:
+     - Создан модуль `packages/combat-core/src/combat.loadout-validator.ts`, собирающий объединенный loadout каждого юнита через `getRuntimePrimitiveStats(baseStats, u.upgradeIds, catUpgrades)`.
+     - Проверяет совместимость геометрий оружия через `assertValidWeaponLoadout(u.definitionId, primitives)`.
+     - Компилирует объединенные периодические способности через `compileAbilityDefinitions(...)`, обнаруживая коллизии ID (`DUPLICATE_ID`).
+     - Компилирует оружейный план через `createLegacyAbilityDefinitions` + `compileTemporalWeaponPlan`.
+     - Любые ошибки объединенного loadout отклоняются с кодом `SCHEMA_VALIDATION_ERROR` строго до создания мира и расхода RNG.
+     - Зафиксированы тесты в `validation-r3a-loadout.test.ts` с проверкой 0 вызовов `PRNG.next()` и `CombatWorld.queueCompiledUnitCreation()`.
+
+5. **Соблюдение архитектурных лимитов и изоляция:**
+   - Все файлы строго укладываются в лимит <= 250 строк:
+     - `combat.input-validator.ts`: 232 строки (лимит 250);
+     - `combat.payload-validator.ts`: 194 строки (лимит 250);
+     - `combat.loadout-validator.ts`: 71 строка (лимит 250);
+     - `combat.ability-compiler.ts`: 229 строк (лимит 250);
+     - `validation-r3a-spawns.test.ts`: 180 строк (лимит 250);
+     - `validation-r3a-loadout.test.ts`: 199 строк (лимит 250).
+   - `npx tsx scripts/check-limits.ts --json`: 0 violations.
+
+### GREEN (обновленный frozen snapshot на c243bba + remediation)
+
+| Команда | Exit code | Результат |
+| --- | --- | --- |
+| `npm run combat:core:build; npm run combat:core:check` | 0 | Сборка dist и tsc noEmit чисты |
+| `npm run test:combat:core` | 0 | 65/65 тестов PASS (8 файлов тестов) |
+| `npm run typecheck` | 0 | Корневой typecheck чист (включая build core) |
+| `npx tsx scripts/check-limits.ts --json` | 0 | 0 violations (все файлы <= 250 строк) |
+| `npx tsx scripts/combat-ecs-golden.ts` | 0 | 7/7 presets stable (Mars baseline V8) |
+| `npx tsx scripts/combat-ecs-golden.ts --v9` | 0 | 7/7 presets stable (Mars baseline V9) |
+| `npm run test:combat:package:runtime` | 0 | Все 8 проверочных блоков в изолированном tmpdir PASS (SHA256: afb2a4747f7cdd2b57ea2418852abae9395e7ffc07049d27225d20363f240c67) |
+| `npm run test:combat:package` | 1 | Честный известный ISO-08 BOUNDARY FAIL (норма до R6) |
+| `npm run lint` | 0 | 0 ошибок, 103 предупреждения |
+| `npm test` | 0 | 202 files, 817 tests PASS |
+
+### Challenge (negative control)
+
+- Доказательство чувствительности проверки вложенных spawn-ссылок:
+  - В `packages/combat-core/src/combat.input-validator.ts` временно закомментирован вызов `validateNestedSpawnPayloads(allDefs, allDefIds, catUpgrades)`.
+  - Запуск `npx vitest run --config packages/combat-core/vitest.config.ts packages/combat-core/tests/validation-r3a-spawns.test.ts` дал немедленный RED:
+    - 4 из 5 тестов упали (`Remark 2a`, `Remark 2b`, `Remark 2c`, `Remark 2d` — все 4 не поймали отсутствующий `ghost` и выбросили `AssertionError: expected function to throw an error, but it didn't`).
+  - Мутант отменен, `validateNestedSpawnPayloads` восстановлен, возврат в 65/65 PASS.
+
 ### Review / решение
 
 - Статус: `needs_external_review`. Переход к R3b–R7 не производился.

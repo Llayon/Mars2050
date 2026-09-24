@@ -44,7 +44,7 @@ export const baseStatsSchema = z.object({
   statusOnHit: z.array(statusEffectSchema).optional(),
   healTargetTags: z.array(z.string()).optional(),
   targetingProfile: z.string().optional(),
-})
+}).passthrough()
 export type BaseStats = z.infer<typeof baseStatsSchema>
 
 export const unitDefinitionSchema = z.object({
@@ -55,7 +55,8 @@ export const unitDefinitionSchema = z.object({
   squadSpacing: z.number().nonnegative().default(20),
   formation: formationSchema.default('grid'),
   targetingProfile: z.string().optional(),
-})
+  abilities: z.array(z.unknown()).optional(),
+}).passthrough()
 export type UnitDefinition = z.infer<typeof unitDefinitionSchema>
 
 export const unitPlacementSchema = z.object({

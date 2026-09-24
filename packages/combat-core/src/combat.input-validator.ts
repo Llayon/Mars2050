@@ -1,21 +1,24 @@
-import { battleInputSchema, type BattleInput, type UnitDefinition } from './contracts/index.js'
+import { battleInputSchema, baseStatsSchema, type BattleInput } from './contracts/index.js'
 import { CombatDefinitionError } from './combat.definition-error.js'
 import { TARGETING_PROFILES } from './combat.targeting.config.js'
 import { calculateEffectiveMaxHp } from './combat.unit-stat-compiler.js'
 import { compileAbilityDefinitions, AbilityCompilationError } from './combat.ability-compiler.js'
 import { periodicAbility } from './combat.ability-config.js'
-import type { CombatCatalog } from './combat.catalog.types.js'
+import type { CombatCatalog, UpgradeConfig } from './combat.catalog.types.js'
 import type { AbilityDefinition } from './combat.ability.types.js'
 import type { PeriodicAbilityConfig } from './combat.sim.types.js'
+import type { UnitBaseStats } from './combat.types.js'
+import { validateNestedSpawnPayloads, validateSummonCycles } from './combat.payload-validator.js'
+import { validateUnitLoadout } from './combat.loadout-validator.js'
 
 const SUPPORTED_SCHEDULED_EFFECT_KINDS = ['orbital_strike', 'mass_heal', 'mass_shield', 'global_emp']
 
 interface AnyDef {
-  id?: string; targetingProfile?: string; squadSize?: number; abilities?: AbilityDefinition[]
+  id?: string; targetingProfile?: string; squadSize?: number; abilities?: unknown[]
   baseStats?: {
     hp?: number; attack?: number; defense?: number; speed?: number; range?: number; attackType?: string
     spawnType?: string; spawnCap?: number; targetingProfile?: string; statusOnHit?: Array<{ duration?: number }>
-    abilities?: AbilityDefinition[]; periodicAbilities?: PeriodicAbilityConfig[]
+    abilities?: unknown[]; periodicAbilities?: PeriodicAbilityConfig[]
   }
 }
 
@@ -40,7 +43,7 @@ export function validateBattleInput(input: unknown): BattleInput {
   }
 
   // 3. Collect accessible definitions and catalog components
-  // Runtime precedence: catalog.unitTypes takes priority over definitions for duplicate keys.
+  // Runtime precedence: definitions take priority over catalog for duplicate keys.
   const allDefs: Record<string, AnyDef> = {}
   const allDefIds = new Set<string>()
   for (const [k, v] of Object.entries(parsed.definitions)) { allDefs[k] = v; allDefIds.add(k) }
@@ -57,26 +60,12 @@ export function validateBattleInput(input: unknown): BattleInput {
 
   const allUpgradeIds = new Set<string>()
   const catUpgrades = (parsed.catalog as {
-    upgrades?: Record<string, {
-      modifiers?: { periodicSpawn?: { unit?: string }; onDeathSpawn?: string; periodicAbilities?: PeriodicAbilityConfig[] }
-    }>
+    upgrades?: Record<string, UpgradeConfig>
   } | undefined)?.upgrades
   if (catUpgrades && typeof catUpgrades === 'object') {
     for (const [upgId, upg] of Object.entries(catUpgrades)) {
       if (!upg || typeof upg !== 'object') continue
       allUpgradeIds.add(upgId)
-      const pUnit = upg.modifiers?.periodicSpawn?.unit
-      if (pUnit && !allDefIds.has(pUnit)) {
-        throw new CombatDefinitionError('MISSING_SPAWN_DEFINITION',
-          `upgrade '${upgId}' periodicSpawn references unknown definition '${pUnit}'`,
-          { path: `catalog.upgrades.${upgId}.modifiers.periodicSpawn.unit`, reference: pUnit, definitionId: upgId })
-      }
-      const dUnit = upg.modifiers?.onDeathSpawn
-      if (dUnit && !allDefIds.has(dUnit)) {
-        throw new CombatDefinitionError('MISSING_SPAWN_DEFINITION',
-          `upgrade '${upgId}' onDeathSpawn references unknown definition '${dUnit}'`,
-          { path: `catalog.upgrades.${upgId}.modifiers.onDeathSpawn`, reference: dUnit, definitionId: upgId })
-      }
       const uPer = upg.modifiers?.periodicAbilities
       if (Array.isArray(uPer)) {
         try { compileAbilityDefinitions(uPer.map(a => periodicAbility(`${upgId}:p:${a.id}`, a))) } catch (err) {
@@ -90,11 +79,27 @@ export function validateBattleInput(input: unknown): BattleInput {
     }
   }
 
-  // 4. Validate all definitions (baseStats presence, attackType, spawnType, targetingProfile, statusOnHit, abilities)
+  // 4. Validate all nested spawn payloads across definitions and catalog upgrades
+  validateNestedSpawnPayloads(allDefs, allDefIds, catUpgrades)
+
+  // 5. Validate all definitions (baseStats structural schema, attackType, spawnType, targetingProfile, statusOnHit, abilities)
   for (const [id, def] of Object.entries(allDefs)) {
     if (!def || typeof def !== 'object' || !def.baseStats || typeof def.baseStats !== 'object') {
       throw new CombatDefinitionError('MISSING_DEFINITION', `definition '${id}' is missing baseStats`,
         { path: `definitions.${id}.baseStats`, definitionId: id })
+    }
+    const baseStatsResult = baseStatsSchema.passthrough().safeParse(def.baseStats)
+    if (!baseStatsResult.success) {
+      const firstIssue = baseStatsResult.error.issues[0]
+      const issuePath = firstIssue ? firstIssue.path.join('.') : ''
+      throw new CombatDefinitionError('SCHEMA_VALIDATION_ERROR',
+        `definition '${id}' baseStats validation failed: ${firstIssue ? firstIssue.message : 'invalid baseStats'} at '${issuePath}'`,
+        {
+          path: `definitions.${id}.baseStats${issuePath ? `.${issuePath}` : ''}`,
+          definitionId: id,
+          reference: String((firstIssue as unknown as { received?: unknown })?.received ?? ''),
+          issues: baseStatsResult.error.issues.map(i => ({ path: i.path.join('.'), message: i.message })),
+        })
     }
     const attackType = def.baseStats.attackType
     if (attackType === 'beam' || attackType === 'spread') {
@@ -102,10 +107,6 @@ export function validateBattleInput(input: unknown): BattleInput {
     }
     if (attackType === 'spawn' && !def.baseStats.spawnType) {
       throw new CombatDefinitionError('MISSING_SPAWN_TYPE', `definition '${id}' with attackType 'spawn' requires non-empty spawnType`, { path: `definitions.${id}.baseStats.spawnType`, definitionId: id })
-    }
-    const spawnType = def.baseStats.spawnType
-    if (spawnType && !allDefIds.has(spawnType)) {
-      throw new CombatDefinitionError('MISSING_SPAWN_DEFINITION', `definition '${id}' spawns unknown definition '${spawnType}'`, { path: `definitions.${id}.baseStats.spawnType`, reference: spawnType, definitionId: id })
     }
     const profile = def.targetingProfile ?? def.baseStats.targetingProfile
     if (profile && !allTargetingProfiles.has(profile)) {
@@ -122,8 +123,11 @@ export function validateBattleInput(input: unknown): BattleInput {
       }
     }
     const authoredAbilities = def.abilities ?? def.baseStats.abilities
-    if (Array.isArray(authoredAbilities)) {
-      try { compileAbilityDefinitions(authoredAbilities) } catch (err) {
+    if (authoredAbilities !== undefined) {
+      if (!Array.isArray(authoredAbilities)) {
+        throw new CombatDefinitionError('SCHEMA_VALIDATION_ERROR', `definition '${id}' abilities must be an array`, { path: `definitions.${id}.abilities`, definitionId: id })
+      }
+      try { compileAbilityDefinitions(authoredAbilities as AbilityDefinition[]) } catch (err) {
         if (err instanceof AbilityCompilationError) {
           throw new CombatDefinitionError('SCHEMA_VALIDATION_ERROR', `definition '${id}' ability error: ${err.message}`,
             { path: `definitions.${id}.abilities.${err.path}`, definitionId: id, reference: err.abilityId })
@@ -143,7 +147,7 @@ export function validateBattleInput(input: unknown): BattleInput {
     }
   }
 
-  // 5. Units validation & squad member ID collision check
+  // 6. Units validation, squad member ID collision check, bounds check & loadout validation
   const seenInstanceIds = new Set<string>()
   const allMemberIds = new Set<string>()
   for (let i = 0; i < parsed.units.length; i++) {
@@ -164,7 +168,8 @@ export function validateBattleInput(input: unknown): BattleInput {
           { path: `units[${i}].upgradeIds[${j}]`, reference: upgId })
       }
     }
-    const squadSize = allDefs[u.definitionId]?.squadSize || 1
+    const squadDef = parsed.definitions[u.definitionId] ?? catUnitTypes?.[u.definitionId]
+    const squadSize = squadDef?.squadSize || 1
     for (let s = 0; s < squadSize; s++) {
       const memberId = squadSize > 1 ? `${u.instanceId}_${s}` : u.instanceId
       if (allMemberIds.has(memberId)) {
@@ -191,34 +196,12 @@ export function validateBattleInput(input: unknown): BattleInput {
           { path: `units[${i}].currentHp`, reference: String(u.currentHp) })
       }
     }
+
+    validateUnitLoadout(i, u, allDefs[u.definitionId].baseStats as UnitBaseStats, catUpgrades)
   }
 
   // 7. Cycle check: only nodes actually participating in the cycle require spawnCap
-  for (const startId of Object.keys(allDefs)) {
-    const path: string[] = []
-    const visitedSet = new Set<string>()
-    let current: string | undefined = startId
-    while (current) {
-      if (visitedSet.has(current)) {
-        const cycleStartIndex = path.indexOf(current)
-        if (cycleStartIndex !== -1) {
-          const hasNoCap = path.slice(cycleStartIndex).some(id => {
-            const def = allDefs[id]
-            return def?.baseStats?.attackType === 'spawn' && (def.baseStats.spawnCap == null || def.baseStats.spawnCap <= 0)
-          })
-          if (hasNoCap) {
-            throw new CombatDefinitionError('UNCONSTRAINED_SUMMON_CYCLE',
-              `unconstrained summon cycle detected for definition '${current}' without spawnCap`,
-              { path: `definitions.${current}.baseStats.spawnCap`, definitionId: current })
-          }
-        }
-        break
-      }
-      visitedSet.add(current); path.push(current)
-      current = allDefs[current]?.baseStats?.spawnType
-      if (!current || !allDefs[current]) break
-    }
-  }
+  validateSummonCycles(allDefs)
 
   // 8. Coordinate and Arena Bounds
   for (let i = 0; i < parsed.arena.obstacles.length; i++) {

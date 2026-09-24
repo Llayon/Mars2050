@@ -40,8 +40,20 @@ const PRIMARY_GEOMETRY_EFFECTS = new Set<AbilityEffect['kind']>([
 export function compileAbilityDefinitions(definitions: AbilityDefinition[]): CompiledAbilityProgram[] {
   const ids = new Set<string>()
   for (const definition of definitions) {
+    if (!definition || typeof definition !== 'object') {
+      throw new AbilityCompilationError('UNSUPPORTED_COMBINATION', 'unknown', '', 'Ability definition must be an object')
+    }
+    if (typeof definition.id !== 'string' || definition.id.length === 0) {
+      throw new AbilityCompilationError('UNSUPPORTED_COMBINATION', String(definition.id ?? 'unknown'), 'id', 'Ability id must be a non-empty string')
+    }
     if (ids.has(definition.id)) throw new AbilityCompilationError('DUPLICATE_ID', definition.id, 'id', `Duplicate ability id: ${definition.id}`)
     ids.add(definition.id)
+    if (!definition.trigger || typeof definition.trigger !== 'object' || typeof definition.trigger.kind !== 'string') {
+      throw new AbilityCompilationError('UNSUPPORTED_COMBINATION', definition.id, 'trigger', 'Ability trigger must be a valid trigger object')
+    }
+    if (!Array.isArray(definition.effects)) {
+      throw new AbilityCompilationError('UNSUPPORTED_COMBINATION', definition.id, 'effects', 'Ability effects must be an array')
+    }
     validateDefinition(definition)
   }
   return definitions
@@ -69,11 +81,17 @@ function validateDefinition(definition: AbilityDefinition): void {
     throw new AbilityCompilationError('INVALID_NUMERIC_VALUE', definition.id, 'trigger.intervalTicks', 'Periodic interval must be a positive integer')
   }
   for (const [groupIndex, group] of definition.effects.entries()) {
+    if (!group || typeof group !== 'object' || !group.selector || typeof group.selector !== 'object' || !Array.isArray(group.effects)) {
+      throw new AbilityCompilationError('UNSUPPORTED_COMBINATION', definition.id, `effects[${groupIndex}]`, 'Effect group must be an object with selector and effects array')
+    }
     if (group.effects.length === 0) {
       throw new AbilityCompilationError('UNSUPPORTED_COMBINATION', definition.id, `effects[${groupIndex}]`, 'Effect group must not be empty')
     }
     validateSelector(definition.id, group.selector, `effects[${groupIndex}].selector`)
     for (const [effectIndex, effect] of group.effects.entries()) {
+      if (!effect || typeof effect !== 'object' || typeof effect.kind !== 'string') {
+        throw new AbilityCompilationError('UNSUPPORTED_COMBINATION', definition.id, `effects[${groupIndex}].effects[${effectIndex}]`, 'Effect must be an object with kind')
+      }
       validateEffect(definition.id, definition.trigger, group.selector, effect, `effects[${groupIndex}].effects[${effectIndex}]`)
     }
   }

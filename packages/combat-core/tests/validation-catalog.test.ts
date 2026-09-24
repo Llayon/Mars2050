@@ -53,8 +53,7 @@ describe('R3a catalog and upgrade validation', () => {
     })
     expect(() => validateBattleInput(input)).toThrowError(
       expect.objectContaining({
-        code: 'INVALID_FIELD_RANGE',
-        path: 'definitions.knight.baseStats.statusOnHit[0].duration',
+        code: 'SCHEMA_VALIDATION_ERROR',
       }),
     )
   })
