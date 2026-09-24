@@ -21,7 +21,7 @@ export type StatusType = z.infer<typeof statusTypeSchema>
 
 export const statusEffectSchema = z.object({
   type: statusTypeSchema,
-  duration: z.number().int().nonnegative(),
+  duration: z.number().int().positive(),
   value: z.number().optional(),
   sourceUnitId: z.string().optional(),
   stackKey: z.string().optional(),
@@ -43,6 +43,7 @@ export const baseStatsSchema = z.object({
   spawnCap: z.number().int().positive().optional(),
   statusOnHit: z.array(statusEffectSchema).optional(),
   healTargetTags: z.array(z.string()).optional(),
+  targetingProfile: z.string().optional(),
 })
 export type BaseStats = z.infer<typeof baseStatsSchema>
 
@@ -53,6 +54,7 @@ export const unitDefinitionSchema = z.object({
   squadSize: z.number().int().positive().default(1),
   squadSpacing: z.number().nonnegative().default(20),
   formation: formationSchema.default('grid'),
+  targetingProfile: z.string().optional(),
 })
 export type UnitDefinition = z.infer<typeof unitDefinitionSchema>
 

@@ -1,4 +1,5 @@
 import type { BattleInput, UnitSpawnSpec, ScheduledEffect, ArenaSpec, UnitDefinition } from '@mars2050/combat-core/contracts'
+import { calculateEffectiveMaxHp } from '@mars2050/combat-core'
 import type { UnitRow } from './combat.types'
 import type { Obstacle } from './combat.sim.types'
 import type { BattleSimulationOptions } from './combat.metrics'
@@ -12,7 +13,7 @@ export { buildMarsUnitDefinitions } from './combat.unit-definitions'
 
 /**
  * Maps a list of UnitRow objects into UnitSpawnSpec list for combat-core.
- * Clamps legacy row.hp_current to definition maxHp for Mars backward compatibility.
+ * Clamps legacy row.hp_current to effective maxHp (with rank & upgrades) for Mars backward compatibility.
  */
 export function mapUnitRowsToSpawnSpecs(
   rows: UnitRow[],
@@ -20,11 +21,14 @@ export function mapUnitRowsToSpawnSpecs(
   definitions?: Record<string, UnitDefinition>,
 ): UnitSpawnSpec[] {
   const defs = definitions ?? buildMarsUnitDefinitions()
+  const marsCatalog = { unitTypes: UNIT_TYPES, upgrades: UPGRADES }
   return rows.map(row => {
+    const rank = getUnitRank(row)
+    const upgradeIds = row.upgrade_path ? [...row.upgrade_path] : []
     let currentHp: number | undefined = row.hp_current ?? undefined
-    if (currentHp !== undefined && defs[row.unit_type]) {
-      const maxHp = defs[row.unit_type].baseStats.hp
-      if (currentHp > maxHp) {
+    if (currentHp !== undefined) {
+      const maxHp = calculateEffectiveMaxHp(row.unit_type, rank, upgradeIds, marsCatalog, defs)
+      if (maxHp !== undefined && currentHp > maxHp) {
         currentHp = maxHp
       }
     }
@@ -37,8 +41,8 @@ export function mapUnitRowsToSpawnSpecs(
         y: row.grid_y != null ? Number(row.grid_y) : undefined,
       },
       currentHp,
-      rank: getUnitRank(row),
-      upgradeIds: row.upgrade_path ? [...row.upgrade_path] : [],
+      rank,
+      upgradeIds,
     }
   })
 }

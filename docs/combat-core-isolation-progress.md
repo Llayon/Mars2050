@@ -243,39 +243,77 @@
 - `packages/combat-core/src/facade/combat-facade.ts`:
   - `simulateCombat` вызывает `validateBattleInput(input)` до делегирования в симулятор.
 - `packages/combat-core/src/index.ts`:
-  - Экспорт `combat.input-validator.js`.
+  - Экспорт `combat.input-validator.js` и `calculateEffectiveMaxHp`.
+- `packages/combat-core/src/combat.unit-stat-compiler.ts`:
+  - Добавлена функция `calculateEffectiveMaxHp(definitionId, rank, upgradeIds, catalog, definitions)` для расчета эффективного предела HP с учетом апгрейдов и ранга.
+- `packages/combat-core/src/combat.spawn-spec-compiler.ts`:
+  - Строка 32: `const def = definitions[spec.definitionId] ?? catalog?.unitTypes?.[spec.definitionId]` предотвращает исчезновение юнитов, объявленных только в каталоге.
 - `src/domains/combat/combat.input-translator.ts`:
-  - Сохранение compatibility mapping для legacy Mars presets / DB: `mapUnitRowsToSpawnSpecs` выполняет безопасный clamp `row.hp_current` к `maxHp` определения снаружи строгого ядра, что гарантирует соблюдение строгого инварианта ядра без искажения исторических golden-слепков.
+  - `mapUnitRowsToSpawnSpecs` использует `calculateEffectiveMaxHp` и ограничивает HP только при `row.hp_current > effectiveMaxHp`, сохраняя повышенное HP юнитов с апгрейдами (морпех с heavy_armor сохраняет 40 HP).
+
+### Доработка R3a по результатам независимого ревью коммита 484b297 (ISO-05)
+
+По результатам проверки коммита `484b297` независимый ревьюер отметил 6 пунктов для доработки R3a:
+
+1. **[P1] Расчет эффективного maxHp и сохранение поведения Mars:**
+   - Ранее валидатор и транслятор ограничивали HP базовым `def.baseStats.hp` (35 для морпеха), что срезало допустимое повышенное HP (40 HP при наличии `heavy_armor` с effective max 46).
+   - Реализована функция `calculateEffectiveMaxHp` в `combat.unit-stat-compiler.ts`, экспортирована через `@mars2050/combat-core`.
+   - В `combat.input-validator.ts` проверка `currentHp` использует `calculateEffectiveMaxHp`, разрешая повышенное здоровье в пределах ранга и модификаторов.
+   - В `combat.input-translator.ts` транслятор Mars вычисляет `effectiveMaxHp` через `calculateEffectiveMaxHp(row.unit_type, rank, upgradeIds, marsCatalog, defs)` и не срезает здоровье юнитов до базового.
+   - Создан тест `src/__tests__/combat.input-translator.test.ts` (4 теста), подтверждающий сохранение 40 HP для морпеха с `heavy_armor`, срез при превышении 46 HP и срез базового юнита до 35 HP.
+
+2. **[P1] Паритет разрешения определений из `catalog.unitTypes`:**
+   - В `packages/combat-core/src/combat.spawn-spec-compiler.ts:32` поиск определения расширен: `definitions[spec.definitionId] ?? catalog?.unitTypes?.[spec.definitionId]`.
+   - Юниты, заданные только в `catalog.unitTypes`, больше не отбрасываются компилятором спавна, корректно попадают в `initialState` и участвуют в боевом моделировании.
+   - В `validation-integrity.test.ts` добавлен тест спавна юнита только из каталога.
+
+3. **[P2] Полнота предсимуляционной валидации до создания мира и расхода RNG:**
+   - `statusOnHit` с `duration: 0` отклоняется валидатором (через `statusEffectSchema` со строгим `z.number().int().positive()` и проверку в `validateBattleInput`).
+   - Неизвестный `upgradeId` в юнитах отклоняется с кодом `MISSING_DEFINITION` при отсутствии в `catalog.upgrades`.
+   - Неизвестный `targetingProfile` в определении или `catalog.unitTypes` отклоняется с кодом `MISSING_DEFINITION`.
+   - Неизвестный `spawnType` внутри `catalog.unitTypes` отклоняется с кодом `MISSING_SPAWN_DEFINITION`.
+   - В `validation.test.ts` добавлен совместный spy на `PRNG.prototype.next` И `CombatWorld.prototype.queueUnitCreation`, подтверждающий ровно 0 обращений к PRNG и 0 вызовов создания мира при невалидном входе.
+
+4. **[P2] Диапазоны значений запланированных эффектов:**
+   - Валидатор проверяет положительность и конечность величин для `orbital_strike`, `mass_heal`, `mass_shield` (`value > 0 && Number.isFinite(value)`).
+   - Для `global_emp` проверяется строгое требование положительного целого числа тиков (`value > 0 && Number.isInteger(value)`).
+   - Некорректные значения (например, `mass_heal` с `value: -20` или `global_emp` с дробным значением) отклоняются с кодом `INVALID_FIELD_RANGE`.
+
+5. **[P2] Изоляция узлов цикла призыва:**
+   - В проверке циклов призыва граф обходится с выделением фактического кольца: `cycleNodes = path.slice(cycleStartIndex)`.
+   - Требование `spawnCap > 0` проверяется только для узлов, непосредственно входящих в цикл.
+   - Конфигурация `parent -> hydra -> hydra`, где `hydra` имеет `spawnCap: 2`, а `parent` не имеет `spawnCap`, теперь корректно принимается без ложного отклонения.
+
+6. **[Additional] Конструктор `CombatDefinitionError` для legacy вызовов:**
+   - В `CombatDefinitionError` проверка `extra?.effectId !== undefined` перенесена перед `typeof attackTypeOrExtra === 'string'`, что гарантирует корректное форматирование сообщения об ошибке запланированного эффекта при передаче пустых строк `''` в качестве 2-го и 3-го аргументов.
 
 ### GREEN (frozen snapshot)
 
 | Команда | Exit code | Результат |
 | --- | --- | --- |
 | `npm run combat:core:build; npm run combat:core:check` | 0 | Сборка dist и tsc noEmit чисты |
-| `npm run test:combat:core` | 0 | 40/40 тестов PASS (contracts: 6, definitions: 7, rules: 9, validation: 12, validation-integrity: 6) |
-| `npx tsc --noEmit --pretty false` | 0 | Корневой typecheck чист |
-| `npx tsx scripts/check-limits.ts --json` | 0 | 0 violations (все файлы строго в пределах лимитов строк) |
+| `npm run test:combat:core` | 0 | 48/48 тестов PASS (contracts: 6, definitions: 7, rules: 9, validation: 15, validation-integrity: 11) |
+| `npm run typecheck` | 0 | Корневой typecheck чист (включая build core) |
+| `npx tsx scripts/check-limits.ts --json` | 0 | 0 violations (все файлы строго в пределах лимитов: validator 247 строк <= 250, compiler 204 строки <= 250) |
 | `npx tsx scripts/combat-ecs-golden.ts` | 0 | 7/7 presets stable (Mars baseline V8) |
 | `npx tsx scripts/combat-ecs-golden.ts --v9` | 0 | 7/7 presets stable (Mars baseline V9) |
-| `npm run test:combat:package:runtime` | 0 | Все блоки в изолированном tmpdir PASS (SHA256: a0b64b12abf48f11b6393d32b21b2c36b9a18490cb05868247c7c95f8b4e342b) |
+| `npm run test:combat:package:runtime` | 0 | Все блоки в изолированном tmpdir PASS (SHA256: 01180d3f0cc7659e574e03a2b290cd26e4eb323d051084acdab30ef68098bd96) |
 | `npm run test:combat:package` | 1 | Честный известный ISO-08 BOUNDARY FAIL (4 внутренних пути, норма до R6) |
-| `npm run lint` | 0 | 0 ошибок, 103 предупреждения |
-| `npm test` | 0 | 201 files, 812 tests PASS |
+| `npm run lint` | 0 | 0 ошибок, 104 предупреждения |
+| `npm test` | 0 | 202 files, 816 tests PASS |
 
 ### Challenge (negative control)
 
-- Проверка чувствительности предсимуляционной проверки некорректного входа (по таблице негативных контролей плана):
-  - В `packages/combat-core/src/combat.input-validator.ts` временно отключена проверка неизвестного определения юнита (`if (false && !allDefIds.has(u.definitionId))`).
-  - Пересборка ядра и запуск `npm run test:combat:core` дал немедленный RED:
-    - `validation-integrity.test.ts > rejects missing definition reference in units with MISSING_DEFINITION`: `AssertionError: expected function to throw an error, but it didn't` (строка 42).
-    - `validation.test.ts > guarantees identical error codes and details for JSON-stringified input`: `AssertionError: expected undefined to be defined` (строка 178).
-    - `validation.test.ts > guarantees zero PRNG consumption or world creation when input validation fails`: `AssertionError: expected undefined to be 'MISSING_DEFINITION'` (строка 197).
-  - Мутант отменен, тест возвращен в чистый GREEN (40/40).
+- Доказательство чувствительности разрешения определений из каталога:
+  - В `packages/combat-core/src/combat.spawn-spec-compiler.ts:32` временно убран fallback к каталогу: `const def = definitions[spec.definitionId]`.
+  - Запуск `npm run combat:core:build && npm run test:combat:core` дал немедленный RED:
+    - `validation-integrity.test.ts > allows unit defined only in catalog.unitTypes and compiles spawn properly in simulation`: `AssertionError: expected false to be true` (строка 213, unit `s1` не был создан).
+  - Мутант отменен, возврат в чистый GREEN (48/48).
 
 ### Review / решение
 
 - Статус: `needs_external_review`. Переход к R3b–R7 не производился.
-- ISO-05 закрыт кодом и тестами.
+- Замечания независимого ревью по R3a полностью устранены, ISO-05 подтвержден тестами.
 
 ## R2b: timeout и scheduled effects как данные (ISO-03, ISO-04) — green, review pending
 

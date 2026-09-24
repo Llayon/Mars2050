@@ -29,7 +29,7 @@ export function createSpawnBuildSpecs(
   arenaWidth: number = FIELD_WIDTH,
   arenaHeight: number = FIELD_HEIGHT,
 ): UnitBuildSpec[] {
-  const def = definitions[spec.definitionId]
+  const def = definitions[spec.definitionId] ?? catalog?.unitTypes?.[spec.definitionId]
   if (!def) return []
   const squadSize = def.squadSize || 1
   const spacing = def.squadSpacing || 20

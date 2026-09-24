@@ -57,6 +57,14 @@ export class CombatDefinitionError extends Error {
       fieldPath = attackTypeOrExtra.path
       refValue = attackTypeOrExtra.reference
       schemaIssues = attackTypeOrExtra.issues
+    } else if (extra?.effectId !== undefined) {
+      // Legacy signature 2: (code, '', '', { effectId, effectType })
+      defId = messageOrDefId || undefined
+      effId = extra.effectId
+      effType = extra.effectType
+      fieldPath = extra.path ?? `scheduledEffects[${effId}].type`
+      refValue = extra.reference ?? effType
+      message = `scheduled effect '${effId}' uses unsupported type '${effType ?? ''}'`
     } else if (typeof attackTypeOrExtra === 'string') {
       // Legacy signature 1: (code, definitionId, attackType, extra?)
       defId = messageOrDefId
@@ -66,14 +74,6 @@ export class CombatDefinitionError extends Error {
       fieldPath = extra?.path ?? (defId ? `definitions.${defId}.baseStats.attackType` : undefined)
       refValue = extra?.reference ?? atkType
       message = `definition '${defId}' uses unsupported attackType '${atkType}'`
-    } else if (extra?.effectId !== undefined) {
-      // Legacy signature 2: (code, '', '', { effectId, effectType })
-      defId = messageOrDefId || undefined
-      effId = extra.effectId
-      effType = extra.effectType
-      fieldPath = extra.path ?? `scheduledEffects[${effId}].type`
-      refValue = extra.reference ?? effType
-      message = `scheduled effect '${effId}' uses unsupported type '${effType ?? ''}'`
     } else {
       message = messageOrDefId
       fieldPath = extra?.path

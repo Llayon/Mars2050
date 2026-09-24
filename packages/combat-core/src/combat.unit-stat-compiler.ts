@@ -2,7 +2,9 @@ import { applyRankScaling } from './combat.rank-scaling.js'
 import type { UnitBuildSpec } from './combat.unit-build.types.js'
 import type { UnitBaseStats, UnitTypeConfig } from './combat.types.js'
 import { getRuntimePrimitiveStats } from './combat.upgrade-primitives.js'
-import { getDefaultCombatCatalog } from './combat.catalog.types.js'
+import { getDefaultCombatCatalog, type CombatCatalog } from './combat.catalog.types.js'
+import type { UnitDefinition } from './contracts/index.js'
+import { mapDefinitionToUnitTypeConfig } from './combat.definition-mapper.js'
 
 export interface CompiledUnitStats {
   definition: UnitTypeConfig
@@ -157,4 +159,45 @@ function resolveRank(spec: UnitBuildSpec): number {
     return spec.loadout.rank
   }
   return 1
+}
+
+/**
+ * Calculates the effective maximum HP of a unit given its definition, rank, and upgrades.
+ */
+export function calculateEffectiveMaxHp(
+  definitionId: string,
+  rank: number = 1,
+  upgradeIds: string[] = [],
+  catalog?: CombatCatalog,
+  definitions?: Record<string, UnitDefinition>,
+): number | undefined {
+  const unitTypes: Record<string, UnitTypeConfig> = { ...(catalog?.unitTypes ?? {}) }
+  if (definitions) {
+    for (const [key, def] of Object.entries(definitions)) {
+      if (!unitTypes[key]) {
+        try {
+          unitTypes[key] = mapDefinitionToUnitTypeConfig(def)
+        } catch {
+          // Ignore unsupported attack types in definition mapping
+        }
+      }
+    }
+  }
+  const effectiveCatalog: CombatCatalog = {
+    unitTypes,
+    upgrades: catalog?.upgrades ?? {},
+    targetingProfiles: catalog?.targetingProfiles,
+  }
+  const compiled = compileUnitStats({
+    definitionId,
+    identity: { id: definitionId, team: 'attacker' },
+    loadout: {
+      rank: Number.isFinite(rank) ? Math.max(1, Math.floor(rank)) : 1,
+      upgradeIds: Array.isArray(upgradeIds) ? [...upgradeIds] : [],
+    },
+    placement: { x: 0, y: 0, angle: 0 },
+    catalog: effectiveCatalog,
+  })
+  if (!compiled) return undefined
+  return Math.round(compiled.hp)
 }
