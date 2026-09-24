@@ -1,6 +1,6 @@
 import type { UnitDefinition } from './contracts/index.js'
 import type { CombatTag } from './combat.sim.types.js'
-import type { UnitBaseStats, UnitTypeConfig } from './combat.types.js'
+import type { TargetingProfile, UnitBaseStats, UnitTypeConfig } from './combat.types.js'
 import { CombatDefinitionError } from './combat.definition-error.js'
 
 /**
@@ -31,6 +31,7 @@ export function mapDefinitionToUnitTypeConfig(def: UnitDefinition): UnitTypeConf
       turnSpeed: def.baseStats.turnSpeed,
       size: def.baseStats.size,
       combatTags: def.baseStats.combatTags ? ([...def.baseStats.combatTags] as CombatTag[]) : [],
+      targetingProfile: (def.targetingProfile ?? def.baseStats.targetingProfile) as TargetingProfile | undefined,
     },
     hireCost: {},
     squadSize: def.squadSize,

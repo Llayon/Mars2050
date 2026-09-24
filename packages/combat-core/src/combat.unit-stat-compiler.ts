@@ -199,5 +199,5 @@ export function calculateEffectiveMaxHp(
     catalog: effectiveCatalog,
   })
   if (!compiled) return undefined
-  return Math.round(compiled.hp)
+  return compiled.hp
 }

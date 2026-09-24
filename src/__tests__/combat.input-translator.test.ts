@@ -20,7 +20,7 @@ describe('combat.input-translator — effective max HP and Mars compatibility', 
     expect(specs[0].currentHp).toBe(40)
   })
 
-  it('clamps currentHp exceeding effective max (46) for marine with heavy_armor', () => {
+  it('clamps currentHp exceeding effective max (45.5) for marine with heavy_armor', () => {
     const row: UnitRow = {
       id: 'marine_2',
       colony_id: 'c1',
@@ -33,7 +33,7 @@ describe('combat.input-translator — effective max HP and Mars compatibility', 
     }
     const specs = mapUnitRowsToSpawnSpecs([row], 'attacker')
     expect(specs).toHaveLength(1)
-    expect(specs[0].currentHp).toBe(46)
+    expect(specs[0].currentHp).toBeCloseTo(45.5, 5)
   })
 
   it('clamps currentHp to base max (35) for base marine without upgrades', () => {
@@ -50,6 +50,22 @@ describe('combat.input-translator — effective max HP and Mars compatibility', 
     const specs = mapUnitRowsToSpawnSpecs([row], 'attacker')
     expect(specs).toHaveLength(1)
     expect(specs[0].currentHp).toBe(35)
+  })
+
+  it('preserves unrounded float effective max HP (36.4) for marine with heavy_armor + stimpacks without truncation', () => {
+    const row: UnitRow = {
+      id: 'marine_multi',
+      colony_id: 'c1',
+      unit_type: 'marine',
+      hp_current: 40,
+      grid_x: '200',
+      grid_y: '600',
+      tier: 1,
+      upgrade_path: ['heavy_armor', 'stimpacks'],
+    }
+    const specs = mapUnitRowsToSpawnSpecs([row], 'attacker')
+    expect(specs).toHaveLength(1)
+    expect(specs[0].currentHp).toBeCloseTo(36.4, 5)
   })
 
   it('allows complete battle translation with elevated HP unit to simulate successfully', () => {

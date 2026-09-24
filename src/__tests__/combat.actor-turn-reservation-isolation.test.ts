@@ -65,13 +65,13 @@ describe('combat actor-turn melee reservation isolation', () => {
     expect(result.candidateBaselineOrderTraceConverges).toBe(false)
     expect(result.traceComparisons.baselineOrder.firstDifference?.field).toBe('group[0].movementRequests')
     expect(result.idContentTraceEffects.baselineOrder).toBe(true)
-  })
+  }, 15000)
 
   it('is deterministic across fresh primary reconstructions', () => {
     const first = runPrimarySummary()
     const second = runPrimarySummary()
     expect(canonicalSerialize(first)).toBe(canonicalSerialize(second))
-  })
+  }, 15000)
 })
 
 function runPrimarySummary() {

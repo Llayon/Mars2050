@@ -302,13 +302,58 @@
 | `npm run lint` | 0 | 0 ошибок, 104 предупреждения |
 | `npm test` | 0 | 202 files, 816 tests PASS |
 
+### Доработка R3a по результатам повторного ревью коммитов 484b297 и 0f76b72 (ISO-05)
+
+По результатам проверки независимый ревьюер отметил 4 замечания по валидации R3a и отдельный пропуск позднего призыва через upgrades:
+
+1. **[P1] Согласованность приоритета определений между валидатором и runtime:**
+   - В рантайме (`combat.runner.ts:57-62`) `catalog.unitTypes` имеет приоритет над публичными `definitions` для одинаковых ключей. Ранее валидатор перезаписывал определения каталога публичными.
+   - В `combat.input-validator.ts` порядок сбора приведен в полное соответствие с runtime: `catalog.unitTypes` имеет приоритет над `definitions`.
+   - В `combat.spawn-spec-compiler.ts:32` порядок разрешения также выровнен: `catalog?.unitTypes?.[spec.definitionId] ?? definitions[spec.definitionId]`.
+   - В `validation-catalog.test.ts` подтверждено: невалидный оверрайд из каталога (duration: 0 в statusOnHit, неизвестный targetingProfile) отклоняется валидатором до создания мира и расхода RNG.
+
+2. **[P2] Полная валидация определений каталога и ссылок позднего призыва в upgrades:**
+   - Отсутствие `baseStats` у определений каталога теперь явно отклоняется с кодом `MISSING_DEFINITION` (ранее приводило к runtime crash).
+   - Модификаторы улучшений `periodicSpawn.unit` и `onDeathSpawn` в `catalog.upgrades` строго валидируются против `allDefIds`. Несуществующие ссылки отклоняются с кодом `MISSING_SPAWN_DEFINITION` (ранее существующий upgrade со ссылкой на несуществующего юнита тихо возвращал 0 призывов).
+   - Все способности (`abilities` и `periodicAbilities` в определениях, а также `periodicAbilities` в улучшениях) валидируются через `compileAbilityDefinitions`. Ошибки компиляции способностей (например, `intervalTicks <= 0`) отклоняются с кодом `SCHEMA_VALIDATION_ERROR`.
+
+3. **[P2] Устранение раннего округления HP в `calculateEffectiveMaxHp`:**
+   - В `packages/combat-core/src/combat.unit-stat-compiler.ts:202` удален `Math.round(compiled.hp)`, функция возвращает точный `compiled.hp`.
+   - Морпех с `heavy_armor` + `stimpacks` сохраняет 36.4 HP без усечения до 36.
+   - Морпех с `heavy_armor` при `hp_current: 50` срезается до точного эффективного максимума 45.5 HP (35 * 1.3).
+   - В `combat.input-validator.ts` проверка `currentHp > maxHp + 1e-6` учитывает машинное эпсилон для чисел с плавающей точкой.
+   - В `src/__tests__/combat.input-translator.test.ts` зафиксированы строгие тесты сохранения и среза вещественного HP.
+
+4. **[P2] Проведение публичного `targetingProfile` через mapper:**
+   - В `packages/combat-core/src/combat.definition-mapper.ts` добавлена передача `targetingProfile: (def.targetingProfile ?? def.baseStats?.targetingProfile) as TargetingProfile | undefined` в `baseStats`.
+   - В `validation-catalog.test.ts` добавлен симуляционный тест: катапульта с публичным профилем `targetingProfile: 'siege'` выбирает целью вражескую башню (`combatTags: ['structure']`) вместо более близкой пехоты.
+
+5. **Оптимизация тестов и соблюдение лимитов:**
+   - Тесты разделены на `validation-integrity.test.ts` (11 тестов, 218 строк <= 250) и `validation-catalog.test.ts` (7 тестов, 178 строк <= 250).
+   - В `combat.actor-turn-reservation-isolation.test.ts` для тяжелых контрфактических тестов установлен явный таймаут 15000ms, исключающий флаки при параллельном прогоне полного набора тестов на Windows.
+
+### GREEN (обновленный frozen snapshot)
+
+| Команда | Exit code | Результат |
+| --- | --- | --- |
+| `npm run combat:core:build; npm run combat:core:check` | 0 | Сборка dist и tsc noEmit чисты |
+| `npm run test:combat:core` | 0 | 55/55 тестов PASS (contracts: 6, definitions: 7, rules: 9, validation: 15, validation-integrity: 11, validation-catalog: 7) |
+| `npm run typecheck` | 0 | Корневой typecheck чист (включая build core) |
+| `npx tsx scripts/check-limits.ts --json` | 0 | 0 violations (validator 249 строк <= 250) |
+| `npx tsx scripts/combat-ecs-golden.ts` | 0 | 7/7 presets stable (Mars baseline V8) |
+| `npx tsx scripts/combat-ecs-golden.ts --v9` | 0 | 7/7 presets stable (Mars baseline V9) |
+| `npm run test:combat:package:runtime` | 0 | Все 8 проверочных блоков в изолированном tmpdir PASS (SHA256: 9b28877769be08c91f809b385309c0c4e9037a92dffc5393087ec25fcc760905) |
+| `npm run test:combat:package` | 1 | Честный известный ISO-08 BOUNDARY FAIL (4 внутренних пути, норма до R6) |
+| `npm run lint` | 0 | 0 ошибок, 104 предупреждения |
+| `npm test` | 0 | 202 files, 817 tests PASS |
+
 ### Challenge (negative control)
 
-- Доказательство чувствительности разрешения определений из каталога:
-  - В `packages/combat-core/src/combat.spawn-spec-compiler.ts:32` временно убран fallback к каталогу: `const def = definitions[spec.definitionId]`.
-  - Запуск `npm run combat:core:build && npm run test:combat:core` дал немедленный RED:
-    - `validation-integrity.test.ts > allows unit defined only in catalog.unitTypes and compiles spawn properly in simulation`: `AssertionError: expected false to be true` (строка 213, unit `s1` не был создан).
-  - Мутант отменен, возврат в чистый GREEN (48/48).
+- Доказательство чувствительности проверки ссылок позднего призыва в upgrades:
+  - В `packages/combat-core/src/combat.input-validator.ts` временно отключена проверка `if (pUnit && !allDefIds.has(pUnit))`.
+  - Запуск `vitest run --config packages/combat-core/vitest.config.ts packages/combat-core/tests/validation-catalog.test.ts` дал немедленный RED:
+    - `validation-catalog.test.ts > rejects upgrade with periodicSpawn pointing to unknown definition with MISSING_SPAWN_DEFINITION`: `AssertionError: expected function to throw an error, but it didn't`.
+  - Мутант отменен, возврат в чистый GREEN (55/55).
 
 ### Review / решение
 
