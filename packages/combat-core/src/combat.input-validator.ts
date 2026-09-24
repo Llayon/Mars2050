@@ -9,12 +9,13 @@ import type { AbilityDefinition } from './combat.ability.types.js'
 import type { PeriodicAbilityConfig } from './combat.sim.types.js'
 import type { UnitBaseStats } from './combat.types.js'
 import { validateNestedSpawnPayloads, validateSummonCycles } from './combat.payload-validator.js'
-import { validateUnitLoadout } from './combat.loadout-validator.js'
+import { validateDefinitionBaseLoadout, validateUnitLoadout } from './combat.loadout-validator.js'
+import { validateUpgradeConfig } from './combat.upgrade-schema.js'
 
 const SUPPORTED_SCHEDULED_EFFECT_KINDS = ['orbital_strike', 'mass_heal', 'mass_shield', 'global_emp']
 
 interface AnyDef {
-  id?: string; targetingProfile?: string; squadSize?: number; abilities?: unknown[]
+  id?: string; targetingProfile?: string; squadSize?: number; squadSpacing?: number; abilities?: unknown[]
   baseStats?: {
     hp?: number; attack?: number; defense?: number; speed?: number; range?: number; attackType?: string
     spawnType?: string; spawnCap?: number; targetingProfile?: string; statusOnHit?: Array<{ duration?: number }>
@@ -64,7 +65,7 @@ export function validateBattleInput(input: unknown): BattleInput {
   } | undefined)?.upgrades
   if (catUpgrades && typeof catUpgrades === 'object') {
     for (const [upgId, upg] of Object.entries(catUpgrades)) {
-      if (!upg || typeof upg !== 'object') continue
+      validateUpgradeConfig(upgId, upg)
       allUpgradeIds.add(upgId)
       const uPer = upg.modifiers?.periodicAbilities
       if (Array.isArray(uPer)) {
@@ -112,39 +113,42 @@ export function validateBattleInput(input: unknown): BattleInput {
     if (profile && !allTargetingProfiles.has(profile)) {
       throw new CombatDefinitionError('MISSING_DEFINITION', `definition '${id}' references unknown targetingProfile '${profile}'`, { path: `definitions.${id}.targetingProfile`, reference: profile, definitionId: id })
     }
+    const isCat = !(id in parsed.definitions)
+    const pathPrefix = isCat ? `catalog.unitTypes.${id}` : `definitions.${id}`
+    if (def.squadSize !== undefined && (!Number.isInteger(def.squadSize) || def.squadSize < 1)) {
+      throw new CombatDefinitionError('INVALID_FIELD_RANGE',
+        `definition '${id}' squadSize (${def.squadSize}) must be a positive integer (>= 1)`,
+        { path: `${pathPrefix}.squadSize`, reference: String(def.squadSize), definitionId: id })
+    }
+    if (def.squadSpacing !== undefined && (!Number.isFinite(def.squadSpacing) || def.squadSpacing < 0)) {
+      throw new CombatDefinitionError('INVALID_FIELD_RANGE',
+        `definition '${id}' squadSpacing (${def.squadSpacing}) must be a non-negative finite number`,
+        { path: `${pathPrefix}.squadSpacing`, reference: String(def.squadSpacing), definitionId: id })
+    }
     if (def.baseStats.statusOnHit) {
       for (let s = 0; s < def.baseStats.statusOnHit.length; s++) {
         const st = def.baseStats.statusOnHit[s]
         if (!st.duration || !Number.isInteger(st.duration) || st.duration <= 0) {
           throw new CombatDefinitionError('INVALID_FIELD_RANGE',
             `definition '${id}' statusOnHit[${s}] duration (${st.duration}) must be a positive integer`,
-            { path: `definitions.${id}.baseStats.statusOnHit[${s}].duration`, reference: String(st.duration), definitionId: id })
+            { path: `${pathPrefix}.baseStats.statusOnHit[${s}].duration`, reference: String(st.duration), definitionId: id })
         }
       }
     }
-    const authoredAbilities = def.abilities ?? def.baseStats.abilities
-    if (authoredAbilities !== undefined) {
-      if (!Array.isArray(authoredAbilities)) {
-        throw new CombatDefinitionError('SCHEMA_VALIDATION_ERROR', `definition '${id}' abilities must be an array`, { path: `definitions.${id}.abilities`, definitionId: id })
-      }
-      try { compileAbilityDefinitions(authoredAbilities as AbilityDefinition[]) } catch (err) {
-        if (err instanceof AbilityCompilationError) {
-          throw new CombatDefinitionError('SCHEMA_VALIDATION_ERROR', `definition '${id}' ability error: ${err.message}`,
-            { path: `definitions.${id}.abilities.${err.path}`, definitionId: id, reference: err.abilityId })
-        }
-        throw err
-      }
+    const authoredAbilities = (def.abilities ?? def.baseStats.abilities) as AbilityDefinition[] | undefined
+    if (authoredAbilities !== undefined && !Array.isArray(authoredAbilities)) {
+      throw new CombatDefinitionError('SCHEMA_VALIDATION_ERROR', `definition '${id}' abilities must be an array`, { path: `${pathPrefix}.abilities`, definitionId: id })
     }
-    const periodicAbs = def.baseStats.periodicAbilities
-    if (Array.isArray(periodicAbs)) {
-      try { compileAbilityDefinitions(periodicAbs.map(a => periodicAbility(`${id}:p:${a.id}`, a))) } catch (err) {
-        if (err instanceof AbilityCompilationError) {
-          throw new CombatDefinitionError('SCHEMA_VALIDATION_ERROR', `definition '${id}' periodic ability error: ${err.message}`,
-            { path: `definitions.${id}.baseStats.periodicAbilities.${err.path}`, definitionId: id, reference: err.abilityId })
-        }
-        throw err
-      }
+    const authoredPeriodic = ((def as { periodicAbilities?: unknown }).periodicAbilities ?? def.baseStats.periodicAbilities) as PeriodicAbilityConfig[] | undefined
+    if (authoredPeriodic !== undefined && !Array.isArray(authoredPeriodic)) {
+      throw new CombatDefinitionError('SCHEMA_VALIDATION_ERROR', `definition '${id}' periodicAbilities must be an array`, { path: `${pathPrefix}.baseStats.periodicAbilities`, definitionId: id })
     }
+    const baseStatsForLoadout = {
+      ...(def.baseStats as Record<string, unknown>),
+      abilities: authoredAbilities,
+      periodicAbilities: authoredPeriodic,
+    } as unknown as UnitBaseStats
+    validateDefinitionBaseLoadout(id, baseStatsForLoadout, pathPrefix)
   }
 
   // 6. Units validation, squad member ID collision check, bounds check & loadout validation
@@ -169,7 +173,12 @@ export function validateBattleInput(input: unknown): BattleInput {
       }
     }
     const squadDef = parsed.definitions[u.definitionId] ?? catUnitTypes?.[u.definitionId]
-    const squadSize = squadDef?.squadSize || 1
+    const squadSize = squadDef?.squadSize ?? 1
+    if (!Number.isInteger(squadSize) || squadSize < 1) {
+      throw new CombatDefinitionError('INVALID_FIELD_RANGE',
+        `unit '${u.instanceId}' squadSize (${squadSize}) must be a positive integer (>= 1)`,
+        { path: `units[${i}].squadSize`, reference: String(squadSize), definitionId: u.definitionId })
+    }
     for (let s = 0; s < squadSize; s++) {
       const memberId = squadSize > 1 ? `${u.instanceId}_${s}` : u.instanceId
       if (allMemberIds.has(memberId)) {

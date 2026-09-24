@@ -31,7 +31,7 @@ export function createSpawnBuildSpecs(
 ): UnitBuildSpec[] {
   const def = definitions[spec.definitionId] ?? catalog?.unitTypes?.[spec.definitionId]
   if (!def) return []
-  const squadSize = def.squadSize || 1
+  const squadSize = Math.max(1, Math.floor(def.squadSize || 1))
   const spacing = def.squadSpacing || 20
   const rowSize = Math.ceil(Math.sqrt(squadSize))
   const rawX = spec.placement.x != null

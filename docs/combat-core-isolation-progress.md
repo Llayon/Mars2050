@@ -430,6 +430,74 @@
 - Статус: `needs_external_review`. Переход к R3b–R7 не производился.
 - Замечания независимого ревью по R3a полностью устранены, ISO-05 подтвержден тестами.
 
+### Доработка R3a по результатам независимого ревью коммита c147be3 (4 замечания)
+
+По результатам проверки коммита `c147be3` независимый ревьюер указал на 4 воспроизводимые проблемы предсимуляционной валидации R3a:
+
+1. **[P2] Публичные способности принимаются и исполняются в runtime (эквивалентность каталогу):**
+   - Проблема: `.passthrough()` сохранял дополнительные поля в `baseStatsSchema`, однако `combat.definition-mapper.ts:19` не передавал `abilities` и `periodicAbilities` в результирующий `UnitTypeConfig.baseStats`. В результате публичная burn-способность давала 0 `status_apply` (против 19 через каталог), а периодический призыв через публичное определение давал 0 `spawn` (против 4 через каталог).
+   - Исправление:
+     - В `packages/combat-core/src/combat.definition-mapper.ts` обеспечена передача всех поддерживаемых полей `abilities`, `periodicAbilities`, геометрий оружия и пассивных эффектов из `def` и `def.baseStats` в `UnitTypeConfig.baseStats`.
+     - Создан `packages/combat-core/tests/validation-r3a-abilities.test.ts` (3 теста), доказывающий полную эквивалентность исполнения способностей через публичный контракт и через каталог (число `status_apply` и `spawn` совпадает 1:1), а также отрицательный контроль (юнит без способности дает 0 status_apply).
+
+2. **[P2] Полный loadout проверяется для всех определений (включая late summons):**
+   - Проблема: `validateUnitLoadout` вызывался только в цикле по `parsed.units` (стартовые юниты). Юнит, создаваемый только через late summon (например, `imp`, призываемый на тике 5 с несовместимой геометрией `cone` + `line`), обходил проверку до симуляции и приводил к runtime crash после создания мира и расхода RNG.
+   - Исправление:
+     - В `packages/combat-core/src/combat.loadout-validator.ts` добавлена функция `validateDefinitionBaseLoadout(definitionId, baseStats, pathPrefix)`.
+     - В `combat.input-validator.ts` функция вызывается для всех определений в `allDefs` (как публичных, так и каталожных).
+     - Проверяет `assertValidWeaponLoadout`, компиляцию периодических способностей и оружейный план (`compileTemporalWeaponPlan`) строго до создания мира и вызова PRNG.
+     - В `packages/combat-core/tests/validation-r3a-contracts.test.ts` зафиксирован тест со spy на `PRNG.prototype.next` и `CombatWorld.prototype.queueCompiledUnitCreation`: 0 вызовов PRNG, 0 созданий мира, выброс `SCHEMA_VALIDATION_ERROR`. Добавлен положительный контроль с совместимой геометрией.
+
+3. **[P2] Валидация squadSize каталога (исключение тихого удаления отряда):**
+   - Проблема: `catUnitTypes` использовал `squadSize` без валидации на положительное целое. Если юнит в `catalog.unitTypes` имел `squadSize: -1`, `Array.from({ length: squadSize })` создавал пустой массив, атакующий отсутствовал в `initialState`, и движок возвращал победу defender на тике 0.
+   - Исправление:
+     - В `combat.input-validator.ts` при сборе определений и при проверке юнитов проверяется `squadSize !== undefined && (!Number.isInteger(squadSize) || squadSize < 1)`. При нарушении выбрасывается `CombatDefinitionError('INVALID_FIELD_RANGE', ...)`.
+     - Аналогично валидируется `squadSpacing` (`Number.isFinite(squadSpacing) && squadSpacing >= 0`).
+     - В `combat.squad-compiler.ts` и `combat.spawn-spec-compiler.ts` добавлена защитная нормализация `Math.max(1, Math.floor(squadSize || 1))`.
+     - В `packages/combat-core/tests/validation-r3a-contracts.test.ts` зафиксированы тесты на отклонение `squadSize: -1` и `squadSize: 0`, а также положительный контроль: `squadSize: 3` из каталога создает 3 сущности в `initialState`.
+
+4. **[P2] Схема и валидация числовых модификаторов upgrades до симуляции:**
+   - Проблема: `catalog.upgrades` проверял периодические/death призывы, но не валидировал структуру числовых модификаторов. Апгрейд с `hpMult: "bad"` проходил валидацию, порождал NaN в HP и приводил к `ZodError` после создания мира и расхода RNG.
+   - Исправление:
+     - Создан модуль `packages/combat-core/src/combat.upgrade-schema.ts` с Zod-схемой `upgradeNumericModifiersSchema` и `upgradeConfigSchema`, валидирующей числовые мультипликаторы и добавки (`hpMult`, `attackMult`, `speedMult` и др.) на `z.number().finite()`.
+     - Функция `validateUpgradeConfig(upgId, upg)` интегрирована в цикл обхода `catUpgrades` в `combat.input-validator.ts`.
+     - Некорректные модификаторы (`hpMult: "bad"`) отклоняются с кодом `SCHEMA_VALIDATION_ERROR` до создания мира и расхода RNG.
+     - Создан `packages/combat-core/tests/validation-r3a-upgrades.test.ts` со spy на PRNG и мир: 0 вызовов PRNG, 0 созданий мира, и положительный контроль: валидный `hpMult: 1.5` корректно увеличивает HP юнита в 1.5 раза.
+
+5. **Соблюдение архитектурных лимитов и изоляция:**
+   - Все файлы укладываются в установленные лимиты:
+     - `combat.input-validator.ts`: 241 строка (лимит 250);
+     - `combat.loadout-validator.ts`: 129 строк (лимит 250);
+     - `combat.upgrade-schema.ts`: 77 строк (лимит 100);
+     - `combat.definition-mapper.ts`: 53 строки (лимит 250);
+     - `combat.squad-compiler.ts`: 88 строк (лимит 250);
+     - `combat.spawn-spec-compiler.ts`: 79 строк (лимит 250);
+     - `combat.runner.ts`: 144 строки (лимит 250);
+     - `validation-r3a-abilities.test.ts`: 152 строки (лимит 250);
+     - `validation-r3a-contracts.test.ts`: 195 строк (лимит 250);
+     - `validation-r3a-upgrades.test.ts`: 88 строк (лимит 250).
+   - `npx tsx scripts/check-limits.ts --json`: 0 violations.
+
+### GREEN (обновленный frozen snapshot на c147be3 + remediation)
+
+| Команда | Exit code | Результат |
+| --- | --- | --- |
+| `npm run combat:core:build; npm run combat:core:check` | 0 | Сборка dist и tsc noEmit чисты |
+| `npm run test:combat:core` | 0 | 75/75 тестов PASS (11 файлов тестов) |
+| `npm run typecheck` | 0 | Корневой typecheck чист (включая build core) |
+| `npx tsx scripts/check-limits.ts --json` | 0 | 0 violations |
+| `npx tsx scripts/combat-ecs-golden.ts` | 0 | 7/7 presets stable (Mars baseline V8) |
+| `npx tsx scripts/combat-ecs-golden.ts --v9` | 0 | 7/7 presets stable (Mars baseline V9) |
+| `npm run test:combat:package:runtime` | 0 | Все 8 проверочных блоков в изолированном tmpdir PASS (SHA256: 5ebb0b6687f96d1d08235a19bde01a4830b7de82e9bfdf6477614e7c7eb345f7) |
+| `npm run test:combat:package` | 1 | Честный известный ISO-08 BOUNDARY FAIL (норма до R6) |
+| `npm run lint` | 0 | 0 ошибок, 103 предупреждения |
+| `npm test` | 0 | 202 files, 817 tests PASS |
+
+### Review / решение
+
+- Статус: `needs_external_review`. Переход к R3b–R7 не производился.
+- Все 4 замечания независимого ревью по R3a устранены и верифицированы.
+
 ## R2b: timeout и scheduled effects как данные (ISO-03, ISO-04) — green, review pending
 
 Критерий: таймаутная матрица и точные effect ticks через публичный API/архив; Mars globals и outcome regression совпадают. Момент terminal checks, ожидание pending impacts/hazards/reassembly и порядок фаз не менялись.

@@ -65,3 +65,64 @@ export function validateUnitLoadout(
     throw err
   }
 }
+
+/**
+ * Validates the base loadout for a definition in allDefs (including definitions reachable via late summons).
+ * Ensures weapon geometries are compatible and assembled abilities compile without duplicate IDs
+ * or unsupported combinations, before world creation or RNG consumption.
+ *
+ * @param definitionId Unique identifier of the definition.
+ * @param baseStats The base stats configuration of the unit.
+ * @param pathPrefix Path prefix for error reporting (e.g. definitions.foo or catalog.unitTypes.foo).
+ */
+export function validateDefinitionBaseLoadout(
+  definitionId: string,
+  baseStats: UnitBaseStats,
+  pathPrefix: string = `definitions.${definitionId}`,
+): void {
+  const primitives = getRuntimePrimitiveStats(baseStats, [], undefined)
+
+  try {
+    assertValidWeaponLoadout(definitionId, primitives)
+  } catch (err) {
+    throw new CombatDefinitionError(
+      'SCHEMA_VALIDATION_ERROR',
+      `definition '${definitionId}' weapon loadout error: ${err instanceof Error ? err.message : String(err)}`,
+      { path: `${pathPrefix}.baseStats`, reference: definitionId, definitionId },
+    )
+  }
+
+  if (primitives.periodicAbilities && primitives.periodicAbilities.length > 0) {
+    try {
+      compileAbilityDefinitions(
+        primitives.periodicAbilities.map(a => periodicAbility(`${definitionId}:periodic:${a.id}`, a)),
+      )
+    } catch (err) {
+      if (err instanceof AbilityCompilationError) {
+        throw new CombatDefinitionError(
+          'SCHEMA_VALIDATION_ERROR',
+          `definition '${definitionId}' periodic ability error: ${err.message}`,
+          { path: `${pathPrefix}.baseStats.periodicAbilities`, reference: err.abilityId, definitionId },
+        )
+      }
+      throw err
+    }
+  }
+
+  try {
+    const legacyAbilities = createLegacyAbilityDefinitions(definitionId, primitives)
+    const authoredAbilities = primitives.abilities ?? []
+    const abilityPrograms = compileAbilityDefinitions([...legacyAbilities, ...authoredAbilities])
+    compileTemporalWeaponPlan(definitionId, primitives, abilityPrograms)
+  } catch (err) {
+    if (err instanceof AbilityCompilationError) {
+      throw new CombatDefinitionError(
+        'SCHEMA_VALIDATION_ERROR',
+        `definition '${definitionId}' ability error: ${err.message}`,
+        { path: `${pathPrefix}.abilities`, reference: err.abilityId, definitionId },
+      )
+    }
+    throw err
+  }
+}
+
