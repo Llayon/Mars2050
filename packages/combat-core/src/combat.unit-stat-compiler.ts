@@ -162,15 +162,22 @@ function resolveRank(spec: UnitBuildSpec): number {
 }
 
 /**
- * Calculates the effective maximum HP of a unit given its definition, rank, and upgrades.
+ * Calculates the compiled effective unit stats given its definition, rank, and upgrades.
+ *
+ * @param definitionId Unique identifier of the unit definition.
+ * @param rank Rank level of the unit (defaults to 1).
+ * @param upgradeIds List of upgrade IDs applied to the unit.
+ * @param catalog Optional combat catalog containing unit types and upgrades.
+ * @param definitions Optional scenario-specific unit definitions.
+ * @returns Compiled unit stats or null if definition is not found.
  */
-export function calculateEffectiveMaxHp(
+export function calculateEffectiveUnitStats(
   definitionId: string,
   rank: number = 1,
   upgradeIds: string[] = [],
   catalog?: CombatCatalog,
   definitions?: Record<string, UnitDefinition>,
-): number | undefined {
+): CompiledUnitStats | null {
   const unitTypes: Record<string, UnitTypeConfig> = { ...(catalog?.unitTypes ?? {}) }
   if (definitions) {
     for (const [key, def] of Object.entries(definitions)) {
@@ -188,7 +195,7 @@ export function calculateEffectiveMaxHp(
     upgrades: catalog?.upgrades ?? {},
     targetingProfiles: catalog?.targetingProfiles,
   }
-  const compiled = compileUnitStats({
+  return compileUnitStats({
     definitionId,
     identity: { id: definitionId, team: 'attacker' },
     loadout: {
@@ -198,6 +205,18 @@ export function calculateEffectiveMaxHp(
     placement: { x: 0, y: 0, angle: 0 },
     catalog: effectiveCatalog,
   })
-  if (!compiled) return undefined
-  return compiled.hp
+}
+
+/**
+ * Calculates the effective maximum HP of a unit given its definition, rank, and upgrades.
+ */
+export function calculateEffectiveMaxHp(
+  definitionId: string,
+  rank: number = 1,
+  upgradeIds: string[] = [],
+  catalog?: CombatCatalog,
+  definitions?: Record<string, UnitDefinition>,
+): number | undefined {
+  const compiled = calculateEffectiveUnitStats(definitionId, rank, upgradeIds, catalog, definitions)
+  return compiled ? compiled.hp : undefined
 }

@@ -6,9 +6,10 @@ import { CombatDefinitionError } from './combat.definition-error.js'
 export interface DefWithPayloads {
   id?: string
   abilities?: unknown[]
+  periodicAbilities?: unknown[]
   baseStats?: {
     spawnType?: string
-    periodicAbilities?: PeriodicAbilityConfig[]
+    periodicAbilities?: unknown[]
     triggerEffects?: TriggerEffectConfig[]
     abilities?: unknown[]
   }
@@ -90,7 +91,7 @@ export function validateNestedSpawnPayloads(
       }
       if (Array.isArray(base.periodicAbilities)) {
         for (let i = 0; i < base.periodicAbilities.length; i++) {
-          const a = base.periodicAbilities[i]
+          const a = base.periodicAbilities[i] as PeriodicAbilityConfig | undefined
           if (a?.payload && typeof a.payload === 'object' && a.payload.kind === 'spawn') {
             const u = (a.payload as { unitType?: string }).unitType
             if (!u || !allDefIds.has(u)) {
@@ -119,6 +120,21 @@ export function validateNestedSpawnPayloads(
         }
       }
       validateAbilityListSpawns(id, `definitions.${id}.baseStats.abilities`, base.abilities, allDefIds)
+    }
+    if (Array.isArray(def.periodicAbilities)) {
+      for (let i = 0; i < def.periodicAbilities.length; i++) {
+        const a = def.periodicAbilities[i] as PeriodicAbilityConfig | undefined
+        if (a?.payload && typeof a.payload === 'object' && a.payload.kind === 'spawn') {
+          const u = (a.payload as { unitType?: string }).unitType
+          if (!u || !allDefIds.has(u)) {
+            throw new CombatDefinitionError(
+              'MISSING_SPAWN_DEFINITION',
+              `definition '${id}' periodicAbility '${a.id ?? i}' spawns unknown definition '${u ?? ''}'`,
+              { path: `definitions.${id}.periodicAbilities[${i}].payload.unitType`, reference: u, definitionId: id },
+            )
+          }
+        }
+      }
     }
     validateAbilityListSpawns(id, `definitions.${id}.abilities`, def.abilities, allDefIds)
   }

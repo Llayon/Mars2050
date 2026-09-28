@@ -498,6 +498,74 @@
 - Статус: `needs_external_review`. Переход к R3b–R7 не производился.
 - Все 4 замечания независимого ревью по R3a устранены и верифицированы.
 
+### Доработка R3a по результатам независимого ревью коммита b017699 (4 замечания)
+
+По результатам проверки коммита `b017699` независимый ревьюер указал на 4 воспроизводимые проблемы предсимуляционной валидации R3a:
+
+1. **[P2] Нормализованные способности участвуют в проверке сочетания с upgrades:**
+   - Проблема: В `combat.input-validator.ts` создавался нормализованный `baseStatsForLoadout`, но последующий `validateUnitLoadout` получал исходный `allDefs[id].baseStats`. В результате конфликт `definition.abilities` (например, `line_pierce`) и upgrade (например, `coneAttack`) пропускался валидатором и приводил к `Invalid weapon loadout` после создания мира и 2 обращений к RNG.
+   - Исправление:
+     - Создан модуль `packages/combat-core/src/combat.definition-validator.ts`, экспортирующий `validateAndNormalizeDefinition(id, def, pathPrefix, allTargetingProfiles)`.
+     - Все `abilities`, `periodicAbilities`, `targetingProfile` нормализуются непосредственно в `def.baseStats` внутри `allDefs` до любых проверок loadout.
+     - `validateUnitLoadout` вызывается с уже нормализованным `allDefs`, гарантируя обнаружение несовместимых комбинаций оружия до создания мира и расхода RNG.
+     - В `packages/combat-core/tests/validation-r3a-remarks.test.ts` зафиксирован тест со spy на PRNG и мир: 0 вызовов PRNG, 0 созданий мира, выброс `SCHEMA_VALIDATION_ERROR`, и положительный контроль с совместимыми способностями.
+
+2. **[P2] Top-level periodicAbilities проверяет spawn-ссылки:**
+   - Проблема: Верхнеуровневый `definition.periodicAbilities` обходил проверку вложенных spawn-ссылок в `validateNestedSpawnPayloads`, позволяя сослаться на несуществующего юнита без ошибки предсимуляции.
+   - Исправление:
+     - В `packages/combat-core/src/combat.payload-validator.ts` в `validateNestedSpawnPayloads` добавлен обход `def.periodicAbilities` на верхнем уровне определения наряду с `baseStats.periodicAbilities` и `baseStats.abilities`.
+     - При ссылке на несуществующую сущность выбрасывается `CombatDefinitionError('MISSING_SPAWN_DEFINITION', ...)` с кодом `SCHEMA_VALIDATION_ERROR`.
+     - В `packages/combat-core/tests/validation-r3a-remarks.test.ts` зафиксированы тесты на отклонение неизвестного `phantom` (0 вызовов PRNG, 0 созданий мира) и положительный контроль при наличии `phantom` в `allDefs`.
+
+3. **[P2] Валидация структуры payload periodic-способностей по Zod-схеме:**
+   - Проблема: Структура payload периодических способностей не валидировалась до симуляции (`status` без `effects`, `damage` или `shield` с нечисловым `amount`), что приводило к падению компилятора способностей после создания мира и расхода RNG.
+   - Исправление:
+     - Создан модуль `packages/combat-core/src/combat.periodic-schema.ts` (99 строк <= 100), описывающий `periodicAbilityPayloadSchema` (discriminated union по `kind`: `status`, `damage`, `hazard`, `shield`, `heal`, `spawn`, `mark`), `periodicAbilityConfigSchema` и экспортирующий `validatePeriodicAbilityConfig(abilityId, ability, pathPrefix)`.
+     - Валидация интегрирована в `combat.definition-validator.ts` и `combat.loadout-validator.ts`.
+     - Некорректные структуры payload отклоняются с кодом `SCHEMA_VALIDATION_ERROR` строго до создания мира и расхода RNG.
+     - В `packages/combat-core/tests/validation-r3a-remarks.test.ts` зафиксированы тесты со spy на PRNG и мир: 0 вызовов PRNG, 0 созданий мира.
+
+4. **[P2] Проверка конечности и допустимых диапазонов итоговых характеристик:**
+   - Проблема: Конечность отдельных модификаторов апгрейдов и базовых статов не гарантировала конечность итоговых характеристик после масштабирования (например, `hpMult: 1e308` переполнял `effectiveHp` в `Infinity`), обходя базовую Zod-схему и ломая симуляцию.
+   - Исправление:
+     - В `packages/combat-core/src/combat.unit-stat-compiler.ts` выделена и экспортирована функция `calculateEffectiveUnitStats(definitionId, rank, upgradeIds, catalog, definitions): CompiledUnitStats | null`.
+     - В `packages/combat-core/src/combat.loadout-validator.ts` добавлена функция `assertFiniteUnitStats(unitIndex, unit, stats)`, проверяющая строгую конечность и допустимость эффективных характеристик: `hp > 0`, `attack >= 0`, `defense`, `speed >= 0`, `range >= 0`, `cooldown > 0`, `shield >= 0`. При нарушении (`Infinity`, `-Infinity`, `NaN`) выбрасывается `CombatDefinitionError('INVALID_FIELD_RANGE', ...)`.
+     - В `packages/combat-core/src/combat.input-validator.ts` итоговые характеристики рассчитываются и валидируются для каждого юнита до создания мира и расхода RNG.
+     - В `packages/combat-core/src/contracts/unit.contracts.ts` добавлено `.finite()` ко всем числовым полям `baseStatsSchema`.
+     - В `packages/combat-core/tests/validation-r3a-remarks.test.ts` зафиксированы тесты со spy на PRNG и мир: отклонение `hpMult: 1e308` с кодом `INVALID_FIELD_RANGE` при 0 вызовов PRNG и 0 созданий мира, а также положительный контроль с корректным масштабированием.
+
+5. **Соблюдение архитектурных лимитов и изоляция:**
+   - Все файлы строго укладываются в лимиты по `check-limits.ts`:
+     - `combat.input-validator.ts`: 179 строк (лимит 250);
+     - `combat.definition-validator.ts`: 111 строк (лимит 250);
+     - `combat.loadout-validator.ts`: 195 строк (лимит 250);
+     - `combat.payload-validator.ts`: 209 строк (лимит 250);
+     - `combat.unit-stat-compiler.ts`: 223 строки (лимит 250);
+     - `combat.periodic-schema.ts`: 99 строк (лимит 100);
+     - `contracts/unit.contracts.ts`: 79 строк (лимит 100);
+     - `validation-r3a-remarks.test.ts`: 207 строк (лимит 250).
+   - `npx tsx scripts/check-limits.ts --json`: 0 violations across entire repo.
+
+### GREEN (обновленный frozen snapshot на b017699 + remediation)
+
+| Команда | Exit code | Результат |
+| --- | --- | --- |
+| `npm run combat:core:build; npm run combat:core:check` | 0 | Сборка dist и tsc noEmit чисты |
+| `npm run test:combat:core` | 0 | 85/85 тестов PASS (12 файлов тестов) |
+| `npm run typecheck` | 0 | Корневой typecheck чист (включая build core) |
+| `npx tsx scripts/check-limits.ts --json` | 0 | 0 violations across entire repo |
+| `npx tsx scripts/combat-ecs-golden.ts` | 0 | 7/7 presets stable (Mars baseline V8) |
+| `npx tsx scripts/combat-ecs-golden.ts --v9` | 0 | 7/7 presets stable (Mars baseline V9) |
+| `npm run test:combat:package:runtime` | 0 | Все 8 проверочных блоков в изолированном tmpdir PASS (SHA256: 9669fd74c5279f7612d41a8715a3fb45c0c9757f1a41608727a1fc8a31ad78ed) |
+| `npm run test:combat:package` | 1 | Честный известный ISO-08 BOUNDARY FAIL (норма до R6) |
+| `npm run lint` | 0 | 0 ошибок, 103 предупреждения |
+| `npm test` | 0 | 202 files, 817 tests PASS |
+
+### Review / решение
+
+- Статус: `needs_external_review`. Переход к R3b–R7 не производился.
+- Все 4 замечания независимого ревью по R3a устранены и верифицированы.
+
 ## R2b: timeout и scheduled effects как данные (ISO-03, ISO-04) — green, review pending
 
 Критерий: таймаутная матрица и точные effect ticks через публичный API/архив; Mars globals и outcome regression совпадают. Момент terminal checks, ожидание pending impacts/hazards/reassembly и порядок фаз не менялись.

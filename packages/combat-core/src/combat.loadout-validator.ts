@@ -1,6 +1,7 @@
 import type { UnitSpawnSpec } from './contracts/index.js'
 import type { UnitBaseStats } from './combat.types.js'
 import type { UpgradeConfig } from './combat.catalog.types.js'
+import type { CompiledUnitStats } from './combat.unit-stat-compiler.js'
 import { getRuntimePrimitiveStats } from './combat.upgrade-primitives.js'
 import { assertValidWeaponLoadout } from './combat.weapon-validation.js'
 import { compileAbilityDefinitions, AbilityCompilationError } from './combat.ability-compiler.js'
@@ -8,6 +9,7 @@ import { periodicAbility } from './combat.ability-config.js'
 import { createLegacyAbilityDefinitions } from './combat.ability-legacy.js'
 import { compileTemporalWeaponPlan } from './combat.temporal-compiler.js'
 import { CombatDefinitionError } from './combat.definition-error.js'
+import { validatePeriodicAbilityConfig } from './combat.periodic-schema.js'
 
 /**
  * Validates the assembled loadout (baseStats + upgrades) for a single unit spawn spec.
@@ -33,6 +35,13 @@ export function validateUnitLoadout(
   }
 
   if (primitives.periodicAbilities && primitives.periodicAbilities.length > 0) {
+    for (let p = 0; p < primitives.periodicAbilities.length; p++) {
+      validatePeriodicAbilityConfig(
+        primitives.periodicAbilities[p],
+        `units[${unitIndex}].loadout.periodicAbilities[${p}]`,
+        unit.definitionId,
+      )
+    }
     try {
       compileAbilityDefinitions(
         primitives.periodicAbilities.map(a => periodicAbility(`${unit.definitionId}:periodic:${a.id}`, a)),
@@ -93,6 +102,13 @@ export function validateDefinitionBaseLoadout(
   }
 
   if (primitives.periodicAbilities && primitives.periodicAbilities.length > 0) {
+    for (let p = 0; p < primitives.periodicAbilities.length; p++) {
+      validatePeriodicAbilityConfig(
+        primitives.periodicAbilities[p],
+        `${pathPrefix}.baseStats.periodicAbilities[${p}]`,
+        definitionId,
+      )
+    }
     try {
       compileAbilityDefinitions(
         primitives.periodicAbilities.map(a => periodicAbility(`${definitionId}:periodic:${a.id}`, a)),
@@ -126,3 +142,51 @@ export function validateDefinitionBaseLoadout(
   }
 }
 
+/**
+ * Asserts that the effective calculated unit stats after modifiers are finite and within valid ranges.
+ *
+ * @param unitIndex Index of the unit in the units array.
+ * @param unit Unit spawn specification.
+ * @param stats Compiled effective stats for the unit.
+ */
+export function assertFiniteUnitStats(
+  unitIndex: number,
+  unit: UnitSpawnSpec,
+  stats: CompiledUnitStats,
+): void {
+  if (!Number.isFinite(stats.hp) || stats.hp <= 0) {
+    throw new CombatDefinitionError('INVALID_FIELD_RANGE',
+      `unit '${unit.instanceId}' effective hp (${stats.hp}) must be a positive finite number`,
+      { path: `units[${unitIndex}].effectiveStats.hp`, reference: String(stats.hp), definitionId: unit.definitionId })
+  }
+  if (!Number.isFinite(stats.attack) || stats.attack < 0) {
+    throw new CombatDefinitionError('INVALID_FIELD_RANGE',
+      `unit '${unit.instanceId}' effective attack (${stats.attack}) must be a non-negative finite number`,
+      { path: `units[${unitIndex}].effectiveStats.attack`, reference: String(stats.attack), definitionId: unit.definitionId })
+  }
+  if (!Number.isFinite(stats.defense)) {
+    throw new CombatDefinitionError('INVALID_FIELD_RANGE',
+      `unit '${unit.instanceId}' effective defense (${stats.defense}) must be a finite number`,
+      { path: `units[${unitIndex}].effectiveStats.defense`, reference: String(stats.defense), definitionId: unit.definitionId })
+  }
+  if (!Number.isFinite(stats.speed) || stats.speed < 0) {
+    throw new CombatDefinitionError('INVALID_FIELD_RANGE',
+      `unit '${unit.instanceId}' effective speed (${stats.speed}) must be a non-negative finite number`,
+      { path: `units[${unitIndex}].effectiveStats.speed`, reference: String(stats.speed), definitionId: unit.definitionId })
+  }
+  if (!Number.isFinite(stats.range) || stats.range < 0) {
+    throw new CombatDefinitionError('INVALID_FIELD_RANGE',
+      `unit '${unit.instanceId}' effective range (${stats.range}) must be a non-negative finite number`,
+      { path: `units[${unitIndex}].effectiveStats.range`, reference: String(stats.range), definitionId: unit.definitionId })
+  }
+  if (!Number.isFinite(stats.cooldown) || stats.cooldown <= 0) {
+    throw new CombatDefinitionError('INVALID_FIELD_RANGE',
+      `unit '${unit.instanceId}' effective cooldown (${stats.cooldown}) must be a positive finite number`,
+      { path: `units[${unitIndex}].effectiveStats.cooldown`, reference: String(stats.cooldown), definitionId: unit.definitionId })
+  }
+  if (stats.shield !== undefined && (!Number.isFinite(stats.shield) || stats.shield < 0)) {
+    throw new CombatDefinitionError('INVALID_FIELD_RANGE',
+      `unit '${unit.instanceId}' effective shield (${stats.shield}) must be a non-negative finite number`,
+      { path: `units[${unitIndex}].effectiveStats.shield`, reference: String(stats.shield), definitionId: unit.definitionId })
+  }
+}

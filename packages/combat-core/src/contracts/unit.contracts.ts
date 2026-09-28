@@ -29,14 +29,14 @@ export const statusEffectSchema = z.object({
 export type StatusEffect = z.infer<typeof statusEffectSchema>
 
 export const baseStatsSchema = z.object({
-  hp: z.number().positive(),
-  attack: z.number().nonnegative(),
-  defense: z.number().nonnegative(),
-  speed: z.number().nonnegative(),
-  range: z.number().nonnegative(),
+  hp: z.number().finite().positive(),
+  attack: z.number().finite().nonnegative(),
+  defense: z.number().finite().nonnegative(),
+  speed: z.number().finite().nonnegative(),
+  range: z.number().finite().nonnegative(),
   attackType: attackTypeSchema.default('single'),
   actionCooldownMax: z.number().int().positive().default(10),
-  turnSpeed: z.number().nonnegative().default(5),
+  turnSpeed: z.number().finite().nonnegative().default(5),
   size: unitSizeSchema.default('M'),
   combatTags: z.array(z.string()).default([]),
   spawnType: z.string().optional(),
