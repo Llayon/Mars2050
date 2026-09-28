@@ -10,7 +10,7 @@ import { validateNestedSpawnPayloads, validateSummonCycles } from './combat.payl
 import { assertFiniteUnitStats, validateUnitLoadout } from './combat.loadout-validator.js'
 import { validateUpgradeConfig } from './combat.upgrade-schema.js'
 import { validatePeriodicAbilityConfig } from './combat.periodic-schema.js'
-import { validateAndNormalizeDefinition, type AnyDef } from './combat.definition-validator.js'
+import { validateAndNormalizeDefinition, type AnyDef, type NormalizedDefinition } from './combat.definition-validator.js'
 
 const SUPPORTED_SCHEDULED_EFFECT_KINDS = ['orbital_strike', 'mass_heal', 'mass_shield', 'global_emp']
 
@@ -71,23 +71,39 @@ export function validateBattleInput(input: unknown): BattleInput {
   }
 
   // 4. Validate and normalize all definitions in parsed.definitions and catalog.unitTypes
-  const allDefs: Record<string, AnyDef> = {}
+  const normDefs: Record<string, NormalizedDefinition> = {}
   for (const [id, def] of Object.entries(parsed.definitions)) {
-    validateAndNormalizeDefinition(id, def as AnyDef, `definitions.${id}`, allTargetingProfiles)
-    allDefs[id] = def as AnyDef
-    parsed.definitions[id].baseStats = def.baseStats as unknown as BaseStats
+    normDefs[id] = validateAndNormalizeDefinition(id, def as AnyDef, `definitions.${id}`, allTargetingProfiles)
   }
+  const normCatDefs: Record<string, NormalizedDefinition> = {}
   if (catUnitTypes && typeof catUnitTypes === 'object') {
     for (const [id, def] of Object.entries(catUnitTypes)) {
       if (def) {
-        validateAndNormalizeDefinition(id, def, `catalog.unitTypes.${id}`, allTargetingProfiles)
-        if (!allDefs[id]) allDefs[id] = def
+        normCatDefs[id] = validateAndNormalizeDefinition(id, def, `catalog.unitTypes.${id}`, allTargetingProfiles)
       }
     }
   }
 
+  // Merge into allDefs with runtime priority:
+  // Combat stats/abilities/references come from catalog.unitTypes over definitions.
+  // squadSize/squadSpacing/formation preserve public definitions priority over catalog.unitTypes.
+  const allDefs: Record<string, NormalizedDefinition> = { ...normDefs }
+  for (const [id, catDef] of Object.entries(normCatDefs)) {
+    const pubDef = allDefs[id]
+    if (pubDef) {
+      allDefs[id] = {
+        ...catDef,
+        squadSize: pubDef.squadSize ?? catDef.squadSize,
+        squadSpacing: pubDef.squadSpacing ?? catDef.squadSpacing,
+        formation: pubDef.formation ?? catDef.formation,
+      }
+    } else {
+      allDefs[id] = catDef
+    }
+  }
+
   // 5. Validate all nested spawn payloads across definitions and catalog upgrades
-  validateNestedSpawnPayloads(allDefs, allDefIds, catUpgrades)
+  validateNestedSpawnPayloads(allDefs, allDefIds, catUpgrades, parsed.catalog as unknown as CombatCatalog, parsed.definitions)
 
   // 6. Units validation, squad member ID collision check, bounds check & loadout validation
   const seenInstanceIds = new Set<string>()
@@ -110,7 +126,7 @@ export function validateBattleInput(input: unknown): BattleInput {
           { path: `units[${i}].upgradeIds[${j}]`, reference: upgId })
       }
     }
-    const squadDef = parsed.definitions[u.definitionId] ?? catUnitTypes?.[u.definitionId]
+    const squadDef = allDefs[u.definitionId]
     const squadSize = squadDef?.squadSize ?? 1
     if (!Number.isInteger(squadSize) || squadSize < 1) {
       throw new CombatDefinitionError('INVALID_FIELD_RANGE',
@@ -143,8 +159,7 @@ export function validateBattleInput(input: unknown): BattleInput {
       }
     }
 
-    const unitDef = parsed.definitions[u.definitionId] ?? catUnitTypes?.[u.definitionId] ?? allDefs[u.definitionId]
-    validateUnitLoadout(i, u, unitDef.baseStats as unknown as UnitBaseStats, catUpgrades)
+    validateUnitLoadout(i, u, allDefs[u.definitionId].baseStats, catUpgrades)
   }
 
   // 7. Cycle check: only nodes actually participating in the cycle require spawnCap

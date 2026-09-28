@@ -566,6 +566,67 @@
 - Статус: `needs_external_review`. Переход к R3b–R7 не производился.
 - Все 4 замечания независимого ревью по R3a устранены и верифицированы.
 
+### Доработка R3a по результатам независимого ревью коммита 9e35f90 (3 замечания + строгий аудит покрытия)
+
+По результатам проверки коммита `9e35f90` независимый ревьюер указал на 3 проблемы предсимуляционной валидации R3a и завышение покрытия в отчёте:
+
+1. **[P2] Приоритет разрешений при совпадении ID в catalog.unitTypes и definitions:**
+   - Проблема: Валидатор и runtime использовали разные источники характеристик юнитов при совпадении ID: валидатор отдавал приоритет `definitions`, а runtime отдавал приоритет `catalog.unitTypes` для боевых характеристик и ссылок на способности/призывы (при сохранении приоритета `definitions` для `squadSize`, `squadSpacing` и `formation`).
+   - Исправление:
+     - В `packages/combat-core/src/combat.input-validator.ts` нормализация и слияние определений приведены в точное соответствие с runtime-семантикой: нормализуются оба источника (`normDefs` и `normCatDefs`), а при объединении в `allDefs` боевые характеристики берутся из `normCatDefs[id]`, если юнит присутствует в каталоге, но `squadSize`, `squadSpacing` и `formation` берутся из `normDefs[id]` при наличии.
+     - Валидация снаряжения (`validateUnitLoadout`), ссылок на способности и геометрию оружия теперь использует единый согласованный `allDefs`.
+     - Добавлены регрессионные тесты в `packages/combat-core/tests/validation-r3a-precedence.test.ts`: каталожный `line_pierce` + выбранный апгрейд `coneAttack` отклоняются до симуляции (0 вызовов PRNG, 0 созданий мира); ссылка из каталога на отсутствующий summon отклоняется; при этом `squadSize: 3` из `definitions` создаёт 3 юнита в отряде, а чистые каталожные характеристики поверх загрязнённого definition корректно симулируются.
+
+2. **[P2] Чистая нормализация без мутации и поломки замороженных определений (Object.freeze):**
+   - Проблема: `validateAndNormalizeDefinition` в `combat.definition-validator.ts` мутировал переданный объект `def.baseStats` (`rawBase.periodicAbilities = ...`), что приводило к `TypeError: Cannot add property periodicAbilities, object is not extensible` на глубоко замороженных каталогах (`Object.freeze(...)`).
+   - Исправление:
+     - `validateAndNormalizeDefinition` переписана как чистая функция без побочных эффектов. Создаются неглубокие копии `baseStats` и нормализованные массивы `abilities` / `periodicAbilities`, возвращаемые в новой структуре `NormalizedDefinition`. Исходные структуры `def` и `def.baseStats` остаются неизменными.
+     - Добавлен тест в `validation-r3a-precedence.test.ts` с глубоко замороженным объектом `Object.freeze(...)` для каталожного юнита: валидация и симуляция проходят успешно, состояние заморозки сохраняется (`Object.isFrozen(frozenKnight) === true`).
+
+3. **[P2] Валидация характеристик и оверрайдов позднего призыва (overflow / non-finite):**
+   - Проблема: Поздние призывы (например, периодический призыв с `hpPercent: 1e308` и базовым HP 1000) обходили проверку конечности статов, вычисляясь уже во время боя в `Infinity` и вызывая падение с `ZodError` после создания мира и расхода RNG. Также не валидировались `spawnOverrides` на валидность диапазонов (`hp > 0`, `attack >= 0`, `duration > 0`).
+   - Исправление:
+     - В `packages/combat-core/src/combat.loadout-validator.ts` добавлена функция `validateLateSpawnConfig(spawnDefId, hpPercent, path, catalog, definitions, spawnOverrides)`: рассчитывает эффективные характеристики призываемого юнита, проверяет `Math.floor(stats.hp * hpPercent)` на строгую конечность и границы, а также валидирует числовые значения `spawnOverrides`.
+     - В `packages/combat-core/src/combat.payload-validator.ts` функция `validateNestedSpawnPayloads` подключена к `validateLateSpawnConfig` для всех источников призывов: апгрейды, периодические способности, триггерные эффекты, `attackType: 'spawn'`.
+     - Добавлены тесты в `validation-r3a-precedence.test.ts` на отклонение `hpPercent: 1e308` и некорректных `spawnOverrides.hp: -50` до симуляции (0 вызовов PRNG, 0 созданий мира) и успешный запуск с корректным `hpPercent: 0.5`.
+
+4. **Строгий контроль покрытия тестов (реальный simulateCombat + spy на PRNG и мир):**
+   - Проблема: Ревьюер отметил, что отрицательные тесты вызывали `validateBattleInput`, завышая заявленное покрытие "валидации до создания мира и расхода RNG".
+   - Исправление:
+     - Все тесты в `packages/combat-core/tests/validation-r3a-remarks.test.ts` и `packages/combat-core/tests/validation-r3a-precedence.test.ts` переведены на вызов `simulateCombat(input)` со шпионами `vi.spyOn(PRNG.prototype, 'next')` и `vi.spyOn(CombatWorld.prototype, 'queueCompiledUnitCreation')`.
+     - Каждое отклонение проверяет `expect(PRNG.prototype.next).toHaveBeenCalledTimes(0)` и `expect(CombatWorld.prototype.queueCompiledUnitCreation).toHaveBeenCalledTimes(0)`.
+
+5. **Соблюдение архитектурных лимитов и изоляция:**
+   - Все файлы строго укладываются в лимиты по `check-limits.ts`:
+     - `combat.definition-validator.ts`: 146 строк (лимит 250);
+     - `combat.input-validator.ts`: 193 строки (лимит 250);
+     - `combat.loadout-validator.ts`: 211 строк (лимит 250);
+     - `combat.payload-validator.ts`: 203 строки (лимит 250);
+     - `index.ts`: 11 строк (лимит 100);
+     - `validation-r3a-remarks.test.ts`: 227 строк (лимит 250);
+     - `validation-r3a-precedence.test.ts`: 221 строка (лимит 250).
+   - `npx tsx scripts/check-limits.ts --json`: 0 violations across entire repo.
+
+### GREEN (обновленный frozen snapshot на 9e35f90 + remediation)
+
+| Команда | Exit code | Результат |
+| --- | --- | --- |
+| `npm run combat:core:build; npm run combat:core:check` | 0 | Сборка dist и tsc noEmit чисты |
+| `npm run test:combat:core` | 0 | 93/93 тестов PASS (13 файлов тестов) |
+| `npm run typecheck` | 0 | Корневой typecheck чист (включая build core) |
+| `npx tsx scripts/check-limits.ts --json` | 0 | 0 violations across entire repo |
+| `npx tsx scripts/combat-ecs-golden.ts` | 0 | 7/7 presets stable (Mars baseline V8) |
+| `npx tsx scripts/combat-ecs-golden.ts --v9` | 0 | 7/7 presets stable (Mars baseline V9) |
+| `npm run test:combat:package:runtime` | 0 | Все 8 проверочных блоков в изолированном tmpdir PASS (SHA256: 7a88cce11cfab8f2994827c19c85a6ef1ba9a22b88ae9cfca6a76e7a5596a2d6) |
+| `npm run test:combat:package` | 1 | Честный известный ISO-08 BOUNDARY FAIL (норма до R6) |
+| `npm run lint` | 0 | 0 ошибок, 105 предупреждений |
+| `npm test` | 0 | 202 files, 817 tests PASS |
+
+### Review / решение
+
+- Статус: `needs_external_review`. Переход к R3b–R7 не производился.
+- Все 3 замечания независимого ревью по R3a и требование строгого тестирования через simulateCombat устранены и верифицированы.
+
 ## R2b: timeout и scheduled effects как данные (ISO-03, ISO-04) — green, review pending
 
 Критерий: таймаутная матрица и точные effect ticks через публичный API/архив; Mars globals и outcome regression совпадают. Момент terminal checks, ожидание pending impacts/hazards/reassembly и порядок фаз не менялись.

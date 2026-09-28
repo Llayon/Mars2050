@@ -1,10 +1,11 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import {
   simulateCombat,
-  validateBattleInput,
+  PRNG,
   type BattleInputSpec,
   type UnitDefinition,
 } from '../src/index.js'
+import { CombatWorld } from '../src/ecs/combat-world.js'
 import { linePierceAbility } from '../src/combat.ability-config.js'
 
 function makeDef(id: string, overrides: Partial<UnitDefinition['baseStats']> = {}, extra: Partial<UnitDefinition> = {}): UnitDefinition {
@@ -38,6 +39,14 @@ function baseInput(overrides: Partial<BattleInputSpec> = {}): BattleInputSpec {
 }
 
 describe('R3a reviewer remarks remediation', () => {
+  beforeEach(() => {
+    vi.spyOn(PRNG.prototype, 'next')
+    vi.spyOn(CombatWorld.prototype, 'queueCompiledUnitCreation')
+  })
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
   describe('Remark 1: Normalized definition abilities in upgrade combinations', () => {
     it('rejects definition.abilities with line_pierce combined with coneAttack upgrade before world creation', () => {
       const input = baseInput({
@@ -55,12 +64,14 @@ describe('R3a reviewer remarks remediation', () => {
           { instanceId: 'u2', definitionId: 'target', team: 'defender', placement: { x: 300, y: 200 }, rank: 1, upgradeIds: [] },
         ],
       })
-      expect(() => validateBattleInput(input)).toThrowError(
+      expect(() => simulateCombat(input)).toThrowError(
         expect.objectContaining({
           code: 'SCHEMA_VALIDATION_ERROR',
           message: expect.stringContaining('multiple area geometries (line, cone)'),
         }),
       )
+      expect(PRNG.prototype.next).toHaveBeenCalledTimes(0)
+      expect(CombatWorld.prototype.queueCompiledUnitCreation).toHaveBeenCalledTimes(0)
     })
 
     it('positive control: definition.abilities with line_pierce without conflicting upgrade passes and simulates', () => {
@@ -87,9 +98,11 @@ describe('R3a reviewer remarks remediation', () => {
           target: makeDef('target'),
         },
       })
-      expect(() => validateBattleInput(input)).toThrowError(
+      expect(() => simulateCombat(input)).toThrowError(
         expect.objectContaining({ code: 'MISSING_SPAWN_DEFINITION', reference: 'ghost' }),
       )
+      expect(PRNG.prototype.next).toHaveBeenCalledTimes(0)
+      expect(CombatWorld.prototype.queueCompiledUnitCreation).toHaveBeenCalledTimes(0)
     })
 
     it('positive control: top-level periodicAbilities with existing spawn definition passes and simulates', () => {
@@ -117,7 +130,9 @@ describe('R3a reviewer remarks remediation', () => {
           target: makeDef('target'),
         },
       })
-      expect(() => validateBattleInput(input)).toThrowError(expect.objectContaining({ code: 'SCHEMA_VALIDATION_ERROR' }))
+      expect(() => simulateCombat(input)).toThrowError(expect.objectContaining({ code: 'SCHEMA_VALIDATION_ERROR' }))
+      expect(PRNG.prototype.next).toHaveBeenCalledTimes(0)
+      expect(CombatWorld.prototype.queueCompiledUnitCreation).toHaveBeenCalledTimes(0)
     })
 
     it('rejects { kind: "damage", amount: "bad" } payload before simulation', () => {
@@ -129,7 +144,9 @@ describe('R3a reviewer remarks remediation', () => {
           target: makeDef('target'),
         },
       })
-      expect(() => validateBattleInput(input)).toThrowError(expect.objectContaining({ code: 'SCHEMA_VALIDATION_ERROR' }))
+      expect(() => simulateCombat(input)).toThrowError(expect.objectContaining({ code: 'SCHEMA_VALIDATION_ERROR' }))
+      expect(PRNG.prototype.next).toHaveBeenCalledTimes(0)
+      expect(CombatWorld.prototype.queueCompiledUnitCreation).toHaveBeenCalledTimes(0)
     })
 
     it('rejects { kind: "shield", amount: "bad" } payload before simulation', () => {
@@ -141,7 +158,9 @@ describe('R3a reviewer remarks remediation', () => {
           target: makeDef('target'),
         },
       })
-      expect(() => validateBattleInput(input)).toThrowError(expect.objectContaining({ code: 'SCHEMA_VALIDATION_ERROR' }))
+      expect(() => simulateCombat(input)).toThrowError(expect.objectContaining({ code: 'SCHEMA_VALIDATION_ERROR' }))
+      expect(PRNG.prototype.next).toHaveBeenCalledTimes(0)
+      expect(CombatWorld.prototype.queueCompiledUnitCreation).toHaveBeenCalledTimes(0)
     })
 
     it('positive control: valid periodic status, damage, and shield payloads pass and simulate', () => {
@@ -174,12 +193,14 @@ describe('R3a reviewer remarks remediation', () => {
           { instanceId: 'u2', definitionId: 'target', team: 'defender', placement: { x: 300, y: 200 }, rank: 1, upgradeIds: [] },
         ],
       })
-      expect(() => validateBattleInput(input)).toThrowError(
+      expect(() => simulateCombat(input)).toThrowError(
         expect.objectContaining({
           code: 'INVALID_FIELD_RANGE',
           path: 'units[0].effectiveStats.hp',
         }),
       )
+      expect(PRNG.prototype.next).toHaveBeenCalledTimes(0)
+      expect(CombatWorld.prototype.queueCompiledUnitCreation).toHaveBeenCalledTimes(0)
     })
 
     it('positive control: unit with valid hpMult (1.5) scales effective HP and simulates cleanly', () => {

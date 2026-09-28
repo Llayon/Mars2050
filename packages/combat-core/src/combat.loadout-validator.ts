@@ -1,7 +1,7 @@
-import type { UnitSpawnSpec } from './contracts/index.js'
+import type { UnitDefinition, UnitSpawnSpec } from './contracts/index.js'
 import type { UnitBaseStats } from './combat.types.js'
-import type { UpgradeConfig } from './combat.catalog.types.js'
-import type { CompiledUnitStats } from './combat.unit-stat-compiler.js'
+import type { CombatCatalog, UpgradeConfig } from './combat.catalog.types.js'
+import { calculateEffectiveUnitStats, type CompiledUnitStats } from './combat.unit-stat-compiler.js'
 import { getRuntimePrimitiveStats } from './combat.upgrade-primitives.js'
 import { assertValidWeaponLoadout } from './combat.weapon-validation.js'
 import { compileAbilityDefinitions, AbilityCompilationError } from './combat.ability-compiler.js'
@@ -145,48 +145,67 @@ export function validateDefinitionBaseLoadout(
 /**
  * Asserts that the effective calculated unit stats after modifiers are finite and within valid ranges.
  *
- * @param unitIndex Index of the unit in the units array.
- * @param unit Unit spawn specification.
+ * @param unitIndexOrPath Index of the unit in the units array or explicit path prefix.
+ * @param unit Unit identification ({ instanceId, definitionId }).
  * @param stats Compiled effective stats for the unit.
  */
 export function assertFiniteUnitStats(
-  unitIndex: number,
-  unit: UnitSpawnSpec,
+  unitIndexOrPath: number | string,
+  unit: { instanceId: string; definitionId: string },
   stats: CompiledUnitStats,
 ): void {
-  if (!Number.isFinite(stats.hp) || stats.hp <= 0) {
-    throw new CombatDefinitionError('INVALID_FIELD_RANGE',
-      `unit '${unit.instanceId}' effective hp (${stats.hp}) must be a positive finite number`,
-      { path: `units[${unitIndex}].effectiveStats.hp`, reference: String(stats.hp), definitionId: unit.definitionId })
+  const pfx = typeof unitIndexOrPath === 'number' ? `units[${unitIndexOrPath}].effectiveStats` : unitIndexOrPath
+  const check = (val: number | undefined, name: string, cond: boolean, msg: string) => {
+    if (!cond) {
+      throw new CombatDefinitionError('INVALID_FIELD_RANGE',
+        `unit '${unit.instanceId}' effective ${name} (${val}) ${msg}`,
+        { path: `${pfx}.${name}`, reference: String(val), definitionId: unit.definitionId })
+    }
   }
-  if (!Number.isFinite(stats.attack) || stats.attack < 0) {
-    throw new CombatDefinitionError('INVALID_FIELD_RANGE',
-      `unit '${unit.instanceId}' effective attack (${stats.attack}) must be a non-negative finite number`,
-      { path: `units[${unitIndex}].effectiveStats.attack`, reference: String(stats.attack), definitionId: unit.definitionId })
+  check(stats.hp, 'hp', Number.isFinite(stats.hp) && stats.hp > 0, 'must be a positive finite number')
+  check(stats.attack, 'attack', Number.isFinite(stats.attack) && stats.attack >= 0, 'must be a non-negative finite number')
+  check(stats.defense, 'defense', Number.isFinite(stats.defense), 'must be a finite number')
+  check(stats.speed, 'speed', Number.isFinite(stats.speed) && stats.speed >= 0, 'must be a non-negative finite number')
+  check(stats.range, 'range', Number.isFinite(stats.range) && stats.range >= 0, 'must be a non-negative finite number')
+  check(stats.cooldown, 'cooldown', Number.isFinite(stats.cooldown) && stats.cooldown > 0, 'must be a positive finite number')
+  if (stats.shield !== undefined) check(stats.shield, 'shield', Number.isFinite(stats.shield) && stats.shield >= 0, 'must be a non-negative finite number')
+}
+
+/**
+ * Validates effective stats and overrides for a late-spawned unit.
+ */
+export function validateLateSpawnConfig(
+  spawnDefId: string,
+  hpPercent: number | undefined,
+  path: string,
+  catalog?: CombatCatalog,
+  definitions?: Record<string, UnitDefinition>,
+  spawnOverrides?: { hp?: number; attack?: number; duration?: number },
+): void {
+  const stats = calculateEffectiveUnitStats(spawnDefId, 1, [], catalog, definitions)
+  if (!stats) return
+  assertFiniteUnitStats(path, { instanceId: spawnDefId, definitionId: spawnDefId }, stats)
+  if (hpPercent !== undefined) {
+    const effectiveHp = Math.floor(stats.hp * hpPercent)
+    if (!Number.isFinite(effectiveHp) || effectiveHp <= 0) {
+      throw new CombatDefinitionError('INVALID_FIELD_RANGE',
+        `spawned unit '${spawnDefId}' effective hp (${effectiveHp}) must be a positive finite number`,
+        { path: `${path}.hpPercent`, reference: String(hpPercent), definitionId: spawnDefId })
+    }
   }
-  if (!Number.isFinite(stats.defense)) {
+  if (spawnOverrides?.hp !== undefined && (!Number.isFinite(spawnOverrides.hp) || spawnOverrides.hp <= 0)) {
     throw new CombatDefinitionError('INVALID_FIELD_RANGE',
-      `unit '${unit.instanceId}' effective defense (${stats.defense}) must be a finite number`,
-      { path: `units[${unitIndex}].effectiveStats.defense`, reference: String(stats.defense), definitionId: unit.definitionId })
+      `spawn override hp (${spawnOverrides.hp}) must be a positive finite number`,
+      { path: `${path}.spawnOverrides.hp`, reference: String(spawnOverrides.hp), definitionId: spawnDefId })
   }
-  if (!Number.isFinite(stats.speed) || stats.speed < 0) {
+  if (spawnOverrides?.attack !== undefined && (!Number.isFinite(spawnOverrides.attack) || spawnOverrides.attack < 0)) {
     throw new CombatDefinitionError('INVALID_FIELD_RANGE',
-      `unit '${unit.instanceId}' effective speed (${stats.speed}) must be a non-negative finite number`,
-      { path: `units[${unitIndex}].effectiveStats.speed`, reference: String(stats.speed), definitionId: unit.definitionId })
+      `spawn override attack (${spawnOverrides.attack}) must be a non-negative finite number`,
+      { path: `${path}.spawnOverrides.attack`, reference: String(spawnOverrides.attack), definitionId: spawnDefId })
   }
-  if (!Number.isFinite(stats.range) || stats.range < 0) {
+  if (spawnOverrides?.duration !== undefined && (!Number.isFinite(spawnOverrides.duration) || spawnOverrides.duration <= 0)) {
     throw new CombatDefinitionError('INVALID_FIELD_RANGE',
-      `unit '${unit.instanceId}' effective range (${stats.range}) must be a non-negative finite number`,
-      { path: `units[${unitIndex}].effectiveStats.range`, reference: String(stats.range), definitionId: unit.definitionId })
-  }
-  if (!Number.isFinite(stats.cooldown) || stats.cooldown <= 0) {
-    throw new CombatDefinitionError('INVALID_FIELD_RANGE',
-      `unit '${unit.instanceId}' effective cooldown (${stats.cooldown}) must be a positive finite number`,
-      { path: `units[${unitIndex}].effectiveStats.cooldown`, reference: String(stats.cooldown), definitionId: unit.definitionId })
-  }
-  if (stats.shield !== undefined && (!Number.isFinite(stats.shield) || stats.shield < 0)) {
-    throw new CombatDefinitionError('INVALID_FIELD_RANGE',
-      `unit '${unit.instanceId}' effective shield (${stats.shield}) must be a non-negative finite number`,
-      { path: `units[${unitIndex}].effectiveStats.shield`, reference: String(stats.shield), definitionId: unit.definitionId })
+      `spawn override duration (${spawnOverrides.duration}) must be a positive finite number`,
+      { path: `${path}.spawnOverrides.duration`, reference: String(spawnOverrides.duration), definitionId: spawnDefId })
   }
 }
