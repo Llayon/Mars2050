@@ -69,10 +69,13 @@ export function validateAndNormalizeDefinition(
     throw new CombatDefinitionError('MISSING_SPAWN_TYPE', `definition '${id}' with attackType 'spawn' requires non-empty spawnType`,
       { path: `${pathPrefix}.baseStats.spawnType`, definitionId: id })
   }
-  const profile = def.targetingProfile ?? rawBase.targetingProfile
-  if (profile && !allTargetingProfiles.has(profile as string)) {
-    throw new CombatDefinitionError('MISSING_DEFINITION', `definition '${id}' references unknown targetingProfile '${profile}'`,
-      { path: `${pathPrefix}.targetingProfile`, reference: String(profile), definitionId: id })
+  if (def.targetingProfile && !allTargetingProfiles.has(def.targetingProfile)) {
+    throw new CombatDefinitionError('MISSING_DEFINITION', `definition '${id}' references unknown targetingProfile '${def.targetingProfile}'`,
+      { path: `${pathPrefix}.targetingProfile`, reference: String(def.targetingProfile), definitionId: id })
+  }
+  if (rawBase.targetingProfile && !allTargetingProfiles.has(rawBase.targetingProfile as string)) {
+    throw new CombatDefinitionError('MISSING_DEFINITION', `definition '${id}' references unknown targetingProfile '${rawBase.targetingProfile}'`,
+      { path: `${pathPrefix}.baseStats.targetingProfile`, reference: String(rawBase.targetingProfile), definitionId: id })
   }
   if (def.squadSize !== undefined && (!Number.isInteger(def.squadSize) || def.squadSize < 1)) {
     throw new CombatDefinitionError('INVALID_FIELD_RANGE', `definition '${id}' squadSize (${def.squadSize}) must be a positive integer (>= 1)`,
@@ -110,23 +113,39 @@ export function validateAndNormalizeDefinition(
     }
   }
 
-  const authoredAbilities = (def.abilities ?? rawBase.abilities) as AbilityDefinition[] | undefined
-  if (authoredAbilities !== undefined && !Array.isArray(authoredAbilities)) {
+  const rawBaseAbilities = rawBase.abilities
+  if (rawBaseAbilities !== undefined && !Array.isArray(rawBaseAbilities)) {
+    throw new CombatDefinitionError('SCHEMA_VALIDATION_ERROR', `definition '${id}' baseStats.abilities must be an array`,
+      { path: `${pathPrefix}.baseStats.abilities`, definitionId: id })
+  }
+  const rawTopAbilities = def.abilities
+  if (rawTopAbilities !== undefined && !Array.isArray(rawTopAbilities)) {
     throw new CombatDefinitionError('SCHEMA_VALIDATION_ERROR', `definition '${id}' abilities must be an array`,
       { path: `${pathPrefix}.abilities`, definitionId: id })
   }
-  const rawPeriodic = (def as Record<string, unknown>).periodicAbilities
-  const authoredPeriodic = (rawPeriodic ?? rawBase.periodicAbilities) as PeriodicAbilityConfig[] | undefined
-  if (authoredPeriodic !== undefined && !Array.isArray(authoredPeriodic)) {
+  const authoredAbilities = (rawTopAbilities ?? rawBaseAbilities) as AbilityDefinition[] | undefined
+
+  const rawBasePeriodic = rawBase.periodicAbilities
+  if (rawBasePeriodic !== undefined && !Array.isArray(rawBasePeriodic)) {
+    throw new CombatDefinitionError('SCHEMA_VALIDATION_ERROR', `definition '${id}' baseStats.periodicAbilities must be an array`,
+      { path: `${pathPrefix}.baseStats.periodicAbilities`, definitionId: id })
+  }
+  if (Array.isArray(rawBasePeriodic)) {
+    for (let p = 0; p < rawBasePeriodic.length; p++) {
+      validatePeriodicAbilityConfig(rawBasePeriodic[p], `${pathPrefix}.baseStats.periodicAbilities[${p}]`, id)
+    }
+  }
+  const rawTopPeriodic = (def as Record<string, unknown>).periodicAbilities
+  if (rawTopPeriodic !== undefined && !Array.isArray(rawTopPeriodic)) {
     throw new CombatDefinitionError('SCHEMA_VALIDATION_ERROR', `definition '${id}' periodicAbilities must be an array`,
       { path: `${pathPrefix}.periodicAbilities`, definitionId: id })
   }
-  if (Array.isArray(authoredPeriodic)) {
-    for (let p = 0; p < authoredPeriodic.length; p++) {
-      const pPath = rawPeriodic ? `${pathPrefix}.periodicAbilities[${p}]` : `${pathPrefix}.baseStats.periodicAbilities[${p}]`
-      validatePeriodicAbilityConfig(authoredPeriodic[p], pPath, id)
+  if (Array.isArray(rawTopPeriodic)) {
+    for (let p = 0; p < rawTopPeriodic.length; p++) {
+      validatePeriodicAbilityConfig(rawTopPeriodic[p], `${pathPrefix}.periodicAbilities[${p}]`, id)
     }
   }
+  const authoredPeriodic = (rawTopPeriodic ?? rawBasePeriodic) as PeriodicAbilityConfig[] | undefined
 
   const normalizedBaseStats = {
     ...rawBase,

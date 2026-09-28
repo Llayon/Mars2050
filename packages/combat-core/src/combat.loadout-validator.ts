@@ -186,8 +186,9 @@ export function validateLateSpawnConfig(
   if (!stats) return
   assertFiniteUnitStats(path, { instanceId: spawnDefId, definitionId: spawnDefId }, stats)
   if (hpPercent !== undefined) {
-    const effectiveHp = Math.floor(stats.hp * hpPercent)
-    if (!Number.isFinite(effectiveHp) || effectiveHp <= 0) {
+    const scaled = stats.hp * hpPercent
+    const effectiveHp = Math.max(1, Math.floor(scaled))
+    if (!Number.isFinite(scaled) || !Number.isFinite(effectiveHp) || hpPercent <= 0) {
       throw new CombatDefinitionError('INVALID_FIELD_RANGE',
         `spawned unit '${spawnDefId}' effective hp (${effectiveHp}) must be a positive finite number`,
         { path: `${path}.hpPercent`, reference: String(hpPercent), definitionId: spawnDefId })

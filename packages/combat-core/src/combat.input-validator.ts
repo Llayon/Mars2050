@@ -1,11 +1,11 @@
-import { battleInputSchema, type BattleInput, type BaseStats } from './contracts/index.js'
+import { battleInputSchema, type BattleInput, type BaseStats, type UnitDefinition, type Formation } from './contracts/index.js'
 import { CombatDefinitionError } from './combat.definition-error.js'
 import { TARGETING_PROFILES } from './combat.targeting.config.js'
 import { calculateEffectiveUnitStats } from './combat.unit-stat-compiler.js'
 import { compileAbilityDefinitions, AbilityCompilationError } from './combat.ability-compiler.js'
 import { periodicAbility } from './combat.ability-config.js'
 import type { CombatCatalog, UpgradeConfig } from './combat.catalog.types.js'
-import type { UnitBaseStats } from './combat.types.js'
+import type { UnitBaseStats, UnitTypeConfig, TargetingProfile } from './combat.types.js'
 import { validateNestedSpawnPayloads, validateSummonCycles } from './combat.payload-validator.js'
 import { assertFiniteUnitStats, validateUnitLoadout } from './combat.loadout-validator.js'
 import { validateUpgradeConfig } from './combat.upgrade-schema.js'
@@ -102,8 +102,53 @@ export function validateBattleInput(input: unknown): BattleInput {
     }
   }
 
+  const normalizedDefinitions: Record<string, UnitDefinition> = {}
+  for (const [id, normDef] of Object.entries(normDefs)) {
+    const origDef = parsed.definitions[id]
+    normalizedDefinitions[id] = {
+      ...origDef,
+      id: normDef.id ?? id,
+      name: normDef.name ?? origDef.name,
+      squadSize: normDef.squadSize ?? origDef.squadSize,
+      squadSpacing: normDef.squadSpacing ?? origDef.squadSpacing,
+      formation: (normDef.formation as Formation | undefined) ?? origDef.formation,
+      targetingProfile: (normDef.targetingProfile as string | undefined) ?? origDef.targetingProfile,
+      abilities: (normDef.abilities as unknown[] | undefined) ?? origDef.abilities,
+      periodicAbilities: normDef.periodicAbilities as unknown[] | undefined,
+      baseStats: {
+        ...origDef.baseStats,
+        ...normDef.baseStats,
+        actionCooldownMax: normDef.baseStats.actionCooldownMax ?? origDef.baseStats.actionCooldownMax ?? 10,
+        turnSpeed: normDef.baseStats.turnSpeed ?? origDef.baseStats.turnSpeed ?? 5,
+        size: normDef.baseStats.size ?? origDef.baseStats.size ?? 'M',
+        combatTags: (normDef.baseStats.combatTags as string[]) ?? origDef.baseStats.combatTags ?? [],
+        attackType: normDef.baseStats.attackType,
+      },
+    }
+  }
+
+  const normalizedCatalogUnitTypes: Record<string, UnitTypeConfig> = {}
+  if (catUnitTypes && typeof catUnitTypes === 'object') {
+    for (const [id, normDef] of Object.entries(normCatDefs)) {
+      const origCat = catUnitTypes[id] as Record<string, unknown>
+      normalizedCatalogUnitTypes[id] = {
+        ...origCat,
+        name: normDef.name ?? (origCat.name as string),
+        baseStats: normDef.baseStats,
+        hireCost: (origCat.hireCost as Record<string, number>) ?? {},
+        recruitable: origCat.recruitable as boolean | undefined,
+        squadSize: normDef.squadSize,
+        squadSpacing: normDef.squadSpacing,
+        formation: normDef.formation as 'line' | 'wedge' | 'grid' | undefined,
+      }
+    }
+  }
+  const normalizedCatalog: Record<string, unknown> | undefined = parsed.catalog
+    ? { ...parsed.catalog, unitTypes: normalizedCatalogUnitTypes }
+    : undefined
+
   // 5. Validate all nested spawn payloads across definitions and catalog upgrades
-  validateNestedSpawnPayloads(allDefs, allDefIds, catUpgrades, parsed.catalog as unknown as CombatCatalog, parsed.definitions)
+  validateNestedSpawnPayloads(allDefs, allDefIds, catUpgrades, normalizedCatalog as unknown as CombatCatalog, normalizedDefinitions)
 
   // 6. Units validation, squad member ID collision check, bounds check & loadout validation
   const seenInstanceIds = new Set<string>()
@@ -149,7 +194,7 @@ export function validateBattleInput(input: unknown): BattleInput {
       throw new CombatDefinitionError('OUT_OF_BOUNDS_COORDINATES', `unit '${u.instanceId}' y coordinate (${u.placement.y}) outside arena height (${parsed.arena.height})`,
         { path: `units[${i}].placement.y`, reference: String(u.placement.y) })
     }
-    const effective = calculateEffectiveUnitStats(u.definitionId, u.rank, u.upgradeIds, parsed.catalog as unknown as CombatCatalog | undefined, parsed.definitions)
+    const effective = calculateEffectiveUnitStats(u.definitionId, u.rank, u.upgradeIds, normalizedCatalog as unknown as CombatCatalog | undefined, normalizedDefinitions)
     if (effective) {
       assertFiniteUnitStats(i, u, effective)
       if (u.currentHp != null && u.currentHp > effective.hp + 1e-6) {
@@ -189,5 +234,9 @@ export function validateBattleInput(input: unknown): BattleInput {
     }
   }
 
-  return parsed
+  return {
+    ...parsed,
+    definitions: normalizedDefinitions,
+    catalog: normalizedCatalog,
+  }
 }

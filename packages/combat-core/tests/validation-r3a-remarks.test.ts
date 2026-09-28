@@ -38,9 +38,16 @@ function baseInput(overrides: Partial<BattleInputSpec> = {}): BattleInputSpec {
   }
 }
 
+function assertZeroLeaks() {
+  expect(PRNG.prototype.next).toHaveBeenCalledTimes(0)
+  expect(CombatWorld.prototype.queueUnitCreation).toHaveBeenCalledTimes(0)
+  expect(CombatWorld.prototype.queueCompiledUnitCreation).toHaveBeenCalledTimes(0)
+}
+
 describe('R3a reviewer remarks remediation', () => {
   beforeEach(() => {
     vi.spyOn(PRNG.prototype, 'next')
+    vi.spyOn(CombatWorld.prototype, 'queueUnitCreation')
     vi.spyOn(CombatWorld.prototype, 'queueCompiledUnitCreation')
   })
   afterEach(() => {
@@ -70,8 +77,7 @@ describe('R3a reviewer remarks remediation', () => {
           message: expect.stringContaining('multiple area geometries (line, cone)'),
         }),
       )
-      expect(PRNG.prototype.next).toHaveBeenCalledTimes(0)
-      expect(CombatWorld.prototype.queueCompiledUnitCreation).toHaveBeenCalledTimes(0)
+      assertZeroLeaks()
     })
 
     it('positive control: definition.abilities with line_pierce without conflicting upgrade passes and simulates', () => {
@@ -101,8 +107,7 @@ describe('R3a reviewer remarks remediation', () => {
       expect(() => simulateCombat(input)).toThrowError(
         expect.objectContaining({ code: 'MISSING_SPAWN_DEFINITION', reference: 'ghost' }),
       )
-      expect(PRNG.prototype.next).toHaveBeenCalledTimes(0)
-      expect(CombatWorld.prototype.queueCompiledUnitCreation).toHaveBeenCalledTimes(0)
+      assertZeroLeaks()
     })
 
     it('positive control: top-level periodicAbilities with existing spawn definition passes and simulates', () => {
@@ -131,8 +136,7 @@ describe('R3a reviewer remarks remediation', () => {
         },
       })
       expect(() => simulateCombat(input)).toThrowError(expect.objectContaining({ code: 'SCHEMA_VALIDATION_ERROR' }))
-      expect(PRNG.prototype.next).toHaveBeenCalledTimes(0)
-      expect(CombatWorld.prototype.queueCompiledUnitCreation).toHaveBeenCalledTimes(0)
+      assertZeroLeaks()
     })
 
     it('rejects { kind: "damage", amount: "bad" } payload before simulation', () => {
@@ -145,8 +149,7 @@ describe('R3a reviewer remarks remediation', () => {
         },
       })
       expect(() => simulateCombat(input)).toThrowError(expect.objectContaining({ code: 'SCHEMA_VALIDATION_ERROR' }))
-      expect(PRNG.prototype.next).toHaveBeenCalledTimes(0)
-      expect(CombatWorld.prototype.queueCompiledUnitCreation).toHaveBeenCalledTimes(0)
+      assertZeroLeaks()
     })
 
     it('rejects { kind: "shield", amount: "bad" } payload before simulation', () => {
@@ -159,8 +162,7 @@ describe('R3a reviewer remarks remediation', () => {
         },
       })
       expect(() => simulateCombat(input)).toThrowError(expect.objectContaining({ code: 'SCHEMA_VALIDATION_ERROR' }))
-      expect(PRNG.prototype.next).toHaveBeenCalledTimes(0)
-      expect(CombatWorld.prototype.queueCompiledUnitCreation).toHaveBeenCalledTimes(0)
+      assertZeroLeaks()
     })
 
     it('positive control: valid periodic status, damage, and shield payloads pass and simulate', () => {
@@ -199,8 +201,7 @@ describe('R3a reviewer remarks remediation', () => {
           path: 'units[0].effectiveStats.hp',
         }),
       )
-      expect(PRNG.prototype.next).toHaveBeenCalledTimes(0)
-      expect(CombatWorld.prototype.queueCompiledUnitCreation).toHaveBeenCalledTimes(0)
+      assertZeroLeaks()
     })
 
     it('positive control: unit with valid hpMult (1.5) scales effective HP and simulates cleanly', () => {
