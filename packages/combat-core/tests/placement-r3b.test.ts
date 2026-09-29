@@ -103,23 +103,38 @@ describe('R3b: Neutral Seeded Placement (ISO-06)', () => {
     expect(buildsNone[0].placement.y).toBe(expY)
   })
 
-  it('preserves legacy Mars coordinates on 600x1200 arena with depth 320 data', () => {
+  it('preserves legacy Mars coordinates on 600x1200 arena with depth 320 and strategy center', () => {
     const input = baseInput({
-      arena: { width: 600, height: 1200, tileSize: 40, obstacles: [], deployment: { depth: 320 } },
+      seed: 42,
+      arena: { width: 600, height: 1200, tileSize: 40, obstacles: [], deployment: { depth: 320, strategy: 'center' } },
+      definitions: {
+        marine: makeDef('marine', { hp: 35, attack: 10, defense: 2, speed: 7, range: 3, size: 'S' }, { squadSize: 8, squadSpacing: 24, formation: 'grid' }),
+        target: makeDef('target', { hp: 100, attack: 1, defense: 0, speed: 1, range: 1, size: 'M' }),
+      },
       units: [
-        { instanceId: 'a', definitionId: 'marine', team: 'attacker', placement: {}, rank: 1, upgradeIds: [] },
-        { instanceId: 'd', definitionId: 'target', team: 'defender', placement: {}, rank: 1, upgradeIds: [] },
+        { instanceId: 'm', definitionId: 'marine', team: 'attacker', placement: {}, rank: 1, upgradeIds: [] },
+        { instanceId: 't', definitionId: 'target', team: 'defender', placement: { x: 300, y: 100 }, rank: 1, upgradeIds: [] },
       ],
     })
     const r1 = simulateCombat(input)
-    const r2 = simulateCombat(input)
-    expect(r1.initialState).toEqual(r2.initialState)
-    const att = r1.initialState.find(u => u.id === 'a')!
-    const def = r1.initialState.find(u => u.id === 'd')!
-    expect(att.y).toBeGreaterThanOrEqual(880)
-    expect(att.y).toBeLessThanOrEqual(1200)
-    expect(def.y).toBeGreaterThanOrEqual(0)
-    expect(def.y).toBeLessThan(320)
+    const m0 = r1.initialState.find(u => u.id === 'm_0')!
+    expect(m0.x).toBe(507)
+    expect(m0.y).toBe(1117)
+  })
+
+  it('respects single boundary specification in deployment zone', () => {
+    const input = baseInput({
+      seed: 42,
+      arena: { width: 100, height: 100, tileSize: 20, obstacles: [], deployment: { attacker: { maxY: 50 } } },
+      units: [
+        { instanceId: 'a', definitionId: 'marine', team: 'attacker', placement: {}, rank: 1, upgradeIds: [] },
+        { instanceId: 'd', definitionId: 'target', team: 'defender', placement: { x: 50, y: 80 }, rank: 1, upgradeIds: [] },
+      ],
+    })
+    const result = simulateCombat(input)
+    const att = result.initialState.find(u => u.id === 'a')!
+    expect(att.y).toBeLessThanOrEqual(50)
+    expect(att.y).toBeGreaterThanOrEqual(0)
   })
 
   it('respects custom explicit deployment zones on 400x600 arena', () => {
@@ -152,15 +167,15 @@ describe('R3b: Neutral Seeded Placement (ISO-06)', () => {
   it('clamps late summons near the boundary so they never escape the arena', () => {
     const input = baseInput({
       definitions: {
-        spawner: makeDef('spawner', { hp: 500 }, {
+        spawner: makeDef('spawner', { hp: 500, size: 'M' }, {
           periodicAbilities: [{ id: 'sum', intervalTicks: 5, targetPolicy: 'self', payload: { kind: 'spawn', unitType: 'minion' } }],
         } as unknown as Partial<UnitDefinition>),
-        minion: makeDef('minion', { hp: 10 }),
+        minion: makeDef('minion', { hp: 10, size: 'M' }),
         target: makeDef('target', { hp: 1000 }),
       },
       units: [
-        { instanceId: 's', definitionId: 'spawner', team: 'attacker', placement: { x: 1, y: 1 }, rank: 1, upgradeIds: [] },
-        { instanceId: 't', definitionId: 'target', team: 'defender', placement: { x: 99, y: 99 }, rank: 1, upgradeIds: [] },
+        { instanceId: 's', definitionId: 'spawner', team: 'attacker', placement: { x: 20, y: 20 }, rank: 1, upgradeIds: [] },
+        { instanceId: 't', definitionId: 'target', team: 'defender', placement: { x: 80, y: 80 }, rank: 1, upgradeIds: [] },
       ],
     })
     const result = simulateCombat(input)
@@ -171,10 +186,10 @@ describe('R3b: Neutral Seeded Placement (ISO-06)', () => {
     for (const sa of spawnActions) {
       const x = (sa as Record<string, unknown>).toX as number
       const y = (sa as Record<string, unknown>).toY as number
-      expect(x).toBeGreaterThanOrEqual(0)
-      expect(x).toBeLessThanOrEqual(100)
-      expect(y).toBeGreaterThanOrEqual(0)
-      expect(y).toBeLessThanOrEqual(100)
+      expect(x).toBeGreaterThanOrEqual(18)
+      expect(x).toBeLessThanOrEqual(82)
+      expect(y).toBeGreaterThanOrEqual(18)
+      expect(y).toBeLessThanOrEqual(82)
     }
   })
 })

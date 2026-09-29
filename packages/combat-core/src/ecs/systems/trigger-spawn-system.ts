@@ -3,6 +3,7 @@ import type { TriggerPayload } from '../../combat.sim.types.js'
 import type { UnitTypeKey } from '../../combat.types.js'
 import { getDefaultCombatCatalog } from '../../combat.catalog.types.js'
 import { compileUnit } from '../../combat.unit-compiler.js'
+import { getSizeRadius } from '../../math/geometry.js'
 import { getCombatArena } from '../combat-resources.js'
 import type { CombatWorld } from '../combat-world.js'
 import type { EntityId } from '../entity.js'
@@ -27,10 +28,14 @@ export function spawnEcsTriggerUnits(
   }).length
   const count = Math.max(1, payload.count ?? 1)
   const arena = getCombatArena(world)
+  const catalog = world.resources.get('catalog') ?? getDefaultCombatCatalog()
+  const unitCatalog = (catalog as { unitTypes?: Record<string, { baseStats?: { size?: 'S' | 'M' | 'L' | 'XL' } }> })?.unitTypes ?? {}
+  const spawnUnitDef = unitCatalog[sourceKey]
+  const bodyRadius = getSizeRadius(spawnUnitDef?.baseStats?.size ?? 'M')
   let spawned = 0
 
   for (let index = 0; index < count && existing + spawned < cap; index++) {
-    const position = getSpawnPosition(anchor, arena)
+    const position = getSpawnPosition(anchor, arena, bodyRadius)
     const unit = compileUnit({
       definitionId: payload.unitType as UnitTypeKey,
       identity: {
@@ -75,13 +80,16 @@ export function spawnEcsTriggerUnits(
 function getSpawnPosition(
   anchor: { x: number; y: number },
   arena: { width: number; height: number },
+  bodyRadius: number = 0,
 ): { x: number; y: number } {
   return {
-    x: clamp(anchor.x, arena.width),
-    y: clamp(anchor.y, arena.height),
+    x: clamp(anchor.x, arena.width, bodyRadius),
+    y: clamp(anchor.y, arena.height, bodyRadius),
   }
 }
 
-function clamp(value: number, maximum: number): number {
-  return Math.max(0, Math.min(maximum, value))
+function clamp(value: number, maximum: number, bodyRadius: number = 0): number {
+  const min = Math.min(maximum / 2, bodyRadius)
+  const max = Math.max(maximum / 2, maximum - bodyRadius)
+  return Math.max(min, Math.min(max, value))
 }

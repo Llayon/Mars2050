@@ -122,6 +122,40 @@ describe('R3b: Arena Bounds & Squad Invariants (ISO-06)', () => {
     assertZeroLeaks()
   })
 
+  it('rejects partially specified coordinates when squad cannot fit in remaining axis before RNG or world creation', () => {
+    const input = baseInput({
+      definitions: {
+        sq: makeDef('sq', {}, { squadSize: 4, squadSpacing: 80 }),
+        target: makeDef('target'),
+      },
+      units: [
+        { instanceId: 's', definitionId: 'sq', team: 'attacker', placement: { x: 50 }, rank: 1, upgradeIds: [] },
+        { instanceId: 't', definitionId: 'target', team: 'defender', placement: { x: 50, y: 10 }, rank: 1, upgradeIds: [] },
+      ],
+    })
+    expect(() => simulateCombat(input)).toThrowError(
+      expect.objectContaining({ code: 'OUT_OF_BOUNDS_COORDINATES' }),
+    )
+    assertZeroLeaks()
+  })
+
+  it('rejects unit when body radius extends outside arena even if center is inside before RNG or world creation', () => {
+    const input = baseInput({
+      definitions: {
+        xl: makeDef('xl', { size: 'XL' }),
+        target: makeDef('target'),
+      },
+      units: [
+        { instanceId: 'x', definitionId: 'xl', team: 'attacker', placement: { x: 1, y: 50 }, rank: 1, upgradeIds: [] },
+        { instanceId: 't', definitionId: 'target', team: 'defender', placement: { x: 50, y: 20 }, rank: 1, upgradeIds: [] },
+      ],
+    })
+    expect(() => simulateCombat(input)).toThrowError(
+      expect.objectContaining({ code: 'OUT_OF_BOUNDS_COORDINATES', path: 'units[0].placement.x' }),
+    )
+    assertZeroLeaks()
+  })
+
   it('keeps all formation members inside arena and preserves squad size when squad fits', () => {
     const input = baseInput({
       definitions: {

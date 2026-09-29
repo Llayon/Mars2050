@@ -46,8 +46,11 @@ export function createSpawnBuildSpecs(
   const zoneWidth = bounds.maxX - bounds.minX
   const zoneHeight = bounds.maxY - bounds.minY
 
+  const deployment = typeof arenaOrWidth === 'object' ? (arenaOrWidth as { deployment?: ArenaDeployment }).deployment : undefined
+  const strategy = deployment?.strategy ?? 'fit_formation'
+
   let leftPad = 0, rightPad = 0, topPad = 0, bottomPad = 0
-  if (squadSize > 1) {
+  if (strategy === 'fit_formation' && squadSize > 1) {
     const offsets = Array.from({ length: squadSize }, (_, index) =>
       getFormationOffset(index, squadSize, rowSize, spacing, def.formation || 'grid', spec.team),
     )

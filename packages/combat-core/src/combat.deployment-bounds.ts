@@ -34,9 +34,9 @@ export function resolveDeploymentBounds(
   let minY: number
   let maxY: number
 
-  if (teamZone?.minY != null && teamZone?.maxY != null) {
-    minY = teamZone.minY
-    maxY = teamZone.maxY
+  if (teamZone?.minY != null || teamZone?.maxY != null) {
+    minY = teamZone.minY ?? 0
+    maxY = teamZone.maxY ?? arena.height
   } else if (deployment?.depth != null) {
     const depth = deployment.depth
     if (team === 'attacker') {

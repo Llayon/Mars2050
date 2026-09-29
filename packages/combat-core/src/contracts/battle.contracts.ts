@@ -19,6 +19,7 @@ export type DeploymentZoneSpec = z.infer<typeof deploymentZoneSpecSchema>
 
 export const arenaDeploymentSchema = z.object({
   depth: z.number().positive().optional(),
+  strategy: z.enum(['center', 'fit_formation']).optional(),
   attacker: deploymentZoneSpecSchema.optional(),
   defender: deploymentZoneSpecSchema.optional(),
 })

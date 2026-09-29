@@ -2,7 +2,7 @@ import { CombatDefinitionError } from './combat.definition-error.js'
 import type { BattleInput, UnitDefinition } from './contracts/index.js'
 import type { NormalizedDefinition } from './combat.definition-validator.js'
 import { resolveDeploymentBounds } from './combat.deployment-bounds.js'
-import { getFormationOffset } from './math/index.js'
+import { getFormationOffset, getSizeRadius } from './math/index.js'
 
 /**
  * Validates arena bounds, deployment configuration, obstacle placement,
@@ -100,6 +100,8 @@ export function validatePlacementAndBounds(
     const spacing = def?.squadSpacing || 20
     const rowSize = Math.ceil(Math.sqrt(squadSize))
     const formation = def?.formation || 'grid'
+    const rawSize = (def as NormalizedDefinition)?.baseStats?.size ?? (def as UnitDefinition)?.baseStats?.size ?? 'M'
+    const bodyRadius = getSizeRadius(rawSize as 'S' | 'M' | 'L' | 'XL')
 
     if (u.placement.x != null && (u.placement.x < 0 || u.placement.x > parsed.arena.width)) {
       throw new CombatDefinitionError(
@@ -125,47 +127,38 @@ export function validatePlacementAndBounds(
     const maxOffsetY = Math.max(...offsets.map(o => o.y))
     const formationWidth = maxOffsetX - minOffsetX
     const formationHeight = maxOffsetY - minOffsetY
+    const formationPhysicalWidth = formationWidth + 2 * bodyRadius
+    const formationPhysicalHeight = formationHeight + 2 * bodyRadius
 
-    if (formationWidth > parsed.arena.width || formationHeight > parsed.arena.height) {
+    if (formationPhysicalWidth > parsed.arena.width || formationPhysicalHeight > parsed.arena.height) {
       throw new CombatDefinitionError(
         'OUT_OF_BOUNDS_COORDINATES',
-        `squad formation for unit '${u.instanceId}' (${formationWidth}x${formationHeight}) exceeds arena dimensions (${parsed.arena.width}x${parsed.arena.height})`,
-        { path: `units[${i}].definitionId`, reference: `${formationWidth}x${formationHeight}` },
+        `squad formation for unit '${u.instanceId}' (${formationPhysicalWidth}x${formationPhysicalHeight}) exceeds arena dimensions (${parsed.arena.width}x${parsed.arena.height})`,
+        { path: `units[${i}].definitionId`, reference: `${formationPhysicalWidth}x${formationPhysicalHeight}` },
       )
     }
 
-    if (u.placement.x != null || u.placement.y != null) {
+    const bounds = resolveDeploymentBounds(parsed.arena, u.team)
+    const zoneWidth = bounds.maxX - bounds.minX
+    const zoneHeight = bounds.maxY - bounds.minY
+    const strategy = parsed.arena.deployment?.strategy ?? 'fit_formation'
+
+    // Validate X axis
+    if (u.placement.x != null) {
       for (let s = 0; s < squadSize; s++) {
         const memberId = squadSize > 1 ? `${u.instanceId}_${s}` : u.instanceId
-        if (u.placement.x != null) {
-          const mx = u.placement.x + offsets[s].x
-          if (mx < 0 || mx > parsed.arena.width) {
-            throw new CombatDefinitionError(
-              'OUT_OF_BOUNDS_COORDINATES',
-              `squad member '${memberId}' x coordinate (${mx}) outside arena width (${parsed.arena.width})`,
-              { path: `units[${i}].placement.x`, reference: String(mx) },
-            )
-          }
-        }
-        if (u.placement.y != null) {
-          const my = u.placement.y + offsets[s].y
-          if (my < 0 || my > parsed.arena.height) {
-            throw new CombatDefinitionError(
-              'OUT_OF_BOUNDS_COORDINATES',
-              `squad member '${memberId}' y coordinate (${my}) outside arena height (${parsed.arena.height})`,
-              { path: `units[${i}].placement.y`, reference: String(my) },
-            )
-          }
+        const mx = u.placement.x + offsets[s].x
+        if (mx - bodyRadius < -1e-4 || mx + bodyRadius > parsed.arena.width + 1e-4) {
+          throw new CombatDefinitionError(
+            'OUT_OF_BOUNDS_COORDINATES',
+            `squad member '${memberId}' body extends outside arena width (${parsed.arena.width})`,
+            { path: `units[${i}].placement.x`, reference: String(mx) },
+          )
         }
       }
-    } else {
-      const bounds = resolveDeploymentBounds(parsed.arena, u.team)
-      const zoneWidth = bounds.maxX - bounds.minX
-      const zoneHeight = bounds.maxY - bounds.minY
+    } else if (strategy === 'fit_formation') {
       const leftPad = Math.max(0, -minOffsetX)
       const rightPad = Math.max(0, maxOffsetX)
-      const topPad = Math.max(0, -minOffsetY)
-      const bottomPad = Math.max(0, maxOffsetY)
       if (zoneWidth < leftPad + rightPad) {
         throw new CombatDefinitionError(
           'OUT_OF_BOUNDS_COORDINATES',
@@ -173,6 +166,24 @@ export function validatePlacementAndBounds(
           { path: `units[${i}].definitionId`, reference: `${formationWidth}>${zoneWidth}` },
         )
       }
+    }
+
+    // Validate Y axis
+    if (u.placement.y != null) {
+      for (let s = 0; s < squadSize; s++) {
+        const memberId = squadSize > 1 ? `${u.instanceId}_${s}` : u.instanceId
+        const my = u.placement.y + offsets[s].y
+        if (my - bodyRadius < -1e-4 || my + bodyRadius > parsed.arena.height + 1e-4) {
+          throw new CombatDefinitionError(
+            'OUT_OF_BOUNDS_COORDINATES',
+            `squad member '${memberId}' body extends outside arena height (${parsed.arena.height})`,
+            { path: `units[${i}].placement.y`, reference: String(my) },
+          )
+        }
+      }
+    } else if (strategy === 'fit_formation') {
+      const topPad = Math.max(0, -minOffsetY)
+      const bottomPad = Math.max(0, maxOffsetY)
       if (zoneHeight < topPad + bottomPad) {
         throw new CombatDefinitionError(
           'OUT_OF_BOUNDS_COORDINATES',
