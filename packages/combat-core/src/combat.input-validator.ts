@@ -11,6 +11,7 @@ import { assertFiniteUnitStats, validateUnitLoadout } from './combat.loadout-val
 import { validateUpgradeConfig } from './combat.upgrade-schema.js'
 import { validatePeriodicAbilityConfig } from './combat.periodic-schema.js'
 import { validateAndNormalizeDefinition, type AnyDef, type NormalizedDefinition } from './combat.definition-validator.js'
+import { validatePlacementAndBounds } from './combat.placement-validator.js'
 
 const SUPPORTED_SCHEDULED_EFFECT_KINDS = ['orbital_strike', 'mass_heal', 'mass_shield', 'global_emp']
 
@@ -186,14 +187,6 @@ export function validateBattleInput(input: unknown): BattleInput {
       }
       allMemberIds.add(memberId)
     }
-    if (u.placement.x != null && (u.placement.x < 0 || u.placement.x > parsed.arena.width)) {
-      throw new CombatDefinitionError('OUT_OF_BOUNDS_COORDINATES', `unit '${u.instanceId}' x coordinate (${u.placement.x}) outside arena width (${parsed.arena.width})`,
-        { path: `units[${i}].placement.x`, reference: String(u.placement.x) })
-    }
-    if (u.placement.y != null && (u.placement.y < 0 || u.placement.y > parsed.arena.height)) {
-      throw new CombatDefinitionError('OUT_OF_BOUNDS_COORDINATES', `unit '${u.instanceId}' y coordinate (${u.placement.y}) outside arena height (${parsed.arena.height})`,
-        { path: `units[${i}].placement.y`, reference: String(u.placement.y) })
-    }
     const effective = calculateEffectiveUnitStats(u.definitionId, u.rank, u.upgradeIds, normalizedCatalog as unknown as CombatCatalog | undefined, normalizedDefinitions)
     if (effective) {
       assertFiniteUnitStats(i, u, effective)
@@ -210,15 +203,8 @@ export function validateBattleInput(input: unknown): BattleInput {
   // 7. Cycle check: only nodes actually participating in the cycle require spawnCap
   validateSummonCycles(allDefs)
 
-  // 8. Coordinate and Arena Bounds
-  for (let i = 0; i < parsed.arena.obstacles.length; i++) {
-    const obs = parsed.arena.obstacles[i]
-    if (obs.x < 0 || obs.x > parsed.arena.width || obs.y < 0 || obs.y > parsed.arena.height) {
-      throw new CombatDefinitionError('OUT_OF_BOUNDS_COORDINATES',
-        `obstacle at index ${i} coordinates (${obs.x}, ${obs.y}) outside arena bounds (${parsed.arena.width}x${parsed.arena.height})`,
-        { path: `arena.obstacles[${i}]`, reference: `(${obs.x},${obs.y})` })
-    }
-  }
+  // 8. Coordinate, squad, and arena deployment bounds
+  validatePlacementAndBounds(parsed, allDefs)
 
   for (let i = 0; i < parsed.scheduledEffects.length; i++) {
     const eff = parsed.scheduledEffects[i]

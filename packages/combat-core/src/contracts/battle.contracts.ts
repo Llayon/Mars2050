@@ -9,11 +9,27 @@ export const obstacleSchema = z.object({
 })
 export type Obstacle = z.infer<typeof obstacleSchema>
 
+export const deploymentZoneSpecSchema = z.object({
+  minX: z.number().min(0).optional(),
+  maxX: z.number().positive().optional(),
+  minY: z.number().min(0).optional(),
+  maxY: z.number().positive().optional(),
+})
+export type DeploymentZoneSpec = z.infer<typeof deploymentZoneSpecSchema>
+
+export const arenaDeploymentSchema = z.object({
+  depth: z.number().positive().optional(),
+  attacker: deploymentZoneSpecSchema.optional(),
+  defender: deploymentZoneSpecSchema.optional(),
+})
+export type ArenaDeployment = z.infer<typeof arenaDeploymentSchema>
+
 export const arenaSpecSchema = z.object({
   width: z.number().int().min(100).max(5000).default(600),
   height: z.number().int().min(100).max(5000).default(1200),
   tileSize: z.number().int().positive().default(40),
   obstacles: z.array(obstacleSchema).default([]),
+  deployment: arenaDeploymentSchema.optional(),
 })
 export type ArenaSpec = z.infer<typeof arenaSpecSchema>
 

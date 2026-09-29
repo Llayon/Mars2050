@@ -8,6 +8,8 @@ import { FIELD_HEIGHT, FIELD_WIDTH, type PRNG } from './combat.utils.js'
 import type { UnitEntityBundle } from './ecs/unit-entity-bundle.js'
 import { getFormationOffset } from './math/index.js'
 import { getDefaultCombatCatalog, type CombatCatalog } from './combat.catalog.types.js'
+import { resolveDeploymentBounds } from './combat.deployment-bounds.js'
+import type { ArenaDeployment } from './contracts/index.js'
 
 export function compileSquadBundles(
   row: UnitRow,
@@ -41,12 +43,18 @@ export function createSquadBuildSpecs(
   const rowSize = Math.ceil(Math.sqrt(squadSize))
   const arenaWidth = arena?.width ?? FIELD_WIDTH
   const arenaHeight = arena?.height ?? FIELD_HEIGHT
+  const bounds = resolveDeploymentBounds(
+    { width: arenaWidth, height: arenaHeight, deployment: (arena as { width: number; height: number; deployment?: ArenaDeployment })?.deployment },
+    team,
+  )
+  const zoneWidth = bounds.maxX - bounds.minX
+  const zoneHeight = bounds.maxY - bounds.minY
   const rawX = row.grid_x != null
     ? row.grid_x
-    : String(Math.floor(rng.next() * arenaWidth))
+    : String(Math.floor(rng.next() * zoneWidth) + bounds.minX)
   const rawY = row.grid_y != null
     ? row.grid_y
-    : String(Math.floor(rng.next() * 320) + (team === 'attacker' ? arenaHeight - 320 : 0))
+    : String(Math.floor(rng.next() * zoneHeight) + bounds.minY)
   const centerX = Number(rawX)
   const centerY = Number(rawY)
   const squadId = squadSize > 1 ? `${row.id}_squad` : undefined

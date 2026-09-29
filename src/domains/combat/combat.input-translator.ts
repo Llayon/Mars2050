@@ -1,5 +1,5 @@
 import type { BattleInput, UnitSpawnSpec, ScheduledEffect, ArenaSpec, UnitDefinition } from '@mars2050/combat-core/contracts'
-import { calculateEffectiveMaxHp } from '@mars2050/combat-core'
+import { calculateEffectiveMaxHp, getFormationOffset } from '@mars2050/combat-core'
 import type { UnitRow } from './combat.types'
 import type { Obstacle } from './combat.sim.types'
 import type { BattleSimulationOptions } from './combat.metrics'
@@ -19,9 +19,13 @@ export function mapUnitRowsToSpawnSpecs(
   rows: UnitRow[],
   team: 'attacker' | 'defender',
   definitions?: Record<string, UnitDefinition>,
+  arena?: ArenaSpec,
 ): UnitSpawnSpec[] {
   const defs = definitions ?? buildMarsUnitDefinitions()
   const marsCatalog = { unitTypes: UNIT_TYPES, upgrades: UPGRADES }
+  const arenaWidth = arena?.width ?? FIELD_WIDTH
+  const arenaHeight = arena?.height ?? FIELD_HEIGHT
+
   return rows.map(row => {
     const rank = getUnitRank(row)
     const upgradeIds = row.upgrade_path ? [...row.upgrade_path] : []
@@ -32,13 +36,41 @@ export function mapUnitRowsToSpawnSpecs(
         currentHp = maxHp
       }
     }
+
+    const def = defs[row.unit_type] ?? marsCatalog.unitTypes[row.unit_type]
+    let posX = row.grid_x != null ? Number(row.grid_x) : undefined
+    let posY = row.grid_y != null ? Number(row.grid_y) : undefined
+
+    if (def) {
+      const squadSize = Math.max(1, Math.floor(def.squadSize || 1))
+      const spacing = def.squadSpacing || 20
+      const rowSize = Math.ceil(Math.sqrt(squadSize))
+      const formation = def.formation || 'grid'
+      const offsets = squadSize > 1
+        ? Array.from({ length: squadSize }, (_, index) =>
+            getFormationOffset(index, squadSize, rowSize, spacing, formation, team),
+          )
+        : [{ x: 0, y: 0 }]
+      const minOffsetX = Math.min(...offsets.map(o => o.x))
+      const maxOffsetX = Math.max(...offsets.map(o => o.x))
+      const minOffsetY = Math.min(...offsets.map(o => o.y))
+      const maxOffsetY = Math.max(...offsets.map(o => o.y))
+
+      if (posX != null) {
+        posX = Math.max(-minOffsetX, Math.min(arenaWidth - maxOffsetX, posX))
+      }
+      if (posY != null) {
+        posY = Math.max(-minOffsetY, Math.min(arenaHeight - maxOffsetY, posY))
+      }
+    }
+
     return {
       instanceId: row.id!,
       definitionId: row.unit_type,
       team,
       placement: {
-        x: row.grid_x != null ? Number(row.grid_x) : undefined,
-        y: row.grid_y != null ? Number(row.grid_y) : undefined,
+        x: posX,
+        y: posY,
       },
       currentHp,
       rank,
@@ -80,11 +112,15 @@ export function translateMarsBattleInput(
 ): BattleInput {
   const seed = providedSeed ?? Date.now()
   const obstacles: Obstacle[] = options.arena?.obstacles ?? providedObstacles ?? generateObstacles(seed)
+  const arenaWidth = options.arena?.width ?? FIELD_WIDTH
+  const arenaHeight = options.arena?.height ?? FIELD_HEIGHT
+  const deployment = options.arena?.deployment ?? (arenaHeight >= 640 ? { depth: 320 } : undefined)
   const arena: ArenaSpec = {
-    width: options.arena?.width ?? FIELD_WIDTH,
-    height: options.arena?.height ?? FIELD_HEIGHT,
+    width: arenaWidth,
+    height: arenaHeight,
     tileSize: options.arena?.tileSize ?? TILE_SIZE,
     obstacles,
+    deployment,
   }
   const maxTicks = options.maxTicks !== undefined && Number.isFinite(options.maxTicks)
     ? Math.max(1, Math.min(2000, Math.floor(options.maxTicks)))
@@ -98,8 +134,8 @@ export function translateMarsBattleInput(
 
   const definitions = buildMarsUnitDefinitions()
   const units: UnitSpawnSpec[] = [
-    ...mapUnitRowsToSpawnSpecs(attackerUnits, 'attacker', definitions),
-    ...mapUnitRowsToSpawnSpecs(defenderUnits, 'defender', definitions),
+    ...mapUnitRowsToSpawnSpecs(attackerUnits, 'attacker', definitions, arena),
+    ...mapUnitRowsToSpawnSpecs(defenderUnits, 'defender', definitions, arena),
   ]
   const scheduledEffects = mapGlobalUpgradesToScheduledEffects(attackerGlobals, defenderGlobals)
 

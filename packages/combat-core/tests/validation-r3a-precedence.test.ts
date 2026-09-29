@@ -219,7 +219,11 @@ describe('R3a remediation: definition precedence, frozen catalog, and late summo
         },
       })
       const result = simulateCombat(input)
-      expect(result.elapsedTicks).toBeGreaterThan(0)
+      const spawnEvent = result.logs
+        .flatMap(t => t.actions)
+        .find(a => a.type === 'spawn' && (a as Record<string, unknown>).spawnType === 'mite')
+      expect(spawnEvent).toBeDefined()
+      expect((spawnEvent as Record<string, unknown>).spawnMaxHp).toBe(1)
     })
 
     it('rejects attack spawn with invalid spawnOverrides before RNG and world creation', () => {

@@ -1,0 +1,185 @@
+import { CombatDefinitionError } from './combat.definition-error.js'
+import type { BattleInput, UnitDefinition } from './contracts/index.js'
+import type { NormalizedDefinition } from './combat.definition-validator.js'
+import { resolveDeploymentBounds } from './combat.deployment-bounds.js'
+import { getFormationOffset } from './math/index.js'
+
+/**
+ * Validates arena bounds, deployment configuration, obstacle placement,
+ * and individual unit/squad positions before simulation.
+ *
+ * Enforces:
+ * - Arena deployment zones and depth ranges are strictly within arena bounds.
+ * - Obstacles do not exceed arena boundaries.
+ * - Unit and squad coordinates (including formation member offsets) are within bounds.
+ * - Squad formations that physically cannot fit in the arena or deployment zone are rejected.
+ *
+ * @param parsed - Validated battle input structure.
+ * @param allDefs - Normalized unit definitions map.
+ */
+export function validatePlacementAndBounds(
+  parsed: BattleInput,
+  allDefs: Record<string, NormalizedDefinition | UnitDefinition>,
+): void {
+  // 1. Validate explicit deployment options
+  if (parsed.arena.deployment) {
+    const dep = parsed.arena.deployment
+    if (dep.depth != null && (dep.depth <= 0 || dep.depth > parsed.arena.height)) {
+      throw new CombatDefinitionError(
+        'INVALID_FIELD_RANGE',
+        `arena.deployment.depth (${dep.depth}) must be positive and <= arena height (${parsed.arena.height})`,
+        { path: 'arena.deployment.depth', reference: String(dep.depth) },
+      )
+    }
+    const teams = ['attacker', 'defender'] as const
+    for (const team of teams) {
+      const zone = dep[team]
+      if (!zone) continue
+      if (zone.minX != null && (zone.minX < 0 || zone.minX >= parsed.arena.width)) {
+        throw new CombatDefinitionError(
+          'OUT_OF_BOUNDS_COORDINATES',
+          `deployment.${team}.minX (${zone.minX}) outside arena width (${parsed.arena.width})`,
+          { path: `arena.deployment.${team}.minX`, reference: String(zone.minX) },
+        )
+      }
+      if (zone.maxX != null && (zone.maxX <= 0 || zone.maxX > parsed.arena.width)) {
+        throw new CombatDefinitionError(
+          'OUT_OF_BOUNDS_COORDINATES',
+          `deployment.${team}.maxX (${zone.maxX}) outside arena width (${parsed.arena.width})`,
+          { path: `arena.deployment.${team}.maxX`, reference: String(zone.maxX) },
+        )
+      }
+      if (zone.minX != null && zone.maxX != null && zone.minX >= zone.maxX) {
+        throw new CombatDefinitionError(
+          'OUT_OF_BOUNDS_COORDINATES',
+          `deployment.${team}.minX (${zone.minX}) must be less than maxX (${zone.maxX})`,
+          { path: `arena.deployment.${team}`, reference: `${zone.minX}>=${zone.maxX}` },
+        )
+      }
+      if (zone.minY != null && (zone.minY < 0 || zone.minY >= parsed.arena.height)) {
+        throw new CombatDefinitionError(
+          'OUT_OF_BOUNDS_COORDINATES',
+          `deployment.${team}.minY (${zone.minY}) outside arena height (${parsed.arena.height})`,
+          { path: `arena.deployment.${team}.minY`, reference: String(zone.minY) },
+        )
+      }
+      if (zone.maxY != null && (zone.maxY <= 0 || zone.maxY > parsed.arena.height)) {
+        throw new CombatDefinitionError(
+          'OUT_OF_BOUNDS_COORDINATES',
+          `deployment.${team}.maxY (${zone.maxY}) outside arena height (${parsed.arena.height})`,
+          { path: `arena.deployment.${team}.maxY`, reference: String(zone.maxY) },
+        )
+      }
+      if (zone.minY != null && zone.maxY != null && zone.minY >= zone.maxY) {
+        throw new CombatDefinitionError(
+          'OUT_OF_BOUNDS_COORDINATES',
+          `deployment.${team}.minY (${zone.minY}) must be less than maxY (${zone.maxY})`,
+          { path: `arena.deployment.${team}`, reference: `${zone.minY}>=${zone.maxY}` },
+        )
+      }
+    }
+  }
+
+  // 2. Validate obstacle bounds
+  for (let i = 0; i < parsed.arena.obstacles.length; i++) {
+    const obs = parsed.arena.obstacles[i]
+    if (obs.x < 0 || obs.x > parsed.arena.width || obs.y < 0 || obs.y > parsed.arena.height) {
+      throw new CombatDefinitionError(
+        'OUT_OF_BOUNDS_COORDINATES',
+        `obstacle at index ${i} coordinates (${obs.x}, ${obs.y}) outside arena bounds (${parsed.arena.width}x${parsed.arena.height})`,
+        { path: `arena.obstacles[${i}]`, reference: `(${obs.x},${obs.y})` },
+      )
+    }
+  }
+
+  // 3. Validate unit placements and squad formation bounds
+  for (let i = 0; i < parsed.units.length; i++) {
+    const u = parsed.units[i]
+    const def = allDefs[u.definitionId]
+    const squadSize = Math.max(1, Math.floor(def?.squadSize || 1))
+    const spacing = def?.squadSpacing || 20
+    const rowSize = Math.ceil(Math.sqrt(squadSize))
+    const formation = def?.formation || 'grid'
+
+    if (u.placement.x != null && (u.placement.x < 0 || u.placement.x > parsed.arena.width)) {
+      throw new CombatDefinitionError(
+        'OUT_OF_BOUNDS_COORDINATES',
+        `unit '${u.instanceId}' x coordinate (${u.placement.x}) outside arena width (${parsed.arena.width})`,
+        { path: `units[${i}].placement.x`, reference: String(u.placement.x) },
+      )
+    }
+    if (u.placement.y != null && (u.placement.y < 0 || u.placement.y > parsed.arena.height)) {
+      throw new CombatDefinitionError(
+        'OUT_OF_BOUNDS_COORDINATES',
+        `unit '${u.instanceId}' y coordinate (${u.placement.y}) outside arena height (${parsed.arena.height})`,
+        { path: `units[${i}].placement.y`, reference: String(u.placement.y) },
+      )
+    }
+
+    const offsets = Array.from({ length: squadSize }, (_, s) =>
+      getFormationOffset(s, squadSize, rowSize, spacing, formation, u.team),
+    )
+    const minOffsetX = Math.min(...offsets.map(o => o.x))
+    const maxOffsetX = Math.max(...offsets.map(o => o.x))
+    const minOffsetY = Math.min(...offsets.map(o => o.y))
+    const maxOffsetY = Math.max(...offsets.map(o => o.y))
+    const formationWidth = maxOffsetX - minOffsetX
+    const formationHeight = maxOffsetY - minOffsetY
+
+    if (formationWidth > parsed.arena.width || formationHeight > parsed.arena.height) {
+      throw new CombatDefinitionError(
+        'OUT_OF_BOUNDS_COORDINATES',
+        `squad formation for unit '${u.instanceId}' (${formationWidth}x${formationHeight}) exceeds arena dimensions (${parsed.arena.width}x${parsed.arena.height})`,
+        { path: `units[${i}].definitionId`, reference: `${formationWidth}x${formationHeight}` },
+      )
+    }
+
+    if (u.placement.x != null || u.placement.y != null) {
+      for (let s = 0; s < squadSize; s++) {
+        const memberId = squadSize > 1 ? `${u.instanceId}_${s}` : u.instanceId
+        if (u.placement.x != null) {
+          const mx = u.placement.x + offsets[s].x
+          if (mx < 0 || mx > parsed.arena.width) {
+            throw new CombatDefinitionError(
+              'OUT_OF_BOUNDS_COORDINATES',
+              `squad member '${memberId}' x coordinate (${mx}) outside arena width (${parsed.arena.width})`,
+              { path: `units[${i}].placement.x`, reference: String(mx) },
+            )
+          }
+        }
+        if (u.placement.y != null) {
+          const my = u.placement.y + offsets[s].y
+          if (my < 0 || my > parsed.arena.height) {
+            throw new CombatDefinitionError(
+              'OUT_OF_BOUNDS_COORDINATES',
+              `squad member '${memberId}' y coordinate (${my}) outside arena height (${parsed.arena.height})`,
+              { path: `units[${i}].placement.y`, reference: String(my) },
+            )
+          }
+        }
+      }
+    } else {
+      const bounds = resolveDeploymentBounds(parsed.arena, u.team)
+      const zoneWidth = bounds.maxX - bounds.minX
+      const zoneHeight = bounds.maxY - bounds.minY
+      const leftPad = Math.max(0, -minOffsetX)
+      const rightPad = Math.max(0, maxOffsetX)
+      const topPad = Math.max(0, -minOffsetY)
+      const bottomPad = Math.max(0, maxOffsetY)
+      if (zoneWidth < leftPad + rightPad) {
+        throw new CombatDefinitionError(
+          'OUT_OF_BOUNDS_COORDINATES',
+          `squad formation for unit '${u.instanceId}' width (${formationWidth}) exceeds deployment zone width (${zoneWidth})`,
+          { path: `units[${i}].definitionId`, reference: `${formationWidth}>${zoneWidth}` },
+        )
+      }
+      if (zoneHeight < topPad + bottomPad) {
+        throw new CombatDefinitionError(
+          'OUT_OF_BOUNDS_COORDINATES',
+          `squad formation for unit '${u.instanceId}' height (${formationHeight}) exceeds deployment zone height (${zoneHeight})`,
+          { path: `units[${i}].definitionId`, reference: `${formationHeight}>${zoneHeight}` },
+        )
+      }
+    }
+  }
+}

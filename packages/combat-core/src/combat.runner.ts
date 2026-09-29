@@ -73,7 +73,7 @@ export function executeCombatSimulation(input: BattleInput): CombatRunResult {
   runtime.world.resources.set('arena', arena)
 
   for (const spawnSpec of validatedInput.units) {
-    const bundles = compileSpawnSpecBundles(spawnSpec, validatedInput.definitions, catalog, rng, arena.width, arena.height)
+    const bundles = compileSpawnSpecBundles(spawnSpec, validatedInput.definitions, catalog, rng, arena)
     runtime.world.queueCompiledUnitCreation(...bundles)
   }
   runtime.world.flushStructuralCommands()
