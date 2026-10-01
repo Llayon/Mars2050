@@ -780,6 +780,21 @@
    - Для клонов по `replicateOnKill` реализованы тесты для обеих границ (нижняя и верхняя) по обеим осям (X и Y).
    - Созданные ECS-сущности проверяются как через шпионы вызовов фабрики (`CombatWorld.prototype.queueCompiledUnitCreation` и `queueUnitClone`), так и в итоговом списке выживших `result.survivors`.
 
+### Ремедиация замечаний независимого ревью R3b (commit 5342af6)
+
+1. **[P2] Физические границы одиночных юнитов под стратегией `center` и согласованность случайного и явного размещения:**
+   - В `packages/combat-core/src/combat.spawn-spec-compiler.ts` условие применения физических границ расширено: `if (strategy === 'fit_formation' || squadSize === 1)`. Для одиночных юнитов при любой стратегии (`center` или `fit_formation`) координаты удерживаются в `[bodyRadius, arenaDim - bodyRadius]`.
+   - В `packages/combat-core/src/combat.placement-validator.ts` проверка опущенных координат расширена аналогично: `else if (strategy === 'fit_formation' || squadSize === 1)`, предотвращая расхождение правил между явным и случайным размещением.
+   - Для `titan_mech` (XL, $R=45$) без координат при seed 5 на арене 600×1200 и глубине 320 случайные координаты генерируются строго в $[45, 555] \times [880, 1155]$, исключая выход тела за границу $Y=1200$. Порядок и количество обращений к PRNG строго сохранены (X затем Y).
+   - Частично заданные координаты (только X или только Y) валидируются и генерируются детерминированно (ровно 1 вызов PRNG для отсутствующей координаты).
+   - Выход явной координаты за физическую границу (например, $Y=1164$ для XL) отклоняется валидатором с `OUT_OF_BOUNDS_COORDINATES` до расхода PRNG и создания мира.
+
+2. **[P2] Нулевой шаг формации (`squadSpacing: 0`) и согласованность defaults:**
+   - В `packages/combat-core/src/combat.placement-validator.ts`, `packages/combat-core/src/combat.squad-compiler.ts`, `src/domains/combat/combat.deployment.ts`, `src/domains/combat/combat.input-translator.ts` и `src/domains/combat/combat.unit-definitions.ts` подстановка значений по умолчанию переведена с логического `||` на nullish coalescing `??` (`def?.squadSpacing ?? 20`).
+   - Допустимое контрактом значение `squadSpacing: 0` больше не подменяется на 20.
+   - Отряд из 9 бойцов размера S с `squadSpacing: 0` и `placement: { x: 50 }` на арене 100×100 успешно проходит валидацию без ложного срабатывания о превышении высоты формации и размещается в $(50, Y)$, где $Y \in [75, 90]$.
+   - Добавлены позитивные симуляционные тесты в `packages/combat-core/tests/placement-r3b-center-bounds.test.ts` и сквозной тест в `src/__tests__/combat.deployment.test.ts`.
+
 ### Challenge (negative control)
 
 - Доказательство чувствительности проверки выхода отряда за пределы зоны развертывания:

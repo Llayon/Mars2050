@@ -24,9 +24,9 @@ export function buildMarsUnitDefinitions(): Record<string, UnitDefinition> {
         spawnType: cfg.baseStats.spawnType,
         spawnCap: cfg.baseStats.spawnCap,
       },
-      squadSize: cfg.squadSize || 1,
-      squadSpacing: cfg.squadSpacing || 20,
-      formation: cfg.formation || 'grid',
+      squadSize: cfg.squadSize ?? 1,
+      squadSpacing: cfg.squadSpacing ?? 20,
+      formation: cfg.formation ?? 'grid',
     }
   }
   return definitions

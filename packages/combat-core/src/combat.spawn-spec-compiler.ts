@@ -56,7 +56,7 @@ export function createSpawnBuildSpecs(
   let minSpawnY = bounds.minY
   let maxSpawnY = bounds.maxY
 
-  if (strategy === 'fit_formation') {
+  if (strategy === 'fit_formation' || squadSize === 1) {
     const rawSize = catDef?.baseStats?.size ?? pubDef?.baseStats?.size ?? 'M'
     const bodyRadius = getSizeRadius(rawSize as 'S' | 'M' | 'L' | 'XL')
     const offsets = Array.from({ length: squadSize }, (_, index) =>

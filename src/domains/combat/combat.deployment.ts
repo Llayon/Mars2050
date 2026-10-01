@@ -47,9 +47,9 @@ export function isInDeploymentZone(mode: DeploymentMode, x: number, y: number): 
 
 export function getDeploymentFootprintRadius(unitType: UnitTypeKey): number {
   const config = UNIT_TYPES[unitType]
-  const base = getSizeRadius(config.baseStats.size || 'M')
-  const squadSize = config.squadSize || 1
-  const spacing = config.squadSpacing || 20
+  const base = getSizeRadius(config.baseStats.size ?? 'M')
+  const squadSize = config.squadSize ?? 1
+  const spacing = config.squadSpacing ?? 20
   if (squadSize <= 1) return base + 8
   const rowSize = Math.ceil(Math.sqrt(squadSize))
   const rows = Math.ceil(squadSize / rowSize)

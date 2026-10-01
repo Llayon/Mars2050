@@ -42,10 +42,10 @@ export function mapUnitRowsToSpawnSpecs(
     let posY = row.grid_y != null ? Number(row.grid_y) : undefined
 
     if (def) {
-      const squadSize = Math.max(1, Math.floor(def.squadSize || 1))
-      const spacing = def.squadSpacing || 20
+      const squadSize = Math.max(1, Math.floor(def.squadSize ?? 1))
+      const spacing = def.squadSpacing ?? 20
       const rowSize = Math.ceil(Math.sqrt(squadSize))
-      const formation = def.formation || 'grid'
+      const formation = def.formation ?? 'grid'
       if (squadSize === 1) {
         const radius = getSizeRadius((def.baseStats?.size ?? 'M') as 'S' | 'M' | 'L' | 'XL')
         if (posX != null) {

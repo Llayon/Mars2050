@@ -96,10 +96,10 @@ export function validatePlacementAndBounds(
   for (let i = 0; i < parsed.units.length; i++) {
     const u = parsed.units[i]
     const def = allDefs[u.definitionId]
-    const squadSize = Math.max(1, Math.floor(def?.squadSize || 1))
-    const spacing = def?.squadSpacing || 20
+    const squadSize = Math.max(1, Math.floor(def?.squadSize ?? 1))
+    const spacing = def?.squadSpacing ?? 20
     const rowSize = Math.ceil(Math.sqrt(squadSize))
-    const formation = def?.formation || 'grid'
+    const formation = def?.formation ?? 'grid'
     const rawSize = (def as NormalizedDefinition)?.baseStats?.size ?? (def as UnitDefinition)?.baseStats?.size ?? 'M'
     const bodyRadius = getSizeRadius(rawSize as 'S' | 'M' | 'L' | 'XL')
 
@@ -158,7 +158,7 @@ export function validatePlacementAndBounds(
           )
         }
       }
-    } else if (strategy === 'fit_formation') {
+    } else if (strategy === 'fit_formation' || squadSize === 1) {
       const leftPad = Math.max(0, -minOffsetX)
       const rightPad = Math.max(0, maxOffsetX)
       if (zoneWidth < leftPad + rightPad) {
@@ -194,7 +194,7 @@ export function validatePlacementAndBounds(
           )
         }
       }
-    } else if (strategy === 'fit_formation') {
+    } else if (strategy === 'fit_formation' || squadSize === 1) {
       const topPad = Math.max(0, -minOffsetY)
       const bottomPad = Math.max(0, maxOffsetY)
       if (zoneHeight < topPad + bottomPad) {

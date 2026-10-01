@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { simulateBattle } from '@/domains/combat/combat.engine'
+import { translateMarsBattleInput } from '@/domains/combat/combat.input-translator'
+import { simulateCombat } from '@mars2050/combat-core'
 import {
   createFormationPlacement,
   findDeploymentOverlap,
@@ -78,5 +80,33 @@ describe('combat deployment helpers', () => {
 
     const result = simulateBattle([attacker], [defender], 42)
     expect(result.winner).toBe('attacker')
+  })
+
+  it('keeps single XL unit (titan_mech) strictly inside physical arena bounds when coordinates are omitted (seed 5)', () => {
+    const titan = unit(UUID_A, 'titan_mech')
+    const marine = unit(UUID_B, 'marine')
+    const defender: UnitRow = {
+      ...marine,
+      grid_x: '300',
+      grid_y: '200',
+    }
+
+    // 1. Without coordinates: titan spawns strictly within [45, 555] x [880, 1155]
+    const input = translateMarsBattleInput([titan], [defender], 5)
+    const result = simulateCombat(input)
+    const titanEntity = result.initialState.find(u => u.id === UUID_A)
+    expect(titanEntity).toBeDefined()
+    expect(titanEntity!.x).toBeGreaterThanOrEqual(45)
+    expect(titanEntity!.x).toBeLessThanOrEqual(555)
+    expect(titanEntity!.y).toBeGreaterThanOrEqual(880)
+    expect(titanEntity!.y).toBeLessThanOrEqual(1155)
+    // Physical body (R=45) never extends beyond arena height 1200
+    expect(titanEntity!.y + 45).toBeLessThanOrEqual(1200)
+
+    // 2. Explicit coordinates (246, 1164) where body reaches Y=1209 > 1200 are rejected by validator
+    input.units[0].placement = { x: 246, y: 1164 }
+    expect(() => simulateCombat(input)).toThrowError(
+      expect.objectContaining({ code: 'OUT_OF_BOUNDS_COORDINATES' }),
+    )
   })
 })

@@ -35,9 +35,9 @@ export function createSquadBuildSpecs(
   const unitCatalog = resolvedCatalog?.unitTypes ?? {}
   const config = unitCatalog[row.unit_type]
   if (!config) return []
-  const squadSize = Math.max(1, Math.floor(config.squadSize || 1))
+  const squadSize = Math.max(1, Math.floor(config.squadSize ?? 1))
   const spacing = getFormationSpacing(
-    config.squadSpacing || 20,
+    config.squadSpacing ?? 20,
     config.baseStats,
   )
   const rowSize = Math.ceil(Math.sqrt(squadSize))
