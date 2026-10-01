@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { simulateBattle } from '@/domains/combat/combat.engine'
 import {
   createFormationPlacement,
   findDeploymentOverlap,
@@ -57,5 +58,25 @@ describe('combat deployment helpers', () => {
       { unitId: UUID_A, x: 30, y: 750 },
       { unitId: UUID_B, x: 30, y: 1110 },
     ])
+  })
+
+  it('allows battle launch with frontline formation placement for single XL unit (titan_mech)', () => {
+    const titan = unit(UUID_A, 'titan_mech')
+    const placement = createFormationPlacement([titan], 'attack', 'frontline')
+    expect(placement[UUID_A]).toEqual({ x: 30, y: 930 })
+
+    const attacker: UnitRow = {
+      ...titan,
+      grid_x: String(placement[UUID_A].x),
+      grid_y: String(placement[UUID_A].y),
+    }
+    const defender: UnitRow = {
+      ...unit(UUID_B, 'marine'),
+      grid_x: '300',
+      grid_y: '200',
+    }
+
+    const result = simulateBattle([attacker], [defender], 42)
+    expect(result.winner).toBe('attacker')
   })
 })

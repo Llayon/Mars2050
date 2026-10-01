@@ -756,10 +756,35 @@
    - Тест обновлен на отряд размера S с шагом 60 (`sq: makeDef('sq', { size: 'S' }, { squadSize: 4, squadSpacing: 60 })`).
    - Физические размеры отряда $80 \times 80 \le 100$, что проходит общую проверку размеров арены и гарантированно тестирует проверку опущенной оси Y против глубины зоны развертывания (25), подтверждая отказ с `exceeds deployment zone height`.
 
+### Ремедиация замечаний независимого ревью R3b (commit 971515d1)
+
+1. **[P1] Штатная формация Mars для одиночных юнитов (`createFormationPlacement([titan_mech], 'attack', 'frontline')`):**
+   - В `src/domains/combat/combat.input-translator.ts` для одиночных юнитов (`squadSize === 1`) введен клампинг координат с учетом `bodyRadius = getSizeRadius(size)` к диапазону `[radius, arenaDim - radius]`.
+   - Одиночный XL-юнит (`titan_mech` в первой колонке со смещением на `(30, 930)`) безопасно корректируется до `(45, 930)`, предотвращая отказ валидатора с `OUT_OF_BOUNDS_COORDINATES` и обеспечивая успешный запуск `simulateBattle()`.
+   - Для многоместных отрядов (`squadSize > 1`) сохраняется клампинг исключительно по смещениям членов отряда, гарантируя сохранение штатных позиций отрядов (скауты на 570) и соблюдение балансных критериев Mars (доля оставшегося HP победителя >= 0.1).
+   - Добавлен проверочный тест запуска боя со штатной расстановкой Титана в `src/__tests__/combat.deployment.test.ts`.
+
+2. **[P2] Отклонение пустого допустимого диапазона зон развертывания до RNG и создания мира (`placement-validator.ts`):**
+   - В `packages/combat-core/src/combat.placement-validator.ts` для стратегии `fit_formation` при опущенных координатах вычисляются границы допустимого диапазона размещения `minSpawnX, maxSpawnX, minSpawnY, maxSpawnY` с учетом смещений формации и `bodyRadius`.
+   - Если `minSpawnX > maxSpawnX` или `minSpawnY > maxSpawnY` (пустое пересечение зоны развертывания и физических границ арены), валидатор выбрасывает `CombatDefinitionError('OUT_OF_BOUNDS_COORDINATES', ...)` строго до создания мира и обращений к PRNG (0 вызовов PRNG, 0 вызовов фабрики сущностей).
+   - В `packages/combat-core/src/combat.spawn-spec-compiler.ts` добавлен защитный коллапс диапазона `minSpawnX = maxSpawnX` / `minSpawnY = maxSpawnY` на случай прямого вызова компилятора в обход валидатора.
+   - В `packages/combat-core/tests/placement-r3b-bounds.test.ts` добавлен отрицательный тест на одиночный XL-юнит на арене 100x100 без координат, подтверждающий отказ до создания мира и RNG.
+
+3. **[P2] Приоритет каталога для характеристик тела при совпадении ID (`spawn-spec-compiler.ts`):**
+   - В `packages/combat-core/src/combat.spawn-spec-compiler.ts` размер и радиус тела извлекаются с приоритетом каталога боевых характеристик над публичными `definitions` (`catDef?.baseStats?.size ?? pubDef?.baseStats?.size ?? 'M'`), тогда как параметры формации отряда (`squadSize`, `squadSpacing`, `formation`) сохраняют приоритет `definitions`.
+   - При совпадении ID с размером `S` в `definitions` и `XL` в `catalog.unitTypes` компилятор использует радиус `XL` (`45`), удерживая центр юнита в диапазоне `[45, 55]` на арене 100x100 и предотвращая выход тела за границы арены.
+   - Добавлен проверочный тест приоритета размера каталога в `packages/combat-core/tests/placement-r3b-bounds.test.ts`.
+
+4. **[P2] Физически корректный радиус XL (45), проверка обеих границ и созданной ECS-сущности:**
+   - В `packages/combat-core/tests/placement-r3b-creation-clamps.test.ts` радиус XL исправлен с 32 на фактический 45 (допустимый диапазон `[45, 55]` на арене 100x100).
+   - Для клонов по `replicateOnKill` реализованы тесты для обеих границ (нижняя и верхняя) по обеим осям (X и Y).
+   - Созданные ECS-сущности проверяются как через шпионы вызовов фабрики (`CombatWorld.prototype.queueCompiledUnitCreation` и `queueUnitClone`), так и в итоговом списке выживших `result.survivors`.
+
 ### Challenge (negative control)
 
 - Доказательство чувствительности проверки выхода отряда за пределы зоны развертывания:
   - В `packages/combat-core/tests/placement-r3b-bounds.test.ts` тест со squad formation размера 120x120 на арене с зоной глубиной 50 отклоняется с кодом `OUT_OF_BOUNDS_COORDINATES` до симуляции при ровно 0 вызовов PRNG и 0 вызовов создания сущностей.
+  - Одиночный XL-юнит на арене 100x100 с опущенными координатами отклоняется с `OUT_OF_BOUNDS_COORDINATES` до симуляции (0 вызовов PRNG, 0 созданий мира).
   - Частично заданные координаты при превышении оставшейся осью зоны отклоняются с `OUT_OF_BOUNDS_COORDINATES` до симуляции (проверено отрядом 80x80 в зоне глубиной 25).
   - Попытка размещения юнита XL у границы (`x: 1`) отклоняется с `OUT_OF_BOUNDS_COORDINATES` по причине выхода тела за границу.
   - Ошибочные параметры зоны развертывания (`minX >= maxX` или `depth <= 0`) отклоняются с `INVALID_FIELD_RANGE` до симуляции.

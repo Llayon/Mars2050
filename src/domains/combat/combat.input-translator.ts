@@ -46,21 +46,29 @@ export function mapUnitRowsToSpawnSpecs(
       const spacing = def.squadSpacing || 20
       const rowSize = Math.ceil(Math.sqrt(squadSize))
       const formation = def.formation || 'grid'
-      const offsets = squadSize > 1
-        ? Array.from({ length: squadSize }, (_, index) =>
-            getFormationOffset(index, squadSize, rowSize, spacing, formation, team),
-          )
-        : [{ x: 0, y: 0 }]
-      const minOffsetX = Math.min(...offsets.map(o => o.x))
-      const maxOffsetX = Math.max(...offsets.map(o => o.x))
-      const minOffsetY = Math.min(...offsets.map(o => o.y))
-      const maxOffsetY = Math.max(...offsets.map(o => o.y))
+      if (squadSize === 1) {
+        const radius = getSizeRadius((def.baseStats?.size ?? 'M') as 'S' | 'M' | 'L' | 'XL')
+        if (posX != null) {
+          posX = Math.max(radius, Math.min(arenaWidth - radius, posX))
+        }
+        if (posY != null) {
+          posY = Math.max(radius, Math.min(arenaHeight - radius, posY))
+        }
+      } else {
+        const offsets = Array.from({ length: squadSize }, (_, index) =>
+          getFormationOffset(index, squadSize, rowSize, spacing, formation, team),
+        )
+        const minOffsetX = Math.min(...offsets.map(o => o.x))
+        const maxOffsetX = Math.max(...offsets.map(o => o.x))
+        const minOffsetY = Math.min(...offsets.map(o => o.y))
+        const maxOffsetY = Math.max(...offsets.map(o => o.y))
 
-      if (posX != null) {
-        posX = Math.max(-minOffsetX, Math.min(arenaWidth - maxOffsetX, posX))
-      }
-      if (posY != null) {
-        posY = Math.max(-minOffsetY, Math.min(arenaHeight - maxOffsetY, posY))
+        if (posX != null) {
+          posX = Math.max(-minOffsetX, Math.min(arenaWidth - maxOffsetX, posX))
+        }
+        if (posY != null) {
+          posY = Math.max(-minOffsetY, Math.min(arenaHeight - maxOffsetY, posY))
+        }
       }
     }
 

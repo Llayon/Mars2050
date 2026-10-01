@@ -36,11 +36,13 @@ export function createSpawnBuildSpecs(
   const arenaHeight = typeof arenaOrWidth === 'object' ? arenaOrWidth.height : arenaHeightParam
   const arenaObj = typeof arenaOrWidth === 'object' ? arenaOrWidth : { width: arenaWidth, height: arenaHeight }
 
-  const def = definitions[spec.definitionId] ?? catalog?.unitTypes?.[spec.definitionId]
-  if (!def) return []
-  const squadSize = Math.max(1, Math.floor(def.squadSize || 1))
-  const spacing = def.squadSpacing || 20
+  const pubDef = definitions[spec.definitionId]
+  const catDef = catalog?.unitTypes?.[spec.definitionId]
+  if (!pubDef && !catDef) return []
+  const squadSize = Math.max(1, Math.floor(pubDef?.squadSize ?? catDef?.squadSize ?? 1))
+  const spacing = pubDef?.squadSpacing ?? catDef?.squadSpacing ?? 20
   const rowSize = Math.ceil(Math.sqrt(squadSize))
+  const formation = pubDef?.formation ?? catDef?.formation ?? 'grid'
 
   const bounds = resolveDeploymentBounds(arenaObj, spec.team)
   const zoneWidth = bounds.maxX - bounds.minX
@@ -55,10 +57,10 @@ export function createSpawnBuildSpecs(
   let maxSpawnY = bounds.maxY
 
   if (strategy === 'fit_formation') {
-    const rawSize = def.baseStats?.size ?? 'M'
+    const rawSize = catDef?.baseStats?.size ?? pubDef?.baseStats?.size ?? 'M'
     const bodyRadius = getSizeRadius(rawSize as 'S' | 'M' | 'L' | 'XL')
     const offsets = Array.from({ length: squadSize }, (_, index) =>
-      getFormationOffset(index, squadSize, rowSize, spacing, def.formation || 'grid', spec.team),
+      getFormationOffset(index, squadSize, rowSize, spacing, formation, spec.team),
     )
     const minOffsetX = Math.min(...offsets.map(o => o.x))
     const maxOffsetX = Math.max(...offsets.map(o => o.x))
@@ -69,6 +71,8 @@ export function createSpawnBuildSpecs(
     maxSpawnX = Math.min(bounds.maxX - maxOffsetX, arenaWidth - bodyRadius - maxOffsetX)
     minSpawnY = Math.max(bounds.minY - minOffsetY, bodyRadius - minOffsetY)
     maxSpawnY = Math.min(bounds.maxY - maxOffsetY, arenaHeight - bodyRadius - maxOffsetY)
+    if (minSpawnX > maxSpawnX) minSpawnX = maxSpawnX
+    if (minSpawnY > maxSpawnY) minSpawnY = maxSpawnY
   }
 
   const spanX = Math.max(0, maxSpawnX - minSpawnX)
@@ -89,7 +93,7 @@ export function createSpawnBuildSpecs(
       squadSize,
       rowSize,
       spacing,
-      def.formation || 'grid',
+      formation,
       spec.team,
     )
     const angle = spec.placement.angle ?? (spec.team === 'attacker' ? Math.PI / 2 : -Math.PI / 2)

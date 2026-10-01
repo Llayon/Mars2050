@@ -162,7 +162,7 @@ describe('R3b: Arena Bounds & Squad Invariants (ISO-06)', () => {
   it('keeps all formation members inside arena and preserves squad size when squad fits', () => {
     const input = baseInput({
       definitions: {
-        fitting_squad: makeDef('fitting_squad', {}, { squadSize: 4, squadSpacing: 10 }),
+        fitting_squad: makeDef('fitting_squad', { size: 'S' }, { squadSize: 4, squadSpacing: 10 }),
         target: makeDef('target'),
       },
       units: [
@@ -178,5 +178,57 @@ describe('R3b: Arena Bounds & Squad Invariants (ISO-06)', () => {
       expect(u.y).toBeGreaterThanOrEqual(0)
       expect(u.y).toBeLessThanOrEqual(100)
     }
+  })
+
+  it('rejects single XL unit when allowable deployment zone cannot fit physical body before RNG or world creation', () => {
+    const input = baseInput({
+      seed: 42,
+      arena: { width: 100, height: 100, tileSize: 20, obstacles: [] },
+      definitions: {
+        titan: makeDef('titan', { size: 'XL' }),
+        target: makeDef('target'),
+      },
+      units: [
+        { instanceId: 'u1', definitionId: 'titan', team: 'attacker', placement: {}, rank: 1, upgradeIds: [] },
+        { instanceId: 'u2', definitionId: 'target', team: 'defender', placement: { x: 50, y: 10 }, rank: 1, upgradeIds: [] },
+      ],
+    })
+    expect(() => simulateCombat(input)).toThrowError(
+      expect.objectContaining({
+        code: 'OUT_OF_BOUNDS_COORDINATES',
+        message: expect.stringContaining('cannot fit in deployment zone height with physical body radius'),
+      }),
+    )
+    assertZeroLeaks()
+  })
+
+  it('prioritizes combat catalog over definitions for unit size and body radius during placement', () => {
+    const input = baseInput({
+      seed: 42,
+      arena: { width: 100, height: 100, tileSize: 20, obstacles: [], deployment: { depth: 100 } },
+      definitions: {
+        titan: makeDef('titan', { size: 'S' }, { squadSize: 1 }),
+        target: makeDef('target', { size: 'M' }),
+      },
+      catalog: {
+        unitTypes: {
+          titan: makeDef('titan', { size: 'XL' }, { squadSize: 1 }) as unknown as Record<string, unknown>,
+          target: makeDef('target', { size: 'M' }) as unknown as Record<string, unknown>,
+        },
+        upgrades: {},
+      },
+      units: [
+        { instanceId: 'u1', definitionId: 'titan', team: 'attacker', placement: {}, rank: 1, upgradeIds: [] },
+        { instanceId: 'u2', definitionId: 'target', team: 'defender', placement: { x: 50, y: 50 }, rank: 1, upgradeIds: [] },
+      ],
+    })
+    const result = simulateCombat(input)
+    const titan = result.initialState.find(u => u.id === 'u1')!
+    expect(titan).toBeDefined()
+    // XL radius is 45 -> allowed range on 100x100 is [45, 55] (if S radius 10 was used, rawX could be 80)
+    expect(titan.x).toBeGreaterThanOrEqual(45)
+    expect(titan.x).toBeLessThanOrEqual(55)
+    expect(titan.y).toBeGreaterThanOrEqual(45)
+    expect(titan.y).toBeLessThanOrEqual(55)
   })
 })

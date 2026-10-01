@@ -168,6 +168,15 @@ export function validatePlacementAndBounds(
           { path: `units[${i}].definitionId`, reference: `${formationWidth}>${zoneWidth}` },
         )
       }
+      const minSpawnX = Math.max(bounds.minX - minOffsetX, bodyRadius - minOffsetX)
+      const maxSpawnX = Math.min(bounds.maxX - maxOffsetX, parsed.arena.width - bodyRadius - maxOffsetX)
+      if (minSpawnX > maxSpawnX) {
+        throw new CombatDefinitionError(
+          'OUT_OF_BOUNDS_COORDINATES',
+          `unit '${u.instanceId}' cannot fit in deployment zone width with physical body radius`,
+          { path: `units[${i}].definitionId`, reference: `${minSpawnX}>${maxSpawnX}` },
+        )
+      }
     }
 
     // Validate Y axis
@@ -193,6 +202,15 @@ export function validatePlacementAndBounds(
           'OUT_OF_BOUNDS_COORDINATES',
           `squad formation for unit '${u.instanceId}' height (${formationHeight}) exceeds deployment zone height (${zoneHeight})`,
           { path: `units[${i}].definitionId`, reference: `${formationHeight}>${zoneHeight}` },
+        )
+      }
+      const minSpawnY = Math.max(bounds.minY - minOffsetY, bodyRadius - minOffsetY)
+      const maxSpawnY = Math.min(bounds.maxY - maxOffsetY, parsed.arena.height - bodyRadius - maxOffsetY)
+      if (minSpawnY > maxSpawnY) {
+        throw new CombatDefinitionError(
+          'OUT_OF_BOUNDS_COORDINATES',
+          `unit '${u.instanceId}' cannot fit in deployment zone height with physical body radius`,
+          { path: `units[${i}].definitionId`, reference: `${minSpawnY}>${maxSpawnY}` },
         )
       }
     }
