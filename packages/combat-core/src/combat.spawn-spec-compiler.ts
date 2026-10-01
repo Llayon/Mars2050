@@ -5,7 +5,7 @@ import { compileUnit } from './combat.unit-compiler.js'
 import type { UnitEntityBundle } from './ecs/unit-entity-bundle.js'
 import type { CombatCatalog } from './combat.catalog.types.js'
 import { FIELD_HEIGHT, FIELD_WIDTH, type PRNG } from './combat.utils.js'
-import { getFormationOffset } from './math/index.js'
+import { getFormationOffset, getSizeRadius } from './math/index.js'
 import { resolveDeploymentBounds } from './combat.deployment-bounds.js'
 
 export type ArenaInput = ArenaSpec | { width: number; height: number; deployment?: ArenaDeployment } | number
@@ -49,26 +49,37 @@ export function createSpawnBuildSpecs(
   const deployment = typeof arenaOrWidth === 'object' ? (arenaOrWidth as { deployment?: ArenaDeployment }).deployment : undefined
   const strategy = deployment?.strategy ?? 'fit_formation'
 
-  let leftPad = 0, rightPad = 0, topPad = 0, bottomPad = 0
-  if (strategy === 'fit_formation' && squadSize > 1) {
+  let minSpawnX = bounds.minX
+  let maxSpawnX = bounds.maxX
+  let minSpawnY = bounds.minY
+  let maxSpawnY = bounds.maxY
+
+  if (strategy === 'fit_formation') {
+    const rawSize = def.baseStats?.size ?? 'M'
+    const bodyRadius = getSizeRadius(rawSize as 'S' | 'M' | 'L' | 'XL')
     const offsets = Array.from({ length: squadSize }, (_, index) =>
       getFormationOffset(index, squadSize, rowSize, spacing, def.formation || 'grid', spec.team),
     )
-    leftPad = Math.max(0, -Math.min(...offsets.map(o => o.x)))
-    rightPad = Math.max(0, Math.max(...offsets.map(o => o.x)))
-    topPad = Math.max(0, -Math.min(...offsets.map(o => o.y)))
-    bottomPad = Math.max(0, Math.max(...offsets.map(o => o.y)))
+    const minOffsetX = Math.min(...offsets.map(o => o.x))
+    const maxOffsetX = Math.max(...offsets.map(o => o.x))
+    const minOffsetY = Math.min(...offsets.map(o => o.y))
+    const maxOffsetY = Math.max(...offsets.map(o => o.y))
+
+    minSpawnX = Math.max(bounds.minX - minOffsetX, bodyRadius - minOffsetX)
+    maxSpawnX = Math.min(bounds.maxX - maxOffsetX, arenaWidth - bodyRadius - maxOffsetX)
+    minSpawnY = Math.max(bounds.minY - minOffsetY, bodyRadius - minOffsetY)
+    maxSpawnY = Math.min(bounds.maxY - maxOffsetY, arenaHeight - bodyRadius - maxOffsetY)
   }
 
-  const availX = Math.max(1, zoneWidth - leftPad - rightPad)
-  const availY = Math.max(1, zoneHeight - topPad - bottomPad)
+  const spanX = Math.max(0, maxSpawnX - minSpawnX)
+  const spanY = Math.max(0, maxSpawnY - minSpawnY)
 
   const rawX = spec.placement.x != null
     ? spec.placement.x
-    : Math.floor(rng.next() * availX) + bounds.minX + leftPad
+    : Math.floor(rng.next() * Math.max(1, spanX)) + minSpawnX
   const rawY = spec.placement.y != null
     ? spec.placement.y
-    : Math.floor(rng.next() * availY) + bounds.minY + topPad
+    : Math.floor(rng.next() * Math.max(1, spanY)) + minSpawnY
   const centerX = Number(rawX)
   const centerY = Number(rawY)
   const squadId = squadSize > 1 ? (spec.instanceId + '_squad') : undefined

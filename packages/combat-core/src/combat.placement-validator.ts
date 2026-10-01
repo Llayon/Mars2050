@@ -145,10 +145,12 @@ export function validatePlacementAndBounds(
 
     // Validate X axis
     if (u.placement.x != null) {
+      const minX = strategy === 'center' && squadSize > 1 ? 0 : bodyRadius
+      const maxX = strategy === 'center' && squadSize > 1 ? parsed.arena.width : parsed.arena.width - bodyRadius
       for (let s = 0; s < squadSize; s++) {
         const memberId = squadSize > 1 ? `${u.instanceId}_${s}` : u.instanceId
         const mx = u.placement.x + offsets[s].x
-        if (mx - bodyRadius < -1e-4 || mx + bodyRadius > parsed.arena.width + 1e-4) {
+        if (mx < minX - 1e-4 || mx > maxX + 1e-4) {
           throw new CombatDefinitionError(
             'OUT_OF_BOUNDS_COORDINATES',
             `squad member '${memberId}' body extends outside arena width (${parsed.arena.width})`,
@@ -170,10 +172,12 @@ export function validatePlacementAndBounds(
 
     // Validate Y axis
     if (u.placement.y != null) {
+      const minY = strategy === 'center' && squadSize > 1 ? 0 : bodyRadius
+      const maxY = strategy === 'center' && squadSize > 1 ? parsed.arena.height : parsed.arena.height - bodyRadius
       for (let s = 0; s < squadSize; s++) {
         const memberId = squadSize > 1 ? `${u.instanceId}_${s}` : u.instanceId
         const my = u.placement.y + offsets[s].y
-        if (my - bodyRadius < -1e-4 || my + bodyRadius > parsed.arena.height + 1e-4) {
+        if (my < minY - 1e-4 || my > maxY + 1e-4) {
           throw new CombatDefinitionError(
             'OUT_OF_BOUNDS_COORDINATES',
             `squad member '${memberId}' body extends outside arena height (${parsed.arena.height})`,

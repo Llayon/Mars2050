@@ -125,7 +125,7 @@ describe('R3b: Arena Bounds & Squad Invariants (ISO-06)', () => {
   it('rejects partially specified coordinates when squad cannot fit in remaining axis before RNG or world creation', () => {
     const input = baseInput({
       definitions: {
-        sq: makeDef('sq', {}, { squadSize: 4, squadSpacing: 80 }),
+        sq: makeDef('sq', { size: 'S' }, { squadSize: 4, squadSpacing: 60 }),
         target: makeDef('target'),
       },
       units: [
@@ -134,7 +134,10 @@ describe('R3b: Arena Bounds & Squad Invariants (ISO-06)', () => {
       ],
     })
     expect(() => simulateCombat(input)).toThrowError(
-      expect.objectContaining({ code: 'OUT_OF_BOUNDS_COORDINATES' }),
+      expect.objectContaining({
+        code: 'OUT_OF_BOUNDS_COORDINATES',
+        message: expect.stringContaining('exceeds deployment zone height'),
+      }),
     )
     assertZeroLeaks()
   })

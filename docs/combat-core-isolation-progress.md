@@ -735,30 +735,35 @@
 | `npm run test:combat:package:runtime` | 0 | Все 8 проверочных блоков в изолированном tmpdir PASS (SHA256: 776b073da34e17676485d8945722bd31f3e10407d81a8c77bfef3d136cbceaf1) |
 | `npm run test:combat:package` | 1 | Честный известный ISO-08 BOUNDARY FAIL (норма до R6) |
 
-### Ремедиация замечаний независимого ревью R3b (commit d4a2c48)
+### Ремедиация замечаний независимого ревью R3b (commit 3d491c3)
 
-1. **[P1] Исторические seeded-координаты Mars и стратегия размещения:**
-   - В контракт `ArenaDeployment` добавлено поле `strategy?: z.enum(['center', 'fit_formation'])`.
-   - При `strategy === 'center'` компилятор спавна `combat.spawn-spec-compiler.ts` размещает центр отряда напрямую без паддингов формации, воспроизводя исторические координаты Mars (для 8 морпехов, seed 42, арена 600x1200 первый боец появляется ровно в `(507, 1117)`).
-   - Адаптер Mars `combat.input-translator.ts` выставляет `strategy: 'center'`.
-   - Дефолтная стратегия `fit_formation` используется нейтральным ядром для автоматического удержания всех членов отряда в границах зоны развертывания.
-2. **[P2] Независимая валидация осей при частично указанных координатах:**
-   - В `combat.placement-validator.ts` проверка осей X и Y разделена.
-   - Если указана только одна координата (например, `placement: { x: 50 }`), для опущенной оси Y проверяется вместимость отряда в зону развертывания (`zoneHeight >= formationHeight`).
-   - Исключена ситуация обхода проверки зоны при частичном указании координат.
-3. **[P2] Поддержка единичной границы Y в `resolveDeploymentBounds`:**
-   - `resolveDeploymentBounds` теперь поддерживает указание только `minY` или только `maxY` с корректными дефолтами `minY ?? 0` и `maxY ?? arena.height`.
-4. **Физический радиус тел юнитов и границы:**
-   - Проверка явных координат и размеров формаций в `combat.placement-validator.ts` учитывает радиус коллизии юнита `bodyRadius = getSizeRadius(size)` ('S': 10, 'M': 18, 'L': 28, 'XL': 45). Юнит XL при x=1 отклоняется с `OUT_OF_BOUNDS_COORDINATES` до создания мира и вызова PRNG.
-   - Поздние призывы (`periodic-ability-spawn-system.ts`, `trigger-spawn-system.ts`) клампятся с учетом `bodyRadius` в диапазоне `[bodyRadius, arenaDim - bodyRadius]`.
+1. **[P1] Сохранение штатных Mars-координат (регрессия балансного теста `tier1_scout_focus_fire`):**
+   - Откачен ошибочный clamp в `src/domains/combat/combat.input-translator.ts` с добавлением `radius`, восстановив исторический диапазон `[0, arenaWidth - maxOffsetX]`. Отряды со скаутами на позиции 570 больше не смещаются на 566.
+   - В `packages/combat-core/src/combat.placement-validator.ts` валидация членов отряда для стратегии Mars (`strategy === 'center' && squadSize > 1`) проверяет центры бойцов в границах `[0, arena.width]` и `[0, arena.height]`, тогда как для `strategy === 'fit_formation'` и одиночных юнитов проверяются физические границы с учетом `bodyRadius`.
+   - В `src/domains/combat/combat.input-translator.ts` deployment гарантированно выставляет `strategy: 'center'`.
+   - Все тесты `src/__tests__/combat.tier1-placement.test.ts` (включая `tier1_scout_focus_fire`) проходят 5/5 со штатным запасом HP (доля оставшегося HP победителя >= 0.1).
+2. **[P2] Случайное размещение и радиус тел юнитов (`combat.spawn-spec-compiler.ts`):**
+   - В `combat.spawn-spec-compiler.ts` для стратегии `fit_formation` диапазон случайного размещения центров теперь строго учитывает `bodyRadius = getSizeRadius(size)`:
+     `minSpawnX = Math.max(bounds.minX - minOffsetX, bodyRadius - minOffsetX)`
+     `maxSpawnX = Math.min(bounds.maxX - maxOffsetX, arenaWidth - bodyRadius - maxOffsetX)`
+     `minSpawnY = Math.max(bounds.minY - minOffsetY, bodyRadius - minOffsetY)`
+     `maxSpawnY = Math.min(bounds.maxY - maxOffsetY, arenaHeight - bodyRadius - maxOffsetY)`
+   - Одиночный M-юнит на арене 100x100 при `seed=42` и `placement: {}` теперь генерирует валидные координаты внутри `[18, 82]`, физическое тело гарантированно помещается в арену `[0, 100]`, валидатор принимает сгенерированную позицию при явной передаче.
+3. **[P2] Физические границы при создании юнитов в рантайме (`spawn-action-system.ts`, `death-system.ts`):**
+   - В `packages/combat-core/src/ecs/systems/spawn-action-system.ts:112` координаты юнитов, создаваемых через атаку `attackType: 'spawn'`, клампятся с учетом `bodyRadius` типа призываемого юнита к `[bodyRadius, arenaDim - bodyRadius]`.
+   - В `packages/combat-core/src/ecs/systems/death-system.ts:106` при клонировании убийцы по `replicateOnKill` координаты клона клампятся с учетом `bodyRadius` убийцы к `[bodyRadius, arenaDim - bodyRadius]` даже если жертва погибла у самой границы арены.
+4. **[P2] Чувствительность теста опущенной оси в `placement-r3b-bounds.test.ts`:**
+   - Тест обновлен на отряд размера S с шагом 60 (`sq: makeDef('sq', { size: 'S' }, { squadSize: 4, squadSpacing: 60 })`).
+   - Физические размеры отряда $80 \times 80 \le 100$, что проходит общую проверку размеров арены и гарантированно тестирует проверку опущенной оси Y против глубины зоны развертывания (25), подтверждая отказ с `exceeds deployment zone height`.
 
 ### Challenge (negative control)
 
 - Доказательство чувствительности проверки выхода отряда за пределы зоны развертывания:
-  - В `packages/combat-core/tests/placement-r3b-bounds.test.ts` тест со squad formation размером 120x120 на арене с зоной глубиной 50 отклоняется с кодом `OUT_OF_BOUNDS_COORDINATES` до симуляции при ровно 0 вызовов PRNG и 0 вызовов создания сущностей.
-  - Частично заданные координаты при превышении оставшейся осью зоны отклоняются с `OUT_OF_BOUNDS_COORDINATES` до симуляции.
+  - В `packages/combat-core/tests/placement-r3b-bounds.test.ts` тест со squad formation размера 120x120 на арене с зоной глубиной 50 отклоняется с кодом `OUT_OF_BOUNDS_COORDINATES` до симуляции при ровно 0 вызовов PRNG и 0 вызовов создания сущностей.
+  - Частично заданные координаты при превышении оставшейся осью зоны отклоняются с `OUT_OF_BOUNDS_COORDINATES` до симуляции (проверено отрядом 80x80 в зоне глубиной 25).
   - Попытка размещения юнита XL у границы (`x: 1`) отклоняется с `OUT_OF_BOUNDS_COORDINATES` по причине выхода тела за границу.
   - Ошибочные параметры зоны развертывания (`minX >= maxX` или `depth <= 0`) отклоняются с `INVALID_FIELD_RANGE` до симуляции.
+  - Рантайм-тесты проверяют удержание в пределах арены: поздних периодических призывов, существ при атаке `attackType: 'spawn'` и клонов `replicateOnKill`.
 
 ### Review / решение
 

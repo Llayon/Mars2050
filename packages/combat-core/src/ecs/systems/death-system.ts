@@ -9,6 +9,9 @@ import { processEcsKillTriggers } from './post-hit-trigger-system.js'
 import { processEcsDeathTriggers } from './death-trigger-system.js'
 import { applyEcsHealing } from './healing-system.js'
 import { cancelTemporalTimeline } from './temporal-attack-system.js'
+import { getCombatArena } from '../combat-resources.js'
+import { getDefaultCombatCatalog } from '../../combat.catalog.types.js'
+import { getSizeRadius } from '../../math/index.js'
 
 export function resolveEcsDeath(
   world: CombatWorld,
@@ -103,12 +106,23 @@ function replicateEcsKiller(
       !world.stores.lifecycle.require(sourceId).replicateOnKill) return
   const target = world.stores.transform.require(targetId)
   const cloneExternalId = world.allocateExternalId('clone')
-  world.queueUnitClone(sourceId, cloneExternalId, target.x, target.y)
+  const arena = getCombatArena(world)
+  const catalog = world.resources.get('catalog') ?? getDefaultCombatCatalog()
+  const unitCatalog = (catalog as { unitTypes?: Record<string, { baseStats?: { size?: 'S' | 'M' | 'L' | 'XL' } }> })?.unitTypes ?? {}
+  const killerDef = unitCatalog[sourceIdentity.type]
+  const bodyRadius = getSizeRadius(killerDef?.baseStats?.size ?? 'M')
+  const minX = Math.min(arena.width / 2, bodyRadius)
+  const maxX = Math.max(arena.width / 2, arena.width - bodyRadius)
+  const minY = Math.min(arena.height / 2, bodyRadius)
+  const maxY = Math.max(arena.height / 2, arena.height - bodyRadius)
+  const cloneX = Math.max(minX, Math.min(maxX, target.x))
+  const cloneY = Math.max(minY, Math.min(maxY, target.y))
+  world.queueUnitClone(sourceId, cloneExternalId, cloneX, cloneY)
   actions.push({
     unitId: sourceIdentity.id,
     type: 'spawn',
-    toX: target.x,
-    toY: target.y,
+    toX: cloneX,
+    toY: cloneY,
     spawnType: sourceIdentity.type,
     spawnTeam: sourceIdentity.team,
     spawnMaxHp: world.stores.vitality.require(sourceId).maxHp,

@@ -51,11 +51,10 @@ export function mapUnitRowsToSpawnSpecs(
             getFormationOffset(index, squadSize, rowSize, spacing, formation, team),
           )
         : [{ x: 0, y: 0 }]
-      const radius = getSizeRadius((def.baseStats?.size ?? 'M') as 'S' | 'M' | 'L' | 'XL')
-      const minOffsetX = Math.min(...offsets.map(o => o.x)) - radius
-      const maxOffsetX = Math.max(...offsets.map(o => o.x)) + radius
-      const minOffsetY = Math.min(...offsets.map(o => o.y)) - radius
-      const maxOffsetY = Math.max(...offsets.map(o => o.y)) + radius
+      const minOffsetX = Math.min(...offsets.map(o => o.x))
+      const maxOffsetX = Math.max(...offsets.map(o => o.x))
+      const minOffsetY = Math.min(...offsets.map(o => o.y))
+      const maxOffsetY = Math.max(...offsets.map(o => o.y))
 
       if (posX != null) {
         posX = Math.max(-minOffsetX, Math.min(arenaWidth - maxOffsetX, posX))
@@ -115,7 +114,9 @@ export function translateMarsBattleInput(
   const obstacles: Obstacle[] = options.arena?.obstacles ?? providedObstacles ?? generateObstacles(seed)
   const arenaWidth = options.arena?.width ?? FIELD_WIDTH
   const arenaHeight = options.arena?.height ?? FIELD_HEIGHT
-  const deployment = options.arena?.deployment ?? (arenaHeight >= 640 ? { depth: 320, strategy: 'center' as const } : undefined)
+  const deployment = options.arena?.deployment
+    ? { strategy: options.arena.deployment.strategy ?? ('center' as const), ...options.arena.deployment }
+    : (arenaHeight >= 640 ? { depth: 320, strategy: 'center' as const } : { strategy: 'center' as const })
   const arena: ArenaSpec = {
     width: arenaWidth,
     height: arenaHeight,

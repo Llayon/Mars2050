@@ -44,15 +44,15 @@ describe('R3b: Neutral Seeded Placement (ISO-06)', () => {
     const att = result.initialState.find(u => u.id === 'u1')!
     const def = result.initialState.find(u => u.id === 'u2')!
 
-    expect(att.x).toBeGreaterThanOrEqual(0)
-    expect(att.x).toBeLessThanOrEqual(100)
+    expect(att.x).toBeGreaterThanOrEqual(18)
+    expect(att.x).toBeLessThanOrEqual(82)
     expect(att.y).toBeGreaterThanOrEqual(75)
-    expect(att.y).toBeLessThanOrEqual(100)
+    expect(att.y).toBeLessThanOrEqual(82)
 
-    expect(def.x).toBeGreaterThanOrEqual(0)
-    expect(def.x).toBeLessThanOrEqual(100)
-    expect(def.y).toBeGreaterThanOrEqual(0)
-    expect(def.y).toBeLessThan(25)
+    expect(def.x).toBeGreaterThanOrEqual(18)
+    expect(def.x).toBeLessThanOrEqual(82)
+    expect(def.y).toBeGreaterThanOrEqual(18)
+    expect(def.y).toBeLessThanOrEqual(25)
     expect(result.elapsedTicks).toBeGreaterThan(0)
   })
 
@@ -71,7 +71,7 @@ describe('R3b: Neutral Seeded Placement (ISO-06)', () => {
     expect(buildsBoth[0].placement.y).toBe(80)
 
     // 2. Only X specified: exactly 1 RNG call (for Y)
-    const expectedY = Math.floor(new PRNG(42).next() * 25) + 75
+    const expectedY = Math.floor(new PRNG(42).next() * 7) + 75
     vi.clearAllMocks()
     const rng2 = new PRNG(42)
     const specOnlyX = { instanceId: 'ox', definitionId: 'marine', team: 'attacker' as const, placement: { x: 33 }, rank: 1, upgradeIds: [] }
@@ -81,19 +81,19 @@ describe('R3b: Neutral Seeded Placement (ISO-06)', () => {
     expect(buildsOnlyX[0].placement.y).toBe(expectedY)
 
     // 3. Only Y specified: exactly 1 RNG call (for X)
-    const expectedX = Math.floor(new PRNG(42).next() * 100)
+    const expectedX = Math.floor(new PRNG(42).next() * 64) + 18
     vi.clearAllMocks()
     const rng3 = new PRNG(42)
-    const specOnlyY = { instanceId: 'oy', definitionId: 'marine', team: 'attacker' as const, placement: { y: 92 }, rank: 1, upgradeIds: [] }
+    const specOnlyY = { instanceId: 'oy', definitionId: 'marine', team: 'attacker' as const, placement: { y: 80 }, rank: 1, upgradeIds: [] }
     const buildsOnlyY = createSpawnBuildSpecs(specOnlyY, defs, cat, rng3, arena)
     expect(PRNG.prototype.next).toHaveBeenCalledTimes(1)
     expect(buildsOnlyY[0].placement.x).toBe(expectedX)
-    expect(buildsOnlyY[0].placement.y).toBe(92)
+    expect(buildsOnlyY[0].placement.y).toBe(80)
 
     // 4. Neither specified: exactly 2 RNG calls (X first, then Y)
     const expGenRng = new PRNG(42)
-    const expX = Math.floor(expGenRng.next() * 100)
-    const expY = Math.floor(expGenRng.next() * 25) + 75
+    const expX = Math.floor(expGenRng.next() * 64) + 18
+    const expY = Math.floor(expGenRng.next() * 7) + 75
     vi.clearAllMocks()
     const rng4 = new PRNG(42)
     const specNone = { instanceId: 'n', definitionId: 'marine', team: 'attacker' as const, placement: {}, rank: 1, upgradeIds: [] }
@@ -164,32 +164,30 @@ describe('R3b: Neutral Seeded Placement (ISO-06)', () => {
     expect(def.y).toBeLessThanOrEqual(200)
   })
 
-  it('clamps late summons near the boundary so they never escape the arena', () => {
-    const input = baseInput({
-      definitions: {
-        spawner: makeDef('spawner', { hp: 500, size: 'M' }, {
-          periodicAbilities: [{ id: 'sum', intervalTicks: 5, targetPolicy: 'self', payload: { kind: 'spawn', unitType: 'minion' } }],
-        } as unknown as Partial<UnitDefinition>),
-        minion: makeDef('minion', { hp: 10, size: 'M' }),
-        target: makeDef('target', { hp: 1000 }),
-      },
+  it('factors body radius into random placement so unseeded units never violate body bounds or fail validator', () => {
+    const input = baseInput({ seed: 42 })
+    const result = simulateCombat(input)
+    const att = result.initialState.find(u => u.id === 'u1')!
+    const def = result.initialState.find(u => u.id === 'u2')!
+    // M-unit has bodyRadius = 18
+    expect(att.x - 18).toBeGreaterThanOrEqual(0)
+    expect(att.x + 18).toBeLessThanOrEqual(100)
+    expect(att.y - 18).toBeGreaterThanOrEqual(0)
+    expect(att.y + 18).toBeLessThanOrEqual(100)
+
+    expect(def.x - 18).toBeGreaterThanOrEqual(0)
+    expect(def.x + 18).toBeLessThanOrEqual(100)
+    expect(def.y - 18).toBeGreaterThanOrEqual(0)
+    expect(def.y + 18).toBeLessThanOrEqual(100)
+
+    // Explicitly passing the generated coordinates passes validation
+    const explicitInput = baseInput({
+      seed: 42,
       units: [
-        { instanceId: 's', definitionId: 'spawner', team: 'attacker', placement: { x: 20, y: 20 }, rank: 1, upgradeIds: [] },
-        { instanceId: 't', definitionId: 'target', team: 'defender', placement: { x: 80, y: 80 }, rank: 1, upgradeIds: [] },
+        { instanceId: 'u1', definitionId: 'marine', team: 'attacker', placement: { x: att.x, y: att.y }, rank: 1, upgradeIds: [] },
+        { instanceId: 'u2', definitionId: 'target', team: 'defender', placement: { x: def.x, y: def.y }, rank: 1, upgradeIds: [] },
       ],
     })
-    const result = simulateCombat(input)
-    const spawnActions = result.logs
-      .flatMap(tick => tick.actions)
-      .filter(a => a.type === 'spawn')
-    expect(spawnActions.length).toBeGreaterThan(0)
-    for (const sa of spawnActions) {
-      const x = (sa as Record<string, unknown>).toX as number
-      const y = (sa as Record<string, unknown>).toY as number
-      expect(x).toBeGreaterThanOrEqual(18)
-      expect(x).toBeLessThanOrEqual(82)
-      expect(y).toBeGreaterThanOrEqual(18)
-      expect(y).toBeLessThanOrEqual(82)
-    }
+    expect(() => simulateCombat(explicitInput)).not.toThrow()
   })
 })

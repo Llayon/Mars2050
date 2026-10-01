@@ -15,6 +15,7 @@ import {
   syncEcsModeForAction,
 } from './action-setup.js'
 import { syncEcsBurrowForAction } from './emerge-strike-system.js'
+import { getSizeRadius } from '../../math/index.js'
 
 const FACING_TOLERANCE = 0.26
 
@@ -116,6 +117,17 @@ function createSpawnedUnit(
     x = transform.x
     y = transform.y
   }
+  const catalog = world.resources.get('catalog') ?? getDefaultCombatCatalog()
+  const unitCatalog = (catalog as { unitTypes?: Record<string, { baseStats?: { size?: 'S' | 'M' | 'L' | 'XL' } }> })?.unitTypes ?? {}
+  const spawnUnitDef = unitCatalog[spawnType]
+  const bodyRadius = getSizeRadius(spawnUnitDef?.baseStats?.size ?? 'M')
+  const minX = Math.min(arena.width / 2, bodyRadius)
+  const maxX = Math.max(arena.width / 2, arena.width - bodyRadius)
+  const minY = Math.min(arena.height / 2, bodyRadius)
+  const maxY = Math.max(arena.height / 2, arena.height - bodyRadius)
+  x = Math.max(minX, Math.min(maxX, x))
+  y = Math.max(minY, Math.min(maxY, y))
+
   const id = world.allocateExternalId('spawn')
   const unit = compileUnit({
     definitionId: spawnType as UnitTypeKey,
@@ -137,7 +149,7 @@ function createSpawnedUnit(
       isTemporary: overrides?.isTemporary,
       temporaryDuration: overrides?.duration,
     },
-    catalog: world.resources.get('catalog') ?? getDefaultCombatCatalog(),
+    catalog,
   })
   return unit
     ? { unit, spawnMaxHp: unit.components.vitality.maxHp }
