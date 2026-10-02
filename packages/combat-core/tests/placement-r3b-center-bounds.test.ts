@@ -158,4 +158,61 @@ describe('R3b: Center Strategy Bounds & Zero Squad Spacing', () => {
     )
     assertZeroLeaks()
   })
+
+  it('determines placement radius from effective definition (catalog ?? definitions) without mixing public size', () => {
+    const input = baseInput({
+      seed: 42,
+      arena: { width: 100, height: 100, tileSize: 20, obstacles: [], deployment: { strategy: 'center' } },
+      definitions: {
+        fighter: makeDef('fighter', { size: 'S' }, { squadSize: 1 }),
+        target: makeDef('target', { size: 'M' }),
+      },
+      catalog: {
+        unitTypes: {
+          // Catalog definition lacks size -> defaults to 'M' (radius 18)
+          fighter: makeDef('fighter', { hp: 100 }, { squadSize: 1 }) as unknown as Record<string, unknown>,
+          target: makeDef('target', { size: 'M' }) as unknown as Record<string, unknown>,
+        },
+        upgrades: {},
+      },
+      units: [
+        { instanceId: 'f', definitionId: 'fighter', team: 'attacker', placement: {}, rank: 1, upgradeIds: [] },
+        { instanceId: 't', definitionId: 'target', team: 'defender', placement: { x: 50, y: 20 }, rank: 1, upgradeIds: [] },
+      ],
+    })
+    const result = simulateCombat(input)
+    const fighter = result.initialState.find(u => u.id === 'f')!
+    expect(fighter).toBeDefined()
+    // Default size is 'M' (radius 18) -> allowed range on 100x100 is [18, 82]
+    expect(fighter.x).toBeGreaterThanOrEqual(18)
+    expect(fighter.x).toBeLessThanOrEqual(82)
+    expect(fighter.y).toBeGreaterThanOrEqual(18)
+    expect(fighter.y).toBeLessThanOrEqual(82)
+    // Physical body with R=18 never exceeds arena boundaries (y + 18 <= 100, never 105)
+    expect(fighter.y + 18).toBeLessThanOrEqual(100)
+  })
+
+  it('places single unit with formation: wedge and non-zero squadSpacing without false height overflow', () => {
+    const input = baseInput({
+      seed: 42,
+      arena: { width: 100, height: 100, tileSize: 20, obstacles: [], deployment: { strategy: 'center' } },
+      definitions: {
+        single_wedge: makeDef('single_wedge', { size: 'S' }, { squadSize: 1, squadSpacing: 30, formation: 'wedge' }),
+        target: makeDef('target', { size: 'S' }),
+      },
+      units: [
+        { instanceId: 'w', definitionId: 'single_wedge', team: 'attacker', placement: {}, rank: 1, upgradeIds: [] },
+        { instanceId: 't', definitionId: 'target', team: 'defender', placement: { x: 50, y: 10 }, rank: 1, upgradeIds: [] },
+      ],
+    })
+    const result = simulateCombat(input)
+    const wedgeUnit = result.initialState.find(u => u.id === 'w')!
+    expect(wedgeUnit).toBeDefined()
+    // Single unit with S size (radius 10) must be inside arena boundaries
+    expect(wedgeUnit.x - 10).toBeGreaterThanOrEqual(0)
+    expect(wedgeUnit.x + 10).toBeLessThanOrEqual(100)
+    expect(wedgeUnit.y - 10).toBeGreaterThanOrEqual(0)
+    expect(wedgeUnit.y + 10).toBeLessThanOrEqual(100)
+    expect(result.elapsedTicks).toBeGreaterThan(0)
+  })
 })

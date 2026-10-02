@@ -159,9 +159,7 @@ export function validatePlacementAndBounds(
         }
       }
     } else if (strategy === 'fit_formation' || squadSize === 1) {
-      const leftPad = Math.max(0, -minOffsetX)
-      const rightPad = Math.max(0, maxOffsetX)
-      if (zoneWidth < leftPad + rightPad) {
+      if (zoneWidth < formationWidth) {
         throw new CombatDefinitionError(
           'OUT_OF_BOUNDS_COORDINATES',
           `squad formation for unit '${u.instanceId}' width (${formationWidth}) exceeds deployment zone width (${zoneWidth})`,
@@ -195,9 +193,7 @@ export function validatePlacementAndBounds(
         }
       }
     } else if (strategy === 'fit_formation' || squadSize === 1) {
-      const topPad = Math.max(0, -minOffsetY)
-      const bottomPad = Math.max(0, maxOffsetY)
-      if (zoneHeight < topPad + bottomPad) {
+      if (zoneHeight < formationHeight) {
         throw new CombatDefinitionError(
           'OUT_OF_BOUNDS_COORDINATES',
           `squad formation for unit '${u.instanceId}' height (${formationHeight}) exceeds deployment zone height (${zoneHeight})`,
