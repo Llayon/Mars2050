@@ -160,6 +160,15 @@ describe('R3b: Center Strategy Bounds & Zero Squad Spacing', () => {
   })
 
   it('determines placement radius from effective definition (catalog ?? definitions) without mixing public size', () => {
+    const rawFighterCatalog = makeDef('fighter', { hp: 100 }, { squadSize: 1 })
+    const { size: _removedSize, ...baseStatsWithoutSize } = rawFighterCatalog.baseStats
+    const fighterCatalogDef = {
+      ...rawFighterCatalog,
+      baseStats: baseStatsWithoutSize,
+    }
+    // Explicitly verify size property is genuinely absent in catalog definition
+    expect((fighterCatalogDef.baseStats as Record<string, unknown>).size).toBeUndefined()
+
     const input = baseInput({
       seed: 42,
       arena: { width: 100, height: 100, tileSize: 20, obstacles: [], deployment: { strategy: 'center' } },
@@ -169,8 +178,8 @@ describe('R3b: Center Strategy Bounds & Zero Squad Spacing', () => {
       },
       catalog: {
         unitTypes: {
-          // Catalog definition lacks size -> defaults to 'M' (radius 18)
-          fighter: makeDef('fighter', { hp: 100 }, { squadSize: 1 }) as unknown as Record<string, unknown>,
+          // Catalog definition genuinely lacks size -> defaults to 'M' (radius 18)
+          fighter: fighterCatalogDef as unknown as Record<string, unknown>,
           target: makeDef('target', { size: 'M' }) as unknown as Record<string, unknown>,
         },
         upgrades: {},
