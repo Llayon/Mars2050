@@ -1017,4 +1017,38 @@ Freeze: `git status` после всех команд — только файл�
 | `npx playwright test tests/e2e/simulator2-replay.spec.ts --project=chromium` | 0 | 9/9 browser replay tests PASS |
 | `npx tsx scripts/check-limits.ts --diff HEAD --json` | 0 | 0 нарушений архитектурных лимитов |
 
+### Доработка по результатам повторного ревью коммита 74c20e8 (5 замечаний P2):
+
+1. **[P2] JSON round-trip терял допустимые поля события (`sourceId`, `x`, `y`, `amount`, `details`):**
+   - Проблема: `decodeLegacyReplayJson` прогонял публичные события через `deserializeCombatAction` (суженный `BattleAction`), теряя `sourceId`, `x`, `y`, `amount`, `details`.
+   - Исправление: `deserializeCombatAction` изолирован исключительно для Mars backward-compat адаптера; добавлен `deserializeCombatEvent` с парсингом по схеме `combatEventSchema`. `decodeLegacyReplayJson` десериализует события через `deserializeCombatEvent`, сохраняя 100% контракт публичных событий на round-trip.
+
+2. **[P2] Вложенные данные событий оставались общей ссылкой и пропускали `_`-сентинелы:**
+   - Проблема: `serializeCombatEvent` делал `event[k] = act[k]`, сохраняя ссылку на исходный объект `details` (`dto.details === original.details`) и пропуская приватные сентинелы вида `_privateWorldRef`.
+   - Исправление: `serializeCombatEvent` пропускает все допустимые поля через `sanitizeNestedValue`, глубоко клонируя `details` с рекурсивным удалением полей с префиксом `_`. В `combatEventSchema` добавлена валидация `details`, отклоняющая любые приватные ключи (`_...`) и нефинитные числа.
+
+3. **[P2] Повреждённый JSON «тихо чинился»:**
+   - Проблема: `decodeLegacyReplayJson` подставлял `[]` при не-массивах `initialState`/`logs`, приводил `seed: null` к `0` через `Number(null)`, а отсутствующий `engineRevision` — к строке `"undefined"`.
+   - Исправление: Устранены скрытые fallback и неявные приведения типов (`Number()`, `String()`, `Array.isArray ? ... : []`). Повреждённый JSON передается в валидатор `combatRunResultSchema.parse` как есть, вызывая строгую ошибку Zod (`ZodError`).
+
+4. **[P2] Неполный контракт вложенных структур snapshot (`statusEffects`, `actionCooldownMax`):**
+   - Проблема: `statusEffects` не имел allowlist полей и проверки типов — `entityStore` из simulation unit проходил без фильтрации, а `statusEffects[0].value: Infinity` и `actionCooldownMax: Infinity` проходили валидацию.
+   - Исправление: В `replay.types.ts` определены канонические константы `CANONICAL_STATUS_EFFECT_KEYS`/`CANONICAL_TARGET_MARK_KEYS`. В `legacy-wire-codec.ts` `sanitizeNestedValue` фильтрует свойства `statusEffects` и `targetMark` по allowlist, отсекая `entityStore`. В `combatSnapshotUnitSchema` добавлена строгая проверка каждого элемента `statusEffects` по `CANONICAL_STATUS_EFFECT_KEY_SET` и `checkFinite` для всех числовых полей (`value`, `tickInterval`, `nextTickIn`, `maxStacks`, `elapsedTicks`, `appliedAtTick`, `shieldAmount`), а `actionCooldownMax` и `actionCooldown` включены в `nonNeg` статы.
+
+5. **[P2] Валидатор loadout и схема реплея расходились по отрицательной защите:**
+   - Проблема: `assertFiniteUnitStats` принимает конечную отрицательную защиту (например, `base: 2, defenseAdd: -5 → effective defense: -3`), но `combatSnapshotUnitSchema` требовала неотрицательную защиту и падала с `ZodError` после симуляции.
+   - Исправление: В `combatSnapshotUnitSchema` поле `defense` перемещено из `nonNeg` в `finiteFields`, поддерживая любые финитные числа (включая отрицательные), в полном согласии с предсимуляционным контрактом.
+
+### Верификация устранения замечаний:
+
+- Добавлен комплексный тест `packages/combat-core/tests/wire-codec-review-p2.test.ts` (5/5 тестов PASS), адресно проверяющий каждое из пяти замечаний.
+- `npm run test:combat:core` — 20 файлов, 133 теста PASS.
+- `npm run combat:ecs:golden` и `npm run combat:ecs:v9:golden` — оба набора пресетов стабильны (7/7).
+- `npm run test:combat:package:runtime` — standalone consumer PASS.
+- `npm test` — 203 файла, 820 тестов PASS.
+- `npm run build` — prebuild checks + turbopack build + typecheck PASS.
+- `npx playwright test tests/e2e/simulator2-replay.spec.ts --project=chromium` — 9/9 тестов PASS.
+- `npx tsx scripts/check-limits.ts --diff HEAD --json` — 0 нарушений архитектурных лимитов.
+
+
 

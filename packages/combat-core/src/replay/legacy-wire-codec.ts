@@ -7,6 +7,9 @@ import {
   CANONICAL_SNAPSHOT_KEY_SET,
   CANONICAL_ACTION_KEYS,
   CANONICAL_ACTION_KEY_SET,
+  CANONICAL_STATUS_EFFECT_KEY_SET,
+  CANONICAL_TARGET_MARK_KEY_SET,
+  combatEventSchema,
   combatRunResultSchema,
   combatSnapshotUnitSchema,
 } from '../contracts/index.js'
@@ -36,6 +39,27 @@ function sanitizeNestedValue(key: string, val: unknown): unknown {
   if (key === 'velocity') {
     const v = val as Record<string, unknown>
     return { x: Number(v.x), y: Number(v.y) }
+  }
+
+  if (key === 'statusEffects') {
+    if (!Array.isArray(val)) return undefined
+    return val.map(item => {
+      if (!item || typeof item !== 'object' || Array.isArray(item)) return item
+      const clean: Record<string, unknown> = {}
+      for (const [k, v] of Object.entries(item as Record<string, unknown>)) {
+        if (CANONICAL_STATUS_EFFECT_KEY_SET.has(k) && v !== undefined) clean[k] = v
+      }
+      return clean
+    })
+  }
+
+  if (key === 'targetMark') {
+    if (!val || typeof val !== 'object' || Array.isArray(val)) return val
+    const clean: Record<string, unknown> = {}
+    for (const [k, v] of Object.entries(val as Record<string, unknown>)) {
+      if (CANONICAL_TARGET_MARK_KEY_SET.has(k) && v !== undefined) clean[k] = v
+    }
+    return clean
   }
 
   if (Array.isArray(val)) {
@@ -76,7 +100,7 @@ export function serializeCombatEvent(action: unknown): CombatEvent {
   const event: Record<string, unknown> = {}
   for (const k of Object.keys(act)) {
     if (CANONICAL_ACTION_KEY_SET.has(k) && act[k] !== undefined) {
-      event[k] = act[k]
+      event[k] = sanitizeNestedValue(k, act[k])
     }
   }
   if (event.sourceId === undefined && typeof (act.sourceUnitId ?? act.unitId) === 'string') {
@@ -92,6 +116,12 @@ export function serializeCombatEvent(action: unknown): CombatEvent {
     event.amount = act.damage ?? act.value
   }
   return event as CombatEvent
+}
+
+export function deserializeCombatEvent(event: unknown): CombatEvent {
+  const sanitized = serializeCombatEvent(event)
+  combatEventSchema.parse(sanitized)
+  return sanitized
 }
 
 export function deserializeCombatAction(event: unknown): BattleAction {
@@ -128,31 +158,41 @@ export function encodeLegacyReplayJson(result: CombatRunResult): string {
 
 export function decodeLegacyReplayJson(json: string): CombatRunResult {
   const parsed = JSON.parse(json) as Record<string, unknown>
-  if (!parsed || typeof parsed !== 'object') {
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
     throw new Error('Invalid replay JSON: expected object')
   }
   const initialState = Array.isArray(parsed.initialState)
     ? parsed.initialState.map(u => deserializeCombatUnitSnapshot(u))
-    : []
+    : parsed.initialState
   const survivors = Array.isArray(parsed.survivors)
     ? parsed.survivors.map(u => deserializeCombatUnitSnapshot(u))
-    : []
+    : parsed.survivors
   const logs = Array.isArray(parsed.logs)
-    ? (parsed.logs as CombatTick[]).map(t => serializeCombatTick(deserializeCombatTick(t)))
-    : []
+    ? parsed.logs.map((t: unknown) => {
+        if (!t || typeof t !== 'object' || Array.isArray(t)) return t
+        const tickObj = t as Record<string, unknown>
+        const actions = Array.isArray(tickObj.actions)
+          ? tickObj.actions.map(deserializeCombatEvent)
+          : tickObj.actions
+        return {
+          tick: tickObj.tick,
+          actions,
+        }
+      })
+    : parsed.logs
 
-  const decoded: CombatRunResult = {
-    winner: parsed.winner as CombatRunResult['winner'],
-    seed: Number(parsed.seed),
-    elapsedTicks: Number(parsed.elapsedTicks),
-    terminationReason: String(parsed.terminationReason),
+  const decoded: Record<string, unknown> = {
+    winner: parsed.winner,
+    seed: parsed.seed,
+    elapsedTicks: parsed.elapsedTicks,
+    terminationReason: parsed.terminationReason,
     initialState,
     survivors,
     logs,
-    engineVersion: Number(parsed.engineVersion),
-    engineRevision: String(parsed.engineRevision),
-    ...(parsed.profile !== undefined && typeof parsed.profile === 'object' ? { profile: parsed.profile as Record<string, unknown> } : {}),
-    ...(parsed.metrics !== undefined && typeof parsed.metrics === 'object' ? { metrics: parsed.metrics as Record<string, unknown> } : {}),
+    engineVersion: parsed.engineVersion,
+    engineRevision: parsed.engineRevision,
+    ...(parsed.profile !== undefined && typeof parsed.profile === 'object' ? { profile: parsed.profile as Record<string, unknown> } : (parsed.profile !== undefined ? { profile: parsed.profile } : {})),
+    ...(parsed.metrics !== undefined && typeof parsed.metrics === 'object' ? { metrics: parsed.metrics as Record<string, unknown> } : (parsed.metrics !== undefined ? { metrics: parsed.metrics } : {})),
   }
   return combatRunResultSchema.parse(decoded)
 }

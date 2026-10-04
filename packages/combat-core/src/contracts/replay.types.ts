@@ -10,7 +10,11 @@ export interface CombatStatusEffectDto {
   duration: number
   value?: number
   sourceId?: string
+  sourceUnitId?: string
+  stackKey?: string
+  controlMode?: string
   tickInterval?: number
+  nextTickIn?: number
   maxStacks?: number
   elapsedTicks?: number
   appliedAtTick?: number
@@ -48,12 +52,12 @@ export interface CombatEvent {
   x?: number
   y?: number
   amount?: number
+  details?: Record<string, unknown>
   [key: string]: unknown
 }
 
 export const CANONICAL_SNAPSHOT_KEYS = [
-  'id', 'team', 'type', 'rank', 'squadId', 'summonSourceId',
-  'x', 'y', 'velocity', 'currentAngle', 'initialAngle', 'offsetX', 'offsetY', 'size', 'isFlying',
+  'id', 'team', 'type', 'rank', 'squadId', 'summonSourceId', 'x', 'y', 'velocity', 'currentAngle', 'initialAngle', 'offsetX', 'offsetY', 'size', 'isFlying',
   'hp', 'maxHp', 'shield', 'maxShield', 'isDead', 'resurrectOnce', 'isTemporary', 'temporaryDuration', 'reassemblyConfig', 'reassemblyState', 'reassemblyTriggersUsed',
   'attack', 'defense', 'speed', 'range', 'actionCooldownMax', 'actionCooldown', 'canTargetAir', 'multishot', 'antiAirDamageMult', 'executeThreshold', 'lifestealMult', 'groundDamageMult', 'shieldDamageMult', 'armorPierceRatio', 'summonCounterDamageMult', 'accuracyPenaltyResist', 'rankScaling',
   'attackType', 'delivery', 'abilityPrograms', 'aoeRadius', 'spawnType', 'spawnCap', 'selfDestructOnAttack', 'statusOnHit', 'markOnHit', 'linePierce', 'coneAttack', 'beamAttack', 'barrageAttack', 'chainAttack', 'splitFire', 'sideWeapon', 'conditionalAttackMode', 'sweepAttack', 'emergeStrikePending', 'appliesEmp', 'leavesPuddle', 'smokeOnAction', 'pullOnHit', 'knockbackOnHit',
@@ -63,21 +67,29 @@ export const CANONICAL_SNAPSHOT_KEYS = [
   'flatDamageBlock', 'shieldHitBlock', 'shieldHitBlockCharges', 'reactiveArmorCharges', 'reactiveArmorBlock', 'damageShareRadius', 'damageShareRatio', 'damageShareMaxTargets', 'projectileInterceptRadius', 'projectileInterceptCooldownMax', 'projectileInterceptCooldown', 'projectileInterceptMaxDamage',
   'supportAuras', 'supportPrograms', 'periodicAbilities', 'periodicPrograms', 'periodicProgramState', 'fieldEffect', 'formationModifiers',
   'triggerEffects', 'statGrowth', 'attackCharge', 'spawnerConfig', 'replicateOnKill', 'onDeathPuddle',
-  'attackTargetId', 'rampTargetId', 'meleeSlotTargetId', 'meleeWaitingTargetId', 'lastProgressTargetId', 'summonOwnerId',
-  'direction', 'squadLeader', 'targetId',
+  'attackTargetId', 'rampTargetId', 'meleeSlotTargetId', 'meleeWaitingTargetId', 'lastProgressTargetId', 'summonOwnerId', 'direction', 'squadLeader', 'targetId',
 ] as const
 
 export const CANONICAL_SNAPSHOT_KEY_SET = new Set<string>(CANONICAL_SNAPSHOT_KEYS)
 
 export const CANONICAL_ACTION_KEYS = [
-  'unitId', 'type', 'targetId', 'damage', 'isCritical', 'isShieldHit',
-  'fromX', 'fromY', 'toX', 'toY', 'facingAngle', 'isWalking', 'motionKind',
-  'spawnType', 'spawnTeam', 'spawnMaxHp', 'hazardId', 'radius', 'statusType',
-  'sourceUnitId', 'damageKind', 'cause', 'controlMode', 'stanceMode', 'modeState',
-  'value', 'markEvent', 'markSquadId', 'markDuration', 'sourceUnitType', 'sourceTeam',
-  'retargetCount', 'bonusDamage', 'impactId', 'launchTick', 'earliestLaunchTick',
-  'impactTick', 'projectileKind', 'cancelReason',
-  'sourceId', 'x', 'y', 'amount', 'details',
+  'unitId', 'type', 'targetId', 'damage', 'isCritical', 'isShieldHit', 'fromX', 'fromY', 'toX', 'toY', 'facingAngle', 'isWalking', 'motionKind',
+  'spawnType', 'spawnTeam', 'spawnMaxHp', 'hazardId', 'radius', 'statusType', 'sourceUnitId', 'damageKind', 'cause', 'controlMode', 'stanceMode', 'modeState',
+  'value', 'markEvent', 'markSquadId', 'markDuration', 'sourceUnitType', 'sourceTeam', 'retargetCount', 'bonusDamage', 'impactId', 'launchTick', 'earliestLaunchTick',
+  'impactTick', 'projectileKind', 'cancelReason', 'sourceId', 'x', 'y', 'amount', 'details',
 ] as const
 
 export const CANONICAL_ACTION_KEY_SET = new Set<string>(CANONICAL_ACTION_KEYS)
+
+export const CANONICAL_STATUS_EFFECT_KEYS = [
+  'type', 'duration', 'value', 'sourceId', 'sourceUnitId', 'stackKey', 'controlMode', 'tickInterval',
+  'nextTickIn', 'maxStacks', 'elapsedTicks', 'appliedAtTick', 'sourceUnitType', 'sourceTeam', 'damageType', 'sourceUpgradeId', 'shieldAmount',
+] as const
+
+export const CANONICAL_STATUS_EFFECT_KEY_SET = new Set<string>(CANONICAL_STATUS_EFFECT_KEYS)
+
+export const CANONICAL_TARGET_MARK_KEYS = [
+  'sourceUnitId', 'squadId', 'duration', 'markDuration', 'damageMultiplier', 'sharedDamage', 'squadWide', 'executeThreshold', 'focusPriority', 'focusRadius', 'retargetPolicy', 'retargetLockTicks',
+] as const
+
+export const CANONICAL_TARGET_MARK_KEY_SET = new Set<string>(CANONICAL_TARGET_MARK_KEYS)
