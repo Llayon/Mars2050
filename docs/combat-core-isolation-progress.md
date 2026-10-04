@@ -1103,7 +1103,32 @@ Freeze: `git status` после всех команд — только файл�
 - `npx playwright test tests/e2e/simulator2-replay.spec.ts --project=chromium`: 9/9 тестов PASS.
 - `npx tsx scripts/check-limits.ts --diff HEAD --json`: 0 violations (`replay.contracts.ts` 97/100, `legacy-wire-codec.ts` 219/250, `wire-codec-review-p2.test.ts` 245/250).
 
+### Доработка по результатам ревью коммита 39c397b (полнота DTO-валидации канонического инвентаря):
 
+1. **[P2] Повреждённые поля событий и снимков проходили декодер и ломали состояние плеера:**
+   - Проблема: `combatEventSchema` и `combatSnapshotUnitSchema` проверяли на тип только часть канонических полей. Поля вида `spawnMaxHp`, `impactTick`, `isCritical`, `sourceTeam` в событиях и `direction`, `supportAuras` в снимках юнитов не проверялись на соответствие типу. Событие с `spawnMaxHp: "bad"` проходило валидатор и декодер, попадая в `createSpawnedUnit` и приводя к `hp = NaN` при применении дельты урона.
+   - Исправление:
+     - В `packages/combat-core/src/contracts/replay.inventory.ts` сформирована полная 100% типизированная партиция всех канонических ключей:
+       - Для событий (`CANONICAL_ACTION_KEYS`, 44 ключа): `ACTION_NUM_KEYS` (19 числовых полей: `x, y, fromX, fromY, toX, toY, amount, damage, value, facingAngle, radius, spawnMaxHp, markDuration, retargetCount, bonusDamage, launchTick, earliestLaunchTick, impactTick, impactId`), `ACTION_BOOL_KEYS` (3 булевых поля: `isCritical, isShieldHit, isWalking`), `ACTION_STR_KEYS` (20 строковых полей: `unitId, sourceId, targetId, sourceUnitId, spawnType, spawnTeam, hazardId, statusType, damageKind, cause, controlMode, stanceMode, modeState, markEvent, markSquadId, sourceUnitType, sourceTeam, projectileKind, cancelReason, motionKind`).
+       - Для снимков юнитов (`CANONICAL_SNAPSHOT_KEYS`, 135 ключей): `SNAPSHOT_NUM_KEYS` (50 финитных числовых полей, включая `direction`, `rank`, `temporaryDuration`, и все скалярные статы/множители), `SNAPSHOT_BOOL_KEYS` (16 булевых флагов: `isFlying, isDead, resurrectOnce, isTemporary, canTargetAir, selfDestructOnAttack, appliesEmp, leavesPuddle, isMoving, isNavigatingObstacle, isBurrowed, stealthWhileMoving, movementStealthActive, stealthUntilAttack, hasAttacked, replicateOnKill`), `SNAPSHOT_STR_KEYS` (17 строковых полей), `SNAPSHOT_ARR_KEYS` (10 полей-массивов: `abilityPrograms, statusOnHit, conditionalRange, transformMode, supportPrograms, periodicAbilities, periodicPrograms, periodicProgramState, fieldEffect, triggerEffects`), `SNAPSHOT_OBJ_KEYS` (30 объектных конфигураций), а также специализированные контракты для `id`, `team`, `type`, `x`, `y`, `hp`, `maxHp`, `size`, `velocity`, `statusEffects`, `targetMark`, `supportAuras`.
+     - В `packages/combat-core/src/contracts/replay.contracts.ts`:
+       - `combatEventSchema` строго проверяет все `ACTION_NUM_KEYS` на финитные числа (`Number.isFinite`), `ACTION_BOOL_KEYS` на `typeof === 'boolean'`, `ACTION_STR_KEYS` на `typeof === 'string'`.
+       - `combatSnapshotUnitSchema` строго проверяет все `SNAPSHOT_NUM_KEYS` на финитные числа, `SNAPSHOT_BOOL_KEYS` на boolean, `SNAPSHOT_STR_KEYS` на string, `SNAPSHOT_ARR_KEYS` на `Array.isArray`, `SNAPSHOT_OBJ_KEYS` на объектность `isObj`, а также `supportAuras` на массив объектов.
+       - Файл строго уложен в лимит типов/контрактов: 98 строк (лимит $\le 100$).
+     - В `packages/combat-core/src/replay/legacy-wire-codec.ts`:
+       - `deserializeCombatAction(event)` выполняет строгую десериализацию через `deserializeCombatEvent(event)`, гарантируя отсечение любых поврежденных действий при десериализации.
+     - Добавлен тестовый набор `packages/combat-core/tests/wire-codec-inventory-validation.test.ts` (139 строк $\le 250$):
+       - Параметризованные отрицательные контроли для событий: `spawnMaxHp: "bad"`, `impactTick: "oops"`, `isCritical: "false"`, `sourceTeam: { pointer: "leak" }` с проверкой падения схемы, десериализатора событий/действий и полного `decodeLegacyReplayJson`.
+       - Параметризованные отрицательные контроли для снимков юнитов: `direction: "bad"`, `supportAuras: {}`, `isFlying: "true"`, `squadId: 123`, `abilityPrograms: "not_an_array"`, `burrowConfig: "not_an_object"`.
+       - Проверка отклонения схемой несанкционированных неканонических ключей.
+       - Положительный контроль сохранения и round-trip всех канонических полей инвентаря.
 
-
-
+### Верификация:
+- `npm run combat:core:build` + `npx tsc --noEmit --pretty false`: 0 ошибок компиляции и типов.
+- `npm run test:combat:core`: 21 файл, 146 тестов PASS (включая 13 новых тестов инвентаря).
+- `npm run combat:ecs:golden` и `npm run combat:ecs:v9:golden`: стабильны на 7/7 пресетах.
+- `npm run test:combat:package:runtime`: изолированная сборка tarball и внешний consumer PASS.
+- `npm test`: 203 файла, 820 тестов PASS.
+- `npm run build`: Turbopack production build + 32/32 static pages PASS.
+- `npx playwright test tests/e2e/simulator2-replay.spec.ts --project=chromium`: 9/9 тестов PASS.
+- `npx tsx scripts/check-limits.ts --json`: 0 violations (`replay.contracts.ts` 98/100, `replay.inventory.ts` 80/250, `legacy-wire-codec.ts` 220/250, `wire-codec-inventory-validation.test.ts` 139/250).

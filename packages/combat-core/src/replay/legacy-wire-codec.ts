@@ -146,7 +146,7 @@ export function deserializeCombatEvent(event: unknown): CombatEvent {
 }
 
 export function deserializeCombatAction(event: unknown): BattleAction {
-  const raw = event as Record<string, unknown>
+  const raw = deserializeCombatEvent(event) as Record<string, unknown>
   const action: Record<string, unknown> = {}
   for (const k of Object.keys(raw)) {
     if (BATTLE_ACTION_ALLOWED_KEYS.has(k) && raw[k] !== undefined) {
