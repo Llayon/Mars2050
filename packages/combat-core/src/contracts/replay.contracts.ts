@@ -19,25 +19,24 @@ export const combatSnapshotUnitSchema: z.ZodType<CombatSnapshotUnit> = z
     if (typeof data.id !== 'string' || !data.id) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Valid id required' }); if (typeof data.type !== 'string' || !data.type) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Valid type required' })
     if (data.team !== 'attacker' && data.team !== 'defender') ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Valid team required' })
     if (!checkFinite(data.x) || !checkFinite(data.y)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Valid coordinates required' })
-    if (!checkFinite(data.hp) || !checkFinite(data.maxHp) || (data.maxHp as number) <= 0) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Valid hp required' })
-    }
-    for (const key of Object.keys(data)) {
-      if (!CANONICAL_SNAPSHOT_KEY_SET.has(key)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: `Disallowed unit snapshot key: ${key}` })
-    }
+    if (!checkFinite(data.hp) || !checkFinite(data.maxHp) || (data.maxHp as number) <= 0) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Valid hp required' })
+    for (const key of Object.keys(data)) if (!CANONICAL_SNAPSHOT_KEY_SET.has(key)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: `Disallowed unit snapshot key: ${key}` })
     const nonNeg = ['attack', 'speed', 'range', 'shield', 'maxShield', 'turnSpeed', 'actionCooldownMax', 'actionCooldown'] as const
     for (const f of nonNeg) if (data[f] !== undefined && (!checkFinite(data[f]) || (data[f] as number) < 0)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: `Invalid numeric value for ${f}` })
-    const finiteFields = ['currentAngle', 'initialAngle', 'offsetX', 'offsetY', 'defense'] as const
-    for (const f of finiteFields) {
-      if (data[f] !== undefined && !checkFinite(data[f])) ctx.addIssue({ code: z.ZodIssueCode.custom, message: `Invalid numeric value for ${f}` })
-    }
+    for (const f of ['currentAngle', 'initialAngle', 'offsetX', 'offsetY', 'defense'] as const) if (data[f] !== undefined && !checkFinite(data[f])) ctx.addIssue({ code: z.ZodIssueCode.custom, message: `Invalid numeric value for ${f}` })
+    if (data.size !== undefined && data.size !== 'S' && data.size !== 'M' && data.size !== 'L' && data.size !== 'XL') ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Invalid unit size' })
+    for (const bf of ['isFlying', 'isDead', 'isTemporary', 'resurrectOnce'] as const) if (data[bf] !== undefined && typeof data[bf] !== 'boolean') ctx.addIssue({ code: z.ZodIssueCode.custom, message: `Invalid boolean for ${bf}` })
+    for (const sf of ['squadId', 'squadLeader', 'targetId', 'summonOwnerId', 'summonSourceId'] as const) if (data[sf] !== undefined && typeof data[sf] !== 'string') ctx.addIssue({ code: z.ZodIssueCode.custom, message: `Invalid string for ${sf}` })
     if (data.statusEffects !== undefined) {
       if (!Array.isArray(data.statusEffects)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'statusEffects must be an array' })
       else for (const s of data.statusEffects) {
-        if (!isObj(s) || typeof s.type !== 'string' || !checkFinite(s.duration)) {
+        if (!isObj(s) || typeof s.type !== 'string' || !s.type || !checkFinite(s.duration)) {
           ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Invalid statusEffect item' })
         } else {
           for (const k of Object.keys(s)) if (!CANONICAL_STATUS_EFFECT_KEY_SET.has(k)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: `Disallowed statusEffect key: ${k}` })
+          for (const sf of ['sourceId', 'sourceUnitId', 'stackKey', 'controlMode', 'sourceUnitType', 'sourceTeam', 'damageType', 'sourceUpgradeId'] as const) {
+            if (s[sf] !== undefined && typeof s[sf] !== 'string') ctx.addIssue({ code: z.ZodIssueCode.custom, message: `Invalid statusEffect ${sf}: expected string` })
+          }
           for (const nf of ['value', 'tickInterval', 'nextTickIn', 'maxStacks', 'elapsedTicks', 'appliedAtTick', 'shieldAmount'] as const) {
             if (s[nf] !== undefined && !checkFinite(s[nf])) ctx.addIssue({ code: z.ZodIssueCode.custom, message: `Invalid statusEffect ${nf}` })
           }
@@ -48,6 +47,8 @@ export const combatSnapshotUnitSchema: z.ZodType<CombatSnapshotUnit> = z
       if (!isObj(data.targetMark)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'targetMark must be an object' })
       else {
         for (const k of Object.keys(data.targetMark)) if (!CANONICAL_TARGET_MARK_KEY_SET.has(k)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: `Disallowed targetMark key: ${k}` })
+        for (const sf of ['sourceUnitId', 'squadId', 'retargetPolicy'] as const) if (data.targetMark[sf] !== undefined && typeof data.targetMark[sf] !== 'string') ctx.addIssue({ code: z.ZodIssueCode.custom, message: `Invalid targetMark ${sf}: expected string` })
+        for (const bf of ['sharedDamage', 'squadWide'] as const) if (data.targetMark[bf] !== undefined && typeof data.targetMark[bf] !== 'boolean') ctx.addIssue({ code: z.ZodIssueCode.custom, message: `Invalid targetMark ${bf}: expected boolean` })
         for (const mf of ['duration', 'markDuration', 'damageMultiplier', 'executeThreshold', 'focusPriority', 'focusRadius', 'retargetLockTicks'] as const) {
           if (data.targetMark[mf] !== undefined && !checkFinite(data.targetMark[mf])) ctx.addIssue({ code: z.ZodIssueCode.custom, message: `Invalid targetMark ${mf}` })
         }
@@ -68,13 +69,11 @@ export const combatEventSchema: z.ZodType<CombatEvent> = z
   .record(z.string(), z.unknown())
   .superRefine((data, ctx) => {
     if (typeof data.type !== 'string' || !data.type) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Valid type required' })
-    for (const key of Object.keys(data)) {
-      if (!CANONICAL_ACTION_KEY_SET.has(key)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: `Disallowed combat event key: ${key}` })
-    }
+    for (const key of Object.keys(data)) if (!CANONICAL_ACTION_KEY_SET.has(key)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: `Disallowed combat event key: ${key}` })
     const numFields = ['x', 'y', 'toX', 'toY', 'fromX', 'fromY', 'amount', 'damage', 'value', 'facingAngle'] as const
-    for (const f of numFields) {
-      if (data[f] !== undefined && !checkFinite(data[f])) ctx.addIssue({ code: z.ZodIssueCode.custom, message: `Invalid numeric value for ${f}` })
-    }
+    for (const f of numFields) if (data[f] !== undefined && !checkFinite(data[f])) ctx.addIssue({ code: z.ZodIssueCode.custom, message: `Invalid numeric value for ${f}` })
+    const strFields = ['unitId', 'sourceId', 'targetId', 'sourceUnitId', 'spawnType', 'spawnTeam', 'hazardId', 'statusType', 'damageKind', 'cause', 'controlMode', 'stanceMode', 'modeState', 'projectileKind'] as const
+    for (const f of strFields) if (data[f] !== undefined && typeof data[f] !== 'string') ctx.addIssue({ code: z.ZodIssueCode.custom, message: `Invalid string value for ${f}` })
     if (data.details !== undefined) {
       if (!isObj(data.details)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'details must be an object' })
       else {

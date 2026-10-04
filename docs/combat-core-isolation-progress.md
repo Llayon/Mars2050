@@ -1068,16 +1068,41 @@ Freeze: `git status` после всех команд — только файл�
    - Проблема: В тестах и маппере прямое приведение строго типизированных интерфейсов без сигнатуры индекса (`as Record<string, unknown>`) вызывало ошибки компиляции `TS2352: Conversion of type ... may be a mistake because neither type sufficiently overlaps with the other`.
    - Исправление: Касты заменены на безопасные двухступенчатые `as unknown as Record<string, unknown>` в `src/__tests__/combat.compat-mapper.test.ts`, `packages/combat-core/tests/wire-codec-dto-isolation-r4a.test.ts` и `packages/combat-core/tests/wire-codec-review-p2.test.ts`. `npx tsc --noEmit --pretty false` проходит с 0 ошибок.
 
+### Доработка по результатам повторного ревью коммита 10a40f91 (2 замечания P2):
+
+1. **[P2] Очистка `event.details` сохраняла ссылки и удаляла допустимые данные:**
+   - Проблема: Ранее правила очистки выбирались по имени ключа глобально: `if (key === 'velocity')`, `if (key === 'statusEffects')`, `if (key === 'targetMark')`. Из-за этого поля `details.velocity`, `details.statusEffects` и `details.targetMark` внутри событий ошибочно обрабатывались как поля снимка юнита:
+     - `serializeCombatEvent()` не рекурсировал в `details.velocity`, сохраняя ссылку на `details.velocity.meta`. Изменение оригинала после сериализации меняло уже возвращённый DTO.
+     - Допустимые пользовательские поля `details.statusEffects[].label`, `payload` и `details.targetMark.label` срезались белым списком ключей снимка юнита.
+   - Исправление: Обработка полей снимка юнита полностью отделена от универсального глубокого копирования `event.details`.
+     - В `packages/combat-core/src/replay/legacy-wire-codec.ts` добавлена универсальная функция `sanitizeEventDetails(val: unknown)`: рекурсивно глубоко копирует любые вложенные объекты и массивы, вырезает приватные ключи с префиксом `_`, сохраняет `null` и примитивы, полностью разрывая ссылки без наложения контрактных фильтров снимка юнита.
+     - `serializeCombatEvent` очищает `action.details` и любые вложенные структуры через `sanitizeEventDetails`, сохраняя валидные поля `label`, `payload`, `meta` и обеспечивая полную изоляцию от последующих мутаций оригинала.
+     - Санитизация снимка юнита (`serializeCombatUnitSnapshot`) вынесена в специализированные функции `sanitizeSnapshotVelocity`, `sanitizeSnapshotStatusEffects`, `sanitizeSnapshotTargetMark`, применяющиеся строго к соответствующим полям снимка юнита.
+
+2. **[P2] Неверный тип `statusEffects.sourceId` позволял протащить внутренний объект:**
+   - Проблема: `statusEffects[].sourceId` принимал объект вместо строки (например, `{ _privateWorldRef: { ecsPtr: 123 } }`). При десериализации сохранялась ссылка на него, а после JSON round-trip сохранялось само поле `_privateWorldRef`, так как схема не проверяла примитивные типы строковых полей вложенных DTO.
+   - Исправление:
+     - В `packages/combat-core/src/contracts/replay.contracts.ts` добавлена строгая проверка типов для всех объявленных полей вложенных DTO:
+       - Для `statusEffects`: поля `['sourceId', 'sourceUnitId', 'stackKey', 'controlMode', 'sourceUnitType', 'sourceTeam', 'damageType', 'sourceUpgradeId']` обязаны быть строками (`typeof === 'string'`);
+       - Для `targetMark`: строковые поля `sourceUnitId`, `squadId`, `retargetPolicy` обязаны быть строками, булевы поля `sharedDamage`, `squadWide` — boolean (`typeof === 'boolean'`);
+       - Для снимка юнита: `size` валидируется по перечислению `'S' | 'M' | 'L' | 'XL'`, строковые ID — строками, булевы флаги — boolean.
+       - Для событий `combatEventSchema`: строковые поля (`unitId`, `sourceId`, `targetId`, и др.) валидируются на `typeof === 'string'`.
+     - При передаче объекта вместо строки `combatSnapshotUnitSchema`, `deserializeCombatUnitSnapshot` и `decodeLegacyReplayJson` выбрасывают `ZodError` (`Invalid statusEffect sourceId: expected string`).
+     - В `legacy-wire-codec.ts` любые объекты, переданные в поля снимка юнита, глубоко копируются и очищаются от `_`, исключая утечки ссылок.
+
 ### Верификация:
-- `packages/combat-core/tests/wire-codec-review-p2.test.ts`: дополнены тесты для каждого из 4 пунктов (сохранение `null`, рекурсивная проверка массивов в `details`, отказ при невалидном `velocity` и `statusEffects`). Все 5 тестов PASS.
-- `npm run combat:core:build` + `npx tsc --noEmit --pretty false`: 0 ошибок компиляции TypeScript.
+- `packages/combat-core/tests/wire-codec-review-p2.test.ts`:
+  - `[P2-1]` расширен проверкой иммутабельности DTO при последующей мутации `rawAction.details.velocity.meta.tag`, `details.statusEffects[0].label`, `details.targetMark.label` и сохранением всех этих полей после round-trip.
+  - `[P2-4]` расширен проверкой отклонения схемой, десериализатором и JSON-декодером объекта `{ _privateWorldRef: { ecsPtr: 123 } }` в `sourceId`, а также невалидных типов в `targetMark`.
+- `npm run combat:core:build` + `npx tsc --noEmit --pretty false`: 0 ошибок.
 - `npm run test:combat:core`: 20 файлов, 133 теста PASS.
-- `npm run combat:ecs:golden` и `npm run combat:ecs:v9:golden`: 7/7 пресетов стабильны в обоих режимах.
+- `npm run combat:ecs:golden` и `npm run combat:ecs:v9:golden`: 7/7 стабильны.
 - `npm run test:combat:package:runtime`: standalone consumer PASS.
 - `npm test`: 203 файла, 820 тестов PASS.
-- `npm run build`: prebuild checks + turbopack build + static generation PASS.
+- `npm run build`: Turbopack build + static generation (32/32) PASS.
 - `npx playwright test tests/e2e/simulator2-replay.spec.ts --project=chromium`: 9/9 тестов PASS.
-- `npx tsx scripts/check-limits.ts --diff HEAD --json`: 0 violations.
+- `npx tsx scripts/check-limits.ts --diff HEAD --json`: 0 violations (`replay.contracts.ts` 97/100, `legacy-wire-codec.ts` 219/250, `wire-codec-review-p2.test.ts` 245/250).
+
 
 
 

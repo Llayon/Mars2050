@@ -32,49 +32,16 @@ const BATTLE_ACTION_ALLOWED_KEYS = new Set<string>([
   'impactTick', 'projectileKind', 'cancelReason',
 ])
 
-function sanitizeNestedValue(key: string, val: unknown): unknown {
+export function sanitizeEventDetails(val: unknown): unknown {
   if (val === undefined) return undefined
   if (val === null || typeof val !== 'object') return val
-
-  if (key === 'velocity') {
-    if (!val || typeof val !== 'object' || Array.isArray(val)) return val
-    const v = val as Record<string, unknown>
-    const clean: Record<string, unknown> = {}
-    for (const [k, valItem] of Object.entries(v)) {
-      if (!k.startsWith('_')) clean[k] = valItem
-    }
-    return clean
-  }
-
-  if (key === 'statusEffects') {
-    if (!Array.isArray(val)) return val
-    return val.map(item => {
-      if (!item || typeof item !== 'object' || Array.isArray(item)) return item
-      const clean: Record<string, unknown> = {}
-      for (const [k, v] of Object.entries(item as Record<string, unknown>)) {
-        if (CANONICAL_STATUS_EFFECT_KEY_SET.has(k) && v !== undefined) clean[k] = v
-      }
-      return clean
-    })
-  }
-
-  if (key === 'targetMark') {
-    if (!val || typeof val !== 'object' || Array.isArray(val)) return val
-    const clean: Record<string, unknown> = {}
-    for (const [k, v] of Object.entries(val as Record<string, unknown>)) {
-      if (CANONICAL_TARGET_MARK_KEY_SET.has(k) && v !== undefined) clean[k] = v
-    }
-    return clean
-  }
-
   if (Array.isArray(val)) {
-    return val.map(item => sanitizeNestedValue(key, item))
+    return val.map(item => sanitizeEventDetails(item))
   }
-
   const cleanObj: Record<string, unknown> = {}
   for (const [k, v] of Object.entries(val as Record<string, unknown>)) {
     if (!k.startsWith('_') && v !== undefined) {
-      const sanitized = sanitizeNestedValue(k, v)
+      const sanitized = sanitizeEventDetails(v)
       if (sanitized !== undefined) {
         cleanObj[k] = sanitized
       }
@@ -83,12 +50,58 @@ function sanitizeNestedValue(key: string, val: unknown): unknown {
   return cleanObj
 }
 
+function sanitizeSnapshotVelocity(val: unknown): unknown {
+  if (!val || typeof val !== 'object' || Array.isArray(val)) return val
+  const clean: Record<string, unknown> = {}
+  for (const [k, v] of Object.entries(val as Record<string, unknown>)) {
+    if (!k.startsWith('_')) {
+      clean[k] = typeof v === 'object' && v !== null ? sanitizeEventDetails(v) : v
+    }
+  }
+  return clean
+}
+
+function sanitizeSnapshotStatusEffects(val: unknown): unknown {
+  if (!Array.isArray(val)) return val
+  return val.map(item => {
+    if (!item || typeof item !== 'object' || Array.isArray(item)) return item
+    const clean: Record<string, unknown> = {}
+    for (const [k, v] of Object.entries(item as Record<string, unknown>)) {
+      if (!k.startsWith('_') && CANONICAL_STATUS_EFFECT_KEY_SET.has(k) && v !== undefined) {
+        clean[k] = typeof v === 'object' && v !== null ? sanitizeEventDetails(v) : v
+      }
+    }
+    return clean
+  })
+}
+
+function sanitizeSnapshotTargetMark(val: unknown): unknown {
+  if (!val || typeof val !== 'object' || Array.isArray(val)) return val
+  const clean: Record<string, unknown> = {}
+  for (const [k, v] of Object.entries(val as Record<string, unknown>)) {
+    if (!k.startsWith('_') && CANONICAL_TARGET_MARK_KEY_SET.has(k) && v !== undefined) {
+      clean[k] = typeof v === 'object' && v !== null ? sanitizeEventDetails(v) : v
+    }
+  }
+  return clean
+}
+
 export function serializeCombatUnitSnapshot(unit: unknown): CombatSnapshotUnit {
   const raw = unit as Record<string, unknown>
   const result: Record<string, unknown> = {}
   for (const key of Object.keys(raw)) {
     if (CANONICAL_SNAPSHOT_KEY_SET.has(key) && raw[key] !== undefined) {
-      result[key] = sanitizeNestedValue(key, raw[key])
+      if (key === 'velocity') {
+        result[key] = sanitizeSnapshotVelocity(raw.velocity)
+      } else if (key === 'statusEffects') {
+        result[key] = sanitizeSnapshotStatusEffects(raw.statusEffects)
+      } else if (key === 'targetMark') {
+        result[key] = sanitizeSnapshotTargetMark(raw.targetMark)
+      } else if (typeof raw[key] === 'object' && raw[key] !== null) {
+        result[key] = sanitizeEventDetails(raw[key])
+      } else {
+        result[key] = raw[key]
+      }
     }
   }
   return result as CombatSnapshotUnit
@@ -108,7 +121,7 @@ export function serializeCombatEvent(action: unknown): CombatEvent {
   const event: Record<string, unknown> = {}
   for (const k of Object.keys(act)) {
     if (CANONICAL_ACTION_KEY_SET.has(k) && act[k] !== undefined) {
-      event[k] = sanitizeNestedValue(k, act[k])
+      event[k] = typeof act[k] === 'object' && act[k] !== null ? sanitizeEventDetails(act[k]) : act[k]
     }
   }
   if (event.sourceId === undefined && typeof (act.sourceUnitId ?? act.unitId) === 'string') {
