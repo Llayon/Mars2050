@@ -40,9 +40,9 @@ describe('R4a / ISO-10: DTO isolation and schema verification', () => {
     const dto = serializeCombatUnitSnapshot(rawSnapshot)
 
     // Verify sentinels are removed
-    expect('_internalVelSentinel' in (dto.velocity as Record<string, unknown>)).toBe(false)
-    expect('_internalEffectSentinel' in (dto.statusEffects![0] as Record<string, unknown>)).toBe(false)
-    expect('_markSentinel' in (dto.targetMark as Record<string, unknown>)).toBe(false)
+    expect('_internalVelSentinel' in (dto.velocity as unknown as Record<string, unknown>)).toBe(false)
+    expect('_internalEffectSentinel' in (dto.statusEffects![0] as unknown as Record<string, unknown>)).toBe(false)
+    expect('_markSentinel' in (dto.targetMark as unknown as Record<string, unknown>)).toBe(false)
 
     // Verify reference detachment (deep copy with fresh objects)
     expect(dto.velocity).not.toBe(rawVelocity)

@@ -1050,5 +1050,35 @@ Freeze: `git status` после всех команд — только файл�
 - `npx playwright test tests/e2e/simulator2-replay.spec.ts --project=chromium` — 9/9 тестов PASS.
 - `npx tsx scripts/check-limits.ts --diff HEAD --json` — 0 нарушений архитектурных лимитов.
 
+### Доработка по результатам повторного ревью коммита 7eb11ae (4 замечания P2):
+
+1. **[P2] Декодер молча исправлял поврежденные данные (`velocity`, `statusEffects`):**
+   - Проблема: `sanitizeNestedValue` приводил `x: null, y: "12"` к финитным числам `{ x: 0, y: 12 }` через `Number()`, а не-массивы в `statusEffects` (например, `{ foo: 'bar' }`) заменял на `undefined`, маскируя ошибки типов до валидатора.
+   - Исправление: В `packages/combat-core/src/replay/legacy-wire-codec.ts` удалено принудительное приведение типов `Number()`. Координаты `velocity` фильтруются только от приватных ключей `_`, сохраняя исходные значения, а при `!Array.isArray(val)` для `statusEffects` возвращается исходное значение `val`. В результате `combatSnapshotUnitSchema` фиксирует неверные типы и выбрасывает валидные `ZodError`.
+
+2. **[P2] Проверка `details` событий не обходила массивы:**
+   - Проблема: `validateDetails` (`checkNode`) рекурсивно проверял только объекты (`isObj`), пропуская массивы, из-за чего структуры вида `details.hits: [{ _privateWorldRef: 'leak', amount: Infinity }]` проходили валидацию.
+   - Исправление: В `packages/combat-core/src/contracts/replay.contracts.ts` обход `checkNode` расширен на массивы (`Array.isArray(node)`). Элементы массивов рекурсивно валидируются на отсутствие приватных ключей с `_` и конечность всех числовых значений.
+
+3. **[P2] Допустимый `null` терялся при round-trip (`details: { label: null }`):**
+   - Проблема: `sanitizeNestedValue` начинался с проверки `if (val === null || val === undefined) return undefined`, что приводило к полному вырезанию ключей со значением `null` при очистке вложенных объектов (`{ label: null }` превращалось в `{}`).
+   - Исправление: Разделена обработка `undefined` и `null`: `if (val === undefined) return undefined; if (val === null || typeof val !== 'object') return val`. В цикле сборки `cleanObj` проверяется `sanitized !== undefined`, благодаря чему валидные значения `null` полностью сохраняются после round-trip.
+
+4. **[P2] Ошибки корневого typecheck (TS2352):**
+   - Проблема: В тестах и маппере прямое приведение строго типизированных интерфейсов без сигнатуры индекса (`as Record<string, unknown>`) вызывало ошибки компиляции `TS2352: Conversion of type ... may be a mistake because neither type sufficiently overlaps with the other`.
+   - Исправление: Касты заменены на безопасные двухступенчатые `as unknown as Record<string, unknown>` в `src/__tests__/combat.compat-mapper.test.ts`, `packages/combat-core/tests/wire-codec-dto-isolation-r4a.test.ts` и `packages/combat-core/tests/wire-codec-review-p2.test.ts`. `npx tsc --noEmit --pretty false` проходит с 0 ошибок.
+
+### Верификация:
+- `packages/combat-core/tests/wire-codec-review-p2.test.ts`: дополнены тесты для каждого из 4 пунктов (сохранение `null`, рекурсивная проверка массивов в `details`, отказ при невалидном `velocity` и `statusEffects`). Все 5 тестов PASS.
+- `npm run combat:core:build` + `npx tsc --noEmit --pretty false`: 0 ошибок компиляции TypeScript.
+- `npm run test:combat:core`: 20 файлов, 133 теста PASS.
+- `npm run combat:ecs:golden` и `npm run combat:ecs:v9:golden`: 7/7 пресетов стабильны в обоих режимах.
+- `npm run test:combat:package:runtime`: standalone consumer PASS.
+- `npm test`: 203 файла, 820 тестов PASS.
+- `npm run build`: prebuild checks + turbopack build + static generation PASS.
+- `npx playwright test tests/e2e/simulator2-replay.spec.ts --project=chromium`: 9/9 тестов PASS.
+- `npx tsx scripts/check-limits.ts --diff HEAD --json`: 0 violations.
+
+
 
 

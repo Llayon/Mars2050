@@ -68,7 +68,7 @@ describe('R4a / ISO-10: Review remediation verification for wire codec', () => {
       x: 12,
       y: 34,
       amount: 7,
-      details: { impactType: 'heavy', subDetail: { radius: 15 } },
+      details: { impactType: 'heavy', label: null, subDetail: { radius: 15 } },
     }
     const replay: CombatRunResult = {
       ...baseValidReplay,
@@ -86,7 +86,7 @@ describe('R4a / ISO-10: Review remediation verification for wire codec', () => {
     expect(event.x).toBe(12)
     expect(event.y).toBe(34)
     expect(event.amount).toBe(7)
-    expect(event.details).toEqual({ impactType: 'heavy', subDetail: { radius: 15 } })
+    expect(event.details).toEqual({ impactType: 'heavy', label: null, subDetail: { radius: 15 } })
   })
 
   it('[P2-2] event details are deeply detached and private sentinels are stripped and rejected', () => {
@@ -106,15 +106,16 @@ describe('R4a / ISO-10: Review remediation verification for wire codec', () => {
     expect(event.details?.nested).not.toBe(rawDetails.nested)
 
     // Private sentinels stripped
-    expect('_privateWorldRef' in (event.details as Record<string, unknown>)).toBe(false)
-    expect('_hiddenFlag' in ((event.details as Record<string, unknown>).nested as Record<string, unknown>)).toBe(false)
+    expect('_privateWorldRef' in (event.details as unknown as Record<string, unknown>)).toBe(false)
+    expect('_hiddenFlag' in ((event.details as unknown as Record<string, unknown>).nested as Record<string, unknown>)).toBe(false)
     expect(event.details).toEqual({ damageType: 'explosive', nested: { count: 3 } })
 
-    // Schema rejects objects with keys starting with _
+    // Schema rejects objects and arrays with keys starting with _ or non-finite numbers
     expect(() => combatEventSchema.parse({ type: 'test', details: { _bad: 123 } })).toThrow()
     expect(() => combatEventSchema.parse({ type: 'test', details: { valid: { _badNested: true } } })).toThrow()
-    // Schema rejects non-finite numbers in details
     expect(() => combatEventSchema.parse({ type: 'test', details: { amount: Infinity } })).toThrow()
+    expect(() => combatEventSchema.parse({ type: 'test', details: { hits: [{ _privateWorldRef: 'leak', amount: Infinity }] } })).toThrow(/Disallowed private key in details: _privateWorldRef/)
+    expect(() => combatEventSchema.parse({ type: 'test', details: { hits: [{ amount: Infinity }] } })).toThrow(/Invalid number in details/)
   })
 
   it('[P2-3] corrupt JSON throws ZodError without silent fallback or coercion', () => {
@@ -126,6 +127,12 @@ describe('R4a / ISO-10: Review remediation verification for wire codec', () => {
 
     // seed: null -> throws (not coerced to 0)
     expect(() => decodeLegacyReplayJson(JSON.stringify({ ...baseValidReplay, seed: null }))).toThrow()
+
+    // velocity: { x: null, y: "12" } -> throws (not coerced to 0 and 12)
+    expect(() => decodeLegacyReplayJson(JSON.stringify({ ...baseValidReplay, initialState: [{ ...baseValidReplay.initialState[0], velocity: { x: null, y: '12' } }] }))).toThrow()
+
+    // statusEffects: { foo: 'bar' } -> throws (not silently converted to undefined)
+    expect(() => decodeLegacyReplayJson(JSON.stringify({ ...baseValidReplay, initialState: [{ ...baseValidReplay.initialState[0], statusEffects: { foo: 'bar' } }] }))).toThrow()
 
     // missing engineRevision -> throws (not coerced to "undefined")
     const { engineRevision: _, ...withoutRevision } = baseValidReplay
@@ -162,7 +169,7 @@ describe('R4a / ISO-10: Review remediation verification for wire codec', () => {
       ...validUnit,
       statusEffects: [{ type: 'emp', duration: 10, value: 5, entityStore: { secret: 42 } }],
     })
-    expect('entityStore' in (serialized.statusEffects![0] as Record<string, unknown>)).toBe(false)
+    expect('entityStore' in (serialized.statusEffects![0] as unknown as Record<string, unknown>)).toBe(false)
     expect(serialized.statusEffects![0]).toEqual({ type: 'emp', duration: 10, value: 5 })
   })
 

@@ -33,16 +33,21 @@ const BATTLE_ACTION_ALLOWED_KEYS = new Set<string>([
 ])
 
 function sanitizeNestedValue(key: string, val: unknown): unknown {
-  if (val === null || val === undefined) return undefined
-  if (typeof val !== 'object') return val
+  if (val === undefined) return undefined
+  if (val === null || typeof val !== 'object') return val
 
   if (key === 'velocity') {
+    if (!val || typeof val !== 'object' || Array.isArray(val)) return val
     const v = val as Record<string, unknown>
-    return { x: Number(v.x), y: Number(v.y) }
+    const clean: Record<string, unknown> = {}
+    for (const [k, valItem] of Object.entries(v)) {
+      if (!k.startsWith('_')) clean[k] = valItem
+    }
+    return clean
   }
 
   if (key === 'statusEffects') {
-    if (!Array.isArray(val)) return undefined
+    if (!Array.isArray(val)) return val
     return val.map(item => {
       if (!item || typeof item !== 'object' || Array.isArray(item)) return item
       const clean: Record<string, unknown> = {}
@@ -69,7 +74,10 @@ function sanitizeNestedValue(key: string, val: unknown): unknown {
   const cleanObj: Record<string, unknown> = {}
   for (const [k, v] of Object.entries(val as Record<string, unknown>)) {
     if (!k.startsWith('_') && v !== undefined) {
-      cleanObj[k] = sanitizeNestedValue(k, v)
+      const sanitized = sanitizeNestedValue(k, v)
+      if (sanitized !== undefined) {
+        cleanObj[k] = sanitized
+      }
     }
   }
   return cleanObj

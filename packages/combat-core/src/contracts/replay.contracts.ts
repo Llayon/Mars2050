@@ -16,8 +16,7 @@ const isObj = (v: unknown): v is Record<string, unknown> => typeof v === 'object
 export const combatSnapshotUnitSchema: z.ZodType<CombatSnapshotUnit> = z
   .record(z.string(), z.unknown())
   .superRefine((data, ctx) => {
-    if (typeof data.id !== 'string' || !data.id) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Valid id required' })
-    if (typeof data.type !== 'string' || !data.type) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Valid type required' })
+    if (typeof data.id !== 'string' || !data.id) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Valid id required' }); if (typeof data.type !== 'string' || !data.type) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Valid type required' })
     if (data.team !== 'attacker' && data.team !== 'defender') ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Valid team required' })
     if (!checkFinite(data.x) || !checkFinite(data.y)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Valid coordinates required' })
     if (!checkFinite(data.hp) || !checkFinite(data.maxHp) || (data.maxHp as number) <= 0) {
@@ -79,20 +78,21 @@ export const combatEventSchema: z.ZodType<CombatEvent> = z
     if (data.details !== undefined) {
       if (!isObj(data.details)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'details must be an object' })
       else {
-        const validateDetails = (obj: Record<string, unknown>) => {
-          for (const [k, v] of Object.entries(obj)) {
-            if (k.startsWith('_')) ctx.addIssue({ code: z.ZodIssueCode.custom, message: `Disallowed private key in details: ${k}` })
-            if (typeof v === 'number' && !Number.isFinite(v)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: `Invalid number in details: ${k}` })
-            if (isObj(v)) validateDetails(v)
+        const checkNode = (n: unknown) => {
+          if (Array.isArray(n)) {
+            for (const it of n) if (typeof it === 'number' && !Number.isFinite(it)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Invalid number in details' }); else if (typeof it === 'object' && it !== null) checkNode(it)
+          } else if (isObj(n)) {
+            for (const [k, v] of Object.entries(n)) {
+              if (k.startsWith('_')) ctx.addIssue({ code: z.ZodIssueCode.custom, message: `Disallowed private key in details: ${k}` })
+              if (typeof v === 'number' && !Number.isFinite(v)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: `Invalid number in details: ${k}` })
+              else if (typeof v === 'object' && v !== null) checkNode(v)
+            }
           }
         }
-        validateDetails(data.details)
+        checkNode(data.details)
       }
     }
   }) as unknown as z.ZodType<CombatEvent>
 
-export const combatTickSchema = z.object({
-  tick: z.number().int().nonnegative(),
-  actions: z.array(combatEventSchema),
-})
+export const combatTickSchema = z.object({ tick: z.number().int().nonnegative(), actions: z.array(combatEventSchema) })
 export type CombatTick = z.infer<typeof combatTickSchema>

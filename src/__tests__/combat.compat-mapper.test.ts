@@ -79,6 +79,6 @@ describe('combat.compat-mapper DTO boundary', () => {
 
     // Metrics are populated from top-level metrics
     expect(battleResult.metrics).toBeDefined()
-    expect((battleResult.metrics as Record<string, unknown>).totalDamageDealt).toBe(15)
+    expect((battleResult.metrics as unknown as Record<string, unknown>).totalDamageDealt).toBe(15)
   })
 })
