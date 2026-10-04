@@ -1,0 +1,41 @@
+{
+  "sourceCommit": "7eb11ae4578b5c49d1ee41edf136a4075655f8ab",
+  "entry": "examples/fantasy-combat/src/demo",
+  "assets": [
+    {
+      "file": "orc-raider.png",
+      "sha256": "d795874d18f9bcf7be26c50dbf70795e1a4b80048da3faccf69c1a1119de49d4"
+    },
+    {
+      "file": "thorn-huntress.png",
+      "sha256": "b2573ea03f37d813496c9b1ffcc3ac4278fefd8e784e2f229c898546b123f302"
+    },
+    {
+      "file": "orc-ember-shaman.png",
+      "sha256": "9f2d6cdab5db7ef2d29aa17c9c282ecb2f42518c27beecc0b69a37803743eaef"
+    },
+    {
+      "file": "forge-foundry-golem.png",
+      "sha256": "9da350814aa153d02312134e77bb2745fe45b9e593bd76eb347d9d3b81915717"
+    },
+    {
+      "file": "dawn-heliomancer.png",
+      "sha256": "abe2f0ea67199f597979f7a87265d3a63c0b1027f411e0591373c1cdae6a9d6a"
+    },
+    {
+      "file": "thorn-dryad.png",
+      "sha256": "d453e10bce5211b981ea09c1bd1483ca178b166a2460fc00f4a57c3264e2c5d3"
+    },
+    {
+      "file": "court-necromancer.png",
+      "sha256": "11662bb676bf34711bb9db2587ee638509fdea1b795ffd327d4676ffcd3a76fe"
+    },
+    {
+      "file": "court-bone-spearman.png",
+      "sha256": "afa3b70cd5f0c63393b39db37504f874d0efe75a6cad91ceee8324735e2f5175"
+    }
+  ],
+  "engine": "@mars2050/combat-core",
+  "build": "browser demo",
+  "bundledModuleCount": 280
+}
