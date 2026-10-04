@@ -122,14 +122,8 @@ export function executeCombatSimulation(input: BattleInput): CombatRunResult {
     ? runtime.world.resources.require('entitySpatial').getProfile(runtime.world)
     : undefined
 
-  const profileData: Record<string, unknown> = {}
-  if (rules.profile && spatialProfile) {
-    profileData.spatial = spatialProfile
-  }
-  if (metrics) {
-    profileData.metrics = finalizeCombatMetrics(metrics, tick)
-  }
-  const profile = Object.keys(profileData).length > 0 ? profileData : undefined
+  const metricsData = metrics ? finalizeCombatMetrics(metrics, tick) : undefined
+  const profile = rules.profile && spatialProfile ? { spatial: spatialProfile } : undefined
 
   return {
     winner: outcome.winner,
@@ -141,6 +135,7 @@ export function executeCombatSimulation(input: BattleInput): CombatRunResult {
     logs: mapBattleTicksToCombatTicks(logs),
     engineVersion: defenseResolutionMode === 'v8_sequential' ? V8_SIMULATION_VERSION : V9_SIMULATION_VERSION,
     engineRevision: defenseResolutionMode === 'v8_sequential' ? V8_SIMULATION_REVISION : V9_SIMULATION_REVISION,
-    profile,
+    ...(profile ? { profile } : {}),
+    ...(metricsData ? { metrics: metricsData } : {}),
   } as CombatRunResult
 }

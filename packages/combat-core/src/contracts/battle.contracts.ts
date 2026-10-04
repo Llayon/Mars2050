@@ -84,5 +84,6 @@ export const combatRunResultSchema = z.object({
   engineVersion: z.number().int(),
   engineRevision: z.string(),
   profile: z.record(z.string(), z.unknown()).optional(),
+  metrics: z.record(z.string(), z.unknown()).optional(),
 })
 export type CombatRunResult = z.infer<typeof combatRunResultSchema>

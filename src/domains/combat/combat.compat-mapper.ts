@@ -1,7 +1,7 @@
-import type { CombatRunResult } from '@mars2050/combat-core/contracts'
+import type { CombatRunResult, CombatSnapshotUnit } from '@mars2050/combat-core/contracts'
 import { deserializeCombatAction, deserializeCombatUnitSnapshot } from '@mars2050/combat-core/replay'
 import type { BattleResult, BattleTick } from './combat.types'
-import type { Obstacle, SimUnit } from './combat.sim.types'
+import type { Obstacle } from './combat.sim.types'
 import type { CombatMetrics } from './combat.metrics'
 import type { SpatialQueryProfile } from './combat.spatial-profile'
 
@@ -11,42 +11,35 @@ import type { SpatialQueryProfile } from './combat.spatial-profile'
 export function mapCombatRunResultToBattleResult(
   result: CombatRunResult,
   obstacles: Obstacle[],
-  options?: {
-    simInitialState?: SimUnit[]
-    simSurvivors?: SimUnit[]
-    simLogs?: BattleTick[]
-    metrics?: CombatMetrics
-    profile?: SpatialQueryProfile
-  },
 ): BattleResult {
-  const profileMetrics = result.profile?.metrics as CombatMetrics | undefined
-  const profileSpatial = result.profile?.spatial as SpatialQueryProfile | undefined
+  const profileMetrics = (result.metrics ?? result.profile?.metrics) as CombatMetrics | undefined
+  const profileSpatial = (result.profile?.spatial ?? result.profile) as SpatialQueryProfile | undefined
 
   const mappedLogs: BattleTick[] = result.logs.map(tick => ({
     tick: tick.tick,
     actions: tick.actions.map(action => deserializeCombatAction(action)),
   }))
 
-  const mappedInitialState = result.initialState.map(unit =>
-    deserializeCombatUnitSnapshot(unit) as unknown as SimUnit,
+  const mappedInitialState: CombatSnapshotUnit[] = result.initialState.map(unit =>
+    deserializeCombatUnitSnapshot(unit),
   )
 
-  const mappedSurvivors = result.survivors.map(unit =>
-    deserializeCombatUnitSnapshot(unit) as unknown as SimUnit,
+  const mappedSurvivors: CombatSnapshotUnit[] = result.survivors.map(unit =>
+    deserializeCombatUnitSnapshot(unit),
   )
 
   return {
     winner: result.winner,
-    logs: options?.simLogs ?? mappedLogs,
+    logs: mappedLogs,
     seed: result.seed,
-    initialState: options?.simInitialState ?? mappedInitialState,
-    survivors: options?.simSurvivors ?? mappedSurvivors,
+    initialState: mappedInitialState,
+    survivors: mappedSurvivors,
     obstacles,
-    metrics: options?.metrics ?? profileMetrics,
+    metrics: profileMetrics,
     terminationReason: result.terminationReason as BattleResult['terminationReason'],
     elapsedTicks: result.elapsedTicks,
     simulationVersion: result.engineVersion,
     simulationRevision: result.engineRevision,
-    profile: options?.profile ?? profileSpatial,
+    profile: profileSpatial,
   }
 }

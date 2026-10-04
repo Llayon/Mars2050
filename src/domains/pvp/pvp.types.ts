@@ -1,5 +1,5 @@
 import type { BattleTick } from '@/domains/combat/combat.types'
-import type { UnitRow, SimUnit, Obstacle } from '@/domains/combat/combat.types'
+import type { UnitRow, SimUnit, CombatSnapshotUnit, Obstacle } from '@/domains/combat/combat.types'
 import type { CombatMetrics } from '@/domains/combat/combat.metrics'
 import type { TerminationReason } from '@/domains/combat/combat.result'
 
@@ -11,7 +11,7 @@ export interface AttackResult {
   logs?: BattleTick[]
   attackerUnits?: UnitRow[]
   defenderUnits?: UnitRow[]
-  initialState?: SimUnit[]
+  initialState?: (CombatSnapshotUnit | SimUnit)[]
   obstacles?: Obstacle[]
   battleId?: string
   seed?: number
@@ -42,7 +42,7 @@ export interface ReplayCompatibility {
 }
 
 export interface StoredBattleReplay {
-  initialState: SimUnit[]
+  initialState: (CombatSnapshotUnit | SimUnit)[]
   logs: BattleTick[]
   simulationVersion: number
   terminationReason?: TerminationReason

@@ -1,6 +1,6 @@
 import { UNIT_TYPES } from '@/domains/combat/combat.config'
 import { FIELD_HEIGHT, FIELD_WIDTH } from '@/domains/combat/combat.utils'
-import type { BattleAction, SimUnit, UnitRow, UnitTypeKey } from '@/domains/combat/combat.types'
+import type { BattleAction, CombatSnapshotUnit, SimUnit, UnitRow, UnitTypeKey } from '@/domains/combat/combat.types'
 import { getReplayActionColor, getReplayActionLabel } from './battle-replay-labels'
 import type { ReplayTeam, ReplayUnit } from './battle-replay-canvas-types'
 import {
@@ -12,12 +12,12 @@ import {
 type SpawnText = (text: string, x: number, y: number, color: string) => void
 type SpawnProjectile = (x1: number, y1: number, x2: number, y2: number, color: string) => void
 
-export function createReplayUnit(unit: SimUnit | UnitRow, team: ReplayTeam, isSimUnit: boolean): ReplayUnit | null {
+export function createReplayUnit(unit: SimUnit | CombatSnapshotUnit | UnitRow, team: ReplayTeam, isSimUnit: boolean): ReplayUnit | null {
   const id = unit.id
   if (!id) return null
-  const type = isSimUnit ? (unit as SimUnit).type : (unit as UnitRow).unit_type
+  const type = isSimUnit ? (unit as SimUnit | CombatSnapshotUnit).type : (unit as UnitRow).unit_type
   const config = UNIT_TYPES[type as UnitTypeKey]?.baseStats
-  const sim = isSimUnit ? unit as SimUnit : null
+  const sim = isSimUnit ? (unit as SimUnit | CombatSnapshotUnit) : null
   const row = isSimUnit ? null : unit as UnitRow
   const x = sim ? sim.x : Number(row?.grid_x ?? 0)
   const y = sim ? sim.y : Number(row?.grid_y ?? 0)
@@ -35,9 +35,9 @@ export function createReplayUnit(unit: SimUnit | UnitRow, team: ReplayTeam, isSi
     tY: y,
     isDead: sim?.isDead ?? false,
     isFlying: sim?.isFlying ?? config?.isFlying ?? false,
-    mobilityMode: sim?.mobilityMode,
+    mobilityMode: sim && typeof sim.mobilityMode === 'string' ? sim.mobilityMode : undefined,
     emp: false,
-    stealth: sim?.movementStealthActive ?? false,
+    stealth: sim ? Boolean(sim.movementStealthActive) : false,
     flash: 0,
     deathAgeMs: sim?.isDead ? 0 : undefined,
     visual: createReplayUnitVisualState(team, sim?.isDead ?? false),

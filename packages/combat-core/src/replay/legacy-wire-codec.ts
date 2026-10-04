@@ -1,45 +1,23 @@
 import {
   type CombatEvent,
-  type CombatReplayUnit,
   type CombatRunResult,
   type CombatSnapshotUnit,
   type CombatTick,
-  combatReplayUnitSchema,
+  CANONICAL_SNAPSHOT_KEYS,
+  CANONICAL_SNAPSHOT_KEY_SET,
+  CANONICAL_ACTION_KEYS,
+  CANONICAL_ACTION_KEY_SET,
   combatRunResultSchema,
   combatSnapshotUnitSchema,
 } from '../contracts/index.js'
 import type { BattleAction, BattleTick } from '../combat.actions.js'
 
-export const CANONICAL_SNAPSHOT_KEYS = [
-  'id', 'team', 'type', 'rank', 'squadId', 'summonSourceId',
-  'x', 'y', 'velocity', 'currentAngle', 'initialAngle', 'offsetX', 'offsetY', 'size', 'isFlying',
-  'hp', 'maxHp', 'shield', 'maxShield', 'isDead', 'resurrectOnce', 'isTemporary', 'temporaryDuration', 'reassemblyConfig', 'reassemblyState', 'reassemblyTriggersUsed',
-  'attack', 'defense', 'speed', 'range', 'actionCooldownMax', 'actionCooldown', 'canTargetAir', 'multishot', 'antiAirDamageMult', 'executeThreshold', 'lifestealMult', 'groundDamageMult', 'shieldDamageMult', 'armorPierceRatio', 'summonCounterDamageMult', 'accuracyPenaltyResist', 'rankScaling',
-  'attackType', 'delivery', 'abilityPrograms', 'aoeRadius', 'spawnType', 'spawnCap', 'selfDestructOnAttack', 'statusOnHit', 'markOnHit', 'linePierce', 'coneAttack', 'beamAttack', 'barrageAttack', 'chainAttack', 'splitFire', 'sideWeapon', 'conditionalAttackMode', 'sweepAttack', 'emergeStrikePending', 'appliesEmp', 'leavesPuddle', 'smokeOnAction', 'pullOnHit', 'knockbackOnHit',
-  'rampMultiplier', 'chargeDistance', 'aggroLockTicks', 'designatedSquadId', 'meleeSlotIndex', 'targetPriorityProfile', 'conditionalRange', 'controlBeam', 'controlProgress',
-  'turnSpeed', 'isMoving', 'isNavigatingObstacle', 'lastProgressX', 'lastProgressY', 'lastTargetDistance', 'stuckTicks', 'avoidanceSide', 'avoidanceTicks', 'damageReductionWhileMoving', 'burrowConfig', 'isBurrowed', 'modeSwitchConfig', 'mobilityMode', 'stanceConfig', 'stanceMode', 'stanceTicks', 'stealthWhileMoving', 'movementStealthActive',
-  'statusEffects', 'targetMark', 'stealthUntilAttack', 'hasAttacked', 'transformMode', 'transformState',
-  'flatDamageBlock', 'shieldHitBlock', 'shieldHitBlockCharges', 'reactiveArmorCharges', 'reactiveArmorBlock', 'damageShareRadius', 'damageShareRatio', 'damageShareMaxTargets', 'projectileInterceptRadius', 'projectileInterceptCooldownMax', 'projectileInterceptCooldown', 'projectileInterceptMaxDamage',
-  'supportAuras', 'supportPrograms', 'periodicAbilities', 'periodicPrograms', 'periodicProgramState', 'fieldEffect', 'formationModifiers',
-  'triggerEffects', 'statGrowth', 'attackCharge', 'spawnerConfig', 'replicateOnKill', 'onDeathPuddle',
-  'attackTargetId', 'rampTargetId', 'meleeSlotTargetId', 'meleeWaitingTargetId', 'lastProgressTargetId', 'summonOwnerId',
-  'direction', 'squadLeader', 'targetId',
-] as const
-
-export const CANONICAL_SNAPSHOT_KEY_SET = new Set<string>(CANONICAL_SNAPSHOT_KEYS)
-
-export const CANONICAL_ACTION_KEYS = [
-  'unitId', 'type', 'targetId', 'damage', 'isCritical', 'isShieldHit',
-  'fromX', 'fromY', 'toX', 'toY', 'facingAngle', 'isWalking', 'motionKind',
-  'spawnType', 'spawnTeam', 'spawnMaxHp', 'hazardId', 'radius', 'statusType',
-  'sourceUnitId', 'damageKind', 'cause', 'controlMode', 'stanceMode', 'modeState',
-  'value', 'markEvent', 'markSquadId', 'markDuration', 'sourceUnitType', 'sourceTeam',
-  'retargetCount', 'bonusDamage', 'impactId', 'launchTick', 'earliestLaunchTick',
-  'impactTick', 'projectileKind', 'cancelReason',
-  'sourceId', 'x', 'y', 'amount', 'details',
-] as const
-
-export const CANONICAL_ACTION_KEY_SET = new Set<string>(CANONICAL_ACTION_KEYS)
+export {
+  CANONICAL_SNAPSHOT_KEYS,
+  CANONICAL_SNAPSHOT_KEY_SET,
+  CANONICAL_ACTION_KEYS,
+  CANONICAL_ACTION_KEY_SET,
+}
 
 const BATTLE_ACTION_ALLOWED_KEYS = new Set<string>([
   'unitId', 'type', 'targetId', 'damage', 'isCritical', 'isShieldHit',
@@ -51,33 +29,48 @@ const BATTLE_ACTION_ALLOWED_KEYS = new Set<string>([
   'impactTick', 'projectileKind', 'cancelReason',
 ])
 
-/**
- * Serializes an internal unit snapshot into a clean CombatSnapshotUnit DTO,
- * copying only allowlisted fields in their canonical component order.
- */
+function sanitizeNestedValue(key: string, val: unknown): unknown {
+  if (val === null || val === undefined) return undefined
+  if (typeof val !== 'object') return val
+
+  if (key === 'velocity') {
+    const v = val as Record<string, unknown>
+    return { x: Number(v.x), y: Number(v.y) }
+  }
+
+  if (Array.isArray(val)) {
+    return val.map(item => sanitizeNestedValue(key, item))
+  }
+
+  const cleanObj: Record<string, unknown> = {}
+  for (const [k, v] of Object.entries(val as Record<string, unknown>)) {
+    if (!k.startsWith('_') && v !== undefined) {
+      cleanObj[k] = sanitizeNestedValue(k, v)
+    }
+  }
+  return cleanObj
+}
+
 export function serializeCombatUnitSnapshot(unit: unknown): CombatSnapshotUnit {
   const raw = unit as Record<string, unknown>
   const result: Record<string, unknown> = {}
   for (const key of Object.keys(raw)) {
     if (CANONICAL_SNAPSHOT_KEY_SET.has(key) && raw[key] !== undefined) {
-      result[key] = raw[key]
+      result[key] = sanitizeNestedValue(key, raw[key])
     }
   }
   return result as CombatSnapshotUnit
 }
 
-/**
- * Validates and decodes raw JSON or DTO data into a typed CombatSnapshotUnit.
- */
 export function deserializeCombatUnitSnapshot(input: unknown): CombatSnapshotUnit {
-  combatSnapshotUnitSchema.parse(input)
-  return serializeCombatUnitSnapshot(input)
+  const sanitized = serializeCombatUnitSnapshot(input)
+  combatSnapshotUnitSchema.parse(sanitized)
+  return sanitized
 }
 
+export const serializeLegacyUnit = serializeCombatUnitSnapshot
+export const deserializeLegacyUnit = deserializeCombatUnitSnapshot
 
-/**
- * Serializes a BattleAction into a clean CombatEvent contract.
- */
 export function serializeCombatEvent(action: unknown): CombatEvent {
   const act = action as Record<string, unknown>
   const event: Record<string, unknown> = {}
@@ -101,9 +94,6 @@ export function serializeCombatEvent(action: unknown): CombatEvent {
   return event as CombatEvent
 }
 
-/**
- * Deserializes a CombatEvent DTO back to a typed BattleAction.
- */
 export function deserializeCombatAction(event: unknown): BattleAction {
   const raw = event as Record<string, unknown>
   const action: Record<string, unknown> = {}
@@ -118,9 +108,6 @@ export function deserializeCombatAction(event: unknown): BattleAction {
   return action as unknown as BattleAction
 }
 
-/**
- * Serializes a BattleTick into a CombatTick contract.
- */
 export function serializeCombatTick(tick: { tick: number; actions: readonly BattleAction[] }): CombatTick {
   return {
     tick: tick.tick,
@@ -128,9 +115,6 @@ export function serializeCombatTick(tick: { tick: number; actions: readonly Batt
   }
 }
 
-/**
- * Deserializes a CombatTick DTO into a BattleTick.
- */
 export function deserializeCombatTick(tick: CombatTick): BattleTick {
   return {
     tick: tick.tick,
@@ -138,53 +122,37 @@ export function deserializeCombatTick(tick: CombatTick): BattleTick {
   }
 }
 
-/**
- * Normalizes a unit snapshot to match the legacy Mars replay JSON field format.
- */
-export function serializeLegacyUnit(unit: CombatReplayUnit): Record<string, unknown> {
-  const result: Record<string, unknown> = {
-    id: unit.id,
-    type: unit.type,
-    team: unit.team,
-    hp: unit.hp,
-    maxHp: unit.maxHp,
-    x: unit.x,
-    y: unit.y,
-    attack: unit.attack,
-    range: unit.range,
-    speed: unit.speed,
-  }
-  if (unit.squadId !== undefined) result.squadId = unit.squadId
-  if (unit.squadLeader !== undefined) result.squadLeader = unit.squadLeader
-  if (unit.isTemporary !== undefined) result.isTemporary = unit.isTemporary
-  if (unit.summonOwnerId !== undefined) result.summonOwnerId = unit.summonOwnerId
-  if (unit.summonSourceId !== undefined) result.summonSourceId = unit.summonSourceId
-  if (unit.shield !== undefined) result.shield = unit.shield
-  if (unit.maxShield !== undefined) result.maxShield = unit.maxShield
-  if (unit.direction !== undefined) result.direction = unit.direction
-  if (unit.targetId !== undefined) result.targetId = unit.targetId
-  return result
-}
-
-/**
- * Validates and decodes raw JSON into a typed CombatReplayUnit.
- */
-export function deserializeLegacyUnit(input: unknown): CombatReplayUnit {
-  return combatReplayUnitSchema.parse(input)
-}
-
-/**
- * Encodes a complete CombatRunResult into a deterministic JSON string.
- */
 export function encodeLegacyReplayJson(result: CombatRunResult): string {
   return JSON.stringify(result)
 }
 
-/**
- * Decodes and validates a complete JSON replay string into a typed CombatRunResult.
- */
 export function decodeLegacyReplayJson(json: string): CombatRunResult {
-  const parsed = JSON.parse(json) as unknown
-  return combatRunResultSchema.parse(parsed)
-}
+  const parsed = JSON.parse(json) as Record<string, unknown>
+  if (!parsed || typeof parsed !== 'object') {
+    throw new Error('Invalid replay JSON: expected object')
+  }
+  const initialState = Array.isArray(parsed.initialState)
+    ? parsed.initialState.map(u => deserializeCombatUnitSnapshot(u))
+    : []
+  const survivors = Array.isArray(parsed.survivors)
+    ? parsed.survivors.map(u => deserializeCombatUnitSnapshot(u))
+    : []
+  const logs = Array.isArray(parsed.logs)
+    ? (parsed.logs as CombatTick[]).map(t => serializeCombatTick(deserializeCombatTick(t)))
+    : []
 
+  const decoded: CombatRunResult = {
+    winner: parsed.winner as CombatRunResult['winner'],
+    seed: Number(parsed.seed),
+    elapsedTicks: Number(parsed.elapsedTicks),
+    terminationReason: String(parsed.terminationReason),
+    initialState,
+    survivors,
+    logs,
+    engineVersion: Number(parsed.engineVersion),
+    engineRevision: String(parsed.engineRevision),
+    ...(parsed.profile !== undefined && typeof parsed.profile === 'object' ? { profile: parsed.profile as Record<string, unknown> } : {}),
+    ...(parsed.metrics !== undefined && typeof parsed.metrics === 'object' ? { metrics: parsed.metrics as Record<string, unknown> } : {}),
+  }
+  return combatRunResultSchema.parse(decoded)
+}

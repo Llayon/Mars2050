@@ -1,7 +1,7 @@
-import type { BattleTick, SimUnit, UnitRow } from '@/domains/combat/combat.types'
+import type { BattleTick, CombatSnapshotUnit, SimUnit, UnitRow } from '@/domains/combat/combat.types'
 
 export interface ReplayRenderUnit {
-  unit: SimUnit | UnitRow
+  unit: SimUnit | CombatSnapshotUnit | UnitRow
   team: 'attacker' | 'defender'
   isSimUnit: boolean
 }
@@ -10,7 +10,7 @@ export function buildReplayRenderUnits(
   attackerUnits: UnitRow[],
   defenderUnits: UnitRow[],
   logs: BattleTick[],
-  initialState?: SimUnit[]
+  initialState?: (CombatSnapshotUnit | SimUnit)[]
 ): ReplayRenderUnit[] {
   if (initialState && initialState.length > 0) {
     return initialState.map(unit => ({ unit, team: unit.team, isSimUnit: true }))

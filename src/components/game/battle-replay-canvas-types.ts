@@ -1,4 +1,4 @@
-import type { BattleTick, Obstacle, SimUnit, UnitRow } from '@/domains/combat/combat.types'
+import type { BattleTick, CombatSnapshotUnit, Obstacle, SimUnit, UnitRow } from '@/domains/combat/combat.types'
 import type { ReplayRenderProfileSnapshot } from './battle-replay-profile'
 
 export interface ReplayControls {
@@ -18,7 +18,7 @@ export type BattleReplayEngineProps = {
   container: HTMLDivElement
   attackerUnits: UnitRow[]
   defenderUnits: UnitRow[]
-  initialState?: SimUnit[]
+  initialState?: (CombatSnapshotUnit | SimUnit)[]
   logs: BattleTick[]
   obstacles?: Obstacle[]
   onTickChange?: (tick: number) => void

@@ -1,4 +1,4 @@
-import type { SimUnit, UnitRow } from '@/domains/combat/combat.types'
+import type { CombatSnapshotUnit, SimUnit, UnitRow } from '@/domains/combat/combat.types'
 
 /**
  * Extract the base unit id from a simulator survivor id.
@@ -53,7 +53,7 @@ export function aggregateSquadHp(
 export function computeBattlePersistence(
   attackerUnits: UnitRow[],
   defenderUnits: UnitRow[],
-  survivors: SimUnit[]
+  survivors: (CombatSnapshotUnit | SimUnit)[]
 ): {
   deadAttackerBaseIds: string[]
   deadDefenderBaseIds: string[]

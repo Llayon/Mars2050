@@ -972,35 +972,49 @@ Freeze: `git status` после всех команд — только файл�
 
 Уточнения воспроизводителей (зафиксировать для R2b): outcome-system даёт `stalemate ticks=0` при attack=0 с обеих сторон (`outcome-system.ts:18-23`), поэтому timeout/scheduled/heal-фикстуры обязаны иметь attack>0 (иначе terminal наступает раньше timeout). `canTeamDealDamage` не учитывает дистанцию — достаточно attack>0 и нелетающих целей.
 
-## R4a: отделить публичный результат боя от внутреннего ECS-состояния (ISO-10)
+## R4a: отделить публичный результат боя от внутреннего ECS-состояния (ISO-10) — green, review pending
 
-- Ветка: `repair/combat-core-isolation`, базовый HEAD: `89184bfa6797cee7059c48f1a31333fa5573ae51`.
+- Ветка: `repair/combat-core-isolation`, базовый HEAD: `b3201ca4d3157f8437325573718e12cc38fd2485`.
 - Цель: полная изоляция публичного контракта симуляции от внутреннего ECS-состояния (`profile.__marsCompat` полностью ликвидирован, исключена прямая передача ссылок на `SimUnit` или внутренних компонентных наборов).
 
-### Выполненные изменения:
+### Устранение 4 замечаний внешнего ревью коммита b3201ca:
 
-1. **Explicit Wire Codec & DTO Contracts** (`packages/combat-core/src/contracts/replay.contracts.ts`, `packages/combat-core/src/replay/legacy-wire-codec.ts`):
-   - Полный инвентарь канонических полей: 126 ключей `CombatSnapshotUnit` в каноническом порядке следования компонентного стора, канонические ключи действий `BattleAction` и `CombatTick`.
-   - Ключ-сохраняющий кодек `serializeCombatUnitSnapshot`: фильтрация по белому списку `CANONICAL_SNAPSHOT_KEY_SET` с гарантированным отсечением внутренних ECS-свойств/сентинелов и отсутствием перестановок ключей (`z.record` superRefine).
-   - Функции сериализации и валидации: `deserializeCombatUnitSnapshot`, `serializeCombatEvent`, `deserializeCombatAction`, `serializeCombatTick`, `deserializeCombatTick`, `encodeLegacyReplayJson`, `decodeLegacyReplayJson`.
-2. **Ликвидация `profile.__marsCompat`** (`packages/combat-core/src/combat.runner.ts`, `packages/combat-core/src/combat.replay-mapper.ts`, `src/domains/combat/combat.compat-mapper.ts`):
-   - `packages/combat-core/src/combat.runner.ts`: удален `__marsCompat` из структуры `profile`. Поле `profile` возвращается строго как `CombatRunProfile` (метрики/профилирование пространственного хэша при `rules.profile: true`) либо `undefined` при `rules.profile: false`.
-   - `src/domains/combat/combat.compat-mapper.ts`: перевод на штатный wire-codec — декодирование `result.logs` через `deserializeCombatAction(entry)`, `result.initialState` и `result.survivors` через `deserializeCombatUnitSnapshot(unit)`.
-3. **Строгая валидация и негативный контроль** (`packages/combat-core/tests/wire-codec-r4a.test.ts`, `scripts/test-combat-package-runtime.ts`):
-   - 7/7 тестов кодека: проверка инвентаря, негативный контроль отсечения внутренних сентинелов `_ecsInternalSentinel` и `_actionInternalSentinel`, тест `profile: false` (отсутствие профилировочных данных и `__marsCompat`), побайтовая стабильность сериализации.
-   - Скрипт изолированного runtime consumer (`scripts/test-combat-package-runtime.ts`): добавлен блок верификации wire-codec DTO границы, негативного сентинела и `profile: false`.
+1. **[P1] Вложенные внутренние поля и ссылки (`snapshot.velocity`, `statusEffects`, sentinels):**
+   - Проблема: `legacy-wire-codec.ts` копировал значения первого уровня и сохранял ссылки на вложенные объекты; сентинелы внутри `velocity` или `statusEffects` попадали в DTO и JSON.
+   - Исправление:
+     - `packages/combat-core/src/contracts/replay.types.ts`: введены строгие типы DTO для вложенных структур: `CombatVelocityDto` (`{ x: number; y: number }`), `CombatStatusEffectDto`, `CombatSnapshotUnit` с полным списком разрешенных полей.
+     - `packages/combat-core/src/replay/legacy-wire-codec.ts`: внедрена глубокая рекурсивная изоляция `sanitizeNestedValue` с полным разрывом ссылок (`structuredClone`/detached reconstruction). Вложенные объекты и массивы рекурсивно очищаются от любых ключей с префиксом `_` и сторонних приватных полей. Для `velocity` гарантируется возвращение нового объекта вида `{ x: Number(v.x), y: Number(v.y) }`.
+
+2. **[P2] Схемы и декодер принимали поврежденные данные (`NaN`, `Infinity`, `maxHp <= 0`, corrupt velocity):**
+   - Проблема: `combatSnapshotUnitSchema` пропускал нефинитные числа (`Infinity`, `NaN`), неположительный `maxHp`, невалидные массивы эффектов, а `decodeLegacyReplayJson` не отсекал внутренние сентинелы.
+   - Исправление:
+     - `packages/combat-core/src/contracts/replay.contracts.ts`: `combatSnapshotUnitSchema` проверяет `Number.isFinite` для всех числовых координат и параметров. Статы (`attack`, `defense`, `speed`, `range`, `shield`, `maxShield`, `turnSpeed`) строго `>= 0`, `maxHp` строго `> 0`. Углы и смещения проверены на конечность. `velocity` проверяется как объект финитных `x` и `y` без сторонних ключей. Любые неразрешенные ключи верхнего уровня за пределами `CANONICAL_SNAPSHOT_KEY_SET` отклоняются валидатором.
+     - `deserializeCombatUnitSnapshot`, `deserializeCombatAction`, `decodeLegacyReplayJson` унифицированы на строгий парсинг Zod и гарантированно отсекают любые внутренние сентинелы.
+
+3. **[P2] Обход DTO через `options` Mars-адаптера и каст `as unknown as SimUnit`:**
+   - Проблема: `combat.compat-mapper.ts` принимал `options` (`simInitialState`, `simSurvivors`, `simLogs`), перетиравшие очищенные данные, и возвращал `as unknown as SimUnit`.
+   - Исправление:
+     - `src/domains/combat/combat.compat-mapper.ts`: аргумент `options` полностью удален. Устранен каст `as unknown as SimUnit`. Адаптер возвращает строгие DTO `CombatSnapshotUnit[]` и `CombatTickActionDto[]`.
+     - Все потребители в Mars-доменах (`pvp.persistence.ts`, `pvp.types.ts`, `battle-replay-*`, `simulator`, `simulator2`) приведены к типизации `CombatSnapshotUnit | SimUnit`.
+
+4. **[P2] `profile: false` не гарантировал отсутствие `profile` при `trackMetrics: true`:**
+   - Проблема: При `trackMetrics: true` и `profile: false` возвращался `profile.metrics`.
+   - Исправление:
+     - `packages/combat-core/src/contracts/battle.contracts.ts`: добавлено поле верхнего уровня `metrics?: Record<string, unknown>`.
+     - `packages/combat-core/src/combat.runner.ts`: `profile` строго `undefined`, если `rules.profile: false`. Агрегированные метрики при `rules.trackMetrics: true` возвращаются в `result.metrics`.
+     - Протестированы все 4 комбинации флагов (`profile: true/false`, `trackMetrics: true/false`).
 
 ### Верификация:
 
 | Команда | Exit | Результат |
 | --- | --- | --- |
-| `npm run test:combat:core` | 0 | 18 файлов, 124 теста PASS |
+| `npm run test:combat:core` | 0 | 19 файлов, 128 тестов PASS (включая `wire-codec-dto-isolation-r4a.test.ts`) |
 | `npm run combat:ecs:golden` | 0 | V8 golden: 7/7 пресетов стабильны |
 | `npm run combat:ecs:v9:golden` | 0 | V9 golden: 7/7 пресетов стабильны |
-| `npm run test:combat:package:runtime` | 0 | Smoke tarball consumer PASS (SHA256: cc265bb2…) |
-| `npm test` | 0 | 203 файла, 844 теста PASS (полный набор тестов Mars) |
-| `npm run combat:core:build` | 0 | tsc core build чист |
-| `npx tsc --noEmit --pretty false` | 0 | Root typecheck чист (0 ошибок) |
+| `npm run test:combat:package:runtime` | 0 | Standalone tarball consumer PASS (SHA256: 5695be82…) |
+| `npm test` | 0 | 203 файла, 820 тестов PASS (полный набор тестов Mars) |
+| `npm run build` | 0 | Turbopack build + prebuild limit checks + static generation (32/32) PASS |
+| `npx playwright test tests/e2e/simulator2-replay.spec.ts --project=chromium` | 0 | 9/9 browser replay tests PASS |
 | `npx tsx scripts/check-limits.ts --diff HEAD --json` | 0 | 0 нарушений архитектурных лимитов |
 
 

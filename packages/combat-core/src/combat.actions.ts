@@ -1,4 +1,6 @@
 import type { Team, SimUnit, Obstacle } from './combat.sim.types.js'
+import type { CombatSnapshotUnit } from './contracts/replay.types.js'
+export type { CombatSnapshotUnit }
 import type { CombatMetrics } from './combat.metrics.js'
 import type { TerminationReason } from './combat.result.js'
 import type { SpatialQueryProfile } from './combat.spatial-profile.js'
@@ -81,8 +83,8 @@ export interface BattleResult {
   winner: 'attacker' | 'defender' | 'draw'
   logs: BattleTick[]
   seed: number
-  survivors: SimUnit[]
-  initialState: SimUnit[]
+  survivors: CombatSnapshotUnit[]
+  initialState: CombatSnapshotUnit[]
   obstacles?: Obstacle[]
   metrics?: CombatMetrics
   terminationReason: TerminationReason

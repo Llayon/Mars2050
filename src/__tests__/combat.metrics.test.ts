@@ -134,8 +134,8 @@ function getReplaySnapshot(result: BattleResult, tickLimit: number): ReplayUnit[
       x: unit.x,
       y: unit.y,
       isDead: false,
-      isFlying: unit.isFlying,
-      size: unit.size
+      isFlying: unit.isFlying ?? false,
+      size: unit.size ?? 'M'
     })
   }
 

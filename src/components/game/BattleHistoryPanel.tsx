@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { simulateBattle } from '@/domains/combat/combat.engine'
-import type { UnitRow, BattleTick, SimUnit, Obstacle } from '@/domains/combat/combat.types'
+import type { UnitRow, BattleTick, SimUnit, CombatSnapshotUnit, Obstacle } from '@/domains/combat/combat.types'
 import { usePvp } from '@/hooks/usePvp'
 import { useToast } from '@/components/ui/toast'
 import { BattleReplayModal } from './BattleReplayModal'
@@ -12,7 +12,7 @@ import { RESOURCE_NAMES } from '@/domains/resource/resource.types'
 export interface BattleReplayPayload {
   attackerUnits: UnitRow[]
   defenderUnits: UnitRow[]
-  initialState?: SimUnit[]
+  initialState?: (CombatSnapshotUnit | SimUnit)[]
   logs: BattleTick[]
   obstacles?: Obstacle[]
   message: string

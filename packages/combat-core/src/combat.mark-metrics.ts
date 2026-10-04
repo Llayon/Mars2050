@@ -1,5 +1,6 @@
 import type { BattleAction } from './combat.actions.js'
 import type { SimUnit, Team } from './combat.sim.types.js'
+import type { CombatSnapshotUnit } from './contracts/replay.types.js'
 
 export interface MarkCombatMetrics {
   firstMarkTick: number | null
@@ -35,12 +36,12 @@ export class MarkMetricsAccumulator {
   private readonly uniqueSquads = new Set<string>()
   private readonly values: MarkCombatMetrics = emptyMarkCombatMetrics()
 
-  constructor(units: SimUnit[]) {
+  constructor(units: (SimUnit | CombatSnapshotUnit)[]) {
     for (const unit of units) {
       this.units.set(unit.id, {
         team: unit.team,
         squadId: unit.squadId ?? unit.id,
-        attack: unit.attack,
+        attack: unit.attack ?? 0,
         hp: unit.hp,
       })
     }

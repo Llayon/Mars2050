@@ -12,7 +12,7 @@ const getRandomInt = (max: number) => Math.floor(Math.random() * max)
 export default function SimulatorPage() {
   const [attackerUnits, setAttackerUnits] = useState<UnitRow[]>([])
   const [defenderUnits, setDefenderUnits] = useState<UnitRow[]>([])
-  const [replayData, setReplayData] = useState<{ attackerUnits: UnitRow[], defenderUnits: UnitRow[], logs: BattleTick[], winner: string, initialState: import('@/domains/combat/combat.types').SimUnit[], obstacles?: import('@/domains/combat/combat.types').Obstacle[] } | null>(null)
+  const [replayData, setReplayData] = useState<{ attackerUnits: UnitRow[], defenderUnits: UnitRow[], logs: BattleTick[], winner: string, initialState: (import('@/domains/combat/combat.types').SimUnit | import('@/domains/combat/combat.types').CombatSnapshotUnit)[], obstacles?: import('@/domains/combat/combat.types').Obstacle[] } | null>(null)
   
   const [selectedUnit, setSelectedUnit] = useState<{team: 'attacker'|'defender', index: number} | null>(null)
 

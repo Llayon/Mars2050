@@ -1,4 +1,4 @@
-import type { BattleTick, SimUnit } from '@/domains/combat/combat.types'
+import type { BattleTick, CombatSnapshotUnit, SimUnit } from '@/domains/combat/combat.types'
 import { collectOverlapMetrics } from '@/domains/combat/combat.metrics-overlap'
 import {
   emptyMarkCombatMetrics,
@@ -30,7 +30,7 @@ interface MetricUnitState {
 
 export function buildBattleReplayMetrics(
   logs: BattleTick[],
-  initialState?: SimUnit[],
+  initialState?: (CombatSnapshotUnit | SimUnit)[],
   collectOverlap = true,
 ): BattleReplayMetrics {
   const metrics: BattleReplayMetrics = {
@@ -62,9 +62,9 @@ export function buildBattleReplayMetrics(
     units.set(unit.id, {
       x: unit.x,
       y: unit.y,
-      isDead: unit.isDead,
-      size: unit.size,
-      isFlying: unit.isFlying,
+      isDead: Boolean(unit.isDead),
+      size: unit.size ?? 'M',
+      isFlying: Boolean(unit.isFlying),
     })
   }
 

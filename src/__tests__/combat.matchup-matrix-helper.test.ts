@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { BattleResult } from '@/domains/combat/combat.types'
-import type { SimUnit } from '@/domains/combat/combat.sim.types'
+import type { BattleResult, CombatSnapshotUnit } from '@/domains/combat/combat.types'
 import { aggregateMatchupSamples, type MatchupSample } from './helpers/combat-matchup-matrix'
 import { evaluateTier1MatchupAcrossSeeds } from './helpers/combat-tier1-matchup'
 import type { CombatBalanceScenario } from '@/domains/combat/combat.tier1-scenarios'
@@ -126,11 +125,11 @@ function sampleWithStats(orientation: 'normal' | 'mirrored', seed: number, roleT
 function result(winner: BattleResult['winner'], seed: number, power = 0, hpRatio = 0): BattleResult {
   const survivor = power === 0 && hpRatio === 0
     ? []
-    : [{ team: 'attacker', hp: power, maxHp: 1 } as unknown as SimUnit]
+    : [{ team: 'attacker', hp: power, maxHp: 1 } as unknown as CombatSnapshotUnit]
   const initialMaxHp = power === 0 ? 0 : power / hpRatio
   const initialState = initialMaxHp === 0
     ? []
-    : [{ team: 'attacker', maxHp: initialMaxHp } as unknown as SimUnit]
+    : [{ team: 'attacker', maxHp: initialMaxHp } as unknown as CombatSnapshotUnit]
   return {
     winner,
     logs: [],

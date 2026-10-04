@@ -1,7 +1,7 @@
 'use client'
 
 import dynamic from 'next/dynamic'
-import type { BattleTick, Obstacle, SimUnit, UnitRow } from '@/domains/combat/combat.types'
+import type { BattleTick, CombatSnapshotUnit, Obstacle, SimUnit, UnitRow } from '@/domains/combat/combat.types'
 import type { ReplayRendererMode } from '@/components/game/battle-replay-engine'
 
 export interface SimulatorReplayData {
@@ -9,14 +9,14 @@ export interface SimulatorReplayData {
   defenderUnits: UnitRow[]
   logs: BattleTick[]
   winner: string
-  initialState: SimUnit[]
+  initialState: (CombatSnapshotUnit | SimUnit)[]
   obstacles?: Obstacle[]
 }
 
 interface BattleReplayModalProps {
   attackerUnits: UnitRow[]
   defenderUnits: UnitRow[]
-  initialState?: SimUnit[]
+  initialState?: (CombatSnapshotUnit | SimUnit)[]
   obstacles?: Obstacle[]
   logs: BattleTick[]
   rendererMode?: ReplayRendererMode

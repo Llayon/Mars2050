@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useRef, memo, useState, useMemo } from 'react'
-import type { BattleTick, UnitRow, SimUnit, Obstacle } from '@/domains/combat/combat.types'
+import type { BattleTick, UnitRow, SimUnit, CombatSnapshotUnit, Obstacle } from '@/domains/combat/combat.types'
 import { startBattleReplayEngine } from './battle-replay-engine'
 import type { ReplayControls, ReplayRendererMode } from './battle-replay-engine'
 import {
@@ -12,7 +12,7 @@ import { BattleReplayDebugMetrics } from './battle-replay-debug-metrics'
 interface BattleReplayModalProps {
   attackerUnits: UnitRow[]
   defenderUnits: UnitRow[]
-  initialState?: SimUnit[]
+  initialState?: (CombatSnapshotUnit | SimUnit)[]
   logs: BattleTick[]
   obstacles?: Obstacle[]
   rendererMode?: ReplayRendererMode
