@@ -39,7 +39,7 @@
 | ISO-07 | `open` | R1,R7 | — |
 | ISO-08 | `open` | R6 | — |
 | ISO-09 | `open` | R5 | — |
-| ISO-10 | `open` | R4a | — |
+| ISO-10 | `needs_external_review` (код+тесты R4a) | R4a | wire-codec-r4a.test.ts 7/7, negative sentinel stripped, profile:false verified, __marsCompat removed, V8/V9 goldens 7+7, full Mars 203/844 |
 | ISO-11 | `open` | R4b | — |
 | ISO-12 | `open` | R2–R3,R7 | — |
 | ISO-13 | `open` | R1,R6–R7 | — |
@@ -971,4 +971,36 @@ Freeze: `git status` после всех команд — только файл�
 | 14:5x UTC | `node -e import(internals)` | 0 | FAIL (ISO-08, ожидаемо) | runner + ecs/combat-world резолвятся |
 
 Уточнения воспроизводителей (зафиксировать для R2b): outcome-system даёт `stalemate ticks=0` при attack=0 с обеих сторон (`outcome-system.ts:18-23`), поэтому timeout/scheduled/heal-фикстуры обязаны иметь attack>0 (иначе terminal наступает раньше timeout). `canTeamDealDamage` не учитывает дистанцию — достаточно attack>0 и нелетающих целей.
+
+## R4a: отделить публичный результат боя от внутреннего ECS-состояния (ISO-10)
+
+- Ветка: `repair/combat-core-isolation`, базовый HEAD: `89184bfa6797cee7059c48f1a31333fa5573ae51`.
+- Цель: полная изоляция публичного контракта симуляции от внутреннего ECS-состояния (`profile.__marsCompat` полностью ликвидирован, исключена прямая передача ссылок на `SimUnit` или внутренних компонентных наборов).
+
+### Выполненные изменения:
+
+1. **Explicit Wire Codec & DTO Contracts** (`packages/combat-core/src/contracts/replay.contracts.ts`, `packages/combat-core/src/replay/legacy-wire-codec.ts`):
+   - Полный инвентарь канонических полей: 126 ключей `CombatSnapshotUnit` в каноническом порядке следования компонентного стора, канонические ключи действий `BattleAction` и `CombatTick`.
+   - Ключ-сохраняющий кодек `serializeCombatUnitSnapshot`: фильтрация по белому списку `CANONICAL_SNAPSHOT_KEY_SET` с гарантированным отсечением внутренних ECS-свойств/сентинелов и отсутствием перестановок ключей (`z.record` superRefine).
+   - Функции сериализации и валидации: `deserializeCombatUnitSnapshot`, `serializeCombatEvent`, `deserializeCombatAction`, `serializeCombatTick`, `deserializeCombatTick`, `encodeLegacyReplayJson`, `decodeLegacyReplayJson`.
+2. **Ликвидация `profile.__marsCompat`** (`packages/combat-core/src/combat.runner.ts`, `packages/combat-core/src/combat.replay-mapper.ts`, `src/domains/combat/combat.compat-mapper.ts`):
+   - `packages/combat-core/src/combat.runner.ts`: удален `__marsCompat` из структуры `profile`. Поле `profile` возвращается строго как `CombatRunProfile` (метрики/профилирование пространственного хэша при `rules.profile: true`) либо `undefined` при `rules.profile: false`.
+   - `src/domains/combat/combat.compat-mapper.ts`: перевод на штатный wire-codec — декодирование `result.logs` через `deserializeCombatAction(entry)`, `result.initialState` и `result.survivors` через `deserializeCombatUnitSnapshot(unit)`.
+3. **Строгая валидация и негативный контроль** (`packages/combat-core/tests/wire-codec-r4a.test.ts`, `scripts/test-combat-package-runtime.ts`):
+   - 7/7 тестов кодека: проверка инвентаря, негативный контроль отсечения внутренних сентинелов `_ecsInternalSentinel` и `_actionInternalSentinel`, тест `profile: false` (отсутствие профилировочных данных и `__marsCompat`), побайтовая стабильность сериализации.
+   - Скрипт изолированного runtime consumer (`scripts/test-combat-package-runtime.ts`): добавлен блок верификации wire-codec DTO границы, негативного сентинела и `profile: false`.
+
+### Верификация:
+
+| Команда | Exit | Результат |
+| --- | --- | --- |
+| `npm run test:combat:core` | 0 | 18 файлов, 124 теста PASS |
+| `npm run combat:ecs:golden` | 0 | V8 golden: 7/7 пресетов стабильны |
+| `npm run combat:ecs:v9:golden` | 0 | V9 golden: 7/7 пресетов стабильны |
+| `npm run test:combat:package:runtime` | 0 | Smoke tarball consumer PASS (SHA256: cc265bb2…) |
+| `npm test` | 0 | 203 файла, 844 теста PASS (полный набор тестов Mars) |
+| `npm run combat:core:build` | 0 | tsc core build чист |
+| `npx tsc --noEmit --pretty false` | 0 | Root typecheck чист (0 ошибок) |
+| `npx tsx scripts/check-limits.ts --diff HEAD --json` | 0 | 0 нарушений архитектурных лимитов |
+
 

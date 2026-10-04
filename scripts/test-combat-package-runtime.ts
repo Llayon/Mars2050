@@ -66,7 +66,14 @@ import { createRequire } from 'node:module'
 import { dirname, resolve, relative, isAbsolute, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { simulateCombat } from '@mars2050/combat-core'
+import {
+  serializeCombatUnitSnapshot,
+  deserializeCombatUnitSnapshot,
+  encodeLegacyReplayJson,
+  decodeLegacyReplayJson,
+} from '@mars2050/combat-core/replay'
 import type { BattleInput, UnitDefinition } from '@mars2050/combat-core/contracts'
+
 
 // 0. Verify package resolution is strictly from this consumer's isolated node_modules
 if (process.env.NODE_PATH) {
@@ -399,6 +406,60 @@ try {
 }
 if (!rejectedEffect) throw new Error('unsupported scheduledEffect apocalypse_strike was not rejected with UNSUPPORTED_SCHEDULED_EFFECT')
 console.log('rejections: unsupported attack and scheduled effect kinds explicitly rejected')
+
+// 8. R4a / ISO-10: DTO wire-codec boundary, sentinel stripping, profile: false and JSON round-trip
+const rawDirtyUnit = {
+  id: 'sentinel_unit',
+  type: 'soldier',
+  team: 'attacker' as const,
+  x: 100,
+  y: 200,
+  hp: 50,
+  maxHp: 50,
+  speed: 3,
+  range: 4,
+  attack: 10,
+  _ecsInternalSentinel: 'DO_NOT_LEAK',
+}
+const serializedUnit = serializeCombatUnitSnapshot(rawDirtyUnit)
+if ('_ecsInternalSentinel' in (serializedUnit as Record<string, unknown>)) {
+  throw new Error('R4a wire codec failed: _ecsInternalSentinel leaked into serialized CombatSnapshotUnit')
+}
+if (JSON.stringify(serializedUnit).includes('_ecsInternalSentinel')) {
+  throw new Error('R4a wire codec failed: _ecsInternalSentinel leaked into serialized JSON')
+}
+const deserializedUnit = deserializeCombatUnitSnapshot(serializedUnit)
+if ('_ecsInternalSentinel' in deserializedUnit) {
+  throw new Error('R4a wire codec failed: _ecsInternalSentinel present in deserialized unit')
+}
+
+const boundaryRun = simulateCombat({
+  seed: 9999,
+  arena: { width: 600, height: 1200, tileSize: 40, obstacles: [] },
+  rules: { maxTicks: 10, timeoutPolicy: 'draw', defenseResolutionMode: 'v9_snapshot', profile: false },
+  definitions: { knight },
+  units: [
+    { instanceId: 'a1', definitionId: 'knight', team: 'attacker', placement: { x: 300, y: 1000 }, rank: 1, upgradeIds: [] },
+    { instanceId: 'd1', definitionId: 'knight', team: 'defender', placement: { x: 300, y: 200 }, rank: 1, upgradeIds: [] },
+  ],
+  scheduledEffects: [],
+})
+if (boundaryRun.profile !== undefined) {
+  throw new Error('R4a wire codec failed: profile is not undefined when rules.profile is false')
+}
+if ('__marsCompat' in (boundaryRun as Record<string, unknown>)) {
+  throw new Error('R4a wire codec failed: __marsCompat leaked in CombatRunResult')
+}
+
+const encodedReplay = encodeLegacyReplayJson(boundaryRun)
+const decodedReplay = decodeLegacyReplayJson(encodedReplay)
+if (decodedReplay.winner !== boundaryRun.winner || decodedReplay.elapsedTicks !== boundaryRun.elapsedTicks) {
+  throw new Error('R4a wire codec failed: decoded replay does not match simulated result')
+}
+if (JSON.stringify(decodedReplay) !== JSON.stringify(boundaryRun)) {
+  throw new Error('R4a wire codec failed: JSON roundtrip mismatch')
+}
+console.log('r4aWireCodec: DTO boundary, sentinel isolation, profile: false and round-trip verified')
 
 console.log('All archive runtime verification suites passed successfully.')
 `
