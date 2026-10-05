@@ -95,3 +95,52 @@ export const VELOCITY_KEYS = ['x', 'y'] as const
 
 export const VELOCITY_KEY_SET = new Set<string>(VELOCITY_KEYS)
 
+export const SNAPSHOT_OBJ_ALLOWED_KEY_SETS: Record<string, Set<string>> = {
+  linePierce: new Set(['width', 'damageMultiplier', 'maxTargets']),
+  coneAttack: new Set(['angleDeg', 'damageMultiplier', 'maxTargets']),
+  beamAttack: new Set(['width', 'damageMultiplier', 'maxTargets']),
+  barrageAttack: new Set(['impacts', 'radius', 'spreadRadius', 'damageMultiplier', 'maxTargetsPerImpact', 'impactIntervalTicks']),
+  chainAttack: new Set(['jumps', 'radius', 'damageMultiplier', 'falloff']),
+  splitFire: new Set(['maxTargets', 'damageMultiplier', 'range', 'canTargetAir', 'allowMinimumDamage']),
+  sideWeapon: new Set(['damage', 'range', 'maxTargets', 'canTargetAir']),
+  conditionalAttackMode: new Set(['minTargets', 'radius', 'damageMultiplier']),
+  sweepAttack: new Set(['width', 'damageMultiplier', 'maxTargets', 'sizeBonusMultiplier']),
+  emergeStrikePending: new Set(['attackMult', 'aoeRadiusAdd']),
+  smokeOnAction: new Set(['radius', 'duration', 'rangeSuppression', 'outputSuppression', 'accuracySuppression']),
+  pullOnHit: new Set(['radius', 'strength', 'maxTargets']),
+  knockbackOnHit: new Set(['radius', 'strength', 'maxTargets']),
+  controlBeam: new Set(['progressPerTick', 'conversionThreshold', 'range', 'maxTargets', 'multiTargetProgressMultiplier', 'breakOnRange', 'breakOnDeath', 'breakOnCleanse', 'healConvertedToMax']),
+  controlProgress: new Set(['sourceUnitId', 'sourceTeam', 'progress', 'threshold', 'breakOnCleanse']),
+  burrowConfig: CANONICAL_BURROW_CONFIG_KEY_SET,
+  modeSwitchConfig: new Set(['trigger', 'startMode', 'groundForAction', 'airSpeedMultiplier', 'groundSpeedMultiplier']),
+  stanceConfig: new Set(['mode', 'deployTicks', 'rangeMultiplier', 'cooldownMultiplier', 'speedMultiplier']),
+  transformState: new Set(['appliedIds']),
+  flatDamageBlock: new Set(['amount', 'perRank', 'minimumDamage']),
+  shieldHitBlock: new Set(['charges']),
+  formationModifiers: new Set(['spacingMultiplier', 'adjacencyBonus']),
+  statGrowth: new Set(['intervalTicks', 'maxStacks', 'attackMultPerStack', 'hpMultPerStack', 'nextTick', 'stacks']),
+  attackCharge: new Set(['intervalTicks', 'maxStacks', 'attackMultPerStack', 'nextTick', 'stacks']),
+  spawnerConfig: new Set(['unitType', 'interval', 'timer']),
+  reassemblyConfig: new Set(['delayTicks', 'hpPercent', 'maxTriggers']),
+  reassemblyState: new Set(['remainingTicks', 'hpPercent', 'sourceUnitId']),
+  rankScaling: new Set(['hpMultPerRank', 'attackMultPerRank', 'defenseAddPerRank', 'rangeAddPerRank', 'cooldownReductionPerRank', 'damageModifiers']),
+  delivery: new Set(['kind', 'speed', 'homing', 'windupTicks', 'interceptable', 'flightTicks']),
+  markOnHit: CANONICAL_TARGET_MARK_KEY_SET,
+}
+
+export const SNAPSHOT_ARR_ITEM_ALLOWED_KEY_SETS: Record<string, Set<string>> = {
+  statusOnHit: CANONICAL_STATUS_EFFECT_KEY_SET,
+  conditionalRange: new Set(['target', 'tag', 'rangeAdd', 'rangeMult']),
+  transformMode: new Set(['id', 'mode', 'trigger', 'hpThreshold', 'hpMult', 'attackMult', 'speedMult', 'rangeMult', 'cooldownMult', 'aoeRadiusAdd', 'isFlying', 'canTargetAir', 'jumpDistance']),
+  fieldEffect: new Set(['id', 'kind', 'radius', 'intervalTicks', 'initialDelayTicks', 'duration', 'value', 'capacity', 'hazardTypes', 'statusEffects', 'hazardType', 'damagePerTick', 'nextTick']),
+  triggerEffects: new Set(['id', 'event', 'threshold', 'count', 'repeatable', 'maxTriggers', 'cooldownTicks', 'payload', 'fired', 'counter', 'triggersRemaining', 'cooldownRemaining']),
+  periodicAbilities: new Set(['id', 'intervalTicks', 'initialDelayTicks', 'charges', 'targetPolicy', 'payload', 'canTargetAir', 'minRange', 'maxRange', 'nextTick', 'chargesRemaining']),
+  periodicProgramState: new Set(['id', 'intervalTicks', 'initialDelayTicks', 'charges', 'targetPolicy', 'payload', 'canTargetAir', 'minRange', 'maxRange', 'nextTick', 'chargesRemaining']),
+}
+
+export const ABILITY_PROGRAM_KEY_SET = new Set(['id', 'trigger', 'priority', 'groups'])
+export const ABILITY_TRIGGER_KEY_SET = new Set(['kind', 'intervalTicks'])
+export const ABILITY_GROUP_KEY_SET = new Set(['selector', 'effects'])
+export const ABILITY_SELECTOR_KEY_SET = new Set(['kind', 'radius', 'maxTargets'])
+export const ABILITY_DAMAGE_EXPR_KEY_SET = new Set(['kind', 'amount', 'multiplier'])
+

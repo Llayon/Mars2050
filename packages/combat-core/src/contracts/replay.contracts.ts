@@ -7,7 +7,7 @@ import {
   SNAPSHOT_NUM_KEYS, SNAPSHOT_BOOL_KEYS, SNAPSHOT_STR_KEYS, SNAPSHOT_ARR_KEYS, SNAPSHOT_OBJ_KEYS,
 } from './replay.types.js'
 import {
-  checkFinite, isObj, validateDeepNode, validateSupportAuras,
+  checkFinite, isObj, validateDeepNode, validateDetailsNode, validateSupportAuras,
   validateSnapshotArrayField, validateSnapshotObjectField,
 } from './replay.nested-validators.js'
 export * from './replay.types.js'
@@ -78,7 +78,7 @@ export const combatEventSchema: z.ZodType<CombatEvent> = z
     if (data.spawnMaxHp !== undefined && (!checkFinite(data.spawnMaxHp) || (data.spawnMaxHp as number) <= 0)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Invalid spawnMaxHp: expected positive finite number' })
     if (data.details !== undefined) {
       if (!isObj(data.details)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'details must be an object' })
-      else validateDeepNode(data.details, ctx, 'details')
+      else validateDetailsNode(data.details, ctx, 'details')
     }
   }) as unknown as z.ZodType<CombatEvent>
 

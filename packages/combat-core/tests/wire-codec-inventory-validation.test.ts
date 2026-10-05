@@ -119,6 +119,63 @@ describe('R4a: Canonical inventory type validation and negative controls', () =>
       expect(() => deserializeCombatUnitSnapshot({ ...baseUnit, abilityPrograms: [null, 'bad'] })).toThrow()
     })
 
+    it('validates abilityPrograms nested structures and strips entityStore', () => {
+      expect(() => combatSnapshotUnitSchema.parse({
+        ...baseUnit,
+        abilityPrograms: [{ id: 'p1', trigger: { kind: 'weapon_attack' }, groups: ['bad'] }],
+      })).toThrow()
+      expect(() => combatSnapshotUnitSchema.parse({
+        ...baseUnit,
+        abilityPrograms: [{ id: 'p1', trigger: { kind: 'weapon_attack' } }],
+      })).toThrow()
+      expect(() => combatSnapshotUnitSchema.parse({
+        ...baseUnit,
+        abilityPrograms: [{ id: 'p1', trigger: { kind: 'periodic', intervalTicks: 'bad' }, groups: [{ selector: { kind: 'primary_target' }, effects: [] }] }],
+      })).toThrow()
+      expect(() => combatSnapshotUnitSchema.parse({
+        ...baseUnit,
+        abilityPrograms: [{
+          id: 'p1',
+          trigger: { kind: 'weapon_attack' },
+          groups: [{ selector: { kind: 'primary_target' }, effects: [{ kind: 'damage', expression: { kind: 'fixed', amount: 'bad' } }] }],
+        }],
+      })).toThrow()
+
+      const progWithEntityStore = {
+        id: 'p1',
+        trigger: { kind: 'weapon_attack' },
+        groups: [{ selector: { kind: 'primary_target' }, effects: [] }],
+        entityStore: { ptr: 123 },
+      }
+      expect(() => combatSnapshotUnitSchema.parse({ ...baseUnit, abilityPrograms: [progWithEntityStore] })).toThrow(/Disallowed ability program key/)
+      const serialized = serializeCombatUnitSnapshot({ ...baseUnit, abilityPrograms: [progWithEntityStore] })
+      const progs = serialized.abilityPrograms as Array<Record<string, unknown>>
+      expect('entityStore' in progs[0]).toBe(false)
+    })
+
+    it('validates linePierce and statusOnHit schemas and strips unmapped fields', () => {
+      expect(() => combatSnapshotUnitSchema.parse({ ...baseUnit, linePierce: { width: 'bad', damageMultiplier: 1.5 } })).toThrow()
+      expect(() => combatSnapshotUnitSchema.parse({ ...baseUnit, linePierce: { width: 10, damageMultiplier: 1.5, entityStore: 123 } })).toThrow(/Disallowed linePierce key/)
+      const stripped = serializeCombatUnitSnapshot({ ...baseUnit, linePierce: { width: 10, damageMultiplier: 1.5, entityStore: 123 } })
+      expect('entityStore' in (stripped.linePierce as Record<string, unknown>)).toBe(false)
+
+      expect(() => combatSnapshotUnitSchema.parse({ ...baseUnit, statusOnHit: [{ type: 'burn', duration: 'bad' }] })).toThrow()
+    })
+
+    it('allows valid null in event.details arrays and round-trips correctly', () => {
+      const eventWithNullArray = {
+        type: 'strike',
+        sourceId: 'u1',
+        details: { values: [1, null, 'ok'], nested: { sub: [null, 42] } },
+      }
+      expect(() => combatEventSchema.parse(eventWithNullArray)).not.toThrow()
+      const deserialized = deserializeCombatEvent(eventWithNullArray)
+      expect(deserialized.details?.values).toEqual([1, null, 'ok'])
+      const replay = { ...baseValidReplay, logs: [{ tick: 1, actions: [deserialized] }] }
+      const decoded = decodeLegacyReplayJson(JSON.stringify(replay))
+      expect(decoded.logs[0].actions[0].details?.values).toEqual([1, null, 'ok'])
+    })
+
     it('rejects damaged burrowConfig (non-finite or wrong types) and disallowed keys', () => {
       expect(() => combatSnapshotUnitSchema.parse({ ...baseUnit, burrowConfig: { damageReduction: 'bad' } })).toThrow()
       expect(() => deserializeCombatUnitSnapshot({ ...baseUnit, burrowConfig: { damageReduction: 'bad' } })).toThrow()

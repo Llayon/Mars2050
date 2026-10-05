@@ -1170,3 +1170,38 @@ Freeze: `git status` после всех команд — только файл�
 - `npx playwright test tests/e2e/simulator2-replay.spec.ts --project=chromium`: 9/9 тестов PASS.
 - `npx tsx scripts/check-limits.ts --json`: 0 violations (`replay.contracts.ts` 87/100, `replay.nested-validators.ts` 149/250, `replay.inventory.ts` 98/250, `legacy-wire-codec.ts` 222/250, `wire-codec-inventory-validation.test.ts` 185/250).
 
+### Доработка по результатам ревью коммита 6a7f636 (вложенная валидация инвентаря и регрессия null):
+
+1. **[P2] Вложенная валидация пропускала повреждённые структуры и внутренние поля:**
+   - Проблема: `validateAbilityProgramItem` проверял только внешний объект программы, но не структуру её содержимого. Проходили `groups: ['bad']`, программы без `groups`, `trigger: { kind: 'periodic', intervalTicks: 'bad' }`, `expression: { kind: 'fixed', amount: 'bad' }`. Внутреннее поле `abilityPrograms[0].entityStore` сохранялось в публичном DTO из-за общей очистки `legacy-wire-codec.ts:87`, удалявшей только ключи с `_`. Аналогично проходили `linePierce.width: 'bad'`, вложенный `linePierce.entityStore` и `statusOnHit.duration: 'bad'`.
+   - Исправление:
+     - В `packages/combat-core/src/contracts/replay.inventory.ts` добавлены полные наборы канонических ключей: `SNAPSHOT_OBJ_ALLOWED_KEY_SETS`, `SNAPSHOT_ARR_ITEM_ALLOWED_KEY_SETS`, `ABILITY_PROGRAM_KEY_SET`, `ABILITY_TRIGGER_KEY_SET`, `ABILITY_GROUP_KEY_SET`, `ABILITY_SELECTOR_KEY_SET`, `ABILITY_DAMAGE_EXPR_KEY_SET`.
+     - В `packages/combat-core/src/contracts/replay.nested-validators.ts`:
+       - `validateAbilityProgramItem`: проверяет отсутствие посторонних ключей (отклоняет `entityStore`), требует непустой строковый `id`, валидирует `priority`, проверяет `trigger` (допустимые kinds, positive finite number `intervalTicks` для `periodic`), требует обязательный непустой массив `groups` объектов; для каждого group проверяет селектор и эффекты; для эффекта `damage` проверяет структуру `expression` (конечные неотрицательные числа для `fixed` и `attack_multiplier`).
+       - `validateSnapshotObjectField`: проверяет ключи по `SNAPSHOT_OBJ_ALLOWED_KEY_SETS` (отклоняет `linePierce.entityStore`), проверяет обязательные финитные числовые поля (`linePierce.width`, `linePierce.damageMultiplier`, `coneAttack`, и др.).
+       - `validateSnapshotArrayField`: проверяет ключи элементов по `SNAPSHOT_ARR_ITEM_ALLOWED_KEY_SETS`, проверяет финитность `duration` в `statusOnHit` (отклоняет `statusOnHit.duration: 'bad'`).
+     - В `packages/combat-core/src/replay/legacy-wire-codec.ts`:
+       - Добавлены `sanitizeAbilityPrograms` и `sanitizeAbilityEffect`: рекурсивно очищают программы и эффекты от любых посторонних полей (включая `entityStore`).
+       - В `serializeCombatUnitSnapshot` объекты снимка очищаются через `SNAPSHOT_OBJ_ALLOWED_KEY_SETS`, массивы — через `SNAPSHOT_ARR_ITEM_ALLOWED_KEY_SETS`, гарантируя отсутствие утечек внутренних полей в публичный DTO.
+
+2. **[P2] Регрессия запрета валидного `null` в массивах `event.details`:**
+   - Проблема: общий `validateDeepNode` запрещал `null` во всех массивах, из-за чего `{ details: { values: [1, null, "ok"] } }` получал `ZodError`.
+   - Исправление:
+     - Создана функция `validateDetailsNode` специально для произвольных JSON-данных `event.details`.
+     - `validateDetailsNode` допускает примитивный `null` внутри массивов и объектов `details`, но продолжает строго запрещать приватные ключи `_` и нефинитные числа (`Infinity`, `NaN`).
+     - `combatEventSchema` переключена на использование `validateDetailsNode` для `details`.
+
+3. **Конфигурация Vitest:**
+   - В `vitest.config.ts` в `exclude` добавлены `'apps/**'` и `'artifacts/**'` для предотвращения подхвата сторонних Playwright spec файлов.
+
+### Верификация:
+- `npm run combat:core:build` + `npx tsc --noEmit --pretty false`: 0 ошибок.
+- `npm run test:combat:core`: 21 файл, 156 тестов PASS (включая все новые негативные контроли и round-trip с `null`).
+- `npm run combat:ecs:golden` и `npm run combat:ecs:v9:golden`: 7/7 стабильны на обоих наборах.
+- `npm run test:combat:package:runtime`: изолированная сборка tarball и внешний consumer PASS.
+- `npm test`: 203 файла, 820 тестов PASS.
+- `npm run build`: Next.js 16 App Router Turbopack, 32/32 статических страниц PASS.
+- `npx playwright test tests/e2e/simulator2-replay.spec.ts --project=chromium`: 9/9 тестов PASS.
+- `npx tsx scripts/check-limits.ts --json`: 0 violations (`replay.contracts.ts` 87/100, `replay.nested-validators.ts` 208/250, `replay.inventory.ts` 148/250, `legacy-wire-codec.ts` 237/250, `wire-codec-inventory-validation.test.ts` 241/250).
+
+
