@@ -6,10 +6,12 @@ import {
   ACTION_NUM_KEYS, ACTION_BOOL_KEYS, ACTION_STR_KEYS,
   SNAPSHOT_NUM_KEYS, SNAPSHOT_BOOL_KEYS, SNAPSHOT_STR_KEYS, SNAPSHOT_ARR_KEYS, SNAPSHOT_OBJ_KEYS,
 } from './replay.types.js'
+import {
+  checkFinite, isObj, validateDeepNode, validateSupportAuras,
+  validateSnapshotArrayField, validateSnapshotObjectField,
+} from './replay.nested-validators.js'
 export * from './replay.types.js'
-
-const checkFinite = (v: unknown): boolean => typeof v === 'number' && Number.isFinite(v)
-const isObj = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v)
+export { checkFinite, isObj } from './replay.nested-validators.js'
 
 export const combatSnapshotUnitSchema: z.ZodType<CombatSnapshotUnit> = z
   .record(z.string(), z.unknown())
@@ -24,12 +26,9 @@ export const combatSnapshotUnitSchema: z.ZodType<CombatSnapshotUnit> = z
     if (data.size !== undefined && data.size !== 'S' && data.size !== 'M' && data.size !== 'L' && data.size !== 'XL') ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Invalid unit size' })
     for (const f of SNAPSHOT_BOOL_KEYS) if (data[f] !== undefined && typeof data[f] !== 'boolean') ctx.addIssue({ code: z.ZodIssueCode.custom, message: `Invalid boolean for ${f}` })
     for (const f of SNAPSHOT_STR_KEYS) if (data[f] !== undefined && typeof data[f] !== 'string') ctx.addIssue({ code: z.ZodIssueCode.custom, message: `Invalid string for ${f}` })
-    for (const f of SNAPSHOT_ARR_KEYS) if (data[f] !== undefined && !Array.isArray(data[f])) ctx.addIssue({ code: z.ZodIssueCode.custom, message: `Invalid array for ${f}` })
-    for (const f of SNAPSHOT_OBJ_KEYS) if (data[f] !== undefined && !isObj(data[f])) ctx.addIssue({ code: z.ZodIssueCode.custom, message: `Invalid object for ${f}` })
-    if (data.supportAuras !== undefined) {
-      if (!Array.isArray(data.supportAuras)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'supportAuras must be an array' })
-      else for (const a of data.supportAuras) if (!isObj(a) || typeof a.type !== 'string') ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Invalid supportAura item' })
-    }
+    for (const f of SNAPSHOT_ARR_KEYS) if (data[f] !== undefined) validateSnapshotArrayField(f, data[f], ctx)
+    for (const f of SNAPSHOT_OBJ_KEYS) if (data[f] !== undefined) validateSnapshotObjectField(f, data[f], ctx)
+    if (data.supportAuras !== undefined) validateSupportAuras(data.supportAuras, ctx)
     if (data.statusEffects !== undefined) {
       if (!Array.isArray(data.statusEffects)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'statusEffects must be an array' })
       else for (const s of data.statusEffects) {
@@ -74,22 +73,12 @@ export const combatEventSchema: z.ZodType<CombatEvent> = z
     for (const f of ACTION_NUM_KEYS) if (data[f] !== undefined && !checkFinite(data[f])) ctx.addIssue({ code: z.ZodIssueCode.custom, message: `Invalid numeric value for ${f}` })
     for (const f of ACTION_BOOL_KEYS) if (data[f] !== undefined && typeof data[f] !== 'boolean') ctx.addIssue({ code: z.ZodIssueCode.custom, message: `Invalid boolean for ${f}` })
     for (const f of ACTION_STR_KEYS) if (data[f] !== undefined && typeof data[f] !== 'string') ctx.addIssue({ code: z.ZodIssueCode.custom, message: `Invalid string value for ${f}` })
+    if (data.type === 'move' && (!data.unitId && !data.sourceId && !data.sourceUnitId)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Move event requires unitId or sourceId' })
+    if (data.spawnTeam !== undefined && data.spawnTeam !== 'attacker' && data.spawnTeam !== 'defender') ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Invalid spawnTeam: expected "attacker" | "defender"' })
+    if (data.spawnMaxHp !== undefined && (!checkFinite(data.spawnMaxHp) || (data.spawnMaxHp as number) <= 0)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Invalid spawnMaxHp: expected positive finite number' })
     if (data.details !== undefined) {
       if (!isObj(data.details)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'details must be an object' })
-      else {
-        const checkNode = (n: unknown) => {
-          if (Array.isArray(n)) {
-            for (const it of n) if (typeof it === 'number' && !Number.isFinite(it)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Invalid number in details' }); else if (typeof it === 'object' && it !== null) checkNode(it)
-          } else if (isObj(n)) {
-            for (const [k, v] of Object.entries(n)) {
-              if (k.startsWith('_')) ctx.addIssue({ code: z.ZodIssueCode.custom, message: `Disallowed private key in details: ${k}` })
-              if (typeof v === 'number' && !Number.isFinite(v)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: `Invalid number in details: ${k}` })
-              else if (typeof v === 'object' && v !== null) checkNode(v)
-            }
-          }
-        }
-        checkNode(data.details)
-      }
+      else validateDeepNode(data.details, ctx, 'details')
     }
   }) as unknown as z.ZodType<CombatEvent>
 

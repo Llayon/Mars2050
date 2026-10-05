@@ -1132,3 +1132,41 @@ Freeze: `git status` после всех команд — только файл�
 - `npm run build`: Turbopack production build + 32/32 static pages PASS.
 - `npx playwright test tests/e2e/simulator2-replay.spec.ts --project=chromium`: 9/9 тестов PASS.
 - `npx tsx scripts/check-limits.ts --json`: 0 violations (`replay.contracts.ts` 98/100, `replay.inventory.ts` 80/250, `legacy-wire-codec.ts` 220/250, `wire-codec-inventory-validation.test.ts` 139/250).
+
+### Доработка по результатам ревью коммита 2688b50 (схемы вложенных конфигураций и инварианты действий):
+
+1. **[P2] Вложенные конфигурации проверялись только как контейнеры:**
+   - Проблема: `supportAuras`, `abilityPrograms`, `burrowConfig` и другие вложенные объекты/массивы проверялись только поверхностно (`isObj`, `Array.isArray`). Невалидные и внутренние данные (например, `entityStore: { ptr: 123 }`, `radius: "bad"`, `value: Infinity`, `abilityPrograms: [null, 'bad']`, повреждённый `burrowConfig`) проходили валидацию, что приводило к сохранению внутренних объектов во внешнем JSON или негласному превращению `Infinity` в `null`.
+   - Исправление:
+     - Выделен модуль `packages/combat-core/src/contracts/replay.nested-validators.ts` (149 строк $\le 250$).
+     - Реализован глубокий обход `validateDeepNode` для валидации произвольных вложенных структур: проверка финитности чисел, запрет приватных полей `_`, отклонение null/undefined/некорректных типов в массивах.
+     - Добавлены строгие канонические валидаторы:
+       - `validateSupportAuras`: проверяет канонический набор ключей (`CANONICAL_SUPPORT_AURA_KEY_SET`), отклоняет несанкционированные поля (`entityStore`), проверяет финитность числовых полей (`radius`, `value`, `duration`, `interval`), валидирует `target` ('allies' | 'enemies') и `targetTags`.
+       - `validateAbilityProgramItem`: проверяет `id` (непустая строка), структуру триггера, `priority`, группы действий и рекурсивно проверяет все ветви конфигурации.
+       - `validateBurrowConfig`: проверяет канонические ключи (`CANONICAL_BURROW_CONFIG_KEY_SET`), требует конечное числовое значение `damageReduction`, валидирует опциональные числовые поля регенерации и множителей.
+       - `validateSnapshotArrayField` и `validateSnapshotObjectField`: отклоняют повреждённые элементы в массивах (`[null, 'bad']`) и повреждённые объекты конфигураций.
+     - В `legacy-wire-codec.ts`:
+       - Реализована санитизация вложенных структур снимков юнитов с фильтрацией по допустимым наборам ключей (`CANONICAL_SUPPORT_AURA_KEYS`, `CANONICAL_BURROW_CONFIG_KEYS`, `VELOCITY_KEYS`), что исключает утечку внутренних полей (`entityStore`) в публичный DTO при сериализации.
+
+2. **[P2] Инварианты `BattleAction` не гарантировались при конверсии:**
+   - Проблема: `deserializeCombatAction()` конструировал `BattleAction`, но не гарантировал обязательные инварианты рантайма плеера:
+     - `move` без `unitId` и `sourceId` приводил к `TypeError: Cannot read properties of undefined (reading 'replace')` в рантайме плеера.
+     - `spawnTeam: 'invalid-team'` молча фоллбэчился на стороне плеера.
+     - `spawnMaxHp: 0` создавал юнитов с `hp: 0, maxHp: 0`, но `isDead: false`.
+   - Исправление:
+     - В `combatEventSchema` добавлена валидация: событие `type === 'move'` обязано содержать непустой `unitId` или `sourceId`. `spawnTeam` может принимать только `'attacker' | 'defender'`. `spawnMaxHp` обязан быть строго положительным числом (`> 0`).
+     - В `deserializeCombatAction` гарантируется наличие непустого `unitId` (из `action.unitId`, `raw.sourceId` или `raw.sourceUnitId`), а также проверяются `spawnTeam` и `spawnMaxHp > 0`.
+   - Расширен тестовый набор `packages/combat-core/tests/wire-codec-inventory-validation.test.ts` (185 строк $\le 250$, 20 тестов):
+     - Добавлены негативные тесты отклонения повреждённых `supportAuras`, `abilityPrograms`, `burrowConfig`.
+     - Добавлены негативные тесты на отсутствие `unitId`/`sourceId` в `move`, невалидный `spawnTeam`, `spawnMaxHp <= 0`.
+
+### Верификация:
+- `npm run combat:core:build` + `npx tsc --noEmit --pretty false`: 0 ошибок компиляции и типов.
+- `npm run test:combat:core`: 21 файл, 153 теста PASS (включая 20 тестов инвентаря и инвариантов).
+- `npm run combat:ecs:golden` и `npm run combat:ecs:v9:golden`: 7/7 стабильны на обоих наборах.
+- `npm run test:combat:package:runtime`: изолированная сборка tarball и внешний consumer PASS.
+- `npm test`: 203 файла, 820 тестов PASS.
+- `npm run build`: Turbopack production build + 32/32 static pages PASS.
+- `npx playwright test tests/e2e/simulator2-replay.spec.ts --project=chromium`: 9/9 тестов PASS.
+- `npx tsx scripts/check-limits.ts --json`: 0 violations (`replay.contracts.ts` 87/100, `replay.nested-validators.ts` 149/250, `replay.inventory.ts` 98/250, `legacy-wire-codec.ts` 222/250, `wire-codec-inventory-validation.test.ts` 185/250).
+

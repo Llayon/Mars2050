@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  serializeCombatUnitSnapshot,
   deserializeCombatUnitSnapshot,
   deserializeCombatEvent,
   deserializeCombatAction,
@@ -49,16 +50,10 @@ describe('R4a: Canonical inventory type validation and negative controls', () =>
 
     invalidEventCases.forEach(({ name, patch }) => {
       it(`rejects corrupt event: ${name}`, () => {
-        const corruptEvent = { type: 'spawn', ...patch }
-
-        // Schema validation throws ZodError
+        const corruptEvent = { type: 'spawn', sourceId: 'u1', ...patch }
         expect(() => combatEventSchema.parse(corruptEvent)).toThrow()
-
-        // Deserialization throws ZodError
         expect(() => deserializeCombatEvent(corruptEvent)).toThrow()
         expect(() => deserializeCombatAction(corruptEvent)).toThrow()
-
-        // Full replay decoder throws ZodError
         const replayWithCorruptEvent = {
           ...baseValidReplay,
           logs: [{ tick: 1, actions: [corruptEvent] }],
@@ -68,7 +63,67 @@ describe('R4a: Canonical inventory type validation and negative controls', () =>
     })
 
     it('rejects disallowed non-canonical event keys on schema validation', () => {
-      expect(() => combatEventSchema.parse({ type: 'spawn', disallowedField: 'unknown' })).toThrow(/Disallowed combat event key/)
+      expect(() => combatEventSchema.parse({ type: 'spawn', sourceId: 'u1', disallowedField: 'unknown' })).toThrow(/Disallowed combat event key/)
+    })
+  })
+
+  describe('BattleAction invariant requirements', () => {
+    it('rejects move actions lacking both unitId and sourceId', () => {
+      expect(() => deserializeCombatAction({ type: 'move', toX: 10, toY: 20 })).toThrow(/Move event requires unitId or sourceId/)
+      expect(() => combatEventSchema.parse({ type: 'move', toX: 10, toY: 20 })).toThrow(/Move event requires unitId or sourceId/)
+      expect(() => deserializeCombatAction({ type: 'heal', amount: 10 })).toThrow(/BattleAction requires a valid non-empty unitId or sourceId/)
+    })
+
+    it('accepts move actions with either unitId or sourceId and maps unitId', () => {
+      const act1 = deserializeCombatAction({ type: 'move', unitId: 'u1', toX: 10, toY: 20 })
+      expect(act1.unitId).toBe('u1')
+      const act2 = deserializeCombatAction({ type: 'move', sourceId: 'u2', toX: 10, toY: 20 })
+      expect(act2.unitId).toBe('u2')
+    })
+
+    it('rejects invalid spawnTeam and requires attacker | defender', () => {
+      expect(() => deserializeCombatAction({ type: 'spawn', unitId: 'u1', spawnTeam: 'invalid-team' })).toThrow(/Invalid spawnTeam/)
+      expect(() => combatEventSchema.parse({ type: 'spawn', unitId: 'u1', spawnTeam: 'invalid-team' })).toThrow(/Invalid spawnTeam/)
+      const valid = deserializeCombatAction({ type: 'spawn', unitId: 'u1', spawnTeam: 'defender' })
+      expect(valid.spawnTeam).toBe('defender')
+    })
+
+    it('rejects spawnMaxHp <= 0', () => {
+      expect(() => deserializeCombatAction({ type: 'spawn', unitId: 'u1', spawnMaxHp: 0 })).toThrow(/Invalid spawnMaxHp/)
+      expect(() => combatEventSchema.parse({ type: 'spawn', unitId: 'u1', spawnMaxHp: 0 })).toThrow(/Invalid spawnMaxHp/)
+      expect(() => deserializeCombatAction({ type: 'spawn', unitId: 'u1', spawnMaxHp: -10 })).toThrow(/Invalid spawnMaxHp/)
+      const valid = deserializeCombatAction({ type: 'spawn', unitId: 'u1', spawnMaxHp: 80 })
+      expect(valid.spawnMaxHp).toBe(80)
+    })
+  })
+
+  describe('Nested configuration schemas and type validation', () => {
+    it('rejects corrupt supportAuras and disallows non-canonical keys like entityStore', () => {
+      const corruptAura = {
+        type: 'haste',
+        target: 'allies',
+        radius: 'bad',
+        value: Infinity,
+        entityStore: { ptr: 123 },
+      }
+      expect(() => combatSnapshotUnitSchema.parse({ ...baseUnit, supportAuras: [corruptAura] })).toThrow()
+      expect(() => deserializeCombatUnitSnapshot({ ...baseUnit, supportAuras: [corruptAura] })).toThrow()
+
+      const serialized = serializeCombatUnitSnapshot({ ...baseUnit, supportAuras: [{ type: 'haste', radius: 100, entityStore: { ptr: 123 } }] })
+      expect('entityStore' in (serialized.supportAuras![0] as unknown as Record<string, unknown>)).toBe(false)
+      expect(serialized.supportAuras![0]).toEqual({ type: 'haste', radius: 100 })
+    })
+
+    it('rejects corrupt abilityPrograms items like null or string', () => {
+      expect(() => combatSnapshotUnitSchema.parse({ ...baseUnit, abilityPrograms: [null, 'bad'] })).toThrow()
+      expect(() => deserializeCombatUnitSnapshot({ ...baseUnit, abilityPrograms: [null, 'bad'] })).toThrow()
+    })
+
+    it('rejects damaged burrowConfig (non-finite or wrong types) and disallowed keys', () => {
+      expect(() => combatSnapshotUnitSchema.parse({ ...baseUnit, burrowConfig: { damageReduction: 'bad' } })).toThrow()
+      expect(() => deserializeCombatUnitSnapshot({ ...baseUnit, burrowConfig: { damageReduction: 'bad' } })).toThrow()
+      expect(() => combatSnapshotUnitSchema.parse({ ...baseUnit, burrowConfig: { damageReduction: Infinity } })).toThrow()
+      expect(() => combatSnapshotUnitSchema.parse({ ...baseUnit, burrowConfig: { damageReduction: 0.5, entityStore: 123 } })).toThrow(/Disallowed burrowConfig key/)
     })
   })
 
@@ -85,18 +140,9 @@ describe('R4a: Canonical inventory type validation and negative controls', () =>
     invalidSnapshotCases.forEach(({ name, patch }) => {
       it(`rejects corrupt snapshot: ${name}`, () => {
         const corruptUnit = { ...baseUnit, ...patch }
-
-        // Schema validation throws ZodError
         expect(() => combatSnapshotUnitSchema.parse(corruptUnit)).toThrow()
-
-        // Deserialization throws ZodError
         expect(() => deserializeCombatUnitSnapshot(corruptUnit)).toThrow()
-
-        // Full replay decoder throws ZodError
-        const replayWithCorruptUnit = {
-          ...baseValidReplay,
-          initialState: [corruptUnit],
-        }
+        const replayWithCorruptUnit = { ...baseValidReplay, initialState: [corruptUnit] }
         expect(() => decodeLegacyReplayJson(JSON.stringify(replayWithCorruptUnit))).toThrow()
       })
     })

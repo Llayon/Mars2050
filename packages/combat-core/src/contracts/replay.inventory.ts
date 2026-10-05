@@ -78,3 +78,20 @@ export const CANONICAL_TARGET_MARK_KEYS = [
 ] as const
 
 export const CANONICAL_TARGET_MARK_KEY_SET = new Set<string>(CANONICAL_TARGET_MARK_KEYS)
+
+export const CANONICAL_SUPPORT_AURA_KEYS = [
+  'type', 'radius', 'value', 'duration', 'interval', 'target', 'targetTags',
+] as const
+
+export const CANONICAL_SUPPORT_AURA_KEY_SET = new Set<string>(CANONICAL_SUPPORT_AURA_KEYS)
+
+export const CANONICAL_BURROW_CONFIG_KEYS = [
+  'damageReduction', 'regenPercentPerTick', 'emergeAttackMult', 'emergeAoeRadiusAdd',
+] as const
+
+export const CANONICAL_BURROW_CONFIG_KEY_SET = new Set<string>(CANONICAL_BURROW_CONFIG_KEYS)
+
+export const VELOCITY_KEYS = ['x', 'y'] as const
+
+export const VELOCITY_KEY_SET = new Set<string>(VELOCITY_KEYS)
+

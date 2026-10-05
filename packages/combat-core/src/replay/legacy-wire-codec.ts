@@ -9,6 +9,9 @@ import {
   CANONICAL_ACTION_KEY_SET,
   CANONICAL_STATUS_EFFECT_KEY_SET,
   CANONICAL_TARGET_MARK_KEY_SET,
+  CANONICAL_SUPPORT_AURA_KEY_SET,
+  CANONICAL_BURROW_CONFIG_KEY_SET,
+  VELOCITY_KEY_SET,
   combatEventSchema,
   combatRunResultSchema,
   combatSnapshotUnitSchema,
@@ -50,40 +53,20 @@ export function sanitizeEventDetails(val: unknown): unknown {
   return cleanObj
 }
 
-function sanitizeSnapshotVelocity(val: unknown): unknown {
+function sanitizeAllowedKeys(val: unknown, allowedKeySet?: Set<string>): unknown {
   if (!val || typeof val !== 'object' || Array.isArray(val)) return val
   const clean: Record<string, unknown> = {}
   for (const [k, v] of Object.entries(val as Record<string, unknown>)) {
-    if (!k.startsWith('_')) {
+    if (!k.startsWith('_') && (!allowedKeySet || allowedKeySet.has(k)) && v !== undefined) {
       clean[k] = typeof v === 'object' && v !== null ? sanitizeEventDetails(v) : v
     }
   }
   return clean
 }
 
-function sanitizeSnapshotStatusEffects(val: unknown): unknown {
+function sanitizeAllowedArray(val: unknown, allowedKeySet?: Set<string>): unknown {
   if (!Array.isArray(val)) return val
-  return val.map(item => {
-    if (!item || typeof item !== 'object' || Array.isArray(item)) return item
-    const clean: Record<string, unknown> = {}
-    for (const [k, v] of Object.entries(item as Record<string, unknown>)) {
-      if (!k.startsWith('_') && CANONICAL_STATUS_EFFECT_KEY_SET.has(k) && v !== undefined) {
-        clean[k] = typeof v === 'object' && v !== null ? sanitizeEventDetails(v) : v
-      }
-    }
-    return clean
-  })
-}
-
-function sanitizeSnapshotTargetMark(val: unknown): unknown {
-  if (!val || typeof val !== 'object' || Array.isArray(val)) return val
-  const clean: Record<string, unknown> = {}
-  for (const [k, v] of Object.entries(val as Record<string, unknown>)) {
-    if (!k.startsWith('_') && CANONICAL_TARGET_MARK_KEY_SET.has(k) && v !== undefined) {
-      clean[k] = typeof v === 'object' && v !== null ? sanitizeEventDetails(v) : v
-    }
-  }
-  return clean
+  return val.map(item => sanitizeAllowedKeys(item, allowedKeySet))
 }
 
 export function serializeCombatUnitSnapshot(unit: unknown): CombatSnapshotUnit {
@@ -92,11 +75,15 @@ export function serializeCombatUnitSnapshot(unit: unknown): CombatSnapshotUnit {
   for (const key of Object.keys(raw)) {
     if (CANONICAL_SNAPSHOT_KEY_SET.has(key) && raw[key] !== undefined) {
       if (key === 'velocity') {
-        result[key] = sanitizeSnapshotVelocity(raw.velocity)
+        result[key] = sanitizeAllowedKeys(raw.velocity, VELOCITY_KEY_SET)
       } else if (key === 'statusEffects') {
-        result[key] = sanitizeSnapshotStatusEffects(raw.statusEffects)
+        result[key] = sanitizeAllowedArray(raw.statusEffects, CANONICAL_STATUS_EFFECT_KEY_SET)
       } else if (key === 'targetMark') {
-        result[key] = sanitizeSnapshotTargetMark(raw.targetMark)
+        result[key] = sanitizeAllowedKeys(raw.targetMark, CANONICAL_TARGET_MARK_KEY_SET)
+      } else if (key === 'supportAuras') {
+        result[key] = sanitizeAllowedArray(raw.supportAuras, CANONICAL_SUPPORT_AURA_KEY_SET)
+      } else if (key === 'burrowConfig') {
+        result[key] = sanitizeAllowedKeys(raw.burrowConfig, CANONICAL_BURROW_CONFIG_KEY_SET)
       } else if (typeof raw[key] === 'object' && raw[key] !== null) {
         result[key] = sanitizeEventDetails(raw[key])
       } else {
@@ -153,8 +140,23 @@ export function deserializeCombatAction(event: unknown): BattleAction {
       action[k] = raw[k]
     }
   }
-  if (action.unitId === undefined && typeof raw.sourceId === 'string') {
-    action.unitId = raw.sourceId
+  const resolvedUnitId = typeof action.unitId === 'string' && action.unitId
+    ? action.unitId
+    : typeof raw.sourceId === 'string' && raw.sourceId
+      ? raw.sourceId
+      : typeof raw.sourceUnitId === 'string' && raw.sourceUnitId
+        ? raw.sourceUnitId
+        : undefined
+  if (!resolvedUnitId) {
+    throw new Error('BattleAction requires a valid non-empty unitId or sourceId')
+  }
+  action.unitId = resolvedUnitId
+
+  if (action.spawnTeam !== undefined && action.spawnTeam !== 'attacker' && action.spawnTeam !== 'defender') {
+    throw new Error(`Invalid spawnTeam: expected "attacker" | "defender", got ${String(action.spawnTeam)}`)
+  }
+  if (action.spawnMaxHp !== undefined && (typeof action.spawnMaxHp !== 'number' || !Number.isFinite(action.spawnMaxHp) || action.spawnMaxHp <= 0)) {
+    throw new Error(`Invalid spawnMaxHp: must be a positive number, got ${String(action.spawnMaxHp)}`)
   }
   return action as unknown as BattleAction
 }
