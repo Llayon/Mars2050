@@ -1,3 +1,4 @@
+import { deterministicSin, deterministicCos } from '../math/deterministic-trig.js'
 import { getSizeMass, getSizeRadius } from '../combat.utils.js'
 import { getCombatArena } from './combat-resources.js'
 import type { CombatWorld } from './combat-world.js'
@@ -228,7 +229,7 @@ function getPairVector(
   }
   const angle = ((hash >>> 0) / 4294967295) * Math.PI * 2 +
     (first < second ? 0 : Math.PI)
-  return { x: Math.cos(angle), y: Math.sin(angle) }
+  return { x: deterministicCos(angle), y: deterministicSin(angle) }
 }
 
 function clamp(value: number, min: number, max: number): number {

@@ -1,3 +1,4 @@
+import { deterministicSin, deterministicCos } from '../math/deterministic-trig.js'
 import type { Obstacle } from '../combat.sim.types.js'
 import { getDistance, getSizeMass, getSizeRadius } from '../combat.utils.js'
 import type { CombatWorld } from './combat-world.js'
@@ -87,8 +88,8 @@ export function getEcsSteeringContext(
         alignmentY += velocityY / speed
         alignmentCount++
       } else if (stationaryAlignment && rulesStore.get(otherId)?.stationaryAlignment === true) {
-        alignmentX += Math.cos(other.currentAngle)
-        alignmentY += Math.sin(other.currentAngle)
+        alignmentX += deterministicCos(other.currentAngle)
+        alignmentY += deterministicSin(other.currentAngle)
         alignmentCount++
       }
     }
@@ -128,7 +129,7 @@ export function getEcsFormationForce(
   const angle = Math.atan2(anchor.y - transform.y, anchor.x - transform.x)
   const multiplier = navigating ? 0.1 : isCentroidAnchor ? 0.5 : near ? 0.18 : 0.75
   const pull = combat.speed * multiplier
-  return { x: Math.cos(angle) * pull, y: Math.sin(angle) * pull }
+  return { x: deterministicCos(angle) * pull, y: deterministicSin(angle) * pull }
 }
 
 export function getEcsObstacleCorrection(
@@ -149,8 +150,8 @@ export function getEcsObstacleCorrection(
     const overlap = minDist - dist
     const angle = Math.atan2(transform.y - obstacle.y, transform.x - obstacle.x)
     const force = Math.min(overlap * 2.5, Math.max(10, effectiveSpeed * 0.6))
-    x += Math.cos(angle) * force
-    y += Math.sin(angle) * force
+    x += deterministicCos(angle) * force
+    y += deterministicSin(angle) * force
   }
   return { x, y }
 }
@@ -165,8 +166,8 @@ function getFormationAnchor(
   if (isCentroidAnchor || transform.offsetX === undefined || transform.offsetY === undefined || transform.initialAngle === undefined) return { x: squadCx, y: squadCy }
   const squadAngle = Math.atan2(target.y - squadCy, target.x - squadCx)
   const rotation = squadAngle - transform.initialAngle
-  const rotatedX = transform.offsetX * Math.cos(rotation) - transform.offsetY * Math.sin(rotation)
-  const rotatedY = transform.offsetX * Math.sin(rotation) + transform.offsetY * Math.cos(rotation)
+  const rotatedX = transform.offsetX * deterministicCos(rotation) - transform.offsetY * deterministicSin(rotation)
+  const rotatedY = transform.offsetX * deterministicSin(rotation) + transform.offsetY * deterministicCos(rotation)
   return {
     x: squadCx + rotatedX,
     y: squadCy + rotatedY,
@@ -188,7 +189,7 @@ function getAwayVector(
     hash = Math.imul(hash, 16777619)
   }
   const angle = ((hash >>> 0) / 4294967295) * Math.PI * 2 + (unitId < otherId ? 0 : Math.PI)
-  return { x: Math.cos(angle), y: Math.sin(angle) }
+  return { x: deterministicCos(angle), y: deterministicSin(angle) }
 }
 
 function getEmergencyPush(

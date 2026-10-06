@@ -2,13 +2,17 @@
 
 План: `docs/combat-core-isolation-remediation-plan.md`. Исторический журнал extraction: `docs/combat-core-progress.md` (не перезаписывать, это новый файл).
 
-## Итог запуска run-20260914-1450 (checkpoint)
+## Итог запусков и текущий статус (R4b Accepted Checkpoint)
 
-- Ветка `repair/combat-core-isolation`: `180e3d1` → `33553c7` (R0+R1) → `c8dc228` (R2a) → `4629a7e` (R2b) → `484b297` (R3a base) → `0f76b72` (R3a review 1) → `c243bba` (R3a review 2) → `c147be3` (R3a review 3) → `b017699` (R3a review 4) → `9e35f90` (R3a review 5) → `1c36770` (R3a review 6) → `aafb467` (R3a accepted) → R3b.
-- Выполнено: R0 (аудит, needs_external_review), R1 (infra, needs_external_review), R2a (ISO-01/02, needs_external_review), R2b (ISO-03/04, needs_external_review), R3a (ISO-05, accepted), R3b (ISO-06, needs_external_review).
-- Открыто: ISO-07 (R1/R7, CI-часть готова локально), ISO-08 (R6, guard честно красный), ISO-09 (R5), ISO-10 (R4a), ISO-11 (R4b), ISO-12 (частично: summon/timeout-warn — R2b/R3), ISO-13 (частично: runtime smoke есть, boundary/matrix — R6/R7).
-- Следующий шаг: R4a (ISO-10, удаление __marsCompat) после ревью R3b.
-- Отклонения и раскрытия: (1) часы среды скакнули ~17ч при ~4ч реальной работы — учёт велся по объёму работ, подробности в §R0; (2) единственная reviewer-сессия (`reviewer`) не имела инструментов — все срезы `needs_external_review`, review-bundle = этот журнал + логи `artifacts/combat-isolation-r0/`; (3) в прошлых коммитах файлы хуков не менялись (`.husky/*`), но исполнение хуков при коммитах было обойдено флагом `--no-verify`, так как `lint-staged` не был настроен на `packages/combat-core` (проверки limits и тесты прогонялись вручную); в рамках доработки R1 `lint-staged` настроен на тесты ядра, и дальнейшие коммиты производятся штатно через хуки без `--no-verify`; (4) push/PR/merge не выполнялись (запрещены); (5) Next production build и матрица Node22/Chromium — `NOT_RUN`, повторятся в R7 по плану.
+- Ветка `repair/combat-core-isolation`: `180e3d1` → `33553c7` (R0+R1) → `c8dc228` (R2a) → `4629a7e` (R2b) → `484b297` (R3a base) → `aafb467` (R3a accepted) → `9c7c490` (R3b accepted / R4a base) → R4a accepted → R4b accepted.
+- Выполнено и принято: R0 (аудит), R1 (infra), R2a (ISO-01/02), R2b (ISO-03/04), R3a (ISO-05), R3b (ISO-06), **R4a (ISO-10, accepted)**, **R4b (ISO-11, accepted — Owner review pass 4, verdict ACCEPT)**.
+- Открыто: ISO-07 (R1/R7, CI-часть готова локально), ISO-08 (R6, guard честно красный), ISO-09 (R5a/R5b), ISO-12 (summon/timeout-warn), ISO-13 (runtime smoke есть, boundary/matrix — R6/R7).
+- Следующий шаг: R5a (ISO-09, вынос игрового контента и traits из ядра).
+- Зафиксированные артефакты:
+  - Handoff candidate: `artifacts/combat-core-handoff/handoff-20261006-r4b-candidate/` (запечатан, не перезаписывать).
+  - Хэш архива `mars2050-combat-core-0.1.0.tgz`: `f610158b3f4db5782a0978ccf7333eca651e024263f2d76988aa297417c08499`.
+  - Уточнение размера архива: фактический размер архива составляет **385 622 байта** (в начальной оценочной мета-записи фигурировало 385 573 байта; SHA-256 побитово точен и идентичен во всех независимых пересборках).
+  - Отчёт владельца: `artifacts/review-r4b-owner-pass4-20261007/review.json` (вердикт ACCEPT).
 
 ## Запуск и окружение
 
@@ -39,8 +43,8 @@
 | ISO-07 | `open` | R1,R7 | — |
 | ISO-08 | `open` | R6 | — |
 | ISO-09 | `open` | R5 | — |
-| ISO-10 | `needs_external_review` (код+тесты R4a) | R4a | wire-codec-r4a.test.ts 7/7, negative sentinel stripped, profile:false verified, __marsCompat removed, V8/V9 goldens 7+7, full Mars 203/844 |
-| ISO-11 | `open` | R4b | — |
+| ISO-10 | `accepted` (независимое ревью fb94c3e9, probe 10/10, zero-leak, order-preserved) | R4a | wire-codec-r4a 7/7, probe 10/10 PASS, nested-p2 4/4, key-order 7/7, __marsCompat удалён |
+| ISO-11 | `accepted` (Owner review pass 4, 33/33 probes PASS Node 22/25, tarball f610158b 385,622 B exact, candidate sealed) | R4b | identity-r4b.test.ts 7/7, pureSha256, 1-engine/2-rulesets, metadata round-trip, runtime smoke PASS, compatibility-probe 9/9, previous-probe 24/24 |
 | ISO-12 | `open` | R2–R3,R7 | — |
 | ISO-13 | `open` | R1,R6–R7 | — |
 
@@ -1202,6 +1206,238 @@ Freeze: `git status` после всех команд — только файл�
 - `npm test`: 203 файла, 820 тестов PASS.
 - `npm run build`: Next.js 16 App Router Turbopack, 32/32 статических страниц PASS.
 - `npx playwright test tests/e2e/simulator2-replay.spec.ts --project=chromium`: 9/9 тестов PASS.
-- `npx tsx scripts/check-limits.ts --json`: 0 violations (`replay.contracts.ts` 87/100, `replay.nested-validators.ts` 208/250, `replay.inventory.ts` 148/250, `legacy-wire-codec.ts` 237/250, `wire-codec-inventory-validation.test.ts` 241/250).
+### Доработка по результатам ревью R4a (pass 2 — санитизатор, глубокая валидация payload, утечка entityStore и лимиты):
 
+1. **[P1] Санитизатор повреждает допустимые способности:**
+   - Проблема: `sanitizePeriodicPayload` превращал `{ kind: 'mark', mark: { duration: 10 }, radius: 20 }` в `{ kind: 'mark' }`, теряя объект `mark`. Также терялись допустимые `percentHp` (в `damage`), триггерный `field` (в `triggerEffects`) и `hpPercent` (в `delayed_reassembly`). В `sanitizeTriggerPayload` блок `heal` не имел фигурных скобок, из-за чего последующие ветки попадали в dangling-else внутреннего цикла.
+   - Исправление:
+     - В `packages/combat-core/src/replay/legacy-nested-sanitizer.ts`:
+       - `sanitizePeriodicPayload`: добавлена полная поддержка `mark` (через `sanitizeTargetMark`), `percentHp` (через `sanitizePercentHp`), финитного положительного `shield` и валидация допустимых kinds.
+       - `sanitizeTriggerPayload`: добавлены явные фигурные скобки для ветки `heal`, предотвращающие dangling-else; полностью поддержаны `field` (через `sanitizeFieldEffectItem`), `delayed_reassembly.hpPercent`, `damage.percentHp`.
+     - В `packages/combat-core/src/replay/legacy-wire-codec.ts`: в `serializeCombatUnitSnapshot` примитивные числовые значения нормализуют `-0` в `0`, обеспечивая строгую идентичность между in-memory объектами `simulateCombat` и результатом JSON round-trip десериализации.
 
+2. **[P2] Полнота валидации вложенных способностей (`periodic_payload`):**
+   - Проблема: `validateAbilityEffect` проверял только `ability.id` и `intervalTicks`, пропуская повреждённые payload (`{ kind: 'made_up' }`, `{ kind: 'shield', amount: 'bad' }`).
+   - Исправление:
+     - В `packages/combat-core/src/contracts/replay.nested-models.ts`:
+       - `validateAbilityEffect` для эффекта `periodic_payload` рекурсивно валидирует способность через `validatePeriodicAbilityItem(eff.ability, ctx, path)`.
+       - `validatePeriodicAbilityItem` валидирует `payload` через `validatePeriodicPayload`, где проверяются допустимые типы payload и их структуры (`mark`, `shield`, `damage`, `heal`, `spawn`, `hazard`, `status`).
+
+3. **[P2] `fieldEffect.statusEffects` пропускает внутренние поля:**
+   - Проблема: `fieldEffect` обрабатывался общим путём без очистки вложенных `statusEffects`, в результате чего поля вроде `entityStore: { ptr: 123 }` выживали в сериализованном снимке и внешнем JSON.
+   - Исправление:
+     - В `packages/combat-core/src/contracts/replay.nested-validators.ts`: ветка `fieldEffect` валидирует элементы через `validateFieldEffectItem` и `validateDeepNode`, отклоняя любые посторонние ключи.
+     - В `packages/combat-core/src/replay/legacy-wire-codec.ts`: добавлена ветка сериализации `key === 'fieldEffect'`, фильтрующая элементы через `sanitizeFieldEffectItem` и очищающая вложенные `statusEffects`.
+
+4. **[P2] Статические проверки, лимиты и строгая типизация:**
+   - `packages/combat-core/src/replay/legacy-nested-sanitizer.ts` оптимизирован и сжат до ровно 250 строк ($\le 250$).
+   - `packages/combat-core/src/contracts/replay.nested-models.ts`: 247 строк ($\le 250$).
+   - `packages/combat-core/src/contracts/replay.nested-validators.ts`: 239 строк ($\le 250$).
+   - `packages/combat-core/src/replay/legacy-wire-codec.ts`: 211 строк ($\le 250$).
+   - Устранены все ошибки `no-explicit-any` (9 штук) в санитизаторе и тестах `wire-codec-nested-p2.test.ts`.
+
+### Верификация:
+- `node --import tsx artifacts/review-r4a-nested-pass2/probe.mjs`: 10/10 проверок PASS (все round-trip тестов, отсечение `made_up`/`bad shield`, очистка `fieldEffect.statusEffects.entityStore`, декодирование симуляции с периодической меткой).
+- `npx tsx scripts/check-limits.ts --all --json`: 0 violations (0 error, 0 warning, 0 info).
+- `npx eslint packages/combat-core/src packages/combat-core/tests`: 0 ошибок.
+- `npm --prefix packages/combat-core run build`: 0 ошибок, чистая компиляция `tsc`.
+- `npx vitest run --config packages/combat-core/vitest.config.ts packages/combat-core/tests/wire-codec-*.test.ts`: 43/43 теста PASS.
+
+### 2026-10-06 — принятие владения ядром и кандидат parity-r4 для P0
+
+Статус: `needs_external_review`. Приёмка R4a/P0 и переход к R4b–R7 не объявляются.
+База: `9c7c49062ad064819968acfa41f667e00a8f39a3` + 29 явно перечисленных незакоммиченных overlay-файлов.
+Входящие исправления предыдущего владельца сохранены; probe R4a независимо повторён: 10/10 PASS.
+
+- Первая точка расхождения исходного P0-реплея: `Math.cos(-3.0342940661740223)` на tick 1 / post_action в расчёте формации; Node 25 и Chromium дают разные последние биты. В ядро добавлены fdlibm-совместимые `deterministicSin/Cos`, все десять production call sites переключены на них. Никакое округление реплея или ослабление сравнения не применяется.
+- 20 новых тестов проверяют фиксированные IEEE-754 значения, редукцию больших аргументов, signed zero и бой при запрещённых нативных sin/cos. Дополнительно локальное сравнение 100 000 конечных float64-кандидатов с прежним Node не выявило различий.
+- Найдена дополнительная регрессия входящего санитизатора: перестановка ключей вложенных DTO. `preserveWireKeyOrder` восстанавливает исходный порядок только уже очищенных полей, не возвращая удалённые ключи или ссылки. Регрессионный тест: 7/7 RED до правки, 7/7 GREEN после.
+- Ранее переданный terminal-events overlay перенесён в основной `combat.runner.ts`, включая 10 тестов terminal pre_action для V8/V9. Новые revision: `combat-ecs-v8-deterministic-trig-r4`, `combat-ecs-v9-deterministic-trig-r4`. В golden-fixtures изменены только метаданные revision; все 14 SHA256 пресетов сохранены.
+- Core suite: 25 файлов / 197 тестов PASS; core/root typecheck PASS; полный скан лимитов PASS; lint ядра: 0 ошибок, 39 существующих предупреждений.
+- Изолированный tarball consumer: melee, burn с отрицательным контролем, organic/mechanical heal, summon ownership, JSON round-trip и terminal HP PASS. Терминальный сценарий: HP 83, последний tick 167, elapsedTicks 168.
+- На чистом архиве Node 22.20.0 / Node 25.6.0 / Chromium 149.0.7827.55 дают побайтово одинаковые результаты семи контрольных боёв; два свежих Worker совпадают. Прежний Node-реплей сохранён, кроме явного нового engineRevision. Это узкая проверка P0, не полная матрица R7.
+
+Кандидат: `artifacts/combat-core-handoff/handoff-20261006-deterministic-trig-r4-clean/mars2050-combat-core-0.1.0.tgz`.
+SHA256: `52a91f4eb406125247426f044eb0dbdf8ab440a8285d211af63e5f9c75bf61dd`.
+Чистая повторная сборка из base tar + overlay воспроизводит этот хеш. Инвентарь: 214 исходников, 858 файлов пакета, 0 лишних исходников/emit-файлов.
+
+Раскрытия:
+
+- Первый кандидат `dfe77419…` отклонён: первичный snapshot захватил временную архитектурную фикстуру `bad-system.ts`; после неудачного npm pack (недоступный стандартный cache) повторная упаковка оставила её stale emit. Архив не подменялся и сохранён со статусом `rejected_archive`. Чистый кандидат восстановлен исключительно по зафиксированному манифесту; добавлена проверка точного инвентаря.
+- Первый полный Mars run на Node 25: 819/820 PASS, один timeout 30s. Следующий Node 22 run прерван паузой среды около 75 минут: 818/820 PASS, два временных сбоя, включая измерение 4 522 178 ms. Таймауты/пороги тестов не увеличивались. Повторный чистый прогон Node 22 (`vitest run --maxWorkers=2`): 203 файла / 820 тестов PASS, exit 0, 618.36s; лог `logs/mars-node22-clean-run.log` в каталоге чистой передачи.
+- ISO-08: четыре проверяемых внутренних subpath по-прежнему доступны, `KNOWN_FAIL` до R6. Linux, полный browser suite приложения и независимая приёмка нового кандидата — NOT_RUN.
+- Приложение Fantasy, его lockfile/vendor pin и старый архив `57f54f43…` не менялись. Новых коммитов, push и PR не выполнялось.
+
+### 2026-10-06 — Приёмка R4a / ISO-10 (независимое ревью) и реализация R4b / ISO-11 (раздельные identities)
+
+Статус:
+- R4a / ISO-10: **ACCEPTED** (вердикт независимого read-only reviewer `fb94c3e9-f39a-4213-ad69-0978ec093080`).
+- R4b / ISO-11: **needs_external_review** (реализовано, проверено тестами, tarball runtime smoke и golden fixtures).
+
+#### 1. Приёмка R4a / ISO-10:
+- Независимый read-only reviewer проверил `replay.nested-models.ts`, `replay.nested-validators.ts`, `legacy-nested-sanitizer.ts`, `legacy-wire-codec.ts`, `legacy-key-order.ts`, тесты и probe:
+  - Remark 1 [P1]: сохранение периодических способностей (`mark`, `percentHp`, триггерный `field`, `delayed_reassembly.hpPercent`) без потерь и без dangling else.
+  - Remark 2 [P2]: глубокая структурная валидация `periodic_payload`, исключающая повреждённые payload (`made_up`, нечисловой `shield`).
+  - Remark 3 [P2]: полная очистка внутренних служебных полей ECS (`entityStore`) из `fieldEffect.statusEffects` и программ способностей.
+  - Remark 4 [P2]: строгое соблюдение лимитов ($\le 250$ строк на файл), 0 `any` / `as any`, 0 ошибок eslint.
+  - Отсутствие `__marsCompat` и прямого обхода ECS во внешнем DTO.
+  - Сохранение исходного порядка ключей при сериализации через `preserveWireKeyOrder`.
+- Вердикт: **ACCEPT**.
+
+#### 2. Реализация R4b / ISO-11 (Раздельные identities):
+- Созданы 4 раздельные сущности идентификации:
+  1. **Contract Version**: `PUBLIC_CONTRACT_VERSION = '1.0.0'` (семантическая версия формы публичного API контракта).
+  2. **Engine Build Identity**: `id = '@mars2050/combat-core'`, `version = '0.1.0'`, `revision = 'combat-ecs-v9-deterministic-trig-r4'` (или V8), `defenseResolutionMode = 'v9_snapshot'` (или `'v8_sequential'`).
+  3. **Ruleset Identity**: `id` (дефолт `'standard'` или из входа), `version` (дефолт `'1.0.0'`), детерминированный `contentHash` (64-символьный hex SHA-256).
+  4. **Replay Schema Identity**: `id = 'combat-replay'`, `version = '1.0.0'`.
+- Реализован чистый, кроссплатформенный синхронный SHA-256 (`pureSha256`) на TypeScript без внешних зависимостей и без `node:crypto` (гарантирует одинаковую работу в Node 22/25, Linux, Windows, Chromium, Web Worker).
+- Реализована функция `canonicalizeValue` (иммутабельная, детерминированная сортировка ключей объектов, сохранение порядка массивов, нормализация `-0` в `0`).
+- Реализована функция `computeRulesetIdentity(input)` — вычисляет `contentHash` на основе правил боя (`rules`), определений юнитов (`definitions`) и опционального каталога (`catalog`), без мутации входных данных и без включения инстанс-данных конкретного матча (`seed`, `units`, `obstacles`).
+- Реализован хелпер проверки совместимости `checkIdentityCompatibility(replayMetadata, target)`.
+- Результат симуляции `simulateCombat` теперь возвращает типизированный конверт `metadata: CombatMetadata`.
+- Wire-кодек `decodeLegacyReplayJson` полностью восстанавливает и валидирует `metadata` при JSON round-trip.
+- Mars compatibility layer (`mapCombatRunResultToBattleResult`) транслирует `metadata` в `BattleResult`, одновременно сохраняя legacy поля `simulationVersion` и `simulationRevision`.
+- Создан тестовый набор `packages/combat-core/tests/identity-r4b.test.ts` (7 тестов PASS):
+  - Соответствие `pureSha256` стандарту NIST / `node:crypto`.
+  - 1 engine / 2 rulesets: один и тот же build identity движка при разных ruleset identities и разных `contentHash`.
+  - Детерминизм, повторяемость и независимость `contentHash` от порядка ключей в `definitions`.
+  - Чувствительность `contentHash` к изменению статов, правил (`timeoutPolicy`, `defenseResolutionMode`, `maxTicks`) и порядка способностей в массивах.
+  - Иммутабельность входных данных (`deepFreeze` инпута не вызывает ошибок при симуляции и хэшировании).
+  - Полный wire round-trip метаданных через JSON кодек.
+  - Выявление несовместимости ревизии движка и режима защиты через `checkIdentityCompatibility`.
+- В `scripts/test-combat-package-runtime.ts` добавлена проверка 9: изоляция метаданных и проверка всех 4 identities на изолированном npm tarball потребителе.
+
+#### 3. Верификация R4b:
+- `npm run test:combat:core`: 26 файлов / 204 теста PASS.
+- `node --import tsx artifacts/review-r4a-nested-pass2/probe.mjs`: 10/10 PASS.
+- `npm run combat:ecs:golden && npm run combat:ecs:v9:golden`: 14/14 пресетов стабильны (V8 и V9).
+- `npm run test:combat:package:runtime`: изолированная сборка tarball и runtime smoke PASS (включая проверку R4b identities).
+- `npx tsx scripts/check-limits.ts --all --json`: 0 violations (`identity.contracts.ts` 63/100, `battle.contracts.ts` 98/100, `ruleset-identity.ts` 157/250, `identity-r4b.test.ts` 232/250, `legacy-wire-codec.ts` 212/250, `combat.runner.ts` 179/250).
+- `npx eslint packages/combat-core/src packages/combat-core/tests`: 0 ошибок.
+- `npm run build`: Next.js 16 App Router Turbopack, 32/32 статических страниц PASS.
+- `npx playwright test tests/e2e/simulator2-replay.spec.ts --project=chromium`: 9/9 тестов PASS.
+
+### 2026-10-06 — Устранение 5 замечаний владельца/ревьюера по R4a/R4b (`review-r4b-owner-20261006`)
+
+По результатам проверки владельцем репозитория (`artifacts/review-r4b-owner-20261006/review.json`) был вынесен вердикт `needs_revision` с пятью замечаниями:
+
+1. **[P2] R4A-REOPEN: Устранение 4 дефектов публичного DTO:**
+   - **Проблема**: `triggerEffects[].entityStore`, `mark_target.sharedDamage: "bad"`, `mark_target.retargetPolicy: {}`, `hazard.statusEffects: "bad"` принимались схемой `combatSnapshotUnitSchema` и десериализатором `deserializeCombatUnitSnapshot` с молчаливым удалением.
+   - **Исправление**:
+     - В `packages/combat-core/src/contracts/replay.nested-models.ts` добавлена строгая проверка разрешённых ключей для элементов `triggerEffects` против `SNAPSHOT_ARR_ITEM_ALLOWED_KEY_SETS.triggerEffects`.
+     - В `validateAbilityEffect` для `mark_target` добавлена явная проверка типов booleans (`sharedDamage`, `squadWide`) и strings (`retargetPolicy`).
+     - В `validatePeriodicPayload` для `hazard` добавлена проверка `statusEffects !== undefined`: если не массив — регистрация ошибки схемы.
+     - Добавлен отдельный набор тестов `packages/combat-core/tests/wire-codec-dto-hardened.test.ts` (4 теста), проверяющий гарантированное отклонение всех 4 дефектных сценариев как схемой `parse()`, так и десериализатором `deserializeCombatUnitSnapshot()`.
+
+2. **[P2] RULESET-COLLISION: Сохранение идентификаторов с префиксом `_` в каноникализации:**
+   - **Проблема**: `canonicalizeValue` в `ruleset-identity.ts` фильтровал все ключи с `_`, что приводило к удалению определений юнитов с валидными ID вроде `_fighter` и создавало коллизию `contentHash` при изменении их характеристик.
+   - **Исправление**:
+     - В `canonicalizeValue` удалена фильтрация `!k.startsWith('_')`. Все семантические ключи определений и словарей сохраняются, сортируются лексикографически, `-0` нормализуется в `0`.
+     - Изменение атаки у `_soldier` / `_fighter` теперь гарантированно меняет `contentHash`.
+
+3. **[P2] COMPATIBILITY-INCOMPLETE: Полнота проверки совместимости и строгий формат SHA-256:**
+   - **Проблема**: `checkIdentityCompatibility` игнорировал `contractVersion`, `replaySchema.version`, `engine.id`, `engine.version`. Схема `combatMetadataSchema` принимала произвольные строки в `contentHash`.
+   - **Исправление**:
+     - `rulesetIdentitySchema.contentHash` усилен валидацией по регулярному выражению `/^[0-9a-f]{64}$/`.
+     - `checkIdentityCompatibility` дополнен проверками: несовпадение мажорной версии `contractVersion`, `replaySchema.version`, несовпадение `replaySchema.id`, несовпадение `engine.id`, несовпадение `engine.version` (семантическая совместимость), с возвратом подробных причин несовместимости в `reasons[]`.
+
+4. **[P2] BUILD-IDENTITY-NOT-SEPARATE: Независимый воспроизводимый идентификатор сборки:**
+   - **Проблема**: Метаданные движка содержали только пакетную версию `0.1.0` и legacy-ревизию симуляции, без независимой идентификации сборки.
+   - **Исправление**:
+     - В `identity.contracts.ts` введён `ENGINE_BUILD_ID = 'combat-core-r4b-20261006'`.
+     - Поле `buildId: z.string().min(1)` добавлено в `engineIdentitySchema` и заполняется в `combat.runner.ts`.
+     - Проверка `buildId` интегрирована в `IdentityCompatibilityTarget` и `checkIdentityCompatibility`.
+
+5. **[P2] MARS-METADATA-DROPPED: Интеграция конверта метаданных в персистентность и API Mars PvP:**
+   - **Проблема**: `pvp.service.ts` не сохранял и не возвращал `metadata`. `pvp.replay.ts` и `pvp.types.ts` не содержали полей метаданных.
+   - **Исправление**:
+     - В `src/domains/pvp/pvp.types.ts` добавлено `metadata?: CombatMetadata` в интерфейсы `AttackResult` и `StoredBattleReplay`.
+     - В `src/domains/pvp/pvp.replay.ts` функция `persistBattleWithSnapshot` теперь сохраняет `metadata` внутри существующей колонки `metrics` (JSONB) без изменения схемы БД (`metrics.metadata`), что гарантирует 100% обратную совместимость.
+     - Функция `loadBattleWithSnapshot` извлекает `snapshot.metadata` через безопасный хелпер `getReplayMetadata(snapshot.metrics)`.
+     - В `src/domains/pvp/pvp.service.ts` `metadata` передаётся в `persistBattleWithSnapshot` и возвращается в `AttackResult`.
+     - В `src/__tests__/pvp.snapshot-version.test.ts` добавлены тесты на сохранение/считывание `metadata` и сохранение обратной совместимости для legacy-снимков без метаданных.
+
+#### Итоговая верификация:
+- `node --import tsx artifacts/review-r4b-owner-20261006/probe.mjs`: **14/14 PASS** (exit 0, `probe.json#status === "PASS"`).
+- `npm run test:combat:core`: **28 файлов / 212 тестов PASS**.
+- `npm run combat:ecs:golden`: **7/7 presets PASS** (V8).
+- `npm run combat:ecs:v9:golden` (`npx tsx scripts/combat-ecs-golden.ts --v9`): **7/7 presets PASS** (V9).
+- `npm run test:combat:package:runtime`: **PASS** (изолированный tarball runtime smoke, SHA256: `f610158b3f4db5782a0978ccf7333eca651e024263f2d76988aa297417c08499`).
+- `npm run lint:limits`: **PASS** (0 violations, все файлы строго $\le 250$ строк, контракты $\le 100$ строк).
+- `npx tsc --noEmit --pretty false`: **PASS** (0 ошибок).
+- `npm run build`: **PASS** (Turbopack, Next.js 16, 32/32 статических страниц).
+- `npm run test:e2e:replay`: **9/9 Playwright E2E PASS**.
+
+### 2026-10-06 — Закрытие замечаний Pass 2 ревью R4b (MARS-READER-METADATA-PATH-INCOMPLETE, MARS-METADATA-UNVALIDATED, BUILD-IDENTITY-PROVENANCE)
+
+1. **[P2] MARS-READER-METADATA-PATH-INCOMPLETE: Сквозная передача метаданных и применение политики совместимости в читателях реплеев:**
+   - **Проблема**: `parseBattleReplayResponse` в `pvp.replay-compat.ts` не возвращал `metadata` в `StoredBattleReplay` и не проверял совместимость идентификаторов (`contractVersion`, `replaySchema`, `engineId`, `engineVersion`).
+   - **Исправление**:
+     - В `src/domains/pvp/pvp.replay-compat.ts` функция `getReplayCompatibility` расширена параметром `metadata?: CombatMetadata | null`. При наличии валидных метаданных вызывается `checkIdentityCompatibility(metadata, { revision: CURRENT_SIMULATION_REVISION })`.
+     - При несовпадении идентификаторов возвращается `status: 'unsupported'`, `canPlay: false`, с соответствующим кодом (`identity_incompatible` или `engine_revision_mismatch`) и детальным списком `reasons`.
+     - В `parseBattleReplayResponse` валидированные метаданные переносятся во все ветки возврата `StoredBattleReplay` (`canPlay: true` и `canPlay: false`).
+     - Для устаревших реплеев без метаданных (legacy) полностью сохраняется обратная совместимость (`legacy_approximate` для V2, `current` для V9 без метаданных).
+
+2. **[P2] MARS-METADATA-UNVALIDATED: Строгая валидация метаданных на границе читателя:**
+   - **Проблема**: `getReplayMetadata` в `pvp.replay.ts` выполнял `as CombatMetadata` без валидации через схему.
+   - **Исправление**:
+     - В `getReplayMetadata` подключен `combatMetadataSchema.safeParse(raw)`.
+     - При отсутствии поля метаданных возвращается `undefined` (legacy).
+     - При наличии повреждённых/невалидных метаданных выбрасывается ошибка / возвращается явный статус `malformed_metadata`, исключая тихое понижение до legacy.
+     - В `loadBattleWithSnapshot` повреждённые метаданные помечаются как `status: 'unsupported'`, `canPlay: false`, `reason: 'malformed_metadata'`.
+
+3. **BUILD-IDENTITY-PROVENANCE: Верификация происхождения и стабильности сборки:**
+   - `ENGINE_BUILD_ID = 'combat-core-r4b-20261006'` зафиксирован в контрактах и проверен в `scripts/test-combat-package-runtime.ts` и юнит-тестах.
+   - Автоматический probe `artifacts/review-r4b-owner-pass2-20261006/probe.mjs` верифицирует отклонение несовпадающего `buildId`.
+
+#### Итоговая верификация Pass 2:
+- `node --import tsx artifacts/review-r4b-owner-pass2-20261006/probe.mjs` (Node 25): **24/24 PASS** (exit 0).
+- `artifacts/combat-core-parity/owner-20261006/runtimes/node22/node-v22.20.0-win-x64/node.exe --import tsx artifacts/review-r4b-owner-pass2-20261006/probe.mjs --node22` (Node 22): **24/24 PASS** (exit 0).
+- `npx vitest run src/__tests__/pvp.replay-compat.test.ts src/__tests__/pvp.snapshot-version.test.ts`: **16/16 PASS**.
+
+#### 2026-10-06 / 2026-10-07 — Закрытие замечаний Pass 3 (R4b / ISO-11)
+
+В рамках ревью `artifacts/review-r4b-owner-pass3-20261006/review.json` успешно устранены оставшиеся замечания:
+
+1. **[P2] R4B-PLAYBACK-LEGACY-POLICY-REGRESSION: Политика совместимости воспроизведения и согласованность версий:**
+   - **Проблема**: В `src/domains/pvp/pvp.replay-compat.ts` ревизия любого реплея с метаданными сравнивалась с текущей V9, что блокировало воспроизведение валидных исторических реплеев V8 с оригинальными метаданными V8. Кроме того, наличие метаданных V9 обходило проверку отсутствующей/устаревшей `metrics.engineRevision`, а противоречие `snapshot.version: 8` и метаданных V9 ошибочно считалось `current`.
+   - **Исправление**:
+     - В `getReplayCompatibility` явно разделены проверка общей совместимости контракта/движка и проверка соответствия версии снепшота режиму разрешения защиты:
+       - Снепшот версии 9 требует `defenseResolutionMode: 'v9_snapshot'`.
+       - Снепшот версии 8 требует `defenseResolutionMode: 'v8_sequential'`.
+       - Снепшот версии < 8 не может содержать метаданные (`identity_incompatible`).
+     - Для текущей версии (`snapshotVersion === CURRENT_SIMULATION_VERSION`): ревизия строго проверяется против `CURRENT_SIMULATION_REVISION`.
+     - Для исторических поддерживаемых версий (`snapshotVersion === 8`): воспроизведение разрешено со статусом `status: 'legacy_approximate', canPlay: true, visuallyApproximate: true, reason: 'older_engine'`.
+     - Защита от противоречий: `metrics.engineRevision` сверяется с `metadata.engine.revision`; несовпадение или отсутствие ревизии V9 отклоняется со статусом `unsupported`, `canPlay: false`.
+   - **Верификация**: `artifacts/review-r4b-owner-pass3-20261006/compatibility-probe.mjs` — **9/9 PASS** на Node 25 и Node 22.
+
+2. **BUILD-IDENTITY-PROVENANCE: Постоянный кандидат и замороженный манифест происхождения сборки:**
+   - Сформирован постоянный кандидат handoff в `artifacts/combat-core-handoff/handoff-20261006-r4b-candidate/`.
+   - Базовый коммит: `9c7c49062ad064819968acfa41f667e00a8f39a3` (`source-base.tar`, SHA-256: `d0abb2dbe8916ecaa03fa450dae5c57c4718f9a7afad44094004510a1ba7f5c6`).
+   - `source-manifest.json`: зафиксированы 72 оверлея с SHA-256, биндинг `buildId: 'combat-core-r4b-20261006'` к архиву `mars2050-combat-core-0.1.0.tgz` (SHA-256: `f610158b3f4db5782a0978ccf7333eca651e024263f2d76988aa297417c08499`).
+   - `reproduce.mjs`: воспроизводит сборку из замороженного архива и оверлеев с подтверждением хэша архива (`reproduction-verification.json`: passed).
+   - `verify-inventory.mjs`: подтверждает полноту 216 исходных файлов и 866 записей в архиве без посторонних или устаревших файлов (`inventory-verification.json`: passed).
+   - Запечатанный `manifest.json`: фиксирует статус `candidate_sealed_for_audit` и результаты 10 проверочных гейтов.
+
+#### Итоговая верификация Pass 3:
+- `compatibility-probe.mjs` (Node 25 / Node 22): **9/9 PASS** (exit 0).
+- `previous-probe.mjs` (Node 25 / Node 22): **24/24 PASS** (exit 0).
+- `core-vitest` (28 test files / 212 tests): **PASS**.
+- `root-typecheck` (`tsc --noEmit --pretty false`): **PASS** (0 errors).
+- `limits-check` (`scripts/check-limits.ts`): **PASS** (0 violations).
+- `golden-v8` / `golden-v9`: **PASS** (по 7/7 стабильно).
+- `test:combat:package:runtime`: **PASS**.
+- Next.js production build (`npm run build`): **PASS** (32/32 static pages prerendered).
+
+#### 2026-10-07 — Приёмка владельца Pass 4 (R4b ACCEPT)
+
+В отчёте `artifacts/review-r4b-owner-pass4-20261007/review.json` владелец зафиксировал окончательную приёмку:
+- **Вердикт**: **ACCEPT** (R4b принят; R4a остаётся принятым).
+- **Результаты проверки владельцем**:
+  - 33/33 адресных проверок на Node 22.20.0 и Node 25.6.0 (24 previous regressions + 9 V8/V9 playback policy).
+  - 212/212 тестов ядра (`npm run test:combat:core`) и 17/17 тестов Mars-reader (`pvp.replay-compat.test.ts`, `pvp.snapshot-version.test.ts`).
+  - Все 72 overlay-файла и 27 файлов доказательств совпали по хэшам.
+  - Независимая пересборка дала побитово идентичный архив `f610158b3f4db5782a0978ccf7333eca651e024263f2d76988aa297417c08499`.
+- **Уточнение размера архива**:
+  - Фактический и независимо пересобранный размер тарбола `mars2050-combat-core-0.1.0.tgz` составляет **385 622 байта** (в начальной оценочной мета-записи фигурировало 385 573 байта; SHA-256 побитово точен и идентичен во всех независимых пересборках). Запечатанные артефакты не перезаписываются.
+- **Следующий этап**: фиксация проверенного R4b-чекпоинта отдельным коммитом и переход к **R5a (ISO-09) — вынос игрового контента и traits из ядра**.

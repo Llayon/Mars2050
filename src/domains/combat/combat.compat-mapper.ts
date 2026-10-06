@@ -41,5 +41,6 @@ export function mapCombatRunResultToBattleResult(
     simulationVersion: result.engineVersion,
     simulationRevision: result.engineRevision,
     profile: profileSpatial,
+    metadata: result.metadata,
   }
 }

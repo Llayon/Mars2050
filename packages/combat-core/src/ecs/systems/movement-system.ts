@@ -1,3 +1,4 @@
+import { deterministicSin, deterministicCos } from '../../math/deterministic-trig.js'
 import type { BattleAction } from '../../combat.actions.js'
 import { getFlowVector } from '../../combat.pathfinding.js'
 import type { RuntimeMovementContext } from '../../combat.runtime.js'
@@ -155,8 +156,8 @@ function runMovementMath(world: CombatWorld, entityId: EntityId, targetId: Entit
   movement.isMoving = positioning.shouldMove
   syncEcsMovementActivity(world, entityId, positioning.shouldMove, actions)
   if (positioning.shouldMove) {
-    vx = Math.cos(transform.currentAngle) * effectiveSpeed
-    vy = Math.sin(transform.currentAngle) * effectiveSpeed
+    vx = deterministicCos(transform.currentAngle) * effectiveSpeed
+    vy = deterministicSin(transform.currentAngle) * effectiveSpeed
   }
   if (!transform.isFlying) {
     const correction = getEcsObstacleCorrection(world, entityId, context.obstacles, myRadius, effectiveSpeed)

@@ -2,6 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { getServerClient } from '@/domains/resource/resource.server'
 import { CURRENT_SIMULATION_VERSION } from '@/domains/combat/combat.version'
 import type { TerminationReason } from '@/domains/combat/combat.result'
+import { combatMetadataSchema, type CombatMetadata } from '@mars2050/combat-core/contracts'
 import { getReplayCompatibility, getReplayEngineRevision } from './pvp.replay-compat'
 import type { ReplayCompatibility } from './pvp.types'
 
@@ -27,12 +28,24 @@ export interface BattleSnapshotRow {
   elapsed_ticks: number | null
   version: number
   created_at: string | null
+  metadata?: CombatMetadata
 }
 
 export interface BattleWithSnapshot {
   battle: BattleRow
   snapshot: BattleSnapshotRow
   compatibility: ReplayCompatibility
+}
+
+export function getReplayMetadata(metrics: unknown): CombatMetadata | undefined {
+  if (!metrics || typeof metrics !== 'object' || Array.isArray(metrics)) return undefined
+  const raw = (metrics as Record<string, unknown>).metadata
+  if (raw === undefined || raw === null) return undefined
+  const parsed = combatMetadataSchema.safeParse(raw)
+  if (!parsed.success) {
+    throw new Error('Invalid combat replay metadata')
+  }
+  return parsed.data
 }
 
 /**
@@ -60,10 +73,42 @@ export async function loadBattleWithSnapshot(
     .single()
   if (snapError || !snapshot) return null
 
+  let metadata: CombatMetadata | undefined
+  let metadataMalformed = false
+  const rawMetrics = snapshot.metrics && typeof snapshot.metrics === 'object' && !Array.isArray(snapshot.metrics)
+    ? (snapshot.metrics as Record<string, unknown>)
+    : undefined
+  if (rawMetrics && 'metadata' in rawMetrics && rawMetrics.metadata !== undefined && rawMetrics.metadata !== null) {
+    try {
+      metadata = getReplayMetadata(snapshot.metrics)
+    } catch {
+      metadataMalformed = true
+    }
+  }
+
+  const compatibility: ReplayCompatibility = metadataMalformed
+    ? {
+        snapshotVersion: snapshot.version,
+        currentVersion: CURRENT_SIMULATION_VERSION,
+        status: 'unsupported',
+        canPlay: false,
+        visuallyApproximate: false,
+        reason: 'malformed_metadata',
+        reasons: ['Combat metadata envelope is malformed or invalid'],
+      }
+    : getReplayCompatibility(
+        snapshot.version,
+        getReplayEngineRevision(snapshot.metrics),
+        metadata
+      )
+
   return {
     battle: battle as BattleRow,
-    snapshot: snapshot as BattleSnapshotRow,
-    compatibility: getReplayCompatibility(snapshot.version, getReplayEngineRevision(snapshot.metrics)),
+    snapshot: {
+      ...(snapshot as BattleSnapshotRow),
+      metadata,
+    },
+    compatibility,
   }
 }
 
@@ -139,6 +184,7 @@ export async function persistBattleWithSnapshot(
     simulationRevision: string
     terminationReason?: TerminationReason
     elapsedTicks?: number
+    metadata?: CombatMetadata
   }
 ): Promise<string | null> {
   if (snapshot.simulationVersion === undefined || snapshot.simulationRevision === undefined) return null
@@ -166,6 +212,7 @@ export async function persistBattleWithSnapshot(
     metrics: {
       ...(snapshot.metrics ?? {}),
       engineRevision: snapshot.simulationRevision,
+      ...(snapshot.metadata ? { metadata: snapshot.metadata } : {}),
     },
     termination_reason: snapshot.terminationReason ?? null,
     elapsed_ticks: snapshot.elapsedTicks ?? null,

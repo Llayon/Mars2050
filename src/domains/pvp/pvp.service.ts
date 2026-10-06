@@ -184,6 +184,7 @@ export async function executeAttack(
         simulationRevision: battleResult.simulationRevision,
         terminationReason: battleResult.terminationReason,
         elapsedTicks: battleResult.elapsedTicks,
+        metadata: battleResult.metadata,
       }
     )
     if (snapId) battleId = snapId
@@ -216,6 +217,7 @@ export async function executeAttack(
     simulationRevision: battleResult.simulationRevision,
     terminationReason: battleResult.terminationReason,
     elapsedTicks: battleResult.elapsedTicks,
+    metadata: battleResult.metadata,
   }
 }
 

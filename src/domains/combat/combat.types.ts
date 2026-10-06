@@ -3,3 +3,4 @@ export type UnitRow = Database['public']['Tables']['units']['Row']
 export type BattleRow = Database['public']['Tables']['battles']['Row']
 export type UnitTypeKey = UnitsType
 export * from '@mars2050/combat-core/combat.types'
+export type { CombatMetadata } from '@mars2050/combat-core/contracts'

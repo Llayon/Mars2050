@@ -1,3 +1,4 @@
+import { deterministicSin, deterministicCos } from '../../math/deterministic-trig.js'
 import type { BattleAction } from '../../combat.actions.js'
 import { compareEntityExternalIdsForMode } from '../authored-order.js'
 import { getDistance, getSizeRadius } from '../../combat.utils.js'
@@ -81,8 +82,8 @@ function applyKnockback(
     let dy = target.y - source.y
     let distance = Math.hypot(dx, dy)
     if (distance <= 0) {
-      dx = Math.cos(source.currentAngle)
-      dy = Math.sin(source.currentAngle)
+      dx = deterministicCos(source.currentAngle)
+      dy = deterministicSin(source.currentAngle)
       distance = 1
     }
     const fromX = target.x

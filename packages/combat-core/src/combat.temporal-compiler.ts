@@ -1,3 +1,4 @@
+import { deterministicSin, deterministicCos } from './math/deterministic-trig.js'
 import type { CompiledAbilityProgram } from './combat.ability-compiler.js'
 import type { AbilityEffect } from './combat.ability.types.js'
 import type { UnitBaseStats } from './combat.types.js'
@@ -59,8 +60,8 @@ function compileBarrageShellPlan(config: NonNullable<UnitBaseStats['barrageAttac
     const angle = (index - 1) * 2.399963229728653
     const ring = 0.55 + (index % 3) * 0.225
     return {
-      x: Math.cos(angle) * config.spreadRadius * ring,
-      y: Math.sin(angle) * config.spreadRadius * ring,
+      x: deterministicCos(angle) * config.spreadRadius * ring,
+      y: deterministicSin(angle) * config.spreadRadius * ring,
     }
   })
   return {

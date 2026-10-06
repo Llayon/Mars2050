@@ -461,6 +461,19 @@ if (JSON.stringify(decodedReplay) !== JSON.stringify(boundaryRun)) {
 }
 console.log('r4aWireCodec: DTO boundary, sentinel isolation, profile: false and round-trip verified')
 
+// 9. R4b / ISO-11: Separate identities for contract, engine, ruleset, and replay
+if (!boundaryRun.metadata) throw new Error('R4b failed: metadata missing on CombatRunResult')
+if (boundaryRun.metadata.contractVersion !== '1.0.0') throw new Error('R4b failed: unexpected contractVersion')
+if (boundaryRun.metadata.engine.id !== '@mars2050/combat-core') throw new Error('R4b failed: unexpected engineId')
+if (boundaryRun.metadata.engine.version !== '0.1.0') throw new Error('R4b failed: unexpected engine.version')
+if (boundaryRun.metadata.engine.buildId !== 'combat-core-r4b-20261006') throw new Error('R4b failed: unexpected engine.buildId')
+if (!boundaryRun.metadata.ruleset.contentHash || boundaryRun.metadata.ruleset.contentHash.length !== 64) {
+  throw new Error('R4b failed: invalid ruleset contentHash')
+}
+if (boundaryRun.metadata.replaySchema.id !== 'combat-replay') throw new Error('R4b failed: unexpected replaySchema.id')
+if (boundaryRun.metadata.replaySchema.version !== '1.0.0') throw new Error('R4b failed: unexpected replaySchema.version')
+console.log('r4bIdentities: contract, engine, ruleset, and replay schema identities (including buildId) verified')
+
 console.log('All archive runtime verification suites passed successfully.')
 `
 

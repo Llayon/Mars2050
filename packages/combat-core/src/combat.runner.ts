@@ -1,4 +1,14 @@
 import type { BattleInput, CombatRunResult } from './contracts/index.js'
+import {
+  ENGINE_ID,
+  ENGINE_VERSION,
+  ENGINE_BUILD_ID,
+  PUBLIC_CONTRACT_VERSION,
+  REPLAY_SCHEMA_ID,
+  REPLAY_SCHEMA_VERSION,
+  type CombatMetadata,
+  computeRulesetIdentity,
+} from './contracts/index.js'
 import { PRNG } from './math/index.js'
 import { createEcsCombatRuntime } from './ecs/combat-ecs-runtime.js'
 import { createPathfindingMap } from './combat.pathfinding.js'
@@ -102,7 +112,20 @@ export function executeCombatSimulation(input: BattleInput): CombatRunResult {
     runtime.runStage('pre_action', { tick, actions, rng, activeGlobals })
 
     const terminalOutcome = runtime.getTerminalOutcome()
-    if (terminalOutcome) { resolvedOutcome = terminalOutcome; break }
+    if (terminalOutcome) {
+      resolvedOutcome = terminalOutcome
+      // The terminal pre-action phase has already committed its mutations.
+      // Keep its events and count that observable tick, without running later phases.
+      if (actions.length > 0) {
+        if (metrics) {
+          recordCombatActions(metrics, tick, actions, runtime.world)
+          recordCombatTick(metrics, runtime.world)
+        }
+        logs.push({ tick, actions })
+        tick++
+      }
+      break
+    }
 
     runtime.runStage('action', { tick, actions, rng, activeGlobals })
     runtime.runStage('post_action', { tick, actions, rng, activeGlobals })
@@ -125,6 +148,22 @@ export function executeCombatSimulation(input: BattleInput): CombatRunResult {
   const metricsData = metrics ? finalizeCombatMetrics(metrics, tick) : undefined
   const profile = rules.profile && spatialProfile ? { spatial: spatialProfile } : undefined
 
+  const metadata: CombatMetadata = {
+    contractVersion: PUBLIC_CONTRACT_VERSION,
+    engine: {
+      id: ENGINE_ID,
+      version: ENGINE_VERSION,
+      revision: defenseResolutionMode === 'v8_sequential' ? V8_SIMULATION_REVISION : V9_SIMULATION_REVISION,
+      buildId: ENGINE_BUILD_ID,
+      defenseResolutionMode,
+    },
+    ruleset: computeRulesetIdentity(input),
+    replaySchema: {
+      id: REPLAY_SCHEMA_ID,
+      version: REPLAY_SCHEMA_VERSION,
+    },
+  }
+
   return {
     winner: outcome.winner,
     seed,
@@ -135,6 +174,7 @@ export function executeCombatSimulation(input: BattleInput): CombatRunResult {
     logs: mapBattleTicksToCombatTicks(logs),
     engineVersion: defenseResolutionMode === 'v8_sequential' ? V8_SIMULATION_VERSION : V9_SIMULATION_VERSION,
     engineRevision: defenseResolutionMode === 'v8_sequential' ? V8_SIMULATION_REVISION : V9_SIMULATION_REVISION,
+    metadata,
     ...(profile ? { profile } : {}),
     ...(metricsData ? { metrics: metricsData } : {}),
   } as CombatRunResult

@@ -4,6 +4,7 @@ export type { CombatSnapshotUnit }
 import type { CombatMetrics } from './combat.metrics.js'
 import type { TerminationReason } from './combat.result.js'
 import type { SpatialQueryProfile } from './combat.spatial-profile.js'
+import type { CombatMetadata } from './contracts/identity.contracts.js'
 
 export const BATTLE_ACTION_TYPES = [
   'move', 'knockback', 'attack', 'heal', 'heal_blocked', 'die', 'spawn', 'hazard_spawn',
@@ -92,4 +93,5 @@ export interface BattleResult {
   simulationVersion: number
   simulationRevision: string
   profile?: SpatialQueryProfile
+  metadata?: CombatMetadata
 }

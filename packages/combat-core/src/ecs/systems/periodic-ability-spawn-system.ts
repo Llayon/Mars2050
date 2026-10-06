@@ -1,3 +1,4 @@
+import { deterministicSin, deterministicCos } from '../../math/deterministic-trig.js'
 import type { BattleAction } from '../../combat.actions.js'
 import type { PeriodicAbilityPayload } from '../../combat.sim.types.js'
 import type { UnitTypeKey } from '../../combat.types.js'
@@ -99,8 +100,8 @@ function getSpawnPosition(
   }
   const angle = (Math.PI * 2 * index) / count
   return {
-    x: clamp(anchor.x + Math.cos(angle) * radius, arena.width, bodyRadius),
-    y: clamp(anchor.y + Math.sin(angle) * radius, arena.height, bodyRadius),
+    x: clamp(anchor.x + deterministicCos(angle) * radius, arena.width, bodyRadius),
+    y: clamp(anchor.y + deterministicSin(angle) * radius, arena.height, bodyRadius),
   }
 }
 

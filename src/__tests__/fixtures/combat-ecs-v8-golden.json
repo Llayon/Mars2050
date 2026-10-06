@@ -1,6 +1,6 @@
 {
   "simulationVersion": 8,
-  "simulationRevision": "combat-ecs-v8-stabilized-r2",
+  "simulationRevision": "combat-ecs-v8-deterministic-trig-r4",
   "seed": 24680,
   "presets": {
     "control_status": "7a6590721c7b1f29baa6b3a4ac61431194d1a74eca306cc18b3e117f9ccbc4e5",

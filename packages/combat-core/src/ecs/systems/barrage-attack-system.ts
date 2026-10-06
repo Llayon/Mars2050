@@ -1,3 +1,4 @@
+import { deterministicSin, deterministicCos } from '../../math/deterministic-trig.js'
 import type { BattleAction } from '../../combat.actions.js'
 import { compareEntityExternalIdsForMode } from '../authored-order.js'
 import type { BarrageAttackConfig } from '../../combat.primitives.js'
@@ -107,8 +108,8 @@ function getOffset(index: number, spreadRadius: number): { x: number; y: number 
   const angle = (index - 1) * 2.399963229728653
   const ring = 0.55 + (index % 3) * 0.225
   return {
-    x: Math.cos(angle) * spreadRadius * ring,
-    y: Math.sin(angle) * spreadRadius * ring,
+    x: deterministicCos(angle) * spreadRadius * ring,
+    y: deterministicSin(angle) * spreadRadius * ring,
   }
 }
 

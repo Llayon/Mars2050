@@ -7,22 +7,29 @@ import {
   CANONICAL_SNAPSHOT_KEY_SET,
   CANONICAL_ACTION_KEYS,
   CANONICAL_ACTION_KEY_SET,
-  CANONICAL_STATUS_EFFECT_KEY_SET,
   CANONICAL_TARGET_MARK_KEY_SET,
-  CANONICAL_SUPPORT_AURA_KEY_SET,
   CANONICAL_BURROW_CONFIG_KEY_SET,
   VELOCITY_KEY_SET,
   SNAPSHOT_OBJ_ALLOWED_KEY_SETS,
   SNAPSHOT_ARR_ITEM_ALLOWED_KEY_SETS,
-  ABILITY_PROGRAM_KEY_SET,
-  ABILITY_TRIGGER_KEY_SET,
-  ABILITY_SELECTOR_KEY_SET,
-  ABILITY_DAMAGE_EXPR_KEY_SET,
   combatEventSchema,
   combatRunResultSchema,
   combatSnapshotUnitSchema,
 } from '../contracts/index.js'
 import type { BattleAction, BattleTick } from '../combat.actions.js'
+import {
+  sanitizeStatusEffect,
+  sanitizeGeometryConfig,
+  sanitizeSupportAuraItem,
+  sanitizeAbilityPrograms,
+  sanitizeFormationModifiers,
+  sanitizeRankScaling,
+  sanitizeFieldEffectItem,
+  sanitizeTriggerEffectItem,
+  sanitizePeriodicAbilityItem,
+} from './legacy-nested-sanitizer.js'
+import { GEOMETRY_KIND_TO_CANONICAL } from '../contracts/replay.nested-models.js'
+import { preserveWireKeyOrder } from './legacy-key-order.js'
 
 export { CANONICAL_SNAPSHOT_KEYS, CANONICAL_SNAPSHOT_KEY_SET, CANONICAL_ACTION_KEYS, CANONICAL_ACTION_KEY_SET }
 
@@ -70,69 +77,37 @@ function sanitizeAllowedArray(val: unknown, allowedKeySet?: Set<string>): unknow
   return val.map(item => sanitizeAllowedKeys(item, allowedKeySet))
 }
 
-function sanitizeAbilityEffect(e: unknown): unknown {
-  if (!e || typeof e !== 'object' || Array.isArray(e)) return e
-  const eff = e as Record<string, unknown>
-  const clean: Record<string, unknown> = { kind: eff.kind }
-  for (const [k, v] of Object.entries(eff)) {
-    if (k === 'kind') continue
-    if (k === 'expression') clean.expression = sanitizeAllowedKeys(v, ABILITY_DAMAGE_EXPR_KEY_SET)
-    else if (k === 'config' && typeof eff.kind === 'string' && SNAPSHOT_OBJ_ALLOWED_KEY_SETS[eff.kind]) {
-      clean.config = sanitizeAllowedKeys(v, SNAPSHOT_OBJ_ALLOWED_KEY_SETS[eff.kind])
-    } else if (!k.startsWith('_') && v !== undefined && k !== 'entityStore') {
-      clean[k] = typeof v === 'object' && v !== null ? sanitizeEventDetails(v) : v
-    }
-  }
-  return clean
-}
-
-function sanitizeAbilityPrograms(programs: unknown): unknown {
-  if (!Array.isArray(programs)) return programs
-  return programs.map(p => {
-    if (!p || typeof p !== 'object' || Array.isArray(p)) return p
-    const prog = p as Record<string, unknown>
-    const clean: Record<string, unknown> = {}
-    for (const [k, v] of Object.entries(prog)) {
-      if (k === 'trigger' && v && typeof v === 'object') clean.trigger = sanitizeAllowedKeys(v, ABILITY_TRIGGER_KEY_SET)
-      else if (k === 'groups' && Array.isArray(v)) {
-        clean.groups = v.map((g: unknown) => {
-          if (!g || typeof g !== 'object') return g
-          const grp = g as Record<string, unknown>
-          return {
-            selector: sanitizeAllowedKeys(grp.selector, ABILITY_SELECTOR_KEY_SET),
-            effects: Array.isArray(grp.effects) ? grp.effects.map(sanitizeAbilityEffect) : grp.effects,
-          }
-        })
-      } else if (ABILITY_PROGRAM_KEY_SET.has(k) && !k.startsWith('_')) clean[k] = v
-    }
-    return clean
-  })
-}
-
 export function serializeCombatUnitSnapshot(unit: unknown): CombatSnapshotUnit {
   const raw = unit as Record<string, unknown>
   const result: Record<string, unknown> = {}
   for (const key of Object.keys(raw)) {
     if (CANONICAL_SNAPSHOT_KEY_SET.has(key) && raw[key] !== undefined) {
       if (key === 'velocity') result[key] = sanitizeAllowedKeys(raw.velocity, VELOCITY_KEY_SET)
-      else if (key === 'statusEffects') result[key] = sanitizeAllowedArray(raw.statusEffects, CANONICAL_STATUS_EFFECT_KEY_SET)
+      else if (key === 'statusEffects') result[key] = Array.isArray(raw.statusEffects) ? raw.statusEffects.map(sanitizeStatusEffect).filter(Boolean) : raw.statusEffects
       else if (key === 'targetMark') result[key] = sanitizeAllowedKeys(raw.targetMark, CANONICAL_TARGET_MARK_KEY_SET)
-      else if (key === 'supportAuras') result[key] = sanitizeAllowedArray(raw.supportAuras, CANONICAL_SUPPORT_AURA_KEY_SET)
+      else if (key === 'supportAuras') result[key] = Array.isArray(raw.supportAuras) ? raw.supportAuras.map(sanitizeSupportAuraItem).filter(Boolean) : raw.supportAuras
       else if (key === 'burrowConfig') result[key] = sanitizeAllowedKeys(raw.burrowConfig, CANONICAL_BURROW_CONFIG_KEY_SET)
+      else if (key === 'formationModifiers') result[key] = sanitizeFormationModifiers(raw.formationModifiers)
+      else if (key === 'rankScaling') result[key] = sanitizeRankScaling(raw.rankScaling)
+      else if (GEOMETRY_KIND_TO_CANONICAL[key]) result[key] = sanitizeGeometryConfig(key, raw[key])
       else if (key === 'abilityPrograms' || key === 'supportPrograms' || key === 'periodicPrograms') result[key] = sanitizeAbilityPrograms(raw[key])
+      else if (key === 'statusOnHit') result[key] = Array.isArray(raw.statusOnHit) ? raw.statusOnHit.map(sanitizeStatusEffect).filter(Boolean) : raw.statusOnHit
+      else if (key === 'fieldEffect') result[key] = Array.isArray(raw.fieldEffect) ? raw.fieldEffect.map(sanitizeFieldEffectItem).filter(Boolean) : raw.fieldEffect
+      else if (key === 'triggerEffects') result[key] = Array.isArray(raw.triggerEffects) ? raw.triggerEffects.map(sanitizeTriggerEffectItem).filter(Boolean) : raw.triggerEffects
+      else if (key === 'periodicAbilities' || key === 'periodicProgramState') result[key] = Array.isArray(raw[key]) ? (raw[key] as unknown[]).map(sanitizePeriodicAbilityItem).filter(Boolean) : raw[key]
       else if (SNAPSHOT_OBJ_ALLOWED_KEY_SETS[key]) result[key] = sanitizeAllowedKeys(raw[key], SNAPSHOT_OBJ_ALLOWED_KEY_SETS[key])
       else if (SNAPSHOT_ARR_ITEM_ALLOWED_KEY_SETS[key]) result[key] = sanitizeAllowedArray(raw[key], SNAPSHOT_ARR_ITEM_ALLOWED_KEY_SETS[key])
       else if (typeof raw[key] === 'object' && raw[key] !== null) result[key] = sanitizeEventDetails(raw[key])
-      else result[key] = raw[key]
+      else result[key] = Object.is(raw[key], -0) ? 0 : raw[key]
     }
   }
-  return result as CombatSnapshotUnit
+  return preserveWireKeyOrder(raw, result) as CombatSnapshotUnit
 }
 
 export function deserializeCombatUnitSnapshot(input: unknown): CombatSnapshotUnit {
-  const sanitized = serializeCombatUnitSnapshot(input)
-  combatSnapshotUnitSchema.parse(sanitized)
-  return sanitized
+  const stripped = sanitizeEventDetails(input)
+  combatSnapshotUnitSchema.parse(stripped)
+  return serializeCombatUnitSnapshot(stripped)
 }
 
 export const serializeLegacyUnit = serializeCombatUnitSnapshot
@@ -229,6 +204,7 @@ export function decodeLegacyReplayJson(json: string): CombatRunResult {
     logs,
     engineVersion: parsed.engineVersion,
     engineRevision: parsed.engineRevision,
+    ...(parsed.metadata !== undefined ? { metadata: parsed.metadata } : {}),
     ...(parsed.profile !== undefined && typeof parsed.profile === 'object' ? { profile: parsed.profile as Record<string, unknown> } : (parsed.profile !== undefined ? { profile: parsed.profile } : {})),
     ...(parsed.metrics !== undefined && typeof parsed.metrics === 'object' ? { metrics: parsed.metrics as Record<string, unknown> } : (parsed.metrics !== undefined ? { metrics: parsed.metrics } : {})),
   }

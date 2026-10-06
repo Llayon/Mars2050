@@ -1,6 +1,6 @@
 {
   "simulationVersion": 9,
-  "simulationRevision": "combat-ecs-v9-defense-snapshot-r2",
+  "simulationRevision": "combat-ecs-v9-deterministic-trig-r4",
   "seed": 24680,
   "presets": {
     "control_status": "9af5a009a687c9859a13059e82e658fd92a750c2db6b0aec3488669c265f1980",

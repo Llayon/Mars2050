@@ -1,4 +1,4 @@
-import type { BattleTick } from '@/domains/combat/combat.types'
+import type { BattleTick, CombatMetadata } from '@/domains/combat/combat.types'
 import type { UnitRow, SimUnit, CombatSnapshotUnit, Obstacle } from '@/domains/combat/combat.types'
 import type { CombatMetrics } from '@/domains/combat/combat.metrics'
 import type { TerminationReason } from '@/domains/combat/combat.result'
@@ -21,6 +21,7 @@ export interface AttackResult {
   terminationReason?: TerminationReason
   elapsedTicks?: number
   cooldownRemaining?: number
+  metadata?: CombatMetadata
 }
 
 export interface TradeResult {
@@ -30,7 +31,13 @@ export interface TradeResult {
 }
 
 export type ReplayCompatibilityStatus = 'current' | 'legacy_approximate' | 'unsupported'
-export type ReplayCompatibilityReason = 'older_engine' | 'newer_engine' | 'invalid_version' | 'engine_revision_mismatch'
+export type ReplayCompatibilityReason =
+  | 'older_engine'
+  | 'newer_engine'
+  | 'invalid_version'
+  | 'engine_revision_mismatch'
+  | 'identity_incompatible'
+  | 'malformed_metadata'
 
 export interface ReplayCompatibility {
   snapshotVersion: number
@@ -39,6 +46,7 @@ export interface ReplayCompatibility {
   canPlay: boolean
   visuallyApproximate: boolean
   reason?: ReplayCompatibilityReason
+  reasons?: string[]
 }
 
 export interface StoredBattleReplay {
@@ -48,4 +56,5 @@ export interface StoredBattleReplay {
   terminationReason?: TerminationReason
   elapsedTicks?: number
   compatibility: ReplayCompatibility
+  metadata?: CombatMetadata
 }

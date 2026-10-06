@@ -1,3 +1,4 @@
+import { deterministicSin, deterministicCos } from '../math/deterministic-trig.js'
 import type { ConditionalRangeConfig, RuntimeStatusEffect } from '../combat.sim.types.js'
 import { getSizeRadius } from '../combat.utils.js'
 import type { CombatWorld } from './combat-world.js'
@@ -158,7 +159,7 @@ function getMeleePoint(world: CombatWorld, entityId: EntityId, targetId: EntityI
   const span = getMeleeSectorSpan(getSizeRadius(transform.size), getSizeRadius(target.size))
   const angle = getMeleeSlotCenterAngle(slot, span)
   const radius = getSizeRadius(target.size) + getSizeRadius(transform.size) + Math.max(2, combat.range * 0.65)
-  return { x: target.x + Math.cos(angle) * radius, y: target.y + Math.sin(angle) * radius }
+  return { x: target.x + deterministicCos(angle) * radius, y: target.y + deterministicSin(angle) * radius }
 }
 
 function isMeleeReady(world: CombatWorld, entityId: EntityId, targetId: EntityId, point: { x: number; y: number }): boolean {
@@ -195,7 +196,7 @@ function getLegacyWaitingDirection(world: CombatWorld, entityId: EntityId, targe
     hash = Math.imul(hash, 16777619)
   }
   const angle = ((hash >>> 0) / 4294967295) * Math.PI * 2
-  return { x: Math.cos(angle), y: Math.sin(angle) }
+  return { x: deterministicCos(angle), y: deterministicSin(angle) }
 }
 
 function getV9WaitingDirection(
@@ -211,7 +212,7 @@ function getV9WaitingDirection(
     : Number.isFinite(transform.initialAngle)
       ? transform.initialAngle!
       : 0
-  return { x: Math.cos(angle), y: Math.sin(angle) }
+  return { x: deterministicCos(angle), y: deterministicSin(angle) }
 }
 
 function getPreferredPoint(unit: { x: number; y: number }, target: { x: number; y: number }, targetRadius: number, myRadius: number, range: number, ratio: number): { x: number; y: number } {

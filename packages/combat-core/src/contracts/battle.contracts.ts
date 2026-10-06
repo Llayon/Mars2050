@@ -1,6 +1,11 @@
 import { z } from 'zod'
 import { teamSchema, unitDefinitionSchema, unitSpawnSpecSchema } from './unit.contracts.js'
 import { combatReplayUnitSchema, combatTickSchema } from './replay.contracts.js'
+import {
+  combatMetadataSchema, defenseResolutionModeSchema,
+  type CombatMetadata, type DefenseResolutionMode,
+} from './identity.contracts.js'
+export { defenseResolutionModeSchema, type DefenseResolutionMode }
 
 export const obstacleSchema = z.object({
   x: z.number(),
@@ -37,15 +42,14 @@ export type ArenaSpec = z.infer<typeof arenaSpecSchema>
 export const timeoutPolicySchema = z.enum(['draw', 'attacker_win', 'defender_win'])
 export type TimeoutPolicy = z.infer<typeof timeoutPolicySchema>
 
-export const defenseResolutionModeSchema = z.enum(['v9_snapshot', 'v8_sequential'])
-export type DefenseResolutionMode = z.infer<typeof defenseResolutionModeSchema>
-
 export const battleRulesSchema = z.object({
   maxTicks: z.number().int().min(1).max(5000).default(2000),
   timeoutPolicy: timeoutPolicySchema.default('draw'),
   defenseResolutionMode: defenseResolutionModeSchema.default('v9_snapshot'),
   trackMetrics: z.boolean().optional(),
   profile: z.boolean().optional(),
+  rulesetId: z.string().min(1).optional(),
+  rulesetVersion: z.string().min(1).optional(),
 })
 export type BattleRules = z.infer<typeof battleRulesSchema>
 
@@ -66,6 +70,8 @@ export const battleInputSchema = z.object({
   units: z.array(unitSpawnSpecSchema),
   scheduledEffects: z.array(scheduledEffectSchema).default([]),
   catalog: z.record(z.string(), z.unknown()).optional(),
+  rulesetId: z.string().min(1).optional(),
+  rulesetVersion: z.string().min(1).optional(),
 })
 export type BattleInput = z.infer<typeof battleInputSchema>
 export type BattleInputSpec = z.input<typeof battleInputSchema>
@@ -83,7 +89,10 @@ export const combatRunResultSchema = z.object({
   logs: z.array(combatTickSchema),
   engineVersion: z.number().int(),
   engineRevision: z.string(),
+  metadata: combatMetadataSchema.optional(),
   profile: z.record(z.string(), z.unknown()).optional(),
   metrics: z.record(z.string(), z.unknown()).optional(),
 })
 export type CombatRunResult = z.infer<typeof combatRunResultSchema>
+export type { CombatMetadata }
+

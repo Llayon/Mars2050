@@ -125,4 +125,51 @@ describe('pvp.replay — snapshot version contract', () => {
     expect(id).toBeNull()
     expect(fromMock).not.toHaveBeenCalled()
   })
+
+  it('persists and reads back metadata envelope when present, preserving backwards compatibility for legacy snapshots', async () => {
+    const fakeMetadata = {
+      contractVersion: '1.0.0',
+      engine: { id: '@mars2050/combat-core', version: '0.1.0', revision: CURRENT_SIMULATION_REVISION, buildId: 'combat-core-r4b-20261006', defenseResolutionMode: 'v9_snapshot' as const },
+      ruleset: { id: 'mars-standard', version: '1.0.0', contentHash: '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef' },
+      replaySchema: { id: 'combat-replay', version: '1.0.0' },
+    }
+    const snapshotInsert = vi.fn()
+    fromMock
+      .mockImplementationOnce(() => chainable({ data: { id: 'b_meta' }, error: null }))
+      .mockImplementationOnce(() => {
+        const chain = chainable({ data: null, error: null })
+        chain.insert = snapshotInsert.mockImplementation(() => chain)
+        return chain
+      })
+
+    const id = await persistBattleWithSnapshot(
+      { attacker_colony_id: 'a', defender_colony_id: 'd', winner: 'attacker', attacker_units: {}, defender_units: {}, rewards: {} },
+      {
+        seed: 42,
+        initial_state: {},
+        log: {},
+        simulationVersion: CURRENT_SIMULATION_VERSION,
+        simulationRevision: CURRENT_SIMULATION_REVISION,
+        metadata: fakeMetadata,
+      }
+    )
+    expect(id).toBe('b_meta')
+    expect(snapshotInsert).toHaveBeenCalledWith(expect.objectContaining({
+      metrics: expect.objectContaining({ metadata: fakeMetadata }),
+    }))
+
+    // Readback with metadata
+    fromMock
+      .mockImplementationOnce(() => chainable({ data: { id: 'b_meta', attacker_colony_id: 'a', defender_colony_id: 'd', winner: 'attacker', rewards: {}, created_at: '2026-01-01' }, error: null }))
+      .mockImplementationOnce(() => chainable({ data: { battle_id: 'b_meta', seed: 42, initial_state: {}, log: [], metrics: { engineRevision: CURRENT_SIMULATION_REVISION, metadata: fakeMetadata }, version: CURRENT_SIMULATION_VERSION, created_at: '2026-01-01' }, error: null }))
+    const readWithMeta = await loadBattleWithSnapshot('b_meta')
+    expect(readWithMeta?.snapshot.metadata).toEqual(fakeMetadata)
+
+    // Legacy readback without metadata
+    fromMock
+      .mockImplementationOnce(() => chainable({ data: { id: 'b_legacy', attacker_colony_id: 'a', defender_colony_id: 'd', winner: 'attacker', rewards: {}, created_at: '2026-01-01' }, error: null }))
+      .mockImplementationOnce(() => chainable({ data: { battle_id: 'b_legacy', seed: 42, initial_state: {}, log: [], metrics: { engineRevision: CURRENT_SIMULATION_REVISION }, version: CURRENT_SIMULATION_VERSION, created_at: '2026-01-01' }, error: null }))
+    const readLegacy = await loadBattleWithSnapshot('b_legacy')
+    expect(readLegacy?.snapshot.metadata).toBeUndefined()
+  })
 })

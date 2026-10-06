@@ -8,11 +8,22 @@ import {
   ABILITY_TRIGGER_KEY_SET,
   ABILITY_GROUP_KEY_SET,
   ABILITY_SELECTOR_KEY_SET,
-  ABILITY_DAMAGE_EXPR_KEY_SET,
 } from './replay.inventory.js'
+import {
+  checkFinite, isObj,
+  GEOMETRY_CONFIG_SPECS,
+  VALID_SELECTOR_KINDS,
+  validateStatusEffectItem,
+  validateGeometryConfig,
+  validateFormationModifiers,
+  validateRankScaling,
+  validateFieldEffectItem,
+  validateAbilityEffect,
+  validateTriggerEffectItem,
+  validatePeriodicAbilityItem,
+} from './replay.nested-models.js'
+export { checkFinite, isObj }
 
-export const checkFinite = (v: unknown): boolean => typeof v === 'number' && Number.isFinite(v)
-export const isObj = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v)
 
 export function validateDetailsNode(node: unknown, ctx: z.RefinementCtx, path: string): void {
   if (Array.isArray(node)) {
@@ -65,22 +76,12 @@ export function validateDeepNode(node: unknown, ctx: z.RefinementCtx, path: stri
 }
 
 export function validateSupportAuras(auras: unknown, ctx: z.RefinementCtx): void {
-  if (!Array.isArray(auras)) {
-    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'supportAuras must be an array' })
-    return
-  }
+  if (!Array.isArray(auras)) { ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'supportAuras must be an array' }); return }
   for (let i = 0; i < auras.length; i++) {
     const a = auras[i]
-    if (!isObj(a) || typeof a.type !== 'string' || !a.type) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, message: `Invalid supportAura item at [${i}]` })
-      continue
-    }
-    for (const k of Object.keys(a)) {
-      if (!CANONICAL_SUPPORT_AURA_KEY_SET.has(k)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: `Disallowed supportAura key: ${k}` })
-    }
-    for (const f of ['radius', 'value', 'duration', 'interval'] as const) {
-      if (a[f] !== undefined && !checkFinite(a[f])) ctx.addIssue({ code: z.ZodIssueCode.custom, message: `Invalid numeric value for supportAura ${f}` })
-    }
+    if (!isObj(a) || typeof a.type !== 'string' || !a.type) { ctx.addIssue({ code: z.ZodIssueCode.custom, message: `Invalid supportAura item at [${i}]` }); continue }
+    for (const k of Object.keys(a)) if (!CANONICAL_SUPPORT_AURA_KEY_SET.has(k)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: `Disallowed supportAura key: ${k}` })
+    for (const f of ['radius', 'value', 'duration', 'interval'] as const) if (a[f] !== undefined && !checkFinite(a[f])) ctx.addIssue({ code: z.ZodIssueCode.custom, message: `Invalid numeric value for supportAura ${f}` })
     if (a.target !== undefined && a.target !== 'allies' && a.target !== 'enemies') ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Invalid supportAura target' })
     if (a.targetTags !== undefined && (!Array.isArray(a.targetTags) || a.targetTags.some(t => typeof t !== 'string'))) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Invalid supportAura targetTags' })
     validateDeepNode(a, ctx, `supportAuras[${i}]`)
@@ -88,21 +89,15 @@ export function validateSupportAuras(auras: unknown, ctx: z.RefinementCtx): void
 }
 
 export function validateBurrowConfig(c: unknown, ctx: z.RefinementCtx): void {
-  if (!isObj(c)) {
-    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'burrowConfig must be an object' })
-    return
-  }
-  for (const k of Object.keys(c)) {
-    if (!CANONICAL_BURROW_CONFIG_KEY_SET.has(k)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: `Disallowed burrowConfig key: ${k}` })
-  }
-  if (c.damageReduction === undefined || !checkFinite(c.damageReduction)) {
-    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Invalid numeric value for burrowConfig damageReduction' })
-  }
+  if (!isObj(c)) { ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'burrowConfig must be an object' }); return }
+  for (const k of Object.keys(c)) if (!CANONICAL_BURROW_CONFIG_KEY_SET.has(k)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: `Disallowed burrowConfig key: ${k}` })
+  if (c.damageReduction === undefined || !checkFinite(c.damageReduction)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Invalid numeric value for burrowConfig damageReduction' })
   for (const f of ['regenPercentPerTick', 'emergeAttackMult', 'emergeAoeRadiusAdd'] as const) {
     if (c[f] !== undefined && !checkFinite(c[f])) ctx.addIssue({ code: z.ZodIssueCode.custom, message: `Invalid numeric value for burrowConfig ${f}` })
   }
   validateDeepNode(c, ctx, 'burrowConfig')
 }
+
 
 export function validateAbilityProgramItem(p: unknown, ctx: z.RefinementCtx, field: string): void {
   if (!isObj(p)) {
@@ -139,28 +134,17 @@ export function validateAbilityProgramItem(p: unknown, ctx: z.RefinementCtx, fie
       if (!isObj(g.selector) || typeof g.selector.kind !== 'string') {
         ctx.addIssue({ code: z.ZodIssueCode.custom, message: `Invalid selector in ${field}.groups[${gi}]` })
       } else {
+        if (!VALID_SELECTOR_KINDS.has(g.selector.kind)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: `Invalid selector kind: ${g.selector.kind}` })
         for (const k of Object.keys(g.selector)) if (!ABILITY_SELECTOR_KEY_SET.has(k)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: `Disallowed selector key: ${k}` })
-        if (g.selector.radius !== undefined && !checkFinite(g.selector.radius)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Invalid selector radius' })
-        if (g.selector.maxTargets !== undefined && !checkFinite(g.selector.maxTargets)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Invalid selector maxTargets' })
+        if (g.selector.radius !== undefined && (!checkFinite(g.selector.radius) || (g.selector.radius as number) <= 0)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Invalid selector radius' })
+        if (g.selector.maxTargets !== undefined && (!checkFinite(g.selector.maxTargets) || (g.selector.maxTargets as number) <= 0)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Invalid selector maxTargets' })
       }
       if (!Array.isArray(g.effects)) {
         ctx.addIssue({ code: z.ZodIssueCode.custom, message: `Invalid effects in ${field}.groups[${gi}]` })
       } else {
         for (let ei = 0; ei < g.effects.length; ei++) {
           const eff = g.effects[ei]
-          if (!isObj(eff) || typeof eff.kind !== 'string') {
-            ctx.addIssue({ code: z.ZodIssueCode.custom, message: `Invalid effect at ${field}.groups[${gi}].effects[${ei}]` })
-            continue
-          }
-          if (eff.kind === 'damage') {
-            if (!isObj(eff.expression) || typeof eff.expression.kind !== 'string') {
-              ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Invalid damage expression' })
-            } else {
-              for (const k of Object.keys(eff.expression)) if (!ABILITY_DAMAGE_EXPR_KEY_SET.has(k)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: `Disallowed expr key: ${k}` })
-              const num = eff.expression.kind === 'fixed' ? eff.expression.amount : eff.expression.multiplier
-              if (!checkFinite(num) || (num as number) < 0) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Invalid amount in damage expression' })
-            }
-          }
+          validateAbilityEffect(eff, ctx, `${field}.groups[${gi}].effects[${ei}]`)
           validateDeepNode(eff, ctx, `${field}.groups[${gi}].effects[${ei}]`)
         }
       }
@@ -169,15 +153,6 @@ export function validateAbilityProgramItem(p: unknown, ctx: z.RefinementCtx, fie
 }
 
 const OBJ_NUMERIC_REQUIREMENTS: Record<string, readonly string[]> = {
-  linePierce: ['width', 'damageMultiplier'],
-  coneAttack: ['angleDeg', 'damageMultiplier'],
-  beamAttack: ['width', 'damageMultiplier'],
-  barrageAttack: ['impacts', 'radius', 'spreadRadius', 'damageMultiplier'],
-  chainAttack: ['jumps', 'radius', 'damageMultiplier'],
-  splitFire: ['maxTargets', 'damageMultiplier'],
-  sideWeapon: ['damage', 'range', 'maxTargets'],
-  conditionalAttackMode: ['minTargets', 'radius', 'damageMultiplier'],
-  sweepAttack: ['width', 'damageMultiplier'],
   flatDamageBlock: ['amount'],
   shieldHitBlock: ['charges'],
   statGrowth: ['intervalTicks', 'maxStacks'],
@@ -194,6 +169,18 @@ export function validateSnapshotObjectField(field: string, obj: unknown, ctx: z.
   }
   if (field === 'burrowConfig') {
     validateBurrowConfig(obj, ctx)
+    return
+  }
+  if (field === 'formationModifiers') {
+    validateFormationModifiers(obj, ctx, field)
+    return
+  }
+  if (field === 'rankScaling') {
+    validateRankScaling(obj, ctx, field)
+    return
+  }
+  if (GEOMETRY_CONFIG_SPECS[field]) {
+    validateGeometryConfig(field, obj, ctx, field)
     return
   }
   const allowed = SNAPSHOT_OBJ_ALLOWED_KEY_SETS[field]
@@ -226,6 +213,17 @@ export function validateSnapshotArrayField(field: string, arr: unknown, ctx: z.R
     }
     if (field === 'abilityPrograms' || field === 'supportPrograms' || field === 'periodicPrograms') {
       validateAbilityProgramItem(item, ctx, `${field}[${i}]`)
+    } else if (field === 'statusOnHit') {
+      validateStatusEffectItem(item, ctx, `${field}[${i}]`)
+    } else if (field === 'fieldEffect') {
+      validateFieldEffectItem(item, ctx, `${field}[${i}]`)
+      validateDeepNode(item, ctx, `${field}[${i}]`)
+    } else if (field === 'triggerEffects') {
+      validateTriggerEffectItem(item, ctx, `${field}[${i}]`)
+      validateDeepNode(item, ctx, `${field}[${i}]`)
+    } else if (field === 'periodicAbilities' || field === 'periodicProgramState') {
+      validatePeriodicAbilityItem(item, ctx, `${field}[${i}]`)
+      validateDeepNode(item, ctx, `${field}[${i}]`)
     } else {
       const allowed = SNAPSHOT_ARR_ITEM_ALLOWED_KEY_SETS[field]
       if (allowed) {
@@ -233,11 +231,8 @@ export function validateSnapshotArrayField(field: string, arr: unknown, ctx: z.R
           if (!allowed.has(k)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: `Disallowed ${field} key: ${k}` })
         }
       }
-      if (field === 'statusOnHit') {
-        if (typeof item.type !== 'string' || !item.type) ctx.addIssue({ code: z.ZodIssueCode.custom, message: `Invalid statusOnHit type at [${i}]` })
-        if (!checkFinite(item.duration)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: `Invalid numeric value for statusOnHit duration at [${i}]` })
-      }
       validateDeepNode(item, ctx, `${field}[${i}]`)
     }
   }
 }
+

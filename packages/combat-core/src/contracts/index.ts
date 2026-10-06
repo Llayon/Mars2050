@@ -1,3 +1,6 @@
 export * from './unit.contracts.js'
 export * from './replay.contracts.js'
 export * from './battle.contracts.js'
+export * from './identity.contracts.js'
+export * from './ruleset-identity.js'
+
