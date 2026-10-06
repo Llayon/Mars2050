@@ -9,8 +9,8 @@ export interface RankScaledStats {
   cooldown: number
 }
 
-export function getUnitRank(unit: Pick<UnitRow, 'tier'>): number {
-  const rank = Number(unit.tier ?? 1)
+export function getUnitRank(unit: { rank?: number | null; tier?: number | null }): number {
+  const rank = Number(unit.rank ?? unit.tier ?? 1)
   return Number.isFinite(rank) ? Math.max(1, Math.floor(rank)) : 1
 }
 

@@ -223,20 +223,19 @@ function compileRuntimeRules(
         ? { ...stats.onKill.status }
         : undefined }
       : undefined,
-    projectileInterceptable: Boolean(stats.barrageAttack) ||
-      Boolean(
-        stats.combatTags?.includes('explosive') &&
-        stats.range * 40 > 80 &&
-        stats.attack > 0,
-      ),
+    projectileInterceptable: stats.projectileInterceptable !== undefined
+      ? stats.projectileInterceptable
+      : (Boolean(stats.barrageAttack) ||
+        Boolean(stats.delivery && 'interceptable' in stats.delivery && stats.delivery.interceptable) ||
+        Boolean(stats.combatTags?.includes('explosive') && stats.range * 40 > 80 && stats.attack > 0)),
     abilityExecutionMode,
     abilityProgramsAuthoritative: abilityExecutionMode === 'compiled',
     spawnOverrides: stats.spawnOverrides
       ? { ...stats.spawnOverrides }
       : undefined,
     temporalPlan,
-    stationaryAlignment: stats.stationaryAlignment ?? (definitionId.startsWith('alien_') || undefined),
-    formationAnchorMode: stats.formationAnchorMode ?? (definitionId.startsWith('alien_') ? 'centroid' : 'leader'),
-    velocityDamping: stats.velocityDamping ?? (definitionId.startsWith('alien_') || (stats.range * 40 > 60) || undefined),
+    stationaryAlignment: stats.stationaryAlignment,
+    formationAnchorMode: stats.formationAnchorMode ?? 'leader',
+    velocityDamping: stats.velocityDamping ?? (stats.range * 40 > 60 || undefined),
   }
 }

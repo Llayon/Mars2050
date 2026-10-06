@@ -44,6 +44,10 @@ export const baseStatsSchema = z.object({
   statusOnHit: z.array(statusEffectSchema).optional(),
   healTargetTags: z.array(z.string()).optional(),
   targetingProfile: z.string().optional(),
+  stationaryAlignment: z.boolean().optional(),
+  formationAnchorMode: z.enum(['leader', 'centroid']).optional(),
+  velocityDamping: z.boolean().optional(),
+  projectileInterceptable: z.boolean().optional(),
 }).passthrough()
 export type BaseStats = z.infer<typeof baseStatsSchema>
 

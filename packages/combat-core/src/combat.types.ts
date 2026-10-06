@@ -49,7 +49,7 @@ export interface UnitBaseStats {
   rampDamage?: RampDamageConfig
   chargeDamage?: ChargeDamageConfig
   percentHpDamage?: PercentHpDamageConfig & { maxBonus: number }
-  shieldDamageMult?: number; armorPierceRatio?: number; antiAirDamageMult?: number; summonCounterDamageMult?: number; accuracyPenaltyResist?: number
+  shieldDamageMult?: number; armorPierceRatio?: number; antiAirDamageMult?: number; summonCounterDamageMult?: number; accuracyPenaltyResist?: number; projectileInterceptable?: boolean
   onKill?: OnKillConfig
   linePierce?: LinePierceConfig
   pullOnHit?: { radius: number; strength: number; maxTargets?: number }

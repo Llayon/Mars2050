@@ -6,8 +6,9 @@
 
 - Ветка `repair/combat-core-isolation`: `180e3d1` → `33553c7` (R0+R1) → `c8dc228` (R2a) → `4629a7e` (R2b) → `484b297` (R3a base) → `aafb467` (R3a accepted) → `9c7c490` (R3b accepted / R4a base) → R4a accepted → R4b accepted.
 - Выполнено и принято: R0 (аудит), R1 (infra), R2a (ISO-01/02), R2b (ISO-03/04), R3a (ISO-05), R3b (ISO-06), **R4a (ISO-10, accepted)**, **R4b (ISO-11, accepted — Owner review pass 4, verdict ACCEPT)**.
-- Открыто: ISO-07 (R1/R7, CI-часть готова локально), ISO-08 (R6, guard честно красный), ISO-09 (R5a/R5b), ISO-12 (summon/timeout-warn), ISO-13 (runtime smoke есть, boundary/matrix — R6/R7).
-- Следующий шаг: R5a (ISO-09, вынос игрового контента и traits из ядра).
+- Реализован срез R5a (ISO-09): явные traits (`stationaryAlignment`, `formationAnchorMode`, `velocityDamping`, `projectileInterceptable`) в контрактах, удаление `alien_`-эвристик из ядра, перенос марсианских определений и вычисления interceptable в Mars adapter, regression `content-isolation-r5a.test.ts`.
+- Открыто: ISO-07 (R1/R7, CI-часть готова локально), ISO-08 (R6, guard честно красный), ISO-09 (R5a реализован, R5b впереди), ISO-12 (summon/timeout-warn), ISO-13 (runtime smoke есть, boundary/matrix — R6/R7).
+- Следующий шаг: независимое ревью / приёмка R5a, затем переход к R5b (удаление глобальных registries).
 - Зафиксированные артефакты:
   - Handoff candidate: `artifacts/combat-core-handoff/handoff-20261006-r4b-candidate/` (запечатан, не перезаписывать).
   - Хэш архива `mars2050-combat-core-0.1.0.tgz`: `f610158b3f4db5782a0978ccf7333eca651e024263f2d76988aa297417c08499`.
@@ -42,7 +43,7 @@
 | ISO-06 | `needs_external_review` (код+тесты R3b) | R3b | `placement-r3b.test.ts` (5), `placement-r3b-bounds.test.ts` (5), neutral bounds, PRNG sequence, Mars edge clamp |
 | ISO-07 | `open` | R1,R7 | — |
 | ISO-08 | `open` | R6 | — |
-| ISO-09 | `open` | R5 | — |
+| ISO-09 | `needs_external_review` (код+тесты R5a; R5b впереди) | R5a/R5b | `content-isolation-r5a.test.ts` (2/2), goldens V8/V9 (7/7), 214/214 tests core, runtime smoke PASS, Node 22/25 probes PASS |
 | ISO-10 | `accepted` (независимое ревью fb94c3e9, probe 10/10, zero-leak, order-preserved) | R4a | wire-codec-r4a 7/7, probe 10/10 PASS, nested-p2 4/4, key-order 7/7, __marsCompat удалён |
 | ISO-11 | `accepted` (Owner review pass 4, 33/33 probes PASS Node 22/25, tarball f610158b 385,622 B exact, candidate sealed) | R4b | identity-r4b.test.ts 7/7, pureSha256, 1-engine/2-rulesets, metadata round-trip, runtime smoke PASS, compatibility-probe 9/9, previous-probe 24/24 |
 | ISO-12 | `open` | R2–R3,R7 | — |
@@ -1441,3 +1442,41 @@ SHA256: `52a91f4eb406125247426f044eb0dbdf8ab440a8285d211af63e5f9c75bf61dd`.
 - **Уточнение размера архива**:
   - Фактический и независимо пересобранный размер тарбола `mars2050-combat-core-0.1.0.tgz` составляет **385 622 байта** (в начальной оценочной мета-записи фигурировало 385 573 байта; SHA-256 побитово точен и идентичен во всех независимых пересборках). Запечатанные артефакты не перезаписываются.
 - **Следующий этап**: фиксация проверенного R4b-чекпоинта отдельным коммитом и переход к **R5a (ISO-09) — вынос игрового контента и traits из ядра**.
+
+#### 2026-10-07 — Реализация R5a (ISO-09): вынос игрового контента и traits из ядра
+
+Срез R5a выполнен в полном соответствии с планом `docs/combat-core-isolation-remediation-plan.md:136-144`:
+
+1. **Явные traits в контрактах и удаление `alien_`-эвристик из ядра:**
+   - В `packages/combat-core/src/contracts/unit.contracts.ts` схема `baseStatsSchema` дополнена явными полями: `stationaryAlignment?: boolean`, `formationAnchorMode?: 'leader' | 'centroid'`, `velocityDamping?: boolean`, `projectileInterceptable?: boolean`.
+   - В `packages/combat-core/src/combat.types.ts` тип `UnitBaseStats` дополнен полем `projectileInterceptable?: boolean`.
+   - В `packages/combat-core/src/combat.unit-compiler.ts` удалены проверки префикса `definitionId.startsWith('alien_')`:
+     - `stationaryAlignment: stats.stationaryAlignment` (ранее неявно подставлялся `true` для `alien_*`).
+     - `formationAnchorMode: stats.formationAnchorMode ?? 'leader'` (ранее подставлялся `'centroid'` для `alien_*`).
+     - `velocityDamping: stats.velocityDamping ?? (stats.range * 40 > 60 || undefined)` (ранее безусловно подставлялся `true` для `alien_*`).
+     - `projectileInterceptable`: поддержан приоритет явно переданного флага `stats.projectileInterceptable` над эвристиками.
+
+2. **Перенос марсианских определений и вычисления interceptable в Mars adapter:**
+   - В `src/domains/combat/combat.unit-definitions.ts` функция `buildMarsUnitDefinitions()` обновлена: теперь она формирует полные, типизированные `UnitDefinition` для всех марсианских юнитов (`UNIT_TYPES`), перенося все базовые характеристики, способности (`abilities`), профили наведения и явные traits (`stationaryAlignment`, `formationAnchorMode`, `velocityDamping`).
+   - Марсианская эвристика перехвата (`combatTags.includes('explosive') && range * 40 > 80 && attack > 0`) вынесена в `buildMarsUnitDefinitions()`: свойство `projectileInterceptable` вычисляется и явно проставляется на уровне марсианского адаптера.
+
+3. **Очистка DB-типов в ядре:**
+   - В `packages/combat-core/src/combat.rank-scaling.ts` функция `getUnitRank` теперь принимает нейтральный контракт `{ rank?: number | null; tier?: number | null }`, где `rank` является приоритетным свойством.
+
+4. **Регрессионный тест инвариантности имени определения:**
+   - Добавлен тест `packages/combat-core/tests/content-isolation-r5a.test.ts`:
+     - Проверяет отсутствие автоматического вывода alien-traits исключительно по префиксу `alien_` при отсутствии явно заданных свойств (Red-Green подтверждён).
+     - Проверяет, что две симуляции с одинаковыми явными traits и stats, но с переименованными определениями (`alien_crawler`/`alien_defender` vs `fantasy_spider`/`fantasy_golem`), дают 100% идентичный механический результат (победитель, тики, HP выживших, типы и последовательность действий).
+
+#### Итоговая верификация R5a:
+- `npm run test:combat:core`: **29/29 files PASS, 214/214 tests PASS**.
+- `npm run combat:ecs:golden` (V8): **PASS (7/7 presets stable)**.
+- `npm run combat:ecs:v9:golden` (V9): **PASS (7/7 presets stable)**.
+- `node node_modules/vitest/vitest.mjs run src/__tests__/pvp.replay-compat.test.ts src/__tests__/pvp.snapshot-version.test.ts`: **17/17 tests PASS**.
+- `node --import tsx scripts/test-combat-package-runtime.ts`: **PASS (Runtime archive smoke PASSED)**.
+- `compatibility-probe.mjs` (Node 25 и Node 22): **9/9 PASS**.
+- `previous-probe.mjs` (Node 25 и Node 22): **24/24 PASS**.
+- `npx tsc --noEmit --pretty false`: **PASS (0 errors)**.
+- `npm run lint:limits`: **PASS (0 violations)**.
+- `npm run build`: **PASS (Next.js production build succeeded, 32/32 static pages)**.
+
