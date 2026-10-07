@@ -1,5 +1,5 @@
-import type { BattleInput, UnitSpawnSpec, ScheduledEffect, ArenaSpec, UnitDefinition } from '@mars2050/combat-core/contracts'
-import { calculateEffectiveMaxHp, getFormationOffset, getSizeRadius } from '@mars2050/combat-core'
+import type { BattleInput, UnitSpawnSpec, ScheduledEffect, ArenaSpec, UnitDefinition, PreparedStats } from '@mars2050/combat-core/contracts'
+import { calculateEffectiveUnitStats, calculateEffectiveMaxHp, getFormationOffset, getSizeRadius } from '@mars2050/combat-core'
 import type { UnitRow } from './combat.types'
 import type { Obstacle } from './combat.sim.types'
 import type { BattleSimulationOptions } from './combat.metrics'
@@ -12,6 +12,68 @@ export { buildMarsUnitDefinitions } from './combat.unit-definitions'
 
 export { buildMarsUpgrades } from './combat.upgrades'
 
+
+/**
+ * Compiles fully prepared runtime stats for a Mars unit.
+ */
+export function buildMarsPreparedStats(
+  unitType: string,
+  rank: number = 1,
+  upgradeIds: string[] = [],
+  catalog?: import('@mars2050/combat-core/combat.catalog.types').CombatCatalog | { upgrades?: Record<string, UpgradeConfig> },
+  definitions?: Record<string, UnitDefinition>,
+): PreparedStats | undefined {
+  const defs = definitions ?? buildMarsUnitDefinitions()
+  const marsCatalog = (catalog as import('@mars2050/combat-core/combat.catalog.types').CombatCatalog | undefined) ?? { upgrades: buildMarsUpgrades() }
+  const effective = calculateEffectiveUnitStats(unitType, rank, upgradeIds, marsCatalog, defs)
+  if (!effective) return undefined
+  const def = defs[unitType]
+  return {
+    hp: effective.hp,
+    attack: effective.attack,
+    defense: effective.defense,
+    speed: effective.speed,
+    range: effective.range,
+    actionCooldownMax: effective.cooldown,
+    shield: effective.shield,
+    isFlying: effective.isFlying,
+    canTargetAir: effective.canTargetAir,
+    attackType: effective.attackType,
+    aoeRadius: effective.aoeRadius,
+    size: (effective.primitives?.size ?? def?.baseStats?.size ?? 'M') as 'S' | 'M' | 'L' | 'XL',
+    turnSpeed: effective.primitives?.turnSpeed ?? def?.baseStats?.turnSpeed ?? 5,
+    combatTags: effective.primitives?.combatTags ?? def?.baseStats?.combatTags ?? [],
+    statusOnHit: effective.primitives?.statusOnHit ?? def?.baseStats?.statusOnHit,
+    stationaryAlignment: effective.primitives?.stationaryAlignment ?? def?.baseStats?.stationaryAlignment,
+    formationAnchorMode: effective.primitives?.formationAnchorMode ?? def?.baseStats?.formationAnchorMode,
+    velocityDamping: effective.primitives?.velocityDamping ?? def?.baseStats?.velocityDamping,
+    projectileInterceptable: effective.primitives?.projectileInterceptable ?? def?.baseStats?.projectileInterceptable,
+    targetingProfile: effective.primitives?.targetingProfile ?? def?.baseStats?.targetingProfile,
+    healTargetTags: effective.primitives?.healTargetTags ?? def?.baseStats?.healTargetTags,
+    minimumRange: effective.primitives?.minimumRange ?? def?.baseStats?.minimumRange,
+    selfDestructOnAttack: effective.primitives?.selfDestructOnAttack ?? def?.baseStats?.selfDestructOnAttack,
+    spawnType: effective.primitives?.spawnType ?? def?.baseStats?.spawnType,
+    spawnCap: effective.primitives?.spawnCap ?? def?.baseStats?.spawnCap,
+    appliesEmp: effective.appliesEmp,
+    leavesPuddle: effective.leavesPuddle,
+    spawnerConfig: effective.spawnerConfig,
+    movingReduction: effective.movingReduction,
+    onDeathPuddle: effective.onDeathPuddle,
+    multishot: effective.multishot,
+    antiAirDamageMult: effective.antiAirDamageMult,
+    replicateOnKill: effective.replicateOnKill,
+    resurrectOnce: effective.resurrectOnce,
+    stealthUntilAttack: effective.stealthUntilAttack,
+    executeThreshold: effective.executeThreshold,
+    lifestealMult: effective.lifestealMult,
+    groundDamageMult: effective.groundDamageMult,
+    shieldDamageMult: effective.shieldDamageMult,
+    armorPierceRatio: effective.armorPierceRatio,
+    summonCounterDamageMult: effective.summonCounterDamageMult,
+    accuracyPenaltyResist: effective.accuracyPenaltyResist,
+    burrowConfig: effective.burrowConfig,
+  }
+}
 
 /**
  * Maps a list of UnitRow objects into UnitSpawnSpec list for combat-core.
@@ -31,11 +93,11 @@ export function mapUnitRowsToSpawnSpecs(
   return rows.map(row => {
     const rank = getUnitRank(row)
     const upgradeIds = row.upgrade_path ? [...row.upgrade_path] : []
+    const preparedStats = buildMarsPreparedStats(row.unit_type, rank, upgradeIds, marsCatalog, defs)
     let currentHp: number | undefined = row.hp_current ?? undefined
-    if (currentHp !== undefined) {
-      const maxHp = calculateEffectiveMaxHp(row.unit_type, rank, upgradeIds, marsCatalog, defs)
-      if (maxHp !== undefined && currentHp > maxHp) {
-        currentHp = maxHp
+    if (currentHp !== undefined && preparedStats?.hp !== undefined) {
+      if (currentHp > preparedStats.hp) {
+        currentHp = preparedStats.hp
       }
     }
 
@@ -85,6 +147,7 @@ export function mapUnitRowsToSpawnSpecs(
       currentHp,
       rank,
       upgradeIds,
+      preparedStats,
     }
   })
 }

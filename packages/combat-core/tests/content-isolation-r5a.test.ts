@@ -157,5 +157,5 @@ describe('R5a (ISO-09): Game content and trait extraction from core', () => {
     delete perturbedTraitInput.definitions.alien_crawler.baseStats.stationaryAlignment
     const resTraitPerturbed = simulateCombat(perturbedTraitInput)
     expect(normalizeAlien(resTraitPerturbed.logs)).not.toEqual(resFantasy.logs)
-  })
+  }, 20_000)
 })

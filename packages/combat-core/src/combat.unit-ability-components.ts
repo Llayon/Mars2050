@@ -3,7 +3,7 @@ import type { AttackDeliveryConfig } from './combat.types.js'
 import type { CompiledAbilityProgram } from './combat.ability-compiler.js'
 
 export interface UnitWeaponComponent {
-  attackType: 'single' | 'aoe' | 'heal' | 'spawn'
+  attackType: 'single' | 'aoe' | 'heal' | 'spawn' | 'beam' | 'spread'
   delivery?: AttackDeliveryConfig
   abilityPrograms?: CompiledAbilityProgram[]
   aoeRadius?: number; spawnType?: string; spawnCap?: number

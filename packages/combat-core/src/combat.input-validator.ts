@@ -195,7 +195,7 @@ export function validateBattleInput(input: unknown): BattleInput {
       }
       allMemberIds.add(memberId)
     }
-    const effective = calculateEffectiveUnitStats(u.definitionId, u.rank, u.upgradeIds, normalizedCatalog as unknown as CombatCatalog | undefined, normalizedDefinitions)
+    const effective = calculateEffectiveUnitStats(u.definitionId, u.rank, u.upgradeIds, normalizedCatalog as unknown as CombatCatalog | undefined, normalizedDefinitions, u.preparedStats)
     if (effective) {
       assertFiniteUnitStats(i, u, effective)
       if (u.currentHp != null && u.currentHp > effective.hp + 1e-6) {

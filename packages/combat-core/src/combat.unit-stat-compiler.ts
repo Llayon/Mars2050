@@ -48,31 +48,41 @@ export function compileUnitStats(spec: UnitBuildSpec): CompiledUnitStats | null 
   const definition = unitCatalog[spec.definitionId]
   if (!definition) return null
   const upgradeIds = resolveUnitUpgradeIds(spec)
-  const primitives = getRuntimePrimitiveStats(definition.baseStats, upgradeIds, upgradesCatalog)
-  const base = definition.baseStats
-  if (spec.preparedStats) {
-    const p = spec.preparedStats
+  const p = spec.preparedStats
+  const cleanP = p ? Object.fromEntries(Object.entries(p).filter(([_, v]) => v !== undefined)) : undefined
+  const base: UnitBaseStats = cleanP
+    ? {
+        ...definition.baseStats,
+        ...cleanP,
+        healTargetTags: (cleanP.healTargetTags ?? definition.baseStats.healTargetTags) as import('./combat.types.js').CombatTag[] | undefined,
+        combatTags: (cleanP.combatTags ?? definition.baseStats.combatTags) as import('./combat.types.js').CombatTag[] | undefined,
+        targetingProfile: (cleanP.targetingProfile ?? definition.baseStats.targetingProfile) as import('./combat.types.js').TargetingProfileKey | undefined,
+      }
+    : definition.baseStats
+  const primitives = getRuntimePrimitiveStats(base, upgradeIds, upgradesCatalog)
+  if (p) {
     return {
       definition, primitives, rank: resolveRank(spec),
-      hp: p.hp ?? base.hp, attack: p.attack ?? base.attack, defense: p.defense ?? base.defense,
-      speed: p.speed ?? base.speed, range: p.range ?? base.range,
-      cooldown: p.actionCooldownMax ?? base.actionCooldownMax ?? 10,
+      hp: p.hp ?? definition.baseStats.hp, attack: p.attack ?? definition.baseStats.attack, defense: p.defense ?? definition.baseStats.defense,
+      speed: p.speed ?? definition.baseStats.speed, range: p.range ?? definition.baseStats.range,
+      cooldown: p.actionCooldownMax ?? definition.baseStats.actionCooldownMax ?? 10,
       canTargetAir: p.canTargetAir ?? base.canTargetAir ?? false,
       attackType: p.attackType ?? base.attackType ?? 'single',
       aoeRadius: p.aoeRadius ?? base.aoeRadius, shield: (p as { shield?: number }).shield ?? 0,
-      isFlying: p.isFlying ?? base.isFlying ?? false, appliesEmp: (p as { appliesEmp?: boolean }).appliesEmp ?? false,
-      leavesPuddle: (p as { leavesPuddle?: boolean }).leavesPuddle ?? false,
-      spawnerConfig: (p as { spawnerConfig?: CompiledUnitStats['spawnerConfig'] }).spawnerConfig,
-      movingReduction: (p as { movingReduction?: number }).movingReduction ?? 0,
-      onDeathPuddle: (p as { onDeathPuddle?: CompiledUnitStats['onDeathPuddle'] }).onDeathPuddle,
-      multishot: (p as { multishot?: number }).multishot ?? 1,
+      isFlying: p.isFlying ?? base.isFlying ?? false,
+      appliesEmp: (p as { appliesEmp?: boolean }).appliesEmp ?? (base as Record<string, unknown>).appliesEmp === true,
+      leavesPuddle: (p as { leavesPuddle?: boolean }).leavesPuddle ?? (base as Record<string, unknown>).leavesPuddle === true,
+      spawnerConfig: (p as { spawnerConfig?: CompiledUnitStats['spawnerConfig'] }).spawnerConfig ?? (base as Record<string, unknown>).spawnerConfig as CompiledUnitStats['spawnerConfig'],
+      movingReduction: (p as { movingReduction?: number }).movingReduction ?? (typeof (base as Record<string, unknown>).movingReduction === 'number' ? (base as Record<string, unknown>).movingReduction as number : 0),
+      onDeathPuddle: (p as { onDeathPuddle?: CompiledUnitStats['onDeathPuddle'] }).onDeathPuddle ?? (base as Record<string, unknown>).onDeathPuddle as CompiledUnitStats['onDeathPuddle'],
+      multishot: (p as { multishot?: number }).multishot ?? (typeof (base as Record<string, unknown>).multishot === 'number' ? (base as Record<string, unknown>).multishot as number : 1),
       antiAirDamageMult: p.antiAirDamageMult ?? base.antiAirDamageMult ?? 1,
-      replicateOnKill: (p as { replicateOnKill?: boolean }).replicateOnKill ?? false,
-      resurrectOnce: (p as { resurrectOnce?: boolean }).resurrectOnce ?? false,
-      stealthUntilAttack: (p as { stealthUntilAttack?: boolean }).stealthUntilAttack ?? false,
-      executeThreshold: (p as { executeThreshold?: number }).executeThreshold ?? 0,
-      lifestealMult: (p as { lifestealMult?: number }).lifestealMult ?? 0,
-      groundDamageMult: (p as { groundDamageMult?: number }).groundDamageMult ?? 1,
+      replicateOnKill: (p as { replicateOnKill?: boolean }).replicateOnKill ?? (base as Record<string, unknown>).replicateOnKill === true,
+      resurrectOnce: (p as { resurrectOnce?: boolean }).resurrectOnce ?? (base as Record<string, unknown>).resurrectOnce === true,
+      stealthUntilAttack: (p as { stealthUntilAttack?: boolean }).stealthUntilAttack ?? (base as Record<string, unknown>).stealthUntilAttack === true,
+      executeThreshold: (p as { executeThreshold?: number }).executeThreshold ?? (typeof (base as Record<string, unknown>).executeThreshold === 'number' ? (base as Record<string, unknown>).executeThreshold as number : 0),
+      lifestealMult: (p as { lifestealMult?: number }).lifestealMult ?? (typeof (base as Record<string, unknown>).lifestealMult === 'number' ? (base as Record<string, unknown>).lifestealMult as number : 0),
+      groundDamageMult: (p as { groundDamageMult?: number }).groundDamageMult ?? (typeof (base as Record<string, unknown>).groundDamageMult === 'number' ? (base as Record<string, unknown>).groundDamageMult as number : 1),
       shieldDamageMult: p.shieldDamageMult ?? base.shieldDamageMult ?? 1,
       armorPierceRatio: p.armorPierceRatio ?? base.armorPierceRatio ?? 0,
       summonCounterDamageMult: p.summonCounterDamageMult ?? base.summonCounterDamageMult ?? 1,
@@ -189,41 +199,29 @@ function resolveRank(spec: UnitBuildSpec): number {
  * @returns Compiled unit stats or null if definition is not found.
  */
 export function calculateEffectiveUnitStats(
-  definitionId: string,
-  rank: number = 1,
-  upgradeIds: string[] = [],
-  catalog?: CombatCatalog,
-  definitions?: Record<string, UnitDefinition>,
+  definitionId: string, rank: number = 1, upgradeIds: string[] = [],
+  catalog?: CombatCatalog, definitions?: Record<string, UnitDefinition>,
+  preparedStats?: import('./contracts/prepared.contracts.js').PreparedStats,
 ): CompiledUnitStats | null {
   const unitTypes: Record<string, UnitTypeConfig> = {}
   if (definitions) {
     for (const [key, def] of Object.entries(definitions)) {
-      try {
-        unitTypes[key] = mapDefinitionToUnitTypeConfig(def)
-      } catch {
-        // Ignore unsupported attack types in definition mapping
-      }
+      try { unitTypes[key] = mapDefinitionToUnitTypeConfig(def) } catch {}
     }
   }
   if (catalog?.unitTypes) {
-    for (const [key, cfg] of Object.entries(catalog.unitTypes)) {
-      unitTypes[key] = cfg
-    }
+    for (const [key, cfg] of Object.entries(catalog.unitTypes)) { unitTypes[key] = cfg }
   }
   const effectiveCatalog: CombatCatalog = {
-    unitTypes,
-    upgrades: catalog?.upgrades ?? {},
-    targetingProfiles: catalog?.targetingProfiles,
+    unitTypes, upgrades: catalog?.upgrades ?? {}, targetingProfiles: catalog?.targetingProfiles,
   }
   return compileUnitStats({
-    definitionId,
-    identity: { id: definitionId, team: 'attacker' },
+    definitionId, identity: { id: definitionId, team: 'attacker' },
     loadout: {
       rank: Number.isFinite(rank) ? Math.max(1, Math.floor(rank)) : 1,
       upgradeIds: Array.isArray(upgradeIds) ? [...upgradeIds] : [],
     },
-    placement: { x: 0, y: 0, angle: 0 },
-    catalog: effectiveCatalog,
+    placement: { x: 0, y: 0, angle: 0 }, catalog: effectiveCatalog, preparedStats,
   })
 }
 
@@ -231,12 +229,10 @@ export function calculateEffectiveUnitStats(
  * Calculates the effective maximum HP of a unit given its definition, rank, and upgrades.
  */
 export function calculateEffectiveMaxHp(
-  definitionId: string,
-  rank: number = 1,
-  upgradeIds: string[] = [],
-  catalog?: CombatCatalog,
-  definitions?: Record<string, UnitDefinition>,
+  definitionId: string, rank: number = 1, upgradeIds: string[] = [],
+  catalog?: CombatCatalog, definitions?: Record<string, UnitDefinition>,
+  preparedStats?: import('./contracts/prepared.contracts.js').PreparedStats,
 ): number | undefined {
-  const compiled = calculateEffectiveUnitStats(definitionId, rank, upgradeIds, catalog, definitions)
+  const compiled = calculateEffectiveUnitStats(definitionId, rank, upgradeIds, catalog, definitions, preparedStats)
   return compiled ? compiled.hp : undefined
 }

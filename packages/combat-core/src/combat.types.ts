@@ -36,7 +36,7 @@ export interface TargetingProfileConfig {
 export interface UnitBaseStats {
   hp: number; attack: number; defense: number; speed: number; range: number
   minimumRange?: number
-  attackType: 'single' | 'aoe' | 'heal' | 'spawn'
+  attackType: 'single' | 'aoe' | 'heal' | 'spawn' | 'beam' | 'spread'
   aoeRadius?: number; spawnType?: string; spawnCap?: number; actionCooldownMax?: number
   selfDestructOnAttack?: boolean
   spawnOverrides?: { hp?: number; attack?: number; isTemporary?: boolean; duration?: number }

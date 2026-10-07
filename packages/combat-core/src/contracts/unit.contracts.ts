@@ -1,32 +1,15 @@
 import { z } from 'zod'
+import {
+  attackTypeSchema,
+  formationSchema,
+  statusEffectSchema,
+  teamSchema,
+  unitSizeSchema,
+} from './unit-primitives.contracts.js'
+import { preparedStatsSchema } from './prepared.contracts.js'
 
-export const teamSchema = z.enum(['attacker', 'defender'])
-export type Team = z.infer<typeof teamSchema>
-
-export const unitSizeSchema = z.enum(['S', 'M', 'L', 'XL'])
-export type UnitSize = z.infer<typeof unitSizeSchema>
-
-export const attackTypeSchema = z.enum(['single', 'aoe', 'beam', 'spread', 'spawn', 'heal'])
-export type AttackType = z.infer<typeof attackTypeSchema>
-
-export const formationSchema = z.enum(['grid', 'line', 'wedge'])
-export type Formation = z.infer<typeof formationSchema>
-
-export const statusTypeSchema = z.enum([
-  'emp', 'slow', 'burn', 'acid', 'vulnerable', 'range_suppressed', 'revealed',
-  'hacked', 'damage_reduction', 'regen', 'output_suppressed', 'accuracy_reduced',
-  'armor_broken', 'degeneration', 'haste', 'range_boost', 'attack_boost', 'status_immunity',
-])
-export type StatusType = z.infer<typeof statusTypeSchema>
-
-export const statusEffectSchema = z.object({
-  type: statusTypeSchema,
-  duration: z.number().int().positive(),
-  value: z.number().optional(),
-  sourceUnitId: z.string().optional(),
-  stackKey: z.string().optional(),
-})
-export type StatusEffect = z.infer<typeof statusEffectSchema>
+export * from './unit-primitives.contracts.js'
+export * from './prepared.contracts.js'
 
 export const baseStatsSchema = z.object({
   hp: z.number().finite().positive(),
@@ -88,6 +71,6 @@ export const unitSpawnSpecSchema = z.object({
   currentHp: z.number().positive().optional(),
   rank: z.number().int().positive().default(1),
   upgradeIds: z.array(z.string()).default([]),
-  preparedStats: baseStatsSchema.partial().optional(),
+  preparedStats: preparedStatsSchema.optional(),
 })
 export type UnitSpawnSpec = z.infer<typeof unitSpawnSpecSchema>

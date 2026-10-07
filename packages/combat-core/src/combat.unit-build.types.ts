@@ -65,7 +65,7 @@ export interface UnitBuildSpec {
     temporaryDuration?: number
   }
   catalog?: import('./combat.catalog.types.js').CombatCatalog
-  preparedStats?: Partial<import('./combat.types.js').UnitBaseStats>
+  preparedStats?: import('./contracts/prepared.contracts.js').PreparedStats
 }
 
 export interface UnitRuntimeRules {

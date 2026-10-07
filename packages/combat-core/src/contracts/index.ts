@@ -1,4 +1,6 @@
 export * from './unit.contracts.js'
+export * from './prepared.contracts.js'
+export * from './unit-primitives.contracts.js'
 export * from './replay.contracts.js'
 export * from './battle.contracts.js'
 export * from './identity.contracts.js'
