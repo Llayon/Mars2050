@@ -350,6 +350,9 @@
   .shrink-0 {
     flex-shrink: 0;
   }
+  .cursor-pointer {
+    cursor: pointer;
+  }
   .scroll-mt-32 {
     scroll-margin-top: calc(var(--spacing) * 32);
   }
@@ -570,9 +573,9 @@
       padding-inline: calc(var(--spacing) * 6);
     }
   }
-  .md\:grid-cols-2 {
-    @media (width >= 48rem) {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+  .lg\:grid-cols-3 {
+    @media (width >= 64rem) {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
     }
   }
   .xl\:order-none {
