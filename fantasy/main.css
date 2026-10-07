@@ -800,6 +800,13 @@
   height: auto;
   image-rendering: pixelated;
 }
+body[data-mini-app="true"] {
+  min-height: 100dvh;
+  padding-top: calc(max(env(safe-area-inset-top, 0px), var(--tg-safe-area-inset-top, 0px)) + var(--tg-content-safe-area-inset-top, 0px));
+  padding-bottom: calc(max(env(safe-area-inset-bottom, 0px), var(--tg-safe-area-inset-bottom, 0px)) + var(--tg-content-safe-area-inset-bottom, 0px));
+  padding-left: calc(max(env(safe-area-inset-left, 0px), var(--tg-safe-area-inset-left, 0px)) + var(--tg-content-safe-area-inset-left, 0px));
+  padding-right: calc(max(env(safe-area-inset-right, 0px), var(--tg-safe-area-inset-right, 0px)) + var(--tg-content-safe-area-inset-right, 0px));
+}
 @property --tw-space-y-reverse {
   syntax: "*";
   inherits: false;

@@ -323,6 +323,8 @@
   "src/components/result-panel.tsx",
   "src/components/faction-confirm.tsx",
   "src/components/arena-app.tsx",
+  "src/host/host-display.schemas.ts",
+  "src/host/host-display.service.ts",
   "src/main.tsx",
   "src/domains/battle/battle.worker.ts"
 ]
