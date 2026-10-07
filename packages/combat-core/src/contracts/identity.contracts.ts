@@ -32,7 +32,7 @@ export const REPLAY_SCHEMA_VERSION = '1.0.0'
  * Independent reproducible build identifier for @mars2050/combat-core.
  * Origin: source-bound isolation snapshot.
  */
-export const ENGINE_BUILD_ID = 'combat-core-r4b-20261006'
+export const ENGINE_BUILD_ID = 'combat-core-r5a-20261007'
 
 export const engineIdentitySchema = z.object({
   id: z.string().min(1),

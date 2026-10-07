@@ -18,8 +18,8 @@ function makeDef(id: string, overrides: Partial<UnitDefinition['baseStats']> = {
       hp: 100,
       attack: 10,
       defense: 2,
-      speed: 5,
-      range: 1,
+      speed: 60,
+      range: 40,
       attackType: 'single',
       actionCooldownMax: 10,
       turnSpeed: 5,
@@ -85,12 +85,18 @@ describe('R5a (ISO-09): Game content and trait extraction from core', () => {
       arena: { width: 600, height: 1200, tileSize: 40, obstacles: [] },
       rules: { maxTicks: 200, timeoutPolicy: 'draw', defenseResolutionMode: 'v9_snapshot' },
       definitions: {
-        alien_crawler: makeDef('alien_crawler', traits),
-        alien_defender: makeDef('alien_defender', { ...traits, hp: 120 }),
+        alien_crawler: makeDef('alien_crawler', { ...traits, rankScaling: { hpMultPerRank: 0.2 } }, { squadSize: 2 }),
+        alien_minion: makeDef('alien_minion', { ...traits, hp: 50, attack: 5 }, { squadSize: 1 }),
+        alien_defender: makeDef('alien_defender', { ...traits, hp: 150, attackType: 'spawn', spawnType: 'alien_minion' }, { squadSize: 1 }),
+      },
+      catalog: {
+        upgrades: {
+          alien_upg: { modifiers: { hpMult: 1.1, grantRevealAura: { radius: 30, duration: 10 } } },
+        },
       },
       units: [
-        { instanceId: 'a1', definitionId: 'alien_crawler', team: 'attacker', placement: { x: 300, y: 800 }, rank: 1, upgradeIds: [] },
-        { instanceId: 'd1', definitionId: 'alien_defender', team: 'defender', placement: { x: 300, y: 400 }, rank: 1, upgradeIds: [] },
+        { instanceId: 'a1', definitionId: 'alien_crawler', team: 'attacker', placement: { x: 300, y: 700 }, rank: 2, upgradeIds: ['alien_upg'] },
+        { instanceId: 'd1', definitionId: 'alien_defender', team: 'defender', placement: { x: 300, y: 500 }, rank: 1, upgradeIds: [] },
       ],
       scheduledEffects: [],
     }
@@ -100,12 +106,18 @@ describe('R5a (ISO-09): Game content and trait extraction from core', () => {
       arena: { width: 600, height: 1200, tileSize: 40, obstacles: [] },
       rules: { maxTicks: 200, timeoutPolicy: 'draw', defenseResolutionMode: 'v9_snapshot' },
       definitions: {
-        fantasy_spider: makeDef('fantasy_spider', traits),
-        fantasy_golem: makeDef('fantasy_golem', { ...traits, hp: 120 }),
+        fantasy_spider: makeDef('fantasy_spider', { ...traits, rankScaling: { hpMultPerRank: 0.2 } }, { squadSize: 2 }),
+        fantasy_minion: makeDef('fantasy_minion', { ...traits, hp: 50, attack: 5 }, { squadSize: 1 }),
+        fantasy_golem: makeDef('fantasy_golem', { ...traits, hp: 150, attackType: 'spawn', spawnType: 'fantasy_minion' }, { squadSize: 1 }),
+      },
+      catalog: {
+        upgrades: {
+          fantasy_upg: { modifiers: { hpMult: 1.1, grantRevealAura: { radius: 30, duration: 10 } } },
+        },
       },
       units: [
-        { instanceId: 'a1', definitionId: 'fantasy_spider', team: 'attacker', placement: { x: 300, y: 800 }, rank: 1, upgradeIds: [] },
-        { instanceId: 'd1', definitionId: 'fantasy_golem', team: 'defender', placement: { x: 300, y: 400 }, rank: 1, upgradeIds: [] },
+        { instanceId: 'a1', definitionId: 'fantasy_spider', team: 'attacker', placement: { x: 300, y: 700 }, rank: 2, upgradeIds: ['fantasy_upg'] },
+        { instanceId: 'd1', definitionId: 'fantasy_golem', team: 'defender', placement: { x: 300, y: 500 }, rank: 1, upgradeIds: [] },
       ],
       scheduledEffects: [],
     }
@@ -117,28 +129,33 @@ describe('R5a (ISO-09): Game content and trait extraction from core', () => {
     expect(resAlien.elapsedTicks).toBe(resFantasy.elapsedTicks)
     expect(resAlien.terminationReason).toBe(resFantasy.terminationReason)
 
-    // Verify survivors have identical state (modulo unit definitionId)
-    expect(resAlien.survivors.length).toBe(resFantasy.survivors.length)
-    for (let i = 0; i < resAlien.survivors.length; i++) {
-      const sA = resAlien.survivors[i]
-      const sF = resFantasy.survivors[i]
-      expect(sA.id).toBe(sF.id)
-      expect(sA.team).toBe(sF.team)
-      expect(sA.hp).toBe(sF.hp)
-      expect(sA.x).toBe(sF.x)
-      expect(sA.y).toBe(sF.y)
+    // Normalize only definition & upgrade references in alien replay output
+    const normalizeAlien = <T>(data: T): T => {
+      const json = JSON.stringify(data)
+      return JSON.parse(
+        json
+          .replace(/alien_crawler/g, 'fantasy_spider')
+          .replace(/alien_defender/g, 'fantasy_golem')
+          .replace(/alien_minion/g, 'fantasy_minion')
+          .replace(/alien_upg/g, 'fantasy_upg'),
+      )
     }
 
-    // Verify actions sequence is identical in every tick (modulo definition ID in strings)
-    expect(resAlien.logs.length).toBe(resFantasy.logs.length)
-    for (let t = 0; t < resAlien.logs.length; t++) {
-      const logA = resAlien.logs[t]
-      const logF = resFantasy.logs[t]
-      expect(logA.tick).toBe(logF.tick)
-      expect(logA.actions.length).toBe(logF.actions.length)
-      for (let a = 0; a < logA.actions.length; a++) {
-        expect(logA.actions[a].type).toBe(logF.actions[a].type)
-      }
-    }
+    // Full mechanical differential comparisons covering amounts, coords, and attribution
+    expect(normalizeAlien(resAlien.initialState)).toEqual(resFantasy.initialState)
+    expect(normalizeAlien(resAlien.survivors)).toEqual(resFantasy.survivors)
+    expect(normalizeAlien(resAlien.logs)).toEqual(resFantasy.logs)
+
+    // Negative control 1: perturbing attacker base attack by 1 breaks log equivalence
+    const perturbedAttackInput = structuredClone(inputAlien)
+    perturbedAttackInput.definitions.alien_crawler.baseStats.attack += 1
+    const resAttackPerturbed = simulateCombat(perturbedAttackInput)
+    expect(normalizeAlien(resAttackPerturbed.logs)).not.toEqual(resFantasy.logs)
+
+    // Negative control 2: omitting explicit stationaryAlignment trait causes mechanical divergence
+    const perturbedTraitInput = structuredClone(inputAlien)
+    delete perturbedTraitInput.definitions.alien_crawler.baseStats.stationaryAlignment
+    const resTraitPerturbed = simulateCombat(perturbedTraitInput)
+    expect(normalizeAlien(resTraitPerturbed.logs)).not.toEqual(resFantasy.logs)
   })
 })

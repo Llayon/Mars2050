@@ -20,10 +20,18 @@ export function validateBattleInput(input: unknown): BattleInput {
   if (!schemaResult.success) {
     const firstIssue = schemaResult.error.issues[0]
     const pathStr = firstIssue ? firstIssue.path.join('.') : ''
-    throw new CombatDefinitionError('SCHEMA_VALIDATION_ERROR',
-      `Schema validation failed: ${firstIssue ? firstIssue.message : 'invalid input'} at '${pathStr}'`,
-      { path: pathStr, reference: String((firstIssue as unknown as { received?: unknown })?.received ?? ''),
-        issues: schemaResult.error.issues.map(i => ({ path: i.path.join('.'), message: i.message })) })
+    let msg = `Schema validation failed: ${firstIssue ? firstIssue.message : 'invalid input'} at '${pathStr}'`
+    let defId: string | undefined
+    if (firstIssue && firstIssue.path[0] === 'catalog' && firstIssue.path[1] === 'upgrades' && firstIssue.path[2]) {
+      defId = String(firstIssue.path[2])
+      msg = `upgrade '${defId}' validation failed: ${msg}`
+    }
+    throw new CombatDefinitionError('SCHEMA_VALIDATION_ERROR', msg, {
+      path: pathStr,
+      definitionId: defId,
+      reference: String((firstIssue as unknown as { received?: unknown })?.received ?? ''),
+      issues: schemaResult.error.issues.map(i => ({ path: i.path.join('.'), message: i.message })),
+    })
   }
   const parsed = schemaResult.data
 

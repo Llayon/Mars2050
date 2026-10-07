@@ -11,17 +11,10 @@ export function getUnitSupportAuras(
   if (Array.isArray(upgradePath)) {
     for (const upgradeId of upgradePath) {
       if (typeof upgradeId !== 'string') continue
-      const revealAura = catalog[upgradeId]?.modifiers.grantRevealAura
-      if (!revealAura) continue
-      auras.push({
-        type: 'reveal',
-        radius: revealAura.radius,
-        value: 0,
-        duration: revealAura.duration,
-        interval: revealAura.interval,
-        target: 'enemies',
-        targetTags: ['stealth'],
-      })
+      const extraAuras = (catalog[upgradeId]?.modifiers as { supportAuras?: SupportAura[] } | undefined)?.supportAuras
+      if (extraAuras && Array.isArray(extraAuras)) {
+        for (const aura of extraAuras) auras.push({ ...aura })
+      }
     }
   }
   return auras.length > 0 ? auras : undefined

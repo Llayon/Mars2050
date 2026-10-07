@@ -64,10 +64,13 @@ export function executeCombatSimulation(input: BattleInput): CombatRunResult {
 
   const runtime = createEcsCombatRuntime({ profile: rules.profile === true, defenseResolutionMode })
   const passedCatalog = validatedInput.catalog as unknown as CombatCatalog | undefined
-  const unitTypes: Record<string, UnitTypeConfig> = { ...(passedCatalog?.unitTypes ?? {}) }
+  const unitTypes: Record<string, UnitTypeConfig> = {}
   for (const [key, def] of Object.entries(validatedInput.definitions)) {
-    if (!unitTypes[key]) {
-      unitTypes[key] = mapDefinitionToUnitTypeConfig(def)
+    unitTypes[key] = mapDefinitionToUnitTypeConfig(def)
+  }
+  if (passedCatalog?.unitTypes) {
+    for (const [key, cfg] of Object.entries(passedCatalog.unitTypes)) {
+      unitTypes[key] = cfg
     }
   }
   const catalog: CombatCatalog = {

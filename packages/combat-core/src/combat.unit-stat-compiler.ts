@@ -53,11 +53,11 @@ export function compileUnitStats(spec: UnitBuildSpec): CompiledUnitStats | null 
   let hp = base.hp
   let attack = base.attack
   let defense = base.defense
-  let speed = base.speed * 15
-  let range = base.range * 40
+  let speed = base.speed
+  let range = base.range
   let cooldown = base.actionCooldownMax || 10
   let canTargetAir = base.canTargetAir || false
-  let aoeRadius = base.aoeRadius ? base.aoeRadius * 40 : undefined
+  let aoeRadius = base.aoeRadius
   let attackType = base.attackType || 'single'
   let shield = 0
   let isFlying = base.isFlying || false
@@ -83,7 +83,7 @@ export function compileUnitStats(spec: UnitBuildSpec): CompiledUnitStats | null 
     if (modifiers.attackMult) attack *= modifiers.attackMult
     if (modifiers.defenseAdd) defense += modifiers.defenseAdd
     if (modifiers.speedMult) speed *= modifiers.speedMult
-    if (modifiers.rangeAdd) range += modifiers.rangeAdd * 40
+    if (modifiers.rangeAdd) range += modifiers.rangeAdd
     if (modifiers.cooldownMult) cooldown *= modifiers.cooldownMult
     if (modifiers.addFlying) isFlying = true
     if (modifiers.grantShield) shield += base.hp * modifiers.grantShield
@@ -120,7 +120,7 @@ export function compileUnitStats(spec: UnitBuildSpec): CompiledUnitStats | null 
     if (modifiers.grantAntiAir) canTargetAir = true
     if (modifiers.addAoE) {
       attackType = 'aoe'
-      aoeRadius = (aoeRadius ?? 0) + modifiers.addAoE * 40
+      aoeRadius = (aoeRadius ?? 0) + modifiers.addAoE
     }
   }
 
@@ -178,16 +178,19 @@ export function calculateEffectiveUnitStats(
   catalog?: CombatCatalog,
   definitions?: Record<string, UnitDefinition>,
 ): CompiledUnitStats | null {
-  const unitTypes: Record<string, UnitTypeConfig> = { ...(catalog?.unitTypes ?? {}) }
+  const unitTypes: Record<string, UnitTypeConfig> = {}
   if (definitions) {
     for (const [key, def] of Object.entries(definitions)) {
-      if (!unitTypes[key]) {
-        try {
-          unitTypes[key] = mapDefinitionToUnitTypeConfig(def)
-        } catch {
-          // Ignore unsupported attack types in definition mapping
-        }
+      try {
+        unitTypes[key] = mapDefinitionToUnitTypeConfig(def)
+      } catch {
+        // Ignore unsupported attack types in definition mapping
       }
+    }
+  }
+  if (catalog?.unitTypes) {
+    for (const [key, cfg] of Object.entries(catalog.unitTypes)) {
+      unitTypes[key] = cfg
     }
   }
   const effectiveCatalog: CombatCatalog = {

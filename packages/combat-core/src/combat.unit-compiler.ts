@@ -128,20 +128,18 @@ export function compileUnitSnapshot(spec: UnitBuildSpec): SimUnit | null {
       ? (modeSwitchConfig.startMode ?? 'ground')
       : undefined,
     pullOnHit: primitives.pullOnHit ? {
-      radius: primitives.pullOnHit.radius * 40,
-      strength: primitives.pullOnHit.strength * 40,
+      radius: primitives.pullOnHit.radius,
+      strength: primitives.pullOnHit.strength,
       maxTargets: primitives.pullOnHit.maxTargets,
     } : undefined,
     knockbackOnHit: primitives.knockbackOnHit ? {
-      radius: primitives.knockbackOnHit.radius * 40,
-      strength: primitives.knockbackOnHit.strength * 40,
+      radius: primitives.knockbackOnHit.radius,
+      strength: primitives.knockbackOnHit.strength,
       maxTargets: primitives.knockbackOnHit.maxTargets,
     } : undefined,
     reactiveArmorCharges: primitives.reactiveArmor?.charges,
     reactiveArmorBlock: primitives.reactiveArmor?.block,
-    damageShareRadius: primitives.damageShare?.radius
-      ? primitives.damageShare.radius * 40
-      : undefined,
+    damageShareRadius: primitives.damageShare?.radius,
     damageShareRatio: primitives.damageShare?.ratio,
     damageShareMaxTargets: primitives.damageShare?.maxTargets,
     projectileInterceptRadius: primitives.projectileInterception?.radius,
@@ -211,7 +209,7 @@ function compileRuntimeRules(
       ? [...stats.healTargetTags]
       : undefined,
     targetingProfile: stats.targetingProfile ?? DEFAULT_TARGETING_PROFILE,
-    minimumRange: Math.max(0, stats.minimumRange ?? 0) * 40,
+    minimumRange: Math.max(0, stats.minimumRange ?? 0),
     rampDamage: stats.rampDamage ? { ...stats.rampDamage } : undefined,
     chargeDamage: stats.chargeDamage ? { ...stats.chargeDamage } : undefined,
     percentHpDamage: stats.percentHpDamage
@@ -226,8 +224,7 @@ function compileRuntimeRules(
     projectileInterceptable: stats.projectileInterceptable !== undefined
       ? stats.projectileInterceptable
       : (Boolean(stats.barrageAttack) ||
-        Boolean(stats.delivery && 'interceptable' in stats.delivery && stats.delivery.interceptable) ||
-        Boolean(stats.combatTags?.includes('explosive') && stats.range * 40 > 80 && stats.attack > 0)),
+        Boolean(stats.delivery && 'interceptable' in stats.delivery && stats.delivery.interceptable)),
     abilityExecutionMode,
     abilityProgramsAuthoritative: abilityExecutionMode === 'compiled',
     spawnOverrides: stats.spawnOverrides
@@ -236,6 +233,6 @@ function compileRuntimeRules(
     temporalPlan,
     stationaryAlignment: stats.stationaryAlignment,
     formationAnchorMode: stats.formationAnchorMode ?? 'leader',
-    velocityDamping: stats.velocityDamping ?? (stats.range * 40 > 60 || undefined),
+    velocityDamping: stats.velocityDamping ?? (stats.range > 60 || undefined),
   }
 }

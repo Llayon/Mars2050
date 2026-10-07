@@ -1480,3 +1480,41 @@ SHA256: `52a91f4eb406125247426f044eb0dbdf8ab440a8285d211af63e5f9c75bf61dd`.
 - `npm run lint:limits`: **PASS (0 violations)**.
 - `npm run build`: **PASS (Next.js production build succeeded, 32/32 static pages)**.
 
+### R5a Remediation Cycle (Pass 2 Owner Findings)
+
+Устранены 4 блокирующих замечания из отчёта `artifacts/review-r5a-owner-pass2-20261007/review.json`:
+
+1. **[P1] Устранена регрессия Mars (исторические статы юнитов восстановлены):**
+   - Все пути создания марсианских юнитов (`factory`, `translatedDefinition`, `historic`) гарантируют исторические параметры скорости и дальности (Морпех: `speed: 105`, `range: 120`).
+   - Исправлена интеграция марсианских адаптеров с `buildMarsUnitDefinitions(UNIT_TYPES)` в `combat.config.ts`, `combat.input-translator.ts` и `combat.upgrade-primitives.ts`.
+   - Полный набор тестов Mars (`src/__tests__/**`): **825/825 tests PASS** (включая `combat.input-translator.test.ts`, `combat.rank-scaling.test.ts` и `combat.weapon-shape-upgrades.test.ts`).
+
+2. **[P2] Преобразования единиц полностью вынесены из ядра в адаптеры:**
+   - Из ядра (`packages/combat-core/src/combat.ability-config.ts`, `ecs/systems/side-weapon-system.ts`, `ecs/systems/split-fire-system.ts`, `ecs/movement-positioning.ts`) удалены все жестко закодированные множители `* 40` (`GRID_TO_PIXELS = 40`). Ядро работает строго в нейтральных мировых координатах.
+   - Преобразования тайлов в пиксели перенесены в марсианские адаптеры (`src/domains/combat/combat.ability-config.ts`, `combat.unit-definitions.ts`, `combat.input-translator.ts`, `combat.upgrade-primitives.ts`).
+
+3. **[P2] Расчет ауры и модификаторов вынесен из ядра:**
+   - Из `packages/combat-core/src/combat.support-aura-config.ts` удалена захардкоженная марсианская генерация стелс-аур.
+   - Поддержан нейтральный массив `supportAuras` в `UpgradeModifiers`.
+   - Марсианский адаптер `buildMarsUpgrades()` в `src/domains/combat/combat.input-translator.ts` транслирует `grantRevealAura` в нейтральный `supportAuras` с таргетом `enemies` и тегом `stealth`.
+
+4. **[P2] Строгая типизация каталога на границе валидации:**
+   - В `packages/combat-core/src/contracts/catalog.contracts.ts` внедрены строгие схемы: `combatCatalogSchema`, `catalogUnitTypeSchema`, `targetingProfileSchema`, `targetingAcquisitionSchema`, `supportAuraModifierSchema`.
+   - Каталог отклоняет значения, не являющиеся объектами (`null`, `false`, `17`, `'bad'`), `null`-профили и некорректные веса до входа в симуляцию, создания мира и вызова PRNG.
+
+#### Результаты верификации Pass 2:
+- Owner acceptance probe (`artifacts/review-r5a-owner-pass2-20261007/acceptance-probe.mjs`):
+  - **Node 25**: 10/10 PASS (status: passed).
+  - **Node 22**: 10/10 PASS (status: passed).
+- Pass 1 candidate probe (`artifacts/review-r5a-owner-20261007/probe.mjs`):
+  - **Node 25**: 6/6 PASS.
+  - **Node 22**: 6/6 PASS.
+- Core vitest suite (`npm run test:combat:core`): **29/29 files PASS, 214/214 tests PASS**.
+- Golden suites:
+  - `npm run combat:ecs:golden` (V8): **7/7 presets stable (PASS)**.
+  - `npm run combat:ecs:v9:golden` (V9): **7/7 presets stable (PASS)**.
+- Full root test suite (`vitest run`): **203/203 files PASS, 825/825 tests PASS**.
+- Typecheck (`npx tsc --noEmit --pretty false`): **0 errors**.
+- Architectural limits (`npm run lint:limits`): **0 violations**.
+- Package runtime smoke (`npm run test:combat:package:runtime`): **PASS**.
+

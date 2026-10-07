@@ -3,4 +3,5 @@ export * from './replay.contracts.js'
 export * from './battle.contracts.js'
 export * from './identity.contracts.js'
 export * from './ruleset-identity.js'
+export * from './catalog.contracts.js'
 

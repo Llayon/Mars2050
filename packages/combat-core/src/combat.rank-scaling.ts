@@ -1,5 +1,4 @@
 import type { RankScalingConfig } from './combat.sim.types.js'
-import type { UnitRow } from './combat.types.js'
 
 export interface RankScaledStats {
   hp: number
@@ -9,8 +8,8 @@ export interface RankScaledStats {
   cooldown: number
 }
 
-export function getUnitRank(unit: { rank?: number | null; tier?: number | null }): number {
-  const rank = Number(unit.rank ?? unit.tier ?? 1)
+export function getUnitRank(unit: { rank?: number | null }): number {
+  const rank = Number(unit.rank ?? 1)
   return Number.isFinite(rank) ? Math.max(1, Math.floor(rank)) : 1
 }
 

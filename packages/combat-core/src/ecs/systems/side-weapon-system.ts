@@ -6,7 +6,6 @@ import type { CombatWorld } from '../combat-world.js'
 import type { EntityId } from '../entity.js'
 import { resolveEcsSecondaryHit } from './secondary-hit-system.js'
 
-const GRID_TO_PIXELS = 40
 const CANDIDATE_MARGIN = 240
 
 export function canUseEcsSideWeapon(
@@ -51,9 +50,9 @@ function getSideWeaponTargets(
   const attacker = world.stores.transform.require(attackerId)
   const attackerIdentity = world.stores.identity.require(attackerId)
   const combat = world.stores.combat.require(attackerId)
-  const range = config.range * GRID_TO_PIXELS
+  const range = config.range
   return world.resources.require('entitySpatial')
-    .query(world, attacker.x, attacker.y, combat.range + CANDIDATE_MARGIN)
+    .query(world, attacker.x, attacker.y, Math.max(combat.range, range) + CANDIDATE_MARGIN)
     .filter(targetId => {
       if (targetId === primaryId || world.stores.vitality.require(targetId).isDead) return false
       if (world.stores.identity.require(targetId).team === attackerIdentity.team) return false

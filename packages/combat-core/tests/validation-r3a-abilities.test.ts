@@ -55,7 +55,7 @@ describe('R3a Remark 1: Public abilities execution equivalence with catalog', ()
     const publicInput = baseInput({
       definitions: {
         mage: {
-          ...makeDef('mage', { hp: 300, attack: 30, speed: 4, range: 6, combatTags: ['magic'] }),
+          ...makeDef('mage', { hp: 300, attack: 30, speed: 60, range: 240, combatTags: ['magic'] }),
           abilities: [burnAbility],
         },
         target: makeDef('target', { hp: 5000, attack: 0, speed: 0 }),
@@ -83,7 +83,7 @@ describe('R3a Remark 1: Public abilities execution equivalence with catalog', ()
             squadSpacing: 20,
             formation: 'grid',
             baseStats: {
-              hp: 300, attack: 30, defense: 5, speed: 4, range: 6, attackType: 'single',
+              hp: 300, attack: 30, defense: 5, speed: 60, range: 240, attackType: 'single',
               actionCooldownMax: 10, turnSpeed: 5, size: 'M',
               combatTags: ['magic'],
               abilities: [burnAbility],
@@ -108,7 +108,7 @@ describe('R3a Remark 1: Public abilities execution equivalence with catalog', ()
   it('negative control: unit without burn ability emits 0 status_apply actions', () => {
     const plainInput = baseInput({
       definitions: {
-        mage: makeDef('mage', { hp: 300, attack: 30, speed: 4, range: 6, combatTags: ['magic'] }),
+        mage: makeDef('mage', { hp: 300, attack: 30, speed: 60, range: 240, combatTags: ['magic'] }),
         target: makeDef('target', { hp: 5000, attack: 0, speed: 0 }),
       },
       units: [

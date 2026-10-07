@@ -73,6 +73,7 @@ import {
   decodeLegacyReplayJson,
 } from '@mars2050/combat-core/replay'
 import type { BattleInput, UnitDefinition } from '@mars2050/combat-core/contracts'
+import { ENGINE_BUILD_ID } from '@mars2050/combat-core/contracts'
 
 
 // 0. Verify package resolution is strictly from this consumer's isolated node_modules
@@ -109,7 +110,7 @@ function fp(v: unknown): string { return JSON.stringify(v) }
 function def(id: string, over: Partial<UnitDefinition['baseStats']> = {}): UnitDefinition {
   return {
     id, name: id,
-    baseStats: { hp: 500, attack: 10, defense: 2, speed: 4, range: 2, attackType: 'single', actionCooldownMax: 10, turnSpeed: 5, size: 'M', combatTags: [], ...over },
+    baseStats: { hp: 500, attack: 10, defense: 2, speed: 60, range: 40, attackType: 'single', actionCooldownMax: 10, turnSpeed: 5, size: 'M', combatTags: [], ...over },
     squadSize: 1, squadSpacing: 20, formation: 'grid',
   }
 }
@@ -139,7 +140,7 @@ if (attacks === 0 || damage === 0) throw new Error(\`melee battle dealt no damag
 console.log(\`melee: winner=\${m1.winner} ticks=\${m1.elapsedTicks} attacks=\${attacks} damageEvents=\${damage}\`)
 
 // 2. In-combat summon with owner/source attribution
-const shaman = def('shaman', { hp: 200, attack: 0, range: 4, attackType: 'spawn', spawnType: 'imp', spawnCap: 2, actionCooldownMax: 20, combatTags: ['summoner'] })
+const shaman = def('shaman', { hp: 200, attack: 0, range: 160, attackType: 'spawn', spawnType: 'imp', spawnCap: 2, actionCooldownMax: 20, combatTags: ['summoner'] })
 const imp = def('imp', { hp: 500, attack: 5, combatTags: ['summoned'] })
 const guard = def('guard', { hp: 400, attack: 8 })
 const summon: BattleInput = {
@@ -216,8 +217,8 @@ for (const initial of s1.survivors.filter(u => !spawnedIds.has(u.id))) {
 console.log(\`summon: impSpawns=\${spawns.length} attributedSurvivors=\${spawnedCreatures.length}\`)
 
 // 3. Burn with real subsequent periodic damage
-const pyromancer = def('pyromancer', { hp: 300, attack: 25, speed: 4, range: 6, combatTags: ['magic'], statusOnHit: [{ type: 'burn', duration: 25, value: 8 }] })
-const plainMage = def('plainMage', { hp: 300, attack: 25, speed: 4, range: 6, combatTags: ['magic'] })
+const pyromancer = def('pyromancer', { hp: 300, attack: 25, speed: 60, range: 240, combatTags: ['magic'], statusOnHit: [{ type: 'burn', duration: 25, value: 8 }] })
+const plainMage = def('plainMage', { hp: 300, attack: 25, speed: 60, range: 240, combatTags: ['magic'] })
 const golem = def('golem', { hp: 3000, defense: 0, speed: 0 })
 const burnBattleInput = (attackerDef: string): BattleInput => ({
   seed: 4444,
@@ -248,7 +249,7 @@ if (controlBurnEvents.length !== 0) throw new Error('burn test: control battle c
 console.log(\`burn: applies=\${burnApplies.length} ticks=\${burnTicks.length} burnDamage=\${totalBurnDmg} hpLossDiff=\${burnDefHpLoss - controlDefHpLoss}\`)
 
 // 4. healTargetTags: heals allowed target tags, never forbidden tags, respects maxHp
-const cleric = def('cleric', { hp: 300, attack: 20, speed: 4, range: 4, attackType: 'heal', healTargetTags: ['organic'], combatTags: ['healer'] })
+const cleric = def('cleric', { hp: 300, attack: 20, speed: 60, range: 160, attackType: 'heal', healTargetTags: ['organic'], combatTags: ['healer'] })
 const allyOrg = def('ally_org', { hp: 120, combatTags: ['organic'] })
 const allyMech = def('ally_mech', { hp: 120, combatTags: ['mechanical'] })
 const dummyFoe = def('dummy_foe', { hp: 200, attack: 1, speed: 0 })
@@ -466,7 +467,7 @@ if (!boundaryRun.metadata) throw new Error('R4b failed: metadata missing on Comb
 if (boundaryRun.metadata.contractVersion !== '1.0.0') throw new Error('R4b failed: unexpected contractVersion')
 if (boundaryRun.metadata.engine.id !== '@mars2050/combat-core') throw new Error('R4b failed: unexpected engineId')
 if (boundaryRun.metadata.engine.version !== '0.1.0') throw new Error('R4b failed: unexpected engine.version')
-if (boundaryRun.metadata.engine.buildId !== 'combat-core-r4b-20261006') throw new Error('R4b failed: unexpected engine.buildId')
+if (boundaryRun.metadata.engine.buildId !== ENGINE_BUILD_ID) throw new Error('R4b failed: unexpected engine.buildId')
 if (!boundaryRun.metadata.ruleset.contentHash || boundaryRun.metadata.ruleset.contentHash.length !== 64) {
   throw new Error('R4b failed: invalid ruleset contentHash')
 }

@@ -38,7 +38,7 @@ export interface UpgradeConfig {
 }
 
 export interface CombatCatalog {
-  readonly unitTypes: Readonly<Record<string, UnitTypeConfig>>
+  readonly unitTypes?: Readonly<Record<string, UnitTypeConfig>>
   readonly upgrades?: Readonly<Record<string, UpgradeConfig>>
   readonly targetingProfiles?: Readonly<Record<string, TargetingProfileConfig>>
 }

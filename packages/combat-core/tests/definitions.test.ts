@@ -59,8 +59,8 @@ describe('public definitions execute (ISO-01, ISO-02)', () => {
   })
 
   it('applies burn on hit and deals follow-up status damage (control stays clean)', () => {
-    const mage = def('mage', { hp: 300, attack: 30, speed: 4, range: 6, combatTags: ['magic'], statusOnHit: [{ type: 'burn', duration: 25, value: 10 }] })
-    const plain = def('plain', { hp: 300, attack: 30, speed: 4, range: 6, combatTags: ['magic'] })
+    const mage = def('mage', { hp: 300, attack: 30, speed: 60, range: 240, combatTags: ['magic'], statusOnHit: [{ type: 'burn', duration: 25, value: 10 }] })
+    const plain = def('plain', { hp: 300, attack: 30, speed: 60, range: 240, combatTags: ['magic'] })
     const tank = def('tank', { hp: 5000 })
     const units = (id: string): BattleInput['units'] => [
       { instanceId: 'att', definitionId: id, team: 'attacker', placement: { x: 300, y: 1000 }, rank: 1, upgradeIds: [] },

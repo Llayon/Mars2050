@@ -6,7 +6,6 @@ import type { EntityId } from './entity.js'
 import { getMeleeSectorSpan, getMeleeSlotCenterAngle, MELEE_ARC_QUANTA } from './melee-arc.js'
 import { getEcsCombatTags } from './targeting-evaluation.js'
 
-const GRID_TO_PIXELS = 40
 const MELEE_RANGE = 60
 const MELEE_SLOT_TOLERANCE = 12
 const RANGED_APPROACH_RANGE_RATIO = 0.72

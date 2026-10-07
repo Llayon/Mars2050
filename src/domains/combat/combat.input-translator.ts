@@ -4,11 +4,49 @@ import type { UnitRow } from './combat.types'
 import type { Obstacle } from './combat.sim.types'
 import type { BattleSimulationOptions } from './combat.metrics'
 import { MAX_TICKS, UNIT_TYPES } from './combat.config'
-import { GLOBAL_UPGRADES, UPGRADES } from './combat.upgrades'
+import { GLOBAL_UPGRADES, UPGRADES, type UpgradeConfig } from './combat.upgrades'
 import { FIELD_HEIGHT, FIELD_WIDTH, TILE_SIZE, generateObstacles } from './combat.utils'
 import { getUnitRank } from './combat.rank-scaling'
 import { buildMarsUnitDefinitions } from './combat.unit-definitions'
 export { buildMarsUnitDefinitions } from './combat.unit-definitions'
+
+/**
+ * Prepares Mars upgrades with tile-to-world conversions for combat-core.
+ */
+export function buildMarsUpgrades(): Record<string, UpgradeConfig> {
+  const result: Record<string, UpgradeConfig> = {}
+  for (const [key, upg] of Object.entries(UPGRADES)) {
+    const mods = { ...upg.modifiers } as Record<string, unknown>
+    if (typeof mods.rangeAdd === 'number') mods.rangeAdd = mods.rangeAdd * 40
+    if (typeof mods.addAoE === 'number') mods.addAoE = mods.addAoE * 40
+    if (mods.grantRevealAura && typeof mods.grantRevealAura === 'object') {
+      const aura = mods.grantRevealAura as { radius: number; duration: number; interval?: number }
+      mods.supportAuras = [{
+        type: 'reveal',
+        radius: aura.radius,
+        value: 0,
+        duration: aura.duration,
+        interval: aura.interval,
+        target: 'enemies',
+        targetTags: ['stealth'],
+      }]
+    }
+    if (mods.sideWeapon && typeof mods.sideWeapon === 'object') {
+      const sw = mods.sideWeapon as { range?: number }
+      if (typeof sw.range === 'number' && sw.range < 20) {
+        mods.sideWeapon = { ...sw, range: sw.range * 40 }
+      }
+    }
+    if (mods.splitFire && typeof mods.splitFire === 'object') {
+      const sf = mods.splitFire as { range?: number }
+      if (typeof sf.range === 'number' && sf.range < 20) {
+        mods.splitFire = { ...sf, range: sf.range * 40 }
+      }
+    }
+    result[key] = { ...upg, modifiers: mods as unknown as UpgradeConfig['modifiers'] }
+  }
+  return result
+}
 
 
 /**
@@ -22,7 +60,7 @@ export function mapUnitRowsToSpawnSpecs(
   arena?: ArenaSpec,
 ): UnitSpawnSpec[] {
   const defs = definitions ?? buildMarsUnitDefinitions()
-  const marsCatalog = { unitTypes: UNIT_TYPES, upgrades: UPGRADES }
+  const marsCatalog = { upgrades: buildMarsUpgrades() }
   const arenaWidth = arena?.width ?? FIELD_WIDTH
   const arenaHeight = arena?.height ?? FIELD_HEIGHT
 
@@ -37,7 +75,7 @@ export function mapUnitRowsToSpawnSpecs(
       }
     }
 
-    const def = defs[row.unit_type] ?? marsCatalog.unitTypes[row.unit_type]
+    const def = defs[row.unit_type]
     let posX = row.grid_x != null ? Number(row.grid_x) : undefined
     let posY = row.grid_y != null ? Number(row.grid_y) : undefined
 
@@ -163,8 +201,7 @@ export function translateMarsBattleInput(
     units,
     scheduledEffects,
     catalog: {
-      unitTypes: UNIT_TYPES,
-      upgrades: UPGRADES,
+      upgrades: buildMarsUpgrades(),
     },
   }
 }

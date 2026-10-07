@@ -73,7 +73,11 @@ export const MAX_TICKS = 400
 
 import { registerDefaultCombatCatalog } from '@mars2050/combat-core/combat.catalog.types'
 import { UPGRADES } from './combat.upgrades'
+import { buildMarsUnitDefinitions } from './combat.unit-definitions'
 
-registerDefaultCombatCatalog({ unitTypes: UNIT_TYPES, upgrades: UPGRADES })
+registerDefaultCombatCatalog({
+  unitTypes: buildMarsUnitDefinitions(UNIT_TYPES) as unknown as Record<string, UnitTypeConfig>,
+  upgrades: UPGRADES,
+})
 
 

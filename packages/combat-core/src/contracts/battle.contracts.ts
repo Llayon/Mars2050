@@ -1,10 +1,8 @@
 import { z } from 'zod'
 import { teamSchema, unitDefinitionSchema, unitSpawnSpecSchema } from './unit.contracts.js'
 import { combatReplayUnitSchema, combatTickSchema } from './replay.contracts.js'
-import {
-  combatMetadataSchema, defenseResolutionModeSchema,
-  type CombatMetadata, type DefenseResolutionMode,
-} from './identity.contracts.js'
+import { combatMetadataSchema, defenseResolutionModeSchema, type CombatMetadata, type DefenseResolutionMode } from './identity.contracts.js'
+import { combatCatalogSchema } from './catalog.contracts.js'
 export { defenseResolutionModeSchema, type DefenseResolutionMode }
 
 export const obstacleSchema = z.object({
@@ -69,7 +67,7 @@ export const battleInputSchema = z.object({
   definitions: z.record(z.string(), unitDefinitionSchema),
   units: z.array(unitSpawnSpecSchema),
   scheduledEffects: z.array(scheduledEffectSchema).default([]),
-  catalog: z.record(z.string(), z.unknown()).optional(),
+  catalog: combatCatalogSchema.optional(),
   rulesetId: z.string().min(1).optional(),
   rulesetVersion: z.string().min(1).optional(),
 })
