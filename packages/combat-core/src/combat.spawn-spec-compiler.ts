@@ -118,6 +118,7 @@ export function createSpawnBuildSpecs(
       },
       overrides: { currentHp: spec.currentHp },
       catalog,
+      preparedStats: spec.preparedStats as Partial<import('./combat.types.js').UnitBaseStats> | undefined,
     }
   })
 }

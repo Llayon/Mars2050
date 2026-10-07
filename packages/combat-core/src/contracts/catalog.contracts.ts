@@ -72,7 +72,7 @@ export type TargetingProfileContract = z.infer<typeof targetingProfileSchema>
 export const catalogUnitTypeSchema = z.object({
   id: z.string().optional(),
   name: z.string().optional(),
-  baseStats: z.unknown().optional(),
+  baseStats: baseStatsSchema.partial().optional(),
   squadSize: z.number().optional(),
   squadSpacing: z.number().optional(),
   formation: formationSchema.optional(),

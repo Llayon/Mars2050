@@ -1518,3 +1518,57 @@ SHA256: `52a91f4eb406125247426f044eb0dbdf8ab440a8285d211af63e5f9c75bf61dd`.
 - Architectural limits (`npm run lint:limits`): **0 violations**.
 - Package runtime smoke (`npm run test:combat:package:runtime`): **PASS**.
 
+### 2026-10-07 — Закрытие замечаний Pass 3 ревью R5a (ISO-09)
+
+В рамках ревью `artifacts/review-r5a-owner-pass3-20261007/review.json` успешно устранены все 4 блокирующих замечания:
+
+1. **[P1] R5A-MARS-CREATION-PATH-REGRESSION: Исправление пути создания отрядов Mars и каталога по умолчанию:**
+   - **Проблема**: `createRuntimeSquad` возвращал для морпеха с `range_enhancement` дальность 123 вместо 240, терял ауру раскрытия у `scout_drone` с `sensor_suite`, а `tier: 2` превращался в `rank: 1`. Причина: дефолтный каталог регистрировал сырые `UPGRADES` вместо подготовленных, а `squad-factory` не нормализовал `tier` перед вызовом ядра.
+   - **Исправление**:
+     - В `src/domains/combat/combat.upgrades.ts` экспортирована функция `buildMarsUpgrades()`.
+     - В `src/domains/combat/combat.config.ts` в `registerDefaultCombatCatalog` передаются `buildMarsUpgrades()`.
+     - В `src/domains/combat/combat.squad-factory.ts` функция `createRuntimeSquad` нормализует `row.tier` в `row.rank` через `getUnitRank(row)`.
+     - В `packages/combat-core/src/combat.squad-compiler.ts` добавлена поддержка `{ rank: row.rank ?? row.tier }`.
+     - Пути `createRuntimeSquad` и `translateMarsBattleInput` теперь выдают 100% идентичные характеристики: дальность 240, аура раскрытия, ранг 2.
+
+2. **[P2] R5A-WORLD-UNIT-BOUNDARY-PARTIAL: Устранение эвристик по величине чисел и однократная конверсия единиц:**
+   - **Проблема**: `prepareMarsAbility` повторно масштабировал способности с малыми радиусами (< 10) из 4 в 160, а прямые дальности `sideWeapon` 20 не масштабировались из-за порога `< 20`.
+   - **Исправление**:
+     - В `src/domains/combat/combat.unit-definitions.ts` удалена функция `prepareMarsAbility` — способности из хелперов уже находятся в мировых координатах и передаются без искажений.
+     - В `buildMarsUnitDefinitions` и `buildMarsUpgrades` дальности `sideWeapon.range` и `splitFire.range` масштабируются строго и единообразно `* 40` без порогов `< 20`.
+     - В `src/domains/combat/combat.upgrade-primitives.ts` функция `getRuntimePrimitiveStats` переведена на `buildMarsUpgrades` без постобработки порогов.
+
+3. **[P2] R5A-CATALOG-CONTRACT-STILL-UNKNOWN: Строгая валидация baseStats в каталоге до создания мира:**
+   - **Проблема**: `catalogUnitTypeSchema.baseStats` был объявлен как `z.unknown().optional()`. Некорректные значения (`isFlying: 'bad'`) вызывали сбой `ZodError` только после создания мира и постановки сущностей в очередь.
+   - **Исправление**:
+     - В `packages/combat-core/src/contracts/unit.contracts.ts` схема `baseStatsSchema` дополнена типизированными полями игровых механик (`isFlying`, `canTargetAir`, `minimumRange`, `aoeRadius`, `selfDestructOnAttack`, `shieldDamageMult`, `armorPierceRatio`, `antiAirDamageMult`, `summonCounterDamageMult`, `accuracyPenaltyResist`).
+     - В `packages/combat-core/src/contracts/catalog.contracts.ts` поле `catalogUnitTypeSchema.baseStats` типизировано через `baseStatsSchema.partial().optional()`.
+     - Значение `isFlying: 'bad'` отклоняется на входной границе `validateBattleInput` с ошибкой `CombatDefinitionError('SCHEMA_VALIDATION_ERROR', ...)` до инициализации мира и с 0 вызовов PRNG.
+
+4. **[P2] R5A-CONTENT-BOUNDARY-INCOMPLETE: Граница подготовленного loadout и сохранение нейтрального исполнения:**
+   - **Проблема**: Необходимость завершения границы подготовленного loadout для юнитов между адаптером и ядром.
+   - **Исправление**:
+     - В `unitSpawnSpecSchema` и `UnitBuildSpec` добавлено типизированное опциональное поле `preparedStats?: baseStatsSchema.partial()`.
+     - В `packages/combat-core/src/combat.unit-stat-compiler.ts` функция `compileUnitStats` при наличии `spec.preparedStats` использует подготовленные характеристики напрямую.
+     - В `packages/combat-core/src/combat.types.ts` добавлен индексный сигнатур `[key: string]: unknown` в `UnitBaseStats` для строгой совместимости типов с контрактами.
+     - Сохранена полная совместимость с нейтральными правилами и независимыми вызовами симулятора с сырыми улучшениями.
+
+#### Результаты итоговой верификации Pass 3:
+- Owner remaining probe (`artifacts/review-r5a-owner-pass3-20261007/remaining-probe.mjs`):
+  - **Node 25**: **10/10 PASS** (status: passed).
+  - **Node 22**: **10/10 PASS** (status: passed).
+- Owner Pass 2 acceptance probe (`artifacts/review-r5a-owner-pass2-20261007/acceptance-probe.mjs`):
+  - **Node 25**: **10/10 PASS** (status: passed).
+  - **Node 22**: **10/10 PASS** (status: passed).
+- Owner Pass 1 candidate probe (`artifacts/review-r5a-owner-20261007/probe.mjs`):
+  - **Node 25**: **6/6 PASS** (status: passed).
+  - **Node 22**: **6/6 PASS** (status: passed).
+- Core vitest suite (`npm run test:combat:core`): **29/29 files PASS, 214/214 tests PASS**.
+- Golden suites:
+  - `npm run combat:ecs:golden` (V8): **7/7 presets stable (PASS)**.
+  - `npm run combat:ecs:v9:golden` (V9): **7/7 presets stable (PASS)**.
+- Full root test suite (`npm test`): **203/203 files PASS, 825/825 tests PASS** (в едином запуске).
+- Typecheck (`npx tsc --noEmit --pretty false`): **0 errors**.
+- Architectural limits (`scripts/check-limits.ts`): **0 violations**.
+- Sealed R4b archive (`f610158b...`) и Fantasy SDK (`52a91f4e...`): **не изменялись (SHA256 инвариантны)**.
+

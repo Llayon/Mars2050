@@ -50,31 +50,48 @@ export function compileUnitStats(spec: UnitBuildSpec): CompiledUnitStats | null 
   const upgradeIds = resolveUnitUpgradeIds(spec)
   const primitives = getRuntimePrimitiveStats(definition.baseStats, upgradeIds, upgradesCatalog)
   const base = definition.baseStats
-  let hp = base.hp
-  let attack = base.attack
-  let defense = base.defense
-  let speed = base.speed
-  let range = base.range
-  let cooldown = base.actionCooldownMax || 10
-  let canTargetAir = base.canTargetAir || false
-  let aoeRadius = base.aoeRadius
-  let attackType = base.attackType || 'single'
-  let shield = 0
-  let isFlying = base.isFlying || false
-  let appliesEmp = false, leavesPuddle = false
-  let spawnerConfig: CompiledUnitStats['spawnerConfig']
-  let movingReduction = 0
+  if (spec.preparedStats) {
+    const p = spec.preparedStats
+    return {
+      definition, primitives, rank: resolveRank(spec),
+      hp: p.hp ?? base.hp, attack: p.attack ?? base.attack, defense: p.defense ?? base.defense,
+      speed: p.speed ?? base.speed, range: p.range ?? base.range,
+      cooldown: p.actionCooldownMax ?? base.actionCooldownMax ?? 10,
+      canTargetAir: p.canTargetAir ?? base.canTargetAir ?? false,
+      attackType: p.attackType ?? base.attackType ?? 'single',
+      aoeRadius: p.aoeRadius ?? base.aoeRadius, shield: (p as { shield?: number }).shield ?? 0,
+      isFlying: p.isFlying ?? base.isFlying ?? false, appliesEmp: (p as { appliesEmp?: boolean }).appliesEmp ?? false,
+      leavesPuddle: (p as { leavesPuddle?: boolean }).leavesPuddle ?? false,
+      spawnerConfig: (p as { spawnerConfig?: CompiledUnitStats['spawnerConfig'] }).spawnerConfig,
+      movingReduction: (p as { movingReduction?: number }).movingReduction ?? 0,
+      onDeathPuddle: (p as { onDeathPuddle?: CompiledUnitStats['onDeathPuddle'] }).onDeathPuddle,
+      multishot: (p as { multishot?: number }).multishot ?? 1,
+      antiAirDamageMult: p.antiAirDamageMult ?? base.antiAirDamageMult ?? 1,
+      replicateOnKill: (p as { replicateOnKill?: boolean }).replicateOnKill ?? false,
+      resurrectOnce: (p as { resurrectOnce?: boolean }).resurrectOnce ?? false,
+      stealthUntilAttack: (p as { stealthUntilAttack?: boolean }).stealthUntilAttack ?? false,
+      executeThreshold: (p as { executeThreshold?: number }).executeThreshold ?? 0,
+      lifestealMult: (p as { lifestealMult?: number }).lifestealMult ?? 0,
+      groundDamageMult: (p as { groundDamageMult?: number }).groundDamageMult ?? 1,
+      shieldDamageMult: p.shieldDamageMult ?? base.shieldDamageMult ?? 1,
+      armorPierceRatio: p.armorPierceRatio ?? base.armorPierceRatio ?? 0,
+      summonCounterDamageMult: p.summonCounterDamageMult ?? base.summonCounterDamageMult ?? 1,
+      accuracyPenaltyResist: p.accuracyPenaltyResist ?? base.accuracyPenaltyResist ?? 0,
+      burrowConfig: (p as { burrowConfig?: UnitBaseStats['burrowWhileMoving'] }).burrowConfig ?? (base.burrowWhileMoving ? { ...base.burrowWhileMoving } : undefined),
+    }
+  }
+  let hp = base.hp, attack = base.attack, defense = base.defense, speed = base.speed, range = base.range
+  let cooldown = base.actionCooldownMax || 10, canTargetAir = base.canTargetAir || false
+  let aoeRadius = base.aoeRadius, attackType = base.attackType || 'single', shield = 0
+  let isFlying = base.isFlying || false, appliesEmp = false, leavesPuddle = false
+  let spawnerConfig: CompiledUnitStats['spawnerConfig'], movingReduction = 0
   let onDeathPuddle: CompiledUnitStats['onDeathPuddle']
   let multishot = 1, antiAirDamageMult = base.antiAirDamageMult ?? 1
   let replicateOnKill = false, resurrectOnce = false, stealthUntilAttack = false
   let executeThreshold = 0, lifestealMult = 0, groundDamageMult = 1
-  let shieldDamageMult = base.shieldDamageMult ?? 1
-  let armorPierceRatio = base.armorPierceRatio ?? 0
-  let summonCounterDamageMult = base.summonCounterDamageMult ?? 1
-  let accuracyPenaltyResist = base.accuracyPenaltyResist ?? 0
-  let burrowConfig = base.burrowWhileMoving
-    ? { ...base.burrowWhileMoving }
-    : undefined
+  let shieldDamageMult = base.shieldDamageMult ?? 1, armorPierceRatio = base.armorPierceRatio ?? 0
+  let summonCounterDamageMult = base.summonCounterDamageMult ?? 1, accuracyPenaltyResist = base.accuracyPenaltyResist ?? 0
+  let burrowConfig = base.burrowWhileMoving ? { ...base.burrowWhileMoving } : undefined
 
   for (const upgradeId of upgradeIds) {
     const modifiers = upgradesCatalog[upgradeId]?.modifiers

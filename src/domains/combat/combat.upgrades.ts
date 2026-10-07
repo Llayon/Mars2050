@@ -198,3 +198,43 @@ export const GLOBAL_UPGRADES: Record<string, GlobalUpgradeConfig> = {
     id: 'global_emp', name: 'Глобальный ЭМИ', description: 'На 5-й секунде накладывает ЭМИ на всех врагов (отключает их урон на 3 сек)', cost: 700, type: 'global_emp', value: 30, target: 'enemies'
   }
 }
+
+/**
+ * Prepares Mars upgrades with tile-to-world conversions for combat-core.
+ * Converts grid tiles to pixels uniformly without magnitude heuristics.
+ */
+export function buildMarsUpgrades(sourceUpgrades?: Record<string, UpgradeConfig>): Record<string, UpgradeConfig> {
+  const source = sourceUpgrades ?? UPGRADES
+  const result: Record<string, UpgradeConfig> = {}
+  for (const [key, upg] of Object.entries(source)) {
+    const mods = { ...upg.modifiers } as Record<string, unknown>
+    if (typeof mods.rangeAdd === 'number') mods.rangeAdd = mods.rangeAdd * 40
+    if (typeof mods.addAoE === 'number') mods.addAoE = mods.addAoE * 40
+    if (mods.grantRevealAura && typeof mods.grantRevealAura === 'object') {
+      const aura = mods.grantRevealAura as { radius: number; duration: number; interval?: number }
+      mods.supportAuras = [{
+        type: 'reveal',
+        radius: aura.radius,
+        value: 0,
+        duration: aura.duration,
+        interval: aura.interval,
+        target: 'enemies',
+        targetTags: ['stealth'],
+      }]
+    }
+    if (mods.sideWeapon && typeof mods.sideWeapon === 'object') {
+      const sw = mods.sideWeapon as { range?: number }
+      if (typeof sw.range === 'number') {
+        mods.sideWeapon = { ...sw, range: sw.range * 40 }
+      }
+    }
+    if (mods.splitFire && typeof mods.splitFire === 'object') {
+      const sf = mods.splitFire as { range?: number }
+      if (typeof sf.range === 'number') {
+        mods.splitFire = { ...sf, range: sf.range * 40 }
+      }
+    }
+    result[key] = { ...upg, modifiers: mods as unknown as UpgradeConfig['modifiers'] }
+  }
+  return result
+}

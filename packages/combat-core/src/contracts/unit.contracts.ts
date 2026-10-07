@@ -48,6 +48,16 @@ export const baseStatsSchema = z.object({
   formationAnchorMode: z.enum(['leader', 'centroid']).optional(),
   velocityDamping: z.boolean().optional(),
   projectileInterceptable: z.boolean().optional(),
+  isFlying: z.boolean().optional(),
+  canTargetAir: z.boolean().optional(),
+  minimumRange: z.number().finite().nonnegative().optional(),
+  aoeRadius: z.number().finite().nonnegative().optional(),
+  selfDestructOnAttack: z.boolean().optional(),
+  shieldDamageMult: z.number().finite().optional(),
+  armorPierceRatio: z.number().finite().optional(),
+  antiAirDamageMult: z.number().finite().optional(),
+  summonCounterDamageMult: z.number().finite().optional(),
+  accuracyPenaltyResist: z.number().finite().optional(),
 }).passthrough()
 export type BaseStats = z.infer<typeof baseStatsSchema>
 
@@ -78,5 +88,6 @@ export const unitSpawnSpecSchema = z.object({
   currentHp: z.number().positive().optional(),
   rank: z.number().int().positive().default(1),
   upgradeIds: z.array(z.string()).default([]),
+  preparedStats: baseStatsSchema.partial().optional(),
 })
 export type UnitSpawnSpec = z.infer<typeof unitSpawnSpecSchema>

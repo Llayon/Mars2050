@@ -3,26 +3,6 @@ import { UNIT_TYPES } from './combat.config'
 
 import type { UnitTypeConfig } from './combat.types'
 
-function prepareMarsAbility(ability: unknown): unknown {
-  if (!ability || typeof ability !== 'object') return ability
-  const cloned = structuredClone(ability) as {
-    effects?: Array<{ effects?: Array<{ kind?: string; radius?: number; strength?: number; config?: { range?: number } }> }>
-  }
-  for (const eff of cloned.effects ?? []) {
-    for (const sub of eff.effects ?? []) {
-      if (sub.kind === 'displace') {
-        if (typeof sub.radius === 'number' && sub.radius < 10) sub.radius *= 40
-        if (typeof sub.strength === 'number' && sub.strength < 10) sub.strength *= 40
-      } else if (sub.kind === 'side_weapon' && sub.config) {
-        if (typeof sub.config.range === 'number' && sub.config.range < 20) sub.config.range *= 40
-      } else if (sub.kind === 'split_fire' && sub.config) {
-        if (typeof sub.config.range === 'number' && sub.config.range < 20) sub.config.range *= 40
-      }
-    }
-  }
-  return cloned
-}
-
 /**
  * Converts Mars UNIT_TYPES into clean UnitDefinition dictionary for combat-core.
  */
@@ -60,13 +40,11 @@ export function buildMarsUnitDefinitions(rawTypes?: Record<string, UnitTypeConfi
         } : undefined,
         sideWeapon: cfg.baseStats.sideWeapon ? {
           ...cfg.baseStats.sideWeapon,
-          range: cfg.baseStats.sideWeapon.range < 20 ? cfg.baseStats.sideWeapon.range * 40 : cfg.baseStats.sideWeapon.range,
+          range: cfg.baseStats.sideWeapon.range * 40,
         } : undefined,
         splitFire: cfg.baseStats.splitFire ? {
           ...cfg.baseStats.splitFire,
-          range: cfg.baseStats.splitFire.range != null && cfg.baseStats.splitFire.range < 20
-            ? cfg.baseStats.splitFire.range * 40
-            : cfg.baseStats.splitFire.range,
+          range: cfg.baseStats.splitFire.range != null ? cfg.baseStats.splitFire.range * 40 : undefined,
         } : undefined,
         velocityDamping: cfg.baseStats.velocityDamping ?? (cfg.baseStats.range * 40 > 60 || undefined),
         attackType: cfg.baseStats.attackType || 'single',
@@ -80,7 +58,7 @@ export function buildMarsUnitDefinitions(rawTypes?: Record<string, UnitTypeConfi
       squadSpacing: cfg.squadSpacing ?? 20,
       formation: cfg.formation ?? 'grid',
       targetingProfile: cfg.baseStats.targetingProfile,
-      abilities: cfg.baseStats.abilities ? cfg.baseStats.abilities.map(prepareMarsAbility) as unknown[] : undefined,
+      abilities: cfg.baseStats.abilities ? [...cfg.baseStats.abilities] as unknown[] : undefined,
     }
   }
   return definitions
