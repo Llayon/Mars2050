@@ -12,6 +12,7 @@ export interface DefWithPayloads {
   preparedStats?: {
     periodicAbilities?: unknown[]
     triggerEffects?: unknown[]
+    spawnerConfig?: { unitType?: string; interval?: number; timer?: number }
   }
   baseStats?: {
     spawnType?: string
@@ -19,6 +20,7 @@ export interface DefWithPayloads {
     periodicAbilities?: unknown[]
     triggerEffects?: TriggerEffectConfig[]
     abilities?: unknown[]
+    spawnerConfig?: { unitType?: string; interval?: number; timer?: number }
   }
 }
 
@@ -109,6 +111,17 @@ export function validateNestedSpawnPayloads(
     if (def.preparedStats) {
       validateSpawnPayloadItems(def.preparedStats.periodicAbilities, `definitions.${id}.preparedStats.periodicAbilities`, 'definition', id, 'periodicAbility', allDefIds, catalog, definitions)
       validateSpawnPayloadItems(def.preparedStats.triggerEffects, `definitions.${id}.preparedStats.triggerEffects`, 'definition', id, 'triggerEffect', allDefIds, catalog, definitions)
+    }
+    const spawner = def.preparedStats?.spawnerConfig ?? (base as { spawnerConfig?: { unitType?: string } } | undefined)?.spawnerConfig
+    if (spawner?.unitType) {
+      if (!allDefIds.has(spawner.unitType)) {
+        throw new CombatDefinitionError(
+          'MISSING_SPAWN_DEFINITION',
+          `definition '${id}' spawnerConfig spawns unknown definition '${spawner.unitType}'`,
+          { path: `definitions.${id}.preparedStats.spawnerConfig.unitType`, reference: spawner.unitType, definitionId: id },
+        )
+      }
+      validateLateSpawnConfig(spawner.unitType, undefined, `definitions.${id}.preparedStats.spawnerConfig`, catalog, definitions)
     }
   }
 }

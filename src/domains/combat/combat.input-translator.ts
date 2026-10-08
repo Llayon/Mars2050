@@ -1,5 +1,5 @@
 import type { BattleInput, UnitSpawnSpec, ScheduledEffect, ArenaSpec, UnitDefinition, PreparedStats } from '@mars2050/combat-core/contracts'
-import { calculateEffectiveUnitStats, calculateEffectiveMaxHp, getFormationOffset, getSizeRadius, getUnitSupportAuras, extractSupportAuras } from '@mars2050/combat-core'
+import { getFormationOffset, getSizeRadius } from '@mars2050/combat-core'
 import type { UnitRow } from './combat.types'
 import type { Obstacle } from './combat.sim.types'
 import type { BattleSimulationOptions } from './combat.metrics'
@@ -8,82 +8,22 @@ import { GLOBAL_UPGRADES, UPGRADES, buildMarsUpgrades, type UpgradeConfig } from
 import { FIELD_HEIGHT, FIELD_WIDTH, TILE_SIZE, generateObstacles } from './combat.utils'
 import { getUnitRank } from './combat.rank-scaling'
 import { buildMarsUnitDefinitions } from './combat.unit-definitions'
+import { buildMarsPreparedStats, type MarsCatalogInput } from './combat.prepared-stats'
 export { buildMarsUnitDefinitions } from './combat.unit-definitions'
 export { buildMarsUpgrades } from './combat.upgrades'
+export { buildMarsPreparedStats } from './combat.prepared-stats'
 
 /**
- * Compiles fully prepared runtime stats for a Mars unit.
+ * Calculates effective max HP for a Mars unit using Mars adapter-owned preparation.
  */
-export function buildMarsPreparedStats(
+export function calculateEffectiveMaxHp(
   unitType: string,
   rank: number = 1,
   upgradeIds: string[] = [],
-  catalog?: import('@mars2050/combat-core/combat.catalog.types').CombatCatalog | { upgrades?: Record<string, UpgradeConfig> },
+  catalog?: MarsCatalogInput,
   definitions?: Record<string, UnitDefinition>,
-): PreparedStats | undefined {
-  const defs = definitions ?? buildMarsUnitDefinitions()
-  const marsCatalog = (catalog as import('@mars2050/combat-core/combat.catalog.types').CombatCatalog | undefined) ?? { upgrades: buildMarsUpgrades() }
-  const effective = calculateEffectiveUnitStats(unitType, rank, upgradeIds, marsCatalog, defs)
-  if (!effective) return undefined
-  const def = defs[unitType]
-  const authoredAuras = extractSupportAuras((def?.abilities ?? def?.baseStats?.abilities) as import('@mars2050/combat-core/combat.ability.types').AbilityDefinition[] | undefined)
-  const baseAuras = [
-    ...((def?.baseStats?.supportAuras as import('@mars2050/combat-core/combat.sim.types').SupportAura[] | undefined) ?? []),
-    ...authoredAuras,
-  ]
-  const supportAuras = getUnitSupportAuras(
-    baseAuras.length > 0 ? baseAuras : undefined,
-    upgradeIds,
-    marsCatalog.upgrades as Record<string, import('@mars2050/combat-core/combat.catalog.types').UpgradeConfig>,
-  )
-  return {
-    hp: effective.hp,
-    attack: effective.attack,
-    defense: effective.defense,
-    speed: effective.speed,
-    range: effective.range,
-    actionCooldownMax: effective.cooldown,
-    shield: effective.shield,
-    isFlying: effective.isFlying,
-    canTargetAir: effective.canTargetAir,
-    attackType: effective.attackType,
-    aoeRadius: effective.aoeRadius,
-    size: (effective.primitives?.size ?? def?.baseStats?.size ?? 'M') as 'S' | 'M' | 'L' | 'XL',
-    turnSpeed: effective.primitives?.turnSpeed ?? def?.baseStats?.turnSpeed ?? 5,
-    combatTags: effective.primitives?.combatTags ?? def?.baseStats?.combatTags ?? [],
-    statusOnHit: effective.primitives?.statusOnHit ?? def?.baseStats?.statusOnHit,
-    stationaryAlignment: effective.primitives?.stationaryAlignment ?? def?.baseStats?.stationaryAlignment,
-    formationAnchorMode: effective.primitives?.formationAnchorMode ?? def?.baseStats?.formationAnchorMode,
-    velocityDamping: effective.primitives?.velocityDamping ?? def?.baseStats?.velocityDamping,
-    projectileInterceptable: effective.primitives?.projectileInterceptable ?? def?.baseStats?.projectileInterceptable,
-    targetingProfile: effective.primitives?.targetingProfile ?? def?.baseStats?.targetingProfile,
-    healTargetTags: effective.primitives?.healTargetTags ?? def?.baseStats?.healTargetTags,
-    minimumRange: effective.primitives?.minimumRange ?? def?.baseStats?.minimumRange,
-    selfDestructOnAttack: effective.primitives?.selfDestructOnAttack ?? def?.baseStats?.selfDestructOnAttack,
-    spawnType: effective.primitives?.spawnType ?? def?.baseStats?.spawnType,
-    spawnCap: effective.primitives?.spawnCap ?? def?.baseStats?.spawnCap,
-    appliesEmp: effective.appliesEmp,
-    leavesPuddle: effective.leavesPuddle,
-    spawnerConfig: effective.spawnerConfig,
-    movingReduction: effective.movingReduction,
-    onDeathPuddle: effective.onDeathPuddle,
-    multishot: effective.multishot,
-    antiAirDamageMult: effective.antiAirDamageMult,
-    replicateOnKill: effective.replicateOnKill,
-    resurrectOnce: effective.resurrectOnce,
-    stealthUntilAttack: effective.stealthUntilAttack,
-    executeThreshold: effective.executeThreshold,
-    lifestealMult: effective.lifestealMult,
-    groundDamageMult: effective.groundDamageMult,
-    shieldDamageMult: effective.shieldDamageMult,
-    armorPierceRatio: effective.armorPierceRatio,
-    summonCounterDamageMult: effective.summonCounterDamageMult,
-    accuracyPenaltyResist: effective.accuracyPenaltyResist,
-    burrowConfig: effective.burrowConfig,
-    supportAuras: supportAuras ? (supportAuras as unknown as import('@mars2050/combat-core/contracts').SupportAuraModifierContract[]) : undefined,
-    periodicAbilities: effective.primitives?.periodicAbilities ? (effective.primitives.periodicAbilities as unknown as Record<string, unknown>[]) : (def?.baseStats?.periodicAbilities ? (def.baseStats.periodicAbilities as unknown as Record<string, unknown>[]) : undefined),
-    triggerEffects: effective.primitives?.triggerEffects ? (effective.primitives.triggerEffects as unknown as Record<string, unknown>[]) : (def?.baseStats?.triggerEffects ? (def.baseStats.triggerEffects as unknown as Record<string, unknown>[]) : undefined),
-  }
+): number | undefined {
+  return buildMarsPreparedStats(unitType, rank, upgradeIds, catalog, definitions)?.hp
 }
 
 /**

@@ -5,7 +5,7 @@ import type { PeriodicAbilityConfig } from './combat.sim.types.js'
 import type { TargetingProfile, UnitBaseStats } from './combat.types.js'
 import { validatePeriodicAbilityConfig } from './combat.periodic-schema.js'
 import { validateDefinitionBaseLoadout } from './combat.loadout-validator.js'
-
+import { resolveEffectiveUnitBaseStats } from './combat.effective-loadout.js'
 import type { PreparedStats } from './contracts/prepared.contracts.js'
 
 export interface AnyDef {
@@ -73,13 +73,10 @@ export function validateAndNormalizeDefinition(
     throw new CombatDefinitionError('MISSING_SPAWN_TYPE', `definition '${id}' with attackType 'spawn' requires non-empty spawnType`,
       { path: `${pathPrefix}.baseStats.spawnType`, definitionId: id })
   }
-  if (def.targetingProfile && !allTargetingProfiles.has(def.targetingProfile)) {
-    throw new CombatDefinitionError('MISSING_DEFINITION', `definition '${id}' references unknown targetingProfile '${def.targetingProfile}'`,
-      { path: `${pathPrefix}.targetingProfile`, reference: String(def.targetingProfile), definitionId: id })
-  }
-  if (rawBase.targetingProfile && !allTargetingProfiles.has(rawBase.targetingProfile as string)) {
-    throw new CombatDefinitionError('MISSING_DEFINITION', `definition '${id}' references unknown targetingProfile '${rawBase.targetingProfile}'`,
-      { path: `${pathPrefix}.baseStats.targetingProfile`, reference: String(rawBase.targetingProfile), definitionId: id })
+  const targetProfile = (def.preparedStats?.targetingProfile ?? def.targetingProfile ?? rawBase.targetingProfile) as string | undefined
+  if (targetProfile && !allTargetingProfiles.has(targetProfile)) {
+    throw new CombatDefinitionError('MISSING_DEFINITION', `definition '${id}' references unknown targetingProfile '${targetProfile}'`,
+      { path: def.preparedStats?.targetingProfile ? `${pathPrefix}.preparedStats.targetingProfile` : (def.targetingProfile ? `${pathPrefix}.targetingProfile` : `${pathPrefix}.baseStats.targetingProfile`), reference: targetProfile, definitionId: id })
   }
   if (def.squadSize !== undefined && (!Number.isInteger(def.squadSize) || def.squadSize < 1)) {
     throw new CombatDefinitionError('INVALID_FIELD_RANGE', `definition '${id}' squadSize (${def.squadSize}) must be a positive integer (>= 1)`,
@@ -158,7 +155,8 @@ export function validateAndNormalizeDefinition(
     targetingProfile: (def.targetingProfile ?? rawBase.targetingProfile) as TargetingProfile | undefined,
   } as unknown as UnitBaseStats
 
-  validateDefinitionBaseLoadout(id, normalizedBaseStats, pathPrefix)
+  const effectiveBase = resolveEffectiveUnitBaseStats(normalizedBaseStats, def.preparedStats)
+  validateDefinitionBaseLoadout(id, effectiveBase, pathPrefix)
   return {
     ...def,
     id: def.id ?? id,

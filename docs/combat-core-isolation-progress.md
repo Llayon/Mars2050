@@ -1656,5 +1656,62 @@ SHA256: `52a91f4eb406125247426f044eb0dbdf8ab440a8285d211af63e5f9c75bf61dd`.
 - Architectural limits (`scripts/check-limits.ts`): **0 violations**.
 - Sealed R4b archive (`f610158b...`) и Fantasy SDK (`52a91f4e...`): **не изменялись (SHA256 инвариантны)**.
 
+### 2026-10-08 — Закрытие замечаний Pass 8 ревью R5a (ISO-09)
+
+В рамках восьмого прохода аудита R5a (Owner Review Pass 8) полностью устранены все 5 замечаний P2, согласован единый эффективный loadout (`mergePreparedStats`) для валидации, размещения и исполнения:
+
+1. **[P2] R5A-EFFECTIVE-DEFINITION-PRECEDENCE-DIVERGENCE**:
+   - **Проблема**: Приоритет между `catalog.unitTypes` и `definitions` расходился между валидацией и рантаймом. Определения каталога наследовали `preparedStats` из публичных определений (XL размер), а подготовленные конфликты вооружения и отсутствующие профили таргетинга в каталоге скрывались чистыми публичными определениями.
+   - **Исправление**:
+     - В `combat.input-validator.ts` при формировании объединённой карты определений устранено ошибочное наследование `pubDef.preparedStats` при наличии каталожного определения.
+     - В `combat.loadout-validator.ts` приоритет разрешения `definition` строго отдан каталогу (`catalogUnit ?? definitions[unit.definitionId]`).
+     - Подготовленные конфликты оружия и отсутствующие профили в каталоге гарантированно отклоняются на этапе pre-flight валидации до создания мира и расхода RNG.
+
+2. **[P2] R5A-LATE-PREPARED-LOADOUT-VALIDATION-INCOMPLETE**:
+   - **Проблема**: Подготовленные поздние призывы (late-summon definitions) обходили предварительную проверку конфликтующих оружий, профилей таргетинга и ссылок `spawnerConfig.unitType`.
+   - **Исправление**:
+     - В `combat.definition-validator.ts` добавлена валидация эффективного базового снаряжения с учётом `def.preparedStats` (проверка конфликтов геометрии оружия и валидности периодических способностей).
+     - В `combat.payload-validator.ts` добавлена валидация `spawnerConfig.unitType` для всех определений (как базовых, так и подготовленных) с выбросом `MISSING_SPAWN_DEFINITION` до создания мира.
+
+3. **[P2] R5A-PREPARED-PRIMITIVES-DOUBLE-APPLIED**:
+   - **Проблема**: Способности, подготовленные на уровне определения (`definition.preparedStats`), при частичных переопределениях или для ранга 2 повторно накатывались с сырыми улучшениями каталога, вызывая дублирование способностей.
+   - **Исправление**:
+     - В `combat.effective-loadout.ts` реализована функция `mergePreparedStats(defPrep, instancePrep)`, объединяющая подготовленные данные с сохранением точно-однократного применения способностей.
+     - В `combat.upgrade-primitives.ts` и `combat.unit-stat-compiler.ts` исключено повторное добавление улучшений, если способность уже включена в подготовленный снаряд.
+
+4. **[P2] R5A-PARTIAL-PREPARATION-RESETS-SHIELD**:
+   - **Проблема**: Частичное переопределение `{ hp: 200 }` на уровне инстанса сбрасывало щит определения `40 -> 0`.
+   - **Исправление**:
+     - В `mergePreparedStats` и `combat.unit-stat-compiler.ts` значение щита определения сохраняется, если в переопределении инстанса поле `shield` опущено (`undefined`), при этом явный `{ shield: 0 }` корректно сбрасывает щит до 0.
+
+5. **[P2] R5A-CONTENT-BOUNDARY-INCOMPLETE**:
+   - **Проблема**: Расчёт улучшений, рангов и аур для Марса частично продолжал делегироваться ядру через `calculateEffectiveUnitStats`, в ядре присутствовало специфичное для Марса умножение `periodicSpawn.interval * 10`.
+   - **Исправление**:
+     - Создан сервис адаптера `src/domains/combat/combat.prepared-stats.ts`, который локально в домене Mars рассчитывает ранги (`applyRankScaling`), модификаторы улучшений, конверсии интервалов (`* 10`) и ауры поддержки.
+     - Из ядра (`combat.unit-stat-compiler.ts`) удалено специфичное для Марса умножение интервала спавна `* 10`.
+     - Из Mars-адаптера удалены вызовы `calculateEffectiveUnitStats` и `getUnitSupportAuras` из ядра.
+
+#### Результаты верификации Pass 8:
+- Owner Pass 8 matrix probe (`artifacts/review-r5a-owner-pass8-20261008/effective-loadout-matrix-probe.mjs`):
+  - **Node 25**: **29/29 PASS** (0 failed).
+  - **Node 22**: **29/29 PASS** (0 failed).
+- Owner Pass 7 pipeline probe (`artifacts/review-r5a-owner-pass7-20261008/prepared-pipeline-probe.mjs`):
+  - **Node 25**: **21/21 PASS**; **Node 22**: **21/21 PASS**.
+- Owner Pass 6 probe (`artifacts/review-r5a-owner-pass6-20261008/effective-loadout-probe.mjs`):
+  - **Node 25**: **9/9 PASS**; **Node 22**: **9/9 PASS**.
+- Owner Pass 5 probe (`artifacts/review-r5a-owner-pass5-20261008/prepared-boundary-probe.mjs`):
+  - **Node 25**: **16/16 PASS**; **Node 22**: **16/16 PASS**.
+- Owner Pass 4 probe (`artifacts/review-r5a-owner-pass4-20261007/prepared-stats-probe.mjs`):
+  - **Node 25**: **12/12 PASS**; **Node 22**: **12/12 PASS**.
+- Combat core vitest suite: **31 files PASS, 244 tests PASS**.
+- Targeted Mars vitest suites: **4 files PASS, 26 tests PASS**.
+- Golden suites:
+  - `npm run combat:ecs:golden` (V8): **7/7 presets stable (PASS)**.
+  - `npm run combat:ecs:v9:golden` (V9): **7/7 presets stable (PASS)**.
+- Typecheck (`npx tsc --noEmit --pretty false`): **0 errors**.
+- Architectural limits (`scripts/check-limits.ts`): **0 violations**.
+- Sealed R4b archive (`f610158b...`) и Fantasy SDK (`52a91f4e...`): **не изменялись (SHA256 инвариантны)**.
+
+
 
 

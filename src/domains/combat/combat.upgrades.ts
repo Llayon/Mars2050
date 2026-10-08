@@ -210,6 +210,10 @@ export function buildMarsUpgrades(sourceUpgrades?: Record<string, UpgradeConfig>
     const mods = { ...upg.modifiers } as Record<string, unknown>
     if (typeof mods.rangeAdd === 'number') mods.rangeAdd = mods.rangeAdd * 40
     if (typeof mods.addAoE === 'number') mods.addAoE = mods.addAoE * 40
+    if (mods.periodicSpawn && typeof mods.periodicSpawn === 'object') {
+      const ps = mods.periodicSpawn as { unit: string; interval: number }
+      mods.periodicSpawn = { ...ps, interval: ps.interval * 10 }
+    }
     if (mods.grantRevealAura && typeof mods.grantRevealAura === 'object') {
       const aura = mods.grantRevealAura as { radius: number; duration: number; interval?: number }
       mods.supportAuras = [{

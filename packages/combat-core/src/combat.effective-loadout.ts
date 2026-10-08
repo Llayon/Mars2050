@@ -31,3 +31,25 @@ export function resolveEffectiveUnitBaseStats(
 
   return effective
 }
+
+/**
+ * Merges definition-level preparedStats and instance-level preparedStats.
+ * Explicit instance values (including 0 and false) override definition values.
+ * Omitted instance fields inherit from definition preparation.
+ */
+export function mergePreparedStats(
+  defPrep?: PreparedStats,
+  instancePrep?: PreparedStats,
+): PreparedStats | undefined {
+  if (!defPrep && !instancePrep) return undefined
+  if (!defPrep) return instancePrep
+  if (!instancePrep) return defPrep
+
+  const cleanInstance = Object.fromEntries(
+    Object.entries(instancePrep).filter(([_, v]) => v !== undefined),
+  )
+  return {
+    ...defPrep,
+    ...cleanInstance,
+  } as PreparedStats
+}

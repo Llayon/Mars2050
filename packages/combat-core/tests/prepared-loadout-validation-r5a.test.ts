@@ -186,5 +186,45 @@ describe('R5a Pass 6: Prepared loadout and support aura input boundary validatio
     expect(minion!.x).toBeGreaterThanOrEqual(45)
     expect(minion!.x).toBeLessThanOrEqual(55)
   })
+
+  it('preserves definition shield when partial instance preparedStats only overrides hp', () => {
+    const input = baseInput()
+    input.definitions.fighter.preparedStats = { hp: 100, shield: 40 }
+    input.units[0].preparedStats = { hp: 200 }
+    const result = simulateCombat(input)
+    expect(result.initialState[0].maxHp).toBe(200)
+    expect(result.initialState[0].maxShield).toBe(40)
+  })
+
+  it('catalog definition without preparedStats does not inherit public definition XL', () => {
+    const input = baseInput()
+    input.definitions.fighter.preparedStats = { size: 'XL' }
+    input.catalog = { unitTypes: { fighter: { ...input.definitions.fighter, preparedStats: undefined } } }
+    input.units[0].placement.x = 20
+    const result = simulateCombat(input)
+    expect(result.initialState[0].size).toBe('S')
+  })
+
+  it('rejects prepared late-summon conflicting weapons before world creation', () => {
+    const input = baseInput()
+    input.definitions.fighter.baseStats.periodicAbilities = periodic('minion')
+    input.definitions.minion = makeDef('minion', { attack: 0 })
+    input.definitions.minion.preparedStats = {
+      attackType: 'aoe',
+      aoeRadius: 20,
+      linePierce: { width: 12, damageMultiplier: 1 },
+    }
+    expectThrowsBeforeWorld(() => simulateCombat(input), 'SCHEMA_VALIDATION_ERROR')
+  })
+
+  it('rejects prepared late spawner with missing reference before world creation', () => {
+    const input = baseInput()
+    input.definitions.fighter.baseStats.periodicAbilities = periodic('minion')
+    input.definitions.minion = makeDef('minion', { attack: 0 })
+    input.definitions.minion.preparedStats = {
+      spawnerConfig: { unitType: 'missing', interval: 1, timer: 0 },
+    }
+    expectThrowsBeforeWorld(() => simulateCombat(input), 'MISSING_SPAWN_DEFINITION')
+  })
 })
 

@@ -11,7 +11,7 @@ import { compileTemporalWeaponPlan } from './combat.temporal-compiler.js'
 import { CombatDefinitionError } from './combat.definition-error.js'
 import { validatePeriodicAbilityConfig } from './combat.periodic-schema.js'
 import { validateUnitSpawnPayloads } from './combat.payload-validator.js'
-import { resolveEffectiveUnitBaseStats } from './combat.effective-loadout.js'
+import { resolveEffectiveUnitBaseStats, mergePreparedStats } from './combat.effective-loadout.js'
 
 /**
  * Validates the assembled loadout (effective baseStats + upgrades) for a single unit spawn spec.
@@ -28,9 +28,10 @@ export function validateUnitLoadout(
   catalog?: CombatCatalog,
   definitions?: Record<string, UnitDefinition>,
 ): void {
-  const def = definitions?.[unit.definitionId] ?? (catalog?.unitTypes?.[unit.definitionId] as unknown as UnitDefinition | undefined)
+  const def = (catalog?.unitTypes?.[unit.definitionId] as unknown as UnitDefinition | undefined) ?? definitions?.[unit.definitionId]
   const defPrep = def?.preparedStats
-  const effectiveBase = resolveEffectiveUnitBaseStats(resolveEffectiveUnitBaseStats(baseStats, defPrep), unit.preparedStats)
+  const effectivePrep = mergePreparedStats(defPrep, unit.preparedStats)
+  const effectiveBase = resolveEffectiveUnitBaseStats(baseStats, effectivePrep)
 
   if (allTargetingProfiles && effectiveBase.targetingProfile && !allTargetingProfiles.has(effectiveBase.targetingProfile as string)) {
     throw new CombatDefinitionError(
@@ -59,7 +60,7 @@ export function validateUnitLoadout(
     validateLateSpawnConfig(effectiveBase.spawnType, undefined, `units[${unitIndex}].spawnType`, catalog, definitions, effectiveBase.spawnOverrides)
   }
 
-  const primitives = getRuntimePrimitiveStats(effectiveBase, unit.upgradeIds, upgradesCatalog, unit.preparedStats ?? defPrep)
+  const primitives = getRuntimePrimitiveStats(effectiveBase, unit.upgradeIds, upgradesCatalog, effectivePrep)
   validateUnitSpawnPayloads(unitIndex, unit, primitives, allDefIds, catalog, definitions)
 
   try {

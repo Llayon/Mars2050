@@ -102,7 +102,7 @@ export function validateBattleInput(input: unknown): BattleInput {
     if (pubDef) {
       allDefs[id] = {
         ...catDef,
-        preparedStats: catDef.preparedStats ?? pubDef.preparedStats,
+        preparedStats: catDef.preparedStats,
         squadSize: pubDef.squadSize ?? catDef.squadSize,
         squadSpacing: pubDef.squadSpacing ?? catDef.squadSpacing,
         formation: pubDef.formation ?? catDef.formation,
