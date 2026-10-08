@@ -86,4 +86,40 @@ describe('Mars Adapter: Prepared loadout emission and parity', () => {
     const translatedUnit = translated.units.find(u => u.instanceId === 'u1')!
     expect(translatedUnit.rank).toBe(2)
   })
+
+  it('preserves innate armorPierceRatio for explosive_drone and sapper in preparedStats and initialState', () => {
+    const droneRow = makeRow('d1', 'explosive_drone')
+    const sapperRow = makeRow('s1', 'sapper')
+    const defender = makeRow('def', 'marine')
+
+    const translated = translateMarsBattleInput([droneRow, sapperRow], [defender], 123, [], [], [], { maxTicks: 1 })
+    const drone = translated.units.find(u => u.instanceId === 'd1')!
+    const sapper = translated.units.find(u => u.instanceId === 's1')!
+
+    expect(drone.preparedStats?.armorPierceRatio).toBe(0.8)
+    expect(sapper.preparedStats?.armorPierceRatio).toBe(0.35)
+
+    const simResult = simulateCombat(translated)
+    const droneSquad = simResult.initialState.filter(u => u.type === 'explosive_drone')
+    expect(droneSquad.length).toBeGreaterThan(0)
+    for (const member of droneSquad) {
+      expect(member.armorPierceRatio).toBe(0.8)
+    }
+
+    const sapperSquad = simResult.initialState.filter(u => u.type === 'sapper')
+    expect(sapperSquad.length).toBeGreaterThan(0)
+    for (const member of sapperSquad) {
+      expect(member.armorPierceRatio).toBe(0.35)
+    }
+  })
+
+  it('preserves drone_carrier periodic spawn interval (150 ticks, not 1500)', () => {
+    const carrierRow = makeRow('c1', 'titan_mech', { upgrade_path: ['drone_carrier'] })
+    const translated = translateMarsBattleInput([carrierRow], [makeRow('def', 'marine')], 123, [], [], [], { maxTicks: 301 })
+    const carrier = translated.units.find(u => u.instanceId === 'c1')!
+
+    expect(carrier.preparedStats?.spawnerConfig?.interval).toBe(150)
+    expect(carrier.preparedStats?.spawnerConfig?.timer).toBe(150)
+  })
 })
+

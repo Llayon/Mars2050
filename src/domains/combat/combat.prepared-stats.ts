@@ -38,7 +38,10 @@ export function buildMarsPreparedStats(
   let isFlying = base.isFlying || false
   let appliesEmp = false
   let leavesPuddle = false
-  let spawnerConfig: { unitType: string; interval: number; timer: number } | undefined
+  const rawBaseSpawner = (base as Record<string, unknown>).spawnerConfig as { unitType: string; interval: number; timer?: number } | undefined
+  let spawnerConfig: { unitType: string; interval: number; timer: number } | undefined = rawBaseSpawner
+    ? { unitType: rawBaseSpawner.unitType, interval: rawBaseSpawner.interval, timer: rawBaseSpawner.timer ?? rawBaseSpawner.interval }
+    : undefined
   let movingReduction = 0
   let onDeathPuddle: 'napalm' | 'acid' | 'emp' | undefined
   let multishot = 1
@@ -48,11 +51,12 @@ export function buildMarsPreparedStats(
   let stealthUntilAttack = false
   let executeThreshold = 0
   let lifestealMult = 0
-  let groundDamageMult = 1
-  let shieldDamageMult = 1
-  let armorPierceRatio = 0
-  let summonCounterDamageMult = 1
-  let accuracyPenaltyResist = 0
+  let groundDamageMult = (base as Record<string, unknown>).groundDamageMult as number | undefined ?? 1
+  let shieldDamageMult = base.shieldDamageMult ?? 1
+  let armorPierceRatio = base.armorPierceRatio ?? 0
+  let summonCounterDamageMult = base.summonCounterDamageMult ?? 1
+  let accuracyPenaltyResist = base.accuracyPenaltyResist ?? 0
+  let effectiveRankScaling = (base as Record<string, unknown>).rankScaling as RankScalingConfig | undefined
   const rawBurrow = (base as Record<string, unknown>).burrowWhileMoving as BurrowConfigContract | undefined
   let burrowConfig: BurrowConfigContract | undefined = rawBurrow ? { ...rawBurrow } : undefined
 
@@ -80,8 +84,22 @@ export function buildMarsPreparedStats(
     if (modifiers.disableEnemyTech) appliesEmp = true
     if (modifiers.leaveAoePuddle) leavesPuddle = true
     if (modifiers.periodicSpawn) {
-      const interval = modifiers.periodicSpawn.interval * 10
+      const interval = modifiers.periodicSpawn.interval
       spawnerConfig = { unitType: modifiers.periodicSpawn.unit, interval, timer: interval }
+    }
+    if (modifiers.onDeathSpawn && typeof modifiers.onDeathSpawn === 'string') {
+      triggerEffects.push({
+        id: `${upgradeId}-on-death-spawn`,
+        event: 'death',
+        payload: { kind: 'spawn', target: 'self', unitType: modifiers.onDeathSpawn, count: 1, cap: 1 },
+      })
+    }
+    if (modifiers.rankScaling) {
+      effectiveRankScaling = {
+        ...(effectiveRankScaling ?? {}),
+        ...modifiers.rankScaling,
+        damageModifiers: modifiers.rankScaling.damageModifiers?.map(m => ({ ...m })) ?? effectiveRankScaling?.damageModifiers,
+      }
     }
     if (modifiers.onDeathPuddle) onDeathPuddle = modifiers.onDeathPuddle
     if (modifiers.replicateOnKill) replicateOnKill = true
@@ -118,7 +136,7 @@ export function buildMarsPreparedStats(
 
   const ranked = applyRankScaling(
     { hp, attack, defense, range, cooldown },
-    (base as Record<string, unknown>).rankScaling as RankScalingConfig | undefined,
+    effectiveRankScaling,
     rank,
   )
 

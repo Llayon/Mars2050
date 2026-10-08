@@ -1712,6 +1712,41 @@ SHA256: `52a91f4eb406125247426f044eb0dbdf8ab440a8285d211af63e5f9c75bf61dd`.
 - Architectural limits (`scripts/check-limits.ts`): **0 violations**.
 - Sealed R4b archive (`f610158b...`) и Fantasy SDK (`52a91f4e...`): **не изменялись (SHA256 инвариантны)**.
 
+### Замечания Owner Review Pass 9 (2026-10-08) и Remediation:
 
+#### Анализ замечаний Pass 9:
+1. **[P1] R5A-MARS-PERIODIC-SPAWN-DOUBLE-CONVERSION**:
+   - **Проблема**: В `buildMarsUpgrades()` интервал автора (15 сек) уже переводился в тики (`interval = 150`). В `buildMarsPreparedStats()` происходило повторное умножение `interval * 10 = 1500`, из-за чего авианосец дронов («Улей-модуль») призывал в 10 раз реже (0 дронов за 301 тик вместо 2).
+   - **Исправление**: Удалено повторное умножение в `src/domains/combat/combat.prepared-stats.ts`, интервал сохраняется равным 150 тикам. Проверено расписание: спавны на тиках 149 и 299.
+2. **[P1] R5A-MARS-INNATE-COMBAT-MULTIPLIERS-RESET**:
+   - **Проблема**: Врожденные множители (`armorPierceRatio`, `shieldDamageMult`, `summonCounterDamageMult`, `accuracyPenaltyResist`, `groundDamageMult`, `movingReduction`, `multishot`, `executeThreshold`, `lifestealMult`) сбрасывались до дефолтных значений в `buildMarsPreparedStats()`. В частности, `explosive_drone` терял `armorPierceRatio: 0.8`, а `sapper` терял `0.35`, что искажало боевой урон.
+   - **Исправление**: В `buildMarsPreparedStats()` все множители инициализируются из `base`, сохраняя врожденные характеристики авторов.
+3. **[P2] R5A-MARS-PREPARED-UPGRADE-INVENTORY-INCOMPLETE**:
+   - **Проблема**: В адаптере не переносились модификаторы улучшений `rankScaling` и триггеры смерти `onDeathSpawn`.
+   - **Исправление**: `modifiers.rankScaling` объединяется в `effectiveRankScaling` и передается в `applyRankScaling`; `modifiers.onDeathSpawn` транслируется в соответствующий триггер `${upgradeId}-on-death-spawn` в `triggerEffects`.
+4. **[P2] R5A-LATE-PREPARED-LOADOUT-VALIDATION-INCOMPLETE**:
+   - **Проблема**: Поздние призывы с подготовленной атакой `attackType: 'spawn'` и отсутствующим/неизвестным `spawnType` обходили pre-flight валидацию.
+   - **Исправление**: В `combat.definition-validator.ts` и `combat.payload-validator.ts` валидация учитывает `def.preparedStats?.attackType` и `def.preparedStats?.spawnType`, выбрасывая `MISSING_SPAWN_TYPE` или `MISSING_SPAWN_DEFINITION` строго до создания ECS-мира и вызовов RNG.
+5. **Архитектурное уточнение**:
+   - Хелпер `applyRankScaling` экспортирован из `@mars2050/combat-core/combat.rank-scaling` как чистая математическая функция без привязки к марсианским сущностям; Mars-адаптер правомерно переиспользует нейтральный контракт без дублирования кода формул.
 
+#### Новые постоянные тесты:
+- `packages/combat-core/tests/prepared-spawn-attack-r5a.test.ts` (158 строк): проверка pre-flight отклонения late prepared `attackType: 'spawn'` с отсутствующим и неизвестным `spawnType`, а также позитивный контроль.
+- `src/__tests__/combat.prepared-loadout.test.ts` (102 строки): тесты на сохранение врожденного бронепробития `explosive_drone` (0.8) и `sapper` (0.35), а также проверка тайминга `drone_carrier` (интервал 150 тиков).
 
+#### Результаты верификации Pass 9:
+- Owner Pass 9 Mars probe (`artifacts/review-r5a-owner-pass9-20261008/mars-preparation-regression-probe.mjs`):
+  - **Node 25**: **14/14 PASS** (0 failed).
+  - **Node 22**: **14/14 PASS** (0 failed).
+- Owner Pass 9 late-reference probe (`artifacts/review-r5a-owner-pass9-20261008/late-reference-boundary-probe.mjs`):
+  - **Node 25**: **6/6 PASS** (0 failed).
+  - **Node 22**: **6/6 PASS** (0 failed).
+- Предыдущие проверочные пробники (Pass 8: 29/29, Pass 7: 21/21, Pass 6: 9/9, Pass 5: 16/16, Pass 4: 12/12): **100% PASS** на Node 25 и Node 22.
+- Combat core vitest suite: **32 files PASS, 247 tests PASS**.
+- Targeted Mars vitest suites: **8 files PASS, 41 tests PASS**.
+- Golden suites:
+  - `npm run combat:ecs:golden` (V8): **7/7 presets stable (PASS)**.
+  - `npm run combat:ecs:v9:golden` (V9): **7/7 presets stable (PASS)**.
+- Typecheck (`npx tsc --noEmit --pretty false`): **0 errors**.
+- Architectural limits (`scripts/check-limits.ts --diff HEAD --json`): **0 violations**.
+- Sealed R4b archive (`f610158b...`) и Fantasy SDK (`52a91f4e...`): **не изменялись (SHA256 инвариантны)**.

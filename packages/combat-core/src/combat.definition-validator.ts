@@ -64,14 +64,15 @@ export function validateAndNormalizeDefinition(
         issues: baseStatsResult.error.issues.map(i => ({ path: i.path.join('.'), message: i.message })) })
   }
   const rawBase = def.baseStats as Record<string, unknown>
-  const attackType = rawBase.attackType
-  if (attackType === 'beam' || attackType === 'spread') {
-    throw new CombatDefinitionError('UNSUPPORTED_ATTACK_TYPE', id, String(attackType),
-      { path: `${pathPrefix}.baseStats.attackType`, reference: String(attackType) })
+  const effectiveAttackType = def.preparedStats?.attackType ?? rawBase.attackType
+  const effectiveSpawnType = def.preparedStats?.spawnType ?? rawBase.spawnType
+  if (effectiveAttackType === 'beam' || effectiveAttackType === 'spread') {
+    throw new CombatDefinitionError('UNSUPPORTED_ATTACK_TYPE', id, String(effectiveAttackType),
+      { path: `${pathPrefix}.baseStats.attackType`, reference: String(effectiveAttackType) })
   }
-  if (attackType === 'spawn' && !rawBase.spawnType) {
+  if (effectiveAttackType === 'spawn' && !effectiveSpawnType) {
     throw new CombatDefinitionError('MISSING_SPAWN_TYPE', `definition '${id}' with attackType 'spawn' requires non-empty spawnType`,
-      { path: `${pathPrefix}.baseStats.spawnType`, definitionId: id })
+      { path: def.preparedStats?.attackType ? `${pathPrefix}.preparedStats.spawnType` : `${pathPrefix}.baseStats.spawnType`, definitionId: id })
   }
   const targetProfile = (def.preparedStats?.targetingProfile ?? def.targetingProfile ?? rawBase.targetingProfile) as string | undefined
   if (targetProfile && !allTargetingProfiles.has(targetProfile)) {

@@ -10,6 +10,7 @@ export interface DefWithPayloads {
   abilities?: unknown[]
   periodicAbilities?: unknown[]
   preparedStats?: {
+    spawnType?: string
     periodicAbilities?: unknown[]
     triggerEffects?: unknown[]
     spawnerConfig?: { unitType?: string; interval?: number; timer?: number }
@@ -95,12 +96,13 @@ export function validateNestedSpawnPayloads(
     if (!def || typeof def !== 'object') continue
     const base = def.baseStats
     if (base && typeof base === 'object') {
-      if (base.spawnType) {
-        if (!allDefIds.has(base.spawnType)) {
-          throw new CombatDefinitionError('MISSING_SPAWN_DEFINITION', `definition '${id}' spawns unknown definition '${base.spawnType}'`,
-            { path: `definitions.${id}.baseStats.spawnType`, reference: base.spawnType, definitionId: id })
+      const spawnType = def.preparedStats?.spawnType ?? base.spawnType
+      if (spawnType) {
+        if (!allDefIds.has(spawnType)) {
+          throw new CombatDefinitionError('MISSING_SPAWN_DEFINITION', `definition '${id}' spawns unknown definition '${spawnType}'`,
+            { path: def.preparedStats?.spawnType ? `definitions.${id}.preparedStats.spawnType` : `definitions.${id}.baseStats.spawnType`, reference: spawnType, definitionId: id })
         }
-        validateLateSpawnConfig(base.spawnType, undefined, `definitions.${id}.baseStats.spawnType`, catalog, definitions, base.spawnOverrides)
+        validateLateSpawnConfig(spawnType, undefined, def.preparedStats?.spawnType ? `definitions.${id}.preparedStats.spawnType` : `definitions.${id}.baseStats.spawnType`, catalog, definitions, base.spawnOverrides)
       }
       validateSpawnPayloadItems(base.periodicAbilities, `definitions.${id}.baseStats.periodicAbilities`, 'definition', id, 'periodicAbility', allDefIds, catalog, definitions)
       validateSpawnPayloadItems(base.triggerEffects, `definitions.${id}.baseStats.triggerEffects`, 'definition', id, 'triggerEffect', allDefIds, catalog, definitions)
