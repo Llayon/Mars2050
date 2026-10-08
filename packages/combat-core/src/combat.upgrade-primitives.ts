@@ -13,8 +13,28 @@ export function getRuntimePrimitiveStats(
   const triggerEffects = baseStats.triggerEffects?.map(trigger => ({ ...trigger })) ?? []
   const skipPeriodic = preparedStats?.periodicAbilities !== undefined
   const skipTriggers = preparedStats?.triggerEffects !== undefined
-  const skipFieldEffect = (preparedStats as Record<string, unknown>)?.fieldEffect !== undefined
-  const skipControlBeam = (preparedStats as Record<string, unknown>)?.controlBeam !== undefined
+  const skipFieldEffect = preparedStats?.fieldEffect !== undefined
+  const skipControlBeam = preparedStats?.controlBeam !== undefined
+  const skipTransform = preparedStats?.transformMode !== undefined
+  const skipFormation = preparedStats?.formationModifiers !== undefined
+  const skipStatGrowth = preparedStats?.statGrowth !== undefined
+  const skipAttackCharge = preparedStats?.attackCharge !== undefined
+  const skipReassembly = preparedStats?.reassembly !== undefined
+  const skipRankScaling = preparedStats?.rankScaling !== undefined
+  const skipConditionalRange = preparedStats?.conditionalRange !== undefined
+  const skipFlatDamageBlock = preparedStats?.flatDamageBlock !== undefined
+  const skipShieldHitBlock = preparedStats?.shieldHitBlock !== undefined
+  const skipTargetPriority = preparedStats?.targetPriorityProfile !== undefined
+  const skipConditionalAttack = preparedStats?.conditionalAttackMode !== undefined
+  const skipSweep = preparedStats?.sweepAttack !== undefined
+  const skipLinePierce = preparedStats?.linePierce !== undefined
+  const skipCone = preparedStats?.coneAttack !== undefined
+  const skipBeam = preparedStats?.beamAttack !== undefined
+  const skipBarrage = preparedStats?.barrageAttack !== undefined
+  const skipChain = preparedStats?.chainAttack !== undefined
+  const skipSplitFire = preparedStats?.splitFire !== undefined
+  const skipSideWeapon = preparedStats?.sideWeapon !== undefined
+  const skipStealth = preparedStats?.stealthWhileMoving !== undefined
   const transformMode = baseStats.transformMode?.map(mode => ({ ...mode })) ?? []
   const fieldEffect = baseStats.fieldEffect?.map(effect => ({ ...effect })) ?? []
   let controlBeam = baseStats.controlBeam ? { ...baseStats.controlBeam } : undefined
@@ -51,28 +71,28 @@ export function getRuntimePrimitiveStats(
         if (modifiers.triggerEffects) triggerEffects.push(...modifiers.triggerEffects.map(trigger => ({ ...trigger })))
         if (modifiers.onDeathSpawn) triggerEffects.push(createOnDeathSpawnTrigger(upgradeId, modifiers.onDeathSpawn))
       }
-      if (modifiers.transformMode) transformMode.push(...modifiers.transformMode.map(mode => ({ ...mode })))
+      if (!skipTransform && modifiers.transformMode) transformMode.push(...modifiers.transformMode.map(mode => ({ ...mode })))
       if (!skipFieldEffect && modifiers.fieldEffect) fieldEffect.push(...modifiers.fieldEffect.map(effect => ({ ...effect })))
       if (!skipControlBeam && modifiers.controlBeam) controlBeam = { ...modifiers.controlBeam }
-      if (modifiers.formationModifiers) formationModifiers = { ...modifiers.formationModifiers }
-      if (modifiers.statGrowth) statGrowth = { ...modifiers.statGrowth }
-      if (modifiers.attackCharge) attackCharge = { ...modifiers.attackCharge }
-      if (modifiers.reassembly) reassembly = { ...modifiers.reassembly }
-      if (modifiers.rankScaling) rankScaling = { ...modifiers.rankScaling, damageModifiers: modifiers.rankScaling.damageModifiers?.map(modifier => ({ ...modifier })) }
-      if (modifiers.conditionalRange) conditionalRange.push(...modifiers.conditionalRange.map(range => ({ ...range })))
-      if (modifiers.flatDamageBlock) flatDamageBlock = { ...modifiers.flatDamageBlock }
-      if (modifiers.shieldHitBlock) shieldHitBlock = { ...modifiers.shieldHitBlock }
-      if (modifiers.targetPriorityProfile) targetPriorityProfile = modifiers.targetPriorityProfile
-      if (modifiers.conditionalAttackMode) conditionalAttackMode = { ...modifiers.conditionalAttackMode }
-      if (modifiers.sweepAttack) sweepAttack = { ...modifiers.sweepAttack }
-      if (modifiers.linePierce) linePierce = { ...modifiers.linePierce }
-      if (modifiers.coneAttack) coneAttack = { ...modifiers.coneAttack }
-      if (modifiers.beamAttack) beamAttack = { ...modifiers.beamAttack }
-      if (modifiers.barrageAttack) barrageAttack = { ...modifiers.barrageAttack }
-      if (modifiers.chainAttack) chainAttack = { ...modifiers.chainAttack }
-      if (modifiers.splitFire) splitFire = { ...modifiers.splitFire }
-      if (modifiers.sideWeapon) sideWeapon = { ...modifiers.sideWeapon }
-      if (modifiers.stealthWhileMoving) stealthWhileMoving = true
+      if (!skipFormation && modifiers.formationModifiers) formationModifiers = { ...modifiers.formationModifiers }
+      if (!skipStatGrowth && modifiers.statGrowth) statGrowth = { ...modifiers.statGrowth }
+      if (!skipAttackCharge && modifiers.attackCharge) attackCharge = { ...modifiers.attackCharge }
+      if (!skipReassembly && modifiers.reassembly) reassembly = { ...modifiers.reassembly }
+      if (!skipRankScaling && modifiers.rankScaling) rankScaling = { ...modifiers.rankScaling, damageModifiers: modifiers.rankScaling.damageModifiers?.map(modifier => ({ ...modifier })) }
+      if (!skipConditionalRange && modifiers.conditionalRange) conditionalRange.push(...modifiers.conditionalRange.map(range => ({ ...range })))
+      if (!skipFlatDamageBlock && modifiers.flatDamageBlock) flatDamageBlock = { ...modifiers.flatDamageBlock }
+      if (!skipShieldHitBlock && modifiers.shieldHitBlock) shieldHitBlock = { ...modifiers.shieldHitBlock }
+      if (!skipTargetPriority && modifiers.targetPriorityProfile) targetPriorityProfile = modifiers.targetPriorityProfile
+      if (!skipConditionalAttack && modifiers.conditionalAttackMode) conditionalAttackMode = { ...modifiers.conditionalAttackMode }
+      if (!skipSweep && modifiers.sweepAttack) sweepAttack = { ...modifiers.sweepAttack }
+      if (!skipLinePierce && modifiers.linePierce) linePierce = { ...modifiers.linePierce }
+      if (!skipCone && modifiers.coneAttack) coneAttack = { ...modifiers.coneAttack }
+      if (!skipBeam && modifiers.beamAttack) beamAttack = { ...modifiers.beamAttack }
+      if (!skipBarrage && modifiers.barrageAttack) barrageAttack = { ...modifiers.barrageAttack }
+      if (!skipChain && modifiers.chainAttack) chainAttack = { ...modifiers.chainAttack }
+      if (!skipSplitFire && modifiers.splitFire) splitFire = { ...modifiers.splitFire }
+      if (!skipSideWeapon && modifiers.sideWeapon) sideWeapon = { ...modifiers.sideWeapon }
+      if (!skipStealth && modifiers.stealthWhileMoving) stealthWhileMoving = true
     }
   }
 

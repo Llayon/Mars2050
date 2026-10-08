@@ -12,6 +12,7 @@ import { CombatDefinitionError } from './combat.definition-error.js'
 import { validatePeriodicAbilityConfig } from './combat.periodic-schema.js'
 import { validateUnitSpawnPayloads } from './combat.payload-validator.js'
 import { resolveEffectiveUnitBaseStats, mergePreparedStats } from './combat.effective-loadout.js'
+import { validatePrimitiveConfigs } from './combat.primitive-validator.js'
 
 /**
  * Validates the assembled loadout (effective baseStats + upgrades) for a single unit spawn spec.
@@ -34,33 +35,28 @@ export function validateUnitLoadout(
   const effectiveBase = resolveEffectiveUnitBaseStats(baseStats, effectivePrep)
 
   if (allTargetingProfiles && effectiveBase.targetingProfile && !allTargetingProfiles.has(effectiveBase.targetingProfile as string)) {
-    throw new CombatDefinitionError(
-      'MISSING_DEFINITION',
+    throw new CombatDefinitionError('MISSING_DEFINITION',
       `unit '${unit.instanceId}' references unknown targetingProfile '${effectiveBase.targetingProfile}'`,
-      { path: `units[${unitIndex}].targetingProfile`, reference: String(effectiveBase.targetingProfile), definitionId: unit.definitionId },
-    )
+      { path: `units[${unitIndex}].targetingProfile`, reference: String(effectiveBase.targetingProfile), definitionId: unit.definitionId })
   }
 
   if (effectiveBase.attackType === 'spawn' && !effectiveBase.spawnType) {
-    throw new CombatDefinitionError(
-      'MISSING_SPAWN_TYPE',
+    throw new CombatDefinitionError('MISSING_SPAWN_TYPE',
       `unit '${unit.instanceId}' with attackType 'spawn' requires non-empty spawnType`,
-      { path: `units[${unitIndex}].spawnType`, definitionId: unit.definitionId },
-    )
+      { path: `units[${unitIndex}].spawnType`, definitionId: unit.definitionId })
   }
 
   if (effectiveBase.spawnType && allDefIds) {
     if (!allDefIds.has(effectiveBase.spawnType)) {
-      throw new CombatDefinitionError(
-        'MISSING_SPAWN_DEFINITION',
+      throw new CombatDefinitionError('MISSING_SPAWN_DEFINITION',
         `unit '${unit.instanceId}' spawns unknown definition '${effectiveBase.spawnType}'`,
-        { path: `units[${unitIndex}].spawnType`, reference: effectiveBase.spawnType, definitionId: unit.definitionId },
-      )
+        { path: `units[${unitIndex}].spawnType`, reference: effectiveBase.spawnType, definitionId: unit.definitionId })
     }
     validateLateSpawnConfig(effectiveBase.spawnType, undefined, `units[${unitIndex}].spawnType`, catalog, definitions, effectiveBase.spawnOverrides)
   }
 
   const primitives = getRuntimePrimitiveStats(effectiveBase, unit.upgradeIds, upgradesCatalog, effectivePrep)
+  validatePrimitiveConfigs(primitives, `units[${unitIndex}].loadout`, unit.definitionId)
   validateUnitSpawnPayloads(unitIndex, unit, primitives, allDefIds, catalog, definitions)
 
   try {
@@ -129,6 +125,7 @@ export function validateDefinitionBaseLoadout(
   pathPrefix: string = `definitions.${definitionId}`,
 ): void {
   const primitives = getRuntimePrimitiveStats(baseStats, [], undefined)
+  validatePrimitiveConfigs(primitives, `${pathPrefix}.baseStats`, definitionId)
 
   try {
     assertValidWeaponLoadout(definitionId, primitives)

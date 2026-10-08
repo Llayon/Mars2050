@@ -1,11 +1,21 @@
 import { z } from 'zod'
 import {
-  attackTypeSchema,
-  burrowConfigSchema,
-  statusEffectSchema,
-  supportAuraModifierSchema,
-  unitSizeSchema,
+  attackTypeSchema, burrowConfigSchema, statusEffectSchema,
+  supportAuraModifierSchema, unitSizeSchema,
 } from './unit-primitives.contracts.js'
+import {
+  controlBeamConfigSchema, fieldEffectConfigSchema, formationModifiersConfigSchema,
+  rankScalingConfigSchema, statGrowthConfigSchema, transformModeConfigSchema,
+} from './modifier-primitives.contracts.js'
+import {
+  attackChargeConfigSchema, conditionalRangeConfigSchema, delayedReassemblyConfigSchema,
+  flatDamageBlockConfigSchema, shieldHitBlockConfigSchema, targetPriorityProfileSchema,
+} from './tactical-primitives.contracts.js'
+import {
+  barrageAttackConfigSchema, beamAttackConfigSchema, chainAttackConfigSchema,
+  conditionalAttackModeConfigSchema, coneAttackConfigSchema, linePierceConfigSchema,
+  sideWeaponConfigSchema, splitFireConfigSchema, sweepAttackConfigSchema,
+} from './weapon-primitives.contracts.js'
 
 export const preparedStatsSchema = z.object({
   hp: z.number().finite().positive().optional(),
@@ -54,9 +64,28 @@ export const preparedStatsSchema = z.object({
   supportAuras: z.array(supportAuraModifierSchema).optional(),
   periodicAbilities: z.array(z.record(z.string(), z.unknown())).optional(),
   triggerEffects: z.array(z.record(z.string(), z.unknown())).optional(),
-  fieldEffect: z.array(z.record(z.string(), z.unknown())).optional(),
-  controlBeam: z.record(z.string(), z.unknown()).optional(),
-  rankScaling: z.record(z.string(), z.unknown()).optional(),
+  fieldEffect: z.array(fieldEffectConfigSchema).optional(),
+  controlBeam: controlBeamConfigSchema.optional(),
+  rankScaling: rankScalingConfigSchema.optional(),
+  transformMode: z.array(transformModeConfigSchema).optional(),
+  formationModifiers: formationModifiersConfigSchema.optional(),
+  statGrowth: statGrowthConfigSchema.optional(),
+  attackCharge: attackChargeConfigSchema.optional(),
+  reassembly: delayedReassemblyConfigSchema.optional(),
+  conditionalRange: z.array(conditionalRangeConfigSchema).optional(),
+  flatDamageBlock: flatDamageBlockConfigSchema.optional(),
+  shieldHitBlock: shieldHitBlockConfigSchema.optional(),
+  targetPriorityProfile: targetPriorityProfileSchema.optional(),
+  conditionalAttackMode: conditionalAttackModeConfigSchema.optional(),
+  sweepAttack: sweepAttackConfigSchema.optional(),
+  linePierce: linePierceConfigSchema.optional(),
+  coneAttack: coneAttackConfigSchema.optional(),
+  beamAttack: beamAttackConfigSchema.optional(),
+  barrageAttack: barrageAttackConfigSchema.optional(),
+  chainAttack: chainAttackConfigSchema.optional(),
+  splitFire: splitFireConfigSchema.optional(),
+  sideWeapon: sideWeaponConfigSchema.optional(),
+  stealthWhileMoving: z.boolean().optional(),
 }).passthrough()
 
 export type PreparedStats = z.infer<typeof preparedStatsSchema>

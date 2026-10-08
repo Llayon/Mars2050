@@ -1,9 +1,13 @@
 export * from './unit.contracts.js'
 export * from './prepared.contracts.js'
 export * from './unit-primitives.contracts.js'
+export * from './modifier-primitives.contracts.js'
+export * from './tactical-primitives.contracts.js'
+export * from './weapon-primitives.contracts.js'
 export * from './replay.contracts.js'
 export * from './battle.contracts.js'
 export * from './identity.contracts.js'
 export * from './ruleset-identity.js'
 export * from './catalog.contracts.js'
+
 

@@ -1801,3 +1801,51 @@ SHA256: `52a91f4eb406125247426f044eb0dbdf8ab440a8285d211af63e5f9c75bf61dd`.
 - Typecheck (`npx tsc --noEmit --pretty false`): **0 errors**.
 - Architectural limits (`scripts/check-limits.ts --diff HEAD --json`): **0 violations**.
 - Sealed R4b archive (`f610158b...`) и Fantasy SDK (`52a91f4e...`): **не изменялись (SHA256 инвариантны)**.
+
+### Замечания Owner Review Pass 11 (2026-10-08) и Remediation:
+
+#### Анализ замечаний Pass 11:
+1. **[P2] R5A-PREPARED-PRIMITIVE-CONTRACT-UNVALIDATED**:
+   - **Проблема**: Поля `fieldEffect`, `controlBeam`, `rankScaling` в `preparedStatsSchema` ранее принимали `z.record(z.string(), z.unknown())` без строгой валидации структуры. Девять повреждённых сценариев (строки вместо чисел в радиусе, скорости прогресса, коэффициентах ранга) обходили предварительную проверку `validateBattleInput` и падали уже после создания мира или тихо санировались.
+   - **Исправление**:
+     - В `packages/combat-core/src/contracts/` созданы строго типизированные схемы для всех примитивов модификаторов с соблюдением лимита $\le 100$ строк на контракт:
+       - `modifier-primitives.contracts.ts` (89 строк): `fieldEffectConfigSchema`, `controlBeamConfigSchema`, `rankScalingConfigSchema`, `transformModeConfigSchema`, `formationModifiersConfigSchema`, `statGrowthConfigSchema`.
+       - `tactical-primitives.contracts.ts` (42 строки): `attackChargeConfigSchema`, `delayedReassemblyConfigSchema`, `conditionalRangeConfigSchema`, `flatDamageBlockConfigSchema`, `shieldHitBlockConfigSchema`, `targetPriorityProfileSchema`.
+       - `weapon-primitives.contracts.ts` (60 строк): `conditionalAttackModeConfigSchema`, `sweepAttackConfigSchema`, `linePierceConfigSchema`, `coneAttackConfigSchema`, `beamAttackConfigSchema`, `barrageAttackConfigSchema`, `chainAttackConfigSchema`, `splitFireConfigSchema`, `sideWeaponConfigSchema`.
+     - В `packages/combat-core/src/contracts/prepared.contracts.ts` (92 строки) все 21 схема подключены напрямую в `preparedStatsSchema`, устранив нетипизированные `z.record` escape hatches.
+     - Создан модуль предвалидации `packages/combat-core/src/combat.primitive-validator.ts` (50 строк) и интегрирован в `packages/combat-core/src/combat.loadout-validator.ts`, обеспечивая раннее отклонение повреждённых примитивов на уровне `validateBattleInput` до инициализации мира и расхода RNG с кодом `SCHEMA_VALIDATION_ERROR`.
+
+2. **[P2] R5A-MARS-PREPARED-UPGRADE-INVENTORY-INCOMPLETE**:
+   - **Проблема**: Из 24 поддерживаемых семейств модификаторов 19 терялись при отсоединении сырых ID улучшений (геометрии оружия, трансформации, рост характеристик, блоки урона, поглощение щитом и др.).
+   - **Исправление**:
+     - Создан модуль `src/domains/combat/combat.prepared-primitives.ts` (196 строк), агрегирующий и подготавливающий все 24 семейства модификаторов из определений юнитов и конфигураций улучшений каталога.
+     - `src/domains/combat/combat.prepared-stats.ts` интегрирован с `collectMarsPreparedPrimitives`, гарантируя включение полного набора всех 24 семейств в `PreparedStats`.
+     - В `packages/combat-core/src/combat.upgrade-primitives.ts` реализована симметричная логика пропуска повторного применения (`skip*`) для всех 24 семейств, если они уже присутствуют в `preparedStats`, предотвращая задвоение эффектов при сохранении сырых ID и обеспечивая 100% идентичность симуляции при отсоединении ID.
+
+#### Постоянные тесты:
+- `packages/combat-core/tests/prepared-primitives-r5a.test.ts` (182 строки, 18 тестов):
+  - Проверка валидации и симуляции корректных примитивов `fieldEffect`, `controlBeam`, `rankScaling`.
+  - Проверка гарантированного отклонения с кодом `SCHEMA_VALIDATION_ERROR` повреждённых структур на всех трёх уровнях (unit instance, definition, late summon) до создания мира (0 RNG вызовов, 0 очередей сущностей).
+- `src/__tests__/combat.modifier-coverage.test.ts` (102 строки, 24 теста):
+  - Проверка полного паритета симуляции для всех 24 семейств модификаторов между raw battle, retained upgradeIds и detached upgradeIds.
+
+#### Результаты итоговой верификации Pass 11:
+- Owner Pass 11 primitives probe (`artifacts/review-r5a-owner-pass11-20261008/prepared-primitives-probe.mjs`):
+  - **Node 25**: **19/19 PASS** (0 failed).
+  - **Node 22**: **19/19 PASS** (0 failed).
+- Owner Pass 11 modifier coverage probe (`artifacts/review-r5a-owner-pass11-20261008/modifier-coverage-probe.mjs`):
+  - **Node 25**: **48/48 PASS** (0 failed).
+  - **Node 22**: **48/48 PASS** (0 failed).
+- Owner Pass 10 inventory probe (`artifacts/review-r5a-owner-pass10-20261008/prepared-inventory-probe.mjs`):
+  - **Node 25**: **10/10 PASS** (1569 comparisons: 0 diffs).
+  - **Node 22**: **10/10 PASS** (1569 comparisons: 0 diffs).
+- Вся матрица предыдущих проверочных пробников (Pass 9, Pass 8, Pass 7, Pass 6, Pass 5, Pass 4): **100% PASS** на Node 25 и Node 22.
+- Combat core vitest suite: **33 files PASS, 265 tests PASS**.
+- Полный тестовый набор Mars (`npm test`): **205 files PASS, 859 tests PASS**.
+- Golden suites:
+  - `npm run combat:ecs:golden` (V8): **7/7 presets stable (PASS)**.
+  - `npm run combat:ecs:v9:golden` (V9): **7/7 presets stable (PASS)**.
+- Typecheck (`npx tsc --noEmit --pretty false`): **0 errors**.
+- Architectural limits (`scripts/check-limits.ts --diff HEAD~1 --json`): **0 violations**.
+- Sealed R4b archive (`f610158b...`) и Fantasy SDK (`52a91f4e...`): **не изменялись (SHA256 инвариантны)**.
+
