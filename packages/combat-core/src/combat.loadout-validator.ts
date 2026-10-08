@@ -28,7 +28,9 @@ export function validateUnitLoadout(
   catalog?: CombatCatalog,
   definitions?: Record<string, UnitDefinition>,
 ): void {
-  const effectiveBase = resolveEffectiveUnitBaseStats(baseStats, unit.preparedStats)
+  const def = definitions?.[unit.definitionId] ?? (catalog?.unitTypes?.[unit.definitionId] as unknown as UnitDefinition | undefined)
+  const defPrep = def?.preparedStats
+  const effectiveBase = resolveEffectiveUnitBaseStats(resolveEffectiveUnitBaseStats(baseStats, defPrep), unit.preparedStats)
 
   if (allTargetingProfiles && effectiveBase.targetingProfile && !allTargetingProfiles.has(effectiveBase.targetingProfile as string)) {
     throw new CombatDefinitionError(
@@ -57,7 +59,7 @@ export function validateUnitLoadout(
     validateLateSpawnConfig(effectiveBase.spawnType, undefined, `units[${unitIndex}].spawnType`, catalog, definitions, effectiveBase.spawnOverrides)
   }
 
-  const primitives = getRuntimePrimitiveStats(effectiveBase, unit.upgradeIds, upgradesCatalog)
+  const primitives = getRuntimePrimitiveStats(effectiveBase, unit.upgradeIds, upgradesCatalog, unit.preparedStats ?? defPrep)
   validateUnitSpawnPayloads(unitIndex, unit, primitives, allDefIds, catalog, definitions)
 
   try {
@@ -231,18 +233,15 @@ export function validateLateSpawnConfig(
     }
   }
   if (spawnOverrides?.hp !== undefined && (!Number.isFinite(spawnOverrides.hp) || spawnOverrides.hp <= 0)) {
-    throw new CombatDefinitionError('INVALID_FIELD_RANGE',
-      `spawn override hp (${spawnOverrides.hp}) must be a positive finite number`,
+    throw new CombatDefinitionError('INVALID_FIELD_RANGE', `spawn override hp (${spawnOverrides.hp}) must be a positive finite number`,
       { path: `${path}.spawnOverrides.hp`, reference: String(spawnOverrides.hp), definitionId: spawnDefId })
   }
   if (spawnOverrides?.attack !== undefined && (!Number.isFinite(spawnOverrides.attack) || spawnOverrides.attack < 0)) {
-    throw new CombatDefinitionError('INVALID_FIELD_RANGE',
-      `spawn override attack (${spawnOverrides.attack}) must be a non-negative finite number`,
+    throw new CombatDefinitionError('INVALID_FIELD_RANGE', `spawn override attack (${spawnOverrides.attack}) must be a non-negative finite number`,
       { path: `${path}.spawnOverrides.attack`, reference: String(spawnOverrides.attack), definitionId: spawnDefId })
   }
   if (spawnOverrides?.duration !== undefined && (!Number.isFinite(spawnOverrides.duration) || spawnOverrides.duration <= 0)) {
-    throw new CombatDefinitionError('INVALID_FIELD_RANGE',
-      `spawn override duration (${spawnOverrides.duration}) must be a positive finite number`,
+    throw new CombatDefinitionError('INVALID_FIELD_RANGE', `spawn override duration (${spawnOverrides.duration}) must be a positive finite number`,
       { path: `${path}.spawnOverrides.duration`, reference: String(spawnOverrides.duration), definitionId: spawnDefId })
   }
 }

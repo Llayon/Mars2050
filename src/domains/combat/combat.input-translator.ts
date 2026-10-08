@@ -209,37 +209,30 @@ export function translateMarsBattleInput(
     deployment,
   }
   const maxTicks = options.maxTicks !== undefined && Number.isFinite(options.maxTicks)
-    ? Math.max(1, Math.min(2000, Math.floor(options.maxTicks)))
-    : MAX_TICKS
-  const timeoutPolicy = options.timeoutPolicy === 'attacker_holds'
-    ? 'attacker_win'
-    : options.timeoutPolicy === 'defender_holds'
-      ? 'defender_win'
-      : 'draw'
+    ? Math.max(1, Math.min(2000, Math.floor(options.maxTicks))) : MAX_TICKS
+  const timeoutPolicy = options.timeoutPolicy === 'attacker_holds' ? 'attacker_win'
+    : options.timeoutPolicy === 'defender_holds' ? 'defender_win' : 'draw'
   const defenseResolutionMode = options.defenseResolutionMode ?? 'v9_snapshot'
 
-  const definitions = buildMarsUnitDefinitions()
+  const rawDefs = buildMarsUnitDefinitions()
+  const marsCatalog = { upgrades: buildMarsUpgrades() }
+  const definitions: Record<string, UnitDefinition> = {}
+  for (const [k, d] of Object.entries(rawDefs)) {
+    definitions[k] = { ...d, preparedStats: buildMarsPreparedStats(k, 1, [], marsCatalog, rawDefs) }
+  }
   const units: UnitSpawnSpec[] = [
-    ...mapUnitRowsToSpawnSpecs(attackerUnits, 'attacker', definitions, arena),
-    ...mapUnitRowsToSpawnSpecs(defenderUnits, 'defender', definitions, arena),
+    ...mapUnitRowsToSpawnSpecs(attackerUnits, 'attacker', rawDefs, arena),
+    ...mapUnitRowsToSpawnSpecs(defenderUnits, 'defender', rawDefs, arena),
   ]
   const scheduledEffects = mapGlobalUpgradesToScheduledEffects(attackerGlobals, defenderGlobals)
 
   return {
     seed,
     arena,
-    rules: {
-      maxTicks,
-      timeoutPolicy,
-      defenseResolutionMode,
-      trackMetrics: options.trackMetrics,
-      profile: options.profile,
-    },
+    rules: { maxTicks, timeoutPolicy, defenseResolutionMode, trackMetrics: options.trackMetrics, profile: options.profile },
     definitions,
     units,
     scheduledEffects,
-    catalog: {
-      upgrades: buildMarsUpgrades(),
-    },
+    catalog: { upgrades: marsCatalog.upgrades, unitTypes: definitions },
   }
 }

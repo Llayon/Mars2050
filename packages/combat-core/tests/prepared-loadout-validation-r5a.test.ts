@@ -142,4 +142,49 @@ describe('R5a Pass 6: Prepared loadout and support aura input boundary validatio
     expect(battleInputSchema.safeParse(rawInput).success).toBe(false)
     expectThrowsBeforeWorld(() => simulateCombat(rawInput as unknown as BattleInput), 'SCHEMA_VALIDATION_ERROR')
   })
+
+  it('rejects definition prepared XL placement out-of-bounds before world creation', () => {
+    const input = baseInput()
+    input.definitions.fighter.preparedStats = { size: 'XL' }
+    input.units[0].placement.x = 20
+    expectThrowsBeforeWorld(() => simulateCombat(input), 'OUT_OF_BOUNDS_COORDINATES')
+  })
+
+  it('rejects definition prepared missing summon before world creation', () => {
+    const input = baseInput()
+    input.definitions.fighter.preparedStats = { periodicAbilities: periodic('missing') }
+    expectThrowsBeforeWorld(() => simulateCombat(input), 'MISSING_SPAWN_DEFINITION')
+  })
+
+  it('rejects definition prepared invalid boolean before world creation', () => {
+    const input = baseInput() as unknown as Record<string, unknown>
+    const defs = input.definitions as Record<string, Record<string, unknown>>
+    defs.fighter.preparedStats = { isFlying: 'bad' }
+    expect(battleInputSchema.safeParse(input).success).toBe(false)
+    expectThrowsBeforeWorld(() => simulateCombat(input as unknown as BattleInput), 'SCHEMA_VALIDATION_ERROR')
+  })
+
+  it('applies catalog unitTypes preparedStats without stripping', () => {
+    const input = baseInput()
+    input.catalog = { unitTypes: { fighter: { ...input.definitions.fighter, preparedStats: { hp: 200 } } } }
+    const result = simulateCombat(input)
+    expect(result.initialState[0].maxHp).toBe(200)
+  })
+
+  it('clamps late-spawned prepared XL units inside arena boundaries', () => {
+    const input = baseInput()
+    input.arena = { width: 100, height: 100, tileSize: 10, obstacles: [], deployment: { depth: 100 } }
+    input.units[0].placement = { x: 10, y: 20, angle: 0 }
+    input.units[1].placement = { x: 60, y: 20, angle: Math.PI }
+    input.definitions.minion = makeDef('minion', { hp: 100, attack: 0, size: 'S' })
+    input.definitions.minion.preparedStats = { hp: 200, size: 'XL' }
+    input.definitions.fighter.baseStats.periodicAbilities = periodic('minion')
+    const result = simulateCombat(input)
+    const minion = result.survivors.find(u => u.type === 'minion')
+    expect(minion).toBeDefined()
+    expect(minion!.size).toBe('XL')
+    expect(minion!.x).toBeGreaterThanOrEqual(45)
+    expect(minion!.x).toBeLessThanOrEqual(55)
+  })
 })
+

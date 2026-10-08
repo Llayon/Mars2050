@@ -49,15 +49,17 @@ export function compileUnitStats(spec: UnitBuildSpec): CompiledUnitStats | null 
   const definition = unitCatalog[spec.definitionId]
   if (!definition) return null
   const upgradeIds = resolveUnitUpgradeIds(spec)
-  const p = spec.preparedStats ?? definition.preparedStats
-  const base = resolveEffectiveUnitBaseStats(definition.baseStats, p)
-  const primitives = getRuntimePrimitiveStats(base, upgradeIds, upgradesCatalog)
+  const isDefaultLoadout = upgradeIds.length === 0 && resolveRank(spec) === 1
+  const p = spec.preparedStats ?? (isDefaultLoadout ? definition.preparedStats : undefined)
+  const defPrep = definition.preparedStats
+  const base = resolveEffectiveUnitBaseStats(resolveEffectiveUnitBaseStats(definition.baseStats, defPrep), spec.preparedStats)
+  const primitives = getRuntimePrimitiveStats(base, upgradeIds, upgradesCatalog, p)
   if (p) {
     return {
       definition, primitives, rank: resolveRank(spec),
-      hp: p.hp ?? definition.baseStats.hp, attack: p.attack ?? definition.baseStats.attack, defense: p.defense ?? definition.baseStats.defense,
-      speed: p.speed ?? definition.baseStats.speed, range: p.range ?? definition.baseStats.range,
-      cooldown: p.actionCooldownMax ?? definition.baseStats.actionCooldownMax ?? 10,
+      hp: p.hp ?? base.hp, attack: p.attack ?? base.attack, defense: p.defense ?? base.defense,
+      speed: p.speed ?? base.speed, range: p.range ?? base.range,
+      cooldown: p.actionCooldownMax ?? base.actionCooldownMax ?? 10,
       canTargetAir: p.canTargetAir ?? base.canTargetAir ?? false,
       attackType: p.attackType ?? base.attackType ?? 'single',
       aoeRadius: p.aoeRadius ?? base.aoeRadius, shield: (p as { shield?: number }).shield ?? 0,

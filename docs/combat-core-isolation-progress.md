@@ -1610,4 +1610,51 @@ SHA256: `52a91f4eb406125247426f044eb0dbdf8ab440a8285d211af63e5f9c75bf61dd`.
 - Architectural limits (`scripts/check-limits.ts`): **0 violations**.
 - Sealed R4b archive (`f610158b...`) и Fantasy SDK (`52a91f4e...`): **не изменялись (SHA256 инвариантны)**.
 
+### 2026-10-08 — Закрытие замечаний Pass 7 ревью R5a (ISO-09)
+
+В рамках седьмого прохода аудита R5a (Owner Review Pass 7) полностью устранены 4 выявленных замечания P2:
+
+1. **[P2] R5A-PREPARED-PRIMITIVES-DOUBLE-APPLIED**:
+   - **Проблема**: При наличии подготовленных способностей (`periodicAbilities`, `triggerEffects`) сырые улучшения повторно накатывались в ядре, приводя к ошибке дублирования идентификаторов способностей (`Duplicate ability id`) или двойному срабатыванию триггерных эффектов (удвоенное лечение).
+   - **Исправление**:
+     - В `combat.upgrade-primitives.ts` передаётся `preparedStats`. Если `preparedStats.periodicAbilities` или `preparedStats.triggerEffects` уже подготовлены адаптером, повторное применение сырых способностей и триггеров из каталога улучшений подавляется, обеспечивая семантику ровно-однократного применения (exactly-once).
+     - В `src/domains/combat/combat.upgrade-primitives.ts` добавлен параметр `preparedStats` с пробросом в ядро.
+
+2. **[P2] R5A-DEFINITION-PREPARED-BOUNDARY-DIVERGENCE**:
+   - **Проблема**: `definition.preparedStats` и `catalog.unitTypes.preparedStats` потреблялись рантаймом без единой типизированной границы: схема каталога молча сбрасывала `preparedStats`, подготовленные некорректные поля вроде `isFlying: "bad"` проходили в рантайм и падали уже после создания мира, а определение размера (`size: 'XL'`) не учитывалось при валидации границ размещения и коридора случайного спавна `[45, 55]`.
+   - **Исправление**:
+     - В `unit.contracts.ts` и `catalog.contracts.ts` в схемы `unitDefinitionSchema` и `catalogUnitTypeSchema` добавлено типизированное поле `preparedStats: preparedStatsSchema.optional()`.
+     - В `combat.placement-validator.ts` и `combat.spawn-spec-compiler.ts` расчёт радиуса тела юнита и допустимого диапазона координат использует единый эффективный базовый размер из `definition.preparedStats ?? baseStats.size`.
+     - В `combat.payload-validator.ts` добавлена валидация призывов и переопределений из `definition.preparedStats`.
+
+3. **[P2] R5A-LATE-PREPARED-SPAWN-RADIUS-DIVERGENCE**:
+   - **Проблема**: Все три системы позднего создания юнитов (`spawn-action-system.ts`, `periodic-ability-spawn-system.ts`, `trigger-spawn-system.ts`) рассчитывали радиус тела `bodyRadius` для отсечения координат внутри арены строго из `baseStats.size`, игнорируя подготовленный размер (`preparedStats.size`), из-за чего созданный XL-юнит оказывался за пределами коридора `[45, 55]`.
+   - **Исправление**:
+     - Во всех трёх ECS-системах спавна радиус тела рассчитывается из эффективного размера: `getSizeRadius(spawnUnitDef?.preparedStats?.size ?? spawnUnitDef?.baseStats?.size ?? 'M')`.
+     - В `combat.unit-compiler.ts` для рантайм-спавна нейтральный множитель урона по воздуху `antiAirDamageMult === 1` опускается до `undefined`, сохраняя сериализационную чистоту и побитовую инвариантность голденов.
+
+4. **[P2] R5A-CONTENT-BOUNDARY-INCOMPLETE**:
+   - **Проблема**: Mars-адаптер в `translateMarsBattleInput` отдавал определения без `preparedStats` и пустой `catalog.unitTypes`, из-за чего цели позднего спавна (например, `scout_drone`) не получали подготовленных характеристик от адаптера.
+   - **Исправление**:
+     - В `src/domains/combat/combat.input-translator.ts` в `translateMarsBattleInput` все определения компилируются через `buildMarsPreparedStats` и передаются в `definitions` и `catalog.unitTypes`.
+     - В `packages/combat-core/src/combat.unit-stat-compiler.ts` шорткат по `definition.preparedStats` активируется только для базового снаряжения по умолчанию (`rank === 1 && upgradeIds.length === 0`), а при наличии индивидуальных рангов или улучшений применяется полный расчёт на основе подготовленной базы.
+
+#### Результаты верификации Pass 7:
+- Owner Pass 7 pipeline probe (`artifacts/review-r5a-owner-pass7-20261008/prepared-pipeline-probe.mjs`):
+  - **Node 25**: **21/21 PASS** (0 failed).
+  - **Node 22**: **21/21 PASS** (0 failed).
+- Owner Pass 6 probe (`artifacts/review-r5a-owner-pass7-20261008/prior-effective-loadout-probe.mjs`):
+  - **Node 25**: **9/9 PASS**; **Node 22**: **9/9 PASS**.
+- Owner Pass 5 probe (`artifacts/review-r5a-owner-pass7-20261008/prior-prepared-boundary-probe.mjs`):
+  - **Node 25**: **16/16 PASS**; **Node 22**: **16/16 PASS**.
+- Core vitest suite (`vitest.config.ts`): **31 files PASS, 240 tests PASS**.
+- Targeted Mars test suites: **4 files PASS, 13 tests PASS**.
+- Golden suites:
+  - `npm run combat:ecs:golden` (V8): **7/7 presets stable (PASS)**.
+  - `npm run combat:ecs:v9:golden` (V9): **7/7 presets stable (PASS)**.
+- Typecheck (`npx tsc --noEmit --pretty false`): **0 errors**.
+- Architectural limits (`scripts/check-limits.ts`): **0 violations**.
+- Sealed R4b archive (`f610158b...`) и Fantasy SDK (`52a91f4e...`): **не изменялись (SHA256 инвариантны)**.
+
+
 

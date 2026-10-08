@@ -61,7 +61,8 @@ export function createSpawnBuildSpecs(
   if (strategy === 'fit_formation' || squadSize === 1) {
     const effectiveDef = catDef ?? pubDef
     const baseStats = (effectiveDef?.baseStats ?? {}) as UnitBaseStats
-    const effectiveBase = resolveEffectiveUnitBaseStats(baseStats, spec.preparedStats)
+    const defPrep = (effectiveDef as { preparedStats?: import('./contracts/prepared.contracts.js').PreparedStats })?.preparedStats
+    const effectiveBase = resolveEffectiveUnitBaseStats(resolveEffectiveUnitBaseStats(baseStats, defPrep), spec.preparedStats)
     const rawSize = effectiveBase.size ?? 'M'
     const bodyRadius = getSizeRadius(rawSize as 'S' | 'M' | 'L' | 'XL')
     const offsets = Array.from({ length: squadSize }, (_, index) =>

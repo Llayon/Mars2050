@@ -102,6 +102,7 @@ export function validateBattleInput(input: unknown): BattleInput {
     if (pubDef) {
       allDefs[id] = {
         ...catDef,
+        preparedStats: catDef.preparedStats ?? pubDef.preparedStats,
         squadSize: pubDef.squadSize ?? catDef.squadSize,
         squadSpacing: pubDef.squadSpacing ?? catDef.squadSpacing,
         formation: pubDef.formation ?? catDef.formation,
@@ -118,6 +119,7 @@ export function validateBattleInput(input: unknown): BattleInput {
       ...origDef,
       id: normDef.id ?? id,
       name: normDef.name ?? origDef.name,
+      preparedStats: normDef.preparedStats ?? origDef.preparedStats,
       squadSize: normDef.squadSize ?? origDef.squadSize,
       squadSpacing: normDef.squadSpacing ?? origDef.squadSpacing,
       formation: (normDef.formation as Formation | undefined) ?? origDef.formation,
@@ -144,6 +146,7 @@ export function validateBattleInput(input: unknown): BattleInput {
         ...origCat,
         name: normDef.name ?? (origCat.name as string),
         baseStats: normDef.baseStats,
+        preparedStats: normDef.preparedStats ?? (origCat.preparedStats as import('./contracts/prepared.contracts.js').PreparedStats | undefined),
         hireCost: (origCat.hireCost as Record<string, number>) ?? {},
         recruitable: origCat.recruitable as boolean | undefined,
         squadSize: normDef.squadSize,

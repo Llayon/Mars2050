@@ -103,7 +103,8 @@ export function validatePlacementAndBounds(
     const rowSize = Math.ceil(Math.sqrt(squadSize))
     const formation = def?.formation ?? 'grid'
     const baseStats = ((def as NormalizedDefinition)?.baseStats ?? (def as UnitDefinition)?.baseStats ?? {}) as UnitBaseStats
-    const effectiveBase = resolveEffectiveUnitBaseStats(baseStats, u.preparedStats)
+    const defPrep = (def as { preparedStats?: import('./contracts/prepared.contracts.js').PreparedStats })?.preparedStats
+    const effectiveBase = resolveEffectiveUnitBaseStats(resolveEffectiveUnitBaseStats(baseStats, defPrep), u.preparedStats)
     const rawSize = effectiveBase.size ?? 'M'
     const bodyRadius = getSizeRadius(rawSize as 'S' | 'M' | 'L' | 'XL')
 

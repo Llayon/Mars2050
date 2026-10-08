@@ -156,9 +156,9 @@ export function compileUnitSnapshot(spec: UnitBuildSpec): SimUnit | null {
     stanceConfig: primitives.stance ? { ...primitives.stance } : undefined,
     stanceMode: primitives.stance ? 'mobile' : undefined,
     stanceTicks: 0,
-    antiAirDamageMult: runtimeSpawn
-      ? primitives.antiAirDamageMult
-      : compiled.antiAirDamageMult,
+    antiAirDamageMult: runtimeSpawn && (primitives.antiAirDamageMult === 1 || primitives.antiAirDamageMult === undefined)
+      ? undefined
+      : (runtimeSpawn ? primitives.antiAirDamageMult : compiled.antiAirDamageMult),
     appliesEmp: runtimeSpawn && !compiled.appliesEmp
       ? undefined
       : compiled.appliesEmp,

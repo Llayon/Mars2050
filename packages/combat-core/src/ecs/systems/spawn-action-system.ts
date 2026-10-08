@@ -119,9 +119,9 @@ function createSpawnedUnit(
     y = transform.y
   }
   const catalog = world.resources.get('catalog') ?? getDefaultCombatCatalog()
-  const unitCatalog = (catalog as { unitTypes?: Record<string, { baseStats?: { size?: 'S' | 'M' | 'L' | 'XL' } }> })?.unitTypes ?? {}
+  const unitCatalog = (catalog as { unitTypes?: Record<string, { baseStats?: { size?: 'S' | 'M' | 'L' | 'XL' }; preparedStats?: { size?: 'S' | 'M' | 'L' | 'XL' } }> })?.unitTypes ?? {}
   const spawnUnitDef = unitCatalog[spawnType]
-  const bodyRadius = getSizeRadius(spawnUnitDef?.baseStats?.size ?? 'M')
+  const bodyRadius = getSizeRadius(spawnUnitDef?.preparedStats?.size ?? spawnUnitDef?.baseStats?.size ?? 'M')
   const minX = Math.min(arena.width / 2, bodyRadius)
   const maxX = Math.max(arena.width / 2, arena.width - bodyRadius)
   const minY = Math.min(arena.height / 2, bodyRadius)

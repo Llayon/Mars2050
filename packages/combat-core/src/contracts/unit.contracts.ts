@@ -53,6 +53,7 @@ export const unitDefinitionSchema = z.object({
   formation: formationSchema.default('grid'),
   targetingProfile: z.string().optional(),
   abilities: z.array(z.unknown()).optional(),
+  preparedStats: preparedStatsSchema.optional(),
 }).passthrough()
 export type UnitDefinition = z.infer<typeof unitDefinitionSchema>
 

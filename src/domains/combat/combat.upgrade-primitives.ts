@@ -16,7 +16,8 @@ export function getRuntimePrimitiveStats(
   baseStats: UnitBaseStats,
   upgradePath: unknown,
   upgradesCatalog?: Record<string, UpgradeConfig>,
+  preparedStats?: import('@mars2050/combat-core/contracts').PreparedStats,
 ): UnitBaseStats {
   const preparedCatalog = buildMarsUpgrades(upgradesCatalog ?? UPGRADES)
-  return coreGetRuntimePrimitiveStats(baseStats, upgradePath, preparedCatalog)
+  return coreGetRuntimePrimitiveStats(baseStats, upgradePath, preparedCatalog, preparedStats)
 }

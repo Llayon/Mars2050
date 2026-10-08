@@ -9,6 +9,10 @@ export interface DefWithPayloads {
   id?: string
   abilities?: unknown[]
   periodicAbilities?: unknown[]
+  preparedStats?: {
+    periodicAbilities?: unknown[]
+    triggerEffects?: unknown[]
+  }
   baseStats?: {
     spawnType?: string
     spawnOverrides?: { hp?: number; attack?: number; duration?: number }
@@ -102,6 +106,10 @@ export function validateNestedSpawnPayloads(
     }
     validateSpawnPayloadItems(def.periodicAbilities, `definitions.${id}.periodicAbilities`, 'definition', id, 'periodicAbility', allDefIds, catalog, definitions)
     validateAbilityListSpawns('definition', id, `definitions.${id}.abilities`, def.abilities, allDefIds, catalog, definitions)
+    if (def.preparedStats) {
+      validateSpawnPayloadItems(def.preparedStats.periodicAbilities, `definitions.${id}.preparedStats.periodicAbilities`, 'definition', id, 'periodicAbility', allDefIds, catalog, definitions)
+      validateSpawnPayloadItems(def.preparedStats.triggerEffects, `definitions.${id}.preparedStats.triggerEffects`, 'definition', id, 'triggerEffect', allDefIds, catalog, definitions)
+    }
   }
 }
 

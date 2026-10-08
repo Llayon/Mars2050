@@ -1,14 +1,18 @@
 import type { UnitBaseStats } from './combat.types.js'
+import type { PreparedStats } from './contracts/prepared.contracts.js'
 import { getDefaultCombatCatalog, type UpgradeConfig } from './combat.catalog.types.js'
 
 export function getRuntimePrimitiveStats(
   baseStats: UnitBaseStats,
   upgradePath: unknown,
   upgradesCatalog?: Record<string, UpgradeConfig>,
+  preparedStats?: PreparedStats,
 ): UnitBaseStats {
   const catalog = upgradesCatalog ?? (getDefaultCombatCatalog()?.upgrades as Record<string, UpgradeConfig>) ?? {}
   const periodicAbilities = baseStats.periodicAbilities?.map(ability => ({ ...ability })) ?? []
   const triggerEffects = baseStats.triggerEffects?.map(trigger => ({ ...trigger })) ?? []
+  const skipPeriodic = preparedStats?.periodicAbilities !== undefined
+  const skipTriggers = preparedStats?.triggerEffects !== undefined
   const transformMode = baseStats.transformMode?.map(mode => ({ ...mode })) ?? []
   const fieldEffect = baseStats.fieldEffect?.map(effect => ({ ...effect })) ?? []
   let controlBeam = baseStats.controlBeam ? { ...baseStats.controlBeam } : undefined
@@ -38,9 +42,13 @@ export function getRuntimePrimitiveStats(
       const modifiers = catalog[upgradeId]?.modifiers
       if (!modifiers) continue
 
-      if (modifiers.periodicAbilities) periodicAbilities.push(...modifiers.periodicAbilities.map(ability => ({ ...ability })))
-      if (modifiers.triggerEffects) triggerEffects.push(...modifiers.triggerEffects.map(trigger => ({ ...trigger })))
-      if (modifiers.onDeathSpawn) triggerEffects.push(createOnDeathSpawnTrigger(upgradeId, modifiers.onDeathSpawn))
+      if (!skipPeriodic && modifiers.periodicAbilities) {
+        periodicAbilities.push(...modifiers.periodicAbilities.map(ability => ({ ...ability })))
+      }
+      if (!skipTriggers) {
+        if (modifiers.triggerEffects) triggerEffects.push(...modifiers.triggerEffects.map(trigger => ({ ...trigger })))
+        if (modifiers.onDeathSpawn) triggerEffects.push(createOnDeathSpawnTrigger(upgradeId, modifiers.onDeathSpawn))
+      }
       if (modifiers.transformMode) transformMode.push(...modifiers.transformMode.map(mode => ({ ...mode })))
       if (modifiers.fieldEffect) fieldEffect.push(...modifiers.fieldEffect.map(effect => ({ ...effect })))
       if (modifiers.controlBeam) controlBeam = { ...modifiers.controlBeam }

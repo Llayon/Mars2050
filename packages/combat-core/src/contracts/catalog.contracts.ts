@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { baseStatsSchema, formationSchema } from './unit.contracts.js'
+import { baseStatsSchema, formationSchema, preparedStatsSchema } from './unit.contracts.js'
 import {
   burrowConfigSchema,
   supportAuraModifierSchema,
@@ -81,6 +81,7 @@ export const catalogUnitTypeSchema = z.object({
   periodicAbilities: z.array(z.unknown()).optional(),
   hireCost: z.record(z.string(), z.number()).optional(),
   recruitable: z.boolean().optional(),
+  preparedStats: preparedStatsSchema.optional(),
 })
 export type CatalogUnitTypeContract = z.infer<typeof catalogUnitTypeSchema>
 

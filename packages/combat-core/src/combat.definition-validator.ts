@@ -6,6 +6,8 @@ import type { TargetingProfile, UnitBaseStats } from './combat.types.js'
 import { validatePeriodicAbilityConfig } from './combat.periodic-schema.js'
 import { validateDefinitionBaseLoadout } from './combat.loadout-validator.js'
 
+import type { PreparedStats } from './contracts/prepared.contracts.js'
+
 export interface AnyDef {
   id?: string
   name?: string
@@ -14,6 +16,7 @@ export interface AnyDef {
   squadSpacing?: number
   abilities?: unknown[]
   periodicAbilities?: unknown[]
+  preparedStats?: PreparedStats
   baseStats?: UnitBaseStats | Record<string, unknown>
 }
 
@@ -26,6 +29,7 @@ export interface NormalizedDefinition {
   formation?: string
   abilities?: AbilityDefinition[]
   periodicAbilities?: PeriodicAbilityConfig[]
+  preparedStats?: PreparedStats
   baseStats: UnitBaseStats
 }
 

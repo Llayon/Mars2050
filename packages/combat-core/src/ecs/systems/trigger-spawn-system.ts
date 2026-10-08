@@ -29,9 +29,9 @@ export function spawnEcsTriggerUnits(
   const count = Math.max(1, payload.count ?? 1)
   const arena = getCombatArena(world)
   const catalog = world.resources.get('catalog') ?? getDefaultCombatCatalog()
-  const unitCatalog = (catalog as { unitTypes?: Record<string, { baseStats?: { size?: 'S' | 'M' | 'L' | 'XL' } }> })?.unitTypes ?? {}
-  const spawnUnitDef = unitCatalog[sourceKey]
-  const bodyRadius = getSizeRadius(spawnUnitDef?.baseStats?.size ?? 'M')
+  const unitCatalog = (catalog as { unitTypes?: Record<string, { baseStats?: { size?: 'S' | 'M' | 'L' | 'XL' }; preparedStats?: { size?: 'S' | 'M' | 'L' | 'XL' } }> })?.unitTypes ?? {}
+  const spawnUnitDef = unitCatalog[payload.unitType]
+  const bodyRadius = getSizeRadius(spawnUnitDef?.preparedStats?.size ?? spawnUnitDef?.baseStats?.size ?? 'M')
   let spawned = 0
 
   for (let index = 0; index < count && existing + spawned < cap; index++) {
