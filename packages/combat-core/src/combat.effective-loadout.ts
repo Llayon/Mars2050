@@ -23,6 +23,9 @@ export function resolveEffectiveUnitBaseStats(
     targetingProfile: (clean.targetingProfile ?? baseStats.targetingProfile) as TargetingProfileKey | undefined,
     periodicAbilities: (clean.periodicAbilities ?? baseStats.periodicAbilities) as UnitBaseStats['periodicAbilities'],
     triggerEffects: (clean.triggerEffects ?? baseStats.triggerEffects) as UnitBaseStats['triggerEffects'],
+    fieldEffect: (clean.fieldEffect ?? baseStats.fieldEffect) as UnitBaseStats['fieldEffect'],
+    controlBeam: (clean.controlBeam ?? baseStats.controlBeam) as UnitBaseStats['controlBeam'],
+    rankScaling: (clean.rankScaling ?? baseStats.rankScaling) as UnitBaseStats['rankScaling'],
   }
 
   if (clean.burrowConfig && !clean.burrowWhileMoving) {

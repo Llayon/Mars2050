@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest'
-import { translateMarsBattleInput } from '../domains/combat/combat.input-translator'
+import {
+  translateMarsBattleInput,
+  buildMarsPreparedStats,
+  buildMarsUnitDefinitions,
+  buildMarsUpgrades,
+} from '../domains/combat/combat.input-translator'
 import { createRuntimeSquad } from '../domains/combat/combat.squad-factory'
 import { PRNG } from '../domains/combat/combat.utils'
 import { simulateCombat } from '@mars2050/combat-core'
@@ -120,6 +125,122 @@ describe('Mars Adapter: Prepared loadout emission and parity', () => {
 
     expect(carrier.preparedStats?.spawnerConfig?.interval).toBe(150)
     expect(carrier.preparedStats?.spawnerConfig?.timer).toBe(150)
+  })
+
+  it('drone_carrier spawns scout drones on ticks 149 and 299 in a 301-tick battle', () => {
+    const carrierRow = makeRow('c1', 'titan_mech', { upgrade_path: ['drone_carrier'], grid_y: '450' })
+    const wallRow = makeRow('w1', 'wall', { grid_y: '200' })
+    const translated = translateMarsBattleInput([carrierRow], [wallRow], 42, [], [], [], {
+      maxTicks: 301,
+      arena: { width: 600, height: 600, tileSize: 40, obstacles: [], deployment: { strategy: 'center' } },
+    })
+    translated.units[1].preparedStats!.hp = 100000
+    translated.units[1].currentHp = 100000
+    const result = simulateCombat(translated)
+    const spawnActions = result.logs.flatMap(tick =>
+      tick.actions.filter(a => a.type === 'spawn').map(a => ({ tick: tick.tick, ...a })),
+    )
+    expect(spawnActions).toHaveLength(2)
+    expect(spawnActions[0].tick).toBe(149)
+    expect(spawnActions[1].tick).toBe(299)
+  })
+
+  it('createRuntimeSquad and buildMarsPreparedStats respect custom catalog definition overrides', () => {
+    const defs = buildMarsUnitDefinitions()
+    const customCatalog = {
+      unitTypes: {
+        marine: {
+          ...defs.marine,
+          hireCost: { minerals: 100 },
+          baseStats: { ...defs.marine.baseStats, hp: 300, attack: 70 },
+        },
+      },
+      upgrades: buildMarsUpgrades(),
+    }
+    const prepared = buildMarsPreparedStats('marine', 1, [], customCatalog, defs)
+    expect(prepared?.hp).toBe(300)
+    expect(prepared?.attack).toBe(70)
+
+    const squad = createRuntimeSquad(
+      makeRow('m1', 'marine', { hp_current: 300 }),
+      'attacker',
+      new PRNG(42),
+      customCatalog as unknown as import('@mars2050/combat-core/combat.catalog.types').CombatCatalog,
+    )
+    expect(squad[0].hp).toBe(300)
+    expect(squad[0].maxHp).toBe(300)
+    expect(squad[0].attack).toBe(70)
+  })
+
+  it('buildMarsPreparedStats follows replacement semantics for rankScaling upgrades', () => {
+    const customDefs = {
+      fighter: {
+        id: 'fighter',
+        name: 'FIGHTER',
+        squadSize: 1,
+        squadSpacing: 20,
+        formation: 'grid' as const,
+        baseStats: {
+          hp: 100, attack: 10, defense: 2, speed: 0, range: 150, attackType: 'single' as const,
+          actionCooldownMax: 10, turnSpeed: 5, size: 'S' as const, combatTags: ['organic'],
+          rankScaling: { attackMultPerRank: 0.5, hpMultPerRank: 0.1 },
+        },
+      },
+    }
+    const customCatalog = {
+      unitTypes: customDefs,
+      upgrades: {
+        veteran: { id: 'veteran', modifiers: { rankScaling: { hpMultPerRank: 0.5 } } },
+      },
+    }
+    const prepared = buildMarsPreparedStats('fighter', 2, ['veteran'], customCatalog, customDefs)
+    expect(prepared?.hp).toBe(150)
+    expect(prepared?.attack).toBe(10)
+    expect(prepared?.rankScaling).toEqual({ hpMultPerRank: 0.5 })
+  })
+
+  it('preserves triggerEffects and onDeathSpawn ordering and QA upgrade detachment', () => {
+    const customDefs = {
+      fighter: {
+        id: 'fighter',
+        name: 'FIGHTER',
+        squadSize: 1,
+        squadSpacing: 20,
+        formation: 'grid' as const,
+        baseStats: {
+          hp: 100, attack: 10, defense: 2, speed: 0, range: 150, attackType: 'single' as const,
+          actionCooldownMax: 10, turnSpeed: 5, size: 'S' as const, combatTags: ['organic'],
+        },
+      },
+      minion: {
+        id: 'minion', name: 'MINION', squadSize: 1, squadSpacing: 20, formation: 'grid' as const,
+        baseStats: { hp: 50, attack: 0, defense: 0, speed: 0, range: 10, attackType: 'single' as const, actionCooldownMax: 10, turnSpeed: 5, size: 'S' as const, combatTags: [] },
+      },
+    }
+    const customCatalog = {
+      unitTypes: customDefs,
+      upgrades: {
+        mixed: {
+          id: 'mixed',
+          modifiers: {
+            onDeathSpawn: 'minion',
+            triggerEffects: [{ id: 'first-death', event: 'death' as const, payload: { kind: 'damage' as const, target: 'killer' as const, amount: 10 } }],
+          },
+        },
+      },
+    }
+    const prepared = buildMarsPreparedStats('fighter', 1, ['mixed'], customCatalog, customDefs)
+    const triggerIds = prepared?.triggerEffects?.map(t => (t as { id: string }).id)
+    expect(triggerIds).toEqual(['first-death', 'mixed-on-death-spawn'])
+
+    const barrierRow = makeRow('b1', 'shield_emitter', { upgrade_path: ['qa_barrier_dome'] })
+    const trans = translateMarsBattleInput([barrierRow], [makeRow('w', 'wall')], 42, [], [], [], { maxTicks: 2 })
+    expect(trans.units[0].preparedStats?.fieldEffect).toBeDefined()
+    const detached = structuredClone(trans)
+    detached.units[0].upgradeIds = []
+    const simRetained = simulateCombat(trans)
+    const simDetached = simulateCombat(detached)
+    expect(simDetached.initialState[0].fieldEffect).toEqual(simRetained.initialState[0].fieldEffect)
   })
 })
 

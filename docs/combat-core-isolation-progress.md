@@ -1750,3 +1750,54 @@ SHA256: `52a91f4eb406125247426f044eb0dbdf8ab440a8285d211af63e5f9c75bf61dd`.
 - Typecheck (`npx tsc --noEmit --pretty false`): **0 errors**.
 - Architectural limits (`scripts/check-limits.ts --diff HEAD --json`): **0 violations**.
 - Sealed R4b archive (`f610158b...`) и Fantasy SDK (`52a91f4e...`): **не изменялись (SHA256 инвариантны)**.
+
+### Замечания Owner Review Pass 10 (2026-10-08) и Remediation:
+
+#### Анализ замечаний Pass 10:
+1. **[P2] R5A-MARS-PREPARED-UPGRADE-INVENTORY-INCOMPLETE**:
+   - **Проблема**: При отсоединении сырых ID улучшений терялись эффекты `fieldEffect` (купола/барьеры) и `controlBeam` (лучи перехвата): 42 расхождения в 1569 протестированных комбинациях ростера и улучшений (QA-улучшения `qa_smoke_field`, `qa_cleanse_field`, `qa_barrier_dome`, `qa_conversion_beam`).
+   - **Исправление**:
+     - В `packages/combat-core/src/contracts/prepared.contracts.ts` добавлены поля `fieldEffect`, `controlBeam`, `rankScaling` в `preparedStatsSchema`.
+     - В `packages/combat-core/src/combat.effective-loadout.ts` поля проброшены в `resolveEffectiveUnitBaseStats`.
+     - В `packages/combat-core/src/combat.upgrade-primitives.ts` добавлены флаги `skipFieldEffect` и `skipControlBeam`, предотвращающие дублирование при сохранении сырых ID улучшений и сохраняющие эффекты при их удалении.
+     - В `src/domains/combat/combat.prepared-stats.ts` поля инициализируются из `def.baseStats`, накапливаются из улучшений и возвращаются в `PreparedStats`.
+     - В матрице из 1569 вариантов достигнуто 0 расхождений (100% паритет как при наличии raw upgradeIds, так и при их detachment).
+
+2. **[P2] R5A-MARS-PREPARED-RANK-OVERRIDE-SEMANTICS**:
+   - **Проблема**: Слияние `rankScaling` из улучшений через `...(effectiveRankScaling ?? {})` сохраняло базовые множители, которые оригинальный резолвер ядра перезаписывает целиком (например, контрольный юнит получал атаку 15 вместо 10).
+   - **Исправление**: В `src/domains/combat/combat.prepared-stats.ts` резолюция `modifiers.rankScaling` заменяет `effectiveRankScaling` целиком, восстанавливая семантику перезаписи базового `rankScaling` улучшениями в точном соответствии с ядром.
+
+3. **[P2] R5A-MARS-PREPARED-TRIGGER-ORDER-REGRESSION**:
+   - **Проблема**: Для улучшений с обоими типами триггеров (`triggerEffects` и `onDeathSpawn`) нарушался порядок следования: `[onDeathSpawn, explicit]` вместо `[explicit, onDeathSpawn]`.
+   - **Исправление**: В `src/domains/combat/combat.prepared-stats.ts` добавление `modifiers.triggerEffects` расположено строго перед `modifiers.onDeathSpawn`, гарантируя порядок `[explicit, onDeathSpawn]`.
+
+4. **[P2] R5A-MARS-CATALOG-OVERRIDE-IGNORED**:
+   - **Проблема**: Фабрика `createRuntimeSquad` и `buildMarsPreparedStats` игнорировали характеристики явно переданного каталога, компилируя дефолтные HP 35 / attack 10 вместо переданных в каталоге HP 300 / attack 70.
+   - **Исправление**:
+     - В `src/domains/combat/combat.prepared-stats.ts` определение выбирается с приоритетом каталога: `catalog.unitTypes?.[unitType] ?? defaultDefs[unitType]`.
+     - В `src/domains/combat/combat.squad-factory.ts` функция `createRuntimeSquad` передаёт `catalog` в `buildMarsPreparedStats`, обеспечивая корректное использование пользовательских определений каталога.
+
+#### Постоянные тесты:
+- В `src/__tests__/combat.prepared-loadout.test.ts` добавлены 4 постоянных теста:
+  - Проверка реального расписания периодического призыва `drone_carrier` (спавны на тиках 149 и 299 за 301 тик).
+  - Приоритет определений переданного каталога над дефолтными в `createRuntimeSquad` и `buildMarsPreparedStats`.
+  - Семантика полной замены `rankScaling` при модификациях улучшений.
+  - Порядок триггеров `[explicit, onDeathSpawn]` и устойчивость `fieldEffect`/`controlBeam` к удалению сырых ID улучшений (`qa_barrier_dome`).
+
+#### Результаты итоговой верификации Pass 10:
+- Owner Pass 10 inventory probe (`artifacts/review-r5a-owner-pass10-20261008/prepared-inventory-probe.mjs`):
+  - **Node 25**: **10/10 PASS** (0 failed, 1569 comparisons: 0 retained diffs, 0 detached diffs).
+  - **Node 22**: **10/10 PASS** (0 failed, 1569 comparisons: 0 retained diffs, 0 detached diffs).
+- Owner Pass 9 Mars probe (`artifacts/review-r5a-owner-pass9-20261008/mars-preparation-regression-probe.mjs`):
+  - **Node 25**: **14/14 PASS**; **Node 22**: **14/14 PASS**.
+- Owner Pass 9 late-reference probe (`artifacts/review-r5a-owner-pass9-20261008/prior-prepared-pipeline-probe.mjs`):
+  - **Node 25**: **21/21 PASS**; **Node 22**: **21/21 PASS**.
+- Предыдущие проверочные пробники (Pass 8: 29/29, Pass 7: 21/21, Pass 6: 9/9, Pass 5: 16/16, Pass 4: 12/12): **100% PASS** на Node 25 и Node 22.
+- Combat core vitest suite: **32 files PASS, 247 tests PASS**.
+- Targeted Mars vitest suites: **4 files PASS, 21 tests PASS** (включая все 10 тестов `combat.prepared-loadout.test.ts`).
+- Golden suites:
+  - `npm run combat:ecs:golden` (V8): **7/7 presets stable (PASS)**.
+  - `npm run combat:ecs:v9:golden` (V9): **7/7 presets stable (PASS)**.
+- Typecheck (`npx tsc --noEmit --pretty false`): **0 errors**.
+- Architectural limits (`scripts/check-limits.ts --diff HEAD --json`): **0 violations**.
+- Sealed R4b archive (`f610158b...`) и Fantasy SDK (`52a91f4e...`): **не изменялись (SHA256 инвариантны)**.

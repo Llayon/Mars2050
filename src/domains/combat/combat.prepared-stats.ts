@@ -20,8 +20,11 @@ export function buildMarsPreparedStats(
   catalog?: MarsCatalogInput,
   definitions?: Record<string, UnitDefinition>,
 ): PreparedStats | undefined {
-  const defs = definitions ?? buildMarsUnitDefinitions()
-  const def = defs[unitType]
+  const catalogUnitTypes = (catalog && 'unitTypes' in catalog && catalog.unitTypes)
+    ? (catalog.unitTypes as unknown as Record<string, UnitDefinition>)
+    : undefined
+  const defaultDefs = definitions ?? buildMarsUnitDefinitions()
+  const def = catalogUnitTypes?.[unitType] ?? defaultDefs[unitType]
   if (!def) return undefined
 
   const base = def.baseStats
@@ -60,6 +63,12 @@ export function buildMarsPreparedStats(
   const rawBurrow = (base as Record<string, unknown>).burrowWhileMoving as BurrowConfigContract | undefined
   let burrowConfig: BurrowConfigContract | undefined = rawBurrow ? { ...rawBurrow } : undefined
 
+  const fieldEffect: Record<string, unknown>[] = [
+    ...((def.baseStats.fieldEffect as unknown as Record<string, unknown>[] | undefined) ?? []),
+  ]
+  let controlBeam: Record<string, unknown> | undefined = def.baseStats.controlBeam
+    ? { ...(def.baseStats.controlBeam as Record<string, unknown>) }
+    : undefined
   const periodicAbilities: Record<string, unknown>[] = [
     ...((def.baseStats.periodicAbilities as unknown as Record<string, unknown>[] | undefined) ?? []),
   ]
@@ -87,18 +96,10 @@ export function buildMarsPreparedStats(
       const interval = modifiers.periodicSpawn.interval
       spawnerConfig = { unitType: modifiers.periodicSpawn.unit, interval, timer: interval }
     }
-    if (modifiers.onDeathSpawn && typeof modifiers.onDeathSpawn === 'string') {
-      triggerEffects.push({
-        id: `${upgradeId}-on-death-spawn`,
-        event: 'death',
-        payload: { kind: 'spawn', target: 'self', unitType: modifiers.onDeathSpawn, count: 1, cap: 1 },
-      })
-    }
     if (modifiers.rankScaling) {
       effectiveRankScaling = {
-        ...(effectiveRankScaling ?? {}),
         ...modifiers.rankScaling,
-        damageModifiers: modifiers.rankScaling.damageModifiers?.map(m => ({ ...m })) ?? effectiveRankScaling?.damageModifiers,
+        damageModifiers: modifiers.rankScaling.damageModifiers?.map(m => ({ ...m })),
       }
     }
     if (modifiers.onDeathPuddle) onDeathPuddle = modifiers.onDeathPuddle
@@ -119,6 +120,12 @@ export function buildMarsPreparedStats(
         ...modifiers.burrowWhileMoving,
       }
     }
+    if (modifiers.fieldEffect && Array.isArray(modifiers.fieldEffect)) {
+      fieldEffect.push(...(modifiers.fieldEffect as unknown as Record<string, unknown>[]).map(e => ({ ...e })))
+    }
+    if (modifiers.controlBeam) {
+      controlBeam = { ...(modifiers.controlBeam as unknown as Record<string, unknown>) }
+    }
     if (modifiers.multishot) multishot = modifiers.multishot
     if (modifiers.antiAirDamageMult) antiAirDamageMult = modifiers.antiAirDamageMult
     if (modifiers.grantAntiAir) canTargetAir = true
@@ -130,7 +137,14 @@ export function buildMarsPreparedStats(
       periodicAbilities.push(...(modifiers.periodicAbilities as unknown as Record<string, unknown>[]))
     }
     if (modifiers.triggerEffects && Array.isArray(modifiers.triggerEffects)) {
-      triggerEffects.push(...(modifiers.triggerEffects as unknown as Record<string, unknown>[]))
+      triggerEffects.push(...(modifiers.triggerEffects as unknown as Record<string, unknown>[]).map(t => ({ ...t })))
+    }
+    if (modifiers.onDeathSpawn && typeof modifiers.onDeathSpawn === 'string') {
+      triggerEffects.push({
+        id: `${upgradeId}-on-death-spawn`,
+        event: 'death',
+        payload: { kind: 'spawn', target: 'self', unitType: modifiers.onDeathSpawn, count: 1, cap: 1 },
+      })
     }
   }
 
@@ -196,6 +210,9 @@ export function buildMarsPreparedStats(
     summonCounterDamageMult,
     accuracyPenaltyResist,
     burrowConfig,
+    rankScaling: effectiveRankScaling as unknown as Record<string, unknown> | undefined,
+    fieldEffect: fieldEffect.length > 0 ? fieldEffect : undefined,
+    controlBeam,
     supportAuras: auras.length > 0 ? (auras as unknown as SupportAuraModifierContract[]) : undefined,
     periodicAbilities: periodicAbilities.length > 0 ? periodicAbilities : undefined,
     triggerEffects: triggerEffects.length > 0 ? triggerEffects : undefined,

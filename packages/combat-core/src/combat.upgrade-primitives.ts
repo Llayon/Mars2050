@@ -13,6 +13,8 @@ export function getRuntimePrimitiveStats(
   const triggerEffects = baseStats.triggerEffects?.map(trigger => ({ ...trigger })) ?? []
   const skipPeriodic = preparedStats?.periodicAbilities !== undefined
   const skipTriggers = preparedStats?.triggerEffects !== undefined
+  const skipFieldEffect = (preparedStats as Record<string, unknown>)?.fieldEffect !== undefined
+  const skipControlBeam = (preparedStats as Record<string, unknown>)?.controlBeam !== undefined
   const transformMode = baseStats.transformMode?.map(mode => ({ ...mode })) ?? []
   const fieldEffect = baseStats.fieldEffect?.map(effect => ({ ...effect })) ?? []
   let controlBeam = baseStats.controlBeam ? { ...baseStats.controlBeam } : undefined
@@ -50,8 +52,8 @@ export function getRuntimePrimitiveStats(
         if (modifiers.onDeathSpawn) triggerEffects.push(createOnDeathSpawnTrigger(upgradeId, modifiers.onDeathSpawn))
       }
       if (modifiers.transformMode) transformMode.push(...modifiers.transformMode.map(mode => ({ ...mode })))
-      if (modifiers.fieldEffect) fieldEffect.push(...modifiers.fieldEffect.map(effect => ({ ...effect })))
-      if (modifiers.controlBeam) controlBeam = { ...modifiers.controlBeam }
+      if (!skipFieldEffect && modifiers.fieldEffect) fieldEffect.push(...modifiers.fieldEffect.map(effect => ({ ...effect })))
+      if (!skipControlBeam && modifiers.controlBeam) controlBeam = { ...modifiers.controlBeam }
       if (modifiers.formationModifiers) formationModifiers = { ...modifiers.formationModifiers }
       if (modifiers.statGrowth) statGrowth = { ...modifiers.statGrowth }
       if (modifiers.attackCharge) attackCharge = { ...modifiers.attackCharge }

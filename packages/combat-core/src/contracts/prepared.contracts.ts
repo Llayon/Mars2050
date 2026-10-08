@@ -54,6 +54,9 @@ export const preparedStatsSchema = z.object({
   supportAuras: z.array(supportAuraModifierSchema).optional(),
   periodicAbilities: z.array(z.record(z.string(), z.unknown())).optional(),
   triggerEffects: z.array(z.record(z.string(), z.unknown())).optional(),
+  fieldEffect: z.array(z.record(z.string(), z.unknown())).optional(),
+  controlBeam: z.record(z.string(), z.unknown()).optional(),
+  rankScaling: z.record(z.string(), z.unknown()).optional(),
 }).passthrough()
 
 export type PreparedStats = z.infer<typeof preparedStatsSchema>
