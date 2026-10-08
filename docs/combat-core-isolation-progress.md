@@ -1849,3 +1849,24 @@ SHA256: `52a91f4eb406125247426f044eb0dbdf8ab440a8285d211af63e5f9c75bf61dd`.
 - Architectural limits (`scripts/check-limits.ts --diff HEAD~1 --json`): **0 violations**.
 - Sealed R4b archive (`f610158b...`) и Fantasy SDK (`52a91f4e...`): **не изменялись (SHA256 инвариантны)**.
 
+### 2026-10-08 — Приёмка R5a (ISO-09, Pass 12) и устранение дефекта barrageAttack
+
+1. **Официальная приёмка R5a / ISO-09 (Owner Review Pass 12)**:
+   - Коммит `3fb23c9558b9f62404769867f93103ed0ff8e4ea` принят с вердиктом **ACCEPT**.
+   - Проверена вся матрица пробников (184/184 assertions PASS на Node 25 и Node 22).
+   - 176 дополнительных типизированных проверок инвентаря (`typed-inventory-probe.mjs`): 176/176 PASS.
+   - Core vitest: 265 тестов PASS; Mars vitest: 859 тестов PASS.
+   - Golden V8 и V9, typecheck, architectural limits: PASS.
+
+2. **Исправление дефекта `barrageAttack` (`CORE-V9-BARRAGE-DUPLICATE-DAMAGE-ORDER`)**:
+   - **Проблема**: При множественных попаданиях залпа (`barrageAttack`, `impacts > 1`) по одной и той же цели в режиме `v9_snapshot` возникало исключение `CombatInvariantError: Duplicate damage order key`. Система вторичных попаданий (`secondary-hit-system.ts`) использовала одинаковый `authoredPosition` `{ 0, 0, 0, 0 }` и `authoredOrdinal: 0` для всех попаданий.
+   - **Исправление**:
+     - В `EcsSecondaryHitOptions` (`secondary-hit-system.ts`) добавлены поля `originExternalId?: string`, `authoredOrdinal?: number`, `authoredPosition?: AuthoredEffectPosition`, которые передаются в `applyEcsSingleDamage` и `applyEcsOnHitEffects` (`authoredKey`).
+     - В `barrage-attack-system.ts` для каждого попадания (`impact.index`) и каждой цели (`targetOrdinal`) формируется уникальный детерминированный `authoredPosition: { programIndex: 0, groupIndex: impact.index, targetOrdinal, effectIndex: 0 }`, `authoredOrdinal: impact.index` и `originExternalId: "unit:${attacker}:barrage"`.
+     - Защита от дублирования ключей урона в `defense-batch.ts` сохранена активной и строгой.
+   - **Верификация**:
+     - Пробник `composition-probe.mjs`: **50/50 PASS** на Node 25.6.0 и Node 22.20.0 (включая `COMPOSE_barrageAttack_BASE_PLUS_TWO_UPGRADES` и `LATE_barrageAttack_PREPARED_DEFINITION`).
+     - Пробник `barrage-baseline-probe.mjs`: все 6 конфигураций кандидата (`candidate_instant_raw`, `candidate_instant_prepared`, `candidate_staggered_raw`, `candidate_staggered_prepared`, `candidate_one-impact-control_raw`, `candidate_one-impact-control_prepared`) теперь успешно завершаются (60 тиков, 24/18 damage events).
+     - Добавлены постоянные тесты в `packages/combat-core/tests/prepared-primitives-r5a.test.ts` и `src/__tests__/combat.ecs-barrage-attack.test.ts`.
+
+

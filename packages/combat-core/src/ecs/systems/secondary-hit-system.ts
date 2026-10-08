@@ -1,6 +1,7 @@
 import type { BattleAction } from '../../combat.actions.js'
 import type { CombatWorld } from '../combat-world.js'
 import type { EntityId } from '../entity.js'
+import type { AuthoredEffectPosition } from '../defense-batch.js'
 import { applyEcsSingleDamage } from './damage-system.js'
 import { resolveEcsDeath } from './death-system.js'
 import { applyEcsOnHitEffects } from './on-hit-system.js'
@@ -10,6 +11,9 @@ export interface EcsSecondaryHitOptions {
   applyOnHitEffects?: boolean
   emitAttackIntent?: boolean
   interceptable?: boolean
+  originExternalId?: string
+  authoredOrdinal?: number
+  authoredPosition?: AuthoredEffectPosition
 }
 
 export function resolveEcsSecondaryHit(
@@ -23,13 +27,16 @@ export function resolveEcsSecondaryHit(
   const attacker = world.stores.identity.require(attackerId).id
   const target = world.stores.identity.require(targetId).id
   if (options.emitAttackIntent) actions.push({ unitId: attacker, type: 'attack', targetId: target })
+  const originExternalId = options.originExternalId ?? `unit:${attacker}:secondary`
+  const authoredOrdinal = options.authoredOrdinal ?? 0
+  const authoredPosition = options.authoredPosition ?? { programIndex: 0, groupIndex: 0, targetOrdinal: 0, effectIndex: 0 }
   const result = applyEcsSingleDamage(world, attackerId, targetId, rawDamage, actions, {
     allowPercentHpDamage: false,
     allowMinimumDamage: options.allowMinimumDamage,
     interceptable: options.interceptable ?? false,
-    originExternalId: `unit:${attacker}:secondary`,
-    authoredOrdinal: 0,
-    authoredPosition: { programIndex: 0, groupIndex: 0, targetOrdinal: 0, effectIndex: 0 },
+    originExternalId,
+    authoredOrdinal,
+    authoredPosition,
   })
   if (result.intercepted) {
     return
@@ -37,6 +44,13 @@ export function resolveEcsSecondaryHit(
   if (options.applyOnHitEffects !== false) {
     applyEcsOnHitEffects(world, attackerId, targetId, actions, {
       propagateSquadMark: false,
+      authoredKey: {
+        originExternalId,
+        position: authoredPosition,
+        authoredOrdinal,
+        targetExternalId: target,
+        sourceExternalId: attacker,
+      },
     })
   }
   resolveEcsDeath(world, targetId, attackerId, actions)

@@ -104,4 +104,29 @@ describe('combat ECS barrage attack', () => {
     expect(world.stores.statusControl.require(2).statusEffects).toEqual([])
     expect(world.stores.defense.require(3).projectileInterceptCooldown).toBe(12)
   })
+
+  it('handles multiple overlapping barrage impacts on the same target in v9_snapshot mode', () => {
+    const attacker = barrageAttacker()
+    attacker.barrageAttack = {
+      impacts: 2,
+      radius: 40,
+      spreadRadius: 10,
+      damageMultiplier: 0.5,
+      maxTargetsPerImpact: 2,
+    }
+    const world = createWorld([
+      attacker,
+      unit('target', 'defender', 'marine', 100, 100, Math.PI),
+    ])
+    world.resources.set('defenseResolutionMode', 'v9_snapshot')
+    const actions: Parameters<typeof runActionSystem>[3] = []
+
+    expect(() => {
+      runActionSystem(world, 0, 1, actions, { rng: new PRNG(1), tick: 0 })
+    }).not.toThrow()
+
+    const damageActions = actions.filter(action => action.type === 'damage' && action.targetId === 'target')
+    expect(damageActions.length).toBeGreaterThanOrEqual(2)
+  })
 })
+

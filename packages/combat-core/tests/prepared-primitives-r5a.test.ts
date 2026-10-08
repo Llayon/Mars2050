@@ -179,4 +179,34 @@ describe('R5a Pass 11: Typed primitive preflight rejection', () => {
       })
     })
   }
+
+  it('handles multiple overlapping barrage impacts on the same target without duplicate damage order key', () => {
+    const barrageAttack = { impacts: 2, radius: 40, spreadRadius: 10, damageMultiplier: 0.5 }
+    const input: BattleInput = {
+      seed: 81,
+      arena: { width: 600, height: 1200, tileSize: 40, obstacles: [] },
+      rules: { maxTicks: 10, timeoutPolicy: 'draw', defenseResolutionMode: 'v9_snapshot' },
+      definitions: {
+        fighter: {
+          ...makeDef('fighter'),
+          baseStats: { ...makeDef('fighter').baseStats, attack: 10, barrageAttack },
+        },
+        target: {
+          ...makeDef('target'),
+          baseStats: { ...makeDef('target').baseStats, hp: 1000, defense: 0 },
+        },
+      },
+      units: [
+        { instanceId: 'a', definitionId: 'fighter', team: 'attacker', placement: { x: 300, y: 650, angle: -Math.PI / 2 }, rank: 1, upgradeIds: [] },
+        { instanceId: 'd', definitionId: 'target', team: 'defender', placement: { x: 300, y: 550, angle: Math.PI / 2 }, rank: 1, upgradeIds: [] },
+      ],
+      scheduledEffects: [],
+    }
+
+    expect(() => simulateCombat(input)).not.toThrow()
+    const result = simulateCombat(input)
+    const damageActions = result.logs.flatMap(tick => tick.actions).filter(a => a.type === 'damage' && a.targetId === 'd')
+    expect(damageActions.length).toBeGreaterThanOrEqual(2)
+  })
 })
+

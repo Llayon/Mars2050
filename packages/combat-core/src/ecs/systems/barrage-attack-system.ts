@@ -45,9 +45,19 @@ export function applyEcsBarrageAttack(
       value: impact.index,
     }
     actions.push({ ...event, type: 'barrage_marker' })
-    for (const targetId of getTargets(world, attackerId, impact, overrideConfig)) {
+    const targets = getTargets(world, attackerId, impact, overrideConfig)
+    for (let targetOrdinal = 0; targetOrdinal < targets.length; targetOrdinal += 1) {
+      const targetId = targets[targetOrdinal]!
       resolveEcsSecondaryHit(world, attackerId, targetId, damage, actions, {
         interceptable: true,
+        originExternalId: `unit:${attacker}:barrage`,
+        authoredOrdinal: impact.index,
+        authoredPosition: {
+          programIndex: 0,
+          groupIndex: impact.index,
+          targetOrdinal,
+          effectIndex: 0,
+        },
       })
     }
     actions.push({ ...event, type: 'barrage_impact' })
