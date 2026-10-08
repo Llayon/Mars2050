@@ -1,5 +1,5 @@
 import type { BattleInput, UnitSpawnSpec, ScheduledEffect, ArenaSpec, UnitDefinition, PreparedStats } from '@mars2050/combat-core/contracts'
-import { calculateEffectiveUnitStats, calculateEffectiveMaxHp, getFormationOffset, getSizeRadius } from '@mars2050/combat-core'
+import { calculateEffectiveUnitStats, calculateEffectiveMaxHp, getFormationOffset, getSizeRadius, getUnitSupportAuras, extractSupportAuras } from '@mars2050/combat-core'
 import type { UnitRow } from './combat.types'
 import type { Obstacle } from './combat.sim.types'
 import type { BattleSimulationOptions } from './combat.metrics'
@@ -9,9 +9,7 @@ import { FIELD_HEIGHT, FIELD_WIDTH, TILE_SIZE, generateObstacles } from './comba
 import { getUnitRank } from './combat.rank-scaling'
 import { buildMarsUnitDefinitions } from './combat.unit-definitions'
 export { buildMarsUnitDefinitions } from './combat.unit-definitions'
-
 export { buildMarsUpgrades } from './combat.upgrades'
-
 
 /**
  * Compiles fully prepared runtime stats for a Mars unit.
@@ -28,6 +26,16 @@ export function buildMarsPreparedStats(
   const effective = calculateEffectiveUnitStats(unitType, rank, upgradeIds, marsCatalog, defs)
   if (!effective) return undefined
   const def = defs[unitType]
+  const authoredAuras = extractSupportAuras((def?.abilities ?? def?.baseStats?.abilities) as import('@mars2050/combat-core/combat.ability.types').AbilityDefinition[] | undefined)
+  const baseAuras = [
+    ...((def?.baseStats?.supportAuras as import('@mars2050/combat-core/combat.sim.types').SupportAura[] | undefined) ?? []),
+    ...authoredAuras,
+  ]
+  const supportAuras = getUnitSupportAuras(
+    baseAuras.length > 0 ? baseAuras : undefined,
+    upgradeIds,
+    marsCatalog.upgrades as Record<string, import('@mars2050/combat-core/combat.catalog.types').UpgradeConfig>,
+  )
   return {
     hp: effective.hp,
     attack: effective.attack,
@@ -72,6 +80,7 @@ export function buildMarsPreparedStats(
     summonCounterDamageMult: effective.summonCounterDamageMult,
     accuracyPenaltyResist: effective.accuracyPenaltyResist,
     burrowConfig: effective.burrowConfig,
+    supportAuras: supportAuras ? (supportAuras as unknown as import('@mars2050/combat-core/contracts').SupportAuraModifierContract[]) : undefined,
   }
 }
 
@@ -111,7 +120,7 @@ export function mapUnitRowsToSpawnSpecs(
       const rowSize = Math.ceil(Math.sqrt(squadSize))
       const formation = def.formation ?? 'grid'
       if (squadSize === 1) {
-        const radius = getSizeRadius((def.baseStats?.size ?? 'M') as 'S' | 'M' | 'L' | 'XL')
+        const radius = getSizeRadius((preparedStats?.size ?? def.baseStats?.size ?? 'M') as 'S' | 'M' | 'L' | 'XL')
         if (posX != null) {
           posX = Math.max(radius, Math.min(arenaWidth - radius, posX))
         }

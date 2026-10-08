@@ -3,6 +3,8 @@ import type { BattleInput, UnitDefinition } from './contracts/index.js'
 import type { NormalizedDefinition } from './combat.definition-validator.js'
 import { resolveDeploymentBounds } from './combat.deployment-bounds.js'
 import { getFormationOffset, getSizeRadius } from './math/index.js'
+import { resolveEffectiveUnitBaseStats } from './combat.effective-loadout.js'
+import type { UnitBaseStats } from './combat.types.js'
 
 /**
  * Validates arena bounds, deployment configuration, obstacle placement,
@@ -100,7 +102,9 @@ export function validatePlacementAndBounds(
     const spacing = def?.squadSpacing ?? 20
     const rowSize = Math.ceil(Math.sqrt(squadSize))
     const formation = def?.formation ?? 'grid'
-    const rawSize = (def as NormalizedDefinition)?.baseStats?.size ?? (def as UnitDefinition)?.baseStats?.size ?? 'M'
+    const baseStats = ((def as NormalizedDefinition)?.baseStats ?? (def as UnitDefinition)?.baseStats ?? {}) as UnitBaseStats
+    const effectiveBase = resolveEffectiveUnitBaseStats(baseStats, u.preparedStats)
+    const rawSize = effectiveBase.size ?? 'M'
     const bodyRadius = getSizeRadius(rawSize as 'S' | 'M' | 'L' | 'XL')
 
     if (u.placement.x != null && (u.placement.x < 0 || u.placement.x > parsed.arena.width)) {

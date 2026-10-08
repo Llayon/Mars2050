@@ -11,18 +11,53 @@ import { compileTemporalWeaponPlan } from './combat.temporal-compiler.js'
 import { CombatDefinitionError } from './combat.definition-error.js'
 import { validatePeriodicAbilityConfig } from './combat.periodic-schema.js'
 
+import { resolveEffectiveUnitBaseStats } from './combat.effective-loadout.js'
+
 /**
- * Validates the assembled loadout (baseStats + upgrades) for a single unit spawn spec.
- * Ensures weapon geometries are compatible and assembled abilities compile without duplicate IDs
- * or unsupported combinations, before world creation or RNG consumption.
+ * Validates the assembled loadout (effective baseStats + upgrades) for a single unit spawn spec.
+ * Ensures weapon geometries are compatible, targeting profiles exist, spawn references resolve,
+ * and assembled abilities compile without duplicate IDs or unsupported combinations, before world creation or RNG consumption.
  */
 export function validateUnitLoadout(
   unitIndex: number,
   unit: UnitSpawnSpec,
   baseStats: UnitBaseStats,
   upgradesCatalog?: Record<string, UpgradeConfig>,
+  allDefIds?: Set<string>,
+  allTargetingProfiles?: Set<string>,
+  catalog?: CombatCatalog,
+  definitions?: Record<string, UnitDefinition>,
 ): void {
-  const primitives = getRuntimePrimitiveStats(baseStats, unit.upgradeIds, upgradesCatalog)
+  const effectiveBase = resolveEffectiveUnitBaseStats(baseStats, unit.preparedStats)
+
+  if (allTargetingProfiles && effectiveBase.targetingProfile && !allTargetingProfiles.has(effectiveBase.targetingProfile as string)) {
+    throw new CombatDefinitionError(
+      'MISSING_DEFINITION',
+      `unit '${unit.instanceId}' references unknown targetingProfile '${effectiveBase.targetingProfile}'`,
+      { path: `units[${unitIndex}].targetingProfile`, reference: String(effectiveBase.targetingProfile), definitionId: unit.definitionId },
+    )
+  }
+
+  if (effectiveBase.attackType === 'spawn' && !effectiveBase.spawnType) {
+    throw new CombatDefinitionError(
+      'MISSING_SPAWN_TYPE',
+      `unit '${unit.instanceId}' with attackType 'spawn' requires non-empty spawnType`,
+      { path: `units[${unitIndex}].spawnType`, definitionId: unit.definitionId },
+    )
+  }
+
+  if (effectiveBase.spawnType && allDefIds) {
+    if (!allDefIds.has(effectiveBase.spawnType)) {
+      throw new CombatDefinitionError(
+        'MISSING_SPAWN_DEFINITION',
+        `unit '${unit.instanceId}' spawns unknown definition '${effectiveBase.spawnType}'`,
+        { path: `units[${unitIndex}].spawnType`, reference: effectiveBase.spawnType, definitionId: unit.definitionId },
+      )
+    }
+    validateLateSpawnConfig(effectiveBase.spawnType, undefined, `units[${unitIndex}].spawnType`, catalog, definitions, effectiveBase.spawnOverrides)
+  }
+
+  const primitives = getRuntimePrimitiveStats(effectiveBase, unit.upgradeIds, upgradesCatalog)
 
   try {
     assertValidWeaponLoadout(unit.definitionId, primitives)

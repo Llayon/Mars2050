@@ -5,6 +5,7 @@ import { getRuntimePrimitiveStats } from './combat.upgrade-primitives.js'
 import { getDefaultCombatCatalog, type CombatCatalog } from './combat.catalog.types.js'
 import type { UnitDefinition } from './contracts/index.js'
 import { mapDefinitionToUnitTypeConfig } from './combat.definition-mapper.js'
+import { resolveEffectiveUnitBaseStats } from './combat.effective-loadout.js'
 
 export interface CompiledUnitStats {
   definition: UnitTypeConfig
@@ -49,16 +50,7 @@ export function compileUnitStats(spec: UnitBuildSpec): CompiledUnitStats | null 
   if (!definition) return null
   const upgradeIds = resolveUnitUpgradeIds(spec)
   const p = spec.preparedStats
-  const cleanP = p ? Object.fromEntries(Object.entries(p).filter(([_, v]) => v !== undefined)) : undefined
-  const base: UnitBaseStats = cleanP
-    ? {
-        ...definition.baseStats,
-        ...cleanP,
-        healTargetTags: (cleanP.healTargetTags ?? definition.baseStats.healTargetTags) as import('./combat.types.js').CombatTag[] | undefined,
-        combatTags: (cleanP.combatTags ?? definition.baseStats.combatTags) as import('./combat.types.js').CombatTag[] | undefined,
-        targetingProfile: (cleanP.targetingProfile ?? definition.baseStats.targetingProfile) as import('./combat.types.js').TargetingProfileKey | undefined,
-      }
-    : definition.baseStats
+  const base = resolveEffectiveUnitBaseStats(definition.baseStats, p)
   const primitives = getRuntimePrimitiveStats(base, upgradeIds, upgradesCatalog)
   if (p) {
     return {

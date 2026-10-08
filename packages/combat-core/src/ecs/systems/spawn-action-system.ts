@@ -105,7 +105,8 @@ function createSpawnedUnit(
   const transform = world.stores.transform.require(entityId)
   const target = world.stores.transform.require(targetId)
   const weapon = world.stores.weapon.require(entityId)
-  const spawnType = configuredSpawnType ?? weapon.spawnType ?? 'turret'
+  const spawnType = configuredSpawnType ?? weapon.spawnType
+  if (!spawnType) return null
   const overrides = world.stores.runtimeRules.require(entityId).spawnOverrides
   const dx = target.x - transform.x
   const dy = target.y - transform.y

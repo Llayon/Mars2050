@@ -205,7 +205,7 @@ export function validateBattleInput(input: unknown): BattleInput {
       }
     }
 
-    validateUnitLoadout(i, u, allDefs[u.definitionId].baseStats, catUpgrades)
+    validateUnitLoadout(i, u, allDefs[u.definitionId].baseStats, catUpgrades, allDefIds, allTargetingProfiles, normalizedCatalog as unknown as CombatCatalog, normalizedDefinitions)
   }
 
   // 7. Cycle check: only nodes actually participating in the cycle require spawnCap

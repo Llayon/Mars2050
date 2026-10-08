@@ -1,12 +1,12 @@
 import { z } from 'zod'
 import { baseStatsSchema, formationSchema } from './unit.contracts.js'
+import {
+  burrowConfigSchema,
+  supportAuraModifierSchema,
+  type SupportAuraModifierContract,
+} from './unit-primitives.contracts.js'
 
-export const supportAuraModifierSchema = z.object({
-  type: z.string(), radius: z.number().finite(), value: z.number().finite().default(0),
-  duration: z.number().int().nonnegative().optional(), interval: z.number().int().positive().optional(),
-  target: z.enum(['allies', 'enemies']), targetTags: z.array(z.string()).optional(),
-})
-export type SupportAuraModifierContract = z.infer<typeof supportAuraModifierSchema>
+export { supportAuraModifierSchema, type SupportAuraModifierContract }
 
 export const upgradeModifierSchema = z.object({
   hpMult: z.number().optional(),
@@ -25,7 +25,7 @@ export const upgradeModifierSchema = z.object({
   disableEnemyTech: z.boolean().optional(),
   leaveAoePuddle: z.boolean().optional(),
   damageReductionWhileMoving: z.number().optional(),
-  burrowWhileMoving: z.object({ damageReduction: z.number() }).optional(),
+  burrowWhileMoving: burrowConfigSchema.optional(),
   onDeathPuddle: z.enum(['napalm', 'acid', 'emp']).optional(),
   multishot: z.number().optional(),
   antiAirDamageMult: z.number().optional(),

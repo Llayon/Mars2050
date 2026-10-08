@@ -51,11 +51,13 @@ export function compileUnitSnapshot(spec: UnitBuildSpec): SimUnit | null {
     .map(ability => periodicAbility(`${spec.definitionId}:periodic:${ability.id}`, ability)))
   const authoredSupportAuras = extractSupportAuras(primitives.abilities)
   const resolvedUpgradeIds = resolveUnitUpgradeIds(spec)
-  const resolvedSupportAuras = getUnitSupportAuras(
-    [...(primitives.supportAuras ?? []), ...authoredSupportAuras],
-    resolvedUpgradeIds,
-    spec.catalog?.upgrades ?? getDefaultCombatCatalog()?.upgrades,
-  )
+  const resolvedSupportAuras = spec.preparedStats?.supportAuras
+    ? (spec.preparedStats.supportAuras as unknown as import('./combat.sim.types.js').SupportAura[])
+    : getUnitSupportAuras(
+        [...(primitives.supportAuras ?? []), ...authoredSupportAuras],
+        resolvedUpgradeIds,
+        spec.catalog?.upgrades ?? getDefaultCombatCatalog()?.upgrades,
+      )
   const upgradeSupportPrograms = compileAbilityDefinitions((resolvedSupportAuras ?? [])
     .filter(aura => !authoredSupportAuras.some(authored => sameSupportAura(authored, aura)))
     .map((aura, index) => auraAbility(`${spec.definitionId}:upgrade_aura:${index}`, aura)))

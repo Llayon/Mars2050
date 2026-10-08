@@ -7,6 +7,8 @@ import type { CombatCatalog } from './combat.catalog.types.js'
 import { FIELD_HEIGHT, FIELD_WIDTH, type PRNG } from './combat.utils.js'
 import { getFormationOffset, getSizeRadius } from './math/index.js'
 import { resolveDeploymentBounds } from './combat.deployment-bounds.js'
+import { resolveEffectiveUnitBaseStats } from './combat.effective-loadout.js'
+import type { UnitBaseStats } from './combat.types.js'
 
 export type ArenaInput = ArenaSpec | { width: number; height: number; deployment?: ArenaDeployment } | number
 
@@ -58,7 +60,9 @@ export function createSpawnBuildSpecs(
 
   if (strategy === 'fit_formation' || squadSize === 1) {
     const effectiveDef = catDef ?? pubDef
-    const rawSize = effectiveDef?.baseStats?.size ?? 'M'
+    const baseStats = (effectiveDef?.baseStats ?? {}) as UnitBaseStats
+    const effectiveBase = resolveEffectiveUnitBaseStats(baseStats, spec.preparedStats)
+    const rawSize = effectiveBase.size ?? 'M'
     const bodyRadius = getSizeRadius(rawSize as 'S' | 'M' | 'L' | 'XL')
     const offsets = Array.from({ length: squadSize }, (_, index) =>
       getFormationOffset(index, squadSize, rowSize, spacing, formation, spec.team),
@@ -118,7 +122,7 @@ export function createSpawnBuildSpecs(
       },
       overrides: { currentHp: spec.currentHp },
       catalog,
-      preparedStats: spec.preparedStats as Partial<import('./combat.types.js').UnitBaseStats> | undefined,
+      preparedStats: spec.preparedStats,
     }
   })
 }

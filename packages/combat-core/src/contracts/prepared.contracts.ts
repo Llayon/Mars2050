@@ -1,7 +1,9 @@
 import { z } from 'zod'
 import {
   attackTypeSchema,
+  burrowConfigSchema,
   statusEffectSchema,
+  supportAuraModifierSchema,
   unitSizeSchema,
 } from './unit-primitives.contracts.js'
 
@@ -48,7 +50,9 @@ export const preparedStatsSchema = z.object({
   stealthUntilAttack: z.boolean().optional(),
   onDeathPuddle: z.enum(['napalm', 'acid', 'emp']).optional(),
   spawnerConfig: z.object({ unitType: z.string(), interval: z.number(), timer: z.number().optional() }).optional(),
-  burrowConfig: z.object({ damageReduction: z.number() }).optional(),
+  burrowConfig: burrowConfigSchema.optional(),
+  supportAuras: z.array(supportAuraModifierSchema).optional(),
+  periodicAbilities: z.array(z.record(z.string(), z.unknown())).optional(),
 }).passthrough()
 
 export type PreparedStats = z.infer<typeof preparedStatsSchema>

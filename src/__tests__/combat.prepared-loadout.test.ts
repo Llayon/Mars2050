@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { translateMarsBattleInput } from '../domains/combat/combat.input-translator'
 import { createRuntimeSquad } from '../domains/combat/combat.squad-factory'
 import { PRNG } from '../domains/combat/combat.utils'
+import { simulateCombat } from '@mars2050/combat-core'
 import type { UnitRow } from '../domains/combat/combat.types'
 import type { UnitsType } from '@/types/database'
 
@@ -64,6 +65,13 @@ describe('Mars Adapter: Prepared loadout emission and parity', () => {
     const translated = translateMarsBattleInput([rowWithSensor], [makeRow('d1')], 123, [], [], [], { maxTicks: 1 })
     const translatedUnit = translated.units.find(u => u.instanceId === 'u1')!
     expect(translatedUnit.upgradeIds).toContain('sensor_suite')
+    expect(translatedUnit.preparedStats?.supportAuras?.some(a => a.type === 'reveal')).toBe(true)
+
+    const detached = structuredClone(translated)
+    detached.units[0].upgradeIds = []
+    const simResult = simulateCombat(detached)
+    const scout = simResult.initialState.find(u => u.id === 'u1')!
+    expect(scout.supportAuras?.some(a => a.type === 'reveal')).toBe(true)
   })
 
   it('createRuntimeSquad normalizes legacy tier: 2 into rank: 2', () => {

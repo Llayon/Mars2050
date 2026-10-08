@@ -27,3 +27,27 @@ export const statusEffectSchema = z.object({
   stackKey: z.string().optional(),
 })
 export type StatusEffect = z.infer<typeof statusEffectSchema>
+
+export const burrowConfigSchema = z.object({
+  damageReduction: z.number().finite().nonnegative(),
+  regenPercentPerTick: z.number().finite().nonnegative().optional(),
+  emergeAttackMult: z.number().finite().positive().optional(),
+  emergeAoeRadiusAdd: z.number().finite().nonnegative().optional(),
+})
+export type BurrowConfigContract = z.infer<typeof burrowConfigSchema>
+
+export const supportAuraTypeSchema = z.enum([
+  'shield', 'shield_repair', 'regen', 'reveal', 'damage_reduction', 'haste', 'range_boost', 'attack_boost', 'cleanse', 'status_immunity',
+])
+export type SupportAuraType = z.infer<typeof supportAuraTypeSchema>
+
+export const supportAuraModifierSchema = z.object({
+  type: z.string(),
+  radius: z.number().finite(),
+  value: z.number().finite().default(0),
+  duration: z.number().int().nonnegative().optional(),
+  interval: z.number().int().positive().optional(),
+  target: z.enum(['allies', 'enemies']),
+  targetTags: z.array(z.string()).optional(),
+})
+export type SupportAuraModifierContract = z.infer<typeof supportAuraModifierSchema>

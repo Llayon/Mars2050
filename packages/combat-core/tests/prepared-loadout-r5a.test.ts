@@ -129,4 +129,97 @@ describe('R5a: Prepared loadout contract and runtime propagation', () => {
     const result = simulateCombat(input)
     expect(result.initialState[0].defense).toBe(-3)
   })
+
+  it('rejects prepared XL body violating placement bounds with zero PRNG and world calls', () => {
+    const input = baseInput()
+    input.units[0].placement.x = 20
+    input.units[0].preparedStats = { size: 'XL' }
+    expectThrowsBeforeWorld(() => simulateCombat(input), /OUT_OF_BOUNDS_COORDINATES/)
+  })
+
+  it('accepts prepared S body overriding XL definition at x=20', () => {
+    const input = baseInput()
+    input.definitions.fighter.baseStats.size = 'XL'
+    input.units[0].placement.x = 20
+    input.units[0].preparedStats = { size: 'S' }
+    const result = simulateCombat(input)
+    expect(result.initialState[0].size).toBe('S')
+    expect(result.initialState[0].x).toBe(20)
+  })
+
+  it('uses prepared radius for random placement within tight bounds', () => {
+    const input = baseInput()
+    input.arena = { width: 100, height: 100, tileSize: 10, obstacles: [], deployment: { depth: 100 } }
+    input.units[0].placement = {}
+    input.units[0].preparedStats = { size: 'XL' }
+    input.units[1].placement = { x: 50, y: 50 }
+    const result = simulateCombat(input)
+    const first = result.initialState[0]
+    expect(first.size).toBe('XL')
+    expect(first.x).toBeGreaterThanOrEqual(45)
+    expect(first.x).toBeLessThanOrEqual(55)
+    expect(first.y).toBeGreaterThanOrEqual(45)
+    expect(first.y).toBeLessThanOrEqual(55)
+  })
+
+  it('rejects prepared weapon geometry conflict before world creation', () => {
+    const input = baseInput()
+    input.definitions.fighter.baseStats.linePierce = { width: 12, damageMultiplier: 1 }
+    input.units[0].preparedStats = { attackType: 'aoe', aoeRadius: 20 }
+    expectThrowsBeforeWorld(() => simulateCombat(input), /SCHEMA_VALIDATION_ERROR/)
+  })
+
+  it('rejects prepared invalid periodic ability payload before world creation', () => {
+    const input = baseInput()
+    input.units[0].preparedStats = {
+      periodicAbilities: [{ id: 'bad-periodic', intervalTicks: 1, payload: { kind: 'made_up' } }],
+    }
+    expectThrowsBeforeWorld(() => simulateCombat(input), /SCHEMA_VALIDATION_ERROR/)
+  })
+
+  it('rejects prepared missing spawn reference before world creation', () => {
+    const input = baseInput()
+    input.units[0].preparedStats = { attackType: 'spawn', spawnType: 'missing', spawnCap: 1 }
+    expectThrowsBeforeWorld(() => simulateCombat(input), /MISSING_SPAWN_DEFINITION/)
+  })
+
+  it('rejects prepared unknown targeting profile before world creation', () => {
+    const input = baseInput()
+    input.units[0].preparedStats = { targetingProfile: 'nonexistent-profile' }
+    expectThrowsBeforeWorld(() => simulateCombat(input), /MISSING_DEFINITION/)
+  })
+
+  it('preserves all burrow fields from preparedStats into initialState', () => {
+    const burrow = { damageReduction: 0.4, regenPercentPerTick: 0.03, emergeAttackMult: 2, emergeAoeRadiusAdd: 24 }
+    const input = baseInput()
+    input.units[0].preparedStats = { burrowConfig: burrow }
+    const result = simulateCombat(input)
+    expect(result.initialState[0].burrowConfig).toEqual(burrow)
+  })
 })
+
+function expectThrowsBeforeWorld(fn: () => void, errorRegex: RegExp): void {
+  let rngCalls = 0
+  let worldQueueCalls = 0
+  const origRng = PRNG.prototype.next
+  const origQueue = CombatWorld.prototype.queueUnitCreation
+  const origCompiled = CombatWorld.prototype.queueCompiledUnitCreation
+  PRNG.prototype.next = function (this: PRNG) { rngCalls++; return origRng.apply(this) }
+  CombatWorld.prototype.queueUnitCreation = function (this: CombatWorld, ...args: Parameters<CombatWorld['queueUnitCreation']>) {
+    worldQueueCalls++
+    return origQueue.apply(this, args)
+  }
+  CombatWorld.prototype.queueCompiledUnitCreation = function (this: CombatWorld, ...args: Parameters<CombatWorld['queueCompiledUnitCreation']>) {
+    worldQueueCalls++
+    return origCompiled.apply(this, args)
+  }
+  try {
+    expect(fn).toThrowError(errorRegex)
+    expect(rngCalls).toBe(0)
+    expect(worldQueueCalls).toBe(0)
+  } finally {
+    PRNG.prototype.next = origRng
+    CombatWorld.prototype.queueUnitCreation = origQueue
+    CombatWorld.prototype.queueCompiledUnitCreation = origCompiled
+  }
+}
