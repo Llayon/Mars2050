@@ -1567,8 +1567,47 @@ SHA256: `52a91f4eb406125247426f044eb0dbdf8ab440a8285d211af63e5f9c75bf61dd`.
 - Golden suites:
   - `npm run combat:ecs:golden` (V8): **7/7 presets stable (PASS)**.
   - `npm run combat:ecs:v9:golden` (V9): **7/7 presets stable (PASS)**.
-- Full root test suite (`npm test`): **203/203 files PASS, 825/825 tests PASS** (в едином запуске).
+### 2026-10-08 — Закрытие замечаний Pass 4, Pass 5 и Pass 6 ревью R5a (ISO-09)
+
+В рамках серийного аудита R5a (Pass 4, Pass 5, Pass 6) полностью завершена изоляция подготовленного контракта характеристик и снаряжения (`PreparedStats`), унификация жизненного цикла размещения и валидации, и строгое экранирование ядра от недопустимых конфигураций до фазы создания сущностей и расхода PRNG:
+
+1. **[P2] R5A-PREPARED-LOADOUT-VALIDATION-BYPASS (Pass 6 Finding 1):**
+   - **Проблема**: Подготовленные способности призыва (`periodicAbilities`, `triggerEffects` со `spawn` payload) обходили предсимуляционную проверку на наличие зарегистрированного определения (`MISSING_SPAWN_DEFINITION`) и переполнение диапазона HP (`INVALID_FIELD_RANGE`).
+   - **Исправление**:
+     - В `combat.payload-validator.ts` реализована функция `validateUnitSpawnPayloads`, проверяющая все входящие призывы и переопределения юнитов (`periodicAbilities`, `triggerEffects`, `spawnerConfig`, `abilities`) относительно всех известных определений.
+     - Проверка вызывается в `validateUnitLoadout` внутри `validateBattleInput` до инициализации мира. При отсутствии типа юнита или некорректном/бесконечном значении HP симуляция мгновенно отклоняется с `CombatDefinitionError` при 0 вызовов PRNG и 0 вызовов создания сущностей.
+
+2. **[P2] R5A-PREPARED-SUPPORT-AURA-TYPE-UNVALIDATED (Pass 6 Finding 2):**
+   - **Проблема**: Неизвестные типы аур поддержки (например, `type: 'made_up'`) принимались схемой `preparedStatsSchema` и пропускались в runtime из-за использования незащищённого `z.string()`.
+   - **Исправление**:
+     - В `unit-primitives.contracts.ts` поле `supportAuraModifierSchema.type` типизировано строгим перечислением `supportAuraTypeSchema` (`shield | shield_repair | regen | reveal | damage_reduction | haste | range_boost | attack_boost | cleanse | status_immunity`).
+     - Неизвестные типы ауры немедленно отклоняются на схематической границе с `SCHEMA_VALIDATION_ERROR` до создания мира и с 0 вызовов PRNG.
+
+3. **[P2] R5A-CONTENT-BOUNDARY-INCOMPLETE (Pass 6 Finding 3):**
+   - **Проблема**: Перенос расчета loadout оставался неполным — примитивы (`periodicAbilities`, `triggerEffects`) не передавались из Mars адаптера в `PreparedStats`, а определения с `preparedStats` теряли свои свойства при позднем призыве.
+   - **Исправление**:
+     - В `prepared.contracts.ts` поля `periodicAbilities` и `triggerEffects` включены в `preparedStatsSchema` и сквозной резолвер `resolveEffectiveUnitBaseStats`.
+     - В `combat.input-translator.ts` функция `buildMarsPreparedStats` собирает все подготовленные примитивы из `effective.primitives`.
+     - В `combat.definition-mapper.ts` и `combat.unit-stat-compiler.ts` обеспечена сквозная передача `preparedStats` определений.
+     - В ECS-системах позднего призыва (`spawn-action-system.ts`, `periodic-ability-spawn-system.ts`, `trigger-spawn-system.ts`) вызовы `compileUnit` снабжены прямой передачей `preparedStats` создаваемых сущностей.
+
+4. **Постоянное тестовое покрытие:**
+   - Добавлен тестовый набор `packages/combat-core/tests/prepared-loadout-validation-r5a.test.ts` (6 тестов), валидирующий отклонение недопустимых аур, отсутствующих определений призыва и переполнения HP до мира и расхода RNG.
+
+#### Итоговые результаты верификации:
+- Owner Pass 6 probe (`artifacts/review-r5a-owner-pass6-20261008/effective-loadout-probe.mjs`):
+  - **Node 25**: **9/9 PASS** (0 failed).
+  - **Node 22**: **9/9 PASS** (0 failed).
+- Owner Pass 5 probe (`artifacts/review-r5a-owner-pass5-20261008/prepared-boundary-probe.mjs`):
+  - **Node 25**: **16/16 PASS** (0 failed).
+  - **Node 22**: **16/16 PASS** (0 failed).
+- Combat core test suite: **31 files PASS, 235 tests PASS**.
+- Targeted Mars test suites: **11 tests PASS**.
+- Golden suites:
+  - `npm run combat:ecs:golden` (V8): **7/7 presets stable (PASS)**.
+  - `npm run combat:ecs:v9:golden` (V9): **7/7 presets stable (PASS)**.
 - Typecheck (`npx tsc --noEmit --pretty false`): **0 errors**.
 - Architectural limits (`scripts/check-limits.ts`): **0 violations**.
 - Sealed R4b archive (`f610158b...`) и Fantasy SDK (`52a91f4e...`): **не изменялись (SHA256 инвариантны)**.
+
 

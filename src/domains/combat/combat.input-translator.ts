@@ -81,6 +81,8 @@ export function buildMarsPreparedStats(
     accuracyPenaltyResist: effective.accuracyPenaltyResist,
     burrowConfig: effective.burrowConfig,
     supportAuras: supportAuras ? (supportAuras as unknown as import('@mars2050/combat-core/contracts').SupportAuraModifierContract[]) : undefined,
+    periodicAbilities: effective.primitives?.periodicAbilities ? (effective.primitives.periodicAbilities as unknown as Record<string, unknown>[]) : (def?.baseStats?.periodicAbilities ? (def.baseStats.periodicAbilities as unknown as Record<string, unknown>[]) : undefined),
+    triggerEffects: effective.primitives?.triggerEffects ? (effective.primitives.triggerEffects as unknown as Record<string, unknown>[]) : (def?.baseStats?.triggerEffects ? (def.baseStats.triggerEffects as unknown as Record<string, unknown>[]) : undefined),
   }
 }
 

@@ -22,6 +22,37 @@ export interface DefWithPayloads {
  * Validates all nested spawn references and late creation effective stats in periodic abilities,
  * trigger effects, authored abilities, and catalog upgrades.
  */
+function validateSpawnPayloadItems(
+  items: unknown[] | undefined,
+  basePath: string,
+  ownerType: 'definition' | 'upgrade' | 'unit',
+  ownerId: string,
+  kindName: string,
+  allDefIds: Set<string>,
+  catalog?: CombatCatalog,
+  definitions?: Record<string, UnitDefinition>,
+): void {
+  if (!Array.isArray(items)) return
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i] as { id?: string; payload?: { kind?: string; unitType?: string; hpPercent?: number } } | undefined
+    if (item?.payload && typeof item.payload === 'object' && item.payload.kind === 'spawn') {
+      const p = item.payload
+      if (!p.unitType || !allDefIds.has(p.unitType)) {
+        throw new CombatDefinitionError(
+          'MISSING_SPAWN_DEFINITION',
+          `${ownerType} '${ownerId}' ${kindName} '${item.id ?? i}' spawns unknown definition '${p.unitType ?? ''}'`,
+          { path: `${basePath}[${i}].payload.unitType`, reference: p.unitType, definitionId: ownerId },
+        )
+      }
+      validateLateSpawnConfig(p.unitType, p.hpPercent, `${basePath}[${i}].payload`, catalog, definitions)
+    }
+  }
+}
+
+/**
+ * Validates all nested spawn references and late creation effective stats in periodic abilities,
+ * trigger effects, authored abilities, and catalog upgrades.
+ */
 export function validateNestedSpawnPayloads(
   allDefs: Record<string, DefWithPayloads>,
   allDefIds: Set<string>,
@@ -49,32 +80,8 @@ export function validateNestedSpawnPayloads(
         }
         validateLateSpawnConfig(mods.onDeathSpawn, undefined, `catalog.upgrades.${upgId}.modifiers.onDeathSpawn`, catalog, definitions)
       }
-      if (Array.isArray(mods.periodicAbilities)) {
-        for (let i = 0; i < mods.periodicAbilities.length; i++) {
-          const a = mods.periodicAbilities[i]
-          if (a?.payload && typeof a.payload === 'object' && a.payload.kind === 'spawn') {
-            const p = a.payload as { unitType?: string; hpPercent?: number }
-            if (!p.unitType || !allDefIds.has(p.unitType)) {
-              throw new CombatDefinitionError('MISSING_SPAWN_DEFINITION', `upgrade '${upgId}' periodicAbility '${a.id ?? i}' spawns unknown definition '${p.unitType ?? ''}'`,
-                { path: `catalog.upgrades.${upgId}.modifiers.periodicAbilities[${i}].payload.unitType`, reference: p.unitType, definitionId: upgId })
-            }
-            validateLateSpawnConfig(p.unitType, p.hpPercent, `catalog.upgrades.${upgId}.modifiers.periodicAbilities[${i}].payload`, catalog, definitions)
-          }
-        }
-      }
-      if (Array.isArray(mods.triggerEffects)) {
-        for (let i = 0; i < mods.triggerEffects.length; i++) {
-          const t = mods.triggerEffects[i]
-          if (t?.payload && typeof t.payload === 'object' && t.payload.kind === 'spawn') {
-            const p = t.payload as { unitType?: string; hpPercent?: number }
-            if (!p.unitType || !allDefIds.has(p.unitType)) {
-              throw new CombatDefinitionError('MISSING_SPAWN_DEFINITION', `upgrade '${upgId}' triggerEffect '${t.id ?? i}' spawns unknown definition '${p.unitType ?? ''}'`,
-                { path: `catalog.upgrades.${upgId}.modifiers.triggerEffects[${i}].payload.unitType`, reference: p.unitType, definitionId: upgId })
-            }
-            validateLateSpawnConfig(p.unitType, p.hpPercent, `catalog.upgrades.${upgId}.modifiers.triggerEffects[${i}].payload`, catalog, definitions)
-          }
-        }
-      }
+      validateSpawnPayloadItems(mods.periodicAbilities, `catalog.upgrades.${upgId}.modifiers.periodicAbilities`, 'upgrade', upgId, 'periodicAbility', allDefIds, catalog, definitions)
+      validateSpawnPayloadItems(mods.triggerEffects, `catalog.upgrades.${upgId}.modifiers.triggerEffects`, 'upgrade', upgId, 'triggerEffect', allDefIds, catalog, definitions)
     }
   }
 
@@ -89,53 +96,18 @@ export function validateNestedSpawnPayloads(
         }
         validateLateSpawnConfig(base.spawnType, undefined, `definitions.${id}.baseStats.spawnType`, catalog, definitions, base.spawnOverrides)
       }
-      if (Array.isArray(base.periodicAbilities)) {
-        for (let i = 0; i < base.periodicAbilities.length; i++) {
-          const a = base.periodicAbilities[i] as PeriodicAbilityConfig | undefined
-          if (a?.payload && typeof a.payload === 'object' && a.payload.kind === 'spawn') {
-            const p = a.payload as { unitType?: string; hpPercent?: number }
-            if (!p.unitType || !allDefIds.has(p.unitType)) {
-              throw new CombatDefinitionError('MISSING_SPAWN_DEFINITION', `definition '${id}' periodicAbility '${a.id ?? i}' spawns unknown definition '${p.unitType ?? ''}'`,
-                { path: `definitions.${id}.baseStats.periodicAbilities[${i}].payload.unitType`, reference: p.unitType, definitionId: id })
-            }
-            validateLateSpawnConfig(p.unitType, p.hpPercent, `definitions.${id}.baseStats.periodicAbilities[${i}].payload`, catalog, definitions)
-          }
-        }
-      }
-      if (Array.isArray(base.triggerEffects)) {
-        for (let i = 0; i < base.triggerEffects.length; i++) {
-          const t = base.triggerEffects[i]
-          if (t?.payload && typeof t.payload === 'object' && t.payload.kind === 'spawn') {
-            const p = t.payload as { unitType?: string; hpPercent?: number }
-            if (!p.unitType || !allDefIds.has(p.unitType)) {
-              throw new CombatDefinitionError('MISSING_SPAWN_DEFINITION', `definition '${id}' triggerEffect '${t.id ?? i}' spawns unknown definition '${p.unitType ?? ''}'`,
-                { path: `definitions.${id}.baseStats.triggerEffects[${i}].payload.unitType`, reference: p.unitType, definitionId: id })
-            }
-            validateLateSpawnConfig(p.unitType, p.hpPercent, `definitions.${id}.baseStats.triggerEffects[${i}].payload`, catalog, definitions)
-          }
-        }
-      }
-      validateAbilityListSpawns(id, `definitions.${id}.baseStats.abilities`, base.abilities, allDefIds, catalog, definitions)
+      validateSpawnPayloadItems(base.periodicAbilities, `definitions.${id}.baseStats.periodicAbilities`, 'definition', id, 'periodicAbility', allDefIds, catalog, definitions)
+      validateSpawnPayloadItems(base.triggerEffects, `definitions.${id}.baseStats.triggerEffects`, 'definition', id, 'triggerEffect', allDefIds, catalog, definitions)
+      validateAbilityListSpawns('definition', id, `definitions.${id}.baseStats.abilities`, base.abilities, allDefIds, catalog, definitions)
     }
-    if (Array.isArray(def.periodicAbilities)) {
-      for (let i = 0; i < def.periodicAbilities.length; i++) {
-        const a = def.periodicAbilities[i] as PeriodicAbilityConfig | undefined
-        if (a?.payload && typeof a.payload === 'object' && a.payload.kind === 'spawn') {
-          const p = a.payload as { unitType?: string; hpPercent?: number }
-          if (!p.unitType || !allDefIds.has(p.unitType)) {
-            throw new CombatDefinitionError('MISSING_SPAWN_DEFINITION', `definition '${id}' periodicAbility '${a.id ?? i}' spawns unknown definition '${p.unitType ?? ''}'`,
-              { path: `definitions.${id}.periodicAbilities[${i}].payload.unitType`, reference: p.unitType, definitionId: id })
-          }
-          validateLateSpawnConfig(p.unitType, p.hpPercent, `definitions.${id}.periodicAbilities[${i}].payload`, catalog, definitions)
-        }
-      }
-    }
-    validateAbilityListSpawns(id, `definitions.${id}.abilities`, def.abilities, allDefIds, catalog, definitions)
+    validateSpawnPayloadItems(def.periodicAbilities, `definitions.${id}.periodicAbilities`, 'definition', id, 'periodicAbility', allDefIds, catalog, definitions)
+    validateAbilityListSpawns('definition', id, `definitions.${id}.abilities`, def.abilities, allDefIds, catalog, definitions)
   }
 }
 
 function validateAbilityListSpawns(
-  defId: string,
+  ownerType: 'definition' | 'unit',
+  ownerId: string,
   basePath: string,
   abilities: unknown[] | undefined,
   allDefIds: Set<string>,
@@ -156,8 +128,8 @@ function validateAbilityListSpawns(
           if (payload && typeof payload === 'object' && payload.kind === 'spawn') {
             const p = payload as { unitType?: string; hpPercent?: number }
             if (!p.unitType || !allDefIds.has(p.unitType)) {
-              throw new CombatDefinitionError('MISSING_SPAWN_DEFINITION', `definition '${defId}' ability '${ab.id ?? i}' spawns unknown definition '${p.unitType ?? ''}'`,
-                { path: `${basePath}[${i}].effects[${g}].effects[${e}].payload.unitType`, reference: p.unitType, definitionId: defId })
+              throw new CombatDefinitionError('MISSING_SPAWN_DEFINITION', `${ownerType} '${ownerId}' ability '${ab.id ?? i}' spawns unknown definition '${p.unitType ?? ''}'`,
+                { path: `${basePath}[${i}].effects[${g}].effects[${e}].payload.unitType`, reference: p.unitType, definitionId: ownerId })
             }
             validateLateSpawnConfig(p.unitType, p.hpPercent, `${basePath}[${i}].effects[${g}].effects[${e}].payload`, catalog, definitions)
           }
@@ -165,6 +137,51 @@ function validateAbilityListSpawns(
       }
     }
   }
+}
+
+export function validateUnitSpawnPayloads(
+  unitIndex: number,
+  unit: import('./contracts/index.js').UnitSpawnSpec,
+  primitives: import('./combat.types.js').UnitBaseStats,
+  allDefIds?: Set<string>,
+  catalog?: CombatCatalog,
+  definitions?: Record<string, UnitDefinition>,
+): void {
+  if (!allDefIds) return
+  validateSpawnPayloadItems(
+    primitives.periodicAbilities,
+    `units[${unitIndex}].loadout.periodicAbilities`,
+    'unit',
+    unit.instanceId,
+    'periodicAbility',
+    allDefIds,
+    catalog,
+    definitions,
+  )
+  validateSpawnPayloadItems(
+    primitives.triggerEffects,
+    `units[${unitIndex}].loadout.triggerEffects`,
+    'unit',
+    unit.instanceId,
+    'triggerEffect',
+    allDefIds,
+    catalog,
+    definitions,
+  )
+  if (primitives.spawnerConfig) {
+    const sc = primitives.spawnerConfig as { unitType?: string; interval?: number; timer?: number }
+    if (sc.unitType && !allDefIds.has(sc.unitType)) {
+      throw new CombatDefinitionError(
+        'MISSING_SPAWN_DEFINITION',
+        `unit '${unit.instanceId}' spawnerConfig spawns unknown definition '${sc.unitType}'`,
+        { path: `units[${unitIndex}].spawnerConfig.unitType`, reference: sc.unitType, definitionId: unit.definitionId },
+      )
+    }
+    if (sc.unitType) {
+      validateLateSpawnConfig(sc.unitType, undefined, `units[${unitIndex}].spawnerConfig`, catalog, definitions)
+    }
+  }
+  validateAbilityListSpawns('unit', unit.instanceId, `units[${unitIndex}].loadout.abilities`, primitives.abilities, allDefIds, catalog, definitions)
 }
 
 /**

@@ -42,7 +42,7 @@ export const supportAuraTypeSchema = z.enum([
 export type SupportAuraType = z.infer<typeof supportAuraTypeSchema>
 
 export const supportAuraModifierSchema = z.object({
-  type: z.string(),
+  type: supportAuraTypeSchema,
   radius: z.number().finite(),
   value: z.number().finite().default(0),
   duration: z.number().int().nonnegative().optional(),

@@ -10,7 +10,7 @@ import { createLegacyAbilityDefinitions } from './combat.ability-legacy.js'
 import { compileTemporalWeaponPlan } from './combat.temporal-compiler.js'
 import { CombatDefinitionError } from './combat.definition-error.js'
 import { validatePeriodicAbilityConfig } from './combat.periodic-schema.js'
-
+import { validateUnitSpawnPayloads } from './combat.payload-validator.js'
 import { resolveEffectiveUnitBaseStats } from './combat.effective-loadout.js'
 
 /**
@@ -58,6 +58,7 @@ export function validateUnitLoadout(
   }
 
   const primitives = getRuntimePrimitiveStats(effectiveBase, unit.upgradeIds, upgradesCatalog)
+  validateUnitSpawnPayloads(unitIndex, unit, primitives, allDefIds, catalog, definitions)
 
   try {
     assertValidWeaponLoadout(unit.definitionId, primitives)

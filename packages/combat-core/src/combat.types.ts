@@ -37,7 +37,7 @@ export interface UnitBaseStats {
   hp: number; attack: number; defense: number; speed: number; range: number
   minimumRange?: number
   attackType: 'single' | 'aoe' | 'heal' | 'spawn' | 'beam' | 'spread'
-  aoeRadius?: number; spawnType?: string; spawnCap?: number; actionCooldownMax?: number
+  aoeRadius?: number; spawnType?: string; spawnCap?: number; spawnerConfig?: { unitType: string; interval: number; timer?: number }; actionCooldownMax?: number
   selfDestructOnAttack?: boolean
   spawnOverrides?: { hp?: number; attack?: number; isTemporary?: boolean; duration?: number }
   coneAttack?: ConeAttackConfig
@@ -89,8 +89,8 @@ export interface UnitTypeConfig {
   squadSize?: number
   squadSpacing?: number
   formation?: 'line' | 'wedge' | 'grid'
+  preparedStats?: import('./contracts/prepared.contracts.js').PreparedStats
 }
 
 export type { Team, CombatTag, StatusEffect, StatusType, HackControlMode, StanceMode, MobilityMode, UnitStanceConfig, UnitModeSwitchConfig, BurrowConfig, SupportAura, SupportAuraType, TargetMark, TargetMarkConfig, PercentHpDamageBasis, PercentHpDamageConfig, PeriodicAbilityConfig, RuntimePeriodicAbility, TriggerEffectConfig, RuntimeTriggerEffect, ControlBeamConfig, FieldEffectConfig, RuntimeFieldEffect, TransformModeConfig, FormationModifiersConfig, AttackChargeConfig, ConditionalAttackModeConfig, DelayedReassemblyConfig, StatGrowthConfig, SweepAttackConfig, TargetPriorityProfile, RankScalingConfig, ConditionalRangeConfig, FlatDamageBlockConfig, ShieldHitBlockConfig, LinePierceConfig, ConeAttackConfig, BeamAttackConfig, BarrageAttackConfig, ChainAttackConfig, SplitFireConfig, SideWeaponConfig, Obstacle, SimHazard, SimUnit } from './combat.sim.types.js'
 export * from './combat.actions.js'
-

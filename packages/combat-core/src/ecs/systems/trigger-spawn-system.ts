@@ -53,6 +53,7 @@ export function spawnEcsTriggerUnits(
       spawn: { inheritance: 'base' },
       overrides: { hpPercent: payload.hpPercent },
       catalog: world.resources.get('catalog') ?? getDefaultCombatCatalog(),
+      preparedStats: (spawnUnitDef as { preparedStats?: import('../../contracts/prepared.contracts.js').PreparedStats })?.preparedStats,
     })
     if (!unit) continue
     world.queueCompiledUnitCreation(unit)

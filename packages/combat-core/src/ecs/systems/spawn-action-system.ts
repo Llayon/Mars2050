@@ -151,6 +151,7 @@ function createSpawnedUnit(
       temporaryDuration: overrides?.duration,
     },
     catalog,
+    preparedStats: (spawnUnitDef as { preparedStats?: import('../../contracts/prepared.contracts.js').PreparedStats })?.preparedStats,
   })
   return unit
     ? { unit, spawnMaxHp: unit.components.vitality.maxHp }

@@ -49,5 +49,6 @@ export function mapDefinitionToUnitTypeConfig(def: UnitDefinition): UnitTypeConf
     squadSize: def.squadSize,
     squadSpacing: def.squadSpacing,
     formation: def.formation,
+    preparedStats: (rawDef.preparedStats ?? rawBase.preparedStats) as import('./contracts/prepared.contracts.js').PreparedStats | undefined,
   }
 }

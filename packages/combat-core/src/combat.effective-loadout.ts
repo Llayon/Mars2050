@@ -21,6 +21,8 @@ export function resolveEffectiveUnitBaseStats(
     healTargetTags: (clean.healTargetTags ?? baseStats.healTargetTags) as CombatTag[] | undefined,
     combatTags: (clean.combatTags ?? baseStats.combatTags) as CombatTag[] | undefined,
     targetingProfile: (clean.targetingProfile ?? baseStats.targetingProfile) as TargetingProfileKey | undefined,
+    periodicAbilities: (clean.periodicAbilities ?? baseStats.periodicAbilities) as UnitBaseStats['periodicAbilities'],
+    triggerEffects: (clean.triggerEffects ?? baseStats.triggerEffects) as UnitBaseStats['triggerEffects'],
   }
 
   if (clean.burrowConfig && !clean.burrowWhileMoving) {

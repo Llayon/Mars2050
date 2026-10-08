@@ -49,7 +49,7 @@ export function compileUnitStats(spec: UnitBuildSpec): CompiledUnitStats | null 
   const definition = unitCatalog[spec.definitionId]
   if (!definition) return null
   const upgradeIds = resolveUnitUpgradeIds(spec)
-  const p = spec.preparedStats
+  const p = spec.preparedStats ?? definition.preparedStats
   const base = resolveEffectiveUnitBaseStats(definition.baseStats, p)
   const primitives = getRuntimePrimitiveStats(base, upgradeIds, upgradesCatalog)
   if (p) {
