@@ -695,6 +695,426 @@
         "y": 60
       },
       "displaySize": 64
+    },
+    {
+      "assetId": "thorn-guardian",
+      "sourceId": "thorn-guardian",
+      "sourcePath": "examples/fantasy-art-lab/public/assets/roster-proportions-v3/thorn-guardian.png",
+      "sha256": "3ee61b80b372ea69789541246ecaedf12e37bc424edb23b24169f55ad1ce5abf",
+      "width": 64,
+      "height": 64,
+      "bounds": {
+        "minX": 11,
+        "minY": 2,
+        "maxX": 50,
+        "maxY": 56
+      },
+      "temporary": false,
+      "status": "candidate_needs_art_review",
+      "groundAnchor": {
+        "x": 32,
+        "y": 56
+      },
+      "displaySize": 64
+    },
+    {
+      "assetId": "thorn-huntress",
+      "sourceId": "thorn-huntress",
+      "sourcePath": "examples/fantasy-art-lab/public/assets/roster-proportions-v3/thorn-huntress.png",
+      "sha256": "b2573ea03f37d813496c9b1ffcc3ac4278fefd8e784e2f229c898546b123f302",
+      "width": 64,
+      "height": 64,
+      "bounds": {
+        "minX": 11,
+        "minY": 4,
+        "maxX": 52,
+        "maxY": 58
+      },
+      "temporary": false,
+      "status": "candidate_needs_art_review",
+      "groundAnchor": {
+        "x": 32,
+        "y": 58
+      },
+      "displaySize": 64
+    },
+    {
+      "assetId": "thorn-dryad",
+      "sourceId": "thorn-dryad",
+      "sourcePath": "examples/fantasy-art-lab/public/assets/roster-proportions-v3/thorn-dryad.png",
+      "sha256": "d453e10bce5211b981ea09c1bd1483ca178b166a2460fc00f4a57c3264e2c5d3",
+      "width": 64,
+      "height": 64,
+      "bounds": {
+        "minX": 10,
+        "minY": 3,
+        "maxX": 55,
+        "maxY": 60
+      },
+      "temporary": false,
+      "status": "candidate_needs_art_review",
+      "groundAnchor": {
+        "x": 32,
+        "y": 60
+      },
+      "displaySize": 64
+    },
+    {
+      "assetId": "thorn-sporeling",
+      "sourceId": "thorn-sporeling",
+      "sourcePath": "examples/fantasy-art-lab/public/assets/roster-proportions-v3/thorn-sporeling.png",
+      "sha256": "8455d4ec6436dff28115f4fc89d859b99e5c3fa556f534efbf8a8aaee7265ffa",
+      "width": 64,
+      "height": 64,
+      "bounds": {
+        "minX": 19,
+        "minY": 9,
+        "maxX": 52,
+        "maxY": 52
+      },
+      "temporary": false,
+      "status": "candidate_needs_art_review",
+      "groundAnchor": {
+        "x": 32,
+        "y": 52
+      },
+      "displaySize": 64
+    },
+    {
+      "assetId": "thorn-antler-sentinel",
+      "sourceId": "thorn-antler-sentinel",
+      "sourcePath": "examples/fantasy-art-lab/public/assets/roster-proportions-v3/thorn-antler-sentinel.png",
+      "sha256": "2754d071d6e26b1fbd8f7d3c665caedbeb1c42873653e54785d15decbc8bba6b",
+      "width": 64,
+      "height": 64,
+      "bounds": {
+        "minX": 7,
+        "minY": 1,
+        "maxX": 46,
+        "maxY": 57
+      },
+      "temporary": false,
+      "status": "candidate_needs_art_review",
+      "groundAnchor": {
+        "x": 32,
+        "y": 57
+      },
+      "displaySize": 64
+    },
+    {
+      "assetId": "thorn-vine-weaver",
+      "sourceId": "thorn-vine-weaver",
+      "sourcePath": "examples/fantasy-art-lab/public/assets/roster-proportions-v3/thorn-vine-weaver.png",
+      "sha256": "f38a37fee30681eadd965654e5081c67bc01d7b1875dca58b3b93311717f8b65",
+      "width": 64,
+      "height": 64,
+      "bounds": {
+        "minX": 3,
+        "minY": 4,
+        "maxX": 50,
+        "maxY": 59
+      },
+      "temporary": false,
+      "status": "candidate_needs_art_review",
+      "groundAnchor": {
+        "x": 32,
+        "y": 59
+      },
+      "displaySize": 64
+    },
+    {
+      "assetId": "thorn-wild-boar",
+      "sourceId": "thorn-wild-boar",
+      "sourcePath": "examples/fantasy-art-lab/public/assets/roster-proportions-v3/thorn-wild-boar.png",
+      "sha256": "53fe6884a2a39b1fee8b1e9d8f33aae9222c1116bc49db0c18e06927334855d7",
+      "width": 64,
+      "height": 64,
+      "bounds": {
+        "minX": 5,
+        "minY": 10,
+        "maxX": 58,
+        "maxY": 54
+      },
+      "temporary": false,
+      "status": "candidate_needs_art_review",
+      "groundAnchor": {
+        "x": 32,
+        "y": 54
+      },
+      "displaySize": 64
+    },
+    {
+      "assetId": "thorn-owlbear",
+      "sourceId": "thorn-owlbear",
+      "sourcePath": "examples/fantasy-art-lab/public/assets/roster-proportions-v3/thorn-owlbear.png",
+      "sha256": "041b93f0119125bd29eea15b6b600a445045e4a78aa02bda26c908d533df4f3e",
+      "width": 64,
+      "height": 64,
+      "bounds": {
+        "minX": 2,
+        "minY": 1,
+        "maxX": 60,
+        "maxY": 62
+      },
+      "temporary": false,
+      "status": "candidate_needs_art_review",
+      "groundAnchor": {
+        "x": 32,
+        "y": 62
+      },
+      "displaySize": 64
+    },
+    {
+      "assetId": "thorn-wolf-brother",
+      "sourceId": "thorn-wolf-brother",
+      "sourcePath": "examples/fantasy-art-lab/public/assets/roster-proportions-v3/thorn-wolf-brother.png",
+      "sha256": "9ed7fb81f3a4ff28b97a5dcba1030f06fbd46ef581b7715d878a6b70b303cb3a",
+      "width": 64,
+      "height": 64,
+      "bounds": {
+        "minX": 10,
+        "minY": 4,
+        "maxX": 45,
+        "maxY": 59
+      },
+      "temporary": false,
+      "status": "candidate_needs_art_review",
+      "groundAnchor": {
+        "x": 32,
+        "y": 59
+      },
+      "displaySize": 64
+    },
+    {
+      "assetId": "thorn-giant-hunter",
+      "sourceId": "thorn-giant-hunter",
+      "sourcePath": "examples/fantasy-art-lab/public/assets/roster-proportions-v3/thorn-giant-hunter.png",
+      "sha256": "90f8d7c88430f95a3f30d3ce1908380d97125862e3b7ae38b3541fdce52c14c2",
+      "width": 64,
+      "height": 64,
+      "bounds": {
+        "minX": 5,
+        "minY": 4,
+        "maxX": 56,
+        "maxY": 58
+      },
+      "temporary": false,
+      "status": "candidate_needs_art_review",
+      "groundAnchor": {
+        "x": 32,
+        "y": 58
+      },
+      "displaySize": 64
+    },
+    {
+      "assetId": "forge-rune-guard",
+      "sourceId": "forge-rune-guard",
+      "sourcePath": "examples/fantasy-art-lab/public/assets/roster-proportions-v3/forge-rune-guard.png",
+      "sha256": "c21e013fd96500603d849b0ef460a26ff2b7a2a61753fe5c3897737834131151",
+      "width": 64,
+      "height": 64,
+      "bounds": {
+        "minX": 4,
+        "minY": 3,
+        "maxX": 56,
+        "maxY": 59
+      },
+      "temporary": false,
+      "status": "candidate_needs_art_review",
+      "groundAnchor": {
+        "x": 32,
+        "y": 59
+      },
+      "displaySize": 64
+    },
+    {
+      "assetId": "forge-thunderer",
+      "sourceId": "forge-thunderer",
+      "sourcePath": "examples/fantasy-art-lab/public/assets/roster-proportions-v3/forge-thunderer.png",
+      "sha256": "dfe36404fd39df8a9711f91823999f4b7c6f76dc1ea5a30ffcc82f0fd55aab52",
+      "width": 64,
+      "height": 64,
+      "bounds": {
+        "minX": 5,
+        "minY": 2,
+        "maxX": 60,
+        "maxY": 61
+      },
+      "temporary": false,
+      "status": "candidate_needs_art_review",
+      "groundAnchor": {
+        "x": 32,
+        "y": 61
+      },
+      "displaySize": 64
+    },
+    {
+      "assetId": "forge-sealsmith",
+      "sourceId": "forge-sealsmith",
+      "sourcePath": "examples/fantasy-art-lab/public/assets/roster-proportions-v3/forge-sealsmith.png",
+      "sha256": "0e723fdd21c8f558677b4b66cafb5d80b52b097d477c5cdb1fef4bcc5ee0d7a6",
+      "width": 64,
+      "height": 64,
+      "bounds": {
+        "minX": 2,
+        "minY": 3,
+        "maxX": 48,
+        "maxY": 59
+      },
+      "temporary": false,
+      "status": "candidate_needs_art_review",
+      "groundAnchor": {
+        "x": 32,
+        "y": 59
+      },
+      "displaySize": 64
+    },
+    {
+      "assetId": "forge-shard-golem",
+      "sourceId": "forge-shard-golem",
+      "sourcePath": "examples/fantasy-art-lab/public/assets/roster-proportions-v3/forge-shard-golem.png",
+      "sha256": "81d3f188c454a8996e99d590404a415c5b5e4b1ff67b4b1eb1d9ccbd45beefd6",
+      "width": 64,
+      "height": 64,
+      "bounds": {
+        "minX": 6,
+        "minY": 8,
+        "maxX": 58,
+        "maxY": 56
+      },
+      "temporary": false,
+      "status": "candidate_needs_art_review",
+      "groundAnchor": {
+        "x": 32,
+        "y": 56
+      },
+      "displaySize": 64
+    },
+    {
+      "assetId": "forge-ember-projector",
+      "sourceId": "forge-ember-projector",
+      "sourcePath": "examples/fantasy-art-lab/public/assets/roster-proportions-v3/forge-ember-projector.png",
+      "sha256": "899d2f7eb92dc62c871f33b4f97f8177a9d3ad55fe4e8d03badb52081ec614b1",
+      "width": 64,
+      "height": 64,
+      "bounds": {
+        "minX": 7,
+        "minY": 4,
+        "maxX": 55,
+        "maxY": 60
+      },
+      "temporary": false,
+      "status": "candidate_needs_art_review",
+      "groundAnchor": {
+        "x": 32,
+        "y": 60
+      },
+      "displaySize": 64
+    },
+    {
+      "assetId": "forge-pavise-arbalist",
+      "sourceId": "forge-pavise-arbalist",
+      "sourcePath": "examples/fantasy-art-lab/public/assets/roster-proportions-v3/forge-pavise-arbalist.png",
+      "sha256": "bf3a75e8a111445165b2702927c31c1e5ba70277ce1817dd06e26edca6642214",
+      "width": 64,
+      "height": 64,
+      "bounds": {
+        "minX": 8,
+        "minY": 1,
+        "maxX": 55,
+        "maxY": 61
+      },
+      "temporary": false,
+      "status": "candidate_needs_art_review",
+      "groundAnchor": {
+        "x": 32,
+        "y": 61
+      },
+      "displaySize": 64
+    },
+    {
+      "assetId": "forge-tunnel-borer",
+      "sourceId": "forge-tunnel-borer",
+      "sourcePath": "examples/fantasy-art-lab/public/assets/roster-proportions-v3/forge-tunnel-borer.png",
+      "sha256": "a870c030395946eae5a8bb2f90370fabe03b27857bb67586a23eb300a45f8424",
+      "width": 64,
+      "height": 64,
+      "bounds": {
+        "minX": 8,
+        "minY": 4,
+        "maxX": 57,
+        "maxY": 58
+      },
+      "temporary": false,
+      "status": "candidate_needs_art_review",
+      "groundAnchor": {
+        "x": 32,
+        "y": 58
+      },
+      "displaySize": 64
+    },
+    {
+      "assetId": "forge-crystalmancer",
+      "sourceId": "forge-crystalmancer",
+      "sourcePath": "examples/fantasy-art-lab/public/assets/roster-proportions-v3/forge-crystalmancer.png",
+      "sha256": "67f10d3fe2a9fb92f77eab1de931ebeafea1c7194d0674014e37396c8720e955",
+      "width": 64,
+      "height": 64,
+      "bounds": {
+        "minX": 8,
+        "minY": 8,
+        "maxX": 49,
+        "maxY": 55
+      },
+      "temporary": false,
+      "status": "candidate_needs_art_review",
+      "groundAnchor": {
+        "x": 32,
+        "y": 55
+      },
+      "displaySize": 64
+    },
+    {
+      "assetId": "forge-stone-ram",
+      "sourceId": "forge-stone-ram",
+      "sourcePath": "examples/fantasy-art-lab/public/assets/roster-proportions-v3/forge-stone-ram.png",
+      "sha256": "d5e6de59c557fd3555dfc444647986960d908f9b26af4d5f130e4df3d26269aa",
+      "width": 64,
+      "height": 64,
+      "bounds": {
+        "minX": 7,
+        "minY": 6,
+        "maxX": 57,
+        "maxY": 57
+      },
+      "temporary": false,
+      "status": "candidate_needs_art_review",
+      "groundAnchor": {
+        "x": 32,
+        "y": 57
+      },
+      "displaySize": 64
+    },
+    {
+      "assetId": "forge-powder-grenadier",
+      "sourceId": "forge-powder-grenadier",
+      "sourcePath": "examples/fantasy-art-lab/public/assets/roster-proportions-v3/forge-powder-grenadier.png",
+      "sha256": "da9be53ca65076faef7a116189150449a9bc0b3f1f0517da4dece1e625e62a29",
+      "width": 64,
+      "height": 64,
+      "bounds": {
+        "minX": 5,
+        "minY": 3,
+        "maxX": 54,
+        "maxY": 59
+      },
+      "temporary": false,
+      "status": "candidate_needs_art_review",
+      "groundAnchor": {
+        "x": 32,
+        "y": 59
+      },
+      "displaySize": 64
     }
   ]
 }
