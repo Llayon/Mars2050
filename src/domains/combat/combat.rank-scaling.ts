@@ -1,6 +1,6 @@
-import { getUnitRank as getCoreUnitRank } from '@mars2050/combat-core/combat.rank-scaling'
+import { getUnitRank as getCoreUnitRank, applyRankScaling, type RankScaledStats } from '@mars2050/combat-core'
 
-export * from '@mars2050/combat-core/combat.rank-scaling'
+export { applyRankScaling, type RankScaledStats }
 
 export function getUnitRank(unit: { rank?: number | null; tier?: number | null }): number {
   return getCoreUnitRank({ rank: unit.rank ?? unit.tier ?? 1 })

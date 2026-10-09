@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { BattleAction } from '@/domains/combat/combat.actions'
-import type { SimUnit, Team } from '@/domains/combat/combat.types'
+import type { Team } from '@/domains/combat/combat.types'
+import type { SimUnit } from '@/domains/combat/combat.sim.types'
 import { PRNG } from '@/domains/combat/combat.utils'
 import { CombatWorld } from '@/domains/combat/ecs/combat-world'
 import { EntitySpatialIndex } from '@/domains/combat/ecs/entity-spatial-index'

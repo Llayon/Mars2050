@@ -1,4 +1,4 @@
-import { getRuntimePrimitiveStats as coreGetRuntimePrimitiveStats } from '@mars2050/combat-core/combat.upgrade-primitives'
+import { getRuntimePrimitiveStats as coreGetRuntimePrimitiveStats } from '@mars2050/combat-core'
 import type { UnitBaseStats } from './combat.types'
 import type { UpgradeConfig } from './combat.upgrades'
 import { UPGRADES, buildMarsUpgrades } from './combat.upgrades'
@@ -19,5 +19,10 @@ export function getRuntimePrimitiveStats(
   preparedStats?: import('@mars2050/combat-core/contracts').PreparedStats,
 ): UnitBaseStats {
   const preparedCatalog = buildMarsUpgrades(upgradesCatalog ?? UPGRADES)
-  return coreGetRuntimePrimitiveStats(baseStats, upgradePath, preparedCatalog, preparedStats)
+  return coreGetRuntimePrimitiveStats(
+    baseStats as unknown as Parameters<typeof coreGetRuntimePrimitiveStats>[0],
+    upgradePath,
+    preparedCatalog as unknown as Parameters<typeof coreGetRuntimePrimitiveStats>[2],
+    preparedStats,
+  ) as unknown as UnitBaseStats
 }

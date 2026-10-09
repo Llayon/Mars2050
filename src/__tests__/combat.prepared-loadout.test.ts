@@ -4,11 +4,11 @@ import {
   buildMarsPreparedStats,
   buildMarsUnitDefinitions,
   buildMarsUpgrades,
-} from '../domains/combat/combat.input-translator'
-import { createRuntimeSquad } from '../domains/combat/combat.squad-factory'
-import { PRNG } from '../domains/combat/combat.utils'
+} from '@/domains/combat/combat.input-translator'
+import { createRuntimeSquad } from '@/domains/combat/combat.squad-factory'
+import { PRNG } from '@/domains/combat/combat.utils'
 import { simulateCombat } from '@mars2050/combat-core'
-import type { UnitRow } from '../domains/combat/combat.types'
+import type { UnitRow } from '@/domains/combat/combat.types'
 import type { UnitsType } from '@/types/database'
 
 function makeRow(id: string, unit_type: UnitsType = 'marine', overrides: Partial<UnitRow> = {}): UnitRow {
@@ -65,18 +65,18 @@ describe('Mars Adapter: Prepared loadout emission and parity', () => {
 
     const squad = createRuntimeSquad(rowWithSensor, 'attacker', rng)
     expect(squad).toHaveLength(1)
-    expect(squad[0].supportAuras?.some(a => a.type === 'reveal')).toBe(true)
+    expect(squad[0].supportAuras?.some((a: { type?: string }) => a.type === 'reveal')).toBe(true)
 
     const translated = translateMarsBattleInput([rowWithSensor], [makeRow('d1')], 123, [], [], [], { maxTicks: 1 })
     const translatedUnit = translated.units.find(u => u.instanceId === 'u1')!
     expect(translatedUnit.upgradeIds).toContain('sensor_suite')
-    expect(translatedUnit.preparedStats?.supportAuras?.some(a => a.type === 'reveal')).toBe(true)
+    expect(translatedUnit.preparedStats?.supportAuras?.some((a: { type?: string }) => a.type === 'reveal')).toBe(true)
 
     const detached = structuredClone(translated)
     detached.units[0].upgradeIds = []
     const simResult = simulateCombat(detached)
     const scout = simResult.initialState.find(u => u.id === 'u1')!
-    expect(scout.supportAuras?.some(a => a.type === 'reveal')).toBe(true)
+    expect(scout.supportAuras?.some((a: { type?: string }) => a.type === 'reveal')).toBe(true)
   })
 
   it('createRuntimeSquad normalizes legacy tier: 2 into rank: 2', () => {
@@ -165,7 +165,7 @@ describe('Mars Adapter: Prepared loadout emission and parity', () => {
       makeRow('m1', 'marine', { hp_current: 300 }),
       'attacker',
       new PRNG(42),
-      customCatalog as unknown as import('@mars2050/combat-core/combat.catalog.types').CombatCatalog,
+      customCatalog as unknown as import('@mars2050/combat-core').CombatCatalog,
     )
     expect(squad[0].hp).toBe(300)
     expect(squad[0].maxHp).toBe(300)

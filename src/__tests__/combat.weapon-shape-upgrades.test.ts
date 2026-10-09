@@ -8,10 +8,11 @@ import { getRuntimePrimitiveStats } from '@/domains/combat/combat.upgrade-primit
 import type { SimUnit, Team } from '@/domains/combat/combat.types'
 import { PRNG } from '@/domains/combat/combat.utils'
 import { CombatWorld } from '@/domains/combat/ecs/combat-world'
+import type { UnitSnapshot } from '@/domains/combat/combat.unit-components'
 import { EntitySpatialIndex } from '@/domains/combat/ecs/entity-spatial-index'
 import { runActionSystem } from '@/domains/combat/ecs/systems'
 
-function makeUnit(overrides: Partial<SimUnit> & { id: string; team: Team }): SimUnit {
+function makeUnit(overrides: Partial<UnitSnapshot> & { id: string; team: Team }): UnitSnapshot {
   return {
     type: 'marine',
     rank: 1,
@@ -38,7 +39,7 @@ function makeUnit(overrides: Partial<SimUnit> & { id: string; team: Team }): Sim
     aggroLockTicks: 0,
     velocity: { x: 0, y: 0 },
     ...overrides,
-  }
+  } as unknown as UnitSnapshot
 }
 
 function withUpgrade(id: string, upgrade: UpgradeConfig, run: () => void): void {
@@ -50,7 +51,7 @@ function withUpgrade(id: string, upgrade: UpgradeConfig, run: () => void): void 
   }
 }
 
-function runAction(units: SimUnit[], actions: BattleAction[]) {
+function runAction(units: UnitSnapshot[], actions: BattleAction[]) {
   const world = new CombatWorld(units)
   const spatial = new EntitySpatialIndex()
   spatial.rebuild(world)
@@ -66,7 +67,7 @@ describe('weapon shape upgrade modifiers', () => {
   it('adds beam attack geometry through upgrade runtime stats', () => {
     withUpgrade('test_beam_shape', { id: 'test_beam_shape', name: 'Beam', description: 'test', cost: 0, allowedUnits: ['marine'], modifiers: { beamAttack: { width: 18, damageMultiplier: 0.5, maxTargets: 2 } } }, () => {
       const attacker = makeUnit({ id: 'beam', team: 'attacker' })
-      const stats = getRuntimePrimitiveStats(UNIT_TYPES.marine.baseStats, ['test_beam_shape'])
+      const stats = getRuntimePrimitiveStats(UNIT_TYPES.marine.baseStats as unknown as Parameters<typeof getRuntimePrimitiveStats>[0], ['test_beam_shape'])
       prepareRuntimePrimitives(attacker, stats)
       const primary = makeUnit({ id: 'primary', team: 'defender', x: 80 })
       const secondary = makeUnit({ id: 'secondary', team: 'defender', x: 130, y: 8 })
@@ -84,7 +85,7 @@ describe('weapon shape upgrade modifiers', () => {
   it('adds side weapon geometry through upgrade runtime stats', () => {
     withUpgrade('test_side_weapon', { id: 'test_side_weapon', name: 'Side', description: 'test', cost: 0, allowedUnits: ['marine'], modifiers: { sideWeapon: { damage: 7, range: 4, maxTargets: 1 } } }, () => {
       const attacker = makeUnit({ id: 'side-gun', team: 'attacker' })
-      const stats = getRuntimePrimitiveStats(UNIT_TYPES.marine.baseStats, ['test_side_weapon'])
+      const stats = getRuntimePrimitiveStats(UNIT_TYPES.marine.baseStats as unknown as Parameters<typeof getRuntimePrimitiveStats>[0], ['test_side_weapon'])
       prepareRuntimePrimitives(attacker, stats)
       const primary = makeUnit({ id: 'primary', team: 'defender', x: 80 })
       const side = makeUnit({ id: 'side', team: 'defender', x: 120, y: 20 })

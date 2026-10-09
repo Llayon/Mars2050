@@ -5,7 +5,7 @@ import { applyEcsCapturedDamage } from '@/domains/combat/ecs/systems/damage-syst
 import { resolveEcsDeath } from '@/domains/combat/ecs/systems/death-system'
 import type { DamageSourceContext } from '@/domains/combat/ecs/damage-source'
 import { EcsActionGroupLedger } from '@/domains/combat/combat.action-intent'
-import { createCombatMetrics, recordCombatActions } from '@/domains/combat/combat.metrics'
+import { createCombatMetrics, recordCombatActions } from '@/domains/combat/combat.metrics-collector'
 
 function source(sourceEntityId?: number): DamageSourceContext {
   return {

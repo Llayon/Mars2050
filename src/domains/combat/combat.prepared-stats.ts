@@ -1,13 +1,18 @@
-import type { PreparedStats, UnitDefinition, SupportAuraModifierContract, BurrowConfigContract } from '@mars2050/combat-core/contracts'
-import { extractSupportAuras } from '@mars2050/combat-core'
-import type { RankScalingConfig } from './combat.sim.types'
+import type {
+  PreparedStats,
+  UnitDefinition,
+  SupportAuraModifierContract,
+  BurrowConfigContract,
+  RankScalingConfigContract as RankScalingConfig,
+} from '@mars2050/combat-core/contracts'
+import { extractSupportAuras, type CombatCatalog } from '@mars2050/combat-core'
 import { applyRankScaling } from './combat.rank-scaling'
 import { buildMarsUnitDefinitions } from './combat.unit-definitions'
 import { buildMarsUpgrades, type UpgradeConfig } from './combat.upgrades'
 import { collectMarsPreparedPrimitives } from './combat.prepared-primitives'
 
 export type MarsCatalogInput =
-  | import('@mars2050/combat-core/combat.catalog.types').CombatCatalog
+  | CombatCatalog
   | { upgrades?: Readonly<Record<string, { modifiers?: Partial<UpgradeConfig['modifiers']> | Record<string, unknown> }>> }
 
 /**
@@ -118,13 +123,13 @@ export function buildMarsPreparedStats(
     rank,
   )
 
-  const authoredAuras = extractSupportAuras((def.abilities ?? def.baseStats.abilities) as import('@mars2050/combat-core/combat.ability.types').AbilityDefinition[] | undefined)
+  const authoredAuras = extractSupportAuras((def.abilities ?? def.baseStats.abilities) as Parameters<typeof extractSupportAuras>[0])
   const auras = [
-    ...((def.baseStats.supportAuras as import('@mars2050/combat-core/combat.sim.types').SupportAura[] | undefined) ?? []),
+    ...((def.baseStats.supportAuras as SupportAuraModifierContract[] | undefined) ?? []),
     ...authoredAuras,
   ]
   for (const upgradeId of upgradeIds) {
-    const extraAuras = (upgradeRecord[upgradeId]?.modifiers as { supportAuras?: import('@mars2050/combat-core/combat.sim.types').SupportAura[] } | undefined)?.supportAuras
+    const extraAuras = (upgradeRecord[upgradeId]?.modifiers as { supportAuras?: SupportAuraModifierContract[] } | undefined)?.supportAuras
     if (extraAuras && Array.isArray(extraAuras)) {
       for (const aura of extraAuras) auras.push({ ...aura })
     }

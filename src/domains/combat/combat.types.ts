@@ -1,6 +1,51 @@
 import { Database, UnitsType } from '@/types/database'
+import type {
+  CombatMetadata,
+  CombatSnapshotUnit,
+  Obstacle,
+  Team,
+  BaseStats,
+  PreparedStats,
+} from '@mars2050/combat-core/contracts'
+import type { UnitBaseStats, SimUnit } from '@mars2050/combat-core'
+import type {
+  BattleAction,
+  BattleActionType,
+  BattleResult,
+  BattleTick,
+  AttackCancelReason,
+} from './combat.actions'
+
 export type UnitRow = Database['public']['Tables']['units']['Row']
 export type BattleRow = Database['public']['Tables']['battles']['Row']
 export type UnitTypeKey = UnitsType
-export * from '@mars2050/combat-core/combat.types'
-export type { CombatMetadata } from '@mars2050/combat-core/contracts'
+
+export interface UnitTypeConfig {
+  name: string
+  baseStats: UnitBaseStats
+  hireCost: Record<string, number>
+  recruitable?: boolean
+  squadSize?: number
+  squadSpacing?: number
+  formation?: 'line' | 'wedge' | 'grid'
+  preparedStats?: PreparedStats
+}
+
+export type {
+  CombatMetadata,
+  CombatSnapshotUnit,
+  Obstacle,
+  Team,
+  UnitBaseStats,
+  BaseStats,
+  PreparedStats,
+}
+export type {
+  BattleAction,
+  BattleActionType,
+  BattleResult,
+  BattleTick,
+  AttackCancelReason,
+  SimUnit,
+}
+export { BATTLE_ACTION_TYPES } from './combat.actions'

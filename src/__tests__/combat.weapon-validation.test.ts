@@ -6,7 +6,7 @@ import type { UnitBaseStats } from '@/domains/combat/combat.types'
 describe('combat weapon loadout validation', () => {
   it('accepts every configured base unit', () => {
     for (const [unitType, config] of Object.entries(UNIT_TYPES)) {
-      expect(() => assertValidWeaponLoadout(unitType, config.baseStats)).not.toThrow()
+      expect(() => assertValidWeaponLoadout(unitType, config.baseStats as unknown as Parameters<typeof assertValidWeaponLoadout>[1])).not.toThrow()
     }
   })
 
@@ -17,8 +17,8 @@ describe('combat weapon loadout validation', () => {
       sideWeapon: { damage: 4, range: 2, maxTargets: 1 },
     }
 
-    expect(getAreaGeometries(stats)).toEqual(['cone'])
-    expect(() => assertValidWeaponLoadout('valid', stats)).not.toThrow()
+    expect(getAreaGeometries(stats as unknown as Parameters<typeof getAreaGeometries>[0])).toEqual(['cone'])
+    expect(() => assertValidWeaponLoadout('valid', stats as unknown as Parameters<typeof assertValidWeaponLoadout>[1])).not.toThrow()
   })
 
   it('rejects multiple area geometries before simulation', () => {
@@ -27,7 +27,7 @@ describe('combat weapon loadout validation', () => {
       chainAttack: { jumps: 2, radius: 80, damageMultiplier: 0.5 },
     }
 
-    expect(() => assertValidWeaponLoadout('invalid', stats)).toThrow(/cone, chain/)
+    expect(() => assertValidWeaponLoadout('invalid', stats as unknown as Parameters<typeof assertValidWeaponLoadout>[1])).toThrow(/cone, chain/)
   })
 })
 

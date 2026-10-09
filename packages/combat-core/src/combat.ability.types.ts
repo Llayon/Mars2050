@@ -1,5 +1,10 @@
 import type { BarrageAttackConfig, BeamAttackConfig, ChainAttackConfig, ConeAttackConfig, LinePierceConfig, PeriodicAbilityConfig, SideWeaponConfig, SplitFireConfig, StatusType, SupportAura } from './combat.primitives.js'
-import type { AuthoredEffectPosition } from './ecs/defense-batch.js'
+export interface AuthoredEffectPosition {
+  readonly programIndex: number
+  readonly groupIndex: number
+  readonly targetOrdinal: number
+  readonly effectIndex: number
+}
 
 export type AbilityTrigger =
   | { kind: 'weapon_attack' }

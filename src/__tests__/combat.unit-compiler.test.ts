@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { compileUnit } from '@/domains/combat/combat.unit-compiler'
@@ -43,7 +43,10 @@ describe('combat unit compiler', () => {
   })
 
   it('keeps the ECS runtime independent from the design catalog', () => {
-    const root = join(process.cwd(), 'src', 'domains', 'combat', 'ecs')
+    const localRoot = join(process.cwd(), 'src', 'domains', 'combat', 'ecs')
+    const root = existsSync(localRoot)
+      ? localRoot
+      : join(process.cwd(), 'packages', 'combat-core', 'src', 'ecs')
     const files = collectTypeScriptFiles(root)
     const violations = files.filter(file => {
       const source = readFileSync(file, 'utf8')

@@ -1,7 +1,7 @@
 import type { CombatRunResult, CombatSnapshotUnit } from '@mars2050/combat-core/contracts'
 import { deserializeCombatAction, deserializeCombatUnitSnapshot } from '@mars2050/combat-core/replay'
 import type { BattleResult, BattleTick } from './combat.types'
-import type { Obstacle } from './combat.sim.types'
+import type { Obstacle } from '@mars2050/combat-core/contracts'
 import type { CombatMetrics } from './combat.metrics'
 import type { SpatialQueryProfile } from './combat.spatial-profile'
 

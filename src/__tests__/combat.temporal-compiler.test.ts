@@ -4,7 +4,7 @@ import { barrageAbility } from '@/domains/combat/combat.ability-config'
 import { compileTemporalWeaponPlan } from '@/domains/combat/combat.temporal-compiler'
 import type { UnitBaseStats } from '@/domains/combat/combat.types'
 
-function stats(overrides: Partial<UnitBaseStats> = {}): UnitBaseStats {
+function stats(overrides: Partial<UnitBaseStats> = {}): Parameters<typeof compileTemporalWeaponPlan>[1] {
   return {
     hp: 100,
     attack: 20,
@@ -13,7 +13,7 @@ function stats(overrides: Partial<UnitBaseStats> = {}): UnitBaseStats {
     range: 5,
     attackType: 'single',
     ...overrides,
-  }
+  } as unknown as Parameters<typeof compileTemporalWeaponPlan>[1]
 }
 
 describe('compiled temporal weapon plans', () => {

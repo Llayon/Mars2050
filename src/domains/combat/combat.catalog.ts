@@ -1,5 +1,4 @@
-import { mapDefinitionToUnitTypeConfig } from '@mars2050/combat-core'
-import type { CombatCatalog } from '@mars2050/combat-core/combat.catalog.types'
+import { mapDefinitionToUnitTypeConfig, type CombatCatalog } from '@mars2050/combat-core'
 import type { UnitTypeConfig } from './combat.types'
 import { UNIT_TYPES } from './combat.config'
 import { buildMarsUnitDefinitions } from './combat.unit-definitions'
@@ -18,11 +17,11 @@ function createMarsCombatCatalog(): CombatCatalog {
       ...config,
       hireCost: rawTypes[key]?.hireCost ?? {},
       preparedStats: buildMarsPreparedStats(key, 1, [], tempCatalog, rawDefs),
-    }
+    } as unknown as UnitTypeConfig
   }
   return {
-    unitTypes,
-    upgrades,
+    unitTypes: unitTypes as unknown as CombatCatalog['unitTypes'],
+    upgrades: upgrades as unknown as CombatCatalog['upgrades'],
   }
 }
 

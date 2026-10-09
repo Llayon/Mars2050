@@ -24,7 +24,7 @@ interface MetricUnitState {
   x: number
   y: number
   isDead: boolean
-  size: SimUnit['size']
+  size: NonNullable<SimUnit['size']>
   isFlying: boolean
 }
 

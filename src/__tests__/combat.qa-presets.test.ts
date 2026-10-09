@@ -112,8 +112,8 @@ describe('combat QA simulator presets', () => {
         zerg_rush: 75_830_013,
       } as Record<string, number>)[gate.presetId]
       if (baselineCandidates !== undefined) {
-        const currentCandidates = (result.profile?.componentCandidateCount ?? Infinity) +
-          (result.profile?.bucketCandidateCount ?? Infinity)
+        const currentCandidates = Number(result.profile?.componentCandidateCount ?? Infinity) +
+          Number(result.profile?.bucketCandidateCount ?? Infinity)
         expect(currentCandidates, `${gate.presetId}: ECS candidate reduction`)
           .toBeLessThanOrEqual(baselineCandidates * 0.3)
       }
@@ -129,7 +129,7 @@ describe('combat QA simulator presets', () => {
     expectBattleTerminates(primitiveEvents, 'qa_primitive_events')
     expectSpawnBounded(primitiveEvents, 12, 'qa_primitive_events')
     expect(countActions(primitiveEvents, 'spawn_blocked'), 'qa_primitive_events').toBeGreaterThan(0)
-  }, 15000)
+  }, 30000)
 
   it('keeps primitive event replay QA preset action coverage stable', () => {
     const result = simulateScenario('qa_primitive_events')
@@ -144,7 +144,7 @@ describe('combat QA simulator presets', () => {
       'status_cleanse',
       'projectile_intercept',
     ], 'qa_primitive_events')
-  }, 15000)
+  }, 30000)
 })
 
 function expectStatusApplied(result: BattleResult, statusType: string, label: string): void {

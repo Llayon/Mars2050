@@ -1,5 +1,5 @@
 import type { UnitRow, BattleResult } from './combat.types'
-import type { Obstacle } from './combat.sim.types'
+import type { Obstacle } from '@mars2050/combat-core/contracts'
 import type { BattleSimulationOptions } from './combat.metrics'
 import { translateMarsBattleInput } from './combat.input-translator'
 import { mapCombatRunResultToBattleResult } from './combat.compat-mapper'

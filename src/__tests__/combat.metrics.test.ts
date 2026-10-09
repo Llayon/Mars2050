@@ -169,7 +169,7 @@ function getOverlapMetrics(units: ReplayUnit[]): { averageOverlap: number; maxOv
       const second = alive[j]
       if (first.isFlying !== second.isFlying) continue
 
-      const minDistance = (getSizeRadius(first.size) + getSizeRadius(second.size)) * 0.95
+      const minDistance = (getSizeRadius(first.size ?? 'M') + getSizeRadius(second.size ?? 'M')) * 0.95
       const distance = Math.hypot(first.x - second.x, first.y - second.y)
       const overlap = Math.max(0, minDistance - distance)
       if (overlap <= 0) continue

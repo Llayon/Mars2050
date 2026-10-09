@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { createPathfindingMap, getFlowVector } from '@mars2050/combat-core/math'
-import { simulateBattle } from '../domains/combat/combat.engine'
-import { executeCombatSimulation } from '../domains/combat/combat.runner'
-import type { UnitRow } from '../domains/combat/combat.types'
+import { simulateBattle } from '@/domains/combat/combat.engine'
+import { executeCombatSimulation } from '@/domains/combat/combat.runner'
+import type { UnitRow } from '@/domains/combat/combat.types'
 import type { BattleInput } from '@mars2050/combat-core/contracts'
 
 describe('Combat Arena Decoupling (Milestone E4)', () => {

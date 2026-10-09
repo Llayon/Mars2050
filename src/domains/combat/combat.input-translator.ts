@@ -1,7 +1,6 @@
-import type { BattleInput, UnitSpawnSpec, ScheduledEffect, ArenaSpec, UnitDefinition, PreparedStats } from '@mars2050/combat-core/contracts'
+import type { BattleInput, UnitSpawnSpec, ScheduledEffect, ArenaSpec, UnitDefinition, PreparedStats, Obstacle } from '@mars2050/combat-core/contracts'
 import { getFormationOffset, getSizeRadius } from '@mars2050/combat-core'
 import type { UnitRow } from './combat.types'
-import type { Obstacle } from './combat.sim.types'
 import type { BattleSimulationOptions } from './combat.metrics'
 import { MAX_TICKS, UNIT_TYPES } from './combat.config'
 import { GLOBAL_UPGRADES, UPGRADES, buildMarsUpgrades, type UpgradeConfig } from './combat.upgrades'
@@ -150,8 +149,11 @@ export function translateMarsBattleInput(
   }
   const maxTicks = options.maxTicks !== undefined && Number.isFinite(options.maxTicks)
     ? Math.max(1, Math.min(2000, Math.floor(options.maxTicks))) : MAX_TICKS
-  const timeoutPolicy = options.timeoutPolicy === 'attacker_holds' ? 'attacker_win'
-    : options.timeoutPolicy === 'defender_holds' ? 'defender_win' : 'draw'
+  const timeoutPolicy = (options.timeoutPolicy === 'attacker_holds' || options.timeoutPolicy === 'attacker_win')
+    ? 'attacker_win'
+    : (options.timeoutPolicy === 'defender_holds' || options.timeoutPolicy === 'defender_win')
+      ? 'defender_win'
+      : 'draw'
   const defenseResolutionMode = options.defenseResolutionMode ?? 'v9_snapshot'
 
   const rawDefs = buildMarsUnitDefinitions()

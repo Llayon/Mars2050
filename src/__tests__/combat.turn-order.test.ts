@@ -48,7 +48,7 @@ describe('combat turn order', () => {
       makeUnit('d-slow', 'defender', 10),
     ]
 
-    const world = new CombatWorld(units)
+    const world = new CombatWorld(units as unknown as import('@/domains/combat/combat.unit-components').UnitSnapshot[])
     expect(getEcsTurnOrder(world).map(entityId =>
       world.stores.identity.require(entityId).id)).toEqual([
       'a0', 'd0', 'd1', 'a1', 'a2', 'd2', 'a-slow', 'd-slow',

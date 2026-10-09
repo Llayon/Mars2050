@@ -1,4 +1,10 @@
-import type { RankScalingConfig } from './combat.sim.types.js'
+export interface RankScalingStatModifiers {
+  hpMultPerRank?: number
+  attackMultPerRank?: number
+  defenseAddPerRank?: number
+  rangeAddPerRank?: number
+  cooldownReductionPerRank?: number
+}
 
 export interface RankScaledStats {
   hp: number
@@ -13,7 +19,7 @@ export function getUnitRank(unit: { rank?: number | null }): number {
   return Number.isFinite(rank) ? Math.max(1, Math.floor(rank)) : 1
 }
 
-export function applyRankScaling(stats: RankScaledStats, config: RankScalingConfig | undefined, rank: number): RankScaledStats {
+export function applyRankScaling(stats: RankScaledStats, config: RankScalingStatModifiers | undefined, rank: number): RankScaledStats {
   if (!config) return stats
   const steps = Math.max(0, Math.floor(rank) - 1)
   const hpMult = 1 + Math.max(-0.95, config.hpMultPerRank ?? 0) * steps

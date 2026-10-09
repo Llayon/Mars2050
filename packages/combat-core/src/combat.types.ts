@@ -15,7 +15,7 @@ export type UnitRow = {
 export type BattleRow = Record<string, unknown>
 export type UnitTypeKey = string
 export type TargetingAcquisition = 'local' | 'global'
-export type TargetingProfileKey = 'default_local' | 'long_range_priority' | 'anti_air' | 'anti_armor' | 'siege' | 'assassin' | 'support_hunter' | 'flanker_local' | 'demolition_local'
+export type TargetingProfileKey = 'default_local' | 'long_range_priority' | 'anti_air' | 'anti_armor' | 'siege' | 'assassin' | 'support_hunter' | 'flanker_local' | 'demolition_local' | (string & {})
 export type TargetingProfile = TargetingProfileKey
 
 export type AttackDeliveryConfig =

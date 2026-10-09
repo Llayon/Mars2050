@@ -1,38 +1,29 @@
-import { createRuntimeSquad as coreCreateRuntimeSquad } from '@mars2050/combat-core/combat.squad-factory'
-import type { SimUnit, Team } from './combat.sim.types'
-import type { UnitRow } from './combat.types'
-import type { PRNG } from './combat.utils'
-import { getUnitRank } from './combat.rank-scaling'
-import { buildMarsPreparedStats } from './combat.input-translator'
-
+import {
+  createSquadBuildSpecs,
+  type CombatCatalog,
+} from '@mars2050/combat-core'
 import { MARS_CATALOG } from './combat.catalog'
-
-export * from '@mars2050/combat-core/combat.squad-factory'
+import { compileUnitSnapshot } from './combat.unit-compiler'
+import type { SimUnit, Team, UnitRow } from './combat.types'
+import type { PRNG } from './combat.utils'
 
 /**
- * Creates runtime squad units for Mars, normalizing legacy row attributes.
+ * Creates a runtime squad from row and team, defaulting to Mars default catalog.
  *
- * @param row Unit row from Mars database or scenario.
- * @param team Team assignment for the squad.
- * @param rng Pseudo-random number generator for placement and formation.
+ * @param row The unit row.
+ * @param team The team assignment.
+ * @param rng PRNG generator.
  * @param catalog Optional combat catalog override.
- * @returns Array of compiled simulation units.
+ * @returns Array of compiled SimUnits.
  */
 export function createRuntimeSquad(
   row: UnitRow,
   team: Team,
   rng: PRNG,
-  catalog?: import('@mars2050/combat-core/combat.catalog.types').CombatCatalog,
+  catalog?: CombatCatalog,
 ): SimUnit[] {
-  const effectiveCatalog = catalog ?? MARS_CATALOG
-  const rank = getUnitRank(row)
-  const upgradeIds = row.upgrade_path ? [...row.upgrade_path] : []
-  const preparedStats = (row as { preparedStats?: unknown }).preparedStats ??
-    buildMarsPreparedStats(row.unit_type, rank, upgradeIds, effectiveCatalog)
-  const normalizedRow = {
-    ...row,
-    rank,
-    preparedStats,
-  }
-  return coreCreateRuntimeSquad(normalizedRow, team, rng, effectiveCatalog)
+  const activeCatalog = catalog ?? MARS_CATALOG
+  return createSquadBuildSpecs(row, team, rng, activeCatalog)
+    .map(spec => compileUnitSnapshot({ ...spec, catalog: activeCatalog }))
+    .filter((unit): unit is SimUnit => unit !== null)
 }

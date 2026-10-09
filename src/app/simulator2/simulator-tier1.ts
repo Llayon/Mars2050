@@ -97,7 +97,8 @@ function getDeploymentRadius(type: UnitTypeKey): number {
   const unitRadius = getSizeRadius(config.baseStats.size ?? 'M')
   if (squadSize === 1) return unitRadius
 
-  const spacingMultiplier = config.baseStats.formationModifiers?.spacingMultiplier ?? 1
+  const formationModifiers = config.baseStats.formationModifiers as { spacingMultiplier?: number } | undefined
+  const spacingMultiplier = formationModifiers?.spacingMultiplier ?? 1
   const spacing = (config.squadSpacing ?? 20) * spacingMultiplier
   const rowSize = Math.ceil(Math.sqrt(squadSize))
   const rowCount = Math.ceil(squadSize / rowSize)

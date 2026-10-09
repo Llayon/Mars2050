@@ -9,6 +9,10 @@ const baseStats: UnitBaseStats = {
   speed: 10,
   range: 3,
   attackType: 'single',
+  actionCooldownMax: 10,
+  turnSpeed: 5,
+  size: 'M',
+  combatTags: [],
 }
 
 describe('combat formation spacing', () => {

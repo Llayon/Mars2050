@@ -118,12 +118,12 @@ export function createU(
   const hpBar = new Graphics(); hpBar.y = -(radius * 2.5) - 5
   c.addChild(hpBar)
   if (!u.id) return
-  const maxHp = UNIT_TYPES[utype as UnitTypeKey]?.baseStats.hp || ('hp_current' in u ? u.hp_current : 1)
+  const maxHp = UNIT_TYPES[utype as UnitTypeKey]?.baseStats.hp || (isSimUnit ? ((u as SimUnit).maxHp ?? 1) : Number((u as UnitRow).hp_current ?? 1))
   const baseScale = s ? s.scale.x : 1
   sprites[u.id] = { 
-    c, g, s, hpBar, hp: isSimUnit ? (u as SimUnit).hp : ('hp_current' in u ? u.hp_current : 1), maxHp, prog: 1, 
+    c, g, s, hpBar, hp: isSimUnit ? (u as SimUnit).hp : Number((u as UnitRow).hp_current ?? 1), maxHp, prog: 1, 
     sX: c.x, sY: c.y, tX: c.x, tY: c.y, type: utype, team: t, basePath, baseScale, isAtlas: !!SPRITE_ATLASES[utype], isSvg,
-    act: 'idle', dir: t === 'attacker' ? 'north' : 'south', mobilityMode: isSimUnit ? (u as SimUnit).mobilityMode : undefined, recoil: 0, recoilAngle: 0
+    act: 'idle', dir: t === 'attacker' ? 'north' : 'south', mobilityMode: isSimUnit ? ((u as SimUnit).mobilityMode as string | undefined) : undefined, recoil: 0, recoilAngle: 0
   }
   updateHp(sprites[u.id])
 }

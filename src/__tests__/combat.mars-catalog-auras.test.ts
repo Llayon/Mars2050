@@ -1,12 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { buildMarsUnitDefinitions } from '../domains/combat/combat.unit-definitions'
-import { buildMarsUpgrades } from '../domains/combat/combat.upgrades'
-import { compileUnitSnapshot } from '../domains/combat/combat.unit-compiler'
-import { createRuntimeUnitFromConfig } from '../domains/combat/combat.unit-factory'
-import { createEcsCombatRuntime } from '@mars2050/combat-core/ecs/combat-ecs-runtime'
-import { runEcsSupportAuraSystem } from '@mars2050/combat-core/ecs/systems/support-aura-system'
-import { mapDefinitionToUnitTypeConfig } from '@mars2050/combat-core'
-import type { CombatCatalog } from '@mars2050/combat-core/combat.catalog.types'
+import { buildMarsUnitDefinitions } from '@/domains/combat/combat.unit-definitions'
+import { buildMarsUpgrades } from '@/domains/combat/combat.upgrades'
+import { compileUnitSnapshot } from '@/domains/combat/combat.unit-compiler'
+import { createRuntimeUnitFromConfig } from '@/domains/combat/combat.unit-factory'
+import { createEcsCombatRuntime } from '@/domains/combat/ecs/combat-ecs-runtime'
+import { runEcsSupportAuraSystem } from '@/domains/combat/ecs/systems/support-aura-system'
+import { mapDefinitionToUnitTypeConfig, type CombatCatalog } from '@mars2050/combat-core'
 
 describe('Mars default catalog: support auras resolution without duplication', () => {
   const rawDefinitions = buildMarsUnitDefinitions()
@@ -55,7 +54,7 @@ describe('Mars default catalog: support auras resolution without duplication', (
     world.queueUnitCreation(source, target)
     world.flushStructuralCommands()
 
-    const actions: import('@mars2050/combat-core/combat.actions').BattleAction[] = []
+    const actions: import('@/domains/combat/combat.actions').BattleAction[] = []
     runEcsSupportAuraSystem(world, 0, actions)
 
     const targetId = world.getEntityId('target')

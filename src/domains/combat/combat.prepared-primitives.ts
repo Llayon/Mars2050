@@ -1,6 +1,5 @@
-import type { PreparedStats } from '@mars2050/combat-core/contracts'
+import type { PreparedStats, RankScalingConfigContract as RankScalingConfig } from '@mars2050/combat-core/contracts'
 import type { UpgradeConfig } from './combat.upgrades'
-import type { RankScalingConfig } from './combat.sim.types'
 
 /**
  * Collects and accumulates all 24 primitive modifier families for Mars adapter loadouts
@@ -120,7 +119,7 @@ export function collectMarsPreparedPrimitives(
     }
     if (modifiers.rankScaling) {
       const rs = modifiers.rankScaling as RankScalingConfig
-      rankScaling = { ...rs, damageModifiers: rs.damageModifiers?.map(m => ({ ...m })) }
+      rankScaling = { ...rs, damageModifiers: rs.damageModifiers?.map((m: { relation: 'same_rank' | 'higher_rank' | 'lower_rank'; multiplier: number }) => ({ ...m })) }
     }
     if (modifiers.conditionalRange && Array.isArray(modifiers.conditionalRange)) {
       conditionalRange.push(...(modifiers.conditionalRange as Record<string, unknown>[]).map(r => ({ ...r })))

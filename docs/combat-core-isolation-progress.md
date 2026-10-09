@@ -2,14 +2,14 @@
 
 План: `docs/combat-core-isolation-remediation-plan.md`. Исторический журнал extraction: `docs/combat-core-progress.md` (не перезаписывать, это новый файл).
 
-## Итог запусков и текущий статус (R5b Accepted Checkpoint)
+## Итог запусков и текущий статус (R6 Implemented Checkpoint)
 
-- Ветка `repair/combat-core-isolation`: `180e3d1` → `33553c7` (R0+R1) → `c8dc228` (R2a) → `4629a7e` (R2b) → `484b297` (R3a base) → `aafb467` (R3a accepted) → `9c7c490` (R3b accepted / R4a base) → R4a accepted → R4b accepted → `3fb23c9` (R5a accepted / Pass 12) → `bc1c45a` (R5b accepted / Pass 4).
-- Выполнено и принято: R0 (аудит), R1 (infra), R2a (ISO-01/02), R2b (ISO-03/04), R3a (ISO-05), R3b (ISO-06), **R4a (ISO-10, accepted)**, **R4b (ISO-11, accepted)**, **R5a (ISO-09, accepted — Owner review pass 12)**, **R5b (ISO-09/ISO-08 runtime isolation, accepted — Owner review pass 4, verdict ACCEPT, коммит bc1c45a)**.
-- Реализованы и приняты срезы R5a (ISO-09: явные traits в контрактах, удаление `alien_`-эвристик из ядра, марсианский адаптер определений) и R5b (ISO-09: изоляция состояния рантайма per-battle, устранение глобальных реестров, чувствительность пофазного чередования, реальный жизненный цикл reassembly и глубокое отсоединение вложенных данных клона; отрицательные контроли `stage-noop`, `reassembly-noop`, `clone-nested-alias` подтверждены).
-- Открыто: ISO-08 (R6 закрытые exports), ISO-07 (R1/R7, CI-часть готова локально), ISO-12 (summon/timeout-warn), ISO-13 (runtime smoke есть, boundary/matrix — R6/R7).
+- Ветка `repair/combat-core-isolation`: `180e3d1` → `33553c7` (R0+R1) → `c8dc228` (R2a) → `4629a7e` (R2b) → `484b297` (R3a base) → `aafb467` (R3a accepted) → `9c7c490` (R3b accepted / R4a base) → R4a accepted → R4b accepted → `3fb23c9` (R5a accepted / Pass 12) → `bc1c45a` (R5b accepted / Pass 4) → `fc0cc9d` (R5b checkpoint) → R6 (ISO-08).
+- Выполнено и принято: R0 (аудит), R1 (infra), R2a (ISO-01/02), R2b (ISO-03/04), R3a (ISO-05), R3b (ISO-06), **R4a (ISO-10, accepted)**, **R4b (ISO-11, accepted)**, **R5a (ISO-09, accepted)**, **R5b (ISO-09/ISO-08 runtime isolation, accepted)**.
+- Реализован срез **R6 (ISO-08: инкапсуляция exports пакета `@mars2050/combat-core`, закрытие приватных подпутей, расширение публичного фасада, адаптеры Mars-потребителей без утечек приватного ECS-состояния)**.
+- Открыто: ISO-07 (R1/R7, CI-часть готова локально), ISO-12 (summon/timeout-warn), ISO-13 (runtime smoke есть, boundary/matrix — R7).
 - Сохранены известные доизоляционные дефекты механики (не блокирующие изоляцию): `CORE-V9-DEATH-TRIGGER-SPAWN-DROPPED` и `CORE-PREPARED-CLONE-SIZE-CLAMP`.
-- Следующий шаг: срез R6 — закрытые exports (`@mars2050/combat-core`), устранение внутренних утечек (`ecs/*`, `*`), миграция потребителей на публичный API facade/contracts/replay/math.
+- Следующий шаг: приёмка R6 владельцем, переход к R7 (финальная матрица сред, package publishing, clean audit).
 - Зафиксированные артефакты:
   - Handoff candidate R4b: `artifacts/combat-core-handoff/handoff-20261006-r4b-candidate/` (запечатан, не перезаписывать).
   - Хэш архива `mars2050-combat-core-0.1.0.tgz` (R4b): `f610158b3f4db5782a0978ccf7333eca651e024263f2d76988aa297417c08499` (385 622 байта).
@@ -43,7 +43,7 @@
 | ISO-05 | `accepted` (коммит aafb467 + non-blocking test update) | R3a | 95/95 тестов core, zero RNG, parity, late summon HP=1, catalog norm transfer |
 | ISO-06 | `needs_external_review` (код+тесты R3b) | R3b | `placement-r3b.test.ts` (5), `placement-r3b-bounds.test.ts` (5), neutral bounds, PRNG sequence, Mars edge clamp |
 | ISO-07 | `open` | R1,R7 | — |
-| ISO-08 | `open` | R6 | Закрытый allowlist exports пакета без `./ecs`, `./ecs/*`, `./*`; guard на `ERR_PACKAGE_PATH_NOT_EXPORTED` |
+| ISO-08 | `needs_external_review` (код+тесты R6) | R6 | Закрытый allowlist exports пакета (`.`, `./contracts`, `./replay`, `./math`) без `./ecs`, `./ecs/*`, `./*`; guard на `ERR_PACKAGE_PATH_NOT_EXPORTED` (4/4 blocked); отрицательный контроль FAIL (exit 1); 275 core tests PASS, 863 Mars tests PASS, V8/V9 goldens PASS |
 | ISO-09 | `accepted` (R5a принят Pass 12 на 3fb23c9, R5b принят Pass 4 на bc1c45a) | R5a/R5b | content-isolation-r5a (2/2), runtime-isolation-r5b (4/4), runtime-lifecycle-r5b (5/5), 3 отрицательных контроля FAIL (exit 1), 275 core tests, V8/V9 goldens, Mars auras 3/3 |
 | ISO-10 | `accepted` (независимое ревью fb94c3e9, probe 10/10, zero-leak, order-preserved) | R4a | wire-codec-r4a 7/7, probe 10/10 PASS, nested-p2 4/4, key-order 7/7, __marsCompat удалён |
 | ISO-11 | `accepted` (Owner review pass 4, 33/33 probes PASS Node 22/25, tarball f610158b 385,622 B exact, candidate sealed) | R4b | identity-r4b.test.ts 7/7, pureSha256, 1-engine/2-rulesets, metadata round-trip, runtime smoke PASS, compatibility-probe 9/9, previous-probe 24/24 |
@@ -2018,6 +2018,52 @@ SHA256: `52a91f4eb406125247426f044eb0dbdf8ab440a8285d211af63e5f9c75bf61dd`.
 - **Architectural limits** (`scripts/check-limits.ts --diff HEAD --json`): **0 violations**.
 - **Package runtime consumer gate** (`scripts/test-combat-package-runtime.ts`): **All archive runtime verification suites passed successfully (PASS)**.
 - Файлы Fantasy, SDK52 и запечатанные архивы (`f610158b...`, `52a91f4e...`): **не изменялись**.
+
+#### 2026-10-10 — Реализация R6 (ISO-08): закрытые exports и миграция потребителей на публичный API
+
+Срез R6 выполнен в соответствии с требованиями ISO-08:
+
+1. **Герметизация границ пакета (`packages/combat-core/package.json`):**
+   - Блок `"exports"` ограничен строго четырьмя публичными точками входа:
+     - `"."` -> `./dist/index.js`
+     - `"./contracts"` -> `./dist/contracts/index.js`
+     - `"./replay"` -> `./dist/replay/index.js`
+     - `"./math"` -> `./dist/math/index.js`
+   - Полностью устранены открытые подпути `./ecs`, `./ecs/*` и `./*`.
+   - Любая попытка прямого импорта приватных модулей ядра блокируется Node.js с кодом `ERR_PACKAGE_PATH_NOT_EXPORTED`.
+   - Проверено в `scripts/test-combat-package.ts` шаг [6/6]:
+     - `@mars2050/combat-core/combat.runner`: blocked (`ERR_PACKAGE_PATH_NOT_EXPORTED`).
+     - `@mars2050/combat-core/combat.unit-compiler`: blocked (`ERR_PACKAGE_PATH_NOT_EXPORTED`).
+     - `@mars2050/combat-core/ecs/combat-world`: blocked (`ERR_PACKAGE_PATH_NOT_EXPORTED`).
+     - `@mars2050/combat-core/ecs/defense-resource-commit`: blocked (`ERR_PACKAGE_PATH_NOT_EXPORTED`).
+   - **Отрицательный контроль под мутацией**: при искусственном открытии приватного экспорта (`./combat.runner`) шаг [6/6] падает с ошибкой `Error: BOUNDARY FAIL: @mars2050/combat-core/combat.runner: RESOLVED (export is open)`.
+
+2. **Расширение публичного фасада (`packages/combat-core/src/index.ts`):**
+   - Экспортированы фабрики способностей (`statusAbility`, `markAbility`, `auraAbility`, `extractSupportAuras`, `periodicAbility`, `displaceAbility`, `splitFireAbility`, `chainAttackAbility`, `sideWeaponAbility`, `barrageAbility`, `linePierceAbility`, `coneAttackAbility`, `beamAttackAbility`, `AbilityDefinition`).
+   - Экспортированы утилиты рангового масштабирования (`getUnitRank`, `applyRankScaling`, `RankScaledStats`).
+   - Экспортированы мапперы и структуры: `mapDefinitionToUnitTypeConfig`, `getRuntimePrimitiveStats`, `UnitBaseStats`, `UnitTypeConfig`, `CombatMetrics`, `BattleSimulationOptions`, `MarkCombatMetrics`, `PeriodicAbilityConfig`, `PeriodicAbilityPayload`, `TriggerEffectConfig`, `UnitBuildSpec`.
+   - Экспортированы функции компиляции и фабрики: `compileUnitSnapshot`, `createRuntimeUnitFromConfig`, `cloneRuntimeUnit`, `RuntimeUnitFactoryInput`, `createSquadBuildSpecs`.
+   - Экспортированы runtime-типы симуляции: `SimUnit`, `SimHazard`, `Obstacle`.
+
+3. **Адаптеры Mars-домена (`src/domains/combat/`):**
+   - Устранены дублирующие реализации ECS и компиляторов в `src/domains/combat/ecs/`.
+   - `src/domains/combat/combat.unit-factory.ts` и `combat.squad-factory.ts` используют публичный API ядра с инкапсулированным каталогом `MARS_CATALOG` по умолчанию.
+   - `src/domains/combat/combat.unit-compiler.ts` компилирует снимки через ядро без прямых зависимостей от внутренних путей ECS.
+   - `src/domains/combat/combat.types.ts` чисто реэкспортирует тип `SimUnit` из `@mars2050/combat-core` вместо опасного wire-DTO алиаса `CombatSnapshotUnit`.
+   - В тестах и конфигах (`vitest.config.ts`, `tsconfig.json`) устранены устаревшие пути.
+
+4. **Итоговая верификация всех гейтов:**
+   - `npm run combat:core:check`: **PASS (0 errors)**.
+   - `npm run test:combat:core`: **35 test files PASS, 275 tests PASS**.
+   - `npm run test:combat:package`: **PASS (все 6 шагов, включая блокировку приватных подпутей)**.
+   - `npm run test:combat:package:runtime`: **PASS (полный автономный запуск симуляции из tarball)**.
+   - `npm test`: **206 test files PASS, 863 tests PASS**.
+   - `npm run combat:ecs:golden` (V8): **7/7 presets stable (PASS)**.
+   - `npm run combat:ecs:v9:golden` (V9): **7/7 presets stable (PASS)**.
+   - `npx tsc --noEmit --pretty false`: **PASS (0 errors)**.
+   - `npx tsx scripts/check-limits.ts --json`: **0 violations, status passed**.
+   - Строгая типизация: строго **0 `any` / `as any`**.
+   - Файлы Fantasy, SDK52 и запечатанные архивы (`f610158b...`, `52a91f4e...`): **не изменялись**.
 
 
 

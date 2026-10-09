@@ -6,6 +6,7 @@ export type CombatTag =
   | 'infantry' | 'vehicle' | 'aircraft' | 'structure'
   | 'organic' | 'mechanical' | 'armored' | 'light' | 'heavy'
   | 'shielded' | 'healer' | 'support' | 'summoner' | 'summoned' | 'stealth' | 'explosive'
+  | (string & {})
 
 export type StatusType =
   | 'emp' | 'slow' | 'burn' | 'acid' | 'vulnerable' | 'range_suppressed' | 'revealed'
@@ -13,7 +14,7 @@ export type StatusType =
 export type HackControlMode = 'disable' | 'redirect' | 'confuse'
 export type StanceMode = 'mobile' | 'deployed'
 export type MobilityMode = 'ground' | 'air'
-export type HazardKind = 'napalm' | 'radiation' | 'emp_field' | 'acid' | 'emp' | 'mine' | 'smoke' | 'barrier_dome'
+export type HazardKind = 'napalm' | 'radiation' | 'emp_field' | 'acid' | 'emp' | 'mine' | 'smoke' | 'barrier_dome' | (string & {})
 
 export interface UnitStanceConfig { mode: 'siege' | 'entrenched'; deployTicks: number; rangeMultiplier?: number; cooldownMultiplier?: number; speedMultiplier?: number }
 export interface BurrowConfig { damageReduction: number; regenPercentPerTick?: number; emergeAttackMult?: number; emergeAoeRadiusAdd?: number }

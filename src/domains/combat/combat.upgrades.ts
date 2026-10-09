@@ -1,4 +1,4 @@
-import type { AttackChargeConfig, BarrageAttackConfig, BeamAttackConfig, ChainAttackConfig, ConditionalAttackModeConfig, ConditionalRangeConfig, ConeAttackConfig, ControlBeamConfig, DelayedReassemblyConfig, FieldEffectConfig, FlatDamageBlockConfig, FormationModifiersConfig, LinePierceConfig, PeriodicAbilityConfig, RankScalingConfig, ShieldHitBlockConfig, SideWeaponConfig, SplitFireConfig, StatGrowthConfig, SweepAttackConfig, TargetPriorityProfile, TransformModeConfig, TriggerEffectConfig } from './combat.sim.types'
+import type { AttackChargeConfig, BarrageAttackConfig, BeamAttackConfig, ChainAttackConfig, ConditionalAttackModeConfig, ConditionalRangeConfig, ConeAttackConfig, ControlBeamConfig, DelayedReassemblyConfig, FieldEffectConfig, FlatDamageBlockConfig, FormationModifiersConfig, LinePierceConfig, PeriodicAbilityConfig, RankScalingConfig, ShieldHitBlockConfig, SideWeaponConfig, SplitFireConfig, StatGrowthConfig, SweepAttackConfig, TargetPriorityProfile, TransformModeConfig, TriggerEffectConfig } from './combat.upgrade.types'
 
 export interface UpgradeConfig {
   id: string

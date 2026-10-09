@@ -10,11 +10,20 @@ export function buildMarsUnitDefinitions(rawTypes?: Record<string, UnitTypeConfi
   const source = rawTypes ?? UNIT_TYPES
   const definitions: Record<string, UnitDefinition> = {}
   for (const [key, cfg] of Object.entries(source)) {
+    const rawStats = cfg.baseStats as Record<string, unknown>
+    const delivery = rawStats.delivery as { interceptable?: boolean } | undefined
     const isInterceptable = cfg.baseStats.projectileInterceptable ?? (
       Boolean(cfg.baseStats.barrageAttack) ||
-      Boolean(cfg.baseStats.delivery && 'interceptable' in cfg.baseStats.delivery && cfg.baseStats.delivery.interceptable) ||
+      Boolean(delivery?.interceptable) ||
       Boolean(cfg.baseStats.combatTags?.includes('explosive') && cfg.baseStats.range * 40 > 80 && cfg.baseStats.attack > 0)
     )
+    const pullOnHit = rawStats.pullOnHit as { radius: number; strength: number } | undefined
+    const knockbackOnHit = rawStats.knockbackOnHit as { radius: number; strength: number } | undefined
+    const damageShare = rawStats.damageShare as { radius: number } | undefined
+    const sideWeapon = rawStats.sideWeapon as { range: number } | undefined
+    const splitFire = rawStats.splitFire as { range?: number } | undefined
+    const abilities = Array.isArray(cfg.baseStats.abilities) ? (cfg.baseStats.abilities as unknown[]) : undefined
+
     definitions[key] = {
       id: key,
       name: cfg.name,
@@ -24,27 +33,27 @@ export function buildMarsUnitDefinitions(rawTypes?: Record<string, UnitTypeConfi
         range: cfg.baseStats.range * 40,
         minimumRange: cfg.baseStats.minimumRange != null ? cfg.baseStats.minimumRange * 40 : undefined,
         aoeRadius: cfg.baseStats.aoeRadius != null ? cfg.baseStats.aoeRadius * 40 : undefined,
-        pullOnHit: cfg.baseStats.pullOnHit ? {
-          ...cfg.baseStats.pullOnHit,
-          radius: cfg.baseStats.pullOnHit.radius * 40,
-          strength: cfg.baseStats.pullOnHit.strength * 40,
+        pullOnHit: pullOnHit ? {
+          ...pullOnHit,
+          radius: pullOnHit.radius * 40,
+          strength: pullOnHit.strength * 40,
         } : undefined,
-        knockbackOnHit: cfg.baseStats.knockbackOnHit ? {
-          ...cfg.baseStats.knockbackOnHit,
-          radius: cfg.baseStats.knockbackOnHit.radius * 40,
-          strength: cfg.baseStats.knockbackOnHit.strength * 40,
+        knockbackOnHit: knockbackOnHit ? {
+          ...knockbackOnHit,
+          radius: knockbackOnHit.radius * 40,
+          strength: knockbackOnHit.strength * 40,
         } : undefined,
-        damageShare: cfg.baseStats.damageShare ? {
-          ...cfg.baseStats.damageShare,
-          radius: cfg.baseStats.damageShare.radius * 40,
+        damageShare: damageShare ? {
+          ...damageShare,
+          radius: damageShare.radius * 40,
         } : undefined,
-        sideWeapon: cfg.baseStats.sideWeapon ? {
-          ...cfg.baseStats.sideWeapon,
-          range: cfg.baseStats.sideWeapon.range * 40,
+        sideWeapon: sideWeapon ? {
+          ...sideWeapon,
+          range: sideWeapon.range * 40,
         } : undefined,
-        splitFire: cfg.baseStats.splitFire ? {
-          ...cfg.baseStats.splitFire,
-          range: cfg.baseStats.splitFire.range != null ? cfg.baseStats.splitFire.range * 40 : undefined,
+        splitFire: splitFire ? {
+          ...splitFire,
+          range: splitFire.range != null ? splitFire.range * 40 : undefined,
         } : undefined,
         velocityDamping: cfg.baseStats.velocityDamping ?? (cfg.baseStats.range * 40 > 60 || undefined),
         attackType: cfg.baseStats.attackType || 'single',
@@ -58,7 +67,7 @@ export function buildMarsUnitDefinitions(rawTypes?: Record<string, UnitTypeConfi
       squadSpacing: cfg.squadSpacing ?? 20,
       formation: cfg.formation ?? 'grid',
       targetingProfile: cfg.baseStats.targetingProfile,
-      abilities: cfg.baseStats.abilities ? [...cfg.baseStats.abilities] as unknown[] : undefined,
+      abilities: abilities ? [...abilities] : undefined,
     }
   }
   return definitions

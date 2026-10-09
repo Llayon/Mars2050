@@ -2,12 +2,18 @@ import {
   createRuntimeUnitFromConfig as coreCreateRuntimeUnitFromConfig,
   cloneRuntimeUnit,
   type RuntimeUnitFactoryInput,
-} from '@mars2050/combat-core/combat.unit-factory'
-import type { SimUnit } from './combat.sim.types'
+} from '@mars2050/combat-core'
 import { MARS_CATALOG } from './combat.catalog'
+import type { SimUnit } from './combat.types'
+
+export type { RuntimeUnitFactoryInput }
+export { cloneRuntimeUnit }
 
 /**
- * Creates a runtime unit snapshot from authored configuration, defaulting to Mars unit catalog.
+ * Creates a runtime unit from config, defaulting to Mars default catalog when none is provided.
+ *
+ * @param input The factory input spec.
+ * @returns Compiled SimUnit or null.
  */
 export function createRuntimeUnitFromConfig(input: RuntimeUnitFactoryInput): SimUnit | null {
   return coreCreateRuntimeUnitFromConfig({
@@ -15,7 +21,3 @@ export function createRuntimeUnitFromConfig(input: RuntimeUnitFactoryInput): Sim
     catalog: input.catalog ?? MARS_CATALOG,
   })
 }
-
-export { cloneRuntimeUnit }
-export type { RuntimeUnitFactoryInput }
-

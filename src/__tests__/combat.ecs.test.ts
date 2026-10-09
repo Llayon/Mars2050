@@ -219,8 +219,8 @@ describe('combat ECS runtime', () => {
 
     expect(result.profile?.targetingFrameBuildCount).toBeGreaterThan(0)
     expect(result.profile?.targetingAcquisitionCount).toBeGreaterThan(0)
-    expect(result.profile?.targetingCandidateCount)
-      .toBeGreaterThanOrEqual(result.profile?.targetingMaxCandidates ?? 0)
+    expect(Number(result.profile?.targetingCandidateCount))
+      .toBeGreaterThanOrEqual(Number(result.profile?.targetingMaxCandidates ?? 0))
     expect(result.profile?.targetingLegacyFallbackCount).toBe(0)
     expect(result.profile?.componentQueryCount).toBeGreaterThan(0)
     expect(result.profile?.componentCandidateCount).toBeGreaterThan(0)
