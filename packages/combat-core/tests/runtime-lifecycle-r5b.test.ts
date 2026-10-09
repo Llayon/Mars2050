@@ -160,47 +160,47 @@ describe('R5b / ISO-08: Lifecycle and nested runtime state isolation', () => {
     expect(spawnEvents[0]).toMatchObject({ spawnType: 'minion', spawnTeam: 'attacker' })
   })
 
-  it('detaches nested clone runtime state and preserves independent reassembly execution', () => {
-    const defs: Record<string, UnitDefinition> = {
-      fighter: makeDef('fighter', {
-        hp: 400,
-        periodicAbilities: [{ id: 'heal', intervalTicks: 2, targetPolicy: 'self', payload: { kind: 'heal', amount: 10 } }],
-        reassembly: { delayTicks: 3, hpPercent: 0.5, maxTriggers: 1 },
-      }),
-    }
-    const catalog = toCatalog(defs)
-    const { world } = createEcsCombatRuntime({ catalog })
+  it('executes real reassembly lifecycle with independent entity schedules and restored HP', () => {
+    const makeInput = (delayTicks: number, maxTicks: number): BattleInput => deepFreeze({
+      seed: 928,
+      definitions: {
+        owner: makeDef('owner', { hp: 40 }),
+        killer: makeDef('killer', { attack: 100, range: 100, actionCooldownMax: 20 }),
+        anchor: makeDef('anchor', { hp: 5000, range: 0 }),
+      },
+      arena: { width: 600, height: 600, tileSize: 40, obstacles: [] },
+      rules: { maxTicks, timeoutPolicy: 'draw', defenseResolutionMode: 'v9_snapshot' },
+      units: [
+        { instanceId: 'u', definitionId: 'owner', team: 'attacker', rank: 1, upgradeIds: [], placement: { x: 300, y: 340, angle: -Math.PI / 2 }, preparedStats: { reassembly: { delayTicks, hpPercent: 0.5, maxTriggers: 1 } } },
+        { instanceId: 'k', definitionId: 'killer', team: 'defender', rank: 1, upgradeIds: [], placement: { x: 300, y: 260, angle: Math.PI / 2 } },
+        { instanceId: 'anchor', definitionId: 'anchor', team: 'attacker', rank: 1, upgradeIds: [], placement: { x: 60, y: 540, angle: 0 } },
+      ],
+      scheduledEffects: [],
+    })
 
-    world.queueUnitCreation(compileUnitSnapshot({
-      definitionId: 'fighter',
-      identity: { id: 'source', team: 'attacker' },
-      loadout: { rank: 1, upgradeIds: [] },
-      placement: { x: 100, y: 100, angle: 0 },
-      catalog,
-    })!)
-    world.flushStructuralCommands()
+    // Schedule 1: delayTicks = 2 -> completes at tick 3
+    const resFast = simulateCombat(makeInput(2, 4))
+    const fastActions = resFast.logs.flatMap(t => t.actions)
+    expect(fastActions.some(a => a.type === 'reassembly_start' && a.unitId === 'u')).toBe(true)
+    const fastComplete = fastActions.filter(a => a.type === 'reassembly_complete')
+    expect(fastComplete).toHaveLength(1)
+    expect(fastComplete[0]).toMatchObject({ unitId: 'u', targetId: 'u', damage: 20 })
+    expect(resFast.survivors.find(u => u.id === 'u')?.hp).toBe(20)
 
-    const sourceEntity = world.getEntityId('source')!
-    world.queueUnitClone(sourceEntity, 'clone', 150, 150)
-    world.flushStructuralCommands()
+    // Schedule 2: delayTicks = 4 -> at tick 4 still in countdown, completes at tick 5
+    const resSlowAt4 = simulateCombat(makeInput(4, 4))
+    expect(resSlowAt4.logs.flatMap(t => t.actions).filter(a => a.type === 'reassembly_complete')).toHaveLength(0)
+    expect(resSlowAt4.survivors.find(u => u.id === 'u')).toBeUndefined()
 
-    const cloneEntity = world.getEntityId('clone')!
-    const beforeClone = structuredClone(world.snapshotEntity(cloneEntity))
-
-    // Mutate source entity vitality and reassembly state
-    world.stores.vitality.require(sourceEntity).reassemblyConfig!.delayTicks = 999
-    for (const store of Object.values(world.stores)) {
-      const state = store.get(sourceEntity)
-      if (state && 'periodicProgramState' in state && Array.isArray((state as Record<string, unknown>).periodicProgramState)) {
-        ((state as Record<string, unknown>).periodicProgramState as Array<{ payload: { amount: number } }>)[0].payload.amount = 999
-      }
-    }
-
-    // Verify clone state is completely detached and unchanged
-    expect(world.snapshotEntity(cloneEntity)).toEqual(beforeClone)
+    const resSlowAt6 = simulateCombat(makeInput(4, 6))
+    const slowComplete = resSlowAt6.logs.flatMap(t => t.actions)
+      .filter(a => a.type === 'reassembly_complete')
+    expect(slowComplete).toHaveLength(1)
+    expect(slowComplete[0]).toMatchObject({ unitId: 'u', targetId: 'u', damage: 20 })
+    expect(resSlowAt6.survivors.find(u => u.id === 'u')?.hp).toBe(20)
   })
 
-  it('strictly isolates nested component stores and resources per-world and per-entity', () => {
+  it('detaches clone runtime state and strictly isolates component stores per entity and world', () => {
     const defs: Record<string, UnitDefinition> = {
       hero: makeDef('hero', {
         shieldHitBlock: { charges: 3 },
@@ -222,14 +222,21 @@ describe('R5b / ISO-08: Lifecycle and nested runtime state isolation', () => {
     runtime2.world.flushStructuralCommands()
 
     const entityA = runtime1.world.getEntityId('a')!
+    runtime1.world.queueUnitClone(entityA, 'cloneA', 150, 150)
+    runtime1.world.flushStructuralCommands()
+    const cloneA = runtime1.world.getEntityId('cloneA')!
+    const beforeClone = structuredClone(runtime1.world.snapshotEntity(cloneA))
+
     const entityB = runtime1.world.getEntityId('b')!
     const beforeEntityB = structuredClone(runtime1.world.snapshotEntity(entityB))
     const beforeWorld2 = structuredClone(runtime2.world.snapshot())
 
     // Mutate entity A in world 1
     runtime1.world.stores.defense.require(entityA).shieldHitBlockCharges = 0
+    runtime1.world.stores.vitality.require(entityA).hp = 1
 
-    // Entity B in world 1 and entire world 2 must remain completely unaffected
+    // Clone A, entity B, and entire world 2 must remain completely unaffected
+    expect(runtime1.world.snapshotEntity(cloneA)).toEqual(beforeClone)
     expect(runtime1.world.snapshotEntity(entityB)).toEqual(beforeEntityB)
     expect(runtime2.world.snapshot()).toEqual(beforeWorld2)
   })

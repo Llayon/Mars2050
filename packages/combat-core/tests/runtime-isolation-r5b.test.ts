@@ -19,10 +19,10 @@ function makeArena(width: number, height: number) {
   return { width, height, tileSize: 40, obstacles: [], deployment: { strategy: 'center' as const } }
 }
 
-function makeDef(id: string, name: string, hp: number, attack: number): UnitDefinition {
+function makeDef(id: string, name: string, hp: number, attack: number, extra: Partial<UnitDefinition['baseStats']> = {}): UnitDefinition {
   return {
     id, name, squadSize: 1, squadSpacing: 20, formation: 'grid',
-    baseStats: { hp, attack, defense: 0, speed: 60, range: 80, attackType: 'single', actionCooldownMax: 10, turnSpeed: 10, size: 'M', combatTags: [] },
+    baseStats: { hp, attack, defense: 0, speed: 60, range: 80, attackType: 'single', actionCooldownMax: 10, turnSpeed: 10, size: 'M', combatTags: [], ...extra },
   }
 }
 
@@ -160,10 +160,14 @@ describe('R5b / ISO-08: Runtime isolation and elimination of global registries',
 
   it('executes interleaved ECS runtimes phase by phase without state leakage or shared resources', () => {
     const defsA: Record<string, UnitDefinition> = {
-      hero: makeDef('hero', 'Hero A', 200, 20),
+      hero: makeDef('hero', 'Hero A', 200, 20, {
+        periodicAbilities: [{ id: 'healA', intervalTicks: 1, initialDelayTicks: 0, targetPolicy: 'self', payload: { kind: 'heal', amount: 20 } }],
+      }),
     }
     const defsB: Record<string, UnitDefinition> = {
-      hero: makeDef('hero', 'Hero B', 800, 80),
+      hero: makeDef('hero', 'Hero B', 800, 80, {
+        periodicAbilities: [{ id: 'healB', intervalTicks: 1, initialDelayTicks: 0, targetPolicy: 'self', payload: { kind: 'heal', amount: 50 } }],
+      }),
     }
 
     const catalogA = toCatalog(defsA)
@@ -177,6 +181,7 @@ describe('R5b / ISO-08: Runtime isolation and elimination of global registries',
       identity: { id: 'h1', team: 'attacker' },
       loadout: { rank: 1, upgradeIds: [] },
       placement: { x: 100, y: 100, angle: 0 },
+      overrides: { currentHp: 50 },
       catalog: catalogA,
     })!
 
@@ -185,6 +190,7 @@ describe('R5b / ISO-08: Runtime isolation and elimination of global registries',
       identity: { id: 'h1', team: 'attacker' },
       loadout: { rank: 1, upgradeIds: [] },
       placement: { x: 200, y: 200, angle: 0 },
+      overrides: { currentHp: 100 },
       catalog: catalogB,
     })!
 
@@ -197,8 +203,8 @@ describe('R5b / ISO-08: Runtime isolation and elimination of global registries',
     const entityA = runtimeA.world.getEntityId('h1')!
     const entityB = runtimeB.world.getEntityId('h1')!
 
-    expect(runtimeA.world.stores.vitality.require(entityA).maxHp).toBe(200)
-    expect(runtimeB.world.stores.vitality.require(entityB).maxHp).toBe(800)
+    expect(runtimeA.world.stores.vitality.require(entityA).hp).toBe(50)
+    expect(runtimeB.world.stores.vitality.require(entityB).hp).toBe(100)
 
     const clockA = { tick: 0, dt: 1, maxTicks: 100, timeoutPolicy: 'draw' as const }
     const clockB = { tick: 0, dt: 1, maxTicks: 100, timeoutPolicy: 'draw' as const }
@@ -210,31 +216,28 @@ describe('R5b / ISO-08: Runtime isolation and elimination of global registries',
     runtimeA.world.resources.set('actions', actionsA)
     runtimeB.world.resources.set('actions', actionsB)
 
-    // Run stage on runtime A; verify runtime B is untouched
+    // Run stage on runtime A; verify runtime A heals 50->70, actions recorded, and runtime B is untouched
     runtimeA.runStage('pre_action', { tick: 0, actions: actionsA, rng: new PRNG(1), activeGlobals: [] })
-    expect(clockA.tick).toBe(0)
-    expect(clockB.tick).toBe(0)
+    expect(runtimeA.world.stores.vitality.require(entityA).hp).toBe(70)
+    expect(actionsA.some(a => a.type === 'heal' && a.unitId === 'h1' && a.damage === 20)).toBe(true)
+    expect(runtimeB.world.stores.vitality.require(entityB).hp).toBe(100)
+    expect(actionsB).toHaveLength(0)
 
     clockA.tick = 1
     runtimeA.runStage('action', { tick: 1, actions: actionsA, rng: new PRNG(1), activeGlobals: [] })
-    expect(clockA.tick).toBe(1)
-    expect(clockB.tick).toBe(0)
+    expect(runtimeB.world.stores.vitality.require(entityB).hp).toBe(100)
 
-    clockB.tick = 2
-    runtimeB.runStage('pre_action', { tick: 2, actions: actionsB, rng: new PRNG(2), activeGlobals: [] })
-    expect(clockA.tick).toBe(1)
-    expect(clockB.tick).toBe(2)
+    // Run stage on runtime B; verify runtime B heals 100->150 and runtime A is untouched
+    clockB.tick = 0
+    runtimeB.runStage('pre_action', { tick: 0, actions: actionsB, rng: new PRNG(2), activeGlobals: [] })
+    expect(runtimeB.world.stores.vitality.require(entityB).hp).toBe(150)
+    expect(actionsB.some(a => a.type === 'heal' && a.unitId === 'h1' && a.damage === 50)).toBe(true)
+    expect(runtimeA.world.stores.vitality.require(entityA).hp).toBe(70)
 
     // Verify distinct resources and isolation
     expect(runtimeA.world.resources.get('catalog')).toBe(catalogA)
     expect(runtimeB.world.resources.get('catalog')).toBe(catalogB)
-    const resourceKeys: (keyof import('../src/ecs/combat-resources.js').CombatResourceMap)[] = [
-      'combatTagCache',
-      'dirtySpatialEntities',
-      'temporalAttacks',
-      'statusDamageAttribution',
-    ]
-    for (const key of resourceKeys) {
+    for (const key of ['combatTagCache', 'dirtySpatialEntities', 'temporalAttacks', 'statusDamageAttribution'] as const) {
       expect(runtimeA.world.resources.get(key)).not.toBe(runtimeB.world.resources.get(key))
     }
   })

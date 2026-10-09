@@ -1962,19 +1962,42 @@ SHA256: `52a91f4eb406125247426f044eb0dbdf8ab440a8285d211af63e5f9c75bf61dd`.
 3. **Характеристика ранее существовавших дефектов механики:**
    - Дефекты `CORE-V9-DEATH-TRIGGER-SPAWN-DROPPED` (отсутствие призыва при гибели в режиме V9) и `CORE-PREPARED-CLONE-SIZE-CLAMP` (смещение XL-клонов из preparedStats) охарактеризованы в `artifacts/review-r5b-owner-20261009/lifecycle-baseline-probe.mjs` и подтверждены как существовавшие до R5b на базовом коммите `4d1efad`. В рамках R5b они сохранены без ложных исправлений и остаются на отдельном отслеживании.
 
-#### Итоговые результаты проверок:
+### 2026-10-09 — Закрытие замечания Pass 2 ревью R5b (ISO-08): усиление чувствительности тестов жизненного цикла
+
+В аудите Pass 2 (`artifacts/review-r5b-owner-pass2-20261009/review.json` / `REVIEW.md` на коммите `04098ba`) исправление аур было принято (вердикт ACCEPT по дублированию аур, 1569 сравнений без различий). Статус R5b оставлен `NEEDS_CHANGES` из-за недостаточной чувствительности двух постоянных lifecycle-тестов при отрицательных контролях (`stage-noop` и `reassembly-noop` spies).
+
+#### Устранённые замечания:
+1. **Чувствительность пофазного чередования рантаймов (`runtime-isolation-r5b.test.ts:161`):**
+   - **Проблема**: Тест чередования вызывал стадии для юнитов без врагов или периодических эффектов и проверял только присваиваемые тестом значения `clock.tick`. При подмене `runStage = () => {}` тест оставался зелёным (exit 0).
+   - **Исправление**: В тесте настроены периодические способности исцеления (`healA` на 20 HP в рантайме A, `healB` на 50 HP в рантайме B). Юниты инициализированы с 50 HP (в A) и 100 HP (в B). Вызов `runStage('pre_action')` на рантайме A увеличивает HP сущности A с 50 до 70 и фиксирует событие лечения, оставляя сущность B нетронутой (100 HP, 0 действий). Вызов `pre_action` на рантайме B увеличивает HP сущности B со 100 до 150 и фиксирует событие лечения, оставляя сущность A с 70 HP.
+   - **Отрицательный контроль**: Под мутацией `R5B_OWNER_MUTATION=stage-noop` тест **падает с кодом 1** по поведенческому утверждению: `AssertionError: expected 50 to be 70`.
+
+2. **Чувствительность реального жизненного цикла reassembly (`runtime-lifecycle-r5b.test.ts:160`):**
+   - **Проблема**: Тест только мутировал `reassemblyConfig.delayTicks` и проверял снимок клона. Гибель, отсчет таймера, событие `reassembly_complete` и восстановление HP не исполнялись. При отключении `runEcsReassemblySystem = () => {}` все тесты оставались зелёными (exit 0).
+   - **Исправление**: Тест переписан на полноценную симуляцию жизненного цикла: юнит погибает, входит в `reassembly_start`. Проверены независимые расписания восстановления:
+     - При `delayTicks: 2` юнит завершает восстановление на тике 3 с событием `reassembly_complete` и 20 HP (1 выжившее существо с 20 HP).
+     - При `delayTicks: 4` юнит на тике 4 всё ещё находится в обратном отсчете (0 событий завершения, выживших нет), а завершает восстановление на тике 5 с событием `reassembly_complete` и 20 HP.
+   - Отсоединение клона и изоляция хранилищ вынесены в совместный тест 4 (`detaches clone runtime state and strictly isolates component stores per entity and world`).
+   - **Отрицательный контроль**: Под мутацией `R5B_OWNER_MUTATION=reassembly-noop` тест **падает с кодом 1** по поведенческому утверждению: `AssertionError: expected [] to have a length of 1 but got +0`.
+
+#### Итоговая верификация:
+- **Отрицательные контроли мутаций**:
+  - `R5B_OWNER_MUTATION=stage-noop`: **FAIL (exit 1)**, `AssertionError: expected 50 to be 70`.
+  - `R5B_OWNER_MUTATION=reassembly-noop`: **FAIL (exit 1)**, `AssertionError: expected [] to have a length of 1 but got +0`.
+- **Неизменённый контроль**: `R5B_OWNER_MUTATION=""` на обоих постоянных тестовых файлах: **2 test files, 8 tests PASS (exit 0)**.
 - **Core vitest suite**: **35 test files PASS, 274 tests PASS**.
 - **Mars vitest suite**: **206 test files PASS, 863 tests PASS**.
 - **Golden suites**:
   - `npm run combat:ecs:golden` (V8): **7/7 presets stable (PASS)**.
   - `npm run combat:ecs:v9:golden` (V9): **7/7 presets stable (PASS)**.
+- **Owner probes Pass 2** (`artifacts/review-r5b-owner-pass2-20261009/`):
+  - `mars-default-catalog-probe.mjs`: **5/5 PASS** на Node 25.6.0 и Node 22.20.0 (1569 comparisons: 0 diffs).
+  - `aura-source-preservation-probe.mjs`: **12/12 PASS** на Node 25.6.0 и Node 22.20.0.
 - **Typecheck** (`npx tsc --noEmit --pretty false`): **0 errors**.
 - **Architectural limits** (`scripts/check-limits.ts --diff HEAD --json`): **0 violations**.
 - **Package runtime consumer gate** (`scripts/test-combat-package-runtime.ts`): **All archive runtime verification suites passed successfully (PASS)**.
-- **Owner probes** (`artifacts/review-r5b-owner-20261009/`):
-  - `mars-default-catalog-probe.mjs`: **5/5 PASS** на Node 25.6.0 и Node 22.20.0.
-  - `lifecycle-baseline-probe.mjs`: **PASS** на Node 25.6.0 и Node 22.20.0.
-- Запечатанные архивы (`f610158b...`, `52a91f4e...`) и файлы Fantasy: **не изменялись**.
+- Файлы Fantasy, SDK52 и запечатанные архивы (`f610158b...`, `52a91f4e...`): **не изменялись**.
+
 
 
 
