@@ -1,8 +1,10 @@
 {
-  "mode": "duel-v2",
+  "mode": "duel-v3",
   "sdk": "52a91f4eb406125247426f044eb0dbdf8ab440a8285d211af63e5f9c75bf61dd",
   "start": 40,
   "income": 20,
+  "deploymentCapacity": 9,
+  "occupiedPositionPolicy": "swap",
   "capitals": [
     40,
     60,
