@@ -1,0 +1,15 @@
+{
+  "mode": "duel-v2",
+  "sdk": "52a91f4eb406125247426f044eb0dbdf8ab440a8285d211af63e5f9c75bf61dd",
+  "start": 40,
+  "income": 20,
+  "capitals": [
+    40,
+    60,
+    80,
+    100,
+    120,
+    140,
+    160
+  ]
+}
