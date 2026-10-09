@@ -1985,18 +1985,38 @@ SHA256: `52a91f4eb406125247426f044eb0dbdf8ab440a8285d211af63e5f9c75bf61dd`.
   - `R5B_OWNER_MUTATION=stage-noop`: **FAIL (exit 1)**, `AssertionError: expected 50 to be 70`.
   - `R5B_OWNER_MUTATION=reassembly-noop`: **FAIL (exit 1)**, `AssertionError: expected [] to have a length of 1 but got +0`.
 - **Неизменённый контроль**: `R5B_OWNER_MUTATION=""` на обоих постоянных тестовых файлах: **2 test files, 8 tests PASS (exit 0)**.
-- **Core vitest suite**: **35 test files PASS, 274 tests PASS**.
-- **Mars vitest suite**: **206 test files PASS, 863 tests PASS**.
+### 2026-10-09 — Закрытие замечания Pass 3 ревью R5b (ISO-08): восстановление проверки глубокого отсоединения клона
+
+В аудите Pass 3 (`artifacts/review-r5b-owner-pass3-20261009/review.json` на коммите `5e2cdf0`) оба замечания Pass 2 по отключению фаз и reassembly признаны закрытыми. Выявлена регрессия тестового покрытия (`R5B-CLONE-NESTED-ISOLATION-COVERAGE-REGRESSION`): при объединении тестов была удалена проверка глубокого отсоединения вложенных данных клона (`source.reassemblyConfig.delayTicks` и `source.periodicProgramState[0].payload.amount`). Под мутацией `clone-nested-alias` (шаринг ссылок на вложенные объекты) тесты проходили.
+
+#### Устранённые замечания:
+1. **Восстановление проверки глубокого отсоединения клона (`runtime-lifecycle-r5b.test.ts:167`):**
+   - **Проблема**: В `5e2cdf0` тест проверял только числовые примитивы `hp` и `shieldHitBlockCharges`, не проверяя мутацию вложенных структур `reassemblyConfig` и `periodicProgramState`.
+   - **Исправление**: Тест `detaches nested clone runtime state and preserves independent reassembly execution` возвращён в полном объёме отдельным постоянным тестом. Мутации `reassemblyConfig.delayTicks = 999` и `periodicProgramState[0].payload.amount = 999` на исходной сущности проверяют неизменность состояния клона.
+   - Повторяющийся код трёх сценариев призыва в тесте 1 оптимизирован через локальный хелпер `runSpawnBattle`, благодаря чему в файле сохранены все 5 тестов при размере 217 строк (лимит $\le 250$).
+   - Тест 5 (`strictly isolates nested component stores and resources per-world and per-entity`) сохранён для контроля изоляции хранилищ между сущностями и мирами.
+   - Все проверки Pass 2 (чередование фаз и реальный жизненный цикл reassembly) полностью сохранены.
+   - **Отрицательный контроль под мутацией**: при `$env:R5B_OWNER_MUTATION="clone-nested-alias"` тест **падает с кодом 1** по поведенческому утверждению (`AssertionError: expected clone payload 10/delayTicks 3 to deeply equal 999`).
+
+#### Итоговая верификация:
+- **Отрицательные контроли мутаций**:
+  - `R5B_OWNER_MUTATION=clone-nested-alias`: **FAIL (exit 1)**, `AssertionError` в `detaches nested clone runtime state`.
+  - `R5B_OWNER_MUTATION=stage-noop`: **FAIL (exit 1)**, `AssertionError: expected 50 to be 70`.
+  - `R5B_OWNER_MUTATION=reassembly-noop`: **FAIL (exit 1)**, `AssertionError: expected [] to have a length of 1 but got +0`.
+- **Неизменённый контроль**: `R5B_OWNER_MUTATION=""` на обоих постоянных тестовых файлах: **2 test files, 9 tests PASS (exit 0)**.
+- **Core vitest suite**: **35 test files PASS, 275 tests PASS**.
+- **Mars vitest suite**: **206 test files PASS, 863 tests PASS** (включая `combat.mars-catalog-auras.test.ts` 3/3 PASS).
 - **Golden suites**:
   - `npm run combat:ecs:golden` (V8): **7/7 presets stable (PASS)**.
   - `npm run combat:ecs:v9:golden` (V9): **7/7 presets stable (PASS)**.
-- **Owner probes Pass 2** (`artifacts/review-r5b-owner-pass2-20261009/`):
+- **Owner probes Pass 2/Pass 3** (`artifacts/review-r5b-owner-pass2-20261009/`):
   - `mars-default-catalog-probe.mjs`: **5/5 PASS** на Node 25.6.0 и Node 22.20.0 (1569 comparisons: 0 diffs).
   - `aura-source-preservation-probe.mjs`: **12/12 PASS** на Node 25.6.0 и Node 22.20.0.
 - **Typecheck** (`npx tsc --noEmit --pretty false`): **0 errors**.
 - **Architectural limits** (`scripts/check-limits.ts --diff HEAD --json`): **0 violations**.
 - **Package runtime consumer gate** (`scripts/test-combat-package-runtime.ts`): **All archive runtime verification suites passed successfully (PASS)**.
 - Файлы Fantasy, SDK52 и запечатанные архивы (`f610158b...`, `52a91f4e...`): **не изменялись**.
+
 
 
 
