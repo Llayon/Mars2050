@@ -2,18 +2,19 @@
 
 План: `docs/combat-core-isolation-remediation-plan.md`. Исторический журнал extraction: `docs/combat-core-progress.md` (не перезаписывать, это новый файл).
 
-## Итог запусков и текущий статус (R4b Accepted Checkpoint)
+## Итог запусков и текущий статус (R5b Accepted Checkpoint)
 
-- Ветка `repair/combat-core-isolation`: `180e3d1` → `33553c7` (R0+R1) → `c8dc228` (R2a) → `4629a7e` (R2b) → `484b297` (R3a base) → `aafb467` (R3a accepted) → `9c7c490` (R3b accepted / R4a base) → R4a accepted → R4b accepted.
-- Выполнено и принято: R0 (аудит), R1 (infra), R2a (ISO-01/02), R2b (ISO-03/04), R3a (ISO-05), R3b (ISO-06), **R4a (ISO-10, accepted)**, **R4b (ISO-11, accepted — Owner review pass 4, verdict ACCEPT)**.
-- Реализован срез R5a (ISO-09): явные traits (`stationaryAlignment`, `formationAnchorMode`, `velocityDamping`, `projectileInterceptable`) в контрактах, удаление `alien_`-эвристик из ядра, перенос марсианских определений и вычисления interceptable в Mars adapter, regression `content-isolation-r5a.test.ts`.
-- Открыто: ISO-07 (R1/R7, CI-часть готова локально), ISO-08 (R6, guard честно красный), ISO-09 (R5a реализован, R5b впереди), ISO-12 (summon/timeout-warn), ISO-13 (runtime smoke есть, boundary/matrix — R6/R7).
-- Следующий шаг: независимое ревью / приёмка R5a, затем переход к R5b (удаление глобальных registries).
+- Ветка `repair/combat-core-isolation`: `180e3d1` → `33553c7` (R0+R1) → `c8dc228` (R2a) → `4629a7e` (R2b) → `484b297` (R3a base) → `aafb467` (R3a accepted) → `9c7c490` (R3b accepted / R4a base) → R4a accepted → R4b accepted → `3fb23c9` (R5a accepted / Pass 12) → `bc1c45a` (R5b accepted / Pass 4).
+- Выполнено и принято: R0 (аудит), R1 (infra), R2a (ISO-01/02), R2b (ISO-03/04), R3a (ISO-05), R3b (ISO-06), **R4a (ISO-10, accepted)**, **R4b (ISO-11, accepted)**, **R5a (ISO-09, accepted — Owner review pass 12)**, **R5b (ISO-09/ISO-08 runtime isolation, accepted — Owner review pass 4, verdict ACCEPT, коммит bc1c45a)**.
+- Реализованы и приняты срезы R5a (ISO-09: явные traits в контрактах, удаление `alien_`-эвристик из ядра, марсианский адаптер определений) и R5b (ISO-09: изоляция состояния рантайма per-battle, устранение глобальных реестров, чувствительность пофазного чередования, реальный жизненный цикл reassembly и глубокое отсоединение вложенных данных клона; отрицательные контроли `stage-noop`, `reassembly-noop`, `clone-nested-alias` подтверждены).
+- Открыто: ISO-08 (R6 закрытые exports), ISO-07 (R1/R7, CI-часть готова локально), ISO-12 (summon/timeout-warn), ISO-13 (runtime smoke есть, boundary/matrix — R6/R7).
+- Сохранены известные доизоляционные дефекты механики (не блокирующие изоляцию): `CORE-V9-DEATH-TRIGGER-SPAWN-DROPPED` и `CORE-PREPARED-CLONE-SIZE-CLAMP`.
+- Следующий шаг: срез R6 — закрытые exports (`@mars2050/combat-core`), устранение внутренних утечек (`ecs/*`, `*`), миграция потребителей на публичный API facade/contracts/replay/math.
 - Зафиксированные артефакты:
-  - Handoff candidate: `artifacts/combat-core-handoff/handoff-20261006-r4b-candidate/` (запечатан, не перезаписывать).
-  - Хэш архива `mars2050-combat-core-0.1.0.tgz`: `f610158b3f4db5782a0978ccf7333eca651e024263f2d76988aa297417c08499`.
-  - Уточнение размера архива: фактический размер архива составляет **385 622 байта** (в начальной оценочной мета-записи фигурировало 385 573 байта; SHA-256 побитово точен и идентичен во всех независимых пересборках).
-  - Отчёт владельца: `artifacts/review-r4b-owner-pass4-20261007/review.json` (вердикт ACCEPT).
+  - Handoff candidate R4b: `artifacts/combat-core-handoff/handoff-20261006-r4b-candidate/` (запечатан, не перезаписывать).
+  - Хэш архива `mars2050-combat-core-0.1.0.tgz` (R4b): `f610158b3f4db5782a0978ccf7333eca651e024263f2d76988aa297417c08499` (385 622 байта).
+  - Отчёт владельца R5a: `artifacts/review-r5a-owner-pass12-20261008/review.json` (вердикт ACCEPT).
+  - Отчёт владельца R5b: `artifacts/review-r5b-owner-pass4-20261009/review.json` (вердикт ACCEPT).
 
 ## Запуск и окружение
 
@@ -42,13 +43,14 @@
 | ISO-05 | `accepted` (коммит aafb467 + non-blocking test update) | R3a | 95/95 тестов core, zero RNG, parity, late summon HP=1, catalog norm transfer |
 | ISO-06 | `needs_external_review` (код+тесты R3b) | R3b | `placement-r3b.test.ts` (5), `placement-r3b-bounds.test.ts` (5), neutral bounds, PRNG sequence, Mars edge clamp |
 | ISO-07 | `open` | R1,R7 | — |
-| ISO-08 | `open` | R6 | — |
-| ISO-09 | `needs_external_review` (код+тесты R5a; R5b впереди) | R5a/R5b | `content-isolation-r5a.test.ts` (2/2), goldens V8/V9 (7/7), 214/214 tests core, runtime smoke PASS, Node 22/25 probes PASS |
+| ISO-08 | `open` | R6 | Закрытый allowlist exports пакета без `./ecs`, `./ecs/*`, `./*`; guard на `ERR_PACKAGE_PATH_NOT_EXPORTED` |
+| ISO-09 | `accepted` (R5a принят Pass 12 на 3fb23c9, R5b принят Pass 4 на bc1c45a) | R5a/R5b | content-isolation-r5a (2/2), runtime-isolation-r5b (4/4), runtime-lifecycle-r5b (5/5), 3 отрицательных контроля FAIL (exit 1), 275 core tests, V8/V9 goldens, Mars auras 3/3 |
 | ISO-10 | `accepted` (независимое ревью fb94c3e9, probe 10/10, zero-leak, order-preserved) | R4a | wire-codec-r4a 7/7, probe 10/10 PASS, nested-p2 4/4, key-order 7/7, __marsCompat удалён |
 | ISO-11 | `accepted` (Owner review pass 4, 33/33 probes PASS Node 22/25, tarball f610158b 385,622 B exact, candidate sealed) | R4b | identity-r4b.test.ts 7/7, pureSha256, 1-engine/2-rulesets, metadata round-trip, runtime smoke PASS, compatibility-probe 9/9, previous-probe 24/24 |
 | ISO-12 | `open` | R2–R3,R7 | — |
 | ISO-13 | `open` | R1,R6–R7 | — |
 
+Файлы Fantasy, запечатанные SDK и архивы R4b (`f610158b...`, `52a91f4e...`): инвариантны.
 Финальное состояние extraction: `needs_revision` (старый журнал остаётся историей, здесь — новая приёмка).
 
 ## Текущий цикл
