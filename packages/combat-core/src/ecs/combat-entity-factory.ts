@@ -4,13 +4,12 @@ import type { RuntimeUnitFactoryInput } from '../combat.unit-build.types.js'
 import { compileUnit } from '../combat.unit-compiler.js'
 import type { UnitRow, UnitTypeKey } from '../combat.types.js'
 import type { PRNG } from '../combat.utils.js'
-import { getDefaultCombatCatalog } from '../combat.catalog.types.js'
 import type { CombatWorld } from './combat-world.js'
 import type { EntityId } from './entity.js'
 
 export function createConfiguredUnitEntity(world: CombatWorld, input: RuntimeUnitFactoryInput): EntityId | null {
   const hp = input.hp === undefined ? undefined : Math.max(1, Math.floor(input.hp))
-  const catalog = world.resources.get('catalog') ?? getDefaultCombatCatalog()
+  const catalog = input.catalog ?? world.resources.get('catalog')
   const unit = compileUnit({
     definitionId: input.type as UnitTypeKey,
     identity: {
@@ -38,7 +37,7 @@ export function createConfiguredUnitEntity(world: CombatWorld, input: RuntimeUni
 }
 
 export function createSquadEntities(world: CombatWorld, row: UnitRow, team: Team, rng: PRNG): EntityId[] {
-  const catalog = world.resources.get('catalog') ?? getDefaultCombatCatalog()
+  const catalog = world.resources.get('catalog')
   const arena = world.resources.get('arena')
   const units = compileSquadBundles(row, team, rng, catalog, arena)
   world.queueCompiledUnitCreation(...units)

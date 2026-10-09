@@ -43,12 +43,3 @@ export interface CombatCatalog {
   readonly targetingProfiles?: Readonly<Record<string, TargetingProfileConfig>>
 }
 
-let defaultCombatCatalog: CombatCatalog | undefined = undefined
-
-export function registerDefaultCombatCatalog(catalog: CombatCatalog | undefined): void {
-  defaultCombatCatalog = catalog
-}
-
-export function getDefaultCombatCatalog(): CombatCatalog | undefined {
-  return defaultCombatCatalog
-}

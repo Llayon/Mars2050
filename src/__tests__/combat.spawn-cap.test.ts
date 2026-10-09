@@ -5,7 +5,7 @@ import { PRNG } from '@/domains/combat/combat.utils'
 import { CombatWorld } from '@/domains/combat/ecs/combat-world'
 import { EntitySpatialIndex } from '@/domains/combat/ecs/entity-spatial-index'
 import { runActionSystem } from '@/domains/combat/ecs/systems'
-import '@/domains/combat/combat.config'
+import { MARS_CATALOG } from '@/domains/combat/combat.catalog'
 
 function makeUnit(overrides: Partial<SimUnit> & { id: string; team: Team }): SimUnit {
   return {
@@ -41,6 +41,7 @@ function runSpawn(units: SimUnit[], targetId: number, actions: BattleAction[]) {
   const spatial = new EntitySpatialIndex()
   spatial.rebuild(world)
   world.resources.set('entitySpatial', spatial)
+  world.resources.set('catalog', MARS_CATALOG)
   const result = runActionSystem(world, 0, targetId, actions, {
     rng: new PRNG(1),
     tick: 0,

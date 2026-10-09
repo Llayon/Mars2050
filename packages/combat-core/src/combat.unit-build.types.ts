@@ -29,6 +29,7 @@ export interface RuntimeUnitFactoryInput {
   attack?: number
   isTemporary?: boolean
   temporaryDuration?: number
+  catalog?: import('./combat.catalog.types.js').CombatCatalog
 }
 
 export interface UnitBuildSpec {

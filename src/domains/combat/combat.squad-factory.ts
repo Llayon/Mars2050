@@ -5,6 +5,8 @@ import type { PRNG } from './combat.utils'
 import { getUnitRank } from './combat.rank-scaling'
 import { buildMarsPreparedStats } from './combat.input-translator'
 
+import { MARS_CATALOG } from './combat.catalog'
+
 export * from '@mars2050/combat-core/combat.squad-factory'
 
 /**
@@ -22,14 +24,15 @@ export function createRuntimeSquad(
   rng: PRNG,
   catalog?: import('@mars2050/combat-core/combat.catalog.types').CombatCatalog,
 ): SimUnit[] {
+  const effectiveCatalog = catalog ?? MARS_CATALOG
   const rank = getUnitRank(row)
   const upgradeIds = row.upgrade_path ? [...row.upgrade_path] : []
   const preparedStats = (row as { preparedStats?: unknown }).preparedStats ??
-    buildMarsPreparedStats(row.unit_type, rank, upgradeIds, catalog)
+    buildMarsPreparedStats(row.unit_type, rank, upgradeIds, effectiveCatalog)
   const normalizedRow = {
     ...row,
     rank,
     preparedStats,
   }
-  return coreCreateRuntimeSquad(normalizedRow, team, rng, catalog)
+  return coreCreateRuntimeSquad(normalizedRow, team, rng, effectiveCatalog)
 }

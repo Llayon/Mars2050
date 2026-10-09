@@ -5,6 +5,7 @@ import { normalizeStatusEffect } from '@/domains/combat/combat.status-core'
 import { createRuntimeUnitFromConfig } from '@/domains/combat/combat.unit-factory'
 import { PRNG } from '@/domains/combat/combat.utils'
 import { createEcsCombatRuntime } from '@/domains/combat/ecs/combat-ecs-runtime'
+import { MARS_CATALOG } from '@/domains/combat/combat.catalog'
 import { CombatWorld } from '@/domains/combat/ecs/combat-world'
 import { EntitySpatialIndex } from '@/domains/combat/ecs/entity-spatial-index'
 import { runEcsPeriodicAbilitySystem } from '@/domains/combat/ecs/systems'
@@ -121,7 +122,7 @@ describe('combat ECS periodic ability phase', () => {
     const secondary = unit('secondary', 'defender', 190)
     const air = unit('air', 'defender', 220)
     air.isFlying = true
-    const ecs = createEcsCombatRuntime()
+    const ecs = createEcsCombatRuntime({ catalog: MARS_CATALOG })
     for (const candidate of [source, ally, secondary, air, ground]) {
       ecs.world.queueUnitCreation(structuredClone(candidate))
     }

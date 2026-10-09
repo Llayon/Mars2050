@@ -1,6 +1,6 @@
 import type { UnitBaseStats } from './combat.types.js'
 import type { PreparedStats } from './contracts/prepared.contracts.js'
-import { getDefaultCombatCatalog, type UpgradeConfig } from './combat.catalog.types.js'
+import type { UpgradeConfig } from './combat.catalog.types.js'
 
 export function getRuntimePrimitiveStats(
   baseStats: UnitBaseStats,
@@ -8,7 +8,7 @@ export function getRuntimePrimitiveStats(
   upgradesCatalog?: Record<string, UpgradeConfig>,
   preparedStats?: PreparedStats,
 ): UnitBaseStats {
-  const catalog = upgradesCatalog ?? (getDefaultCombatCatalog()?.upgrades as Record<string, UpgradeConfig>) ?? {}
+  const catalog = upgradesCatalog ?? {}
   const periodicAbilities = baseStats.periodicAbilities?.map(ability => ({ ...ability })) ?? []
   const triggerEffects = baseStats.triggerEffects?.map(trigger => ({ ...trigger })) ?? []
   const skipPeriodic = preparedStats?.periodicAbilities !== undefined

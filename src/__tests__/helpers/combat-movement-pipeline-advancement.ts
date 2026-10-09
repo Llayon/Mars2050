@@ -4,6 +4,7 @@ import type { RuntimePhaseContext } from '@/domains/combat/combat.phase'
 import { PRNG } from '@/domains/combat/combat.utils'
 import { createPathfindingMap } from '@/domains/combat/combat.pathfinding'
 import { createEcsCombatRuntime, type EcsCombatRuntime } from '@/domains/combat/ecs/combat-ecs-runtime'
+import { MARS_CATALOG } from '@/domains/combat/combat.catalog'
 import type { OrderingProbeResult } from './combat-ordering-probes'
 
 export interface PreparedWorld {
@@ -13,7 +14,7 @@ export interface PreparedWorld {
 }
 
 export function prepareMovementProbeWorld(scenario: CombatBalanceScenario, seed: number, probe: OrderingProbeResult, profile = false): PreparedWorld {
-  const runtime = createEcsCombatRuntime({ defenseResolutionMode: 'v9_snapshot', profile })
+  const runtime = createEcsCombatRuntime({ defenseResolutionMode: 'v9_snapshot', profile, catalog: MARS_CATALOG })
   const rng = new PRNG(seed)
   for (const row of probe.attackers) runtime.addSquad(row, 'attacker', rng)
   for (const row of probe.defenders) runtime.addSquad(row, 'defender', rng)

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createEcsCombatRuntime } from '@/domains/combat/ecs/combat-ecs-runtime'
+import { MARS_CATALOG } from '@/domains/combat/combat.catalog'
 import { createConfiguredUnitEntity } from '@/domains/combat/ecs/combat-entity-factory'
 import { getEcsSteeringContext } from '@/domains/combat/ecs/movement-steering'
 import { createEcsMeleeEngagementState, reserveEcsMeleeSlot } from '@/domains/combat/ecs/systems/melee-engagement-system'
@@ -42,7 +43,7 @@ describe('ordering mechanism boundaries', () => {
 })
 
 function runReservationMicro(reverse: boolean, saturated = true): Record<string, { slot: number | null; waiting: string | null }> {
-  const runtime = createEcsCombatRuntime()
+  const runtime = createEcsCombatRuntime({ catalog: MARS_CATALOG })
   const count = saturated ? 8 : 2
   const actors = Array.from({ length: count }, (_, index) => {
     const angle = (index / count) * Math.PI * 2
@@ -77,7 +78,7 @@ function runReservationMicro(reverse: boolean, saturated = true): Record<string,
 }
 
 function runTargetTieMicro(swapped: boolean): { selectedSemantic: string; idSet: string[]; candidateOrder: string[] } {
-  const runtime = createEcsCombatRuntime()
+  const runtime = createEcsCombatRuntime({ catalog: MARS_CATALOG })
   const leftId = swapped ? 'tie-b' : 'tie-a'
   const rightId = swapped ? 'tie-a' : 'tie-b'
   createConfiguredUnitEntity(runtime.world, { id: 'tie-attacker', team: 'attacker', type: 'marine', x: 300, y: 300, currentAngle: 0 })
@@ -102,7 +103,7 @@ function runTargetTieMicro(swapped: boolean): { selectedSemantic: string; idSet:
 }
 
 function runSteeringOverlapMicro(renamed: boolean): { separation: { x: number; y: number } } {
-  const runtime = createEcsCombatRuntime()
+  const runtime = createEcsCombatRuntime({ catalog: MARS_CATALOG })
   const firstId = renamed ? 'probe-a-0000' : 'steer-a'
   const secondId = renamed ? 'probe-a-0001' : 'steer-b'
   createConfiguredUnitEntity(runtime.world, { id: firstId, team: 'attacker', type: 'shock_trooper', x: 300, y: 300, currentAngle: 0 })

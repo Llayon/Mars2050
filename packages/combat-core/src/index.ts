@@ -12,3 +12,4 @@ export { assertFiniteUnitStats, validateLateSpawnConfig, validateUnitLoadout, va
 export { resolveEffectiveUnitBaseStats, mergePreparedStats } from './combat.effective-loadout.js'
 export { getUnitSupportAuras } from './combat.support-aura-config.js'
 export { extractSupportAuras } from './combat.ability-config.js'
+export { mapDefinitionToUnitTypeConfig } from './combat.definition-mapper.js'

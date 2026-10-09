@@ -10,8 +10,8 @@ import { processEcsDeathTriggers } from './death-trigger-system.js'
 import { applyEcsHealing } from './healing-system.js'
 import { cancelTemporalTimeline } from './temporal-attack-system.js'
 import { getCombatArena } from '../combat-resources.js'
-import { getDefaultCombatCatalog } from '../../combat.catalog.types.js'
 import { getSizeRadius } from '../../math/index.js'
+
 
 export function resolveEcsDeath(
   world: CombatWorld,
@@ -107,8 +107,9 @@ function replicateEcsKiller(
   const target = world.stores.transform.require(targetId)
   const cloneExternalId = world.allocateExternalId('clone')
   const arena = getCombatArena(world)
-  const catalog = world.resources.get('catalog') ?? getDefaultCombatCatalog()
+  const catalog = world.resources.get('catalog')
   const unitCatalog = (catalog as { unitTypes?: Record<string, { baseStats?: { size?: 'S' | 'M' | 'L' | 'XL' } }> })?.unitTypes ?? {}
+
   const killerDef = unitCatalog[sourceIdentity.type]
   const bodyRadius = getSizeRadius(killerDef?.baseStats?.size ?? 'M')
   const minX = Math.min(arena.width / 2, bodyRadius)

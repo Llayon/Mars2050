@@ -8,6 +8,7 @@ import {
   canUseSimpleSingleDamage,
   runActionSystem,
 } from '@/domains/combat/ecs/systems'
+import { MARS_CATALOG } from '@/domains/combat/combat.catalog'
 
 function unit(
   id: string,
@@ -30,6 +31,7 @@ function createWorld(units: SimUnit[]): CombatWorld {
   const spatial = new EntitySpatialIndex()
   spatial.rebuild(world)
   world.resources.set('entitySpatial', spatial)
+  world.resources.set('catalog', MARS_CATALOG)
   return world
 }
 

@@ -4,7 +4,7 @@ import { getUnitSupportAuras } from './combat.support-aura-config.js'
 import { DEFAULT_TARGETING_PROFILE } from './combat.targeting.config.js'
 import type { UnitBuildSpec, UnitRuntimeRules } from './combat.unit-build.types.js'
 import type { UnitBaseStats } from './combat.types.js'
-import { getDefaultCombatCatalog } from './combat.catalog.types.js'
+
 import { compileUnitStats, resolveUnitUpgradeIds } from './combat.unit-stat-compiler.js'
 import { sameSupportAura } from './combat.unit-compiler-utils.js'
 import { assertValidWeaponLoadout } from './combat.weapon-validation.js'
@@ -56,7 +56,7 @@ export function compileUnitSnapshot(spec: UnitBuildSpec): SimUnit | null {
     : getUnitSupportAuras(
         [...(primitives.supportAuras ?? []), ...authoredSupportAuras],
         resolvedUpgradeIds,
-        spec.catalog?.upgrades ?? getDefaultCombatCatalog()?.upgrades,
+        spec.catalog?.upgrades,
       )
   const upgradeSupportPrograms = compileAbilityDefinitions((resolvedSupportAuras ?? [])
     .filter(aura => !authoredSupportAuras.some(authored => sameSupportAura(authored, aura)))

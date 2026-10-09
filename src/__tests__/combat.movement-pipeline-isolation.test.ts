@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { TIER1_BALANCE_SCENARIOS, type CombatBalanceScenario } from '@/domains/combat/combat.tier1-scenarios'
 import { createEcsCombatRuntime } from '@/domains/combat/ecs/combat-ecs-runtime'
+import { MARS_CATALOG } from '@/domains/combat/combat.catalog'
 import { createConfiguredUnitEntity } from '@/domains/combat/ecs/combat-entity-factory'
 import { createMovementFrame } from '@/domains/combat/ecs/movement-frame'
 import { solveBatchMovementCollisions } from '@/domains/combat/ecs/movement-collision-solver'
@@ -102,7 +103,7 @@ describe('combat movement pipeline isolation', () => {
 
   it('self-validates the test-only collision fallback vector against the production solver', () => {
     for (const swapped of [false, true]) {
-      const runtime = createEcsCombatRuntime({ defenseResolutionMode: 'v9_snapshot' })
+      const runtime = createEcsCombatRuntime({ defenseResolutionMode: 'v9_snapshot', catalog: MARS_CATALOG })
       const firstExternalId = swapped ? 'collision-b' : 'collision-a'
       const secondExternalId = swapped ? 'collision-a' : 'collision-b'
       createConfiguredUnitEntity(runtime.world, { id: firstExternalId, team: 'attacker', type: 'shock_trooper', x: 300, y: 300, currentAngle: 0 })

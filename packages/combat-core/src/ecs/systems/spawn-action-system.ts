@@ -2,7 +2,7 @@ import type { BattleAction } from '../../combat.actions.js'
 import type { RuntimeActionContext, RuntimeActionResult } from '../../combat.runtime.js'
 import type { StatusEffect } from '../../combat.sim.types.js'
 import type { UnitTypeKey } from '../../combat.types.js'
-import { getDefaultCombatCatalog } from '../../combat.catalog.types.js'
+
 import { compileUnit } from '../../combat.unit-compiler.js'
 import { getCombatArena } from '../combat-resources.js'
 import type { CombatWorld } from '../combat-world.js'
@@ -118,7 +118,7 @@ function createSpawnedUnit(
     x = transform.x
     y = transform.y
   }
-  const catalog = world.resources.get('catalog') ?? getDefaultCombatCatalog()
+  const catalog = world.resources.get('catalog')
   const unitCatalog = (catalog as { unitTypes?: Record<string, { baseStats?: { size?: 'S' | 'M' | 'L' | 'XL' }; preparedStats?: { size?: 'S' | 'M' | 'L' | 'XL' } }> })?.unitTypes ?? {}
   const spawnUnitDef = unitCatalog[spawnType]
   const bodyRadius = getSizeRadius(spawnUnitDef?.preparedStats?.size ?? spawnUnitDef?.baseStats?.size ?? 'M')

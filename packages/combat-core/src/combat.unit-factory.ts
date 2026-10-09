@@ -32,6 +32,7 @@ export function createRuntimeUnitFromConfig(
       isTemporary: input.isTemporary,
       temporaryDuration: input.temporaryDuration,
     },
+    catalog: input.catalog,
   })
   return unit
 }

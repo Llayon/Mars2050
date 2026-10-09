@@ -4,6 +4,7 @@ import type { SimUnit } from '@/domains/combat/combat.sim.types'
 import { createRuntimeUnitFromConfig } from '@/domains/combat/combat.unit-factory'
 import { PRNG } from '@/domains/combat/combat.utils'
 import { createEcsCombatRuntime } from '@/domains/combat/ecs/combat-ecs-runtime'
+import { MARS_CATALOG } from '@/domains/combat/combat.catalog'
 import { runEcsPeriodicSpawnerSystem } from '@/domains/combat/ecs/systems'
 
 function unit(
@@ -27,7 +28,7 @@ function context(seed: number) {
 }
 
 function runSpawner(units: SimUnit[], seed: number) {
-  const runtime = createEcsCombatRuntime()
+  const runtime = createEcsCombatRuntime({ catalog: MARS_CATALOG })
   runtime.world.queueUnitCreation(...structuredClone(units))
   runtime.flushStructuralCommands()
   const world = runtime.world

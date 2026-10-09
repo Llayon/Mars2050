@@ -1869,4 +1869,67 @@ SHA256: `52a91f4eb406125247426f044eb0dbdf8ab440a8285d211af63e5f9c75bf61dd`.
      - Пробник `barrage-baseline-probe.mjs`: все 6 конфигураций кандидата (`candidate_instant_raw`, `candidate_instant_prepared`, `candidate_staggered_raw`, `candidate_staggered_prepared`, `candidate_one-impact-control_raw`, `candidate_one-impact-control_prepared`) теперь успешно завершаются (60 тиков, 24/18 damage events).
      - Добавлены постоянные тесты в `packages/combat-core/tests/prepared-primitives-r5a.test.ts` и `src/__tests__/combat.ecs-barrage-attack.test.ts`.
 
+### 2026-10-09 — Реализация R5b (ISO-08): изоляция состояния рантайма и устранение глобальных реестров
+
+Срез R5b выполнен в полном соответствии с требованиями ISO-08:
+
+1. **Полное устранение глобальных реестров и мутабельных синглтонов из `@mars2050/combat-core`:**
+   - Из `packages/combat-core/src/combat.catalog.types.ts` удалены:
+     - `defaultCombatCatalog`
+     - `registerDefaultCombatCatalog`
+     - `getDefaultCombatCatalog`
+   - Из `packages/combat-core/src/facade/combat-facade.ts` удалены:
+     - `activeSimulator`
+     - `registerCombatSimulator`
+     - `CombatSimulatorHandler`
+     `simulateCombat` теперь вызывает `executeCombatSimulation` напрямую без глобальных обработчиков.
+   - Устранены все fallback-вызовы к дефолтному каталогу (`?? getDefaultCombatCatalog()`) по всем путям ядра:
+     - `combat.squad-compiler.ts`
+     - `combat.support-aura-config.ts`
+     - `combat.unit-compiler.ts`
+     - `combat.unit-stat-compiler.ts`
+     - `combat.upgrade-primitives.ts`
+     - `ecs/combat-entity-factory.ts`
+     - `ecs/systems/death-system.ts`
+     - `ecs/systems/periodic-ability-spawn-system.ts`
+     - `ecs/systems/spawn-action-system.ts`
+     - `ecs/systems/trigger-spawn-system.ts`
+     - `ecs/combat-ecs-runtime.ts`
+
+2. **Изоляция владения контекстом битвы (Per-battle lifecycle & catalog context):**
+   - В `packages/combat-core/src/combat.runner.ts` для каждой битвы собирается изолированный `CombatCatalog` из переданных в `BattleInput` определений (`definitions`) и каталога (`catalog`), который передаётся в рантайм через опции `createEcsCombatRuntime({ catalog })`.
+   - Рантайм сохраняет каталог в ресурсах мира (`world.resources.set('catalog', options.catalog)`).
+   - Все фабрики сущностей, поздние призывы (death spawn, periodic spawn, trigger spawn, clone, reassembly) и расчет аур извлекают каталог строго из локального контекста: `input.catalog ?? world.resources.get('catalog')`.
+   - Входные данные симуляции не модифицируются и могут быть глубоко заморожены (`Object.freeze`).
+
+3. **Марсианский каталог и изоляция домена Mars (`src/domains/combat/`):**
+   - Создан модуль `src/domains/combat/combat.catalog.ts`, инкапсулирующий сборку марсианского каталога (`MARS_CATALOG` / `getMarsCombatCatalog()`) с предрассчитанными характеристиками марсианских юнитов и улучшений через `mapDefinitionToUnitTypeConfig`.
+   - Из `src/domains/combat/combat.config.ts` удалён вызов `registerDefaultCombatCatalog`.
+   - `src/domains/combat/combat.facade.ts` реэкспортирует `simulateCombat` напрямую из `@mars2050/combat-core`.
+   - Фабрики сущностей и отрядов Mars (`combat.squad-factory.ts`, `combat.unit-factory.ts`, `combat.unit-compiler.ts`) используют `effectiveCatalog = catalog ?? MARS_CATALOG`.
+   - Низкоуровневые тестовые сценарии Mars, создающие ECS-мир напрямую в обход `simulateCombat`, явно передают `catalog: MARS_CATALOG` в подготовку мира.
+
+4. **Тестирование и верификация изоляции:**
+   - Добавлен тестовый набор `packages/combat-core/tests/runtime-isolation-r5b.test.ts` (3 теста):
+     - Проверка отсутствия экспорта глобальных реестров и синглтонов из `combat-core`.
+     - Конкурентный запуск изолированных симуляций с одинаковыми `definitionId`, но расходящимися характеристиками без перекрёстного влияния при глубоко замороженных `BattleInput`.
+     - Проверка разрешения поздних призывов и периодических способностей строго из локального каталога без глобальных fallback.
+
+#### Итоговая верификация R5b:
+- **Combat core vitest suite**: **34 files PASS, 269 tests PASS**.
+- **Golden suites**:
+  - `npm run combat:ecs:golden` (V8): **7/7 presets stable (PASS)**.
+  - `npm run combat:ecs:v9:golden` (V9): **7/7 presets stable (PASS)**.
+- **Typecheck** (`npx tsc --noEmit --pretty false`): **0 errors**.
+- **Architectural limits** (`scripts/check-limits.ts --diff HEAD --json`): **0 violations**.
+- **Owner Pass 12 Probes (Node 25.6.0 & Node 22.20.0)**:
+  - `typed-inventory-probe.mjs`: **176/176 PASS**.
+  - `prepared-primitives-probe.mjs`: **19/19 PASS**.
+  - `modifier-coverage-probe.mjs`: **48/48 PASS**.
+  - `prepared-inventory-probe.mjs`: **10/10 PASS** (1569 comparisons: 0 diffs).
+  - `composition-probe.mjs`: **50/50 PASS**.
+  - `barrage-baseline-probe.mjs`: все сценарии кандидата **PASS** (60 ticks, 24 damage events).
+- Sealed R4b archive (`f610158b...`) и Fantasy SDK (`52a91f4e...`): **не изменялись (SHA256 инвариантны)**.
+
+
 

@@ -1,7 +1,2 @@
-import { registerCombatSimulator, simulateCombat } from '@mars2050/combat-core'
-import { executeCombatSimulation } from './combat.runner'
+export { simulateCombat } from '@mars2050/combat-core'
 
-// Register the Mars runtime engine with the core facade
-registerCombatSimulator(executeCombatSimulation)
-
-export { simulateCombat }

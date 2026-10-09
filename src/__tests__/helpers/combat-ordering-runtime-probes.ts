@@ -1,4 +1,5 @@
 import { createEcsCombatRuntime } from '@/domains/combat/ecs/combat-ecs-runtime'
+import { MARS_CATALOG } from '@/domains/combat/combat.catalog'
 import { getEcsInitiativeGroups } from '@/domains/combat/ecs/systems/initiative-system'
 import {
   createEcsMeleeEngagementState,
@@ -46,7 +47,7 @@ export function captureInitialPlanningSnapshot(
   probe: OrderingProbeResult,
   seed: number,
 ): InitialPlanningSnapshot {
-  const runtime = createEcsCombatRuntime()
+  const runtime = createEcsCombatRuntime({ catalog: MARS_CATALOG })
   const rng = new PRNG(seed)
   for (const row of probe.attackers) runtime.addSquad(row, 'attacker', rng)
   for (const row of probe.defenders) runtime.addSquad(row, 'defender', rng)

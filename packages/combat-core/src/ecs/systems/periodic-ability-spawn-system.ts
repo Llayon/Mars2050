@@ -2,7 +2,7 @@ import { deterministicSin, deterministicCos } from '../../math/deterministic-tri
 import type { BattleAction } from '../../combat.actions.js'
 import type { PeriodicAbilityPayload } from '../../combat.sim.types.js'
 import type { UnitTypeKey } from '../../combat.types.js'
-import { getDefaultCombatCatalog } from '../../combat.catalog.types.js'
+
 import { compileUnit } from '../../combat.unit-compiler.js'
 import { getSizeRadius } from '../../math/geometry.js'
 import { getCombatArena } from '../combat-resources.js'
@@ -31,7 +31,7 @@ export function spawnEcsPeriodicUnits(
     .length
   const count = Math.max(1, payload.count ?? 1)
   const arena = getCombatArena(world)
-  const catalog = world.resources.get('catalog') ?? getDefaultCombatCatalog()
+  const catalog = world.resources.get('catalog')
   const unitCatalog = (catalog as { unitTypes?: Record<string, { baseStats?: { size?: 'S' | 'M' | 'L' | 'XL' }; preparedStats?: { size?: 'S' | 'M' | 'L' | 'XL' } }> })?.unitTypes ?? {}
   const spawnUnitDef = unitCatalog[payload.unitType]
   const bodyRadius = getSizeRadius(spawnUnitDef?.preparedStats?.size ?? spawnUnitDef?.baseStats?.size ?? 'M')
@@ -61,7 +61,7 @@ export function spawnEcsPeriodicUnits(
       },
       spawn: { inheritance: 'base' },
       overrides: { hpPercent: payload.hpPercent },
-      catalog: world.resources.get('catalog') ?? getDefaultCombatCatalog(),
+      catalog: world.resources.get('catalog'),
       preparedStats: (spawnUnitDef as { preparedStats?: import('../../contracts/prepared.contracts.js').PreparedStats })?.preparedStats,
     })
     if (!unit) continue

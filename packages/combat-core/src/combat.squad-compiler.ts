@@ -7,7 +7,7 @@ import type { UnitRow } from './combat.types.js'
 import { FIELD_HEIGHT, FIELD_WIDTH, type PRNG } from './combat.utils.js'
 import type { UnitEntityBundle } from './ecs/unit-entity-bundle.js'
 import { getFormationOffset } from './math/index.js'
-import { getDefaultCombatCatalog, type CombatCatalog } from './combat.catalog.types.js'
+import type { CombatCatalog } from './combat.catalog.types.js'
 import { resolveDeploymentBounds } from './combat.deployment-bounds.js'
 import type { ArenaDeployment } from './contracts/index.js'
 
@@ -31,7 +31,7 @@ export function createSquadBuildSpecs(
   catalog?: CombatCatalog,
   arena?: { width: number; height: number },
 ): UnitBuildSpec[] {
-  const resolvedCatalog = catalog ?? getDefaultCombatCatalog()
+  const resolvedCatalog = catalog
   const unitCatalog = resolvedCatalog?.unitTypes ?? {}
   const config = unitCatalog[row.unit_type]
   if (!config) return []

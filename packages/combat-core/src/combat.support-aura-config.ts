@@ -1,12 +1,12 @@
 import type { SupportAura } from './combat.sim.types.js'
-import { getDefaultCombatCatalog, type UpgradeConfig } from './combat.catalog.types.js'
+import type { UpgradeConfig } from './combat.catalog.types.js'
 
 export function getUnitSupportAuras(
   baseAuras: SupportAura[] | undefined,
   upgradePath: unknown,
   upgradesCatalog?: Record<string, UpgradeConfig>,
 ): SupportAura[] | undefined {
-  const catalog = upgradesCatalog ?? (getDefaultCombatCatalog()?.upgrades as Record<string, UpgradeConfig>) ?? {}
+  const catalog = upgradesCatalog ?? {}
   const auras = baseAuras?.map(aura => ({ ...aura })) ?? []
   if (Array.isArray(upgradePath)) {
     for (const upgradeId of upgradePath) {

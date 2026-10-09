@@ -8,7 +8,7 @@ import { TargetingRuntime } from './targeting-runtime.js'
 import { DesignationIndex } from './designation-index.js'
 import { PendingImpactQueue } from './pending-impacts.js'
 import type { DefenseResolutionMode } from './defense-batch.js'
-import { getDefaultCombatCatalog, type CombatCatalog } from '../combat.catalog.types.js'
+import type { CombatCatalog } from '../combat.catalog.types.js'
 
 export interface EcsCombatRuntime extends CombatRuntime {
   readonly world: CombatWorld
@@ -22,8 +22,8 @@ export function createEcsCombatRuntime(options: {
   const profilingEnabled = options.profile === true
   const world = new CombatWorld([], { profile: profilingEnabled })
   const scheduler = new EcsCombatPhaseScheduler(world)
-  const initialCatalog = options.catalog ?? getDefaultCombatCatalog()
-  if (initialCatalog) world.resources.set('catalog', initialCatalog)
+  if (options.catalog) world.resources.set('catalog', options.catalog)
+
   world.resources.set('entitySpatial', new EntitySpatialIndex(undefined, profilingEnabled))
   world.resources.set('combatTagCache', new Map())
   world.resources.set('dirtySpatialEntities', new Set())

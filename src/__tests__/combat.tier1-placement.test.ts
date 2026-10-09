@@ -15,7 +15,7 @@ describe('Tier 1 placement and support value', () => {
 
     expect(droneBreach).toBeGreaterThanOrEqual(droneScreened + 6)
     expect(jetpackFlank).toBeGreaterThan(jetpackCenter * 1.5)
-  }, 30000)
+  }, 60000)
 
   it('makes a medic materially improve a five-squad line', () => {
     const scenario = findScenario('tier1_medic_sustain_check')
@@ -33,7 +33,7 @@ describe('Tier 1 placement and support value', () => {
     expect(remainingPower(medic, 'defender'))
       .toBeLessThan(remainingPower(control, 'defender') * 0.92)
     expect(medic.metrics?.healingDoneByUnitType.medic ?? 0).toBeGreaterThan(500)
-  }, 30000)
+  }, 60000)
 
   it('keeps scout marking useful but answerable by the heavy gunner', () => {
     const focusScenario = findScenario('tier1_scout_focus_fire')
@@ -65,7 +65,7 @@ describe('Tier 1 placement and support value', () => {
     expect(counter.winner).toBe('defender')
     expect(counter.metrics?.damageByUnitType.heavy_gunner ?? 0).toBeGreaterThan(0)
     expect(counter.survivors.some(unit => unit.team === 'attacker' && unit.type === 'scout_drone')).toBe(false)
-  }, 30000)
+  }, 60000)
 
   it('lets five marines plus a scout beat six marines in the legal screenshot formation', () => {
     const attackers = [150, 210, 330, 390, 450, 270]

@@ -2,7 +2,7 @@ import { applyRankScaling } from './combat.rank-scaling.js'
 import type { UnitBuildSpec } from './combat.unit-build.types.js'
 import type { UnitBaseStats, UnitTypeConfig } from './combat.types.js'
 import { getRuntimePrimitiveStats } from './combat.upgrade-primitives.js'
-import { getDefaultCombatCatalog, type CombatCatalog } from './combat.catalog.types.js'
+import type { CombatCatalog } from './combat.catalog.types.js'
 import type { UnitDefinition } from './contracts/index.js'
 import { mapDefinitionToUnitTypeConfig } from './combat.definition-mapper.js'
 import { resolveEffectiveUnitBaseStats, mergePreparedStats } from './combat.effective-loadout.js'
@@ -43,7 +43,7 @@ export interface CompiledUnitStats {
 }
 
 export function compileUnitStats(spec: UnitBuildSpec): CompiledUnitStats | null {
-  const activeCatalog = spec.catalog ?? getDefaultCombatCatalog()
+  const activeCatalog = spec.catalog
   const unitCatalog: Readonly<Record<string, UnitTypeConfig>> = activeCatalog?.unitTypes ?? {}
   const upgradesCatalog = activeCatalog?.upgrades ?? {}
   const definition = unitCatalog[spec.definitionId]

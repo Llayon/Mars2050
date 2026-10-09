@@ -62,7 +62,6 @@ export function executeCombatSimulation(input: BattleInput): CombatRunResult {
     }
   })
 
-  const runtime = createEcsCombatRuntime({ profile: rules.profile === true, defenseResolutionMode })
   const passedCatalog = validatedInput.catalog as unknown as CombatCatalog | undefined
   const unitTypes: Record<string, UnitTypeConfig> = {}
   for (const [key, def] of Object.entries(validatedInput.definitions)) {
@@ -79,11 +78,17 @@ export function executeCombatSimulation(input: BattleInput): CombatRunResult {
     targetingProfiles: passedCatalog?.targetingProfiles,
   }
 
+  const runtime = createEcsCombatRuntime({
+    profile: rules.profile === true,
+    defenseResolutionMode,
+    catalog,
+  })
+
   const obstacles = arena.obstacles
   const flowFieldMap = createPathfindingMap(obstacles, arena)
 
-  runtime.world.resources.set('catalog', catalog)
   runtime.world.resources.set('arena', arena)
+
 
   for (const spawnSpec of validatedInput.units) {
     const bundles = compileSpawnSpecBundles(spawnSpec, validatedInput.definitions, catalog, rng, arena)
