@@ -1,0 +1,236 @@
+import { describe, expect, it } from 'vitest'
+import { simulateCombat } from '../src/facade/combat-facade.js'
+import { createEcsCombatRuntime } from '../src/ecs/combat-ecs-runtime.js'
+import { compileUnitSnapshot } from '../src/combat.unit-compiler.js'
+import { mapDefinitionToUnitTypeConfig } from '../src/combat.definition-mapper.js'
+import type { BattleInput, UnitDefinition } from '../src/contracts/index.js'
+import type { CombatCatalog } from '../src/combat.catalog.types.js'
+
+function deepFreeze<T>(obj: T): T {
+  if (obj === null || typeof obj !== 'object' || Object.isFrozen(obj)) return obj
+  Object.freeze(obj)
+  for (const value of Object.values(obj as Record<string, unknown>)) deepFreeze(value)
+  return obj
+}
+
+function makeDef(id: string, extra: Record<string, unknown> = {}): UnitDefinition {
+  return {
+    id, name: id, squadSize: 1, squadSpacing: 20, formation: 'grid',
+    baseStats: { hp: 1000, attack: 0, defense: 0, speed: 0, range: 150, attackType: 'single', actionCooldownMax: 10, turnSpeed: 5, size: 'S', combatTags: ['organic'], ...extra },
+  }
+}
+
+function toCatalog(defs: Record<string, UnitDefinition>): CombatCatalog {
+  return deepFreeze({ unitTypes: Object.fromEntries(Object.entries(defs).map(([k, v]) => [k, mapDefinitionToUnitTypeConfig(v)])) })
+}
+
+describe('R5b / ISO-08: Lifecycle and nested runtime state isolation', () => {
+  it('executes action spawn, periodic ability spawn, and damage trigger spawn strictly from local catalog', () => {
+    const defs: Record<string, UnitDefinition> = {
+      actionSpawner: makeDef('actionSpawner', {
+        hp: 500,
+        attackType: 'spawn',
+        spawnType: 'minion',
+        spawnCap: 1,
+        actionCooldownMax: 2,
+      }),
+      periodicSpawner: makeDef('periodicSpawner', {
+        hp: 500,
+        periodicAbilities: [{
+          id: 'summon-periodic',
+          intervalTicks: 2,
+          initialDelayTicks: 0,
+          targetPolicy: 'self',
+          payload: { kind: 'spawn', unitType: 'minion', cap: 1 },
+        }],
+      }),
+      triggerSpawner: makeDef('triggerSpawner', {
+        hp: 500,
+        triggerEffects: [{
+          id: 'summon-trigger',
+          event: 'damage_taken',
+          maxTriggers: 1,
+          payload: { kind: 'spawn', target: 'self', unitType: 'minion', cap: 1 },
+        }],
+      }),
+      minion: makeDef('minion', { hp: 45, attack: 8, speed: 60, range: 40 }),
+      target: makeDef('target', { hp: 5000, attack: 10, range: 100, actionCooldownMax: 2 }),
+      anchor: makeDef('anchor', { hp: 10000, range: 0 }),
+    }
+
+    const catalog = deepFreeze({ unitTypes: defs })
+
+    // 1. Action spawn battle
+    const actionBattle: BattleInput = deepFreeze({
+      seed: 928,
+      arena: { width: 600, height: 600, tileSize: 40, obstacles: [] },
+      rules: { maxTicks: 8, timeoutPolicy: 'draw', defenseResolutionMode: 'v9_snapshot' },
+      definitions: defs,
+      units: [
+        { instanceId: 'a', definitionId: 'actionSpawner', team: 'attacker', rank: 1, upgradeIds: [], placement: { x: 300, y: 340, angle: 0 } },
+        { instanceId: 'd', definitionId: 'target', team: 'defender', rank: 1, upgradeIds: [], placement: { x: 300, y: 260, angle: Math.PI } },
+        { instanceId: 'anchor', definitionId: 'anchor', team: 'defender', rank: 1, upgradeIds: [], placement: { x: 50, y: 50, angle: 0 } },
+      ],
+      catalog,
+      scheduledEffects: [],
+    })
+    const actionResult = simulateCombat(actionBattle)
+    const actionSpawns = actionResult.logs.flatMap(t => t.actions).filter(a => a.type === 'spawn')
+    expect(actionSpawns.length).toBeGreaterThan(0)
+    expect(actionSpawns[0]).toMatchObject({ spawnType: 'minion', spawnTeam: 'attacker' })
+
+    // 2. Periodic ability spawn battle
+    const periodicBattle: BattleInput = deepFreeze({
+      seed: 928,
+      arena: { width: 600, height: 600, tileSize: 40, obstacles: [] },
+      rules: { maxTicks: 8, timeoutPolicy: 'draw', defenseResolutionMode: 'v9_snapshot' },
+      definitions: defs,
+      units: [
+        { instanceId: 'a', definitionId: 'periodicSpawner', team: 'attacker', rank: 1, upgradeIds: [], placement: { x: 300, y: 340, angle: 0 } },
+        { instanceId: 'd', definitionId: 'target', team: 'defender', rank: 1, upgradeIds: [], placement: { x: 300, y: 260, angle: Math.PI } },
+        { instanceId: 'anchor', definitionId: 'anchor', team: 'defender', rank: 1, upgradeIds: [], placement: { x: 50, y: 50, angle: 0 } },
+      ],
+      catalog,
+      scheduledEffects: [],
+    })
+    const periodicResult = simulateCombat(periodicBattle)
+    const periodicSpawns = periodicResult.logs.flatMap(t => t.actions).filter(a => a.type === 'spawn')
+    expect(periodicSpawns.length).toBeGreaterThan(0)
+    expect(periodicSpawns[0]).toMatchObject({ spawnType: 'minion', spawnTeam: 'attacker' })
+
+    // 3. Trigger spawn battle
+    const triggerBattle: BattleInput = deepFreeze({
+      seed: 928,
+      arena: { width: 600, height: 600, tileSize: 40, obstacles: [] },
+      rules: { maxTicks: 8, timeoutPolicy: 'draw', defenseResolutionMode: 'v9_snapshot' },
+      definitions: defs,
+      units: [
+        { instanceId: 'a', definitionId: 'triggerSpawner', team: 'attacker', rank: 1, upgradeIds: [], placement: { x: 300, y: 340, angle: 0 } },
+        { instanceId: 'd', definitionId: 'target', team: 'defender', rank: 1, upgradeIds: [], placement: { x: 300, y: 260, angle: Math.PI } },
+        { instanceId: 'anchor', definitionId: 'anchor', team: 'defender', rank: 1, upgradeIds: [], placement: { x: 50, y: 50, angle: 0 } },
+      ],
+      catalog,
+      scheduledEffects: [],
+    })
+    const triggerResult = simulateCombat(triggerBattle)
+    const triggerSpawns = triggerResult.logs.flatMap(t => t.actions).filter(a => a.type === 'spawn')
+    expect(triggerSpawns.length).toBeGreaterThan(0)
+    expect(triggerSpawns[0]).toMatchObject({ spawnType: 'minion', spawnTeam: 'attacker' })
+  })
+
+  it('executes V8 sequential death-spawn as positive control (noting V9 open defect separately)', () => {
+    const definitions: Record<string, UnitDefinition> = {
+      owner: makeDef('owner', {
+        hp: 40,
+        triggerEffects: [{
+          id: 'after-death',
+          event: 'death',
+          payload: { kind: 'spawn', target: 'self', unitType: 'minion', count: 1 },
+        }],
+      }),
+      killer: makeDef('killer', { attack: 100, range: 100, actionCooldownMax: 2 }),
+      minion: makeDef('minion', { hp: 90, attack: 10 }),
+      anchor: makeDef('anchor', { hp: 5000, range: 0 }),
+    }
+
+    const catalog = deepFreeze({ unitTypes: definitions })
+    const battleV8: BattleInput = deepFreeze({
+      seed: 928,
+      definitions,
+      catalog,
+      arena: { width: 600, height: 600, tileSize: 40, obstacles: [] },
+      rules: { maxTicks: 8, timeoutPolicy: 'draw', defenseResolutionMode: 'v8_sequential' },
+      units: [
+        { instanceId: 'a', definitionId: 'owner', team: 'attacker', rank: 1, upgradeIds: [], placement: { x: 300, y: 340, angle: -Math.PI / 2 } },
+        { instanceId: 'd', definitionId: 'killer', team: 'defender', rank: 1, upgradeIds: [], placement: { x: 300, y: 260, angle: Math.PI / 2 } },
+        { instanceId: 'anchor', definitionId: 'anchor', team: 'attacker', rank: 1, upgradeIds: [], placement: { x: 60, y: 540, angle: 0 } },
+      ],
+      scheduledEffects: [],
+    })
+
+    const result = simulateCombat(battleV8)
+    const actions = result.logs.flatMap(t => t.actions)
+    const deathEvents = actions.filter(a => a.type === 'die')
+    const triggerEvents = actions.filter(a => a.type === 'trigger_effect')
+    const spawnEvents = actions.filter(a => a.type === 'spawn')
+
+    expect(deathEvents.length).toBeGreaterThan(0)
+    expect(triggerEvents.length).toBeGreaterThan(0)
+    expect(spawnEvents).toHaveLength(1)
+    expect(spawnEvents[0]).toMatchObject({ spawnType: 'minion', spawnTeam: 'attacker' })
+  })
+
+  it('detaches nested clone runtime state and preserves independent reassembly execution', () => {
+    const defs: Record<string, UnitDefinition> = {
+      fighter: makeDef('fighter', {
+        hp: 400,
+        periodicAbilities: [{ id: 'heal', intervalTicks: 2, targetPolicy: 'self', payload: { kind: 'heal', amount: 10 } }],
+        reassembly: { delayTicks: 3, hpPercent: 0.5, maxTriggers: 1 },
+      }),
+    }
+    const catalog = toCatalog(defs)
+    const { world } = createEcsCombatRuntime({ catalog })
+
+    world.queueUnitCreation(compileUnitSnapshot({
+      definitionId: 'fighter',
+      identity: { id: 'source', team: 'attacker' },
+      loadout: { rank: 1, upgradeIds: [] },
+      placement: { x: 100, y: 100, angle: 0 },
+      catalog,
+    })!)
+    world.flushStructuralCommands()
+
+    const sourceEntity = world.getEntityId('source')!
+    world.queueUnitClone(sourceEntity, 'clone', 150, 150)
+    world.flushStructuralCommands()
+
+    const cloneEntity = world.getEntityId('clone')!
+    const beforeClone = structuredClone(world.snapshotEntity(cloneEntity))
+
+    // Mutate source entity vitality and reassembly state
+    world.stores.vitality.require(sourceEntity).reassemblyConfig!.delayTicks = 999
+    for (const store of Object.values(world.stores)) {
+      const state = store.get(sourceEntity)
+      if (state && 'periodicProgramState' in state && Array.isArray((state as Record<string, unknown>).periodicProgramState)) {
+        ((state as Record<string, unknown>).periodicProgramState as Array<{ payload: { amount: number } }>)[0].payload.amount = 999
+      }
+    }
+
+    // Verify clone state is completely detached and unchanged
+    expect(world.snapshotEntity(cloneEntity)).toEqual(beforeClone)
+  })
+
+  it('strictly isolates nested component stores and resources per-world and per-entity', () => {
+    const defs: Record<string, UnitDefinition> = {
+      hero: makeDef('hero', {
+        shieldHitBlock: { charges: 3 },
+        formationModifiers: { adjacencyBonus: { radius: 50, maxStacks: 2, damageReductionPerAlly: 0.1 } },
+      }),
+    }
+    const catalog = toCatalog(defs)
+    const runtime1 = createEcsCombatRuntime({ catalog })
+    const runtime2 = createEcsCombatRuntime({ catalog })
+
+    runtime1.world.queueUnitCreation(
+      compileUnitSnapshot({ definitionId: 'hero', identity: { id: 'a', team: 'attacker' }, loadout: { rank: 1, upgradeIds: [] }, placement: { x: 100, y: 100, angle: 0 }, catalog })!,
+      compileUnitSnapshot({ definitionId: 'hero', identity: { id: 'b', team: 'attacker' }, loadout: { rank: 1, upgradeIds: [] }, placement: { x: 120, y: 100, angle: 0 }, catalog })!,
+    )
+    runtime2.world.queueUnitCreation(
+      compileUnitSnapshot({ definitionId: 'hero', identity: { id: 'a', team: 'attacker' }, loadout: { rank: 1, upgradeIds: [] }, placement: { x: 100, y: 100, angle: 0 }, catalog })!,
+    )
+    runtime1.world.flushStructuralCommands()
+    runtime2.world.flushStructuralCommands()
+
+    const entityA = runtime1.world.getEntityId('a')!
+    const entityB = runtime1.world.getEntityId('b')!
+    const beforeEntityB = structuredClone(runtime1.world.snapshotEntity(entityB))
+    const beforeWorld2 = structuredClone(runtime2.world.snapshot())
+
+    // Mutate entity A in world 1
+    runtime1.world.stores.defense.require(entityA).shieldHitBlockCharges = 0
+
+    // Entity B in world 1 and entire world 2 must remain completely unaffected
+    expect(runtime1.world.snapshotEntity(entityB)).toEqual(beforeEntityB)
+    expect(runtime2.world.snapshot()).toEqual(beforeWorld2)
+  })
+})

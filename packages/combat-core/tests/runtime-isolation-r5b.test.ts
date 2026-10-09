@@ -1,25 +1,33 @@
 import { describe, expect, it } from 'vitest'
 import * as combatCore from '../src/index.js'
 import { simulateCombat } from '../src/facade/combat-facade.js'
+import { createEcsCombatRuntime } from '../src/ecs/combat-ecs-runtime.js'
+import { compileUnitSnapshot } from '../src/combat.unit-compiler.js'
+import { PRNG } from '../src/combat.utils.js'
+import { mapDefinitionToUnitTypeConfig } from '../src/combat.definition-mapper.js'
 import type { BattleInput, UnitDefinition } from '../src/contracts/index.js'
+import type { CombatCatalog } from '../src/combat.catalog.types.js'
 
 function deepFreeze<T>(obj: T): T {
-  if (obj === null || typeof obj !== 'object') return obj
+  if (obj === null || typeof obj !== 'object' || Object.isFrozen(obj)) return obj
   Object.freeze(obj)
-  for (const value of Object.values(obj as Record<string, unknown>)) {
-    deepFreeze(value)
-  }
+  for (const value of Object.values(obj as Record<string, unknown>)) deepFreeze(value)
   return obj
 }
 
-function makeBasicArena() {
+function makeArena(width: number, height: number) {
+  return { width, height, tileSize: 40, obstacles: [], deployment: { strategy: 'center' as const } }
+}
+
+function makeDef(id: string, name: string, hp: number, attack: number): UnitDefinition {
   return {
-    width: 600,
-    height: 1200,
-    tileSize: 40,
-    obstacles: [],
-    deployment: { strategy: 'center' as const },
+    id, name, squadSize: 1, squadSpacing: 20, formation: 'grid',
+    baseStats: { hp, attack, defense: 0, speed: 60, range: 80, attackType: 'single', actionCooldownMax: 10, turnSpeed: 10, size: 'M', combatTags: [] },
   }
+}
+
+function toCatalog(defs: Record<string, UnitDefinition>): CombatCatalog {
+  return deepFreeze({ unitTypes: Object.fromEntries(Object.entries(defs).map(([k, v]) => [k, mapDefinitionToUnitTypeConfig(v)])) })
 }
 
 describe('R5b / ISO-08: Runtime isolation and elimination of global registries', () => {
@@ -32,183 +40,202 @@ describe('R5b / ISO-08: Runtime isolation and elimination of global registries',
     expect(exports.activeSimulator).toBeUndefined()
   })
 
-  it('runs isolated concurrent battles with identical IDs but divergent stats without cross-talk', async () => {
-    const arena = makeBasicArena()
+  it('runs isolated synchronous alternating battles (A->B->A and B->A->B) over frozen inputs with divergent definitions and arenas', () => {
+    const arenaA = makeArena(600, 600)
+    const arenaB = makeArena(800, 800)
 
-    const defA: Record<string, UnitDefinition> = {
-      brawler: {
-        id: 'brawler',
-        name: 'Brawler A',
-        squadSize: 1,
-        squadSpacing: 20,
-        formation: 'grid',
-        baseStats: {
-          hp: 120,
-          attack: 15,
-          defense: 0,
-          speed: 60,
-          range: 80,
-          attackType: 'single',
-          actionCooldownMax: 10,
-          turnSpeed: 10,
-          size: 'M',
-          combatTags: [],
-        },
-      },
+    const defsA: Record<string, UnitDefinition> = {
+      fighter: makeDef('fighter', 'Fighter A (Light)', 120, 15),
+      target: makeDef('target', 'Target A', 1000, 0),
     }
 
-    const defB: Record<string, UnitDefinition> = {
-      brawler: {
-        id: 'brawler',
-        name: 'Brawler B (Heavy)',
-        squadSize: 1,
-        squadSpacing: 20,
-        formation: 'grid',
-        baseStats: {
-          hp: 600,
-          attack: 40,
-          defense: 10,
-          speed: 60,
-          range: 80,
-          attackType: 'single',
-          actionCooldownMax: 10,
-          turnSpeed: 10,
-          size: 'M',
-          combatTags: [],
-        },
-      },
+    const defsB: Record<string, UnitDefinition> = {
+      fighter: makeDef('fighter', 'Fighter B (Heavy)', 600, 40),
+      target: makeDef('target', 'Target B', 3000, 0),
     }
 
     const battleA: BattleInput = deepFreeze({
       seed: 42,
-      arena,
+      arena: arenaA,
       rules: { maxTicks: 25, timeoutPolicy: 'draw', defenseResolutionMode: 'v9_snapshot' },
-      definitions: defA,
+      definitions: defsA,
       units: [
-        { instanceId: 'a1', definitionId: 'brawler', team: 'attacker', rank: 1, upgradeIds: [], placement: { x: 280, y: 300, angle: 0 } },
-        { instanceId: 'd1', definitionId: 'brawler', team: 'defender', rank: 1, upgradeIds: [], placement: { x: 320, y: 300, angle: Math.PI } },
+        { instanceId: 'a1', definitionId: 'fighter', team: 'attacker', rank: 1, upgradeIds: [], placement: { x: 280, y: 300, angle: 0 } },
+        { instanceId: 'd1', definitionId: 'target', team: 'defender', rank: 1, upgradeIds: [], placement: { x: 320, y: 300, angle: Math.PI } },
       ],
-      catalog: { unitTypes: defA },
+      catalog: { unitTypes: defsA },
       scheduledEffects: [],
     })
 
     const battleB: BattleInput = deepFreeze({
       seed: 42,
-      arena,
+      arena: arenaB,
       rules: { maxTicks: 25, timeoutPolicy: 'draw', defenseResolutionMode: 'v9_snapshot' },
-      definitions: defB,
+      definitions: defsB,
       units: [
-        { instanceId: 'a1', definitionId: 'brawler', team: 'attacker', rank: 1, upgradeIds: [], placement: { x: 280, y: 300, angle: 0 } },
-        { instanceId: 'd1', definitionId: 'brawler', team: 'defender', rank: 1, upgradeIds: [], placement: { x: 320, y: 300, angle: Math.PI } },
+        { instanceId: 'a1', definitionId: 'fighter', team: 'attacker', rank: 1, upgradeIds: [], placement: { x: 380, y: 400, angle: 0 } },
+        { instanceId: 'd1', definitionId: 'target', team: 'defender', rank: 1, upgradeIds: [], placement: { x: 420, y: 400, angle: Math.PI } },
       ],
-      catalog: { unitTypes: defB },
+      catalog: { unitTypes: defsB },
       scheduledEffects: [],
     })
 
-    const [resA, resB] = await Promise.all([
-      simulateCombat(battleA),
-      simulateCombat(battleB),
-    ])
+    const beforeA = JSON.stringify(battleA)
+    const beforeB = JSON.stringify(battleB)
 
-    expect(resA.initialState[0].maxHp).toBe(120)
-    expect(resA.initialState[0].attack).toBe(15)
-    expect(resA.initialState[1].maxHp).toBe(120)
+    // Sequence 1: A -> B -> A
+    const resA1 = simulateCombat(battleA)
+    const resB1 = simulateCombat(battleB)
+    const resA2 = simulateCombat(battleA)
 
-    expect(resB.initialState[0].maxHp).toBe(600)
-    expect(resB.initialState[0].attack).toBe(40)
-    expect(resB.initialState[1].maxHp).toBe(600)
+    expect(resA1).toEqual(resA2)
+    expect(resA1).not.toEqual(resB1)
+    expect(JSON.stringify(battleA)).toBe(beforeA)
+    expect(JSON.stringify(battleB)).toBe(beforeB)
 
-    expect(resA.logs.length).toBeGreaterThan(0)
-    expect(resB.logs.length).toBeGreaterThan(0)
-    expect(resA.logs).not.toEqual(resB.logs)
+    // Sequence 2: B -> A -> B
+    const resB2 = simulateCombat(battleB)
+    const resA3 = simulateCombat(battleA)
+    const resB3 = simulateCombat(battleB)
+
+    expect(resB2).toEqual(resB1)
+    expect(resB3).toEqual(resB1)
+    expect(resA3).toEqual(resA1)
+
+    expect(resA1.initialState[0].maxHp).toBe(120)
+    expect(resA1.initialState[0].attack).toBe(15)
+    expect(resB1.initialState[0].maxHp).toBe(600)
+    expect(resB1.initialState[0].attack).toBe(40)
   })
 
-  it('resolves late summons and periodic abilities strictly from local catalog without global fallback', async () => {
-    const arena = makeBasicArena()
-
-    const defs: Record<string, UnitDefinition> = {
-      carrier: {
-        id: 'carrier',
-        name: 'Spawn Carrier',
-        squadSize: 1,
-        squadSpacing: 20,
-        formation: 'grid',
-        baseStats: {
-          hp: 250,
-          attack: 0,
-          defense: 0,
-          speed: 40,
-          range: 120,
-          attackType: 'spawn',
-          spawnType: 'custom_minion',
-          spawnCap: 2,
-          actionCooldownMax: 5,
-          turnSpeed: 5,
-          size: 'M',
-          combatTags: [],
-        },
-      },
-      custom_minion: {
-        id: 'custom_minion',
-        name: 'Custom Isolated Minion',
-        squadSize: 1,
-        squadSpacing: 20,
-        formation: 'grid',
-        baseStats: {
-          hp: 45,
-          attack: 8,
-          defense: 1,
-          speed: 80,
-          range: 40,
-          attackType: 'single',
-          actionCooldownMax: 8,
-          turnSpeed: 10,
-          size: 'S',
-          combatTags: [],
-        },
-      },
-      target: {
-        id: 'target',
-        name: 'Target Dummy',
-        squadSize: 1,
-        squadSpacing: 20,
-        formation: 'grid',
-        baseStats: {
-          hp: 500,
-          attack: 0,
-          defense: 0,
-          speed: 20,
-          range: 40,
-          attackType: 'single',
-          actionCooldownMax: 100,
-          turnSpeed: 5,
-          size: 'M',
-          combatTags: [],
-        },
-      },
+  it('isolates intentionally colliding definition IDs across distinct catalogs without cross-contamination', () => {
+    const defsMars: Record<string, UnitDefinition> = {
+      marine: makeDef('marine', 'Mars Marine', 100, 12),
+      dummy: makeDef('dummy', 'Target Dummy', 500, 0),
     }
 
-    const input: BattleInput = deepFreeze({
-      seed: 99,
-      arena,
-      rules: { maxTicks: 50, timeoutPolicy: 'draw', defenseResolutionMode: 'v9_snapshot' },
-      definitions: defs,
+    const defsFantasy: Record<string, UnitDefinition> = {
+      marine: makeDef('marine', 'Fantasy Marine (Champion)', 777, 95),
+      dummy: makeDef('dummy', 'Target Dummy', 500, 0),
+    }
+
+    const battleMars: BattleInput = deepFreeze({
+      seed: 928,
+      arena: makeArena(600, 600),
+      rules: { maxTicks: 20, timeoutPolicy: 'draw', defenseResolutionMode: 'v9_snapshot' },
+      definitions: defsMars,
       units: [
-        { instanceId: 'c1', definitionId: 'carrier', team: 'attacker', rank: 1, upgradeIds: [], placement: { x: 200, y: 300, angle: 0 } },
-        { instanceId: 't1', definitionId: 'target', team: 'defender', rank: 1, upgradeIds: [], placement: { x: 260, y: 300, angle: Math.PI } },
+        { instanceId: 'm1', definitionId: 'marine', team: 'attacker', rank: 1, upgradeIds: [], placement: { x: 260, y: 300, angle: 0 } },
+        { instanceId: 't1', definitionId: 'dummy', team: 'defender', rank: 1, upgradeIds: [], placement: { x: 340, y: 300, angle: Math.PI } },
       ],
-      catalog: { unitTypes: defs },
+      catalog: { unitTypes: defsMars },
       scheduledEffects: [],
     })
 
-    const res = await simulateCombat(input)
-    expect(res.initialState).toHaveLength(2)
-
-    const spawnActions = res.logs.flatMap(tick => tick.actions).filter(entry => entry.type === 'spawn')
-    expect(spawnActions.length).toBeGreaterThan(0)
-    expect(spawnActions[0]).toMatchObject({
-      spawnType: 'custom_minion',
-      spawnTeam: 'attacker',
+    const battleFantasy: BattleInput = deepFreeze({
+      seed: 928,
+      arena: makeArena(600, 600),
+      rules: { maxTicks: 20, timeoutPolicy: 'draw', defenseResolutionMode: 'v9_snapshot' },
+      definitions: defsFantasy,
+      units: [
+        { instanceId: 'm1', definitionId: 'marine', team: 'attacker', rank: 1, upgradeIds: [], placement: { x: 260, y: 300, angle: 0 } },
+        { instanceId: 't1', definitionId: 'dummy', team: 'defender', rank: 1, upgradeIds: [], placement: { x: 340, y: 300, angle: Math.PI } },
+      ],
+      catalog: { unitTypes: defsFantasy },
+      scheduledEffects: [],
     })
+
+    const resM1 = simulateCombat(battleMars)
+    const resF1 = simulateCombat(battleFantasy)
+    const resM2 = simulateCombat(battleMars)
+    const resF2 = simulateCombat(battleFantasy)
+
+    expect(resM1).toEqual(resM2)
+    expect(resF1).toEqual(resF2)
+
+    expect(resM1.initialState.find(u => u.type === 'marine')?.maxHp).toBe(100)
+    expect(resF1.initialState.find(u => u.type === 'marine')?.maxHp).toBe(777)
+    expect(resM1.logs).not.toEqual(resF1.logs)
+  })
+
+  it('executes interleaved ECS runtimes phase by phase without state leakage or shared resources', () => {
+    const defsA: Record<string, UnitDefinition> = {
+      hero: makeDef('hero', 'Hero A', 200, 20),
+    }
+    const defsB: Record<string, UnitDefinition> = {
+      hero: makeDef('hero', 'Hero B', 800, 80),
+    }
+
+    const catalogA = toCatalog(defsA)
+    const catalogB = toCatalog(defsB)
+
+    const runtimeA = createEcsCombatRuntime({ catalog: catalogA })
+    const runtimeB = createEcsCombatRuntime({ catalog: catalogB })
+
+    const unitA = compileUnitSnapshot({
+      definitionId: 'hero',
+      identity: { id: 'h1', team: 'attacker' },
+      loadout: { rank: 1, upgradeIds: [] },
+      placement: { x: 100, y: 100, angle: 0 },
+      catalog: catalogA,
+    })!
+
+    const unitB = compileUnitSnapshot({
+      definitionId: 'hero',
+      identity: { id: 'h1', team: 'attacker' },
+      loadout: { rank: 1, upgradeIds: [] },
+      placement: { x: 200, y: 200, angle: 0 },
+      catalog: catalogB,
+    })!
+
+    runtimeA.world.queueUnitCreation(unitA)
+    runtimeB.world.queueUnitCreation(unitB)
+
+    runtimeA.world.flushStructuralCommands()
+    runtimeB.world.flushStructuralCommands()
+
+    const entityA = runtimeA.world.getEntityId('h1')!
+    const entityB = runtimeB.world.getEntityId('h1')!
+
+    expect(runtimeA.world.stores.vitality.require(entityA).maxHp).toBe(200)
+    expect(runtimeB.world.stores.vitality.require(entityB).maxHp).toBe(800)
+
+    const clockA = { tick: 0, dt: 1, maxTicks: 100, timeoutPolicy: 'draw' as const }
+    const clockB = { tick: 0, dt: 1, maxTicks: 100, timeoutPolicy: 'draw' as const }
+    runtimeA.world.resources.set('clock', clockA)
+    runtimeB.world.resources.set('clock', clockB)
+
+    const actionsA: import('../src/combat.types.js').BattleAction[] = []
+    const actionsB: import('../src/combat.types.js').BattleAction[] = []
+    runtimeA.world.resources.set('actions', actionsA)
+    runtimeB.world.resources.set('actions', actionsB)
+
+    // Run stage on runtime A; verify runtime B is untouched
+    runtimeA.runStage('pre_action', { tick: 0, actions: actionsA, rng: new PRNG(1), activeGlobals: [] })
+    expect(clockA.tick).toBe(0)
+    expect(clockB.tick).toBe(0)
+
+    clockA.tick = 1
+    runtimeA.runStage('action', { tick: 1, actions: actionsA, rng: new PRNG(1), activeGlobals: [] })
+    expect(clockA.tick).toBe(1)
+    expect(clockB.tick).toBe(0)
+
+    clockB.tick = 2
+    runtimeB.runStage('pre_action', { tick: 2, actions: actionsB, rng: new PRNG(2), activeGlobals: [] })
+    expect(clockA.tick).toBe(1)
+    expect(clockB.tick).toBe(2)
+
+    // Verify distinct resources and isolation
+    expect(runtimeA.world.resources.get('catalog')).toBe(catalogA)
+    expect(runtimeB.world.resources.get('catalog')).toBe(catalogB)
+    const resourceKeys: (keyof import('../src/ecs/combat-resources.js').CombatResourceMap)[] = [
+      'combatTagCache',
+      'dirtySpatialEntities',
+      'temporalAttacks',
+      'statusDamageAttribution',
+    ]
+    for (const key of resourceKeys) {
+      expect(runtimeA.world.resources.get(key)).not.toBe(runtimeB.world.resources.get(key))
+    }
   })
 })

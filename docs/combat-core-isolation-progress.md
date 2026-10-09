@@ -1931,5 +1931,50 @@ SHA256: `52a91f4eb406125247426f044eb0dbdf8ab440a8285d211af63e5f9c75bf61dd`.
   - `barrage-baseline-probe.mjs`: все сценарии кандидата **PASS** (60 ticks, 24 damage events).
 - Sealed R4b archive (`f610158b...`) и Fantasy SDK (`52a91f4e...`): **не изменялись (SHA256 инвариантны)**.
 
+### 2026-10-09 — Закрытие замечаний Pass 1 ревью R5b (ISO-08)
+
+В рамках аудита R5b (`artifacts/review-r5b-owner-20261009/review.json` / `REVIEW.md`) устранены два замечания P2:
+
+1. **[P2] `R5B-MARS-DEFAULT-CATALOG-DOUBLE-AURAS` (Дублирование аур в Mars-каталоге):**
+   - **Проблема**: В `MARS_CATALOG` поле `definition.preparedStats.supportAuras` уже содержало базовые ауры из способностей юнита. В `compileUnitSnapshot` (`combat.unit-compiler.ts`) при отсутствии `spec.preparedStats?.supportAuras` выполнялся расчет `getUnitSupportAuras([...(primitives.supportAuras ?? []), ...authoredSupportAuras], ...)` над `baseAuras`, где `primitives.supportAuras` уже наследовал `definition.preparedStats.supportAuras`. В итоге ауры конкатенировались повторно, приводя к тому, что инженер восстанавливал 36 щита вместо 18 (затронуто 87 из 1569 снимков для 5 типов: `officer`, `engineer`, `shield_emitter`, `radar_zepplin`, `nanite_generator`).
+   - **Исправление**: В `packages/combat-core/src/combat.unit-compiler.ts` база аур для разрешения улучшений теперь вычисляется с учетом наличия уже подготовленных аур:
+     `const baseAuras = (definition.preparedStats?.supportAuras as unknown as SupportAura[] | undefined) ?? [...(primitives.supportAuras ?? []), ...authoredSupportAuras]`.
+     Для неподготовленных определений (сырых/Fantasy) базовые ауры собираются единожды из способностей; для подготовленных — используются уже подготовленные без повторного добавления.
+   - **Верификация**: В пробнике `artifacts/review-r5b-owner-20261009/mars-default-catalog-probe.mjs`:
+     - **Node 25.6.0**: **5/5 PASS** (0 различий из 1569 сравнений; инженер восстанавливает ровно 18 щита в 1 событии).
+     - **Node 22.20.0**: **5/5 PASS** (0 различий из 1569 сравнений; инженер восстанавливает ровно 18 щита в 1 событии).
+   - Создан постоянный набор тестов `src/__tests__/combat.mars-catalog-auras.test.ts` (3 теста), фиксирующий отсутствие дублирования аур и точное поведение в ECS-рантайме.
+
+2. **[P2] `R5B-LIFECYCLE-COVERAGE-INCOMPLETE` (Расширение постоянных тестов изоляции жизненного цикла R5b):**
+   - **Проблема**: Тестовое покрытие R5b не охватывало все пути создания сущностей, чередование фаз ECS-рантайма, изоляцию вложенного состояния и защиту от коллизий идентификаторов определений.
+   - **Исправление**:
+     - В `packages/combat-core/tests/runtime-isolation-r5b.test.ts` (4 теста):
+       - Проверка исключения глобальных реестров и изменяемых синглтонов.
+       - Чередующееся синхронное выполнение `A->B->A` и `B->A->B` на замороженных входных данных с несовпадающими определениями, характеристиками и размерами арен (`600x600` vs `800x800`).
+       - Полная изоляция коллидирующих `definitionId` (`marine` с HP 100 vs 777 в каталогах Mars и Fantasy) без перекрёстного загрязнения.
+       - Пофазное чередование ECS-рантаймов (`pre_action`, `action`) с независимыми ресурсами (`combatTagCache`, `dirtySpatialEntities`, `temporalAttacks`, `statusDamageAttribution`).
+     - В `packages/combat-core/tests/runtime-lifecycle-r5b.test.ts` (4 теста):
+       - Разрешение призывов по действию (`spawn` attack), периодических способностей и триггеров урона строго из локального каталога.
+       - Положительный контроль death-spawn для V8 sequential.
+       - Глубокое отсоединение runtime-состояния клона от исходной сущности при модификации оригинала.
+       - Строгая изоляция вложенных компонентных хранилищ (`defense`, `vitality`) между сущностями и мирами.
+
+3. **Характеристика ранее существовавших дефектов механики:**
+   - Дефекты `CORE-V9-DEATH-TRIGGER-SPAWN-DROPPED` (отсутствие призыва при гибели в режиме V9) и `CORE-PREPARED-CLONE-SIZE-CLAMP` (смещение XL-клонов из preparedStats) охарактеризованы в `artifacts/review-r5b-owner-20261009/lifecycle-baseline-probe.mjs` и подтверждены как существовавшие до R5b на базовом коммите `4d1efad`. В рамках R5b они сохранены без ложных исправлений и остаются на отдельном отслеживании.
+
+#### Итоговые результаты проверок:
+- **Core vitest suite**: **35 test files PASS, 274 tests PASS**.
+- **Mars vitest suite**: **206 test files PASS, 863 tests PASS**.
+- **Golden suites**:
+  - `npm run combat:ecs:golden` (V8): **7/7 presets stable (PASS)**.
+  - `npm run combat:ecs:v9:golden` (V9): **7/7 presets stable (PASS)**.
+- **Typecheck** (`npx tsc --noEmit --pretty false`): **0 errors**.
+- **Architectural limits** (`scripts/check-limits.ts --diff HEAD --json`): **0 violations**.
+- **Package runtime consumer gate** (`scripts/test-combat-package-runtime.ts`): **All archive runtime verification suites passed successfully (PASS)**.
+- **Owner probes** (`artifacts/review-r5b-owner-20261009/`):
+  - `mars-default-catalog-probe.mjs`: **5/5 PASS** на Node 25.6.0 и Node 22.20.0.
+  - `lifecycle-baseline-probe.mjs`: **PASS** на Node 25.6.0 и Node 22.20.0.
+- Запечатанные архивы (`f610158b...`, `52a91f4e...`) и файлы Fantasy: **не изменялись**.
+
 
 
