@@ -4,5 +4,6 @@
   "published": true,
   "balanceChanged": false,
   "cloudSchemaChanged": false,
+  "clientRevision": "ui-redesign-v1.1",
   "path": "fantasy-ui-redesign-v1"
 }
