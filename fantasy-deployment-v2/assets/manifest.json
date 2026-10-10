@@ -1,0 +1,1120 @@
+{
+  "snapshotDate": "2026-10-06",
+  "sourceManifest": "examples/fantasy-art-lab/public/assets/roster-proportions-v3/static-manifest.json",
+  "sourceManifestSha256": "bbb0d3b9ba28e27f40e246c5bccdec97d0339d423e6757ae0c359db4a114599c",
+  "assets": [
+    {
+      "assetId": "dawn-oathkeeper",
+      "sourceId": "dawn-oathkeeper",
+      "sourcePath": "examples/fantasy-art-lab/public/assets/roster-proportions-v3/dawn-oathkeeper.png",
+      "sha256": "09e2b1e8d64043407b680ea7c3a78b916935bbcdcbeda62d512843b296e84089",
+      "width": 64,
+      "height": 64,
+      "bounds": {
+        "minX": 11,
+        "minY": 5,
+        "maxX": 50,
+        "maxY": 57
+      },
+      "temporary": false,
+      "status": "candidate_needs_art_review",
+      "groundAnchor": {
+        "x": 32,
+        "y": 57
+      },
+      "displaySize": 64
+    },
+    {
+      "assetId": "dawn-sun-pikeman",
+      "sourceId": "dawn-sun-pikeman",
+      "sourcePath": "examples/fantasy-art-lab/public/assets/roster-proportions-v3/dawn-sun-pikeman.png",
+      "sha256": "b131d880868bf907d3d17b09d1476abbf75ce59823410b6213d0a82106a5f4e7",
+      "width": 64,
+      "height": 64,
+      "bounds": {
+        "minX": 8,
+        "minY": 5,
+        "maxX": 60,
+        "maxY": 57
+      },
+      "temporary": false,
+      "status": "candidate_needs_art_review",
+      "groundAnchor": {
+        "x": 32,
+        "y": 57
+      },
+      "displaySize": 64
+    },
+    {
+      "assetId": "dawn-crossbow-sentinel",
+      "sourceId": "dawn-crossbow-sentinel",
+      "sourcePath": "examples/fantasy-art-lab/public/assets/roster-proportions-v3/dawn-crossbow-sentinel.png",
+      "sha256": "8f7b265e4f3a67d9205be63c6f509e5045d84f56e3217a79f930fba34fece155",
+      "width": 64,
+      "height": 64,
+      "bounds": {
+        "minX": 8,
+        "minY": 4,
+        "maxX": 53,
+        "maxY": 57
+      },
+      "temporary": false,
+      "status": "candidate_needs_art_review",
+      "groundAnchor": {
+        "x": 32,
+        "y": 57
+      },
+      "displaySize": 64
+    },
+    {
+      "assetId": "dawn-field-chaplain",
+      "sourceId": "dawn-field-chaplain",
+      "sourcePath": "examples/fantasy-art-lab/public/assets/roster-proportions-v3/dawn-field-chaplain.png",
+      "sha256": "b7083d82d99d9dda76943567e056754b1e5fa1d529bfe006dfd4a2444fc39dd0",
+      "width": 64,
+      "height": 64,
+      "bounds": {
+        "minX": 12,
+        "minY": 2,
+        "maxX": 55,
+        "maxY": 61
+      },
+      "temporary": false,
+      "status": "candidate_needs_art_review",
+      "groundAnchor": {
+        "x": 32,
+        "y": 61
+      },
+      "displaySize": 64
+    },
+    {
+      "assetId": "dawn-heliomancer",
+      "sourceId": "dawn-heliomancer",
+      "sourcePath": "examples/fantasy-art-lab/public/assets/roster-proportions-v3/dawn-heliomancer.png",
+      "sha256": "326cfa671b4de1c774803f29104515c7defb1ac61f08b1e35f895fdbf7836b9c",
+      "width": 64,
+      "height": 64,
+      "bounds": {
+        "minX": 13,
+        "minY": 4,
+        "maxX": 49,
+        "maxY": 60
+      },
+      "temporary": false,
+      "status": "candidate_needs_art_review",
+      "groundAnchor": {
+        "x": 32,
+        "y": 60
+      },
+      "displaySize": 64
+    },
+    {
+      "assetId": "dawn-dawn-duelist",
+      "sourceId": "dawn-dawn-duelist",
+      "sourcePath": "examples/fantasy-art-lab/public/assets/roster-proportions-v3/dawn-dawn-duelist.png",
+      "sha256": "05067281b7dfccd62d7833b8ca6eb745c064905c888c9d44ceaaedad7d8fa8db",
+      "width": 64,
+      "height": 64,
+      "bounds": {
+        "minX": 4,
+        "minY": 4,
+        "maxX": 59,
+        "maxY": 60
+      },
+      "temporary": false,
+      "status": "candidate_needs_art_review",
+      "groundAnchor": {
+        "x": 32,
+        "y": 60
+      },
+      "displaySize": 64
+    },
+    {
+      "assetId": "orc-door-shield",
+      "sourceId": "orc-door-shield",
+      "sourcePath": "examples/fantasy-art-lab/public/assets/roster-proportions-v3/orc-door-shield.png",
+      "sha256": "f95e06e08fec087d936251e68cd55b188c7b5d97c83f3a1fb7e315e6f2eb4465",
+      "width": 64,
+      "height": 64,
+      "bounds": {
+        "minX": 4,
+        "minY": 3,
+        "maxX": 58,
+        "maxY": 59
+      },
+      "temporary": false,
+      "status": "candidate_needs_art_review",
+      "groundAnchor": {
+        "x": 32,
+        "y": 59
+      },
+      "displaySize": 64
+    },
+    {
+      "assetId": "orc-raider",
+      "sourceId": "orc-raider",
+      "sourcePath": "examples/fantasy-art-lab/public/assets/roster-proportions-v3/orc-raider.png",
+      "sha256": "d795874d18f9bcf7be26c50dbf70795e1a4b80048da3faccf69c1a1119de49d4",
+      "width": 64,
+      "height": 64,
+      "bounds": {
+        "minX": 8,
+        "minY": 5,
+        "maxX": 55,
+        "maxY": 60
+      },
+      "temporary": false,
+      "status": "candidate_needs_art_review",
+      "groundAnchor": {
+        "x": 32,
+        "y": 60
+      },
+      "displaySize": 64
+    },
+    {
+      "assetId": "orc-javelin-thrower",
+      "sourceId": "orc-javelin-thrower",
+      "sourcePath": "examples/fantasy-art-lab/public/assets/roster-proportions-v3/orc-javelin-thrower.png",
+      "sha256": "5025e0d5c601212b1b4cfbae54f2752ed8a58806d98a3ca9346e7aafcd80ee03",
+      "width": 64,
+      "height": 64,
+      "bounds": {
+        "minX": 2,
+        "minY": 2,
+        "maxX": 61,
+        "maxY": 60
+      },
+      "temporary": false,
+      "status": "candidate_needs_art_review",
+      "groundAnchor": {
+        "x": 32,
+        "y": 60
+      },
+      "displaySize": 64
+    },
+    {
+      "assetId": "orc-bone-mender",
+      "sourceId": "orc-bone-mender",
+      "sourcePath": "examples/fantasy-art-lab/public/assets/roster-proportions-v3/orc-bone-mender.png",
+      "sha256": "40483f696305b4a10cb756896aeee0d0449e45882428fe387577ce45d9cacfb3",
+      "width": 64,
+      "height": 64,
+      "bounds": {
+        "minX": 8,
+        "minY": 3,
+        "maxX": 53,
+        "maxY": 61
+      },
+      "temporary": false,
+      "status": "candidate_needs_art_review",
+      "groundAnchor": {
+        "x": 32,
+        "y": 61
+      },
+      "displaySize": 64
+    },
+    {
+      "assetId": "orc-ember-shaman",
+      "sourceId": "orc-ember-shaman",
+      "sourcePath": "examples/fantasy-art-lab/public/assets/roster-proportions-v3/orc-ember-shaman.png",
+      "sha256": "9f2d6cdab5db7ef2d29aa17c9c282ecb2f42518c27beecc0b69a37803743eaef",
+      "width": 64,
+      "height": 64,
+      "bounds": {
+        "minX": 3,
+        "minY": 2,
+        "maxX": 55,
+        "maxY": 61
+      },
+      "temporary": false,
+      "status": "candidate_needs_art_review",
+      "groundAnchor": {
+        "x": 32,
+        "y": 61
+      },
+      "displaySize": 64
+    },
+    {
+      "assetId": "orc-black-fang",
+      "sourceId": "orc-black-fang",
+      "sourcePath": "examples/fantasy-art-lab/public/assets/roster-proportions-v3/orc-black-fang.png",
+      "sha256": "1c9c8726b5c5bcc6cd0d4eec36e2d152d460dc9032735028a1e9ac5bbe20c908",
+      "width": 64,
+      "height": 64,
+      "bounds": {
+        "minX": 6,
+        "minY": 5,
+        "maxX": 57,
+        "maxY": 59
+      },
+      "temporary": false,
+      "status": "candidate_needs_art_review",
+      "groundAnchor": {
+        "x": 32,
+        "y": 59
+      },
+      "displaySize": 64
+    },
+    {
+      "assetId": "merc-archers",
+      "sourceId": "dawn-crossbow-sentinel",
+      "sourcePath": "examples/fantasy-art-lab/public/assets/roster-proportions-v3/dawn-crossbow-sentinel.png",
+      "sha256": "8f7b265e4f3a67d9205be63c6f509e5045d84f56e3217a79f930fba34fece155",
+      "width": 64,
+      "height": 64,
+      "bounds": {
+        "minX": 8,
+        "minY": 4,
+        "maxX": 53,
+        "maxY": 57
+      },
+      "temporary": true,
+      "status": "candidate_needs_art_review",
+      "groundAnchor": {
+        "x": 32,
+        "y": 57
+      },
+      "displaySize": 64
+    },
+    {
+      "assetId": "merc-healer",
+      "sourceId": "dawn-field-chaplain",
+      "sourcePath": "examples/fantasy-art-lab/public/assets/roster-proportions-v3/dawn-field-chaplain.png",
+      "sha256": "b7083d82d99d9dda76943567e056754b1e5fa1d529bfe006dfd4a2444fc39dd0",
+      "width": 64,
+      "height": 64,
+      "bounds": {
+        "minX": 12,
+        "minY": 2,
+        "maxX": 55,
+        "maxY": 61
+      },
+      "temporary": true,
+      "status": "candidate_needs_art_review",
+      "groundAnchor": {
+        "x": 32,
+        "y": 61
+      },
+      "displaySize": 64
+    },
+    {
+      "assetId": "ember-elemental",
+      "sourceId": "forge-foundry-golem",
+      "sourcePath": "examples/fantasy-art-lab/public/assets/roster-proportions-v3/forge-foundry-golem.png",
+      "sha256": "9da350814aa153d02312134e77bb2745fe45b9e593bd76eb347d9d3b81915717",
+      "width": 64,
+      "height": 64,
+      "bounds": {
+        "minX": 3,
+        "minY": 1,
+        "maxX": 59,
+        "maxY": 57
+      },
+      "temporary": true,
+      "status": "candidate_needs_art_review",
+      "groundAnchor": {
+        "x": 32,
+        "y": 57
+      },
+      "displaySize": 64
+    },
+    {
+      "assetId": "dawn-oath-justiciar",
+      "sourceId": "dawn-oath-justiciar",
+      "sourcePath": "examples/fantasy-art-lab/public/assets/roster-proportions-v3/dawn-oath-justiciar.png",
+      "sha256": "f4ee97e2fd46eeb726cc9b69476abe732ae6fc4196d5f21eeb3052ddb150087c",
+      "width": 64,
+      "height": 64,
+      "bounds": {
+        "minX": 12,
+        "minY": 1,
+        "maxX": 50,
+        "maxY": 61
+      },
+      "temporary": false,
+      "status": "candidate_needs_art_review",
+      "groundAnchor": {
+        "x": 32,
+        "y": 61
+      },
+      "displaySize": 64
+    },
+    {
+      "assetId": "dawn-witch-hunter",
+      "sourceId": "dawn-witch-hunter",
+      "sourcePath": "examples/fantasy-art-lab/public/assets/roster-proportions-v3/dawn-witch-hunter.png",
+      "sha256": "bf4037443d7919934cd5c8eacc9263d049b71424d1d30b7752c91baa4e9254f4",
+      "width": 64,
+      "height": 64,
+      "bounds": {
+        "minX": 8,
+        "minY": 2,
+        "maxX": 53,
+        "maxY": 59
+      },
+      "temporary": false,
+      "status": "candidate_needs_art_review",
+      "groundAnchor": {
+        "x": 32,
+        "y": 59
+      },
+      "displaySize": 64
+    },
+    {
+      "assetId": "dawn-shield-marshal",
+      "sourceId": "dawn-shield-marshal",
+      "sourcePath": "examples/fantasy-art-lab/public/assets/roster-proportions-v3/dawn-shield-marshal.png",
+      "sha256": "7436b6ece59cd2629887ba50cbbf6e9e21b97620d6815915464abd4be25ff092",
+      "width": 64,
+      "height": 64,
+      "bounds": {
+        "minX": 4,
+        "minY": 4,
+        "maxX": 55,
+        "maxY": 61
+      },
+      "temporary": false,
+      "status": "candidate_needs_art_review",
+      "groundAnchor": {
+        "x": 32,
+        "y": 61
+      },
+      "displaySize": 64
+    },
+    {
+      "assetId": "dawn-penitent",
+      "sourceId": "dawn-penitent",
+      "sourcePath": "examples/fantasy-art-lab/public/assets/roster-proportions-v3/dawn-penitent.png",
+      "sha256": "daf85d094806e3adf44cb9acf4c2861d4df92a5ad7b2b621b92f3e04aecdce7c",
+      "width": 64,
+      "height": 64,
+      "bounds": {
+        "minX": 6,
+        "minY": 4,
+        "maxX": 57,
+        "maxY": 59
+      },
+      "temporary": false,
+      "status": "candidate_needs_art_review",
+      "groundAnchor": {
+        "x": 32,
+        "y": 59
+      },
+      "displaySize": 64
+    },
+    {
+      "assetId": "orc-bonebreaker",
+      "sourceId": "orc-bonebreaker",
+      "sourcePath": "examples/fantasy-art-lab/public/assets/roster-proportions-v3/orc-bonebreaker.png",
+      "sha256": "a0d1bb861ef47450d2c424ebfcf6850cfe087502328ba618aa66363dbf233a68",
+      "width": 64,
+      "height": 64,
+      "bounds": {
+        "minX": 4,
+        "minY": 6,
+        "maxX": 58,
+        "maxY": 57
+      },
+      "temporary": false,
+      "status": "candidate_needs_art_review",
+      "groundAnchor": {
+        "x": 32,
+        "y": 57
+      },
+      "displaySize": 64
+    },
+    {
+      "assetId": "orc-goblin-slinger",
+      "sourceId": "orc-goblin-slinger",
+      "sourcePath": "examples/fantasy-art-lab/public/assets/roster-proportions-v3/orc-goblin-slinger.png",
+      "sha256": "0172e87fb7c5c0683f0c9a9f91527615393b009fed0ba96c618d33bd9acf5a5c",
+      "width": 64,
+      "height": 64,
+      "bounds": {
+        "minX": 6,
+        "minY": 2,
+        "maxX": 56,
+        "maxY": 61
+      },
+      "temporary": false,
+      "status": "candidate_needs_art_review",
+      "groundAnchor": {
+        "x": 32,
+        "y": 61
+      },
+      "displaySize": 64
+    },
+    {
+      "assetId": "orc-warg-rider",
+      "sourceId": "orc-warg-rider",
+      "sourcePath": "examples/fantasy-art-lab/public/assets/roster-proportions-v3/orc-warg-rider.png",
+      "sha256": "048685af927e1611695aa02c2b6b9756e68ff52324d95cefb0bfaf1cdc28709f",
+      "width": 64,
+      "height": 64,
+      "bounds": {
+        "minX": 1,
+        "minY": 2,
+        "maxX": 58,
+        "maxY": 61
+      },
+      "temporary": false,
+      "status": "candidate_needs_art_review",
+      "groundAnchor": {
+        "x": 32,
+        "y": 61
+      },
+      "displaySize": 64
+    },
+    {
+      "assetId": "orc-goblin-demolisher",
+      "sourceId": "orc-goblin-demolisher",
+      "sourcePath": "examples/fantasy-art-lab/public/assets/roster-proportions-v3/orc-goblin-demolisher.png",
+      "sha256": "d9faa2331bb50888a373286ce5d9a0cf2878a9c8cb379f8ea4b4617c11902193",
+      "width": 64,
+      "height": 64,
+      "bounds": {
+        "minX": 11,
+        "minY": 5,
+        "maxX": 53,
+        "maxY": 61
+      },
+      "temporary": false,
+      "status": "candidate_needs_art_review",
+      "groundAnchor": {
+        "x": 32,
+        "y": 61
+      },
+      "displaySize": 64
+    },
+    {
+      "assetId": "court-sworn-guard",
+      "sourceId": "court-sworn-guard",
+      "sourcePath": "examples/fantasy-art-lab/public/assets/roster-proportions-v3/court-sworn-guard.png",
+      "sha256": "fc0ac1e1cc5e436857eddd1c241af56226cd44ed5ae1e4843c9cfbfc4b43448e",
+      "width": 64,
+      "height": 64,
+      "bounds": {
+        "minX": 6,
+        "minY": 1,
+        "maxX": 52,
+        "maxY": 62
+      },
+      "temporary": false,
+      "status": "candidate_needs_art_review",
+      "groundAnchor": {
+        "x": 32,
+        "y": 62
+      },
+      "displaySize": 64
+    },
+    {
+      "assetId": "court-bone-spearman",
+      "sourceId": "court-bone-spearman",
+      "sourcePath": "examples/fantasy-art-lab/public/assets/roster-proportions-v3/court-bone-spearman.png",
+      "sha256": "afa3b70cd5f0c63393b39db37504f874d0efe75a6cad91ceee8324735e2f5175",
+      "width": 64,
+      "height": 64,
+      "bounds": {
+        "minX": 7,
+        "minY": 1,
+        "maxX": 52,
+        "maxY": 58
+      },
+      "temporary": false,
+      "status": "candidate_needs_art_review",
+      "groundAnchor": {
+        "x": 32,
+        "y": 58
+      },
+      "displaySize": 64
+    },
+    {
+      "assetId": "court-bone-arbalist",
+      "sourceId": "court-bone-arbalist",
+      "sourcePath": "examples/fantasy-art-lab/public/assets/roster-proportions-v3/court-bone-arbalist.png",
+      "sha256": "a12dcc48d538f46a0988e273cc36ed26a5554cdd6ae3307a0079f678e2947ba5",
+      "width": 64,
+      "height": 64,
+      "bounds": {
+        "minX": 2,
+        "minY": 1,
+        "maxX": 59,
+        "maxY": 61
+      },
+      "temporary": false,
+      "status": "candidate_needs_art_review",
+      "groundAnchor": {
+        "x": 32,
+        "y": 61
+      },
+      "displaySize": 64
+    },
+    {
+      "assetId": "court-coffin-bearer",
+      "sourceId": "court-coffin-bearer",
+      "sourcePath": "examples/fantasy-art-lab/public/assets/roster-proportions-v3/court-coffin-bearer.png",
+      "sha256": "7a9cb8ec7f0da91c34084c267bcd59da62dc640d71b8b4de0f0449e04a82b382",
+      "width": 64,
+      "height": 64,
+      "bounds": {
+        "minX": 7,
+        "minY": 7,
+        "maxX": 58,
+        "maxY": 58
+      },
+      "temporary": false,
+      "status": "candidate_needs_art_review",
+      "groundAnchor": {
+        "x": 32,
+        "y": 58
+      },
+      "displaySize": 64
+    },
+    {
+      "assetId": "court-grave-hound",
+      "sourceId": "court-grave-hound",
+      "sourcePath": "examples/fantasy-art-lab/public/assets/roster-proportions-v3/court-grave-hound.png",
+      "sha256": "a2cd28f51c8d4e25fb22dee9dd1b9e2b6d5fdcc2ec5b466de5c8b10dbb0adb3d",
+      "width": 64,
+      "height": 64,
+      "bounds": {
+        "minX": 1,
+        "minY": 5,
+        "maxX": 62,
+        "maxY": 59
+      },
+      "temporary": false,
+      "status": "candidate_needs_art_review",
+      "groundAnchor": {
+        "x": 32,
+        "y": 59
+      },
+      "displaySize": 64
+    },
+    {
+      "assetId": "court-silent-executioner",
+      "sourceId": "court-silent-executioner",
+      "sourcePath": "examples/fantasy-art-lab/public/assets/roster-proportions-v3/court-silent-executioner.png",
+      "sha256": "86ba018a05cbeefae5cd34f40b885b66a88687ed4996d5d5a8802460ecc0b844",
+      "width": 64,
+      "height": 64,
+      "bounds": {
+        "minX": 4,
+        "minY": 3,
+        "maxX": 61,
+        "maxY": 60
+      },
+      "temporary": false,
+      "status": "candidate_needs_art_review",
+      "groundAnchor": {
+        "x": 32,
+        "y": 60
+      },
+      "displaySize": 64
+    },
+    {
+      "assetId": "court-mourner",
+      "sourceId": "court-mourner",
+      "sourcePath": "examples/fantasy-art-lab/public/assets/roster-proportions-v3/court-mourner.png",
+      "sha256": "aef51bf8e5c2a235a2a0960b71cc9d0a0f7f0646c3e25656c03337a55efb0490",
+      "width": 64,
+      "height": 64,
+      "bounds": {
+        "minX": 8,
+        "minY": 6,
+        "maxX": 48,
+        "maxY": 56
+      },
+      "temporary": false,
+      "status": "candidate_needs_art_review",
+      "groundAnchor": {
+        "x": 32,
+        "y": 56
+      },
+      "displaySize": 64
+    },
+    {
+      "assetId": "court-necromancer",
+      "sourceId": "court-necromancer",
+      "sourcePath": "examples/fantasy-art-lab/public/assets/roster-proportions-v3/court-necromancer.png",
+      "sha256": "11662bb676bf34711bb9db2587ee638509fdea1b795ffd327d4676ffcd3a76fe",
+      "width": 64,
+      "height": 64,
+      "bounds": {
+        "minX": 7,
+        "minY": 4,
+        "maxX": 55,
+        "maxY": 58
+      },
+      "temporary": false,
+      "status": "candidate_needs_art_review",
+      "groundAnchor": {
+        "x": 32,
+        "y": 58
+      },
+      "displaySize": 64
+    },
+    {
+      "assetId": "court-stitcher",
+      "sourceId": "court-stitcher",
+      "sourcePath": "examples/fantasy-art-lab/public/assets/roster-proportions-v3/court-stitcher.png",
+      "sha256": "6009365ae966971042e8ad573880c5702d3bc608ebc280352bab08c0b9791f5d",
+      "width": 64,
+      "height": 64,
+      "bounds": {
+        "minX": 10,
+        "minY": 3,
+        "maxX": 58,
+        "maxY": 60
+      },
+      "temporary": false,
+      "status": "candidate_needs_art_review",
+      "groundAnchor": {
+        "x": 32,
+        "y": 60
+      },
+      "displaySize": 64
+    },
+    {
+      "assetId": "court-plague-apothecary",
+      "sourceId": "court-plague-apothecary",
+      "sourcePath": "examples/fantasy-art-lab/public/assets/roster-proportions-v3/court-plague-apothecary.png",
+      "sha256": "8a157060952d7a95c25f843971328a1f2bd131734a6aca5e822cb0e114637858",
+      "width": 64,
+      "height": 64,
+      "bounds": {
+        "minX": 6,
+        "minY": 3,
+        "maxX": 55,
+        "maxY": 60
+      },
+      "temporary": false,
+      "status": "candidate_needs_art_review",
+      "groundAnchor": {
+        "x": 32,
+        "y": 60
+      },
+      "displaySize": 64
+    },
+    {
+      "assetId": "thorn-guardian",
+      "sourceId": "thorn-guardian",
+      "sourcePath": "examples/fantasy-art-lab/public/assets/roster-proportions-v3/thorn-guardian.png",
+      "sha256": "3ee61b80b372ea69789541246ecaedf12e37bc424edb23b24169f55ad1ce5abf",
+      "width": 64,
+      "height": 64,
+      "bounds": {
+        "minX": 11,
+        "minY": 2,
+        "maxX": 50,
+        "maxY": 56
+      },
+      "temporary": false,
+      "status": "candidate_needs_art_review",
+      "groundAnchor": {
+        "x": 32,
+        "y": 56
+      },
+      "displaySize": 64
+    },
+    {
+      "assetId": "thorn-huntress",
+      "sourceId": "thorn-huntress",
+      "sourcePath": "examples/fantasy-art-lab/public/assets/roster-proportions-v3/thorn-huntress.png",
+      "sha256": "b2573ea03f37d813496c9b1ffcc3ac4278fefd8e784e2f229c898546b123f302",
+      "width": 64,
+      "height": 64,
+      "bounds": {
+        "minX": 11,
+        "minY": 4,
+        "maxX": 52,
+        "maxY": 58
+      },
+      "temporary": false,
+      "status": "candidate_needs_art_review",
+      "groundAnchor": {
+        "x": 32,
+        "y": 58
+      },
+      "displaySize": 64
+    },
+    {
+      "assetId": "thorn-dryad",
+      "sourceId": "thorn-dryad",
+      "sourcePath": "examples/fantasy-art-lab/public/assets/roster-proportions-v3/thorn-dryad.png",
+      "sha256": "d453e10bce5211b981ea09c1bd1483ca178b166a2460fc00f4a57c3264e2c5d3",
+      "width": 64,
+      "height": 64,
+      "bounds": {
+        "minX": 10,
+        "minY": 3,
+        "maxX": 55,
+        "maxY": 60
+      },
+      "temporary": false,
+      "status": "candidate_needs_art_review",
+      "groundAnchor": {
+        "x": 32,
+        "y": 60
+      },
+      "displaySize": 64
+    },
+    {
+      "assetId": "thorn-sporeling",
+      "sourceId": "thorn-sporeling",
+      "sourcePath": "examples/fantasy-art-lab/public/assets/roster-proportions-v3/thorn-sporeling.png",
+      "sha256": "8455d4ec6436dff28115f4fc89d859b99e5c3fa556f534efbf8a8aaee7265ffa",
+      "width": 64,
+      "height": 64,
+      "bounds": {
+        "minX": 19,
+        "minY": 9,
+        "maxX": 52,
+        "maxY": 52
+      },
+      "temporary": false,
+      "status": "candidate_needs_art_review",
+      "groundAnchor": {
+        "x": 32,
+        "y": 52
+      },
+      "displaySize": 64
+    },
+    {
+      "assetId": "thorn-antler-sentinel",
+      "sourceId": "thorn-antler-sentinel",
+      "sourcePath": "examples/fantasy-art-lab/public/assets/roster-proportions-v3/thorn-antler-sentinel.png",
+      "sha256": "2754d071d6e26b1fbd8f7d3c665caedbeb1c42873653e54785d15decbc8bba6b",
+      "width": 64,
+      "height": 64,
+      "bounds": {
+        "minX": 7,
+        "minY": 1,
+        "maxX": 46,
+        "maxY": 57
+      },
+      "temporary": false,
+      "status": "candidate_needs_art_review",
+      "groundAnchor": {
+        "x": 32,
+        "y": 57
+      },
+      "displaySize": 64
+    },
+    {
+      "assetId": "thorn-vine-weaver",
+      "sourceId": "thorn-vine-weaver",
+      "sourcePath": "examples/fantasy-art-lab/public/assets/roster-proportions-v3/thorn-vine-weaver.png",
+      "sha256": "f38a37fee30681eadd965654e5081c67bc01d7b1875dca58b3b93311717f8b65",
+      "width": 64,
+      "height": 64,
+      "bounds": {
+        "minX": 3,
+        "minY": 4,
+        "maxX": 50,
+        "maxY": 59
+      },
+      "temporary": false,
+      "status": "candidate_needs_art_review",
+      "groundAnchor": {
+        "x": 32,
+        "y": 59
+      },
+      "displaySize": 64
+    },
+    {
+      "assetId": "thorn-wild-boar",
+      "sourceId": "thorn-wild-boar",
+      "sourcePath": "examples/fantasy-art-lab/public/assets/roster-proportions-v3/thorn-wild-boar.png",
+      "sha256": "53fe6884a2a39b1fee8b1e9d8f33aae9222c1116bc49db0c18e06927334855d7",
+      "width": 64,
+      "height": 64,
+      "bounds": {
+        "minX": 5,
+        "minY": 10,
+        "maxX": 58,
+        "maxY": 54
+      },
+      "temporary": false,
+      "status": "candidate_needs_art_review",
+      "groundAnchor": {
+        "x": 32,
+        "y": 54
+      },
+      "displaySize": 64
+    },
+    {
+      "assetId": "thorn-owlbear",
+      "sourceId": "thorn-owlbear",
+      "sourcePath": "examples/fantasy-art-lab/public/assets/roster-proportions-v3/thorn-owlbear.png",
+      "sha256": "041b93f0119125bd29eea15b6b600a445045e4a78aa02bda26c908d533df4f3e",
+      "width": 64,
+      "height": 64,
+      "bounds": {
+        "minX": 2,
+        "minY": 1,
+        "maxX": 60,
+        "maxY": 62
+      },
+      "temporary": false,
+      "status": "candidate_needs_art_review",
+      "groundAnchor": {
+        "x": 32,
+        "y": 62
+      },
+      "displaySize": 64
+    },
+    {
+      "assetId": "thorn-wolf-brother",
+      "sourceId": "thorn-wolf-brother",
+      "sourcePath": "examples/fantasy-art-lab/public/assets/roster-proportions-v3/thorn-wolf-brother.png",
+      "sha256": "9ed7fb81f3a4ff28b97a5dcba1030f06fbd46ef581b7715d878a6b70b303cb3a",
+      "width": 64,
+      "height": 64,
+      "bounds": {
+        "minX": 10,
+        "minY": 4,
+        "maxX": 45,
+        "maxY": 59
+      },
+      "temporary": false,
+      "status": "candidate_needs_art_review",
+      "groundAnchor": {
+        "x": 32,
+        "y": 59
+      },
+      "displaySize": 64
+    },
+    {
+      "assetId": "thorn-giant-hunter",
+      "sourceId": "thorn-giant-hunter",
+      "sourcePath": "examples/fantasy-art-lab/public/assets/roster-proportions-v3/thorn-giant-hunter.png",
+      "sha256": "90f8d7c88430f95a3f30d3ce1908380d97125862e3b7ae38b3541fdce52c14c2",
+      "width": 64,
+      "height": 64,
+      "bounds": {
+        "minX": 5,
+        "minY": 4,
+        "maxX": 56,
+        "maxY": 58
+      },
+      "temporary": false,
+      "status": "candidate_needs_art_review",
+      "groundAnchor": {
+        "x": 32,
+        "y": 58
+      },
+      "displaySize": 64
+    },
+    {
+      "assetId": "forge-rune-guard",
+      "sourceId": "forge-rune-guard",
+      "sourcePath": "examples/fantasy-art-lab/public/assets/roster-proportions-v3/forge-rune-guard.png",
+      "sha256": "c21e013fd96500603d849b0ef460a26ff2b7a2a61753fe5c3897737834131151",
+      "width": 64,
+      "height": 64,
+      "bounds": {
+        "minX": 4,
+        "minY": 3,
+        "maxX": 56,
+        "maxY": 59
+      },
+      "temporary": false,
+      "status": "candidate_needs_art_review",
+      "groundAnchor": {
+        "x": 32,
+        "y": 59
+      },
+      "displaySize": 64
+    },
+    {
+      "assetId": "forge-thunderer",
+      "sourceId": "forge-thunderer",
+      "sourcePath": "examples/fantasy-art-lab/public/assets/roster-proportions-v3/forge-thunderer.png",
+      "sha256": "dfe36404fd39df8a9711f91823999f4b7c6f76dc1ea5a30ffcc82f0fd55aab52",
+      "width": 64,
+      "height": 64,
+      "bounds": {
+        "minX": 5,
+        "minY": 2,
+        "maxX": 60,
+        "maxY": 61
+      },
+      "temporary": false,
+      "status": "candidate_needs_art_review",
+      "groundAnchor": {
+        "x": 32,
+        "y": 61
+      },
+      "displaySize": 64
+    },
+    {
+      "assetId": "forge-sealsmith",
+      "sourceId": "forge-sealsmith",
+      "sourcePath": "examples/fantasy-art-lab/public/assets/roster-proportions-v3/forge-sealsmith.png",
+      "sha256": "0e723fdd21c8f558677b4b66cafb5d80b52b097d477c5cdb1fef4bcc5ee0d7a6",
+      "width": 64,
+      "height": 64,
+      "bounds": {
+        "minX": 2,
+        "minY": 3,
+        "maxX": 48,
+        "maxY": 59
+      },
+      "temporary": false,
+      "status": "candidate_needs_art_review",
+      "groundAnchor": {
+        "x": 32,
+        "y": 59
+      },
+      "displaySize": 64
+    },
+    {
+      "assetId": "forge-shard-golem",
+      "sourceId": "forge-shard-golem",
+      "sourcePath": "examples/fantasy-art-lab/public/assets/roster-proportions-v3/forge-shard-golem.png",
+      "sha256": "81d3f188c454a8996e99d590404a415c5b5e4b1ff67b4b1eb1d9ccbd45beefd6",
+      "width": 64,
+      "height": 64,
+      "bounds": {
+        "minX": 6,
+        "minY": 8,
+        "maxX": 58,
+        "maxY": 56
+      },
+      "temporary": false,
+      "status": "candidate_needs_art_review",
+      "groundAnchor": {
+        "x": 32,
+        "y": 56
+      },
+      "displaySize": 64
+    },
+    {
+      "assetId": "forge-ember-projector",
+      "sourceId": "forge-ember-projector",
+      "sourcePath": "examples/fantasy-art-lab/public/assets/roster-proportions-v3/forge-ember-projector.png",
+      "sha256": "899d2f7eb92dc62c871f33b4f97f8177a9d3ad55fe4e8d03badb52081ec614b1",
+      "width": 64,
+      "height": 64,
+      "bounds": {
+        "minX": 7,
+        "minY": 4,
+        "maxX": 55,
+        "maxY": 60
+      },
+      "temporary": false,
+      "status": "candidate_needs_art_review",
+      "groundAnchor": {
+        "x": 32,
+        "y": 60
+      },
+      "displaySize": 64
+    },
+    {
+      "assetId": "forge-pavise-arbalist",
+      "sourceId": "forge-pavise-arbalist",
+      "sourcePath": "examples/fantasy-art-lab/public/assets/roster-proportions-v3/forge-pavise-arbalist.png",
+      "sha256": "bf3a75e8a111445165b2702927c31c1e5ba70277ce1817dd06e26edca6642214",
+      "width": 64,
+      "height": 64,
+      "bounds": {
+        "minX": 8,
+        "minY": 1,
+        "maxX": 55,
+        "maxY": 61
+      },
+      "temporary": false,
+      "status": "candidate_needs_art_review",
+      "groundAnchor": {
+        "x": 32,
+        "y": 61
+      },
+      "displaySize": 64
+    },
+    {
+      "assetId": "forge-tunnel-borer",
+      "sourceId": "forge-tunnel-borer",
+      "sourcePath": "examples/fantasy-art-lab/public/assets/roster-proportions-v3/forge-tunnel-borer.png",
+      "sha256": "a870c030395946eae5a8bb2f90370fabe03b27857bb67586a23eb300a45f8424",
+      "width": 64,
+      "height": 64,
+      "bounds": {
+        "minX": 8,
+        "minY": 4,
+        "maxX": 57,
+        "maxY": 58
+      },
+      "temporary": false,
+      "status": "candidate_needs_art_review",
+      "groundAnchor": {
+        "x": 32,
+        "y": 58
+      },
+      "displaySize": 64
+    },
+    {
+      "assetId": "forge-crystalmancer",
+      "sourceId": "forge-crystalmancer",
+      "sourcePath": "examples/fantasy-art-lab/public/assets/roster-proportions-v3/forge-crystalmancer.png",
+      "sha256": "67f10d3fe2a9fb92f77eab1de931ebeafea1c7194d0674014e37396c8720e955",
+      "width": 64,
+      "height": 64,
+      "bounds": {
+        "minX": 8,
+        "minY": 8,
+        "maxX": 49,
+        "maxY": 55
+      },
+      "temporary": false,
+      "status": "candidate_needs_art_review",
+      "groundAnchor": {
+        "x": 32,
+        "y": 55
+      },
+      "displaySize": 64
+    },
+    {
+      "assetId": "forge-stone-ram",
+      "sourceId": "forge-stone-ram",
+      "sourcePath": "examples/fantasy-art-lab/public/assets/roster-proportions-v3/forge-stone-ram.png",
+      "sha256": "d5e6de59c557fd3555dfc444647986960d908f9b26af4d5f130e4df3d26269aa",
+      "width": 64,
+      "height": 64,
+      "bounds": {
+        "minX": 7,
+        "minY": 6,
+        "maxX": 57,
+        "maxY": 57
+      },
+      "temporary": false,
+      "status": "candidate_needs_art_review",
+      "groundAnchor": {
+        "x": 32,
+        "y": 57
+      },
+      "displaySize": 64
+    },
+    {
+      "assetId": "forge-powder-grenadier",
+      "sourceId": "forge-powder-grenadier",
+      "sourcePath": "examples/fantasy-art-lab/public/assets/roster-proportions-v3/forge-powder-grenadier.png",
+      "sha256": "da9be53ca65076faef7a116189150449a9bc0b3f1f0517da4dece1e625e62a29",
+      "width": 64,
+      "height": 64,
+      "bounds": {
+        "minX": 5,
+        "minY": 3,
+        "maxX": 54,
+        "maxY": 59
+      },
+      "temporary": false,
+      "status": "candidate_needs_art_review",
+      "groundAnchor": {
+        "x": 32,
+        "y": 59
+      },
+      "displaySize": 64
+    }
+  ]
+}

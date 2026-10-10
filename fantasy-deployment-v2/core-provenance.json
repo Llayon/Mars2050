@@ -1,0 +1,11 @@
+{
+  "package": "@mars2050/combat-core",
+  "packageVersion": "0.1.0",
+  "sourceCommit": "9c7c49062ad064819968acfa41f667e00a8f39a3",
+  "sha256": "52a91f4eb406125247426f044eb0dbdf8ab440a8285d211af63e5f9c75bf61dd",
+  "artifact": "vendor/core/mars2050-combat-core-0.1.0-52a91f4e.tgz",
+  "revision": "combat-ecs-v9-deterministic-trig-r4",
+  "overlayManifestSha256": "aa5cbe02af664b9697b61033a437c0d08a52e2f7d1f86608f7e500d5b034acc8",
+  "knownLimitations": ["R4a needs_external_review", "ISO-08 KNOWN_FAIL"],
+  "snapshot": "committed-base-plus-explicit-uncommitted-overlay"
+}

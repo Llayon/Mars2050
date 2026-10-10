@@ -1,0 +1,15 @@
+{
+  "mode": "duel-deployment-v2",
+  "sdk": "52a91f4eb406125247426f044eb0dbdf8ab440a8285d211af63e5f9c75bf61dd",
+  "published": true,
+  "grid": {
+    "columns": 7,
+    "rows": 5,
+    "originX": 90,
+    "originY": 850,
+    "stepX": 70,
+    "stepY": 70
+  },
+  "maxSquads": 9,
+  "path": "fantasy-deployment-v2"
+}
