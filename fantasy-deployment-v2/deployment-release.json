@@ -2,16 +2,16 @@
   "mode": "duel-deployment-v2",
   "sdk": "52a91f4eb406125247426f044eb0dbdf8ab440a8285d211af63e5f9c75bf61dd",
   "published": true,
-  "grid": {
-    "columns": 7,
-    "rows": 5,
-    "originX": 90,
-    "originY": 850,
-    "stepX": 70,
-    "stepY": 70
+  "placement": {
+    "format": "deployment-v3",
+    "geometry": "sdk52-free-zone-v1",
+    "coordinates": "finite-world",
+    "width": 600,
+    "height": 1200,
+    "ownDepth": 400
   },
   "maxSquads": 9,
-  "presentation": "battlefield-v1",
+  "presentation": "free-placement-v1",
   "automaticReplay": true,
   "path": "fantasy-deployment-v2"
 }

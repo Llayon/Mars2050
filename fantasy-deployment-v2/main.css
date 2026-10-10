@@ -23,7 +23,6 @@
     --color-teal-300: oklch(85.5% 0.138 181.071);
     --color-teal-700: oklch(51.1% 0.096 186.391);
     --color-teal-800: oklch(43.7% 0.078 188.216);
-    --color-teal-900: oklch(38.6% 0.063 188.416);
     --color-stone-100: oklch(97% 0.001 106.424);
     --color-stone-200: oklch(92.3% 0.003 48.717);
     --color-stone-300: oklch(86.9% 0.005 56.366);
@@ -478,6 +477,9 @@
   .overflow-hidden {
     overflow: hidden;
   }
+  .rounded {
+    border-radius: 0.25rem;
+  }
   .rounded-full {
     border-radius: calc(infinity * 1px);
   }
@@ -529,14 +531,8 @@
   .fill-amber-950 {
     fill: var(--color-amber-950);
   }
-  .fill-red-400 {
-    fill: var(--color-red-400);
-  }
   .fill-red-900 {
     fill: var(--color-red-900);
-  }
-  .fill-red-950 {
-    fill: var(--color-red-950);
   }
   .fill-stone-100 {
     fill: var(--color-stone-100);
@@ -544,20 +540,11 @@
   .fill-stone-800 {
     fill: var(--color-stone-800);
   }
-  .fill-stone-900 {
-    fill: var(--color-stone-900);
-  }
   .fill-stone-950 {
     fill: var(--color-stone-950);
   }
-  .fill-teal-300 {
-    fill: var(--color-teal-300);
-  }
   .fill-teal-700 {
     fill: var(--color-teal-700);
-  }
-  .fill-teal-900 {
-    fill: var(--color-teal-900);
   }
   .fill-transparent {
     fill: transparent;
@@ -682,12 +669,6 @@
   }
   .opacity-20 {
     opacity: 20%;
-  }
-  .opacity-30 {
-    opacity: 30%;
-  }
-  .opacity-50 {
-    opacity: 50%;
   }
   .shadow-lg {
     --tw-shadow: 0 10px 15px -3px var(--tw-shadow-color, rgb(0 0 0 / 0.1)), 0 4px 6px -4px var(--tw-shadow-color, rgb(0 0 0 / 0.1));
