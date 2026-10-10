@@ -11,5 +11,7 @@
     "stepY": 70
   },
   "maxSquads": 9,
+  "presentation": "battlefield-v1",
+  "automaticReplay": true,
   "path": "fantasy-deployment-v2"
 }
