@@ -1,0 +1,60 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "paths": {
+      "@/domains/combat/combat.unit-factory": ["./src/__tests__/helpers/combat-unit-factory.ts"],
+      "@mars2050/combat-core/contracts": ["./packages/combat-core/src/contracts/index.ts"],
+      "@mars2050/combat-core/replay": ["./packages/combat-core/src/replay/index.ts"],
+      "@mars2050/combat-core/math": ["./packages/combat-core/src/math/index.ts"],
+      "@mars2050/combat-core": ["./packages/combat-core/src/index.ts"],
+      "@/domains/combat/ecs/*": ["./packages/combat-core/src/ecs/*"],
+      "@/domains/combat/ecs": ["./packages/combat-core/src/ecs/index.ts"],
+      "@/domains/combat/combat.ability-compiler": ["./packages/combat-core/src/combat.ability-compiler.ts"],
+      "@/domains/combat/combat.ability-legacy": ["./packages/combat-core/src/combat.ability-legacy.ts"],
+      "@/domains/combat/combat.ability.types": ["./packages/combat-core/src/combat.ability.types.ts"],
+      "@/domains/combat/combat.action-intent": ["./packages/combat-core/src/combat.action-intent.ts"],
+      "@/domains/combat/combat.actions": ["./packages/combat-core/src/combat.actions.ts"],
+      "@/domains/combat/combat.advanced-primitives": ["./packages/combat-core/src/combat.advanced-primitives.ts"],
+      "@/domains/combat/combat.catalog.types": ["./packages/combat-core/src/combat.catalog.types.ts"],
+      "@/domains/combat/combat.control-mode": ["./packages/combat-core/src/combat.control-mode.ts"],
+      "@/domains/combat/combat.death.types": ["./packages/combat-core/src/combat.death.types.ts"],
+      "@/domains/combat/combat.definition-mapper": ["./packages/combat-core/src/combat.definition-mapper.ts"],
+      "@/domains/combat/combat.outcome": ["./packages/combat-core/src/combat.outcome.ts"],
+      "@/domains/combat/combat.pathfinding": ["./packages/combat-core/src/combat.pathfinding.ts"],
+      "@/domains/combat/combat.metrics-collector": ["./packages/combat-core/src/combat.metrics.ts"],
+      "@/domains/combat/combat.phase": ["./packages/combat-core/src/combat.phase.ts"],
+      "@/domains/combat/combat.primitive-coverage": ["./packages/combat-core/src/combat.primitive-coverage.ts"],
+      "@/domains/combat/combat.primitives": ["./packages/combat-core/src/combat.primitives.ts"],
+      "@/domains/combat/combat.replay-mapper": ["./packages/combat-core/src/combat.replay-mapper.ts"],
+      "@/domains/combat/combat.runner": ["./packages/combat-core/src/combat.runner.ts"],
+      "@/domains/combat/combat.runtime-primitives": ["./packages/combat-core/src/combat.runtime-primitives.ts"],
+      "@/domains/combat/combat.runtime": ["./packages/combat-core/src/combat.runtime.ts"],
+      "@/domains/combat/combat.sim.types": ["./packages/combat-core/src/combat.sim.types.ts"],
+      "@/domains/combat/combat.spawn-spec-compiler": ["./packages/combat-core/src/combat.spawn-spec-compiler.ts"],
+      "@/domains/combat/combat.squad-compiler": ["./packages/combat-core/src/combat.squad-compiler.ts"],
+      "@/domains/combat/combat.status-core": ["./packages/combat-core/src/combat.status-core.ts"],
+      "@/domains/combat/combat.support-aura-config": ["./packages/combat-core/src/combat.support-aura-config.ts"],
+      "@/domains/combat/combat.targeting.config": ["./packages/combat-core/src/combat.targeting.config.ts"],
+      "@/domains/combat/combat.temporal-compiler": ["./packages/combat-core/src/combat.temporal-compiler.ts"],
+      "@/domains/combat/combat.temporal.types": ["./packages/combat-core/src/combat.temporal.types.ts"],
+      "@/domains/combat/combat.unit-ability-components": ["./packages/combat-core/src/combat.unit-ability-components.ts"],
+      "@/domains/combat/combat.unit-build.types": ["./packages/combat-core/src/combat.unit-build.types.ts"],
+      "@/domains/combat/combat.unit-compiler-utils": ["./packages/combat-core/src/combat.unit-compiler-utils.ts"],
+      "@/domains/combat/combat.unit-components": ["./packages/combat-core/src/combat.unit-components.ts"],
+      "@/domains/combat/combat.unit-core-components": ["./packages/combat-core/src/combat.unit-core-components.ts"],
+      "@/domains/combat/combat.unit-stat-compiler": ["./packages/combat-core/src/combat.unit-stat-compiler.ts"],
+      "@/domains/combat/combat.upgrade-runtime": ["./packages/combat-core/src/combat.upgrade-runtime.ts"],
+      "@/domains/combat/combat.weapon-validation": ["./packages/combat-core/src/combat.weapon-validation.ts"],
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": [
+    "src/__tests__/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "scripts",
+    "artifacts"
+  ]
+}

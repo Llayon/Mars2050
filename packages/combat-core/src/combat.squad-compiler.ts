@@ -58,7 +58,7 @@ export function createSquadBuildSpecs(
   const centerX = Number(rawX)
   const centerY = Number(rawY)
   const squadId = squadSize > 1 ? `${row.id}_squad` : undefined
-  const rank = getUnitRank({ rank: row.rank ?? row.tier })
+  const rank = getUnitRank({ rank: row.rank })
   return Array.from({ length: squadSize }, (_, index) => {
     const offset = getFormationOffset(
       index,

@@ -2,20 +2,8 @@ import type { BattleAction } from './combat.actions.js'
 import type { SimUnit, Team } from './combat.sim.types.js'
 import type { CombatSnapshotUnit } from './contracts/replay.types.js'
 
-export interface MarkCombatMetrics {
-  firstMarkTick: number | null
-  markUptimeTicks: number
-  uniqueMarkedSquads: number
-  designationSwitchCount: number
-  markRefreshCount: number
-  alliedShotsWhileMarkActive: number
-  shotsAgainstMarkedTargets: number
-  markUtilization: number
-  damageAgainstMarkedTargets: number
-  bonusDamageFromMarks: number
-  alliesRetargetedByMark: number
-  markedTargetOverkillDamage: number
-}
+import type { MarkCombatMetrics } from './contracts/metrics.contracts.js'
+export type { MarkCombatMetrics }
 
 interface MetricUnit {
   team: Team

@@ -7,7 +7,9 @@ import type {
   BaseStats,
   PreparedStats,
 } from '@mars2050/combat-core/contracts'
-import type { UnitBaseStats, SimUnit } from '@mars2050/combat-core'
+import type { UnitBaseStats } from '@mars2050/combat-core'
+export type { UnitBaseStats }
+export type SimUnit = CombatSnapshotUnit
 import type {
   BattleAction,
   BattleActionType,
@@ -36,7 +38,6 @@ export type {
   CombatSnapshotUnit,
   Obstacle,
   Team,
-  UnitBaseStats,
   BaseStats,
   PreparedStats,
 }
@@ -46,6 +47,5 @@ export type {
   BattleResult,
   BattleTick,
   AttackCancelReason,
-  SimUnit,
 }
 export { BATTLE_ACTION_TYPES } from './combat.actions'

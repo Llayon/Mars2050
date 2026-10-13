@@ -2065,6 +2065,56 @@ SHA256: `52a91f4eb406125247426f044eb0dbdf8ab440a8285d211af63e5f9c75bf61dd`.
    - Строгая типизация: строго **0 `any` / `as any`**.
    - Файлы Fantasy, SDK52 и запечатанные архивы (`f610158b...`, `52a91f4e...`): **не изменялись**.
 
+#### 2026-10-10 — R6 Remediation Pass 2: устранение четырех замечаний P2
+
+По результатам первичного аудита коммита `feb16ee` (Pass 1) были выявлены 4 замечания P2 (`artifacts/review-r6-owner-20261010/review.json`). В Pass 2 все 4 замечания полностью устранены и верифицированы:
+
+1. **[P2] `R6-PRODUCTION-PATHS-BYPASS-PACKAGE-BOUNDARY` — Устранение обхода границы пакета:**
+   - Из корневого `tsconfig.json` удалены все 46 алиасов, указывавших напрямую на исходники `./packages/combat-core/src/*`. Оставлен строгий маппинг `"@/*": ["./src/*"]`.
+   - Исключена папка `src/__tests__` из продакшн `tsconfig.json`, создан изолированный `tsconfig.test.json` для проверок тестов.
+   - Удалены продакшн-обертки `src/domains/combat/combat.unit-compiler.ts` и `combat.unit-factory.ts`. Тестовая фабрика вынесена в `src/__tests__/helpers/combat-unit-factory.ts`.
+   - Проверено в `workspace-probe.mjs`: `production-typescript-paths-must-not-bypass-package-exports: passed: true` (`sourceAliases: []`).
+
+2. **[P2] `R6-PUBLIC-FACADE-EXPOSES-RUNTIME-AND-ECS-TYPES` — Очистка публичного фасада от ECS/runtime типов:**
+   - Из `packages/combat-core/src/index.ts` удалены runtime-компиляторы и фабрики (`compileUnitSnapshot`, `createRuntimeUnitFromConfig`, `cloneRuntimeUnit`, `createSquadBuildSpecs`) и внутренние типы (`SimUnit`, `SimHazard`, `Obstacle`, `UnitBuildSpec`).
+   - Созданы изолированные контракты `metrics.contracts.ts` и `replay.actions.ts` без зависимостей от `CombatWorld` и ECS.
+   - Во всех 4 публичных точках входа (`index.d.ts`, `contracts/index.d.ts`, `replay/index.d.ts`, `math/index.d.ts`) граф публичных деклараций дает **`ecsCount: 0`**.
+   - Проверка установленного тарбола `archive-probe.mjs` на Node 25 и Node 22 подтвердила 10/10 PASS, включая строгий typecheck с `skipLibCheck: false` и отрицательный контроль инкапсуляции.
+
+3. **[P2] `R6-REINTRODUCES-LEGACY-TIER-IN-CORE` — Возврат нейтральной семантики ранга в ядро:**
+   - В `packages/combat-core/src/combat.squad-compiler.ts:61` восстановлен строгий вызов `const rank = getUnitRank({ rank: row.rank })`.
+   - Преобразование исторического `tier` в `rank` сохранено исключительно внутри марсианского адаптера `src/domains/combat/combat.rank-scaling.ts`.
+   - Тест инвентаря на 669 комбинаций (`workspace-probe.mjs`) показал **0 расхождений и 0 ошибок** на Node 25 и Node 22.
+
+4. **[P2] `R6-TEST-RESOLVER-SHADOWS-MARS-ADAPTER` — Исправление тестового резолвера:**
+   - Из регулярного выражения `vitest.config.ts:20` удалены `combat.ability-config`, `combat.actions` и `combat.spatial-profile`.
+   - Тестовый резолвер проверен через `resolver.test.ts` (2/2 PASS): функции смещения марсианского адаптера корректно возвращают радиус 80 и силу 120 как при прямом, так и при алиасном импорте.
+
+#### 2026-10-13 — Устранение регрессии P2: продвижение переданного PRNG в squad-factory
+
+В ходе повторного аудита R6 была выявлена регрессия P2:
+- **Проблема (`R6-SQUAD-FACTORY-SEQUENTIAL-PRNG-PROGRESSION`)**: В `src/domains/combat/combat.squad-factory.ts` при создании отрядов без координат фабрика запускала симуляцию с внутренним `seed`, но не вызывала `rng.next()` на переданном экземпляре `PRNG`. При двух последовательных вызовах с `PRNG(42)` позиции первых бойцов составляли `(507, 1117) -> (507, 1117)` вместо исходных `(507, 1121) -> (551, 1106)`, приводя к наложению отрядов и сдвигу последующей псевдослучайной последовательности.
+- **Исправление**:
+  - В `src/domains/combat/combat.squad-factory.ts` до вызова `translateMarsBattleInput` и `simulateCombat` вычисляются координаты размещения (`grid_x`, `grid_y`) с использованием переданного генератора `rng: PRNG`.
+  - При отсутствии обеих координат `rng.next()` продвигается дважды на отряд, восстанавливая точные базовые координаты `(507, 1121) -> (551, 1106)`.
+  - При передаче одной координаты `rng.next()` вызывается ровно один раз для недостающей координаты.
+  - При явно заданных обеих координатах `rng.next()` не расходуется, сохраняя исходное состояние PRNG.
+  - Закрытые экспорты пакета ядра сохранены в неприкосновенности (приватные функции не открывались).
+- **Постоянное тестовое покрытие**:
+  - Создан тестовый набор `src/__tests__/combat.squad-factory-prng.test.ts` (5 тестов, 137 строк):
+    1. Детерминированное продвижение PRNG при отсутствии обеих координат (`(507, 1121) -> (551, 1106)`).
+    2. Продвижение PRNG ровно 1 раз при наличии только `grid_x`.
+    3. Продвижение PRNG ровно 1 раз при наличии только `grid_y`.
+    4. Неизменность PRNG при наличии обеих координат (`grid_x` и `grid_y`).
+    5. Корректное размещение и продвижение PRNG для команды защиты (`team === 'defender'`).
+- **Верификация**:
+  - `workspace-probe.mjs`: добавлен чек `factory-must-advance-caller-prng-on-sequential-unplaced-squads`. Результат: **5/5 PASS** на **Node 25.6.0** и **Node 22.20.0** (669/669 инвентарных сравнений совпадают побитово, 0 различий, 0 ошибок).
+  - `archive-probe.mjs`: **10/10 PASS** на обеих Node, `ecsCount: 0` для всех 4 публичных деклараций `index.d.ts`, `contracts/`, `replay/`, `math/`.
+  - `gates.mjs`: все 9 гейтов (`build`, `core` 279 тестов, `golden-v8`, `golden-v9`, `typecheck`, `limits`, `package`, `runtime`, `resolver` 2 теста) — **exitCode 0**.
+  - `npm test` (Mars vitest): **206 test files PASS, 864 tests PASS** (0 failed).
+  - Запечатанные архивы (`f610158b...`, `52a91f4e...`), Fantasy SDK и артефакты Pass 1 не изменялись.
+  - Итоговый вердикт: **ACCEPT (R6 / ISO-08 полностью готов к приёмке)**.
+
 
 
 

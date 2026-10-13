@@ -14,6 +14,7 @@ function createMarsCombatCatalog(): CombatCatalog {
   for (const [key, def] of Object.entries(rawDefs)) {
     const config = mapDefinitionToUnitTypeConfig(def)
     unitTypes[key] = {
+      id: key,
       ...config,
       hireCost: rawTypes[key]?.hireCost ?? {},
       preparedStats: buildMarsPreparedStats(key, 1, [], tempCatalog, rawDefs),

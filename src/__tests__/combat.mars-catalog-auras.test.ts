@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { buildMarsUnitDefinitions } from '@/domains/combat/combat.unit-definitions'
 import { buildMarsUpgrades } from '@/domains/combat/combat.upgrades'
-import { compileUnitSnapshot } from '@/domains/combat/combat.unit-compiler'
+import { buildMarsPreparedStats } from '@/domains/combat/combat.prepared-stats'
 import { createRuntimeUnitFromConfig } from '@/domains/combat/combat.unit-factory'
 import { createEcsCombatRuntime } from '@/domains/combat/ecs/combat-ecs-runtime'
 import { runEcsSupportAuraSystem } from '@/domains/combat/ecs/systems/support-aura-system'
@@ -73,18 +73,12 @@ describe('Mars default catalog: support auras resolution without duplication', (
   })
 
   it('matches explicit previous catalog snapshots with upgrades for aura units', () => {
-    const specWithUpgrade = {
-      definitionId: 'officer',
-      identity: { id: 'off-1', team: 'attacker' as const },
-      loadout: { rank: 1, upgradeIds: ['sensor_suite'] },
-      placement: { x: 300, y: 700, angle: 0 },
-    }
-    const expected = compileUnitSnapshot({ ...specWithUpgrade, catalog: explicitPreviousCatalog })
-    const actual = compileUnitSnapshot(specWithUpgrade)
+    const expected = buildMarsPreparedStats('officer', 1, ['sensor_suite'], explicitPreviousCatalog)
+    const actual = buildMarsPreparedStats('officer', 1, ['sensor_suite'])
 
-    expect(expected).not.toBeNull()
-    expect(actual).not.toBeNull()
-    expect(actual!.supportAuras).toEqual(expected!.supportAuras)
-    expect(actual!.supportAuras).toHaveLength(2) // haste + reveal from sensor_suite
+    expect(expected).toBeDefined()
+    expect(actual).toBeDefined()
+    expect(actual?.supportAuras).toEqual(expected?.supportAuras)
+    expect(actual?.supportAuras).toHaveLength(2) // haste + reveal from sensor_suite
   })
 })

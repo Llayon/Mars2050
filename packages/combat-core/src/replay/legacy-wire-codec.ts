@@ -16,7 +16,7 @@ import {
   combatRunResultSchema,
   combatSnapshotUnitSchema,
 } from '../contracts/index.js'
-import type { BattleAction, BattleTick } from '../combat.actions.js'
+import type { BattleAction, BattleTick } from '../contracts/replay.actions.js'
 import {
   sanitizeStatusEffect,
   sanitizeGeometryConfig,

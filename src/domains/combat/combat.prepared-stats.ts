@@ -141,7 +141,7 @@ export function buildMarsPreparedStats(
     defense: ranked.defense,
     speed,
     range: ranked.range,
-    actionCooldownMax: ranked.cooldown,
+    actionCooldownMax: Math.max(1, Math.round(ranked.cooldown)),
     shield,
     isFlying,
     canTargetAir,

@@ -1,8 +1,37 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { compileUnit } from '@/domains/combat/combat.unit-compiler'
-import type { SpawnInheritance } from '@/domains/combat/combat.unit-build.types'
+import { compileUnit } from '../src/combat.unit-compiler.js'
+import type { SpawnInheritance } from '../src/combat.unit-build.types.js'
+
+const testCatalog = {
+  unitTypes: {
+    marine: {
+      name: 'Marine',
+      baseStats: {
+        hp: 100,
+        attack: 10,
+        defense: 2,
+        speed: 5,
+        range: 40,
+        attackType: 'single' as const,
+        rankScaling: {
+          attackMultPerRank: 0.15,
+          hpMultPerRank: 0.15,
+        },
+      },
+      hireCost: {},
+    },
+  },
+  upgrades: {
+    hollow_point: {
+      id: 'hollow_point',
+      name: 'Hollow Point',
+      allowedUnits: ['all'],
+      modifiers: { attackMult: 1.5 },
+    },
+  },
+}
 
 function compile(inheritance?: SpawnInheritance) {
   return compileUnit({
@@ -11,6 +40,7 @@ function compile(inheritance?: SpawnInheritance) {
     loadout: { rank: 3, upgradeIds: ['hollow_point'] },
     placement: { x: 100, y: 200, angle: 0 },
     spawn: inheritance ? { inheritance } : undefined,
+    catalog: testCatalog,
   })!
 }
 
@@ -43,10 +73,7 @@ describe('combat unit compiler', () => {
   })
 
   it('keeps the ECS runtime independent from the design catalog', () => {
-    const localRoot = join(process.cwd(), 'src', 'domains', 'combat', 'ecs')
-    const root = existsSync(localRoot)
-      ? localRoot
-      : join(process.cwd(), 'packages', 'combat-core', 'src', 'ecs')
+    const root = join(process.cwd(), 'packages', 'combat-core', 'src', 'ecs')
     const files = collectTypeScriptFiles(root)
     const violations = files.filter(file => {
       const source = readFileSync(file, 'utf8')

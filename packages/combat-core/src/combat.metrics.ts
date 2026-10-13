@@ -5,37 +5,8 @@ import type { TimeoutPolicy } from './combat.result.js'
 import type { CombatWorld } from './ecs/combat-world.js'
 import { isEcsMeleeEngagementReady } from './ecs/movement-positioning.js'
 import type { ArenaSpec } from './contracts/index.js'
-export interface BattleSimulationOptions {
-  trackMetrics?: boolean
-  maxTicks?: number
-  timeoutPolicy?: TimeoutPolicy
-  profile?: boolean
-  defenseResolutionMode?: 'v8_sequential' | 'v9_snapshot'
-  arena?: ArenaSpec
-}
-
-export interface CombatMetrics {
-  firstAttackTick: number | null
-  battleDurationTicks: number
-  targetSwitches: number
-  overlapSamples: number
-  averageOverlap: number
-  maxOverlap: number
-  averageOverlapRatio: number
-  maxOverlapRatio: number
-  severeOverlapSamples: number
-  averageTimeToEngage: number | null
-  averageEngagementDistance: number | null
-  meleeSlotWaitTicks: number
-  stuckTicksByUnitType: Record<string, number>
-  targetSwitchesByUnitType: Record<string, number>
-  damageByUnitType: Record<string, number>
-  damageTakenByUnitType: Record<string, number>
-  healingDoneByUnitType: Record<string, number>
-  killsByUnitType: Record<string, number>
-  overkillDamage: number
-  mark: MarkCombatMetrics
-}
+import type { BattleSimulationOptions, CombatMetrics } from './contracts/metrics.contracts.js'
+export type { BattleSimulationOptions, CombatMetrics }
 
 export interface CombatMetricsCollector {
   firstAttackTick: number | null

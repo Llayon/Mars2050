@@ -34,16 +34,18 @@ export function mapUnitRowsToSpawnSpecs(
   team: 'attacker' | 'defender',
   definitions?: Record<string, UnitDefinition>,
   arena?: ArenaSpec,
+  catalog?: MarsCatalogInput,
 ): UnitSpawnSpec[] {
   const defs = definitions ?? buildMarsUnitDefinitions()
-  const marsCatalog = { upgrades: buildMarsUpgrades() }
+  const marsCatalog = catalog ?? { upgrades: buildMarsUpgrades() }
   const arenaWidth = arena?.width ?? FIELD_WIDTH
   const arenaHeight = arena?.height ?? FIELD_HEIGHT
 
   return rows.map(row => {
     const rank = getUnitRank(row)
     const upgradeIds = row.upgrade_path ? [...row.upgrade_path] : []
-    const preparedStats = buildMarsPreparedStats(row.unit_type, rank, upgradeIds, marsCatalog, defs)
+    const preparedStats = (row as { preparedStats?: PreparedStats }).preparedStats ??
+      buildMarsPreparedStats(row.unit_type, rank, upgradeIds, marsCatalog, defs)
     let currentHp: number | undefined = row.hp_current ?? undefined
     if (currentHp !== undefined && preparedStats?.hp !== undefined) {
       if (currentHp > preparedStats.hp) {
@@ -156,15 +158,39 @@ export function translateMarsBattleInput(
       : 'draw'
   const defenseResolutionMode = options.defenseResolutionMode ?? 'v9_snapshot'
 
-  const rawDefs = buildMarsUnitDefinitions()
-  const marsCatalog = { upgrades: buildMarsUpgrades() }
+  const rawDefs: Record<string, UnitDefinition> = {
+    ...buildMarsUnitDefinitions(),
+    ...(options.definitions ?? {}),
+    ...(options.catalog?.unitTypes
+      ? Object.fromEntries(
+          Object.entries(options.catalog.unitTypes).map(([k, v]) => {
+            const raw = v as unknown as Record<string, unknown>
+            return [
+              k,
+              {
+                ...raw,
+                id: (raw.id as string | undefined) ?? k,
+                name: (raw.name as string | undefined) ?? k,
+                baseStats: raw.baseStats,
+              } as unknown as UnitDefinition,
+            ]
+          }),
+        )
+      : {}),
+  }
+  const marsCatalog = {
+    upgrades: {
+      ...buildMarsUpgrades(),
+      ...(options.catalog?.upgrades ?? {}),
+    },
+  }
   const definitions: Record<string, UnitDefinition> = {}
   for (const [k, d] of Object.entries(rawDefs)) {
     definitions[k] = { ...d, preparedStats: buildMarsPreparedStats(k, 1, [], marsCatalog, rawDefs) }
   }
   const units: UnitSpawnSpec[] = [
-    ...mapUnitRowsToSpawnSpecs(attackerUnits, 'attacker', rawDefs, arena),
-    ...mapUnitRowsToSpawnSpecs(defenderUnits, 'defender', rawDefs, arena),
+    ...mapUnitRowsToSpawnSpecs(attackerUnits, 'attacker', rawDefs, arena, marsCatalog),
+    ...mapUnitRowsToSpawnSpecs(defenderUnits, 'defender', rawDefs, arena, marsCatalog),
   ]
   const scheduledEffects = mapGlobalUpgradesToScheduledEffects(attackerGlobals, defenderGlobals)
 
@@ -175,6 +201,9 @@ export function translateMarsBattleInput(
     definitions,
     units,
     scheduledEffects,
-    catalog: { upgrades: marsCatalog.upgrades, unitTypes: definitions },
+    catalog: {
+      upgrades: marsCatalog.upgrades as unknown as NonNullable<BattleInput['catalog']>['upgrades'],
+      unitTypes: definitions,
+    },
   }
 }
