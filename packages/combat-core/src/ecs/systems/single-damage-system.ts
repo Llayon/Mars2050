@@ -1,3 +1,4 @@
+import { deterministicAtan2 } from '../../math/deterministic-trig.js'
 import type { BattleAction } from '../../combat.actions.js'
 import { chooseHackControlMode } from '../../combat.control-mode.js'
 import type { HackControlMode, RuntimeStatusEffect } from '../../combat.primitives.js'
@@ -57,7 +58,7 @@ export function runSimpleSingleDamage(
   const edgeDistance = getDistance(transform.x, transform.y, targetTransform.x, targetTransform.y) -
     getSizeRadius(transform.size) - getSizeRadius(targetTransform.size)
   if (!isEcsWeaponActionInRange(world, entityId, targetId, edgeDistance)) return notActed()
-  const targetAngle = Math.atan2(targetTransform.y - transform.y, targetTransform.x - transform.x)
+  const targetAngle = deterministicAtan2(targetTransform.y - transform.y, targetTransform.x - transform.x)
   if (Math.abs(normalizeAngle(targetAngle - transform.currentAngle)) > FACING_TOLERANCE) return notActed()
   if (combat.actionCooldown > 0) return notActed()
   if (isActionBlocked(status.statusEffects, combat.attack)) return notActed()

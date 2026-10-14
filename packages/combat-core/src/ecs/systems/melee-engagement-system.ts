@@ -1,3 +1,4 @@
+import { deterministicAtan2 } from '../../math/deterministic-trig.js'
 import { getSizeRadius } from '../../combat.utils.js'
 import type { CombatWorld } from '../combat-world.js'
 import type { EntityId } from '../entity.js'
@@ -64,7 +65,7 @@ function findSlot(world: CombatWorld, unitId: EntityId, targetId: EntityId, stat
 function getPreferredSlot(world: CombatWorld, unitId: EntityId, targetId: EntityId, span: number): number {
   const unit = world.stores.transform.require(unitId)
   const target = world.stores.transform.require(targetId)
-  const angle = Math.atan2(unit.y - target.y, unit.x - target.x)
+  const angle = deterministicAtan2(unit.y - target.y, unit.x - target.x)
   return getPreferredMeleeSlot(angle, span)
 }
 

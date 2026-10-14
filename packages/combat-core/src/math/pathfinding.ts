@@ -1,3 +1,4 @@
+import { deterministicAtan2 } from './deterministic-trig.js'
 export const DEFAULT_FIELD_WIDTH = 600
 export const DEFAULT_FIELD_HEIGHT = 1200
 export const DEFAULT_TILE_SIZE = 40
@@ -72,14 +73,14 @@ export function getFlowVector(map: FlowFieldMap, startX: number, startY: number,
   const sy = Math.max(0, Math.min(rows - 1, Math.floor(startY / tileSize)))
 
   if (sx === tx && sy === ty) {
-    return Math.atan2(targetY - startY, targetX - startX)
+    return deterministicAtan2(targetY - startY, targetX - startX)
   }
 
   const sIndex = sy * cols + sx
   const angle = vectorField[sIndex]
 
   if (isNaN(angle)) {
-    let bestAngle = Math.atan2(targetY - startY, targetX - startX)
+    let bestAngle = deterministicAtan2(targetY - startY, targetX - startX)
     const neighbors = [
       { dx: 0, dy: -1 }, { dx: 1, dy: 0 }, { dx: 0, dy: 1 }, { dx: -1, dy: 0 },
       { dx: 1, dy: -1 }, { dx: 1, dy: 1 }, { dx: -1, dy: 1 }, { dx: -1, dy: -1 }
@@ -94,7 +95,7 @@ export function getFlowVector(map: FlowFieldMap, startX: number, startY: number,
         const nIdx = ny * cols + nx
         const nCost = vectorField[nIdx]
         if (!isNaN(nCost)) {
-          const angleToNeighbor = Math.atan2((sy + n.dy) * tileSize + tileSize / 2 - startY, (sx + n.dx) * tileSize + tileSize / 2 - startX)
+          const angleToNeighbor = deterministicAtan2((sy + n.dy) * tileSize + tileSize / 2 - startY, (sx + n.dx) * tileSize + tileSize / 2 - startX)
           let diff = angleToNeighbor - directAngle
           while (diff > Math.PI) diff -= Math.PI * 2
           while (diff < -Math.PI) diff += Math.PI * 2
@@ -174,7 +175,7 @@ function generateVectorField(costField: Uint8Array, tx: number, ty: number, cols
       }
 
       if (bestDx !== 0 || bestDy !== 0) {
-        vectorField[idx] = Math.atan2(bestDy, bestDx)
+        vectorField[idx] = deterministicAtan2(bestDy, bestDx)
       }
     }
   }

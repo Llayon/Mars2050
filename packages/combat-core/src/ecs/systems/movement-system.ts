@@ -1,4 +1,4 @@
-import { deterministicSin, deterministicCos } from '../../math/deterministic-trig.js'
+import { deterministicSin, deterministicCos, deterministicAtan2 } from '../../math/deterministic-trig.js'
 import type { BattleAction } from '../../combat.actions.js'
 import { getFlowVector } from '../../combat.pathfinding.js'
 import type { RuntimeMovementContext } from '../../combat.runtime.js'
@@ -62,14 +62,14 @@ function runMovementMath(world: CombatWorld, entityId: EntityId, targetId: Entit
   const steering = getEcsSteeringContext(world, entityId, neighbors, myRadius, steeringInRange)
   const facingPoint = positioning.shouldMove ? positioning.point : target
   let targetAngle = identity.squadId && steering.squadCount > 1 && distance > combat.range * 1.5
-    ? Math.atan2(positioning.point.y - steering.squadCy, positioning.point.x - steering.squadCx)
-    : Math.atan2(facingPoint.y - transform.y, facingPoint.x - transform.x)
+    ? deterministicAtan2(positioning.point.y - steering.squadCy, positioning.point.x - steering.squadCx)
+    : deterministicAtan2(facingPoint.y - transform.y, facingPoint.x - transform.x)
   let navigating = false
 
   if (!transform.isFlying && positioning.shouldMove && getDistance(transform.x, transform.y, positioning.point.x, positioning.point.y) > 20) {
     const flowAngle = getFlowVector(context.flowField, transform.x, transform.y, positioning.point.x, positioning.point.y)
     if (flowAngle !== null) {
-      const directAngle = Math.atan2(positioning.point.y - transform.y, positioning.point.x - transform.x)
+      const directAngle = deterministicAtan2(positioning.point.y - transform.y, positioning.point.x - transform.x)
       const difference = normalizeAngle(flowAngle - directAngle)
       if (movement.isNavigatingObstacle) {
         if (Math.abs(difference) > 0.25) {

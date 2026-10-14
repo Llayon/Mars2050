@@ -29,3 +29,5 @@ export function deterministicCos(x: number): number {
     default: return kernelSin(head, tail, true)
   }
 }
+
+export { deterministicAtan, deterministicAtan2 } from './trig-atan.js'

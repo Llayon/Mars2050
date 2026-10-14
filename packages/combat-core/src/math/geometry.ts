@@ -1,10 +1,12 @@
+import { deterministicAtan2 } from './deterministic-trig.js'
+
 export function getDistance(x1: number, y1: number, x2: number, y2: number): number {
   return Math.hypot(x2 - x1, y2 - y1)
 }
 
 export function getDir(dx: number, dy: number): string {
   if (Math.abs(dx) < 0.1 && Math.abs(dy) < 0.1) return 'south'
-  const a = (Math.atan2(dy, dx) * 180) / Math.PI
+  const a = (deterministicAtan2(dy, dx) * 180) / Math.PI
   if (a >= -22.5 && a < 22.5) return 'east'
   if (a >= 22.5 && a < 67.5) return 'south-east'
   if (a >= 67.5 && a < 112.5) return 'south'

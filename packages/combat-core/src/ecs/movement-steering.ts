@@ -1,4 +1,4 @@
-import { deterministicSin, deterministicCos } from '../math/deterministic-trig.js'
+import { deterministicSin, deterministicCos, deterministicAtan2 } from '../math/deterministic-trig.js'
 import type { Obstacle } from '../combat.sim.types.js'
 import { getDistance, getSizeMass, getSizeRadius } from '../combat.utils.js'
 import type { CombatWorld } from './combat-world.js'
@@ -126,7 +126,7 @@ export function getEcsFormationForce(
   const anchor = getFormationAnchor(transform, targetPoint, squadCx, squadCy, isCentroidAnchor)
   const distance = getDistance(transform.x, transform.y, anchor.x, anchor.y)
   if (distance <= threshold) return { x: 0, y: 0 }
-  const angle = Math.atan2(anchor.y - transform.y, anchor.x - transform.x)
+  const angle = deterministicAtan2(anchor.y - transform.y, anchor.x - transform.x)
   const multiplier = navigating ? 0.1 : isCentroidAnchor ? 0.5 : near ? 0.18 : 0.75
   const pull = combat.speed * multiplier
   return { x: deterministicCos(angle) * pull, y: deterministicSin(angle) * pull }
@@ -148,7 +148,7 @@ export function getEcsObstacleCorrection(
     const minDist = myRadius + obstacle.radius
     if (dist <= 0 || dist >= minDist) continue
     const overlap = minDist - dist
-    const angle = Math.atan2(transform.y - obstacle.y, transform.x - obstacle.x)
+    const angle = deterministicAtan2(transform.y - obstacle.y, transform.x - obstacle.x)
     const force = Math.min(overlap * 2.5, Math.max(10, effectiveSpeed * 0.6))
     x += deterministicCos(angle) * force
     y += deterministicSin(angle) * force
@@ -164,7 +164,7 @@ function getFormationAnchor(
   isCentroidAnchor: boolean,
 ): { x: number; y: number } {
   if (isCentroidAnchor || transform.offsetX === undefined || transform.offsetY === undefined || transform.initialAngle === undefined) return { x: squadCx, y: squadCy }
-  const squadAngle = Math.atan2(target.y - squadCy, target.x - squadCx)
+  const squadAngle = deterministicAtan2(target.y - squadCy, target.x - squadCx)
   const rotation = squadAngle - transform.initialAngle
   const rotatedX = transform.offsetX * deterministicCos(rotation) - transform.offsetY * deterministicSin(rotation)
   const rotatedY = transform.offsetX * deterministicSin(rotation) + transform.offsetY * deterministicCos(rotation)

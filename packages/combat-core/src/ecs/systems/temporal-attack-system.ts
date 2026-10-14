@@ -1,3 +1,4 @@
+import { deterministicAtan2 } from '../../math/deterministic-trig.js'
 import type { BattleAction } from '../../combat.actions.js'
 import type { RuntimeActionContext } from '../../combat.runtime.js'
 import { chooseHackControlMode } from '../../combat.control-mode.js'
@@ -105,7 +106,7 @@ export function runTemporalTimelineSystem(
         ? { x: target.x, y: target.y }
         : { x: timeline.aimX, y: timeline.aimY }
     const source = world.stores.transform.require(entityId)
-    const facing = Math.atan2(aim.y - source.y, aim.x - source.x)
+    const facing = deterministicAtan2(aim.y - source.y, aim.x - source.x)
     if (Math.abs(normalizeAngle(facing - source.currentAngle)) > 0.26) continue
     timelines.delete(entityId)
     launchTemporalAttack(world, entityId, timeline, aim, context.actions, context.tick)

@@ -1,3 +1,4 @@
+import { deterministicAtan2 } from '../../math/deterministic-trig.js'
 import type { BattleAction } from '../../combat.actions.js'
 import type { RuntimeActionContext, RuntimeActionResult } from '../../combat.runtime.js'
 import type { StatusEffect } from '../../combat.sim.types.js'
@@ -39,7 +40,7 @@ export function runEcsSmokeAction(
   const edgeDistance = getDistance(transform.x, transform.y, targetTransform.x, targetTransform.y) -
     getSizeRadius(transform.size) - getSizeRadius(targetTransform.size)
   if (!isEcsWeaponActionInRange(world, entityId, targetId, edgeDistance)) return notActed()
-  const targetAngle = Math.atan2(targetTransform.y - transform.y, targetTransform.x - transform.x)
+  const targetAngle = deterministicAtan2(targetTransform.y - transform.y, targetTransform.x - transform.x)
   if (Math.abs(normalizeAngle(targetAngle - transform.currentAngle)) > FACING_TOLERANCE) return notActed()
   if (combat.actionCooldown > 0 || isActionBlocked(status.statusEffects)) return notActed()
   if (!prepareEcsStanceForAction(world, entityId, actions)) {

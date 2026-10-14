@@ -6,6 +6,11 @@ export function highWord(value: number): number {
   return bits.getUint32(0, false)
 }
 
+export function lowWord(value: number): number {
+  bits.setFloat64(0, value, false)
+  return bits.getUint32(4, false)
+}
+
 export function fromWords(high: number, low = 0): number {
   bits.setUint32(0, high, false)
   bits.setUint32(4, low, false)

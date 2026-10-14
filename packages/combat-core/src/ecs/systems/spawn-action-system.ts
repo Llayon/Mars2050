@@ -15,7 +15,7 @@ import {
   syncEcsModeForAction,
 } from './action-setup.js'
 import { syncEcsBurrowForAction } from './emerge-strike-system.js'
-import { getSizeRadius } from '../../math/index.js'
+import { getSizeRadius, deterministicAtan2 } from '../../math/index.js'
 
 const FACING_TOLERANCE = 0.26
 
@@ -39,7 +39,7 @@ export function runEcsSpawnAction(
   const weapon = world.stores.weapon.require(entityId)
   if ((weapon.attackType !== 'spawn' && options.spawnType === undefined) ||
       !isEcsMeleeEngagementReady(world, entityId, targetId)) return notActed()
-  const targetAngle = Math.atan2(targetTransform.y - transform.y, targetTransform.x - transform.x)
+  const targetAngle = deterministicAtan2(targetTransform.y - transform.y, targetTransform.x - transform.x)
   if (Math.abs(normalizeAngle(targetAngle - transform.currentAngle)) > FACING_TOLERANCE) return notActed()
   const previousCooldown = combat.actionCooldown
   if ((!options.preserveCooldown && combat.actionCooldown > 0) ||

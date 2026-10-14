@@ -2,6 +2,7 @@ import type { RuntimeMovementContext } from '../../combat.runtime.js'
 import type { CombatWorld } from '../combat-world.js'
 import type { MovementIntent, MovementRequest } from '../movement-batch.types.js'
 import { normalizeMovementAngle } from '../movement-batch-math.js'
+import { deterministicAtan2 } from '../../math/deterministic-trig.js'
 
 export function createTurnIntent(
   world: CombatWorld,
@@ -10,7 +11,7 @@ export function createTurnIntent(
   context: RuntimeMovementContext,
 ): MovementIntent {
   const angleDifference = normalizeMovementAngle(
-    Math.atan2(request.targetY - frozen.y, request.targetX - frozen.x) - frozen.currentAngle,
+    deterministicAtan2(request.targetY - frozen.y, request.targetX - frozen.x) - frozen.currentAngle,
   )
   const maxTurn = world.stores.movement.require(request.entityId).turnSpeed * context.dt
   const currentAngle = normalizeMovementAngle(

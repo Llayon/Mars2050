@@ -1,3 +1,4 @@
+import { deterministicAtan2 } from '../../math/deterministic-trig.js'
 import type { BattleAction } from '../../combat.actions.js'
 import { chooseHackControlMode } from '../../combat.control-mode.js'
 import type { RuntimeStatusEffect } from '../../combat.primitives.js'
@@ -29,7 +30,7 @@ export function prepareEcsWeaponAction(
   if (!isEcsWeaponActionInRange(world, entityId, targetId, edgeDistance)) {
     return { state: 'not_ready' }
   }
-  const targetAngle = Math.atan2(target.y - source.y, target.x - source.x)
+  const targetAngle = deterministicAtan2(target.y - source.y, target.x - source.x)
   if ((options.requireFacing !== false && Math.abs(normalizeAngle(targetAngle - source.currentAngle)) > FACING_TOLERANCE) ||
       combat.actionCooldown > 0 || isEcsAttackBlocked(status.statusEffects, combat.attack)) {
     return { state: 'not_ready' }

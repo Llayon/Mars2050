@@ -1,3 +1,4 @@
+import { deterministicAtan2 } from '../../math/deterministic-trig.js'
 import type { BattleAction } from '../../combat.actions.js'
 import type { RuntimeActionContext, RuntimeActionResult } from '../../combat.runtime.js'
 import { getDistance, getSizeRadius } from '../../combat.utils.js'
@@ -86,7 +87,7 @@ function runHealAction(
     getSizeRadius(targetTransform.size) - getSizeRadius(transform.size)
   if (targetVitality.hp >= targetVitality.maxHp ||
       distance > getEcsEffectiveActionRangeAgainst(world, entityId, targetId)) return notActed()
-  const angle = Math.atan2(targetTransform.y - transform.y, targetTransform.x - transform.x)
+  const angle = deterministicAtan2(targetTransform.y - transform.y, targetTransform.x - transform.x)
   if (Math.abs(normalizeAngle(angle - transform.currentAngle)) > FACING_TOLERANCE) return notActed()
   if (combat.actionCooldown > 0 || isActionBlocked(status.statusEffects)) return notActed()
   if (!prepareEcsStanceForAction(world, entityId, actions)) {

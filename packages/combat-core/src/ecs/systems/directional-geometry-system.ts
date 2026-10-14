@@ -1,3 +1,4 @@
+import { deterministicAtan2 } from '../../math/deterministic-trig.js'
 import type { BattleAction } from '../../combat.actions.js'
 import { compareEntityExternalIdsForMode } from '../authored-order.js'
 import type { BeamAttackConfig, ConeAttackConfig, LinePierceConfig } from '../../combat.primitives.js'
@@ -75,7 +76,7 @@ function getDirectionalTargets(
   const line = override?.kind === 'line_pierce' ? override.config : weapon.linePierce
   const beam = override?.kind === 'beam_attack' ? override.config : weapon.beamAttack
   if (cone) {
-    const centerAngle = Math.atan2(primary.y - attacker.y, primary.x - attacker.x)
+    const centerAngle = deterministicAtan2(primary.y - attacker.y, primary.x - attacker.x)
     const maxAngle = cone.angleDeg * Math.PI / 360
     return candidates
       .map(targetId => ({
@@ -133,7 +134,7 @@ function getEntityDistance(world: CombatWorld, leftId: EntityId, rightId: Entity
 function getTargetAngle(world: CombatWorld, attackerId: EntityId, targetId: EntityId): number {
   const attacker = world.stores.transform.require(attackerId)
   const target = world.stores.transform.require(targetId)
-  return Math.atan2(target.y - attacker.y, target.x - attacker.x)
+  return deterministicAtan2(target.y - attacker.y, target.x - attacker.x)
 }
 
 function getTargetRadius(world: CombatWorld, targetId: EntityId): number {
