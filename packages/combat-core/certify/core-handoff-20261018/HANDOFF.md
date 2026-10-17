@@ -56,6 +56,14 @@ Windows (this workstation): Node v22.20.0, v25.6.0, v26.11.1 and Chromium (Googl
 matrix 5/5 bit-for-bit** in every environment. Browser bundle provenance: 282 inputs, 0 workspace
 inputs.
 
+Linux (GitHub Actions `ubuntu-latest`, workflow `.github/workflows/core-archive-verify.yml`,
+run 39071929358): Node **v22.23.3** and **v26.12.0** → installed archive matches the committed
+manifest (912/912), R7 golden matrix 5/5, both MREs with **0 inconsistent intermediate frames**,
+`ARCHIVE-VERIFY=PASS`. The Linux `npm pack` produced tarball bytes
+`13e8c69e430b36642c9ae0f0cd09f583b9a4a2a91b336a505710ae61dea346c3` (different bytes from the
+Windows release `421ad6e3…` because tar/npm layout differs across OS); content identity is what is
+enforced, via the committed per-file manifest.
+
 Journal completeness on both MREs (per-tick comparison of journal projection vs live world):
 
 | MRE | ticks | living | intermediate mismatches | max journal delta | final survivor delta |
