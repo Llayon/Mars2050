@@ -101,13 +101,13 @@ function commitIntents(
   for (const intent of [...intents].sort((left, right) =>
     left.initiativeIndex - right.initiativeIndex || left.entityId - right.entityId,
   )) {
-    emitIntentAction(world, intent, collisions, actions)
+    emitIntentAction(world, intent, collisions, actions, positionChanged.has(intent.entityId))
   }
   const intentIds = new Set(intents.map(intent => intent.entityId))
   for (const entityId of [...collisions.corrected].sort((left, right) => left - right)) {
     if (intentIds.has(entityId)) continue
     const frozen = frame.transforms[entityId]
-    if (frozen) emitCorrectionAction(world, entityId, frozen, actions)
+    if (frozen) emitCorrectionAction(world, entityId, frozen, actions, positionChanged.has(entityId))
   }
 }
 
@@ -116,11 +116,18 @@ function emitIntentAction(
   intent: MovementIntent,
   collisions: ReturnType<typeof solveBatchMovementCollisions>,
   actions: BattleAction[],
+  positionWritten: boolean,
 ): void {
   const transform = world.stores.transform.require(intent.entityId)
   const displacement = Math.hypot(transform.x - intent.fromX, transform.y - intent.fromY)
   recordEcsChargeMovement(world, intent.entityId, displacement)
-  if (displacement <= 0.1 && Math.abs(intent.angleDifference) <= 0.2) return
+  // Journal completeness: whenever the world position was committed, the move must be
+  // published even if the resulting displacement is <= 0.1 (collision corrections can
+  // cancel an intent). Turning-only intents that write nothing are still published only
+  // when the facing changed, and they must not invent coordinates the world never reached.
+  if (!positionWritten && displacement <= 0.1 && Math.abs(intent.angleDifference) <= 0.2) return
+  const publishedX = positionWritten ? collisions.x[intent.entityId] : intent.fromX
+  const publishedY = positionWritten ? collisions.y[intent.entityId] : intent.fromY
   actions.push({
     unitId: world.stores.identity.require(intent.entityId).id,
     type: 'move',
@@ -129,8 +136,8 @@ function emitIntentAction(
       : {}),
     fromX: round(intent.fromX),
     fromY: round(intent.fromY),
-    toX: round(collisions.x[intent.entityId]),
-    toY: round(collisions.y[intent.entityId]),
+    toX: round(publishedX),
+    toY: round(publishedY),
     facingAngle: round(intent.facingAngle),
     isWalking: intent.isWalking,
     motionKind: displacement <= 0.1 ? 'turn' : intent.motionKind,
@@ -142,9 +149,11 @@ function emitCorrectionAction(
   entityId: number,
   from: { x: number; y: number },
   actions: BattleAction[],
+  positionWritten: boolean,
 ): void {
+  if (!positionWritten) return
   const transform = world.stores.transform.require(entityId)
-  if (Math.hypot(transform.x - from.x, transform.y - from.y) <= 0.1) return
+  if (Math.hypot(transform.x - from.x, transform.y - from.y) <= 0) return
   actions.push({
     unitId: world.stores.entityMeta.require(entityId).externalId,
     type: 'move',

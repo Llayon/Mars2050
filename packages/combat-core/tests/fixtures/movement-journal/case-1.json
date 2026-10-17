@@ -1,0 +1,123 @@
+{
+  "seed": 42,
+  "arena": {
+    "width": 600,
+    "height": 1200,
+    "tileSize": 40,
+    "obstacles": [],
+    "deployment": {
+      "depth": 400,
+      "strategy": "fit_formation"
+    }
+  },
+  "rules": {
+    "maxTicks": 600,
+    "timeoutPolicy": "draw",
+    "defenseResolutionMode": "v9_snapshot",
+    "profile": false
+  },
+  "definitions": {
+    "dawn-oathkeeper": {
+      "id": "dawn-oathkeeper",
+      "name": "Клятвенник",
+      "baseStats": {
+        "hp": 150,
+        "attack": 15,
+        "defense": 8,
+        "speed": 4,
+        "range": 1,
+        "attackType": "single",
+        "actionCooldownMax": 12,
+        "turnSpeed": 8,
+        "size": "M",
+        "combatTags": [
+          "organic"
+        ]
+      },
+      "squadSize": 3,
+      "squadSpacing": 28,
+      "formation": "line"
+    },
+    "dawn-field-chaplain": {
+      "id": "dawn-field-chaplain",
+      "name": "Полевой капеллан",
+      "baseStats": {
+        "hp": 85,
+        "attack": 33,
+        "defense": 3,
+        "speed": 5,
+        "range": 4,
+        "attackType": "heal",
+        "actionCooldownMax": 10,
+        "turnSpeed": 8,
+        "size": "M",
+        "combatTags": [
+          "organic"
+        ],
+        "healTargetTags": [
+          "organic"
+        ]
+      },
+      "squadSize": 1,
+      "squadSpacing": 28,
+      "formation": "line"
+    },
+    "thorn-wild-boar": {
+      "id": "thorn-wild-boar",
+      "name": "Дикий вепрь",
+      "baseStats": {
+        "hp": 250,
+        "attack": 38,
+        "defense": 3,
+        "speed": 9,
+        "range": 1.1,
+        "attackType": "single",
+        "actionCooldownMax": 13,
+        "turnSpeed": 8,
+        "size": "M",
+        "combatTags": [
+          "organic"
+        ]
+      },
+      "squadSize": 1,
+      "squadSpacing": 28,
+      "formation": "line"
+    }
+  },
+  "units": [
+    {
+      "instanceId": "attacker:squad-1",
+      "definitionId": "thorn-wild-boar",
+      "team": "attacker",
+      "placement": {
+        "x": 150,
+        "y": 840
+      },
+      "rank": 1,
+      "upgradeIds": []
+    },
+    {
+      "instanceId": "defender:squad-1",
+      "definitionId": "dawn-oathkeeper",
+      "team": "defender",
+      "placement": {
+        "x": 150,
+        "y": 360
+      },
+      "rank": 1,
+      "upgradeIds": []
+    },
+    {
+      "instanceId": "defender:squad-2",
+      "definitionId": "dawn-field-chaplain",
+      "team": "defender",
+      "placement": {
+        "x": 300,
+        "y": 360
+      },
+      "rank": 1,
+      "upgradeIds": []
+    }
+  ],
+  "scheduledEffects": []
+}

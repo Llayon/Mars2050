@@ -1,0 +1,337 @@
+{
+  "seed": 0,
+  "arena": {
+    "width": 600,
+    "height": 1200,
+    "tileSize": 40,
+    "obstacles": [],
+    "deployment": {
+      "depth": 400,
+      "strategy": "fit_formation"
+    }
+  },
+  "rules": {
+    "maxTicks": 600,
+    "timeoutPolicy": "draw",
+    "defenseResolutionMode": "v9_snapshot",
+    "profile": false
+  },
+  "definitions": {
+    "court-bone-spearman": {
+      "id": "court-bone-spearman",
+      "name": "Костяной копейщик",
+      "baseStats": {
+        "hp": 70,
+        "attack": 20,
+        "defense": 2,
+        "speed": 5,
+        "range": 1.4,
+        "attackType": "single",
+        "actionCooldownMax": 11,
+        "turnSpeed": 8,
+        "size": "M",
+        "combatTags": [
+          "undead"
+        ]
+      },
+      "squadSize": 4,
+      "squadSpacing": 28,
+      "formation": "line"
+    },
+    "court-bone-arbalist": {
+      "id": "court-bone-arbalist",
+      "name": "Костяной арбалетчик",
+      "baseStats": {
+        "hp": 50,
+        "attack": 30,
+        "defense": 1,
+        "speed": 4,
+        "range": 5.5,
+        "attackType": "single",
+        "actionCooldownMax": 15,
+        "turnSpeed": 8,
+        "size": "M",
+        "combatTags": [
+          "undead"
+        ]
+      },
+      "squadSize": 3,
+      "squadSpacing": 28,
+      "formation": "line"
+    },
+    "court-grave-hound": {
+      "id": "court-grave-hound",
+      "name": "Могильная гончая",
+      "baseStats": {
+        "hp": 85,
+        "attack": 19,
+        "defense": 0,
+        "speed": 10,
+        "range": 1,
+        "attackType": "single",
+        "actionCooldownMax": 10,
+        "turnSpeed": 8,
+        "size": "M",
+        "combatTags": [
+          "undead"
+        ]
+      },
+      "squadSize": 3,
+      "squadSpacing": 28,
+      "formation": "line"
+    },
+    "court-stitcher": {
+      "id": "court-stitcher",
+      "name": "Швея плоти",
+      "baseStats": {
+        "hp": 95,
+        "attack": 30,
+        "defense": 2,
+        "speed": 5,
+        "range": 4,
+        "attackType": "heal",
+        "actionCooldownMax": 16,
+        "turnSpeed": 8,
+        "size": "M",
+        "combatTags": [
+          "undead"
+        ],
+        "healTargetTags": [
+          "undead"
+        ]
+      },
+      "squadSize": 1,
+      "squadSpacing": 28,
+      "formation": "line"
+    },
+    "court-plague-apothecary": {
+      "id": "court-plague-apothecary",
+      "name": "Чумной аптекарь",
+      "baseStats": {
+        "hp": 75,
+        "attack": 28,
+        "defense": 1,
+        "speed": 4,
+        "range": 5,
+        "attackType": "single",
+        "actionCooldownMax": 12,
+        "turnSpeed": 8,
+        "size": "M",
+        "combatTags": [
+          "undead"
+        ],
+        "statusOnHit": [
+          {
+            "type": "burn",
+            "duration": 10,
+            "value": 4
+          }
+        ]
+      },
+      "squadSize": 1,
+      "squadSpacing": 28,
+      "formation": "line"
+    }
+  },
+  "units": [
+    {
+      "instanceId": "attacker:squad-1",
+      "definitionId": "court-plague-apothecary",
+      "team": "attacker",
+      "placement": {
+        "x": 150,
+        "y": 840
+      },
+      "rank": 1,
+      "upgradeIds": []
+    },
+    {
+      "instanceId": "attacker:squad-2",
+      "definitionId": "court-bone-arbalist",
+      "team": "attacker",
+      "placement": {
+        "x": 300,
+        "y": 840
+      },
+      "rank": 1,
+      "upgradeIds": []
+    },
+    {
+      "instanceId": "attacker:squad-3",
+      "definitionId": "court-bone-arbalist",
+      "team": "attacker",
+      "placement": {
+        "x": 450,
+        "y": 840
+      },
+      "rank": 1,
+      "upgradeIds": []
+    },
+    {
+      "instanceId": "attacker:squad-4",
+      "definitionId": "court-grave-hound",
+      "team": "attacker",
+      "placement": {
+        "x": 150,
+        "y": 950
+      },
+      "rank": 1,
+      "upgradeIds": []
+    },
+    {
+      "instanceId": "attacker:squad-5",
+      "definitionId": "court-grave-hound",
+      "team": "attacker",
+      "placement": {
+        "x": 300,
+        "y": 950
+      },
+      "rank": 1,
+      "upgradeIds": []
+    },
+    {
+      "instanceId": "attacker:squad-6",
+      "definitionId": "court-bone-spearman",
+      "team": "attacker",
+      "placement": {
+        "x": 450,
+        "y": 950
+      },
+      "rank": 1,
+      "upgradeIds": []
+    },
+    {
+      "instanceId": "attacker:squad-7",
+      "definitionId": "court-bone-spearman",
+      "team": "attacker",
+      "placement": {
+        "x": 150,
+        "y": 1060
+      },
+      "rank": 1,
+      "upgradeIds": []
+    },
+    {
+      "instanceId": "attacker:squad-8",
+      "definitionId": "court-stitcher",
+      "team": "attacker",
+      "placement": {
+        "x": 300,
+        "y": 1060
+      },
+      "rank": 1,
+      "upgradeIds": []
+    },
+    {
+      "instanceId": "attacker:squad-9",
+      "definitionId": "court-stitcher",
+      "team": "attacker",
+      "placement": {
+        "x": 450,
+        "y": 1060
+      },
+      "rank": 1,
+      "upgradeIds": []
+    },
+    {
+      "instanceId": "defender:squad-1",
+      "definitionId": "court-stitcher",
+      "team": "defender",
+      "placement": {
+        "x": 150,
+        "y": 360
+      },
+      "rank": 1,
+      "upgradeIds": []
+    },
+    {
+      "instanceId": "defender:squad-2",
+      "definitionId": "court-stitcher",
+      "team": "defender",
+      "placement": {
+        "x": 300,
+        "y": 360
+      },
+      "rank": 1,
+      "upgradeIds": []
+    },
+    {
+      "instanceId": "defender:squad-3",
+      "definitionId": "court-bone-spearman",
+      "team": "defender",
+      "placement": {
+        "x": 450,
+        "y": 360
+      },
+      "rank": 1,
+      "upgradeIds": []
+    },
+    {
+      "instanceId": "defender:squad-4",
+      "definitionId": "court-bone-spearman",
+      "team": "defender",
+      "placement": {
+        "x": 150,
+        "y": 250
+      },
+      "rank": 1,
+      "upgradeIds": []
+    },
+    {
+      "instanceId": "defender:squad-5",
+      "definitionId": "court-grave-hound",
+      "team": "defender",
+      "placement": {
+        "x": 300,
+        "y": 250
+      },
+      "rank": 1,
+      "upgradeIds": []
+    },
+    {
+      "instanceId": "defender:squad-6",
+      "definitionId": "court-grave-hound",
+      "team": "defender",
+      "placement": {
+        "x": 450,
+        "y": 250
+      },
+      "rank": 1,
+      "upgradeIds": []
+    },
+    {
+      "instanceId": "defender:squad-7",
+      "definitionId": "court-bone-arbalist",
+      "team": "defender",
+      "placement": {
+        "x": 150,
+        "y": 140
+      },
+      "rank": 1,
+      "upgradeIds": []
+    },
+    {
+      "instanceId": "defender:squad-8",
+      "definitionId": "court-bone-arbalist",
+      "team": "defender",
+      "placement": {
+        "x": 300,
+        "y": 140
+      },
+      "rank": 1,
+      "upgradeIds": []
+    },
+    {
+      "instanceId": "defender:squad-9",
+      "definitionId": "court-plague-apothecary",
+      "team": "defender",
+      "placement": {
+        "x": 450,
+        "y": 140
+      },
+      "rank": 1,
+      "upgradeIds": []
+    }
+  ],
+  "scheduledEffects": []
+}
