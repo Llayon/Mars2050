@@ -1,0 +1,39 @@
+name: core archive verify (Linux)
+
+# Linux cross-environment verification of the CORE-HANDOFF candidate archive.
+# The repo gitignores *.tgz, so the job rebuilds the archive from the workspace package with the
+# released identity, verifies its content against the committed per-file manifest and runs the
+# R7 golden matrix + both CORE-HANDOFF MREs against the INSTALLED archive (never the workspace dist).
+
+on:
+  push:
+    branches: [repair/combat-core-isolation]
+    paths:
+      - 'packages/combat-core/certify/core-handoff-20261018/**'
+      - '.github/workflows/core-archive-verify.yml'
+      - 'packages/combat-core/src/**'
+  workflow_dispatch:
+
+jobs:
+  verify:
+    name: Node ${{ matrix.node }} archive verification
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [22, 26]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+
+      - name: Show runtime identity
+        run: |
+          node --version
+          npm --version
+
+      - name: Verify installed archive (R7 matrix goldens + MRE journal completeness)
+        run: node packages/combat-core/certify/core-handoff-20261018/verify-archive.mjs

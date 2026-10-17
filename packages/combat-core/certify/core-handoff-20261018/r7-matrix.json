@@ -1,0 +1,179 @@
+{
+  "generatedAt": "2026-10-13T20:49:00+03:00",
+  "baseCommit": "e1b013997aaf6ee6de82747d65f236adbf848ad4",
+  "tarball": {
+    "filename": "mars2050-combat-core-0.1.0.tgz",
+    "sha256": "39a042822ea1a2a61e75875d6c60fd6966e3812d355a1ea059f2378b8e139fbf",
+    "bytes": 416502
+  },
+  "environments": {
+    "node22_windows": {
+      "runtime": "Node.js",
+      "version": "v22.20.0",
+      "os": "Windows (win32 x64)",
+      "executable": "artifacts/combat-core-parity/owner-20261006/runtimes/node22/node-v22.20.0-win-x64/node.exe",
+      "mechanicsCheck": "17/17 PASS (exit code 0)"
+    },
+    "node22_linux": {
+      "runtime": "Node.js",
+      "version": "v22.23.3",
+      "os": "Linux (Alpine 3.21 on WSL2 x86_64, kernel 6.6.87.2-microsoft-standard-WSL2)",
+      "runner": "docker run --rm -v D:\\Max\\Mars2050:/app -w /app node:22-alpine",
+      "mechanicsCheck": "17/17 PASS (exit code 0)"
+    },
+    "node25_windows_host": {
+      "runtime": "Node.js",
+      "version": "v25.6.0",
+      "os": "Windows 11 (win32 x64)",
+      "executable": "C:\\Program Files\\nodejs\\node.exe",
+      "mechanicsCheck": "17/17 PASS (exit code 0)"
+    },
+    "node26_windows_fantasy": {
+      "runtime": "Node.js",
+      "version": "v26.11.1",
+      "os": "Windows (win32 x64)",
+      "runner": "npx.cmd --yes node@26.11.1",
+      "role": "Fantasy-backend target environment",
+      "mechanicsCheck": "17/17 PASS (exit code 0)"
+    },
+    "chromium_headless": {
+      "runtime": "Chromium (Google Chrome)",
+      "version": "154.0.8037.99",
+      "os": "Windows (win32 x64)",
+      "runner": "Playwright chromium.launchPersistentContext (channel: chrome)",
+      "mechanicsCheck": "14/14 mechanics PASS + 5/5 common scenarios 100% bit-for-bit (exit code 0)"
+    }
+  },
+  "scenarios": {
+    "melee-duel": {
+      "name": "1v1 Melee duel on standard arena",
+      "nodeDeterminism": {
+        "allNodeIdentical": true,
+        "winner": "draw",
+        "terminationReason": "timeout",
+        "elapsedTicks": 200,
+        "initialStateCount": 2,
+        "survivorsCount": 2,
+        "logsCount": 65,
+        "initialStateSha256": "340127d16d5d5f50ba9dfbec28696ad93f53f542453536971407af3b4baef9f0",
+        "survivorsSha256": "e8a1cbafb8954e5cdb841d5f2f5a9908ecb26406f31453ffc34fb4d07cceda19",
+        "logsSha256": "4575297cfa919c4ed1ae9ed1fc1cc58d61255cd0d24ec892c8fc06321324f895",
+        "metadataSha256": "12d7408abb391275d2347e5dee24861dc53524ab56652403532d4b3bbfd9c4c9"
+      },
+      "chromium": {
+        "matchesNodeBitForBit": true,
+        "winner": "draw",
+        "terminationReason": "timeout",
+        "elapsedTicks": 200,
+        "initialStateSha256": "340127d16d5d5f50ba9dfbec28696ad93f53f542453536971407af3b4baef9f0",
+        "survivorsSha256": "e8a1cbafb8954e5cdb841d5f2f5a9908ecb26406f31453ffc34fb4d07cceda19",
+        "logsSha256": "4575297cfa919c4ed1ae9ed1fc1cc58d61255cd0d24ec892c8fc06321324f895",
+        "metadataSha256": "12d7408abb391275d2347e5dee24861dc53524ab56652403532d4b3bbfd9c4c9"
+      }
+    },
+    "burn-siege": {
+      "name": "Pyromancer burn vs high HP Golem",
+      "nodeDeterminism": {
+        "allNodeIdentical": true,
+        "winner": "draw",
+        "terminationReason": "timeout",
+        "elapsedTicks": 150,
+        "initialStateCount": 2,
+        "survivorsCount": 2,
+        "logsCount": 21,
+        "initialStateSha256": "4621d135c73d7afcf1cf3f65d4cb82f3d67da8b1cf039e1d4cd9bf83eaa09e0c",
+        "survivorsSha256": "0ef67c40a42c99b604944d3764b564c72b7f8948d828e29c60b8c00f000e17f9",
+        "logsSha256": "a829970d0739d496de254bcf5de8af87242df513f98533ff2f7bb729285ec662",
+        "metadataSha256": "29d7a051e9142a43392ba4ead782da78b9049371c23951e150a3d7c0323ecaa5"
+      },
+      "chromium": {
+        "matchesNodeBitForBit": true,
+        "winner": "draw",
+        "terminationReason": "timeout",
+        "elapsedTicks": 150,
+        "initialStateSha256": "4621d135c73d7afcf1cf3f65d4cb82f3d67da8b1cf039e1d4cd9bf83eaa09e0c",
+        "survivorsSha256": "0ef67c40a42c99b604944d3764b564c72b7f8948d828e29c60b8c00f000e17f9",
+        "logsSha256": "a829970d0739d496de254bcf5de8af87242df513f98533ff2f7bb729285ec662",
+        "metadataSha256": "29d7a051e9142a43392ba4ead782da78b9049371c23951e150a3d7c0323ecaa5"
+      }
+    },
+    "summon-clash": {
+      "name": "In-combat summoning clash",
+      "nodeDeterminism": {
+        "allNodeIdentical": true,
+        "winner": "draw",
+        "terminationReason": "timeout",
+        "elapsedTicks": 250,
+        "initialStateCount": 3,
+        "survivorsCount": 5,
+        "logsCount": 191,
+        "initialStateSha256": "d6b134863a14e12be52046f00a009c4703eedc08e332002d46186b5fde1bb940",
+        "survivorsSha256": "a1ac8d0b3a152cc8e3b49fea121803cacaa6e10cbe6605042303c38246932c6b",
+        "logsSha256": "71b15bf1556ec82a963344ed43a01d7602753e7dc06d26d9c771a75ab93bf370",
+        "metadataSha256": "5c2096ce86ec16952b6bfea461209537e11cb1b059d83d8dca561d7e5ba7c5b4"
+      },
+      "chromium": {
+        "matchesNodeBitForBit": true,
+        "winner": "draw",
+        "terminationReason": "timeout",
+        "elapsedTicks": 250,
+        "initialStateSha256": "d6b134863a14e12be52046f00a009c4703eedc08e332002d46186b5fde1bb940",
+        "survivorsSha256": "a1ac8d0b3a152cc8e3b49fea121803cacaa6e10cbe6605042303c38246932c6b",
+        "logsSha256": "71b15bf1556ec82a963344ed43a01d7602753e7dc06d26d9c771a75ab93bf370",
+        "metadataSha256": "5c2096ce86ec16952b6bfea461209537e11cb1b059d83d8dca561d7e5ba7c5b4"
+      }
+    },
+    "timeout-defense": {
+      "name": "Timeout policy attacker_win resolution",
+      "nodeDeterminism": {
+        "allNodeIdentical": true,
+        "winner": "attacker",
+        "terminationReason": "timeout",
+        "elapsedTicks": 15,
+        "initialStateCount": 2,
+        "survivorsCount": 2,
+        "logsCount": 6,
+        "initialStateSha256": "6c918883184e3e4d02b33805aae12da0d733fa987664f62e1ac495646cd92b1e",
+        "survivorsSha256": "aca42c11935c388c9ab0551041cbb22e8704b0462025733df017bb843f89d762",
+        "logsSha256": "18ea8b2091e771be36912799139c1997be2eac45ed5f94403cd8b465114de5bb",
+        "metadataSha256": "cecdb3529ab7fe87cdc03123d9e586917db80b8979d943f735c35575600928be"
+      },
+      "chromium": {
+        "matchesNodeBitForBit": true,
+        "winner": "attacker",
+        "terminationReason": "timeout",
+        "elapsedTicks": 15,
+        "initialStateSha256": "6c918883184e3e4d02b33805aae12da0d733fa987664f62e1ac495646cd92b1e",
+        "survivorsSha256": "aca42c11935c388c9ab0551041cbb22e8704b0462025733df017bb843f89d762",
+        "logsSha256": "18ea8b2091e771be36912799139c1997be2eac45ed5f94403cd8b465114de5bb",
+        "metadataSha256": "cecdb3529ab7fe87cdc03123d9e586917db80b8979d943f735c35575600928be"
+      }
+    },
+    "mixed-squads": {
+      "name": "Multi-unit clash on custom 800x800 arena with obstacles and heal",
+      "nodeDeterminism": {
+        "allNodeIdentical": true,
+        "winner": "draw",
+        "terminationReason": "timeout",
+        "elapsedTicks": 200,
+        "initialStateCount": 4,
+        "survivorsCount": 4,
+        "logsCount": 102,
+        "initialStateSha256": "0415e62c32b5d0a6a41dcebe085ec13e95cc476ddaa8cccf00ca890538e6ed55",
+        "survivorsSha256": "9edb57cb165343118901ea7df64ce2cd3fed3ea737615e7b2a75ef1b00a13ac4",
+        "logsSha256": "b93730266c094c3bf65769d8c91317abbc23931d6f3686b4fc2d29e6edbe13e1",
+        "metadataSha256": "73a9d7363d1d7e05b6d253eaf6b24f8b85afea898049ec1e8fc5fec434ad59af"
+      },
+      "chromium": {
+        "matchesNodeBitForBit": true,
+        "winner": "draw",
+        "terminationReason": "timeout",
+        "elapsedTicks": 200,
+        "initialStateSha256": "0415e62c32b5d0a6a41dcebe085ec13e95cc476ddaa8cccf00ca890538e6ed55",
+        "survivorsSha256": "9edb57cb165343118901ea7df64ce2cd3fed3ea737615e7b2a75ef1b00a13ac4",
+        "logsSha256": "b93730266c094c3bf65769d8c91317abbc23931d6f3686b4fc2d29e6edbe13e1",
+        "metadataSha256": "73a9d7363d1d7e05b6d253eaf6b24f8b85afea898049ec1e8fc5fec434ad59af"
+      }
+    }
+  }
+}
