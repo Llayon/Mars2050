@@ -35,5 +35,11 @@ jobs:
           node --version
           npm --version
 
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund --ignore-scripts
+
+      - name: Build combat-core package
+        run: npm run combat:core:build
+
       - name: Verify installed archive (R7 matrix goldens + MRE journal completeness)
         run: node packages/combat-core/certify/core-handoff-20261018/verify-archive.mjs
