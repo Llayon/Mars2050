@@ -1,12 +1,12 @@
 import type { CombatRunResult, CombatSnapshotUnit } from '@mars2050/combat-core/contracts'
-import { deserializeCombatAction, deserializeCombatUnitSnapshot } from '@mars2050/combat-core/replay'
+import { mapCombatEventToBattleAction, serializeCombatUnitSnapshot } from '@mars2050/combat-core/replay'
 import type { BattleResult, BattleTick } from './combat.types'
 import type { Obstacle } from '@mars2050/combat-core/contracts'
 import type { CombatMetrics } from './combat.metrics'
 import type { SpatialQueryProfile } from './combat.spatial-profile'
 
 /**
- * Maps a core CombatRunResult back to Mars-compatible BattleResult via explicit DTO deserialization.
+ * Maps a core CombatRunResult back to Mars-compatible BattleResult via explicit DTO mapping.
  */
 export function mapCombatRunResultToBattleResult(
   result: CombatRunResult,
@@ -17,15 +17,15 @@ export function mapCombatRunResultToBattleResult(
 
   const mappedLogs: BattleTick[] = result.logs.map(tick => ({
     tick: tick.tick,
-    actions: tick.actions.map(action => deserializeCombatAction(action)),
+    actions: tick.actions.map(action => mapCombatEventToBattleAction(action)),
   }))
 
   const mappedInitialState: CombatSnapshotUnit[] = result.initialState.map(unit =>
-    deserializeCombatUnitSnapshot(unit),
+    serializeCombatUnitSnapshot(unit),
   )
 
   const mappedSurvivors: CombatSnapshotUnit[] = result.survivors.map(unit =>
-    deserializeCombatUnitSnapshot(unit),
+    serializeCombatUnitSnapshot(unit),
   )
 
   return {

@@ -12,6 +12,7 @@ import { validateUpgradeConfig } from './combat.upgrade-schema.js'
 import { validatePeriodicAbilityConfig } from './combat.periodic-schema.js'
 import { validateAndNormalizeDefinition, type AnyDef, type NormalizedDefinition } from './combat.definition-validator.js'
 import { validatePlacementAndBounds } from './combat.placement-validator.js'
+import { brandNormalizedInput } from './combat.input-brand.js'
 
 const SUPPORTED_SCHEDULED_EFFECT_KINDS = ['orbital_strike', 'mass_heal', 'mass_shield', 'global_emp']
 
@@ -231,9 +232,9 @@ export function validateBattleInput(input: unknown): BattleInput {
     }
   }
 
-  return {
+  return brandNormalizedInput({
     ...parsed,
     definitions: normalizedDefinitions,
     catalog: normalizedCatalog,
-  }
+  } as BattleInput)
 }

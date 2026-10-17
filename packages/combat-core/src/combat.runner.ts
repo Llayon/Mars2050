@@ -24,6 +24,7 @@ import type { ActiveGlobalEffect, ScheduledGlobalEffectKind } from './combat.pri
 import { CombatDefinitionError } from './combat.definition-error.js'
 import { createCombatMetrics, finalizeCombatMetrics, recordCombatActions, recordCombatTick } from './combat.metrics.js'
 import { validateBattleInput } from './combat.input-validator.js'
+import { isNormalizedBattleInput } from './combat.input-brand.js'
 
 const SUPPORTED_SCHEDULED_EFFECT_KINDS: readonly string[] = ['orbital_strike', 'mass_heal', 'mass_shield', 'global_emp']
 
@@ -36,7 +37,7 @@ function isSupportedScheduledEffectKind(type: string): type is ScheduledGlobalEf
   return SUPPORTED_SCHEDULED_EFFECT_KINDS.includes(type)
 }
 export function executeCombatSimulation(input: BattleInput): CombatRunResult {
-  const validatedInput = validateBattleInput(input)
+  const validatedInput = isNormalizedBattleInput(input) ? input : validateBattleInput(input)
   const seed = validatedInput.seed
   const rng = new PRNG(seed)
   const dt = 0.1

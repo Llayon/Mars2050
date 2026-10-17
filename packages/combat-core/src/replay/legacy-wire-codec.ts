@@ -134,12 +134,14 @@ export function deserializeCombatEvent(event: unknown): CombatEvent {
   return sanitized
 }
 
-export function deserializeCombatAction(event: unknown): BattleAction {
-  const raw = deserializeCombatEvent(event) as Record<string, unknown>
+export function mapCombatEventToBattleAction(event: CombatEvent): BattleAction {
+  const raw = event as Record<string, unknown>
   const action: Record<string, unknown> = {}
   for (const k of Object.keys(raw)) {
     if (BATTLE_ACTION_ALLOWED_KEYS.has(k) && raw[k] !== undefined) {
-      action[k] = raw[k]
+      action[k] = (k === 'details' && typeof raw[k] === 'object' && raw[k] !== null)
+        ? sanitizeEventDetails(raw[k])
+        : raw[k]
     }
   }
   const resolvedUnitId = (typeof action.unitId === 'string' && action.unitId) ||
@@ -155,6 +157,11 @@ export function deserializeCombatAction(event: unknown): BattleAction {
     throw new Error(`Invalid spawnMaxHp: must be a positive number, got ${String(action.spawnMaxHp)}`)
   }
   return action as unknown as BattleAction
+}
+
+export function deserializeCombatAction(event: unknown): BattleAction {
+  const raw = deserializeCombatEvent(event)
+  return mapCombatEventToBattleAction(raw)
 }
 
 export function serializeCombatTick(tick: { tick: number; actions: readonly BattleAction[] }): CombatTick {
