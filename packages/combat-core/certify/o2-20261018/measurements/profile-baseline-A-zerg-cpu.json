@@ -1,0 +1,183 @@
+{
+  "file": "D:\\Max\\o2\\profiles\\base-A-zerg.cpu.json",
+  "kind": "cpuprofile",
+  "sampleCount": 72887,
+  "totalMicros": 48764464,
+  "top": [
+    {
+      "functionName": "structuredClone",
+      "url": "node:internal/worker/js_transferable",
+      "line": 112,
+      "samples": 6225,
+      "share": 0.08540617668445676
+    },
+    {
+      "functionName": "begin",
+      "url": "D:/Max/Mars2050-o2/packages/combat-core/dist/combat.action-intent.js",
+      "line": 2,
+      "samples": 4543,
+      "share": 0.06232935914497784
+    },
+    {
+      "functionName": "structuredClone",
+      "url": "",
+      "line": 0,
+      "samples": 4507,
+      "share": 0.061835443906320745
+    },
+    {
+      "functionName": "get",
+      "url": "D:/Max/Mars2050-o2/packages/combat-core/dist/math/index.js",
+      "line": 2,
+      "samples": 3711,
+      "share": 0.05091442918490266
+    },
+    {
+      "functionName": "require",
+      "url": "D:/Max/Mars2050-o2/packages/combat-core/dist/ecs/component-store.js",
+      "line": 2,
+      "samples": 2663,
+      "share": 0.03653600779288488
+    },
+    {
+      "functionName": "getSizeRadius",
+      "url": "D:/Max/Mars2050-o2/packages/combat-core/dist/combat.utils.js",
+      "line": 2,
+      "samples": 2249,
+      "share": 0.030855982548328234
+    },
+    {
+      "functionName": "get",
+      "url": "D:/Max/Mars2050-o2/packages/combat-core/dist/math/geometry.js",
+      "line": 2,
+      "samples": 2217,
+      "share": 0.030416946780633034
+    },
+    {
+      "functionName": "get",
+      "url": "D:/Max/Mars2050-o2/packages/combat-core/dist/ecs/component-store.js",
+      "line": 2,
+      "samples": 2066,
+      "share": 0.02834524675182131
+    },
+    {
+      "functionName": "visitBucketPair",
+      "url": "D:/Max/Mars2050-o2/packages/combat-core/dist/ecs/movement-neighbor-graph.js",
+      "line": 2,
+      "samples": 2017,
+      "share": 0.027672973232538037
+    },
+    {
+      "functionName": "getEcsSteeringContext",
+      "url": "D:/Max/Mars2050-o2/packages/combat-core/dist/ecs/movement-steering.js",
+      "line": 2,
+      "samples": 1964,
+      "share": 0.026945820242292865
+    },
+    {
+      "functionName": "inst._zod.parse",
+      "url": "D:/Max/Mars2050-o2/node_modules/zod/v4/core/schemas.cjs",
+      "line": 1455,
+      "samples": 1803,
+      "share": 0.024736921536076394
+    },
+    {
+      "functionName": "(garbage collector)",
+      "url": "",
+      "line": 0,
+      "samples": 1285,
+      "share": 0.017630030046510353
+    },
+    {
+      "functionName": "solveBatchMovementCollisions",
+      "url": "D:/Max/Mars2050-o2/packages/combat-core/dist/ecs/movement-collision-solver.js",
+      "line": 2,
+      "samples": 1258,
+      "share": 0.017259593617517527
+    },
+    {
+      "functionName": "findSlot",
+      "url": "D:/Max/Mars2050-o2/packages/combat-core/dist/ecs/systems/melee-engagement-system.js",
+      "line": 2,
+      "samples": 1144,
+      "share": 0.015695528695103378
+    },
+    {
+      "functionName": "(anonymous)",
+      "url": "D:/Max/Mars2050-o2/packages/combat-core/dist/contracts/replay.contracts.js",
+      "line": 2,
+      "samples": 1033,
+      "share": 0.014172623375910656
+    },
+    {
+      "functionName": "addBucketPairs",
+      "url": "D:/Max/Mars2050-o2/packages/combat-core/dist/ecs/movement-collision-pairs.js",
+      "line": 2,
+      "samples": 1019,
+      "share": 0.013980545227544007
+    },
+    {
+      "functionName": "compactEcsReachableEnemies",
+      "url": "D:/Max/Mars2050-o2/packages/combat-core/dist/ecs/targeting-selection.js",
+      "line": 2,
+      "samples": 978,
+      "share": 0.013418030650184532
+    },
+    {
+      "functionName": "(anonymous)",
+      "url": "D:/Max/Mars2050-o2/packages/combat-core/dist/combat.action-intent.js",
+      "line": 2,
+      "samples": 967,
+      "share": 0.013267112105039308
+    },
+    {
+      "functionName": "getDistance",
+      "url": "D:/Max/Mars2050-o2/packages/combat-core/dist/math/geometry.js",
+      "line": 2,
+      "samples": 897,
+      "share": 0.012306721363206059
+    },
+    {
+      "functionName": "scanBase",
+      "url": "D:/Max/Mars2050-o2/packages/combat-core/dist/ecs/targeting-runtime.js",
+      "line": 2,
+      "samples": 823,
+      "share": 0.01129145115041091
+    },
+    {
+      "functionName": "createBatchMovementIntent",
+      "url": "D:/Max/Mars2050-o2/packages/combat-core/dist/ecs/systems/batch-movement-intent-system.js",
+      "line": 2,
+      "samples": 771,
+      "share": 0.01057801802790621
+    },
+    {
+      "functionName": "runEcsActorTurnSystem",
+      "url": "D:/Max/Mars2050-o2/packages/combat-core/dist/ecs/systems/actor-turn-system.js",
+      "line": 2,
+      "samples": 728,
+      "share": 0.009988063715065786
+    },
+    {
+      "functionName": "getSizeMass",
+      "url": "D:/Max/Mars2050-o2/packages/combat-core/dist/combat.utils.js",
+      "line": 2,
+      "samples": 706,
+      "share": 0.009686226624775337
+    },
+    {
+      "functionName": "add",
+      "url": "D:/Max/Mars2050-o2/packages/combat-core/dist/ecs/movement-neighbor-table.js",
+      "line": 2,
+      "samples": 660,
+      "share": 0.009055112708713488
+    },
+    {
+      "functionName": "runBatchMovementSystem",
+      "url": "D:/Max/Mars2050-o2/packages/combat-core/dist/ecs/systems/batch-movement-system.js",
+      "line": 2,
+      "samples": 627,
+      "share": 0.008602357073277814
+    }
+  ]
+}

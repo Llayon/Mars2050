@@ -1,0 +1,182 @@
+{
+  "file": "D:\\Max\\o2\\profiles\\base-A-zerg-gc.heap.json",
+  "kind": "heapprofile",
+  "totalSelfBytes": 5650704952,
+  "top": [
+    {
+      "functionName": "begin",
+      "url": "D:/Max/Mars2050-o2/packages/combat-core/dist/combat.action-intent.js",
+      "line": 2,
+      "bytes": 1263024120,
+      "share": 0.22351620385930213
+    },
+    {
+      "functionName": "inst._zod.parse",
+      "url": "D:/Max/Mars2050-o2/node_modules/zod/v4/core/schemas.cjs",
+      "line": 1455,
+      "bytes": 541046624,
+      "share": 0.09574851785678581
+    },
+    {
+      "functionName": "buildAllPairs",
+      "url": "D:/Max/Mars2050-o2/packages/combat-core/dist/ecs/movement-collision-pairs.js",
+      "line": 2,
+      "bytes": 447137568,
+      "share": 0.07912951955520894
+    },
+    {
+      "functionName": "set",
+      "url": "",
+      "line": 0,
+      "bytes": 363469112,
+      "share": 0.06432279071151192
+    },
+    {
+      "functionName": "hypot",
+      "url": "",
+      "line": 0,
+      "bytes": 208673560,
+      "share": 0.03692876583940955
+    },
+    {
+      "functionName": "push",
+      "url": "",
+      "line": 0,
+      "bytes": 204193088,
+      "share": 0.036135860876566964
+    },
+    {
+      "functionName": "getEcsSteeringContext",
+      "url": "D:/Max/Mars2050-o2/packages/combat-core/dist/ecs/movement-steering.js",
+      "line": 2,
+      "bytes": 191498704,
+      "share": 0.033889347546313016
+    },
+    {
+      "functionName": "findSlot",
+      "url": "D:/Max/Mars2050-o2/packages/combat-core/dist/ecs/systems/melee-engagement-system.js",
+      "line": 2,
+      "bytes": 136962992,
+      "share": 0.024238213313813806
+    },
+    {
+      "functionName": "next",
+      "url": "",
+      "line": 0,
+      "bytes": 135193232,
+      "share": 0.02392502053255319
+    },
+    {
+      "functionName": "buildMovementNeighborGraph",
+      "url": "D:/Max/Mars2050-o2/packages/combat-core/dist/ecs/movement-neighbor-graph.js",
+      "line": 2,
+      "bytes": 122187608,
+      "share": 0.02162342734896345
+    },
+    {
+      "functionName": "solveBatchMovementCollisions",
+      "url": "D:/Max/Mars2050-o2/packages/combat-core/dist/ecs/movement-collision-solver.js",
+      "line": 2,
+      "bytes": 114384632,
+      "share": 0.02024254194328708
+    },
+    {
+      "functionName": "deterministicAtan2",
+      "url": "D:/Max/Mars2050-o2/packages/combat-core/dist/math/trig-atan.js",
+      "line": 2,
+      "bytes": 102119536,
+      "share": 0.01807199931114011
+    },
+    {
+      "functionName": "deterministicAtan",
+      "url": "D:/Max/Mars2050-o2/packages/combat-core/dist/math/trig-atan.js",
+      "line": 2,
+      "bytes": 102103568,
+      "share": 0.018069173469030912
+    },
+    {
+      "functionName": "(anonymous)",
+      "url": "D:/Max/Mars2050-o2/packages/combat-core/dist/ecs/component-query-registry.js",
+      "line": 2,
+      "bytes": 89638040,
+      "share": 0.01586316057225279
+    },
+    {
+      "functionName": "createBatchMovementIntent",
+      "url": "D:/Max/Mars2050-o2/packages/combat-core/dist/ecs/systems/batch-movement-intent-system.js",
+      "line": 2,
+      "bytes": 86177392,
+      "share": 0.015250732914217816
+    },
+    {
+      "functionName": "serializeCombatEvent",
+      "url": "D:/Max/Mars2050-o2/packages/combat-core/dist/replay/legacy-wire-codec.js",
+      "line": 2,
+      "bytes": 86169800,
+      "share": 0.015249389365038644
+    },
+    {
+      "functionName": "add",
+      "url": "",
+      "line": 0,
+      "bytes": 85809080,
+      "share": 0.015185553082121
+    },
+    {
+      "functionName": "commitV9DefenseBatch",
+      "url": "D:/Max/Mars2050-o2/packages/combat-core/dist/ecs/v9-defense-commit.js",
+      "line": 2,
+      "bytes": 83618336,
+      "share": 0.014797859153910395
+    },
+    {
+      "functionName": "selectEcsNearestTarget",
+      "url": "D:/Max/Mars2050-o2/packages/combat-core/dist/ecs/targeting-selection.js",
+      "line": 2,
+      "bytes": 72513680,
+      "share": 0.012832678509313186
+    },
+    {
+      "functionName": "pureSha256",
+      "url": "D:/Max/Mars2050-o2/packages/combat-core/dist/contracts/ruleset-identity.js",
+      "line": 2,
+      "bytes": 58606384,
+      "share": 0.010371517270470292
+    },
+    {
+      "functionName": "sort",
+      "url": "",
+      "line": 0,
+      "bytes": 55093264,
+      "share": 0.009749803691396131
+    },
+    {
+      "functionName": "scanBase",
+      "url": "D:/Max/Mars2050-o2/packages/combat-core/dist/ecs/targeting-runtime.js",
+      "line": 2,
+      "bytes": 51135920,
+      "share": 0.009049476204186
+    },
+    {
+      "functionName": "keys",
+      "url": "",
+      "line": 0,
+      "bytes": 45798072,
+      "share": 0.008104842208013411
+    },
+    {
+      "functionName": "(anonymous)",
+      "url": "D:/Max/Mars2050-o2/packages/combat-core/dist/ecs/combat-entity-indexes.js",
+      "line": 2,
+      "bytes": 43060056,
+      "share": 0.007620298062945121
+    },
+    {
+      "functionName": "createMovementFrame",
+      "url": "D:/Max/Mars2050-o2/packages/combat-core/dist/ecs/movement-frame.js",
+      "line": 2,
+      "bytes": 38178368,
+      "share": 0.006756390277727599
+    }
+  ]
+}

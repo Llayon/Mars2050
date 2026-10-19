@@ -1,0 +1,46 @@
+
+ RUN  v4.1.5 D:/Max/Mars2050-o2
+
+ ❯ packages/combat-core/tests/o2-buffer-isolation.test.ts (5 tests | 2 failed) 751ms
+     × never aliases the live status list and never shares one array between groups 29ms
+     × copies a populated status list instead of reusing it 8ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 3 passed (5)
+   Start at  10:49:57
+   Duration  3.74s (transform 1.83s, setup 0ms, import 2.51s, tests 751ms, environment 0ms)
+
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  packages/combat-core/tests/o2-buffer-isolation.test.ts > O2: defense-frame snapshots are detached copies > never aliases the live status list and never shares one array between groups
+AssertionError: expected [] not to be [] // Object.is equality
+
+Compared values have no visual difference.
+
+ ❯ packages/combat-core/tests/o2-buffer-isolation.test.ts:34:45
+     32|     expect(probeEntityId).toBeDefined()
+     33|     const liveStatuses = world.stores.statusControl.require(probeEntit…
+     34|     expect(probeSnapshot.statusEffects).not.toBe(liveStatuses)
+       |                                             ^
+     35|     liveStatuses.push({ type: 'burn', duration: 5, value: 3, tickInter…
+     36|     expect(probeSnapshot.statusEffects).toEqual([])
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  packages/combat-core/tests/o2-buffer-isolation.test.ts > O2: defense-frame snapshots are detached copies > copies a populated status list instead of reusing it
+AssertionError: expected [ Array(1) ] not to be [ Array(1) ] // Object.is equality
+
+Compared values have no visual difference.
+
+ ❯ packages/combat-core/tests/o2-buffer-isolation.test.ts:60:41
+     58|     const snapshot = ledger.frame?.defense.targetsByExternalId.get(ext…
+     59|     expect(snapshot?.statusEffects).toEqual([{ type: 'burn', duration:…
+     60|     expect(snapshot?.statusEffects).not.toBe(live)
+       |                                         ^
+     61|     live[0].duration = 99
+     62|     expect(snapshot?.statusEffects?.[0].duration).toBe(10)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

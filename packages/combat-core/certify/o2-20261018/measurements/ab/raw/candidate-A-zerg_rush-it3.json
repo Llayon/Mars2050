@@ -1,0 +1,53 @@
+{
+  "variant": "candidate",
+  "contour": "A",
+  "node": "v25.6.0",
+  "platform": "win32-x64",
+  "warmup": 2,
+  "runs": 5,
+  "core": {
+    "entryUrl": "file:///D:/Max/Mars2050-o2/packages/combat-core/dist/index.js",
+    "resolvedEntry": "D:/Max/Mars2050-o2/packages/combat-core/dist/index.js",
+    "realEntry": "D:/Max/Mars2050-o2/packages/combat-core/dist/index.js",
+    "entrySha256": "502b750f8baba5fc05246ae696bd6580bf10659d41566309091b280048a54579",
+    "packageJsonPath": "D:/Max/Mars2050-o2/packages/combat-core/package.json",
+    "packageJsonSha256": "67a98caf2b5cda6d561d8578367073ff7a179c01906226b923197fde313642a7",
+    "name": "@mars2050/combat-core",
+    "version": "0.1.0"
+  },
+  "presets": {
+    "zerg_rush": {
+      "note": "pure core: public simulateCombat(frozen translated BattleInput)",
+      "inputPath": "D:/Max/Mars2050-o2/packages/combat-core/certify/o2-20261018/inputs/zerg_rush.battle-input.json",
+      "inputSha256": "d9e290ae1756c911a66c49a829003be246f047cffaae4753f2b2c099a8cd3fd0",
+      "units": 68,
+      "summary": {
+        "runs": 5,
+        "medianMs": 4237.143000000002,
+        "meanMs": 4303.405520000002,
+        "minMs": 3973.745200000001,
+        "maxMs": 4725.5422000000035,
+        "spreadMs": 751.7970000000023,
+        "madMs": 184.2498999999989
+      },
+      "rawMs": [
+        4421.392900000001,
+        4237.143000000002,
+        4159.204300000001,
+        4725.5422000000035,
+        3973.745200000001
+      ],
+      "hashes": [
+        "89fea02569679c9cfb6d1435d52cb43b466f2480bdf6cdc60cc55340a2b19854",
+        "89fea02569679c9cfb6d1435d52cb43b466f2480bdf6cdc60cc55340a2b19854",
+        "89fea02569679c9cfb6d1435d52cb43b466f2480bdf6cdc60cc55340a2b19854",
+        "89fea02569679c9cfb6d1435d52cb43b466f2480bdf6cdc60cc55340a2b19854",
+        "89fea02569679c9cfb6d1435d52cb43b466f2480bdf6cdc60cc55340a2b19854"
+      ],
+      "distinctHashes": [
+        "89fea02569679c9cfb6d1435d52cb43b466f2480bdf6cdc60cc55340a2b19854"
+      ],
+      "resultInvariant": true
+    }
+  }
+}

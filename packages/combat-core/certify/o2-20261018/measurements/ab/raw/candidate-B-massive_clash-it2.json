@@ -1,0 +1,52 @@
+{
+  "variant": "candidate",
+  "contour": "B",
+  "node": "v25.6.0",
+  "platform": "win32-x64",
+  "seed": 24680,
+  "warmup": 2,
+  "runs": 5,
+  "core": {
+    "resolvedEntry": "D:/Max/Mars2050-o2/packages/combat-core/dist/index.js",
+    "realEntry": "D:/Max/Mars2050-o2/packages/combat-core/dist/index.js",
+    "entrySha256": "502b750f8baba5fc05246ae696bd6580bf10659d41566309091b280048a54579",
+    "packageJsonSha256": "67a98caf2b5cda6d561d8578367073ff7a179c01906226b923197fde313642a7",
+    "name": "@mars2050/combat-core",
+    "version": "0.1.0"
+  },
+  "presets": {
+    "massive_clash": {
+      "note": "Mars compat: simulateBattle end-to-end (translation + core + compat mapping timed)",
+      "seed": 24680,
+      "inputSha256": "b823f03b8499e1a7d356427f3fc69418d785ddcc28abe33497fa45305518167e",
+      "units": 10,
+      "summary": {
+        "runs": 5,
+        "medianMs": 399.9099000000001,
+        "meanMs": 404.8104799999998,
+        "minMs": 356.22729999999956,
+        "maxMs": 454.9015999999997,
+        "spreadMs": 98.67430000000013,
+        "madMs": 43.68260000000055
+      },
+      "rawMs": [
+        359.297,
+        453.71659999999974,
+        454.9015999999997,
+        399.9099000000001,
+        356.22729999999956
+      ],
+      "hashes": [
+        "58138344db35d6808db51c25a8ce2893debf2d53d9437cb221233628ffa803ef",
+        "58138344db35d6808db51c25a8ce2893debf2d53d9437cb221233628ffa803ef",
+        "58138344db35d6808db51c25a8ce2893debf2d53d9437cb221233628ffa803ef",
+        "58138344db35d6808db51c25a8ce2893debf2d53d9437cb221233628ffa803ef",
+        "58138344db35d6808db51c25a8ce2893debf2d53d9437cb221233628ffa803ef"
+      ],
+      "distinctHashes": [
+        "58138344db35d6808db51c25a8ce2893debf2d53d9437cb221233628ffa803ef"
+      ],
+      "resultInvariant": true
+    }
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "variant": "baseline",
+  "contour": "A",
+  "node": "v25.6.0",
+  "platform": "win32-x64",
+  "warmup": 2,
+  "runs": 5,
+  "core": {
+    "entryUrl": "file:///D:/Max/o2/baseline-install/node_modules/@mars2050/combat-core/dist/index.js",
+    "resolvedEntry": "D:/Max/o2/baseline-install/node_modules/@mars2050/combat-core/dist/index.js",
+    "realEntry": "D:/Max/o2/baseline-install/node_modules/@mars2050/combat-core/dist/index.js",
+    "entrySha256": "502b750f8baba5fc05246ae696bd6580bf10659d41566309091b280048a54579",
+    "packageJsonPath": "D:/Max/o2/baseline-install/node_modules/@mars2050/combat-core/package.json",
+    "packageJsonSha256": "445b24dd224c7471c4a243f40417d74db4cd03297436a09346e050bcac41548c",
+    "name": "@mars2050/combat-core",
+    "version": "0.1.0-o1mv.1"
+  },
+  "presets": {
+    "massive_clash": {
+      "note": "pure core: public simulateCombat(frozen translated BattleInput)",
+      "inputPath": "D:/Max/Mars2050-o2/packages/combat-core/certify/o2-20261018/inputs/massive_clash.battle-input.json",
+      "inputSha256": "e9e653147d18601fe8af7bc839e8c89acbd91893aefaa1b5a54bad0a85a33398",
+      "units": 10,
+      "summary": {
+        "runs": 5,
+        "medianMs": 418.30539999999974,
+        "meanMs": 409.56313999999986,
+        "minMs": 369.8469,
+        "maxMs": 435.28639999999996,
+        "spreadMs": 65.43949999999995,
+        "madMs": 16.981000000000222
+      },
+      "rawMs": [
+        428.2337,
+        435.28639999999996,
+        369.8469,
+        418.30539999999974,
+        396.1432999999997
+      ],
+      "hashes": [
+        "e319e672616911ef5d85fc37e735124c49f7b65c711b91260341b237510e1c7a",
+        "e319e672616911ef5d85fc37e735124c49f7b65c711b91260341b237510e1c7a",
+        "e319e672616911ef5d85fc37e735124c49f7b65c711b91260341b237510e1c7a",
+        "e319e672616911ef5d85fc37e735124c49f7b65c711b91260341b237510e1c7a",
+        "e319e672616911ef5d85fc37e735124c49f7b65c711b91260341b237510e1c7a"
+      ],
+      "distinctHashes": [
+        "e319e672616911ef5d85fc37e735124c49f7b65c711b91260341b237510e1c7a"
+      ],
+      "resultInvariant": true
+    }
+  }
+}

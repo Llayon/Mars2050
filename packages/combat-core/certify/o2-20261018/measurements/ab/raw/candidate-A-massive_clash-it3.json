@@ -1,0 +1,53 @@
+{
+  "variant": "candidate",
+  "contour": "A",
+  "node": "v25.6.0",
+  "platform": "win32-x64",
+  "warmup": 2,
+  "runs": 5,
+  "core": {
+    "entryUrl": "file:///D:/Max/Mars2050-o2/packages/combat-core/dist/index.js",
+    "resolvedEntry": "D:/Max/Mars2050-o2/packages/combat-core/dist/index.js",
+    "realEntry": "D:/Max/Mars2050-o2/packages/combat-core/dist/index.js",
+    "entrySha256": "502b750f8baba5fc05246ae696bd6580bf10659d41566309091b280048a54579",
+    "packageJsonPath": "D:/Max/Mars2050-o2/packages/combat-core/package.json",
+    "packageJsonSha256": "67a98caf2b5cda6d561d8578367073ff7a179c01906226b923197fde313642a7",
+    "name": "@mars2050/combat-core",
+    "version": "0.1.0"
+  },
+  "presets": {
+    "massive_clash": {
+      "note": "pure core: public simulateCombat(frozen translated BattleInput)",
+      "inputPath": "D:/Max/Mars2050-o2/packages/combat-core/certify/o2-20261018/inputs/massive_clash.battle-input.json",
+      "inputSha256": "e9e653147d18601fe8af7bc839e8c89acbd91893aefaa1b5a54bad0a85a33398",
+      "units": 10,
+      "summary": {
+        "runs": 5,
+        "medianMs": 450.92779999999993,
+        "meanMs": 452.3234600000002,
+        "minMs": 376.5353,
+        "maxMs": 525.0976,
+        "spreadMs": 148.56230000000005,
+        "madMs": 31.435300000000325
+      },
+      "rawMs": [
+        482.36310000000026,
+        376.5353,
+        426.6935000000003,
+        450.92779999999993,
+        525.0976
+      ],
+      "hashes": [
+        "e319e672616911ef5d85fc37e735124c49f7b65c711b91260341b237510e1c7a",
+        "e319e672616911ef5d85fc37e735124c49f7b65c711b91260341b237510e1c7a",
+        "e319e672616911ef5d85fc37e735124c49f7b65c711b91260341b237510e1c7a",
+        "e319e672616911ef5d85fc37e735124c49f7b65c711b91260341b237510e1c7a",
+        "e319e672616911ef5d85fc37e735124c49f7b65c711b91260341b237510e1c7a"
+      ],
+      "distinctHashes": [
+        "e319e672616911ef5d85fc37e735124c49f7b65c711b91260341b237510e1c7a"
+      ],
+      "resultInvariant": true
+    }
+  }
+}

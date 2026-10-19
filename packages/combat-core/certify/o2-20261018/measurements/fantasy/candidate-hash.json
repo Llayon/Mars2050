@@ -1,0 +1,1153 @@
+{
+  "mode": "hash",
+  "bundle": "D:/Max/o2/fantasy/candidate/native-compare.mjs",
+  "bundleSha256": "013e07a784870aa19216219f2fdf0179e8a6abbdda1a990fc19052716fb7f197",
+  "node": "v26.11.1",
+  "platform": "win32-x64",
+  "sdk52Sha256": "52a91f4eb406125247426f044eb0dbdf8ab440a8285d211af63e5f9c75bf61dd",
+  "nativeRuntime": {
+    "schema": 1,
+    "catalogue": "f2d93f04a2e20b7c6c3460cc3159d61ba2ae25493e508bab3c8714c557a38da5",
+    "sdk": "421ad6e35821aeafa0f1bbd3a93cfd69a3fbb81523d031ab6eaa0f8bb13a67f3",
+    "revision": "combat-ecs-v9-deterministic-trig-r4",
+    "inputFormat": "fantasy-r7-native-input-v1",
+    "adapter": "fantasy-sdk52-to-r7-units-v1",
+    "hpProfile": "r7-signed-hp-v1"
+  },
+  "corpus": {
+    "files": {
+      "corpus.json.gz": {
+        "expected": "dfffc6b8bcf211eea4c2279ecad150087ec1ac1414d811b4116be52427667070",
+        "actual": "dfffc6b8bcf211eea4c2279ecad150087ec1ac1414d811b4116be52427667070"
+      },
+      "extra-corpus.json.gz": {
+        "expected": "29c70cccb6c4397e5229b1d332451f3b0dd683e1ccb6c98b17e734c745089b12",
+        "actual": "29c70cccb6c4397e5229b1d332451f3b0dd683e1ccb6c98b17e734c745089b12"
+      },
+      "sdk52-ledger.json": {
+        "expected": "d54bc51a698c1df9f02a186fe3e59464d984184ca7c2a10c666904648a7b0304",
+        "actual": "d54bc51a698c1df9f02a186fe3e59464d984184ca7c2a10c666904648a7b0304"
+      }
+    },
+    "intact": true,
+    "scenarios": 159
+  },
+  "scenarios": [
+    {
+      "name": "recruit/dawn-oathkeeper/attacker",
+      "inputSha256": "c868937edd75a4f69b44a54b96d88b1d99b0ae2d0775ee8889591a2877bf9c02",
+      "digest": "b33e2970a5aa224d6da268b9c60c702f481a0845271365d23e15af3c50a92a86",
+      "ticks": 551
+    },
+    {
+      "name": "recruit/dawn-oathkeeper/defender",
+      "inputSha256": "7391e8199222a6d786e244d87cdb3c07c24c493501779d34888a54bda252f685",
+      "digest": "dd19c4823a2cb4b35ab940d06e0dc6e02b14526fe8d117ef9d5ec6cc3ae59d58",
+      "ticks": 600
+    },
+    {
+      "name": "recruit/dawn-sun-pikeman/attacker",
+      "inputSha256": "e548017fce8c34a00d11c1efa6cd98ca03ad0fd73dd1c2a3e5d8d3a7808c7945",
+      "digest": "c72263ddc13acf8e6ad1dfbeb8303529ece889ba652592ee713644d0b54ad576",
+      "ticks": 347
+    },
+    {
+      "name": "recruit/dawn-sun-pikeman/defender",
+      "inputSha256": "e071c2ca874d4af68bdb57019949ddb376590d74bc7d43c03c52258bf23a466d",
+      "digest": "1432f4a7d6b58881fdc79737977e4f4848066b6225f65c97061db8be5a262ed3",
+      "ticks": 287
+    },
+    {
+      "name": "recruit/dawn-crossbow-sentinel/attacker",
+      "inputSha256": "cdaebcd7d2f6873d0e9dcebd8b05fa0d24ed95ab7862ccd22371559e6ce2800d",
+      "digest": "8a0036a466bf1897118ab38ca7e253098902b84c2a68cbc499e62e05542e647d",
+      "ticks": 161
+    },
+    {
+      "name": "recruit/dawn-crossbow-sentinel/defender",
+      "inputSha256": "13c39cd4109db60932b07cad406f259dd78fde68f52a33cfaa768a3f9de2b8aa",
+      "digest": "3d20ad0f30aa7de05cd8a0e2007604b30003d7678128258c0df57af6798c30a5",
+      "ticks": 166
+    },
+    {
+      "name": "recruit/dawn-field-chaplain/attacker",
+      "inputSha256": "ec21c647cc0a13165a3bbeba6a6fae70b121208f2dcdbd125ebc7c36d365316a",
+      "digest": "f1e4649f2b7f4dd37c68ffda3c16511d08d66d6229f8d083264373974d2581ac",
+      "ticks": 129
+    },
+    {
+      "name": "recruit/dawn-field-chaplain/defender",
+      "inputSha256": "c1af85cc97f934aecd75cc201871e4c95152fb51837a18c025a590d4d5e0f8f4",
+      "digest": "035f14eacbe0a150e19825eb9520c3e92211d9e9780bf349dca6d7ab4ca249a5",
+      "ticks": 140
+    },
+    {
+      "name": "recruit/dawn-heliomancer/attacker",
+      "inputSha256": "9e7781383fe227da944d439e297f7c6f9c21fba3375a22a6412b963cdbe7515f",
+      "digest": "3d7df96a5af17fae22770d806cb554ac3f80c7014875df92e56a959ee7501ad9",
+      "ticks": 90
+    },
+    {
+      "name": "recruit/dawn-heliomancer/defender",
+      "inputSha256": "0cad3296fa07b2ed64005f3b265653d6c61fb049e9b5c312c2f6d194c2d70e2e",
+      "digest": "aeb1c1f53d922e6aff71223722f807570c981063695fffe36c9eaa9047ca1e76",
+      "ticks": 97
+    },
+    {
+      "name": "recruit/dawn-dawn-duelist/attacker",
+      "inputSha256": "bb7c81519bc386ac18c8f7a2648e6599fefa696cfdb083e8a017e6c220e3a6b8",
+      "digest": "18652b798e561ab88512ca4f777fa158bd63fec6ac2f8a5ce4cfbaf466ca2da1",
+      "ticks": 217
+    },
+    {
+      "name": "recruit/dawn-dawn-duelist/defender",
+      "inputSha256": "b923c6196680dbdf43547247c495b37262eb2a01ab1d1ab17e2e6c646f41c276",
+      "digest": "cf1e3bb4258acc7300c01529801cd2cd3224615a6644a6c130da97c7326f0671",
+      "ticks": 114
+    },
+    {
+      "name": "recruit/dawn-oath-justiciar/attacker",
+      "inputSha256": "8602e6d95b0bbd5451ae300d6dc670332e3fff06fa9db0e630aa244a9a003429",
+      "digest": "246c263bf5b22652e0f423d402ba3f6c705427120aa071726a5e5f2fe39c13f9",
+      "ticks": 399
+    },
+    {
+      "name": "recruit/dawn-oath-justiciar/defender",
+      "inputSha256": "8e5de2321588636e040b508adf4beab5a59e10d4ee2097afd8840c2a0db447b5",
+      "digest": "2cffa947394c6cc0f778682ade8057835146fc6dbe2690fafc3ecb087ad61221",
+      "ticks": 407
+    },
+    {
+      "name": "recruit/dawn-witch-hunter/attacker",
+      "inputSha256": "31c52f6bcb393bb8033c5b3118993b1a572eddea34e3513890df43ff27f3cb16",
+      "digest": "1208e44084a334b95db008e3e47be493257868b77498e0725827b1729bbbdb72",
+      "ticks": 100
+    },
+    {
+      "name": "recruit/dawn-witch-hunter/defender",
+      "inputSha256": "ad791bb9b35dccac0f85c5211d2c976ec8e7cf0136e544fc94eb36859c7fe61d",
+      "digest": "01b8b2c37db811a8c2d202e4bab0d53d1c298abb39a226b0625cad4fa5ecd34a",
+      "ticks": 110
+    },
+    {
+      "name": "recruit/dawn-shield-marshal/attacker",
+      "inputSha256": "8dc9064b88b57cdd096f30ab5cbd41a0e2073d088142ed03da551a156bb536ce",
+      "digest": "88a4a7c628c658999100e6c0450fab21c578f57a1b43e3b78b2ae8c83cee4920",
+      "ticks": 600
+    },
+    {
+      "name": "recruit/dawn-shield-marshal/defender",
+      "inputSha256": "49f88eb9c065c0c314cc098d72027afb7fb0e08d3874293eb2c4fa6d1371360b",
+      "digest": "aa869030aa0bbd5a1d0001969b0025d8540b43f2e71d298d973e6eaef77f4c58",
+      "ticks": 600
+    },
+    {
+      "name": "recruit/dawn-penitent/attacker",
+      "inputSha256": "233dc107c1dfb74b8f5ca046860b81e888b929bafc3bd80b57db319ec2e6014d",
+      "digest": "9e86c0dc7de32b51c9a3c199333c75e3dd62db1635f01b53fc523825dcd0e714",
+      "ticks": 181
+    },
+    {
+      "name": "recruit/dawn-penitent/defender",
+      "inputSha256": "6ff4d0fd4b3473300df5715c9b24ea1b7d691656d13dccd0969f57cdf839787b",
+      "digest": "acdc3a86b615f496bf73483455ee55af0e460eb7d3d1aa2048370cd3b2e7ed7b",
+      "ticks": 221
+    },
+    {
+      "name": "recruit/orc-door-shield/attacker",
+      "inputSha256": "44c9130431e9fb196e1e30899a1ffccbdd2a43cd58a390ff609701113f07cdb8",
+      "digest": "7bec82a8ad4d4fa31919b7d009b83dc1038ee6b8de3a0ea9ece9346c45da6a6b",
+      "ticks": 427
+    },
+    {
+      "name": "recruit/orc-door-shield/defender",
+      "inputSha256": "34e1c2bf3d685c4d62af1e7714ab53817b133c27a7cbc8c2a184a8acf8b2f7f8",
+      "digest": "756949c77e7a828bfe91aca65459fd805c7c297327b2177490ce9d6defe1943a",
+      "ticks": 324
+    },
+    {
+      "name": "recruit/orc-raider/attacker",
+      "inputSha256": "a95765313637448736b3defb5ac2f0b295a0687061ed296a74768d801fef80c5",
+      "digest": "a564c4de53ac4a816c6227fa9c1af786bf5992846eb68ce2137966875064c4fe",
+      "ticks": 157
+    },
+    {
+      "name": "recruit/orc-raider/defender",
+      "inputSha256": "2d144320d87c8ffccc25b2060dabeb3023319cbc72e3474c619bb2b8a5ca4f32",
+      "digest": "7216b95a695cef394c72878a1b5b837ca381398d9f54a5ec7cdbb80b825f3c44",
+      "ticks": 185
+    },
+    {
+      "name": "recruit/orc-javelin-thrower/attacker",
+      "inputSha256": "bbfd95039afb39ff5d706c68603cb2c164cda1c6881c46f6c294816de5735257",
+      "digest": "9a4b039986792d607b4d3ced0553ce6aa2fd3bbf4a92e8cbe58a33a937ebcb1a",
+      "ticks": 192
+    },
+    {
+      "name": "recruit/orc-javelin-thrower/defender",
+      "inputSha256": "96bdcfabc3a513ab20b33d0e65ada7f4fbd8f3955f250a22efff40ed2d962c88",
+      "digest": "f9ea3049253b27c35bc4f24779b821301f3f99c93ab6ceecafd47172e5a244e2",
+      "ticks": 218
+    },
+    {
+      "name": "recruit/orc-bone-mender/attacker",
+      "inputSha256": "cff1dd478782d8b5e804fd91f34bd2c2b6261d0d0fa736361bd9f304e0abdb1a",
+      "digest": "f62515c1663d6310978fefafc2314f23dc538511442b7e36231962548799d343",
+      "ticks": 129
+    },
+    {
+      "name": "recruit/orc-bone-mender/defender",
+      "inputSha256": "8cdcabc5558573a9b2a53fffad85de1fd52e67f879ac72a75db76f7fb354fd73",
+      "digest": "f944499492f84f2853694a6ceb343c2a4c865932929dc4820173370980bf01ea",
+      "ticks": 140
+    },
+    {
+      "name": "recruit/orc-ember-shaman/attacker",
+      "inputSha256": "04fff46033d2ad6d05ffba4230b1f2b3672c683d6cc7add22b8555df57c66cb2",
+      "digest": "52ea47b669991ffeb06f985c7bd3cf5cd5c2e43b20703a2c64865b8860028e11",
+      "ticks": 454
+    },
+    {
+      "name": "recruit/orc-ember-shaman/defender",
+      "inputSha256": "cbf73f5d6fa4aa7b1c05266573642fbec5e8d3ef8711d50a5c56be27de31cf50",
+      "digest": "d99eef84600a0a83ab345b35c36aeda0061e36314fa363b1d28effbbe697e7a9",
+      "ticks": 420
+    },
+    {
+      "name": "recruit/orc-black-fang/attacker",
+      "inputSha256": "327044de19648c7bf80c53dda8e7843f0983eeaf23e55bb0d62a8a116358e757",
+      "digest": "f80647439cbddf87009f80169c13aac2050e5eca37931610425f6a8587f5fb74",
+      "ticks": 170
+    },
+    {
+      "name": "recruit/orc-black-fang/defender",
+      "inputSha256": "74658d49e0004b54f599fa84c513fec74d202feb1e9e400ed5358f2bfc3ca1bf",
+      "digest": "312c95248675728341939ffc7a44a7639f823962a7c2b08e920a7333f33e9b12",
+      "ticks": 159
+    },
+    {
+      "name": "recruit/orc-bonebreaker/attacker",
+      "inputSha256": "0279c5f79a2d9ba18d5eaa288cbdab6c6f913cb2fa5719af73a16b5a206f0d3b",
+      "digest": "47db385f562bb81d0163db717bb9f6c421a4adc33dbb74bd796756b9755f1cde",
+      "ticks": 600
+    },
+    {
+      "name": "recruit/orc-bonebreaker/defender",
+      "inputSha256": "06596230b06fd0b2eabc2bc86e12e703332ee7ba2cc58064659f0b92558136d7",
+      "digest": "298ecd760e81a3fa4f029ddf95a02ee607c45c377ee6e0799ff05a72f8fa45a0",
+      "ticks": 268
+    },
+    {
+      "name": "recruit/orc-goblin-slinger/attacker",
+      "inputSha256": "a8751947536801bd916ec2d93cdb2592c2b6d15538b6b5c557ce79cb44fef177",
+      "digest": "830059bd631315069e97c5496e02f8eefeab356b05cba9a570d7992fbe5338d1",
+      "ticks": 97
+    },
+    {
+      "name": "recruit/orc-goblin-slinger/defender",
+      "inputSha256": "f4b80447ce48f08c3e53edfc46d097c78d7660f66ef138b37fc50f3523454ff1",
+      "digest": "509b2d8733c2dde7321c29ba23adf95878c1a35870faed61e6ecaa60114f03ac",
+      "ticks": 116
+    },
+    {
+      "name": "recruit/orc-warg-rider/attacker",
+      "inputSha256": "7473f0cfd102f557d6f10a4db978f77e9b430dc36eede481f46c930d0987b2c8",
+      "digest": "7eb33be28b8ea8f5fb09a967a81acfe3c9041a0b27c3cfb5c5e97d8c8acb99cf",
+      "ticks": 131
+    },
+    {
+      "name": "recruit/orc-warg-rider/defender",
+      "inputSha256": "0e9d6a6f031c9882598fe7d3dfab7159484d24a3007232f079c3be7028e9fe78",
+      "digest": "b4b466c795d7013693ee65ed4efcdb0ec69cebcb413f9d5e707f00026c2c37fa",
+      "ticks": 133
+    },
+    {
+      "name": "recruit/orc-goblin-demolisher/attacker",
+      "inputSha256": "9f3823ecbd2be8f9d79c533cffb43e40d632da617e044808fd9b7cadf599ff08",
+      "digest": "bae642f94964d76e1b950b7a7694bb4d76c02ce675369f61869afcafe137276c",
+      "ticks": 55
+    },
+    {
+      "name": "recruit/orc-goblin-demolisher/defender",
+      "inputSha256": "f7b94f12406f6d075b1a89e7c6133012f61668feb86f03f700d7450902d01899",
+      "digest": "14adccc2451a379cbc261bc8fe975b7f2a90dad1e739e54db79040333a4f8744",
+      "ticks": 68
+    },
+    {
+      "name": "recruit/court-sworn-guard/attacker",
+      "inputSha256": "31b0a1c2ebaf4898f9cc754372466e7d48864e59fb90279cdb890d5316984928",
+      "digest": "db77338347fefd80bb67afd7d6a34eb62f6d4117c0652b9aa82623804397a84b",
+      "ticks": 455
+    },
+    {
+      "name": "recruit/court-sworn-guard/defender",
+      "inputSha256": "5f64b3fd6e615ff44c7d50709d0ea3e2d06776db65486b5c6d94d0e610441528",
+      "digest": "26d9814fc37d73348d7f0d9d396f8b1680cc048d224f06e56093f399c6e01f79",
+      "ticks": 534
+    },
+    {
+      "name": "recruit/court-bone-spearman/attacker",
+      "inputSha256": "c2ee7ccc56b2d7f7b4e87b9d768e0be93274c2f12691823ae7b2f98a7f4210d1",
+      "digest": "01f61fb425845639f0c4946921e15509b8bc5d9a8a778afeb1bb38cfe0d4985d",
+      "ticks": 164
+    },
+    {
+      "name": "recruit/court-bone-spearman/defender",
+      "inputSha256": "2ab6eb2857c4b32aa08d3bcba48f92ad8f9426a65dce47f1158dc68c11cba128",
+      "digest": "7d22276604882ab4256b3dd6a2594ed4472938b5b593486c6788430d2d77fec8",
+      "ticks": 600
+    },
+    {
+      "name": "recruit/court-bone-arbalist/attacker",
+      "inputSha256": "b56e048138a6e4d4ab99528ecafbc10301d7c1051dff865b18870a4caa092dce",
+      "digest": "99f8210af426fbd4c08387c2e540ac1b31f7dfa4cae87f3755fa9aca859b99ef",
+      "ticks": 127
+    },
+    {
+      "name": "recruit/court-bone-arbalist/defender",
+      "inputSha256": "7f041fb2934dba856c3781016d8af74d0b4e8d3c6ebb01a75282676150defa8c",
+      "digest": "a4afdfbc912a9de051db3742b8c7a1e1eae3ea451e509c6c8dd336523eb2f82f",
+      "ticks": 117
+    },
+    {
+      "name": "recruit/court-coffin-bearer/attacker",
+      "inputSha256": "74b18c1f19312a5b4bd86c857ce71fa251e0294aec0a1881ceabc9e1d813665e",
+      "digest": "5cb0d09614c64f2cf6798720213fafe997685d59578baf9a7a3db873c5ac86e6",
+      "ticks": 600
+    },
+    {
+      "name": "recruit/court-coffin-bearer/defender",
+      "inputSha256": "d3c0ed546fd28a465714f61886568e886cf8b4ed42fcfa3958e6993edde9fd41",
+      "digest": "be2a5cd410cf5139e30778c689dc576bb01ac40287233a41f1f616bdafe72aa4",
+      "ticks": 600
+    },
+    {
+      "name": "recruit/court-grave-hound/attacker",
+      "inputSha256": "47611572b6f66893012e2eb53a7cc5261f548c47712ae8f79364903bcf8096ae",
+      "digest": "cd4a784c333d525d8759b4644f1d7576a74ebed67ba74ed5f8bb21beb752ef37",
+      "ticks": 108
+    },
+    {
+      "name": "recruit/court-grave-hound/defender",
+      "inputSha256": "1e6b61345e80ecc17ac27b9ae15484822b496e9b9cb822767c6c8c9feed2867d",
+      "digest": "43079e378d531f5185fb8d1f57b307f661ba13265b463fd0b8abe1e96ea61d03",
+      "ticks": 98
+    },
+    {
+      "name": "recruit/court-silent-executioner/attacker",
+      "inputSha256": "90b70c99bbb61541d077da4de5728d03bdacfcea7b2b62a26b23dd2dd38c9c01",
+      "digest": "33778a094d1619ddcef9ffb1cff6388a8a69c7a480a7dba77749f9e5028e5860",
+      "ticks": 227
+    },
+    {
+      "name": "recruit/court-silent-executioner/defender",
+      "inputSha256": "732c8e58f878e23a7f639b5b66099fab229e1c281554299e3c9e94fbaf7ef104",
+      "digest": "6824823bcbbbf546b17f2b055b2dd9ad7626193fce4233ea8e03257757f693a6",
+      "ticks": 307
+    },
+    {
+      "name": "recruit/court-mourner/attacker",
+      "inputSha256": "1ec79a153758863e5651c1e1e631d71d82a22d21b2f4f07f9ba0ce888e47d904",
+      "digest": "f86244d5b4b2185c49b3e60c65afd9bde0f8476963354b392a7176da3a119639",
+      "ticks": 86
+    },
+    {
+      "name": "recruit/court-mourner/defender",
+      "inputSha256": "4535832e41f6a5fb22d7aba21517da10c7dc19aff92be0c4365701115765673c",
+      "digest": "b332c03a6ff7b44a069cca5d9b727af3106b294c638fdfbafa1ffa9067af5928",
+      "ticks": 97
+    },
+    {
+      "name": "recruit/court-necromancer/attacker",
+      "inputSha256": "6e0dcd68faff167ba170f97a26af60d8e4fcd29d28d5bda607628e43fb1a5fba",
+      "digest": "61c29313a6ffe2d682c604fd58cfca12b141a29d9bc67379614dd37662591ea7",
+      "ticks": 187
+    },
+    {
+      "name": "recruit/court-necromancer/defender",
+      "inputSha256": "91e07d7a92828c6538c771ed44161ba304c3758e6f7fedf9cf6537d53a23dab5",
+      "digest": "6b760f8cd5c548be7ae91da240a51232a14f8e662213ad654b784681eaaa19aa",
+      "ticks": 186
+    },
+    {
+      "name": "recruit/court-stitcher/attacker",
+      "inputSha256": "eb28eb578e4e1ee9e98480f08973f3c1826ea36da807345848b7c21616d7cfb3",
+      "digest": "7b84f887a4c411fae6be8b8aad06897e666862140fd394cacb81b12df4775e2f",
+      "ticks": 129
+    },
+    {
+      "name": "recruit/court-stitcher/defender",
+      "inputSha256": "f020543525ec0af629dddcc371a5b420e700fede2b9786320b04234509cd5dd1",
+      "digest": "3450637e16bbdb2e9fce4c005806d57ad6eab6dbd6010624d077cf0e62ac145f",
+      "ticks": 140
+    },
+    {
+      "name": "recruit/court-plague-apothecary/attacker",
+      "inputSha256": "ef056cfead96a426d8560684a5c9ca63984c34ca8d9e7b3d88850754e7aac845",
+      "digest": "899223e0f757777ef2570be819aac0dda94c606fd2d9483832303da832831402",
+      "ticks": 86
+    },
+    {
+      "name": "recruit/court-plague-apothecary/defender",
+      "inputSha256": "996433c6c314ae49d6cda88da182f42f37034106d8219a0bc912d5199098efd5",
+      "digest": "2e42086c779bb73b9357091e2eb912595325d41f9c7e8c2a69ce4faf562b8e21",
+      "ticks": 97
+    },
+    {
+      "name": "recruit/merc-archers/attacker",
+      "inputSha256": "50ce88e68d4fa8ac9d21c48db70b6ee8c52f927aabf900754d79f188c2a8eb61",
+      "digest": "98ba3aa68e4f4f4991c2a0b2b360c009554911717536830fcef2812a14050b69",
+      "ticks": 124
+    },
+    {
+      "name": "recruit/merc-archers/defender",
+      "inputSha256": "fe18b4bd7df781b7a6bf7e497f7e5b6536295b11d7938a6a95a66571acef3755",
+      "digest": "5c4ecf537a25ec522b9d71837388965075488b7757f256c69291b64bf30c1cb5",
+      "ticks": 138
+    },
+    {
+      "name": "recruit/merc-healer/attacker",
+      "inputSha256": "814ad0aa209836c24a0dfbfc11343b54d7c2ed72e2f51e01e679d0a298c1a034",
+      "digest": "106a23e440dced52d63b57d96a1cb3986d244c10b87300ae5bff51440d2eab72",
+      "ticks": 93
+    },
+    {
+      "name": "recruit/merc-healer/defender",
+      "inputSha256": "0e0b5ca9faf638341c60815f161fae3208772b6179dae7e84f8b6c945f96dbca",
+      "digest": "c8614f549bd7143d7631755bf7acf074a902df16866057881f16beb244b91b6f",
+      "ticks": 104
+    },
+    {
+      "name": "recruit/thorn-guardian/attacker",
+      "inputSha256": "068a7ff1f1c9e254e6534b9142721a8121d1a5ca9ef4b84d9c5c619f766f0dd3",
+      "digest": "55bc57faa044df6be90b50b387c80284507c3387a90bac9985210fa175cdb288",
+      "ticks": 600
+    },
+    {
+      "name": "recruit/thorn-guardian/defender",
+      "inputSha256": "a146d51ae71688d684838e8178cbab1186ad7c3e16ddddbdaf43a1847ae0f189",
+      "digest": "bb908ff6c4f743e73bccbe9f63c8047a32e428f5f3655f7700546361135da498",
+      "ticks": 577
+    },
+    {
+      "name": "recruit/thorn-huntress/attacker",
+      "inputSha256": "4cf566799971af5332b216bced58d5392219fc2f82fe462762526f713b86b7ca",
+      "digest": "ce2aef150651c102f051cf857f1adf2b0d73d79a82828b2bc9408c0ce8471f23",
+      "ticks": 131
+    },
+    {
+      "name": "recruit/thorn-huntress/defender",
+      "inputSha256": "58758b935ea195dc258a46632ee10ef27d81807aa3af88d8840c98a37b204cc2",
+      "digest": "df5832a6b6171eed6aaf60686498661c79d2c43d6a9e6c05496080f7b54237eb",
+      "ticks": 122
+    },
+    {
+      "name": "recruit/thorn-dryad/attacker",
+      "inputSha256": "b43aed87feb0bf2a7c3989498fe48ae98401406488e4bbe935f7c833ed0686dd",
+      "digest": "fe599141d341e2847d87dae8450821f7bce66912c2ef4f2e760a245412038f97",
+      "ticks": 105
+    },
+    {
+      "name": "recruit/thorn-dryad/defender",
+      "inputSha256": "2741edc88a61157195cc33b73bb8791e19e3ce0c67dcb2755dd878835a58399d",
+      "digest": "01492cf62e7799b5bcc530a1f248bd149bbd552d9a651d488d1a70406caa21d3",
+      "ticks": 116
+    },
+    {
+      "name": "recruit/thorn-sporeling/attacker",
+      "inputSha256": "09ae18581ebb1c693e0f60dc969c4bf1e119a9e6160ea7a55637b28341f91b73",
+      "digest": "505b53882672e24d6d6636eeb45e3368ce90e975daad0020712e1eac31ce76aa",
+      "ticks": 236
+    },
+    {
+      "name": "recruit/thorn-sporeling/defender",
+      "inputSha256": "e568e1dca78930182f1369443974ac93abfac36dd4122f16b9c0b2e6d572aeb6",
+      "digest": "9fa6f8e4a69b170f6da0dca816dceb1f98ce74f3d3b5451de6f5c3972c5b7964",
+      "ticks": 227
+    },
+    {
+      "name": "recruit/thorn-antler-sentinel/attacker",
+      "inputSha256": "9743ef6a576e772acafadd85b643ea203414bf820ee98aed80de9f40c6a621f5",
+      "digest": "9133833e465f349b10edc5844701370306587e6c9290282897dda9463f153973",
+      "ticks": 214
+    },
+    {
+      "name": "recruit/thorn-antler-sentinel/defender",
+      "inputSha256": "ab5c3028f84979f06c3d0893f5528c9c5e7236ed1018d81b83ea4ff9e351f6a0",
+      "digest": "c0a569d42957788bf9fdbb273920c698de2a567ea325a77f98853c8a374404ac",
+      "ticks": 600
+    },
+    {
+      "name": "recruit/thorn-vine-weaver/attacker",
+      "inputSha256": "149e7d0ad27cf52b33ac9651201eec313d3e071e7c695e160bdf1aa578393605",
+      "digest": "227665dc2e4da977c1ac2de39ad8222bd58c4f7db4ca178143f660cf79da451b",
+      "ticks": 82
+    },
+    {
+      "name": "recruit/thorn-vine-weaver/defender",
+      "inputSha256": "78a85a6039ae4d531937cfad333458136f331a55a29a30bf0c3044cdf825c279",
+      "digest": "837c434c4d703a3e391393f5fa6886a4cbefe960a281774ef085efd6cd8b1be9",
+      "ticks": 83
+    },
+    {
+      "name": "recruit/thorn-wild-boar/attacker",
+      "inputSha256": "d3ef20ff1a5269c8f724298f00c9e3e613db2d9b2cfbb3affab7dc76b0fc47a5",
+      "digest": "44a85e132685d0e7316fd910aa2408b276d52233b850d78addbbcb67e9d9ffe9",
+      "ticks": 265
+    },
+    {
+      "name": "recruit/thorn-wild-boar/defender",
+      "inputSha256": "f19e8d38fb1d564e38ddd2898ebf3eac18b88c2fe2c461e5058f8dcb87f44008",
+      "digest": "77385ffa6f7ae5644bdaa065eae80b98c513806f06f37e5d4d7b3411c43c7008",
+      "ticks": 245
+    },
+    {
+      "name": "recruit/thorn-owlbear/attacker",
+      "inputSha256": "101dc8395a656fccb6032acbc918fc43fcc70a8c3c3bdad0404bcca486adc716",
+      "digest": "62564e5a575fa20dc5b006ed8dc457f0b83482c7f0e4c27e74bc4ddc8faee3ba",
+      "ticks": 600
+    },
+    {
+      "name": "recruit/thorn-owlbear/defender",
+      "inputSha256": "6467b4799588e9b6a3fd565941ed3f7842a60b5fe231104558ca356e6120d256",
+      "digest": "ef93fe5a1222fb5752b416b6de50117d6252d2c0db3ed91aa9db1a1908a9fe47",
+      "ticks": 256
+    },
+    {
+      "name": "recruit/thorn-wolf-brother/attacker",
+      "inputSha256": "07209194d980934bdc934dc3070b840c8363f9207da9eae1df38feda17b7a59a",
+      "digest": "c840677ed32016b25cbbcfffa62ca8804abd1c5dd080e218bca8721edaebf481",
+      "ticks": 99
+    },
+    {
+      "name": "recruit/thorn-wolf-brother/defender",
+      "inputSha256": "ed3b7c41cd345c5de9213ae46a9fcbc103c48e96b61aa934aebdfd46dafe5e52",
+      "digest": "6026bbdc91a47bdb83be412db336ba13a32b57e4b732d62dfbb51228cd5522de",
+      "ticks": 600
+    },
+    {
+      "name": "recruit/thorn-giant-hunter/attacker",
+      "inputSha256": "57f50fcb4d8188364f15f3b1cc8deba19ae08d719ee7c7428f3e0267d5293e33",
+      "digest": "6181a2355a9f2025807396272b64843158a9d2f83fe25677823599e389e22cde",
+      "ticks": 277
+    },
+    {
+      "name": "recruit/thorn-giant-hunter/defender",
+      "inputSha256": "28f20f6648e43a2c72bc7b957d99bac99c93b6e7235b959e0a816bfb02ac57ad",
+      "digest": "1fc45c03246027b60c78e29cd96549b086e6b254f20f64e5a7f24a82871133fe",
+      "ticks": 111
+    },
+    {
+      "name": "recruit/forge-rune-guard/attacker",
+      "inputSha256": "2bf7e3b1f2cd089a62b79c8760ebd43e32917885d73e16cf8a5ebf51760ea823",
+      "digest": "700775678b3b332bf5b0752212a3b14b6cb738e055c20e5de16d092f5bad12b4",
+      "ticks": 600
+    },
+    {
+      "name": "recruit/forge-rune-guard/defender",
+      "inputSha256": "fbfed1627cadd699bfae8815519a26b9db96eedf6383f4c987acfdc9aa8b883b",
+      "digest": "ba2fcbed13fc9e76eb784ede698e623573839a2bdb226fb569c8a9a5b5f9dbbd",
+      "ticks": 600
+    },
+    {
+      "name": "recruit/forge-thunderer/attacker",
+      "inputSha256": "86968096c76a0538d527f5452de4b71fb5647fd0b383cac3efa37c6f869904b6",
+      "digest": "6c706f0f01993eb9cd7e8289c85f9ac2f78165172dc0a06db7ece51a28569ede",
+      "ticks": 600
+    },
+    {
+      "name": "recruit/forge-thunderer/defender",
+      "inputSha256": "505482daf382938b55d1d7394613028ac6c24e429b2687ed7a956b15e3cf3d8c",
+      "digest": "4cfe0bb9d6e3e63eab586ba64f4a77f4fcca954822974a1032f1d50a61737773",
+      "ticks": 600
+    },
+    {
+      "name": "recruit/forge-sealsmith/attacker",
+      "inputSha256": "9e83a4ec06dc5b02da408579d64a797540b2164f925872358a69b7ec276281cb",
+      "digest": "f9b747f1e7c806d8702ba4ce38a29714dccb8c9f3f255571512ec0eaf672f28e",
+      "ticks": 141
+    },
+    {
+      "name": "recruit/forge-sealsmith/defender",
+      "inputSha256": "0bed47196de4d02867dd9ad490a50becc8c173a5b5d7b24c12c8dec5af2ea5da",
+      "digest": "d72aa3870101a2bf7c6a53b8ccb2089c9618e4bc7ca81cdafcc51e2fb0a0c4f8",
+      "ticks": 152
+    },
+    {
+      "name": "recruit/forge-shard-golem/attacker",
+      "inputSha256": "def73e2ff2ef2d79e828a9facb5d3f4e50cd6a647a6dc2d2054b22fcc4c27c6c",
+      "digest": "a0e1d13a68163778c058a28f0e874b95e995ce3154195ba2cc4a9f0b326c87a7",
+      "ticks": 534
+    },
+    {
+      "name": "recruit/forge-shard-golem/defender",
+      "inputSha256": "8b6ec2a5560598d1c08fea9dcc2e762f661ae3ca44e21c2a448402a76763cc3c",
+      "digest": "ee8a470052b2b79c282eff9502ad735a081a0215a3d2baf66bdba6b90432175f",
+      "ticks": 548
+    },
+    {
+      "name": "recruit/forge-ember-projector/attacker",
+      "inputSha256": "9015b169b046fab3e4972bb222ab624cc2e8b8767295d5bc2563f1e7f7cfdef1",
+      "digest": "132ad681580a47aeaf2ddf91d0b62bf5d1a039a7318c28a10f33585a127e27b2",
+      "ticks": 90
+    },
+    {
+      "name": "recruit/forge-ember-projector/defender",
+      "inputSha256": "46f795796b4cdb1c50eb1611a509cdce09731bce23aa12f1584fc4962b82f67a",
+      "digest": "df3b3e53353aa7139613ddfb4e655ccce115708db20e62f9d24731515728dd67",
+      "ticks": 69
+    },
+    {
+      "name": "recruit/forge-pavise-arbalist/attacker",
+      "inputSha256": "ea0e663f1c48620e6a98652df11201fa2c79b37273c6af0159eee5670657de91",
+      "digest": "746e3141426a19ce77bc1f9ef6867add6bc106ffcc4383e661f710985369db97",
+      "ticks": 600
+    },
+    {
+      "name": "recruit/forge-pavise-arbalist/defender",
+      "inputSha256": "a03b889ab7065fe1e646b52c9fa2d2eec2454493ab1beabc0b0612f2a5976a2a",
+      "digest": "074cd4dae268644bf5a983c6367381db45bdb12d1c3379581a2b439d1ea7c990",
+      "ticks": 578
+    },
+    {
+      "name": "recruit/forge-tunnel-borer/attacker",
+      "inputSha256": "2f3184725318c099fe21dfae4d8b4c8b53694f6c7f51a88c07c373976ef6184c",
+      "digest": "1c68237f74dcf41a985436e7f7c89dd4c8786e9762e7cd291c4f84acd9b1c644",
+      "ticks": 528
+    },
+    {
+      "name": "recruit/forge-tunnel-borer/defender",
+      "inputSha256": "ac20aec8a8e296a44f904a23fba8db96263fa8cffd8667a96d04cef063dc15f2",
+      "digest": "5f72b30b70d47c769b60fed3dcb4cf171b868a51f31df42e920f9e176b5f2b6d",
+      "ticks": 600
+    },
+    {
+      "name": "recruit/forge-crystalmancer/attacker",
+      "inputSha256": "f57d7823c8c18eafd39a66a0e36216d04ee0ca080609190fc41c12635eb65716",
+      "digest": "9034d6b962f1a1d2b9beaef5c0aacea9e054a2ead597af3bec392b01c99f7e03",
+      "ticks": 185
+    },
+    {
+      "name": "recruit/forge-crystalmancer/defender",
+      "inputSha256": "40a4b6a8e182fdb277b87558ecfe52e412fa56ce7043c3a4a5e381f07a8082d2",
+      "digest": "1651fe505148ce8dc3659f82d5255a20c085a39386e058a447cb50b043494019",
+      "ticks": 185
+    },
+    {
+      "name": "recruit/forge-stone-ram/attacker",
+      "inputSha256": "a30d88caff65e76d44023b0dfcd3fadbf9d304d3fe66531df29b2ae485c37901",
+      "digest": "0d0b90ed7b439f51b1749b810b011594bb9f27de14ec400285e0033c38cb8be5",
+      "ticks": 330
+    },
+    {
+      "name": "recruit/forge-stone-ram/defender",
+      "inputSha256": "2fe8552bd76a14e6e68fc1c7ef9133b7e2c70d500ac8b9fd69ae9b01d49dd2ef",
+      "digest": "514a855f44dbfb352bb22b01369937fd72f5e165425ae9ef73e640f60b3f7ec4",
+      "ticks": 178
+    },
+    {
+      "name": "recruit/forge-powder-grenadier/attacker",
+      "inputSha256": "4b19248f7b2fa13f4cec21842a54a64956b30e3220a8a7f94bd04c546ceff7f3",
+      "digest": "eb6e2126eeaa92f8be04f2ceca17d9e678f1667b7a8ba0171e8f33c14f3f37f1",
+      "ticks": 77
+    },
+    {
+      "name": "recruit/forge-powder-grenadier/defender",
+      "inputSha256": "3198cec28bcf354a43724afd240b6e77bdae91dafdbd6adb7d7986199a918a4a",
+      "digest": "1a1109d9d0d10378f3cb0e7e151396c06496f40b13cf2224fd23a8dbf0ee4c0d",
+      "ticks": 86
+    },
+    {
+      "name": "capacity/dawn/classic/attacker",
+      "inputSha256": "b4a36e0986eaed784f0a26b4ae930916e182a78ad96c1f41121cc36208b24b85",
+      "digest": "27c9d167ab39626df3a6eda17269ce9c784207e907d966b4be77822de3065f3d",
+      "ticks": 163
+    },
+    {
+      "name": "capacity/dawn/classic/defender",
+      "inputSha256": "42f2d5e05cc36187ec2ab36383c7d70586b1fa99f13128914f8219352e087cbf",
+      "digest": "7a5bc9ace7d696be8a4c7f1f78bf7f5c85c2a6b2d855f06c2157d5776072eea0",
+      "ticks": 149
+    },
+    {
+      "name": "capacity/dawn/free/attacker",
+      "inputSha256": "ae6bb19a09f25275d4acdf1318f1af9cc8ae84292942b53d480714a868815c5a",
+      "digest": "950815a7fe80e4e3f2406a68a92e4a7a225c76bbb839ba2e2b42b17f51249287",
+      "ticks": 187
+    },
+    {
+      "name": "capacity/dawn/free/defender",
+      "inputSha256": "2d84784b8f228f36b98ca15a15b1b241758c3ce427b22091aaa3b7022b56137a",
+      "digest": "2fbd798f044306aab691e7784ec47a47c6027b3c72aee84f810739c1d50c268c",
+      "ticks": 141
+    },
+    {
+      "name": "arena/dawn",
+      "inputSha256": "3d0deb8b5a84daaba9578abba59a1871e214367d3588aad346a72079dc5390ce",
+      "digest": "bb6eac9a5c2575dc574fb09c891678e7cba6541baf37f8f2fe6d0ce3532944c0",
+      "ticks": 277
+    },
+    {
+      "name": "capacity/orc/classic/attacker",
+      "inputSha256": "01753a1cad682b3fd0430851f085a246a6a51767b33c835965225c8460d5779e",
+      "digest": "0ebc1e03280b512d4ea1511eb5c4885c92f198bab07627ff49b85b49b60a95b2",
+      "ticks": 198
+    },
+    {
+      "name": "capacity/orc/classic/defender",
+      "inputSha256": "47072ade1dec4dff3d87e177db727b5c2ea2e8a141424288cf76f21afa3eaf40",
+      "digest": "43b84ce76d1b7bf19505cd75540c54deeb169787ba55836766bf27ea71d77276",
+      "ticks": 266
+    },
+    {
+      "name": "capacity/orc/free/attacker",
+      "inputSha256": "bee090343029aed252f8a1ebd812ec486a308fba026d4ad1b5801c9fc5a65944",
+      "digest": "23eee4acee748a941d741f76bd4e5d8f997c391d8f686df84ea86aae8ab46086",
+      "ticks": 121
+    },
+    {
+      "name": "capacity/orc/free/defender",
+      "inputSha256": "9bfb533da661e0881a3490ac2baf54857c3b87960f91ced75b0cbdcc0fb5b3d2",
+      "digest": "9c7ed686b7043285b43fa5d8849d2ad4f402ceea44347c6779315a733e2e712c",
+      "ticks": 101
+    },
+    {
+      "name": "arena/orc",
+      "inputSha256": "72c0a7209c859be7faa6ea4a8f2cb471e9e008af8fe68534431ef654ebf8f675",
+      "digest": "dbd8e5b2b0a3d9743306ed5e101f884df7e471bf746ce1a94f1f876b69ce1c34",
+      "ticks": 171
+    },
+    {
+      "name": "capacity/court/classic/attacker",
+      "inputSha256": "6d4be9874a90323a590118c6b9796960598cea4d911b92e8b579c49075fc9b54",
+      "digest": "f8a58f38a713a7808b07099d5654a1b31964b031b7e603b4b775230577805279",
+      "ticks": 167
+    },
+    {
+      "name": "capacity/court/classic/defender",
+      "inputSha256": "5a05a80e1b4b93bb0d5d0f1d0de812205ccc12ee3422d179e380a29e4d8fec26",
+      "digest": "ce4d471770e64bb71f63072d0f60550d2158e03f7ea484fb0b89256f31adfd85",
+      "ticks": 134
+    },
+    {
+      "name": "capacity/court/free/attacker",
+      "inputSha256": "a810f31c9aa070072432d92d2c42fae5fa6faf8de07cb56327cbff0b2f14ecaf",
+      "digest": "10885d609f59d52611424966771dd5715d66c95cbf689729cb54e1200a77313d",
+      "ticks": 226
+    },
+    {
+      "name": "capacity/court/free/defender",
+      "inputSha256": "1bb6f37d9f1e847dd5236299068a3a2b45f65e2929a520fd3d312545b93876ee",
+      "digest": "d28a9467d66ca824e04b68a2be9f9c9fd5743287b83f2390cb3200c28e77597c",
+      "ticks": 119
+    },
+    {
+      "name": "arena/court",
+      "inputSha256": "bd226ca25a88f81fc0e56daa9c4de5352c44de4c31965de2b8096d8b12bc7014",
+      "digest": "65a04186a19b16debf88a2c746f16fb5d7dfcbfe3645e18e86f2ad16523e4691",
+      "ticks": 291
+    },
+    {
+      "name": "capacity/thorn/classic/attacker",
+      "inputSha256": "7307e55f02cadbe4336f12b8ce79cab4ac20cc379e36d47ad8501519a9399a46",
+      "digest": "447c572b9537dac33af041b81177f1f80c17b0854372eafbf5402583ba10a401",
+      "ticks": 114
+    },
+    {
+      "name": "capacity/thorn/classic/defender",
+      "inputSha256": "8590229c93725fd21e52c85047bebf7bd41407f7d4c8e4eee0366dd373a8996e",
+      "digest": "b4b2b345bc18c120077f8f34114e08e4d5f09d7a5d4b748895045f9200afc46f",
+      "ticks": 119
+    },
+    {
+      "name": "capacity/thorn/free/attacker",
+      "inputSha256": "314d3af275488b5e92e261dbbc14262d51f3fc501da025be1c8163d928fd76e6",
+      "digest": "80e40a98feff385514fd65ea829ea987c908a462e40b97073cb9e8332c84a874",
+      "ticks": 173
+    },
+    {
+      "name": "capacity/thorn/free/defender",
+      "inputSha256": "5414384f4061016b044f620b292d82d500b55f73566c3094d2e49ce493afffa9",
+      "digest": "c5608627453292185e22850b18c8059dd3b70ff6f938ca37c21482be51cde9d8",
+      "ticks": 128
+    },
+    {
+      "name": "arena/thorn",
+      "inputSha256": "e538c0441cd313147645c72ca27cb11354be67c0650add63dc44de9699e03ad4",
+      "digest": "64e2b3d2c33e75754564542f0aff9a5e9d711b98b1d0e1e03f6da7ffec754ad7",
+      "ticks": 195
+    },
+    {
+      "name": "capacity/forge/classic/attacker",
+      "inputSha256": "760f4ffb32246e8966c40447e9783b257f13e944a5b2084a169f7dfa4ef3c825",
+      "digest": "61658828bedc6b6290e1cf918526539ae10f7778e1a5d5317d5928c3c526c3d5",
+      "ticks": 151
+    },
+    {
+      "name": "capacity/forge/classic/defender",
+      "inputSha256": "cd99b7f7a42e12d0c02d67dfdf40fb500ecae5466b992c663194db245b7c16c6",
+      "digest": "ea44b302bf638652084a40e4a989910f8c1b386affb10ba2e3dc5b5377c108a4",
+      "ticks": 131
+    },
+    {
+      "name": "capacity/forge/free/attacker",
+      "inputSha256": "ac774392096d64b37d7770af8da43697b2abbe5d788c001bea924b1dfa156767",
+      "digest": "a9f4e8d50e27a4d26b6780d4f0cc1ba4335c6854ed03f477ebaabcf35e2799fe",
+      "ticks": 126
+    },
+    {
+      "name": "capacity/forge/free/defender",
+      "inputSha256": "f8d8e8339f7fd5bc68cf44d826272b164d9c97c2ce1599b83fc8cc87cb139922",
+      "digest": "406e38919ccbd754380c1d7aca70491503613d36f393a52d7f5d81f02a959f95",
+      "ticks": 125
+    },
+    {
+      "name": "arena/forge",
+      "inputSha256": "e1112e222cc614a234c7d9fd3c1926d057af7e1f713a4264d0ffd0bc81f2724d",
+      "digest": "1d5a15c35e23529d6d15f2d052915f01eb7b790643334a99fe66365cd1a18401",
+      "ticks": 204
+    },
+    {
+      "name": "campaign/s1/attacker",
+      "inputSha256": "cf7e7a96ddad0d52328c1e8be69b9cf7fa256a3ee1907f32d73110b33e52d2ad",
+      "digest": "15fa873039c9abae45fb0df757ebc7a86b9774e3c4170f94c1287f2e87bf652d",
+      "ticks": 67
+    },
+    {
+      "name": "campaign/s1/defender",
+      "inputSha256": "36b12a7758bd34c6b38ebf8b6d11e835a6e8efb63c2dc836c81315fc7fc9d761",
+      "digest": "bc2dc6b280a1239f2873dc462fc6e8c55ea3d0f98aeed36294296ea4d9b815c8",
+      "ticks": 65
+    },
+    {
+      "name": "campaign/s2a/attacker",
+      "inputSha256": "968f6532caf05aa8e4077a9f1c5625d51d4095486b5f7f982e48d95b64a43e82",
+      "digest": "4ed30920529a3a82f557bce1015d013d0c6f30cfebc8e06c86a4b2f71d2578f2",
+      "ticks": 96
+    },
+    {
+      "name": "campaign/s2a/defender",
+      "inputSha256": "cebeb9a2221e837170e3d41bd33b91e0180e6db828d727c921f4aa2d123590c9",
+      "digest": "0ba9ca5ae7ad6d49114d52626b78c22d3e024993d9132e8fd0bc35479c71a87c",
+      "ticks": 109
+    },
+    {
+      "name": "campaign/s2b/attacker",
+      "inputSha256": "0e7dfb7502cfd286ef718e5cbf5e8aebc8568669777a20b74c0f305fbabbe851",
+      "digest": "798eff5481b05645847683a737f59e8436a69d7e79784c375742b788aa9b33c4",
+      "ticks": 175
+    },
+    {
+      "name": "campaign/s2b/defender",
+      "inputSha256": "3f04c8b27228283b4bdcca781305d62120a1f3199ea83da9ce79eb80699cdc61",
+      "digest": "7f8c1a088dcf2911518f412646570130106e20c01a87916d7a4b1aa471a4d90e",
+      "ticks": 152
+    },
+    {
+      "name": "campaign/s3/attacker",
+      "inputSha256": "157e7d530695cca7c7985ef82ed5349f3f55459e19124fdfa4d31b0fae918f6e",
+      "digest": "4a1354157aca18831aabe1120d2fa2d7b7c9efbfcd5234044279cbae95ef26f1",
+      "ticks": 164
+    },
+    {
+      "name": "campaign/s3/defender",
+      "inputSha256": "225214119f69b0433bf22f30d3ccda33e9780066b45ecf590dc53a5d057b833d",
+      "digest": "e903e1df9d65cbc75f72498e85740e3dd0037c17c49e883c6023ab84eb3de0fb",
+      "ticks": 149
+    },
+    {
+      "name": "campaign/s4a/attacker",
+      "inputSha256": "fa294c408cceab009de7f63ddf20512f745c505c1762017dc25bb275cbcfb685",
+      "digest": "315144b448e7e8d4a79b65e1c9d036d389ec7eaccb2ea67f6aa4f053bdf30dd2",
+      "ticks": 135
+    },
+    {
+      "name": "campaign/s4a/defender",
+      "inputSha256": "e04450785e3885a4ec7bba761dbc7ee9cf34344f7ecdbc5fe3d7312502db1048",
+      "digest": "6ee57df8313e2ece66f1f0133f628c5653b2456f064474b8d99da7bae866bd24",
+      "ticks": 122
+    },
+    {
+      "name": "campaign/s4b/attacker",
+      "inputSha256": "cf13ae18cf64c5bf186e1c634de58a207bd46609db659ef83673d9c555004c43",
+      "digest": "ce3c3a0c1d3419d872ad4e79bef1de82b2d2d326d97bf13b35ac6dffb966251b",
+      "ticks": 239
+    },
+    {
+      "name": "campaign/s4b/defender",
+      "inputSha256": "bbbecdbc3ae3ca4d543854e20d326770b49356d6245366e0ffd23134b33af4be",
+      "digest": "65e04793568536563311a71ea2b080982046936de8e47fb3843f601610029d33",
+      "ticks": 217
+    },
+    {
+      "name": "campaign/s5/attacker",
+      "inputSha256": "8e4168ae0345524dca8d3f49b4db5418e3ab7fed648f7064f7167f37c5180595",
+      "digest": "db01d33da1175f7450f620ee9ec2a59800eb4655b4d7c9a2b1cf91b7ceeded5f",
+      "ticks": 168
+    },
+    {
+      "name": "campaign/s5/defender",
+      "inputSha256": "ffa63e54686d7a7d9019bfea03b4ea071d4c9e47dcbfe076e623b488d4f78e06",
+      "digest": "c96571de58334295e2d23e84fa7f00e633363f699e88279a9f0f8d7d21aede5a",
+      "ticks": 148
+    },
+    {
+      "name": "snapshot/dawn",
+      "inputSha256": "1818ce239e4ff17f1aecf50ecbff83cdafbac39f3ef837780962d019edfba9c7",
+      "digest": "8e91db9ea5afdcb98890a246c0eba0167520c381a4f058759bd49f8322bbacfc",
+      "ticks": 300
+    },
+    {
+      "name": "online/dawn",
+      "inputSha256": "d046256176601f6b6361b2f506a0a40626c1194474ba1d633069fb1a8562baff",
+      "digest": "d4dd4422b417bea9ac448657613a86f91073ea29ba8c921a06bc77b30015cac1",
+      "ticks": 408
+    },
+    {
+      "name": "snapshot/orc",
+      "inputSha256": "9d6b1de46b674ec828b6dd9d78f31228c3da29381d228ca04ec085bef8dcd7b5",
+      "digest": "1e89d08495c3d1dc44d11158262908212af0f658241144ad67e89a418a422267",
+      "ticks": 300
+    },
+    {
+      "name": "online/orc",
+      "inputSha256": "f75059e5ba4243536d5adac5ac3d570482e8905a2705618a56e2a93255f1814b",
+      "digest": "71ec089d5b22ca3b092c5fc7b094c9f16756bbf906097668f06b7423a6071844",
+      "ticks": 536
+    },
+    {
+      "name": "snapshot/court",
+      "inputSha256": "d56ca2413f6eca152fa7d4ac32549657255776a2f363122d94dedabac00a44eb",
+      "digest": "1bf6af6f2aaaad489fb4cf97df87ea2414820dc99248ab98210c899dac8e7e9d",
+      "ticks": 300
+    },
+    {
+      "name": "online/court",
+      "inputSha256": "dab2f577f27b0056470e904c342f03971f45893ce0be99c56a9d5686cd5fe863",
+      "digest": "09de513f543da3615548570bf3a26db2e5779805eef0fec20e6446f265a3fd4e",
+      "ticks": 359
+    },
+    {
+      "name": "snapshot/thorn",
+      "inputSha256": "d5c37011f10d612f03a1ba6c8ff67667c53e642b1c0d73194ba8e0308d39a404",
+      "digest": "68db3446a452680b08728f52489b445d9bd46202aaa075d1dba5a564391e1102",
+      "ticks": 300
+    },
+    {
+      "name": "online/thorn",
+      "inputSha256": "adf1b4d893db138148d407f239f73655ca2d9e184949daa63828bb988ff5cb57",
+      "digest": "643d11d680ecd82a1eef89f1d4878a5d38cfe7f6743ec9e794ae51a037e07ffd",
+      "ticks": 600
+    },
+    {
+      "name": "snapshot/forge",
+      "inputSha256": "08011570c545b3e1f855197157446b10c93b724da1cc7dcd7b973c245b11b901",
+      "digest": "3f62586dae6735d899b1e0cd15196139a2c3e13464419320d35593e591c810bf",
+      "ticks": 300
+    },
+    {
+      "name": "online/forge",
+      "inputSha256": "71b58af5b5fb00178102c2ff7d6778c444955435b2aa926d6adfbcc9fbfef056",
+      "digest": "2028f3f9509f017ab1f3b8c969a85fec459f028483aa165165ed75e34212c17d",
+      "ticks": 600
+    },
+    {
+      "name": "long/healers-timeout",
+      "inputSha256": "80d0705d03b74054c1af885e8ac74c6a4a92f4c71d3a649a6c7b6b6b36fe826b",
+      "digest": "73e50c3f227ce05b1ae1aeb3dbdfa13f2c190c2a3768bf6f4a8622eae756b326",
+      "ticks": 0
+    },
+    {
+      "name": "capacity/forge-neutral/classic/attacker",
+      "inputSha256": "d9d5ba02d725404a92a8a2e0f2aa0d631ee41a84b2779afa3361dcffba7bcf81",
+      "digest": "e5d15cec17cc3d8bd91e4304c57404687919a611bd823daf4b44db2d461d2279",
+      "ticks": 147
+    },
+    {
+      "name": "capacity/forge-neutral/classic/defender",
+      "inputSha256": "4799bb27d745b581da9754a866e0562960e4cddd3efc5db9833b1cc3ff75f1c4",
+      "digest": "3d4e4ea9c3282dd3ccda9109fa4547f036532e27162a93d3eb7ecef435021531",
+      "ticks": 158
+    },
+    {
+      "name": "capacity/forge-neutral/free/attacker",
+      "inputSha256": "613205cff1ede9232161f672a9acfcffaeb4c9890e538cd2f24e4f8724cb99a2",
+      "digest": "42fe4749987b896b8d1a35a4c24be6acd8ca3843da781c68f321f95b9fa80060",
+      "ticks": 138
+    },
+    {
+      "name": "capacity/forge-neutral/free/defender",
+      "inputSha256": "8735f46d809b0ac812719a8b855ba937c0cd55ecb01cee446f4f8377b83c9ff0",
+      "digest": "d5d5d42133525a91ef534e1a5c8754a186ea090a305294bf1d9e422f0e9f2263",
+      "ticks": 142
+    },
+    {
+      "name": "arena/forge-neutral",
+      "inputSha256": "89f7c3579a8a46351c0486190e5314be5ee2fdc2e10ae01f3bce93c628bb6eb7",
+      "digest": "6acb735b29394c6dac8eb77503d0ea3cc8e961ac106204ea0edb525b12b0df74",
+      "ticks": 300
+    }
+  ],
+  "digests": {
+    "recruit/dawn-oathkeeper/attacker": "b33e2970a5aa224d6da268b9c60c702f481a0845271365d23e15af3c50a92a86",
+    "recruit/dawn-oathkeeper/defender": "dd19c4823a2cb4b35ab940d06e0dc6e02b14526fe8d117ef9d5ec6cc3ae59d58",
+    "recruit/dawn-sun-pikeman/attacker": "c72263ddc13acf8e6ad1dfbeb8303529ece889ba652592ee713644d0b54ad576",
+    "recruit/dawn-sun-pikeman/defender": "1432f4a7d6b58881fdc79737977e4f4848066b6225f65c97061db8be5a262ed3",
+    "recruit/dawn-crossbow-sentinel/attacker": "8a0036a466bf1897118ab38ca7e253098902b84c2a68cbc499e62e05542e647d",
+    "recruit/dawn-crossbow-sentinel/defender": "3d20ad0f30aa7de05cd8a0e2007604b30003d7678128258c0df57af6798c30a5",
+    "recruit/dawn-field-chaplain/attacker": "f1e4649f2b7f4dd37c68ffda3c16511d08d66d6229f8d083264373974d2581ac",
+    "recruit/dawn-field-chaplain/defender": "035f14eacbe0a150e19825eb9520c3e92211d9e9780bf349dca6d7ab4ca249a5",
+    "recruit/dawn-heliomancer/attacker": "3d7df96a5af17fae22770d806cb554ac3f80c7014875df92e56a959ee7501ad9",
+    "recruit/dawn-heliomancer/defender": "aeb1c1f53d922e6aff71223722f807570c981063695fffe36c9eaa9047ca1e76",
+    "recruit/dawn-dawn-duelist/attacker": "18652b798e561ab88512ca4f777fa158bd63fec6ac2f8a5ce4cfbaf466ca2da1",
+    "recruit/dawn-dawn-duelist/defender": "cf1e3bb4258acc7300c01529801cd2cd3224615a6644a6c130da97c7326f0671",
+    "recruit/dawn-oath-justiciar/attacker": "246c263bf5b22652e0f423d402ba3f6c705427120aa071726a5e5f2fe39c13f9",
+    "recruit/dawn-oath-justiciar/defender": "2cffa947394c6cc0f778682ade8057835146fc6dbe2690fafc3ecb087ad61221",
+    "recruit/dawn-witch-hunter/attacker": "1208e44084a334b95db008e3e47be493257868b77498e0725827b1729bbbdb72",
+    "recruit/dawn-witch-hunter/defender": "01b8b2c37db811a8c2d202e4bab0d53d1c298abb39a226b0625cad4fa5ecd34a",
+    "recruit/dawn-shield-marshal/attacker": "88a4a7c628c658999100e6c0450fab21c578f57a1b43e3b78b2ae8c83cee4920",
+    "recruit/dawn-shield-marshal/defender": "aa869030aa0bbd5a1d0001969b0025d8540b43f2e71d298d973e6eaef77f4c58",
+    "recruit/dawn-penitent/attacker": "9e86c0dc7de32b51c9a3c199333c75e3dd62db1635f01b53fc523825dcd0e714",
+    "recruit/dawn-penitent/defender": "acdc3a86b615f496bf73483455ee55af0e460eb7d3d1aa2048370cd3b2e7ed7b",
+    "recruit/orc-door-shield/attacker": "7bec82a8ad4d4fa31919b7d009b83dc1038ee6b8de3a0ea9ece9346c45da6a6b",
+    "recruit/orc-door-shield/defender": "756949c77e7a828bfe91aca65459fd805c7c297327b2177490ce9d6defe1943a",
+    "recruit/orc-raider/attacker": "a564c4de53ac4a816c6227fa9c1af786bf5992846eb68ce2137966875064c4fe",
+    "recruit/orc-raider/defender": "7216b95a695cef394c72878a1b5b837ca381398d9f54a5ec7cdbb80b825f3c44",
+    "recruit/orc-javelin-thrower/attacker": "9a4b039986792d607b4d3ced0553ce6aa2fd3bbf4a92e8cbe58a33a937ebcb1a",
+    "recruit/orc-javelin-thrower/defender": "f9ea3049253b27c35bc4f24779b821301f3f99c93ab6ceecafd47172e5a244e2",
+    "recruit/orc-bone-mender/attacker": "f62515c1663d6310978fefafc2314f23dc538511442b7e36231962548799d343",
+    "recruit/orc-bone-mender/defender": "f944499492f84f2853694a6ceb343c2a4c865932929dc4820173370980bf01ea",
+    "recruit/orc-ember-shaman/attacker": "52ea47b669991ffeb06f985c7bd3cf5cd5c2e43b20703a2c64865b8860028e11",
+    "recruit/orc-ember-shaman/defender": "d99eef84600a0a83ab345b35c36aeda0061e36314fa363b1d28effbbe697e7a9",
+    "recruit/orc-black-fang/attacker": "f80647439cbddf87009f80169c13aac2050e5eca37931610425f6a8587f5fb74",
+    "recruit/orc-black-fang/defender": "312c95248675728341939ffc7a44a7639f823962a7c2b08e920a7333f33e9b12",
+    "recruit/orc-bonebreaker/attacker": "47db385f562bb81d0163db717bb9f6c421a4adc33dbb74bd796756b9755f1cde",
+    "recruit/orc-bonebreaker/defender": "298ecd760e81a3fa4f029ddf95a02ee607c45c377ee6e0799ff05a72f8fa45a0",
+    "recruit/orc-goblin-slinger/attacker": "830059bd631315069e97c5496e02f8eefeab356b05cba9a570d7992fbe5338d1",
+    "recruit/orc-goblin-slinger/defender": "509b2d8733c2dde7321c29ba23adf95878c1a35870faed61e6ecaa60114f03ac",
+    "recruit/orc-warg-rider/attacker": "7eb33be28b8ea8f5fb09a967a81acfe3c9041a0b27c3cfb5c5e97d8c8acb99cf",
+    "recruit/orc-warg-rider/defender": "b4b466c795d7013693ee65ed4efcdb0ec69cebcb413f9d5e707f00026c2c37fa",
+    "recruit/orc-goblin-demolisher/attacker": "bae642f94964d76e1b950b7a7694bb4d76c02ce675369f61869afcafe137276c",
+    "recruit/orc-goblin-demolisher/defender": "14adccc2451a379cbc261bc8fe975b7f2a90dad1e739e54db79040333a4f8744",
+    "recruit/court-sworn-guard/attacker": "db77338347fefd80bb67afd7d6a34eb62f6d4117c0652b9aa82623804397a84b",
+    "recruit/court-sworn-guard/defender": "26d9814fc37d73348d7f0d9d396f8b1680cc048d224f06e56093f399c6e01f79",
+    "recruit/court-bone-spearman/attacker": "01f61fb425845639f0c4946921e15509b8bc5d9a8a778afeb1bb38cfe0d4985d",
+    "recruit/court-bone-spearman/defender": "7d22276604882ab4256b3dd6a2594ed4472938b5b593486c6788430d2d77fec8",
+    "recruit/court-bone-arbalist/attacker": "99f8210af426fbd4c08387c2e540ac1b31f7dfa4cae87f3755fa9aca859b99ef",
+    "recruit/court-bone-arbalist/defender": "a4afdfbc912a9de051db3742b8c7a1e1eae3ea451e509c6c8dd336523eb2f82f",
+    "recruit/court-coffin-bearer/attacker": "5cb0d09614c64f2cf6798720213fafe997685d59578baf9a7a3db873c5ac86e6",
+    "recruit/court-coffin-bearer/defender": "be2a5cd410cf5139e30778c689dc576bb01ac40287233a41f1f616bdafe72aa4",
+    "recruit/court-grave-hound/attacker": "cd4a784c333d525d8759b4644f1d7576a74ebed67ba74ed5f8bb21beb752ef37",
+    "recruit/court-grave-hound/defender": "43079e378d531f5185fb8d1f57b307f661ba13265b463fd0b8abe1e96ea61d03",
+    "recruit/court-silent-executioner/attacker": "33778a094d1619ddcef9ffb1cff6388a8a69c7a480a7dba77749f9e5028e5860",
+    "recruit/court-silent-executioner/defender": "6824823bcbbbf546b17f2b055b2dd9ad7626193fce4233ea8e03257757f693a6",
+    "recruit/court-mourner/attacker": "f86244d5b4b2185c49b3e60c65afd9bde0f8476963354b392a7176da3a119639",
+    "recruit/court-mourner/defender": "b332c03a6ff7b44a069cca5d9b727af3106b294c638fdfbafa1ffa9067af5928",
+    "recruit/court-necromancer/attacker": "61c29313a6ffe2d682c604fd58cfca12b141a29d9bc67379614dd37662591ea7",
+    "recruit/court-necromancer/defender": "6b760f8cd5c548be7ae91da240a51232a14f8e662213ad654b784681eaaa19aa",
+    "recruit/court-stitcher/attacker": "7b84f887a4c411fae6be8b8aad06897e666862140fd394cacb81b12df4775e2f",
+    "recruit/court-stitcher/defender": "3450637e16bbdb2e9fce4c005806d57ad6eab6dbd6010624d077cf0e62ac145f",
+    "recruit/court-plague-apothecary/attacker": "899223e0f757777ef2570be819aac0dda94c606fd2d9483832303da832831402",
+    "recruit/court-plague-apothecary/defender": "2e42086c779bb73b9357091e2eb912595325d41f9c7e8c2a69ce4faf562b8e21",
+    "recruit/merc-archers/attacker": "98ba3aa68e4f4f4991c2a0b2b360c009554911717536830fcef2812a14050b69",
+    "recruit/merc-archers/defender": "5c4ecf537a25ec522b9d71837388965075488b7757f256c69291b64bf30c1cb5",
+    "recruit/merc-healer/attacker": "106a23e440dced52d63b57d96a1cb3986d244c10b87300ae5bff51440d2eab72",
+    "recruit/merc-healer/defender": "c8614f549bd7143d7631755bf7acf074a902df16866057881f16beb244b91b6f",
+    "recruit/thorn-guardian/attacker": "55bc57faa044df6be90b50b387c80284507c3387a90bac9985210fa175cdb288",
+    "recruit/thorn-guardian/defender": "bb908ff6c4f743e73bccbe9f63c8047a32e428f5f3655f7700546361135da498",
+    "recruit/thorn-huntress/attacker": "ce2aef150651c102f051cf857f1adf2b0d73d79a82828b2bc9408c0ce8471f23",
+    "recruit/thorn-huntress/defender": "df5832a6b6171eed6aaf60686498661c79d2c43d6a9e6c05496080f7b54237eb",
+    "recruit/thorn-dryad/attacker": "fe599141d341e2847d87dae8450821f7bce66912c2ef4f2e760a245412038f97",
+    "recruit/thorn-dryad/defender": "01492cf62e7799b5bcc530a1f248bd149bbd552d9a651d488d1a70406caa21d3",
+    "recruit/thorn-sporeling/attacker": "505b53882672e24d6d6636eeb45e3368ce90e975daad0020712e1eac31ce76aa",
+    "recruit/thorn-sporeling/defender": "9fa6f8e4a69b170f6da0dca816dceb1f98ce74f3d3b5451de6f5c3972c5b7964",
+    "recruit/thorn-antler-sentinel/attacker": "9133833e465f349b10edc5844701370306587e6c9290282897dda9463f153973",
+    "recruit/thorn-antler-sentinel/defender": "c0a569d42957788bf9fdbb273920c698de2a567ea325a77f98853c8a374404ac",
+    "recruit/thorn-vine-weaver/attacker": "227665dc2e4da977c1ac2de39ad8222bd58c4f7db4ca178143f660cf79da451b",
+    "recruit/thorn-vine-weaver/defender": "837c434c4d703a3e391393f5fa6886a4cbefe960a281774ef085efd6cd8b1be9",
+    "recruit/thorn-wild-boar/attacker": "44a85e132685d0e7316fd910aa2408b276d52233b850d78addbbcb67e9d9ffe9",
+    "recruit/thorn-wild-boar/defender": "77385ffa6f7ae5644bdaa065eae80b98c513806f06f37e5d4d7b3411c43c7008",
+    "recruit/thorn-owlbear/attacker": "62564e5a575fa20dc5b006ed8dc457f0b83482c7f0e4c27e74bc4ddc8faee3ba",
+    "recruit/thorn-owlbear/defender": "ef93fe5a1222fb5752b416b6de50117d6252d2c0db3ed91aa9db1a1908a9fe47",
+    "recruit/thorn-wolf-brother/attacker": "c840677ed32016b25cbbcfffa62ca8804abd1c5dd080e218bca8721edaebf481",
+    "recruit/thorn-wolf-brother/defender": "6026bbdc91a47bdb83be412db336ba13a32b57e4b732d62dfbb51228cd5522de",
+    "recruit/thorn-giant-hunter/attacker": "6181a2355a9f2025807396272b64843158a9d2f83fe25677823599e389e22cde",
+    "recruit/thorn-giant-hunter/defender": "1fc45c03246027b60c78e29cd96549b086e6b254f20f64e5a7f24a82871133fe",
+    "recruit/forge-rune-guard/attacker": "700775678b3b332bf5b0752212a3b14b6cb738e055c20e5de16d092f5bad12b4",
+    "recruit/forge-rune-guard/defender": "ba2fcbed13fc9e76eb784ede698e623573839a2bdb226fb569c8a9a5b5f9dbbd",
+    "recruit/forge-thunderer/attacker": "6c706f0f01993eb9cd7e8289c85f9ac2f78165172dc0a06db7ece51a28569ede",
+    "recruit/forge-thunderer/defender": "4cfe0bb9d6e3e63eab586ba64f4a77f4fcca954822974a1032f1d50a61737773",
+    "recruit/forge-sealsmith/attacker": "f9b747f1e7c806d8702ba4ce38a29714dccb8c9f3f255571512ec0eaf672f28e",
+    "recruit/forge-sealsmith/defender": "d72aa3870101a2bf7c6a53b8ccb2089c9618e4bc7ca81cdafcc51e2fb0a0c4f8",
+    "recruit/forge-shard-golem/attacker": "a0e1d13a68163778c058a28f0e874b95e995ce3154195ba2cc4a9f0b326c87a7",
+    "recruit/forge-shard-golem/defender": "ee8a470052b2b79c282eff9502ad735a081a0215a3d2baf66bdba6b90432175f",
+    "recruit/forge-ember-projector/attacker": "132ad681580a47aeaf2ddf91d0b62bf5d1a039a7318c28a10f33585a127e27b2",
+    "recruit/forge-ember-projector/defender": "df3b3e53353aa7139613ddfb4e655ccce115708db20e62f9d24731515728dd67",
+    "recruit/forge-pavise-arbalist/attacker": "746e3141426a19ce77bc1f9ef6867add6bc106ffcc4383e661f710985369db97",
+    "recruit/forge-pavise-arbalist/defender": "074cd4dae268644bf5a983c6367381db45bdb12d1c3379581a2b439d1ea7c990",
+    "recruit/forge-tunnel-borer/attacker": "1c68237f74dcf41a985436e7f7c89dd4c8786e9762e7cd291c4f84acd9b1c644",
+    "recruit/forge-tunnel-borer/defender": "5f72b30b70d47c769b60fed3dcb4cf171b868a51f31df42e920f9e176b5f2b6d",
+    "recruit/forge-crystalmancer/attacker": "9034d6b962f1a1d2b9beaef5c0aacea9e054a2ead597af3bec392b01c99f7e03",
+    "recruit/forge-crystalmancer/defender": "1651fe505148ce8dc3659f82d5255a20c085a39386e058a447cb50b043494019",
+    "recruit/forge-stone-ram/attacker": "0d0b90ed7b439f51b1749b810b011594bb9f27de14ec400285e0033c38cb8be5",
+    "recruit/forge-stone-ram/defender": "514a855f44dbfb352bb22b01369937fd72f5e165425ae9ef73e640f60b3f7ec4",
+    "recruit/forge-powder-grenadier/attacker": "eb6e2126eeaa92f8be04f2ceca17d9e678f1667b7a8ba0171e8f33c14f3f37f1",
+    "recruit/forge-powder-grenadier/defender": "1a1109d9d0d10378f3cb0e7e151396c06496f40b13cf2224fd23a8dbf0ee4c0d",
+    "capacity/dawn/classic/attacker": "27c9d167ab39626df3a6eda17269ce9c784207e907d966b4be77822de3065f3d",
+    "capacity/dawn/classic/defender": "7a5bc9ace7d696be8a4c7f1f78bf7f5c85c2a6b2d855f06c2157d5776072eea0",
+    "capacity/dawn/free/attacker": "950815a7fe80e4e3f2406a68a92e4a7a225c76bbb839ba2e2b42b17f51249287",
+    "capacity/dawn/free/defender": "2fbd798f044306aab691e7784ec47a47c6027b3c72aee84f810739c1d50c268c",
+    "arena/dawn": "bb6eac9a5c2575dc574fb09c891678e7cba6541baf37f8f2fe6d0ce3532944c0",
+    "capacity/orc/classic/attacker": "0ebc1e03280b512d4ea1511eb5c4885c92f198bab07627ff49b85b49b60a95b2",
+    "capacity/orc/classic/defender": "43b84ce76d1b7bf19505cd75540c54deeb169787ba55836766bf27ea71d77276",
+    "capacity/orc/free/attacker": "23eee4acee748a941d741f76bd4e5d8f997c391d8f686df84ea86aae8ab46086",
+    "capacity/orc/free/defender": "9c7ed686b7043285b43fa5d8849d2ad4f402ceea44347c6779315a733e2e712c",
+    "arena/orc": "dbd8e5b2b0a3d9743306ed5e101f884df7e471bf746ce1a94f1f876b69ce1c34",
+    "capacity/court/classic/attacker": "f8a58f38a713a7808b07099d5654a1b31964b031b7e603b4b775230577805279",
+    "capacity/court/classic/defender": "ce4d471770e64bb71f63072d0f60550d2158e03f7ea484fb0b89256f31adfd85",
+    "capacity/court/free/attacker": "10885d609f59d52611424966771dd5715d66c95cbf689729cb54e1200a77313d",
+    "capacity/court/free/defender": "d28a9467d66ca824e04b68a2be9f9c9fd5743287b83f2390cb3200c28e77597c",
+    "arena/court": "65a04186a19b16debf88a2c746f16fb5d7dfcbfe3645e18e86f2ad16523e4691",
+    "capacity/thorn/classic/attacker": "447c572b9537dac33af041b81177f1f80c17b0854372eafbf5402583ba10a401",
+    "capacity/thorn/classic/defender": "b4b2b345bc18c120077f8f34114e08e4d5f09d7a5d4b748895045f9200afc46f",
+    "capacity/thorn/free/attacker": "80e40a98feff385514fd65ea829ea987c908a462e40b97073cb9e8332c84a874",
+    "capacity/thorn/free/defender": "c5608627453292185e22850b18c8059dd3b70ff6f938ca37c21482be51cde9d8",
+    "arena/thorn": "64e2b3d2c33e75754564542f0aff9a5e9d711b98b1d0e1e03f6da7ffec754ad7",
+    "capacity/forge/classic/attacker": "61658828bedc6b6290e1cf918526539ae10f7778e1a5d5317d5928c3c526c3d5",
+    "capacity/forge/classic/defender": "ea44b302bf638652084a40e4a989910f8c1b386affb10ba2e3dc5b5377c108a4",
+    "capacity/forge/free/attacker": "a9f4e8d50e27a4d26b6780d4f0cc1ba4335c6854ed03f477ebaabcf35e2799fe",
+    "capacity/forge/free/defender": "406e38919ccbd754380c1d7aca70491503613d36f393a52d7f5d81f02a959f95",
+    "arena/forge": "1d5a15c35e23529d6d15f2d052915f01eb7b790643334a99fe66365cd1a18401",
+    "campaign/s1/attacker": "15fa873039c9abae45fb0df757ebc7a86b9774e3c4170f94c1287f2e87bf652d",
+    "campaign/s1/defender": "bc2dc6b280a1239f2873dc462fc6e8c55ea3d0f98aeed36294296ea4d9b815c8",
+    "campaign/s2a/attacker": "4ed30920529a3a82f557bce1015d013d0c6f30cfebc8e06c86a4b2f71d2578f2",
+    "campaign/s2a/defender": "0ba9ca5ae7ad6d49114d52626b78c22d3e024993d9132e8fd0bc35479c71a87c",
+    "campaign/s2b/attacker": "798eff5481b05645847683a737f59e8436a69d7e79784c375742b788aa9b33c4",
+    "campaign/s2b/defender": "7f8c1a088dcf2911518f412646570130106e20c01a87916d7a4b1aa471a4d90e",
+    "campaign/s3/attacker": "4a1354157aca18831aabe1120d2fa2d7b7c9efbfcd5234044279cbae95ef26f1",
+    "campaign/s3/defender": "e903e1df9d65cbc75f72498e85740e3dd0037c17c49e883c6023ab84eb3de0fb",
+    "campaign/s4a/attacker": "315144b448e7e8d4a79b65e1c9d036d389ec7eaccb2ea67f6aa4f053bdf30dd2",
+    "campaign/s4a/defender": "6ee57df8313e2ece66f1f0133f628c5653b2456f064474b8d99da7bae866bd24",
+    "campaign/s4b/attacker": "ce3c3a0c1d3419d872ad4e79bef1de82b2d2d326d97bf13b35ac6dffb966251b",
+    "campaign/s4b/defender": "65e04793568536563311a71ea2b080982046936de8e47fb3843f601610029d33",
+    "campaign/s5/attacker": "db01d33da1175f7450f620ee9ec2a59800eb4655b4d7c9a2b1cf91b7ceeded5f",
+    "campaign/s5/defender": "c96571de58334295e2d23e84fa7f00e633363f699e88279a9f0f8d7d21aede5a",
+    "snapshot/dawn": "8e91db9ea5afdcb98890a246c0eba0167520c381a4f058759bd49f8322bbacfc",
+    "online/dawn": "d4dd4422b417bea9ac448657613a86f91073ea29ba8c921a06bc77b30015cac1",
+    "snapshot/orc": "1e89d08495c3d1dc44d11158262908212af0f658241144ad67e89a418a422267",
+    "online/orc": "71ec089d5b22ca3b092c5fc7b094c9f16756bbf906097668f06b7423a6071844",
+    "snapshot/court": "1bf6af6f2aaaad489fb4cf97df87ea2414820dc99248ab98210c899dac8e7e9d",
+    "online/court": "09de513f543da3615548570bf3a26db2e5779805eef0fec20e6446f265a3fd4e",
+    "snapshot/thorn": "68db3446a452680b08728f52489b445d9bd46202aaa075d1dba5a564391e1102",
+    "online/thorn": "643d11d680ecd82a1eef89f1d4878a5d38cfe7f6743ec9e794ae51a037e07ffd",
+    "snapshot/forge": "3f62586dae6735d899b1e0cd15196139a2c3e13464419320d35593e591c810bf",
+    "online/forge": "2028f3f9509f017ab1f3b8c969a85fec459f028483aa165165ed75e34212c17d",
+    "long/healers-timeout": "73e50c3f227ce05b1ae1aeb3dbdfa13f2c190c2a3768bf6f4a8622eae756b326",
+    "capacity/forge-neutral/classic/attacker": "e5d15cec17cc3d8bd91e4304c57404687919a611bd823daf4b44db2d461d2279",
+    "capacity/forge-neutral/classic/defender": "3d4e4ea9c3282dd3ccda9109fa4547f036532e27162a93d3eb7ecef435021531",
+    "capacity/forge-neutral/free/attacker": "42fe4749987b896b8d1a35a4c24be6acd8ca3843da781c68f321f95b9fa80060",
+    "capacity/forge-neutral/free/defender": "d5d5d42133525a91ef534e1a5c8754a186ea090a305294bf1d9e422f0e9f2263",
+    "arena/forge-neutral": "6acb735b29394c6dac8eb77503d0ea3cc8e961ac106204ea0edb525b12b0df74"
+  },
+  "totalMs": 15629.1461
+}

@@ -1,0 +1,30 @@
+
+ RUN  v4.1.5 D:/Max/Mars2050-o2
+
+ ❯ packages/combat-core/tests/o2-buffer-isolation.test.ts (5 tests | 1 failed) 806ms
+     × never aliases the live status list and never shares one array between groups 29ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 4 passed (5)
+   Start at  10:49:53
+   Duration  3.46s (transform 1.63s, setup 0ms, import 2.23s, tests 806ms, environment 0ms)
+
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  packages/combat-core/tests/o2-buffer-isolation.test.ts > O2: defense-frame snapshots are detached copies > never aliases the live status list and never shares one array between groups
+AssertionError: expected [] not to be [] // Object.is equality
+
+Compared values have no visual difference.
+
+ ❯ packages/combat-core/tests/o2-buffer-isolation.test.ts:43:56
+     41|     expect(secondSnapshots.length).toBe(firstSnapshots.length)
+     42|     for (let index = 0; index < secondSnapshots.length; index += 1) {
+     43|       expect(secondSnapshots[index].statusEffects).not.toBe(firstSnaps…
+       |                                                        ^
+     44|     }
+     45|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

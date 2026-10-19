@@ -1,0 +1,53 @@
+{
+  "variant": "candidate",
+  "contour": "A",
+  "node": "v25.6.0",
+  "platform": "win32-x64",
+  "warmup": 2,
+  "runs": 5,
+  "core": {
+    "entryUrl": "file:///D:/Max/Mars2050-o2/packages/combat-core/dist/index.js",
+    "resolvedEntry": "D:/Max/Mars2050-o2/packages/combat-core/dist/index.js",
+    "realEntry": "D:/Max/Mars2050-o2/packages/combat-core/dist/index.js",
+    "entrySha256": "502b750f8baba5fc05246ae696bd6580bf10659d41566309091b280048a54579",
+    "packageJsonPath": "D:/Max/Mars2050-o2/packages/combat-core/package.json",
+    "packageJsonSha256": "67a98caf2b5cda6d561d8578367073ff7a179c01906226b923197fde313642a7",
+    "name": "@mars2050/combat-core",
+    "version": "0.1.0"
+  },
+  "presets": {
+    "massive_clash": {
+      "note": "pure core: public simulateCombat(frozen translated BattleInput)",
+      "inputPath": "D:/Max/Mars2050-o2/packages/combat-core/certify/o2-20261018/inputs/massive_clash.battle-input.json",
+      "inputSha256": "e9e653147d18601fe8af7bc839e8c89acbd91893aefaa1b5a54bad0a85a33398",
+      "units": 10,
+      "summary": {
+        "runs": 5,
+        "medianMs": 422.94699999999966,
+        "meanMs": 430.97932000000003,
+        "minMs": 380.1397000000002,
+        "maxMs": 494.0943000000002,
+        "spreadMs": 113.95460000000003,
+        "madMs": 17.300300000000334
+      },
+      "rawMs": [
+        440.2473,
+        494.0943000000002,
+        380.1397000000002,
+        422.94699999999966,
+        417.4683
+      ],
+      "hashes": [
+        "e319e672616911ef5d85fc37e735124c49f7b65c711b91260341b237510e1c7a",
+        "e319e672616911ef5d85fc37e735124c49f7b65c711b91260341b237510e1c7a",
+        "e319e672616911ef5d85fc37e735124c49f7b65c711b91260341b237510e1c7a",
+        "e319e672616911ef5d85fc37e735124c49f7b65c711b91260341b237510e1c7a",
+        "e319e672616911ef5d85fc37e735124c49f7b65c711b91260341b237510e1c7a"
+      ],
+      "distinctHashes": [
+        "e319e672616911ef5d85fc37e735124c49f7b65c711b91260341b237510e1c7a"
+      ],
+      "resultInvariant": true
+    }
+  }
+}

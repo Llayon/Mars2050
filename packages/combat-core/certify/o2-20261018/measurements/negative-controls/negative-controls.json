@@ -1,0 +1,84 @@
+{
+  "generatedAt": "2026-10-19T07:49:52.463Z",
+  "repo": "D:\\Max\\Mars2050-o2",
+  "suite": "packages/combat-core/tests/o2-buffer-isolation.test.ts",
+  "node": "v25.6.0",
+  "baseline": {
+    "exitCode": 0,
+    "failed": 0,
+    "passed": 5,
+    "failingTitles": [],
+    "testsLine": "Tests  5 passed (5)"
+  },
+  "mutations": [
+    {
+      "id": "shared-empty-status-array",
+      "applied": true,
+      "restoredByteIdentical": true,
+      "expectedFailureObserved": true,
+      "controlPassed": true,
+      "outcome": {
+        "exitCode": 1,
+        "failed": 1,
+        "passed": 0,
+        "failingTitles": [
+          "O2: defense-frame snapshots are detached copies > never aliases the live status list and never shares one array between groups"
+        ],
+        "testsLine": "Tests  1 failed | 4 passed (5)"
+      },
+      "files": [
+        "D:/Max/Mars2050-o2/packages/combat-core/src/combat.action-intent.ts",
+        "D:/Max/Mars2050-o2/packages/combat-core/src/combat.action-intent.ts"
+      ]
+    },
+    {
+      "id": "alias-live-status-array",
+      "applied": true,
+      "restoredByteIdentical": true,
+      "expectedFailureObserved": true,
+      "controlPassed": true,
+      "outcome": {
+        "exitCode": 1,
+        "failed": 2,
+        "passed": 0,
+        "failingTitles": [
+          "O2: defense-frame snapshots are detached copies > never aliases the live status list and never shares one array between groups",
+          "O2: defense-frame snapshots are detached copies > copies a populated status list instead of reusing it"
+        ],
+        "testsLine": "Tests  2 failed | 3 passed (5)"
+      },
+      "files": [
+        "D:/Max/Mars2050-o2/packages/combat-core/src/combat.action-intent.ts"
+      ]
+    },
+    {
+      "id": "drop-targeting-scratch-reset",
+      "applied": true,
+      "restoredByteIdentical": true,
+      "expectedFailureObserved": true,
+      "controlPassed": true,
+      "outcome": {
+        "exitCode": 1,
+        "failed": 2,
+        "passed": 0,
+        "failingTitles": [
+          "O2: spatial candidate buffers keep length and order > returns an empty candidate list for an empty neighbourhood and leaves no tail",
+          "O2: spatial candidate buffers keep length and order > keeps a stable deterministic candidate order for saturated queries"
+        ],
+        "testsLine": "Tests  2 failed | 3 passed (5)"
+      },
+      "files": [
+        "D:/Max/Mars2050-o2/packages/combat-core/src/ecs/targeting-runtime.ts"
+      ]
+    }
+  ],
+  "final": {
+    "exitCode": 0,
+    "failed": 0,
+    "passed": 5,
+    "failingTitles": [],
+    "testsLine": "Tests  5 passed (5)"
+  },
+  "allControlsPassed": true,
+  "restoredSuiteGreen": true
+}

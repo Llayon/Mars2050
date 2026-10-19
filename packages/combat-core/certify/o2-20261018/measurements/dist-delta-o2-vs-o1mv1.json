@@ -1,0 +1,15 @@
+﻿{
+ "o1Files": 912,
+ "o2Files": 912,
+ "added": 0,
+ "removed": 0,
+ "changedCount": 6,
+ "changed": [
+  "dist/combat.action-intent.d.ts.map",
+  "dist/combat.action-intent.js",
+  "dist/combat.action-intent.js.map",
+  "dist/ecs/movement-steering.d.ts.map",
+  "dist/ecs/movement-steering.js",
+  "dist/ecs/movement-steering.js.map"
+ ]
+}

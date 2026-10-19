@@ -1,6 +1,6 @@
 import type { Team } from './combat.sim.types.js'
 import type { DeathCause } from './combat.death.types.js'
-import type { StatusEffect, TargetMarkConfig } from './combat.primitives.js'
+import type { RuntimeStatusEffect, StatusEffect, TargetMarkConfig } from './combat.primitives.js'
 import type { EntityId } from './ecs/entity.js'
 import type { CombatWorld } from './ecs/combat-world.js'
 import type { DamageAttribution } from './ecs/damage-source.js'
@@ -123,7 +123,7 @@ export class EcsActionGroupLedger {
       }
       targetsByExternalId.set(identity.id, {
         externalId: identity.id, hp: vitality.hp, maxHp: vitality.maxHp, shield: vitality.shield, maxShield: vitality.maxShield,
-        armor: combat.defense, statusEffects: structuredClone(statusControl.statusEffects), targetMark: statusControl.targetMark ? structuredClone(statusControl.targetMark) : undefined,
+        armor: combat.defense, statusEffects: cloneStatusEffects(statusControl.statusEffects), targetMark: statusControl.targetMark ? structuredClone(statusControl.targetMark) : undefined,
         isFlying: transform.isFlying, rank: identity.rank, isMoving: movement.isMoving, damageReductionWhileMoving: movement.damageReductionWhileMoving,
         isBurrowed: movement.isBurrowed, burrowDamageReduction: movement.burrowConfig?.damageReduction, flatDamageBlock: defense.flatDamageBlock,
         shieldHitBlockCharges: defense.shieldHitBlockCharges, reactiveArmorCharges: defense.reactiveArmorCharges, reactiveArmorBlock: defense.reactiveArmorBlock,
@@ -238,4 +238,10 @@ export class EcsActionGroupLedger {
     this.active = false
     this.committing = false
   }
+}
+
+/** Detached copy of a target's status list for one resolution group. The empty list — the common
+ * case — skips the `structuredClone` round-trip while callers still receive their own fresh array. */
+function cloneStatusEffects(source: RuntimeStatusEffect[]): RuntimeStatusEffect[] {
+  return source.length === 0 ? [] : structuredClone(source)
 }

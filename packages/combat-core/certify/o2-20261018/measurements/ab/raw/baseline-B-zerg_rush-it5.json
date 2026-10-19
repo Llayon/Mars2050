@@ -1,0 +1,52 @@
+{
+  "variant": "baseline",
+  "contour": "B",
+  "node": "v25.6.0",
+  "platform": "win32-x64",
+  "seed": 24680,
+  "warmup": 2,
+  "runs": 5,
+  "core": {
+    "resolvedEntry": "D:/Max/o2/baseline-install/node_modules/@mars2050/combat-core/dist/index.js",
+    "realEntry": "D:/Max/o2/baseline-install/node_modules/@mars2050/combat-core/dist/index.js",
+    "entrySha256": "502b750f8baba5fc05246ae696bd6580bf10659d41566309091b280048a54579",
+    "packageJsonSha256": "445b24dd224c7471c4a243f40417d74db4cd03297436a09346e050bcac41548c",
+    "name": "@mars2050/combat-core",
+    "version": "0.1.0-o1mv.1"
+  },
+  "presets": {
+    "zerg_rush": {
+      "note": "Mars compat: simulateBattle end-to-end (translation + core + compat mapping timed)",
+      "seed": 24680,
+      "inputSha256": "8eb8cf5dfa394cc98fc5a24efd6a82f25127cafdf52d8e5950e849856a891da2",
+      "units": 68,
+      "summary": {
+        "runs": 5,
+        "medianMs": 5830.4353999999985,
+        "meanMs": 5844.56132,
+        "minMs": 5615.491699999999,
+        "maxMs": 6209.457200000004,
+        "spreadMs": 593.9655000000057,
+        "madMs": 146.1911
+      },
+      "rawMs": [
+        5830.4353999999985,
+        5684.2442999999985,
+        6209.457200000004,
+        5615.491699999999,
+        5883.178
+      ],
+      "hashes": [
+        "a23db85e658cbdf09294cde2f40d8adaaae9d66a00a339bca302f12556adee09",
+        "a23db85e658cbdf09294cde2f40d8adaaae9d66a00a339bca302f12556adee09",
+        "a23db85e658cbdf09294cde2f40d8adaaae9d66a00a339bca302f12556adee09",
+        "a23db85e658cbdf09294cde2f40d8adaaae9d66a00a339bca302f12556adee09",
+        "a23db85e658cbdf09294cde2f40d8adaaae9d66a00a339bca302f12556adee09"
+      ],
+      "distinctHashes": [
+        "a23db85e658cbdf09294cde2f40d8adaaae9d66a00a339bca302f12556adee09"
+      ],
+      "resultInvariant": true
+    }
+  }
+}

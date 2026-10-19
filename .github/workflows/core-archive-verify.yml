@@ -1,22 +1,32 @@
 name: core archive verify (Linux)
 
-# Linux cross-environment verification of the CORE-HANDOFF candidate archive.
-# The repo gitignores *.tgz, so the job rebuilds the archive from the workspace package with the
-# released identity, verifies its content against the committed per-file manifest and runs the
-# R7 golden matrix + both CORE-HANDOFF MREs against the INSTALLED archive (never the workspace dist).
+# Linux cross-environment verification of the released combat-core candidate archives.
+# The repo gitignores *.tgz, so each job rebuilds its archive from the workspace package with the
+# released identity, verifies its content against that bundle's committed per-file manifest and
+# runs the R7 golden matrix + both CORE-HANDOFF MREs against the INSTALLED archive (never the
+# workspace dist).
+#
+# Two collections are verified, one per candidate bundle:
+#   * core-handoff-20261018 (0.1.0-o1mv.1) — the accepted R7 + O1 + movement-fix archive.
+#   * o2-20261018         (0.1.0-o2mv.1)   — the O2 allocation slice on top of it.
+# The o1 job is scoped to the branch whose source it pins: on the O2 branch the source has moved,
+# so rebuilding the o1 archive from that source cannot reproduce the o1 manifest by construction.
+# No existing gate is relaxed: both jobs keep the identical verifier, matrix and MRE checks.
 
 on:
   push:
-    branches: [repair/combat-core-isolation]
+    branches: [repair/combat-core-isolation, perf/combat-core-o2-v1]
     paths:
       - 'packages/combat-core/certify/core-handoff-20261018/**'
+      - 'packages/combat-core/certify/o2-20261018/**'
       - '.github/workflows/core-archive-verify.yml'
       - 'packages/combat-core/src/**'
   workflow_dispatch:
 
 jobs:
   verify:
-    name: Node ${{ matrix.node }} archive verification
+    name: Node ${{ matrix.node }} o1 archive verification
+    if: github.ref_name != 'perf/combat-core-o2-v1'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -43,3 +53,36 @@ jobs:
 
       - name: Verify installed archive (R7 matrix goldens + MRE journal completeness)
         run: node packages/combat-core/certify/core-handoff-20261018/verify-archive.mjs
+
+  verify-o2:
+    name: Node ${{ matrix.node }} o2 archive verification
+    if: github.ref_name == 'perf/combat-core-o2-v1'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [22, 26]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+
+      - name: Show runtime identity
+        run: |
+          node --version
+          npm --version
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund --ignore-scripts
+
+      - name: Build combat-core package
+        run: npm run combat:core:build
+
+      - name: Fight-core unit suite
+        run: npm run test:combat:core
+
+      - name: Verify installed archive (R7 matrix goldens + MRE journal completeness)
+        run: node packages/combat-core/certify/o2-20261018/verify-archive.mjs

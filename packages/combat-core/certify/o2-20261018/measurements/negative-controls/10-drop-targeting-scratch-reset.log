@@ -1,0 +1,62 @@
+
+ RUN  v4.1.5 D:/Max/Mars2050-o2
+
+ ❯ packages/combat-core/tests/o2-buffer-isolation.test.ts (5 tests | 2 failed) 766ms
+     × returns an empty candidate list for an empty neighbourhood and leaves no tail 17ms
+     × keeps a stable deterministic candidate order for saturated queries 10ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 3 passed (5)
+   Start at  10:50:01
+   Duration  3.57s (transform 1.85s, setup 0ms, import 2.51s, tests 766ms, environment 0ms)
+
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  packages/combat-core/tests/o2-buffer-isolation.test.ts > O2: spatial candidate buffers keep length and order > returns an empty candidate list for an empty neighbourhood and leaves no tail
+AssertionError: expected 4 to be +0 // Object.is equality
+
+- Expected
++ Received
+
+- 0
++ 4
+
+ ❯ packages/combat-core/tests/o2-buffer-isolation.test.ts:86:26
+     84|
+     85|     const empty = targeting.collect(world, -50000, -50000, 5, 'defende…
+     86|     expect(empty.length).toBe(0)
+       |                          ^
+     87|
+     88|     const repeated = targeting.collect(world, anchor.x, anchor.y, 2000…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  packages/combat-core/tests/o2-buffer-isolation.test.ts > O2: spatial candidate buffers keep length and order > keeps a stable deterministic candidate order for saturated queries
+AssertionError: expected [ 1, 2, 3, 4, 1, 2, 3, 4 ] to deeply equal [ 1, 2, 3, 4 ]
+
+- Expected
++ Received
+
+  [
+    1,
+    2,
+    3,
+    4,
++   1,
++   2,
++   3,
++   4,
+  ]
+
+ ❯ packages/combat-core/tests/o2-buffer-isolation.test.ts:99:62
+     97|
+     98|     const second = targeting.collect(world, anchor.x, anchor.y, 2000, …
+     99|     expect([...second.entityIds.subarray(0, second.length)]).toEqual(f…
+       |                                                              ^
+    100|
+    101|     const tighter = targeting.collect(world, anchor.x, anchor.y, 60, '…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

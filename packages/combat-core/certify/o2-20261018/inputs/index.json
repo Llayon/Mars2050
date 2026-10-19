@@ -1,0 +1,55 @@
+{
+  "generator": "scripts/o2-verify/freeze-inputs.ts",
+  "translator": "src/domains/combat/combat.input-translator.ts (base commit 1134ffa9b80b3d66aee447e557e3bb20507b9269)",
+  "seed": 24680,
+  "inputs": [
+    {
+      "presetId": "massive_clash",
+      "seed": 24680,
+      "units": 10,
+      "definitions": 50,
+      "rules": {
+        "maxTicks": 400,
+        "timeoutPolicy": "draw",
+        "defenseResolutionMode": "v9_snapshot",
+        "profile": false
+      },
+      "arena": {
+        "width": 600,
+        "height": 1200,
+        "tileSize": 40,
+        "obstacles": [],
+        "deployment": {
+          "depth": 320,
+          "strategy": "center"
+        }
+      },
+      "bytes": 293769,
+      "sha256": "e9e653147d18601fe8af7bc839e8c89acbd91893aefaa1b5a54bad0a85a33398"
+    },
+    {
+      "presetId": "zerg_rush",
+      "seed": 24680,
+      "units": 68,
+      "definitions": 50,
+      "rules": {
+        "maxTicks": 400,
+        "timeoutPolicy": "draw",
+        "defenseResolutionMode": "v9_snapshot",
+        "profile": false
+      },
+      "arena": {
+        "width": 600,
+        "height": 1200,
+        "tileSize": 40,
+        "obstacles": [],
+        "deployment": {
+          "depth": 320,
+          "strategy": "center"
+        }
+      },
+      "bytes": 367152,
+      "sha256": "d9e290ae1756c911a66c49a829003be246f047cffaae4753f2b2c099a8cd3fd0"
+    }
+  ]
+}

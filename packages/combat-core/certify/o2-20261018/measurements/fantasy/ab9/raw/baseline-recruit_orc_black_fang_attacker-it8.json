@@ -1,0 +1,62 @@
+{
+  "mode": "time",
+  "bundle": "D:/Max/o2/fantasy/baseline/native-compare.mjs",
+  "bundleSha256": "d8bcf69e52dc1a421ccad1e6d76ed0a158f200dac846699c86829ad99fcaf754",
+  "node": "v26.11.1",
+  "platform": "win32-x64",
+  "sdk52Sha256": "52a91f4eb406125247426f044eb0dbdf8ab440a8285d211af63e5f9c75bf61dd",
+  "nativeRuntime": {
+    "schema": 1,
+    "catalogue": "f2d93f04a2e20b7c6c3460cc3159d61ba2ae25493e508bab3c8714c557a38da5",
+    "sdk": "421ad6e35821aeafa0f1bbd3a93cfd69a3fbb81523d031ab6eaa0f8bb13a67f3",
+    "revision": "combat-ecs-v9-deterministic-trig-r4",
+    "inputFormat": "fantasy-r7-native-input-v1",
+    "adapter": "fantasy-sdk52-to-r7-units-v1",
+    "hpProfile": "r7-signed-hp-v1"
+  },
+  "corpus": {
+    "files": {
+      "corpus.json.gz": {
+        "expected": "dfffc6b8bcf211eea4c2279ecad150087ec1ac1414d811b4116be52427667070",
+        "actual": "dfffc6b8bcf211eea4c2279ecad150087ec1ac1414d811b4116be52427667070"
+      },
+      "extra-corpus.json.gz": {
+        "expected": "29c70cccb6c4397e5229b1d332451f3b0dd683e1ccb6c98b17e734c745089b12",
+        "actual": "29c70cccb6c4397e5229b1d332451f3b0dd683e1ccb6c98b17e734c745089b12"
+      },
+      "sdk52-ledger.json": {
+        "expected": "d54bc51a698c1df9f02a186fe3e59464d984184ca7c2a10c666904648a7b0304",
+        "actual": "d54bc51a698c1df9f02a186fe3e59464d984184ca7c2a10c666904648a7b0304"
+      }
+    },
+    "intact": true,
+    "scenarios": 159
+  },
+  "scenarios": [
+    {
+      "name": "recruit/orc-black-fang/attacker",
+      "inputSha256": "327044de19648c7bf80c53dda8e7843f0983eeaf23e55bb0d62a8a116358e757",
+      "rawMs": [
+        138.74869999999999,
+        109.07230000000004,
+        114.80279999999993,
+        71.80360000000019,
+        70.65699999999993
+      ],
+      "hashes": [
+        "f80647439cbddf87009f80169c13aac2050e5eca37931610425f6a8587f5fb74",
+        "f80647439cbddf87009f80169c13aac2050e5eca37931610425f6a8587f5fb74",
+        "f80647439cbddf87009f80169c13aac2050e5eca37931610425f6a8587f5fb74",
+        "f80647439cbddf87009f80169c13aac2050e5eca37931610425f6a8587f5fb74",
+        "f80647439cbddf87009f80169c13aac2050e5eca37931610425f6a8587f5fb74"
+      ],
+      "distinctHashes": [
+        "f80647439cbddf87009f80169c13aac2050e5eca37931610425f6a8587f5fb74"
+      ],
+      "medianMs": 109.07230000000004
+    }
+  ],
+  "digests": {
+    "recruit/orc-black-fang/attacker": "f80647439cbddf87009f80169c13aac2050e5eca37931610425f6a8587f5fb74"
+  }
+}

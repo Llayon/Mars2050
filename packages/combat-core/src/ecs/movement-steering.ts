@@ -68,7 +68,18 @@ export function getEcsSteeringContext(
     const separateRadius = Math.max(minDist * SEPARATION_RADIUS_MULT, 45)
     if (!transform.isFlying && distanceSq < separateRadius * separateRadius) {
       const dist = getDistance(transform.x, transform.y, other.x, other.y)
-      const direction = getAwayVector(identity.id, otherIdentity.id, transform, other, dist)
+      // The separation direction is consumed inside this iteration, so keep it in locals instead
+      // of allocating a { x, y } vector for every overlapping neighbour of every moving unit.
+      let directionX: number
+      let directionY: number
+      if (dist > 0) {
+        directionX = (transform.x - other.x) / dist
+        directionY = (transform.y - other.y) / dist
+      } else {
+        const angle = getAwayAngle(identity.id, otherIdentity.id)
+        directionX = deterministicCos(angle)
+        directionY = deterministicSin(angle)
+      }
       const soft = Math.max(0, (separateRadius - dist) / separateRadius)
       const emergency = dist < minDist
         ? getEmergencyPush(transform.size, other.size, myRadius, otherRadius, dist, combat.speed, isInRange)
@@ -76,8 +87,8 @@ export function getEcsSteeringContext(
       const massRatio = getSizeMass(other.size) / getSizeMass(transform.size)
       const force = soft * soft * combat.speed * SEPARATION_WEIGHT * (isInRange ? 0.15 : 1) *
         Math.max(0.08, Math.min(1.25, Math.sqrt(massRatio))) + emergency * (isInRange ? 0.3 : 0.55)
-      separationX += direction.x * force
-      separationY += direction.y * force
+      separationX += directionX * force
+      separationY += directionY * force
     }
     if (!isInRange && distanceSq > 0 && distanceSq <= ALIGNMENT_RADIUS * ALIGNMENT_RADIUS) {
       const velocityX = 'velocityX' in other ? other.velocityX : other.velocity.x
@@ -174,22 +185,22 @@ function getFormationAnchor(
   }
 }
 
-function getAwayVector(
-  unitId: string,
-  otherId: string,
-  unit: { x: number; y: number },
-  other: { x: number; y: number },
-  distance: number,
-): { x: number; y: number } {
-  if (distance > 0) return { x: (unit.x - other.x) / distance, y: (unit.y - other.y) / distance }
+/**
+ * Deterministic fallback direction for perfectly overlapping units, derived from the ordered pair
+ * of external unit ids. Returns the angle only: the caller builds the two vector components
+ * locally, which keeps this per-neighbour path allocation free.
+ * @param unitId External id of the moving unit
+ * @param otherId External id of the neighbour occupying the same point
+ * @returns Angle in radians, mirrored for the reversed pair order
+ */
+function getAwayAngle(unitId: string, otherId: string): number {
   let hash = 2166136261
   const value = unitId < otherId ? `${unitId}:${otherId}` : `${otherId}:${unitId}`
   for (const char of value) {
     hash ^= char.charCodeAt(0)
     hash = Math.imul(hash, 16777619)
   }
-  const angle = ((hash >>> 0) / 4294967295) * Math.PI * 2 + (unitId < otherId ? 0 : Math.PI)
-  return { x: deterministicCos(angle), y: deterministicSin(angle) }
+  return ((hash >>> 0) / 4294967295) * Math.PI * 2 + (unitId < otherId ? 0 : Math.PI)
 }
 
 function getEmergencyPush(
