@@ -24,7 +24,11 @@ export const SEED = 24680
 export const hash = (value: unknown): string => createHash('sha256').update(JSON.stringify(value)).digest('hex')
 export const json = (value: unknown): string => JSON.stringify(value)
 
-export function createDefinition(id: string, over: Record<string, unknown> = {}): Definition {
+export function createDefinition(
+  id: string,
+  over: Record<string, unknown> = {},
+  definitionOver: Record<string, unknown> = {},
+): Definition {
   return {
     id,
     name: id,
@@ -44,6 +48,7 @@ export function createDefinition(id: string, over: Record<string, unknown> = {})
     squadSize: 1,
     squadSpacing: 20,
     formation: 'grid',
+    ...definitionOver,
   } as unknown as Definition
 }
 
@@ -76,6 +81,10 @@ export function smallBattle(): BattleInput {
 }
 
 /** Dense squad clash: many moving neighbours, the case that exercises the per-tick buffers. */
+export const LARGE_BATTLE_SQUAD_SIZE = 8
+/** 6 attacker rows + 6 defender rows, each a full squad: 96 combatants on the field. */
+export const LARGE_BATTLE_COMBATANTS = 12 * LARGE_BATTLE_SQUAD_SIZE
+
 export function largeBattle(attack: number): BattleInput {
   const units: UnitSpec[] = []
   for (let index = 0; index < 6; index += 1) {
@@ -87,9 +96,12 @@ export function largeBattle(attack: number): BattleInput {
     arena: { width: 600, height: 1200, tileSize: 40, obstacles: [] },
     rules: { maxTicks: 60, timeoutPolicy: 'draw', defenseResolutionMode: 'v9_snapshot' },
     definitions: {
-      swarm: createDefinition('swarm', {
-        hp: 400, attack, defense: 3, speed: 70, range: 45, squadSize: 8, squadSpacing: 18,
-      }),
+      // Squad size and spacing are definition-level fields, not base stats.
+      swarm: createDefinition(
+        'swarm',
+        { hp: 400, attack, defense: 3, speed: 70, range: 45 },
+        { squadSize: LARGE_BATTLE_SQUAD_SIZE, squadSpacing: 18 },
+      ),
     },
     units,
     scheduledEffects: [],
@@ -159,14 +171,19 @@ export function runStages(
   resources: ReturnType<typeof createRuntime>['resources'],
   rng: PRNG,
   ticks: number,
+  sink?: BattleAction[],
 ): void {
   for (let tick = 0; tick < ticks; tick += 1) {
     const actions: BattleAction[] = []
     resources.require('clock').tick = tick
     resources.set('actions', actions)
     runtime.runStage('pre_action', { tick, actions, rng, activeGlobals: [] })
-    if (runtime.getTerminalOutcome()) break
+    if (runtime.getTerminalOutcome()) {
+      if (sink) sink.push(...actions)
+      break
+    }
     runtime.runStage('action', { tick, actions, rng, activeGlobals: [] })
     runtime.runStage('post_action', { tick, actions, rng, activeGlobals: [] })
+    if (sink) sink.push(...actions)
   }
 }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { simulateCombat } from '../src/facade/combat-facade.js'
-import { createUnit, deepFreeze, hash, json, largeBattle, runTicks, smallBattle } from './o2-fixtures.js'
+import { createUnit, deepFreeze, hash, json, largeBattle, LARGE_BATTLE_COMBATANTS, runTicks, smallBattle } from './o2-fixtures.js'
 import type { BattleInput } from '../src/contracts/index.js'
 
 /**
@@ -10,6 +10,14 @@ import type { BattleInput } from '../src/contracts/index.js'
  */
 
 describe('O2: public simulation determinism and buffer isolation', () => {
+  it('spawns the intended army sizes for the fixtures', () => {
+    expect(simulateCombat(smallBattle()).initialState.length).toBe(2)
+    const dense = simulateCombat(largeBattle(16))
+    // 12 unit rows, each a full squad: guards against squadSize silently landing in baseStats.
+    expect(dense.initialState.length).toBe(LARGE_BATTLE_COMBATANTS)
+    expect(dense.initialState.filter(unit => unit.team === 'attacker').length).toBe(LARGE_BATTLE_COMBATANTS / 2)
+  })
+
   it('repeats identically for the same input and seed', () => {
     const first = simulateCombat(smallBattle())
     const second = simulateCombat(smallBattle())

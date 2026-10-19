@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
 import { EcsActionGroupLedger } from '../src/combat.action-intent.js'
-import { simulateCombat } from '../src/facade/combat-facade.js'
 import { createRuntime, hash, loadMre, runStages } from './o2-fixtures.js'
 import type { BattleAction } from '../src/contracts/index.js'
 
@@ -104,19 +103,39 @@ describe('O2: spatial candidate buffers keep length and order', () => {
     expect(tightOrder).toEqual(firstOrder.filter(entityId => tightOrder.includes(entityId)))
   })
 
-  it('keeps the world simulatable after manual targeting probes', () => {
+  it('keeps the probed world identical to an undisturbed control', () => {
     const input = loadMre('case-1')
-    const reference = simulateCombat(input)
-    const { runtime, resources, rng } = createRuntime(input)
-    const world = runtime.world
-    const targeting = world.resources.require('targetingRuntime')
-    targeting.begin(world)
-    targeting.collect(world, 300, 600, 2000, 'defender')
-    targeting.collect(world, -50000, -50000, 5, 'defender')
+    const ticks = 5
+
+    const control = createRuntime(input)
+    const controlActions: BattleAction[] = []
+    runStages(control.runtime, control.resources, control.rng, ticks, controlActions)
+
+    const probed = createRuntime(input)
+    const targeting = probed.runtime.world.resources.require('targetingRuntime')
+    targeting.begin(probed.runtime.world)
+    targeting.collect(probed.runtime.world, 300, 600, 2000, 'defender')
+    targeting.collect(probed.runtime.world, -50000, -50000, 5, 'defender')
     targeting.end()
-    const actions: BattleAction[] = []
-    resources.set('actions', actions)
-    runStages(runtime, resources, rng, 5)
-    expect(hash(simulateCombat(input))).toBe(hash(reference))
+    const probedActions: BattleAction[] = []
+    runStages(probed.runtime, probed.resources, probed.rng, ticks, probedActions)
+
+    // Compare the probed runtime itself, not a freshly created world.
+    expect(probed.runtime.snapshotUnits()).toEqual(control.runtime.snapshotUnits())
+    expect(hash(probed.runtime.snapshotUnits())).toBe(hash(control.runtime.snapshotUnits()))
+    expect(probedActions).toEqual(controlActions)
+    expect(probed.runtime.getTerminalOutcome() ?? null).toEqual(control.runtime.getTerminalOutcome() ?? null)
+
+    // Sensitivity: the same comparison must notice a deliberate world perturbation, so the
+    // equality above is not vacuous. The perturbation lives only inside this test.
+    const perturbed = createRuntime(input)
+    const perturbedWorld = perturbed.runtime.world
+    const victim = perturbedWorld.query(['transform'])[0]
+    const victimTransform = perturbedWorld.stores.transform.require(victim)
+    perturbedWorld.setEntityPosition(victim, victimTransform.x + 3, victimTransform.y + 3)
+    const perturbedActions: BattleAction[] = []
+    runStages(perturbed.runtime, perturbed.resources, perturbed.rng, ticks, perturbedActions)
+    expect(hash(perturbed.runtime.snapshotUnits())).not.toBe(hash(control.runtime.snapshotUnits()))
+    expect(perturbedActions).not.toEqual(controlActions)
   })
 })
