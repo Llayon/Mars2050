@@ -1,0 +1,104 @@
+{
+  "generatedAt": "2026-10-19T07:39:28.084Z",
+  "node": "v25.6.0",
+  "platform": "win32-x64",
+  "worktree": "D:/Max/Mars2050-o2",
+  "baselineDir": "D:/Max/o2/baseline-install/node_modules/@mars2050/combat-core",
+  "candidateDir": "D:/Max/o2/consumer/node_modules/@mars2050/combat-core",
+  "methodology": {
+    "iterations": 3,
+    "warmupPerProcess": 2,
+    "measuredRunsPerProcess": 5,
+    "alternation": "baseline/candidate process order swapped every iteration; cooldown between processes",
+    "aggregation": "per-process median, then median/min/max across per-iteration process medians plus paired per-iteration ratios; raw per-process reports kept in raw/"
+  },
+  "cases": {
+    "A|massive_clash": {
+      "contour": "A",
+      "preset": "massive_clash",
+      "baseline": {
+        "processMediansMs": [
+          262.52469999999994,
+          268.0396999999998,
+          281.9143999999999
+        ],
+        "medianOfMediansMs": 268.0396999999998,
+        "minOfMediansMs": 262.52469999999994,
+        "maxOfMediansMs": 281.9143999999999,
+        "minMs": 251.82520000000022,
+        "maxMs": 293.96129999999994,
+        "spreadMs": 42.136099999999715,
+        "allRawMs": [
+          283.44630000000006,
+          290.7749000000001,
+          262.33889999999997,
+          259.0505000000003,
+          262.52469999999994,
+          279.76019999999994,
+          290.4487999999999,
+          268.0396999999998,
+          256.8966999999998,
+          251.82520000000022,
+          281.9143999999999,
+          292.2782000000002,
+          268.75840000000017,
+          293.96129999999994,
+          273.8186999999998
+        ],
+        "distinctHashes": [
+          "e319e672616911ef5d85fc37e735124c49f7b65c711b91260341b237510e1c7a"
+        ],
+        "resultInvariant": true,
+        "provenance": [
+          "D:/Max/o2/baseline-install/node_modules/@mars2050/combat-core/dist/index.js|502b750f8baba5fc05246ae696bd6580bf10659d41566309091b280048a54579|0.1.0-o1mv.1"
+        ]
+      },
+      "candidate": {
+        "processMediansMs": [
+          231.4719,
+          233.7053000000003,
+          270.6497999999999
+        ],
+        "medianOfMediansMs": 233.7053000000003,
+        "minOfMediansMs": 231.4719,
+        "maxOfMediansMs": 270.6497999999999,
+        "minMs": 217.82699999999977,
+        "maxMs": 281.5189999999998,
+        "spreadMs": 63.69200000000001,
+        "allRawMs": [
+          244.36390000000006,
+          251.62470000000008,
+          231.4719,
+          227.20879999999988,
+          217.82699999999977,
+          244.54770000000008,
+          257.4851000000001,
+          223.58569999999986,
+          233.7053000000003,
+          222.97450000000026,
+          247.0639000000001,
+          277.4801,
+          270.6497999999999,
+          281.5189999999998,
+          246.13380000000006
+        ],
+        "distinctHashes": [
+          "e319e672616911ef5d85fc37e735124c49f7b65c711b91260341b237510e1c7a"
+        ],
+        "resultInvariant": true,
+        "provenance": [
+          "D:/Max/o2/consumer/node_modules/@mars2050/combat-core/dist/index.js|502b750f8baba5fc05246ae696bd6580bf10659d41566309091b280048a54579|0.1.0-o2mv.1"
+        ]
+      },
+      "medianSpeedup": 1.1469132278985519,
+      "medianDeltaMs": 34.334399999999505,
+      "perIterationRatios": [
+        1.1341536488878345,
+        1.1469132278985519,
+        1.041620573892905
+      ],
+      "medianPairedRatio": 1.1341536488878345,
+      "crossVariantHashEqual": true
+    }
+  }
+}

@@ -1,0 +1,67 @@
+{
+  "variant": "candidate",
+  "contour": "A",
+  "preset": "zerg_rush",
+  "node": "v25.6.0",
+  "platform": "win32-x64",
+  "battles": 5,
+  "gcAvailable": true,
+  "core": {
+    "entryPath": "D:/Max/Mars2050-o2/packages/combat-core/dist/index.js",
+    "realEntry": "D:/Max/Mars2050-o2/packages/combat-core/dist/index.js",
+    "entrySha256": "502b750f8baba5fc05246ae696bd6580bf10659d41566309091b280048a54579"
+  },
+  "beforeBytes": {
+    "rss": 83300352,
+    "heapUsed": 16743008,
+    "heapTotal": 32063488,
+    "external": 2086944
+  },
+  "peakRssBytes": 587546624,
+  "peakHeapUsedBytes": 363889648,
+  "peakRssDeltaBytes": 504246272,
+  "peakHeapDeltaBytes": 347146640,
+  "retainedAfterGcBytes": {
+    "rss": 565665792,
+    "heapUsed": 60321712,
+    "heapTotal": 223907840,
+    "external": 2650651
+  },
+  "retainedHeapDeltaBytes": 43578704,
+  "samples": [
+    {
+      "rss": 387244032,
+      "heapUsed": 236472064,
+      "heapTotal": 324907008,
+      "external": 2392854
+    },
+    {
+      "rss": 496590848,
+      "heapUsed": 174059880,
+      "heapTotal": 351473664,
+      "external": 2078756
+    },
+    {
+      "rss": 515698688,
+      "heapUsed": 248410960,
+      "heapTotal": 374730752,
+      "external": 2392854
+    },
+    {
+      "rss": 559267840,
+      "heapUsed": 363889648,
+      "heapTotal": 493305856,
+      "external": 2706952
+    },
+    {
+      "rss": 587546624,
+      "heapUsed": 206230776,
+      "heapTotal": 396038144,
+      "external": 2650651
+    }
+  ],
+  "distinctResultHashes": [
+    "89fea02569679c9cfb6d1435d52cb43b466f2480bdf6cdc60cc55340a2b19854"
+  ],
+  "resultInvariant": true
+}

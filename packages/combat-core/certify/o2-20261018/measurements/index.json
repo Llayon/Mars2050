@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-19T08:06:55.194Z",
+  "generatedAt": "2026-10-19T08:21:32.007Z",
   "lab": "D:/Max/o2",
   "node": "v25.6.0",
   "platform": "win32-x64",
@@ -3059,6 +3059,201 @@
       "path": "measurements/ab/tmp/tsx-Максим/17923-fff728d91719ef73f639a413d62e450cdd82151a",
       "bytes": 3886,
       "sha256": "d22f095a14260c9004a0c7bbdb4b51eae7f4a1c6e7eee05540ee9b4fc17cfdc0"
+    },
+    {
+      "path": "measurements/ab-zerg-extended/ab-summary.json",
+      "bytes": 5573,
+      "sha256": "7e0031b6f218f183cf53d54c469900604e9da790f6e75a6b0d5fe6d5a24780cd"
+    },
+    {
+      "path": "measurements/ab-zerg-extended/raw/baseline-A-zerg_rush-it1.json",
+      "bytes": 2100,
+      "sha256": "1be34daed678edf46b2354eeed7226eb4a20df1c32591843406869822bd6e36a"
+    },
+    {
+      "path": "measurements/ab-zerg-extended/raw/baseline-A-zerg_rush-it2.json",
+      "bytes": 2077,
+      "sha256": "dad3dfbb24219320d9e22f89f66a9eddcd8341a78594b5d07749455242c76c1c"
+    },
+    {
+      "path": "measurements/ab-zerg-extended/raw/baseline-A-zerg_rush-it3.json",
+      "bytes": 2102,
+      "sha256": "3733d11a78270a9e56b81e08cb27c92eb10bbb80bffb2df95442bd6a4c7d2df1"
+    },
+    {
+      "path": "measurements/ab-zerg-extended/raw/baseline-A-zerg_rush-it4.json",
+      "bytes": 2084,
+      "sha256": "21debadb26d2552f378892a83020cb68186b43bb4b01c9d6a862c0b87d6e5633"
+    },
+    {
+      "path": "measurements/ab-zerg-extended/raw/baseline-A-zerg_rush-it5.json",
+      "bytes": 2109,
+      "sha256": "9fc8a86aaab2aba394ce39df92a5aad9eaf40574ad6cf8cbc68baff2904b0c1d"
+    },
+    {
+      "path": "measurements/ab-zerg-extended/raw/baseline-A-zerg_rush-it6.json",
+      "bytes": 2103,
+      "sha256": "014c886dcb26274f1f9d47a6b939007bd70e34c1f6d8eb3d75d5e217e04aac7c"
+    },
+    {
+      "path": "measurements/ab-zerg-extended/raw/baseline-A-zerg_rush-it7.json",
+      "bytes": 2084,
+      "sha256": "6876404c1c5930d620b8b891c44189acfdb1994dfe2a7b524d2a20acb660f3e4"
+    },
+    {
+      "path": "measurements/ab-zerg-extended/raw/baseline-A-zerg_rush-it8.json",
+      "bytes": 2108,
+      "sha256": "707a48080a3429eb6b559013bcccd29e14999108cec8e98982c7fdf4ab5ee5d1"
+    },
+    {
+      "path": "measurements/ab-zerg-extended/raw/baseline-A-zerg_rush-it9.json",
+      "bytes": 2066,
+      "sha256": "e7d106e97765e4cd6517c0f3b85805f6423a6e28c33084111e8798e92b84e842"
+    },
+    {
+      "path": "measurements/ab-zerg-extended/raw/candidate-A-zerg_rush-it1.json",
+      "bytes": 2018,
+      "sha256": "cf35567b63206666472edb4730d821a2fd1d2c74464caf3dbcfc85351bca8f1f"
+    },
+    {
+      "path": "measurements/ab-zerg-extended/raw/candidate-A-zerg_rush-it2.json",
+      "bytes": 2002,
+      "sha256": "3f75492d4b5de1c5d98dcbe215a754a060d7243afe48419df8e7d85919aaa041"
+    },
+    {
+      "path": "measurements/ab-zerg-extended/raw/candidate-A-zerg_rush-it3.json",
+      "bytes": 2005,
+      "sha256": "9ba67d37ba8fde6d2d01cc4ea923a56612d6b1d50aca1ea4cf6b9932a60bfc91"
+    },
+    {
+      "path": "measurements/ab-zerg-extended/raw/candidate-A-zerg_rush-it4.json",
+      "bytes": 2025,
+      "sha256": "7ef433a84db0de17779af9e58410eb74ce5088f015ce9fa9502e796bf5704bee"
+    },
+    {
+      "path": "measurements/ab-zerg-extended/raw/candidate-A-zerg_rush-it5.json",
+      "bytes": 2028,
+      "sha256": "ed1dc20cfbbbfea89ddc8dbefcf7a5b49a16dccc70d790eda422667733f6c259"
+    },
+    {
+      "path": "measurements/ab-zerg-extended/raw/candidate-A-zerg_rush-it6.json",
+      "bytes": 2024,
+      "sha256": "75509d2f2ad26190156b71d39a208d6b0babc00ab684301b60703071c4d4b0a3"
+    },
+    {
+      "path": "measurements/ab-zerg-extended/raw/candidate-A-zerg_rush-it7.json",
+      "bytes": 1999,
+      "sha256": "29f3440e39e6676a4227a98c7c8a4fc1a58f281caa9d7790f0fa6b40ceccc2e7"
+    },
+    {
+      "path": "measurements/ab-zerg-extended/raw/candidate-A-zerg_rush-it8.json",
+      "bytes": 1999,
+      "sha256": "42fd6383c06f5e9ed1efb5fbd602277258d90824eb02d3197e9a57c6da178dba"
+    },
+    {
+      "path": "measurements/ab-zerg-extended/raw/candidate-A-zerg_rush-it9.json",
+      "bytes": 2025,
+      "sha256": "e58f2c093892d934365fd82a7293055f6abfe78d0f197c773a1d13f0779f4960"
+    },
+    {
+      "path": "measurements/ab-installed/ab-summary.json",
+      "bytes": 3484,
+      "sha256": "a2a263b8ffd5a7b5f7db0eac68a8b1854bccc8a8cb9d5445c69b818ec64d54e8"
+    },
+    {
+      "path": "measurements/ab-installed/raw/baseline-A-massive_clash-it1.json",
+      "bytes": 2125,
+      "sha256": "c57e8cbb0e3b836e6da4cbb2b4a17eb33967637f86d94cf96f73c32ff724dff3"
+    },
+    {
+      "path": "measurements/ab-installed/raw/baseline-A-massive_clash-it2.json",
+      "bytes": 2124,
+      "sha256": "12f5d516f7bc6179cc9fe29ed373dfccd0c8548e7e343653a1071a72525747f2"
+    },
+    {
+      "path": "measurements/ab-installed/raw/baseline-A-massive_clash-it3.json",
+      "bytes": 2116,
+      "sha256": "a5158b704c9cb6f17f0626462a9038f6c3c13f6eb5051dcba0d312aade3a5bee"
+    },
+    {
+      "path": "measurements/ab-installed/raw/candidate-A-massive_clash-it1.json",
+      "bytes": 2080,
+      "sha256": "07c8ad233bea92b3ba5f745dde4b5e62f26abf9120e09e0f2f1533a565aa196b"
+    },
+    {
+      "path": "measurements/ab-installed/raw/candidate-A-massive_clash-it2.json",
+      "bytes": 2095,
+      "sha256": "a1fc3a98c75f5c8cba8de6fba07f933198bb9f6449f168b25e8b47de58567027"
+    },
+    {
+      "path": "measurements/ab-installed/raw/candidate-A-massive_clash-it3.json",
+      "bytes": 2084,
+      "sha256": "524f9e82b8e9fdd037c8f6236c8e8f7cd698b7819b3763f9b0f2ab54d5468a6f"
+    },
+    {
+      "path": "measurements/memory/ab-memory-summary.json",
+      "bytes": 2270,
+      "sha256": "23f9e159ed4e5a0b07d523d40b1de11f177c3c5c2e37bbdff1dd0216d296eaf8"
+    },
+    {
+      "path": "measurements/memory/raw/baseline-A-massive_clash-it1.json",
+      "bytes": 1634,
+      "sha256": "39272ead12a661d2aa9e6d5ce0df1c13ce06ab64e3ef7f164437d11ba98f2ce6"
+    },
+    {
+      "path": "measurements/memory/raw/baseline-A-massive_clash-it2.json",
+      "bytes": 1636,
+      "sha256": "95f718f6673dc323cac6dddbd8dcb7dda553c26c60d95131765f0d05e0bb930a"
+    },
+    {
+      "path": "measurements/memory/raw/baseline-A-massive_clash-it3.json",
+      "bytes": 1638,
+      "sha256": "dd1cba5e3a27f3b6820d886b475d76d9054ab30f55bb17ed2bfc5ea64446ba5b"
+    },
+    {
+      "path": "measurements/memory/raw/baseline-A-zerg_rush-it1.json",
+      "bytes": 1638,
+      "sha256": "b13f5399f91167e298825fea65bdba0bc78af03565f7a0bc48439bf4c7574aeb"
+    },
+    {
+      "path": "measurements/memory/raw/baseline-A-zerg_rush-it2.json",
+      "bytes": 1638,
+      "sha256": "b97fbbc772a7661aae3c6aea1e1b46887a7521e216bf0297e18ca674df52edc6"
+    },
+    {
+      "path": "measurements/memory/raw/baseline-A-zerg_rush-it3.json",
+      "bytes": 1638,
+      "sha256": "10732884128e4d6611147cf3f3f0405650450460895a854e2ba0d088190d127e"
+    },
+    {
+      "path": "measurements/memory/raw/candidate-A-massive_clash-it1.json",
+      "bytes": 1593,
+      "sha256": "23a153cf1943e6db4ed517f8c9bdbab2e7df2e98da350affa8459741d16e9fbf"
+    },
+    {
+      "path": "measurements/memory/raw/candidate-A-massive_clash-it2.json",
+      "bytes": 1593,
+      "sha256": "0d05108e7851ebb576e18728f0a0e28ba9399b0e72d4a26b573939fb46f91803"
+    },
+    {
+      "path": "measurements/memory/raw/candidate-A-massive_clash-it3.json",
+      "bytes": 1591,
+      "sha256": "870435c55da5b4b4b8b928385972d9393bc1bee5aa646b25e47b5e39b66abf4d"
+    },
+    {
+      "path": "measurements/memory/raw/candidate-A-zerg_rush-it1.json",
+      "bytes": 1595,
+      "sha256": "5e1348838dd1e5c9a009e65525541cf3aeb7e176dfc7ba528023589d2a08f181"
+    },
+    {
+      "path": "measurements/memory/raw/candidate-A-zerg_rush-it2.json",
+      "bytes": 1595,
+      "sha256": "6bd840a04565c8568d51a4499cb4f0302f67652d54b6754d06101611ddd8c651"
+    },
+    {
+      "path": "measurements/memory/raw/candidate-A-zerg_rush-it3.json",
+      "bytes": 1595,
+      "sha256": "56a21672f67cbf52e920349f8b3de44d02ad9fffb111ee92859be4367c62f09d"
     },
     {
       "path": "measurements/fantasy/ab/ab-fantasy-summary.json",

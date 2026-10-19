@@ -1,0 +1,13 @@
+{
+  "method": "temporary counter injected into the built dist/ecs/movement-steering.js (assignment inside the separation branch of getEcsSteeringContext), one full battle, counter removed afterwards and dist re-verified against the committed per-file manifest (compare-dist.mjs: 912/912, contentIdentical=true)",
+  "purpose": "deterministic count of the { x, y } objects S2 no longer allocates per battle; the sampling profiler could not separate this site between baseline and candidate",
+  "preset": "zerg_rush",
+  "input": "inputs/zerg_rush.battle-input.json",
+  "inputSha256": "d9e290ae1756c911a66c49a829003be246f047cffaae4753f2b2c099a8cd3fd0",
+  "ticks": 184,
+  "actions": 69664,
+  "separationBranchExecutions": 1330719,
+  "resultSha256": "89fea02569679c9cfb6d1435d52cb43b466f2480bdf6cdc60cc55340a2b19854",
+  "node": "v25.6.0",
+  "note": "the same input under the unmodified candidate produces the same result digest, so the counter did not disturb the simulation"
+}

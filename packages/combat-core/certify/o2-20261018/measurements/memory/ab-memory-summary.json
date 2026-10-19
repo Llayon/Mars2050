@@ -1,0 +1,115 @@
+{
+  "generatedAt": "2026-10-19T07:39:28.174Z",
+  "node": "v25.6.0",
+  "battlesPerProcess": 5,
+  "cases": {
+    "zerg_rush": {
+      "baseline": {
+        "peakRssMb": [
+          555.73,
+          560.74,
+          560.6
+        ],
+        "peakHeapMb": [
+          377.47,
+          328.14,
+          344.67
+        ],
+        "retainedHeapMb": [
+          56.66,
+          56.68,
+          56.68
+        ],
+        "retainedRssMb": [
+          537.43,
+          539.44,
+          540.86
+        ],
+        "resultInvariant": true,
+        "provenance": [
+          "D:/Max/o2/baseline-install/node_modules/@mars2050/combat-core/dist/index.js"
+        ]
+      },
+      "candidate": {
+        "peakRssMb": [
+          648.34,
+          560.33,
+          560.62
+        ],
+        "peakHeapMb": [
+          464.41,
+          347.03,
+          356.39
+        ],
+        "retainedHeapMb": [
+          57.54,
+          57.53,
+          56.64
+        ],
+        "retainedRssMb": [
+          581.91,
+          539.46,
+          537.95
+        ],
+        "resultInvariant": true,
+        "provenance": [
+          "D:/Max/Mars2050-o2/packages/combat-core/dist/index.js"
+        ]
+      }
+    },
+    "massive_clash": {
+      "baseline": {
+        "peakRssMb": [
+          235.33,
+          233.4,
+          254.62
+        ],
+        "peakHeapMb": [
+          86.34,
+          96.17,
+          131.82
+        ],
+        "retainedHeapMb": [
+          23.92,
+          24,
+          24.06
+        ],
+        "retainedRssMb": [
+          227.96,
+          226.61,
+          243.73
+        ],
+        "resultInvariant": true,
+        "provenance": [
+          "D:/Max/o2/baseline-install/node_modules/@mars2050/combat-core/dist/index.js"
+        ]
+      },
+      "candidate": {
+        "peakRssMb": [
+          232.38,
+          247.59,
+          234.43
+        ],
+        "peakHeapMb": [
+          107.56,
+          99.8,
+          86.15
+        ],
+        "retainedHeapMb": [
+          23.98,
+          24.04,
+          23.98
+        ],
+        "retainedRssMb": [
+          225.43,
+          240.95,
+          227.65
+        ],
+        "resultInvariant": true,
+        "provenance": [
+          "D:/Max/Mars2050-o2/packages/combat-core/dist/index.js"
+        ]
+      }
+    }
+  }
+}

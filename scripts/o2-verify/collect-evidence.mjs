@@ -40,6 +40,9 @@ function copyTree(fromDir, toDir, filter = () => true) {
 }
 
 copyTree(join(LAB, 'evidence', 'ab'), join(OUT, 'ab'), file => !file.endsWith('.log'))
+copyTree(join(LAB, 'evidence', 'ab-zerg-extended'), join(OUT, 'ab-zerg-extended'), file => !file.endsWith('.log'))
+copyTree(join(LAB, 'evidence', 'ab-installed'), join(OUT, 'ab-installed'), file => !file.endsWith('.log'))
+copyTree(join(LAB, 'evidence', 'memory'), join(OUT, 'memory'), file => !file.endsWith('.log'))
 copyTree(join(LAB, 'evidence', 'fantasy'), join(OUT, 'fantasy'), file => !file.endsWith('.log'))
 copyTree(join(LAB, 'evidence', 'cross-env'), join(OUT, 'cross-env'), file => !file.endsWith('.log'))
 copyTree(join(LAB, 'evidence', 'negative-controls'), join(OUT, 'negative-controls'))
