@@ -281,11 +281,16 @@ Node v26.11.1 (портативный тулчейн стенда Fantasy), че
 | Linux (GitHub Actions) | Node v22.23.3 | 5/5 PASS | `installed-vs-manifest` 912/912, оба MRE 0 несогласованных кадров, `ARCHIVE-VERIFY=PASS` |
 | Linux (GitHub Actions) | Node v26.12.0 | 5/5 PASS | `installed-vs-manifest` 912/912, оба MRE 0 несогласованных кадров, `ARCHIVE-VERIFY=PASS` |
 
-CI: workflow `core archive verify (Linux)`, run [39221737787](https://github.com/Llayon/Mars2050/actions/runs/39221737787)
-для коммита `dfbd9d719ee928d186c9d0dac4c651619e9b731b` — job'ы `Node 22 o2 archive verification`
-и `Node 26 o2 archive verification` завершились успешно (в обоих: ядро 306/306 тестов, 912/912
-файлов манифеста, матрица 5/5, оба MRE без расхождений); job `o1 archive verification` корректно
-не запускался на этой ветке (её источник уже не воспроизводит манифест `o1mv.1`).
+CI: workflow `core archive verify (Linux)` прошёл на обоих коммитах ветки —
+`dfbd9d719ee928d186c9d0dac4c651619e9b731b` (реализация; run
+[39221737787](https://github.com/Llayon/Mars2050/actions/runs/39221737787)) и
+`67556b2b6dda494e1aca50eed1a68336c6587b99` (финальный evidence-коммит; run
+[39222295476](https://github.com/Llayon/Mars2050/actions/runs/39222295476)). В каждом запуске
+job'ы `Node 22 o2 archive verification` и `Node 26 o2 archive verification` завершились успешно:
+ядро 306/306 тестов, `installed-vs-manifest` 912/912, матрица 5/5, оба MRE без расхождений,
+`ARCHIVE-VERIFY=PASS`; job `o1 archive verification` корректно не запускался на этой ветке (её
+источник уже не воспроизводит манифест `o1mv.1`). Каждый последующий push в ветку повторно
+прогоняет тот же гейт, включая коммит, публикующий этот абзац.
 Linux `npm pack` даёт другие байты архива (`f8a504ef4aaf6ce4…`), чем Windows-релиз — как и в
 CORE-HANDOFF, сравнивается именно содержимое (пофайловый манифест), а не байты tar.
 
