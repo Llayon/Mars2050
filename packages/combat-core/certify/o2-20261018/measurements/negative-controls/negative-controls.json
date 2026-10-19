@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-19T07:49:52.463Z",
+  "generatedAt": "2026-10-19T10:38:26.690Z",
   "repo": "D:\\Max\\Mars2050-o2",
   "suite": "packages/combat-core/tests/o2-buffer-isolation.test.ts",
   "node": "v25.6.0",
@@ -59,13 +59,14 @@
       "controlPassed": true,
       "outcome": {
         "exitCode": 1,
-        "failed": 2,
+        "failed": 3,
         "passed": 0,
         "failingTitles": [
           "O2: spatial candidate buffers keep length and order > returns an empty candidate list for an empty neighbourhood and leaves no tail",
-          "O2: spatial candidate buffers keep length and order > keeps a stable deterministic candidate order for saturated queries"
+          "O2: spatial candidate buffers keep length and order > keeps a stable deterministic candidate order for saturated queries",
+          "O2: spatial candidate buffers keep length and order > keeps the probed world identical to an undisturbed control"
         ],
-        "testsLine": "Tests  2 failed | 3 passed (5)"
+        "testsLine": "Tests  3 failed | 2 passed (5)"
       },
       "files": [
         "D:/Max/Mars2050-o2/packages/combat-core/src/ecs/targeting-runtime.ts"

@@ -1,13 +1,13 @@
 
  RUN  v4.1.5 D:/Max/Mars2050-o2
 
- ❯ packages/combat-core/tests/o2-buffer-isolation.test.ts (5 tests | 1 failed) 806ms
-     × never aliases the live status list and never shares one array between groups 29ms
+ ❯ packages/combat-core/tests/o2-buffer-isolation.test.ts (5 tests | 1 failed) 105ms
+     × never aliases the live status list and never shares one array between groups 31ms
 
  Test Files  1 failed (1)
       Tests  1 failed | 4 passed (5)
-   Start at  10:49:53
-   Duration  3.46s (transform 1.63s, setup 0ms, import 2.23s, tests 806ms, environment 0ms)
+   Start at  13:38:27
+   Duration  2.40s (transform 1.44s, setup 0ms, import 2.03s, tests 105ms, environment 0ms)
 
 
 

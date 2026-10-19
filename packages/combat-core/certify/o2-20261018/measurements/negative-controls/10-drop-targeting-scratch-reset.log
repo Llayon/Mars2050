@@ -1,18 +1,19 @@
 
  RUN  v4.1.5 D:/Max/Mars2050-o2
 
- ❯ packages/combat-core/tests/o2-buffer-isolation.test.ts (5 tests | 2 failed) 766ms
-     × returns an empty candidate list for an empty neighbourhood and leaves no tail 17ms
+ ❯ packages/combat-core/tests/o2-buffer-isolation.test.ts (5 tests | 3 failed) 118ms
+     × returns an empty candidate list for an empty neighbourhood and leaves no tail 14ms
      × keeps a stable deterministic candidate order for saturated queries 10ms
+     × keeps the probed world identical to an undisturbed control 61ms
 
  Test Files  1 failed (1)
-      Tests  2 failed | 3 passed (5)
-   Start at  10:50:01
-   Duration  3.57s (transform 1.85s, setup 0ms, import 2.51s, tests 766ms, environment 0ms)
+      Tests  3 failed | 2 passed (5)
+   Start at  13:38:33
+   Duration  2.46s (transform 1.44s, setup 0ms, import 2.05s, tests 118ms, environment 0ms)
 
 
 
-⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
 
  FAIL  packages/combat-core/tests/o2-buffer-isolation.test.ts > O2: spatial candidate buffers keep length and order > returns an empty candidate list for an empty neighbourhood and leaves no tail
 AssertionError: expected 4 to be +0 // Object.is equality
@@ -31,7 +32,7 @@ AssertionError: expected 4 to be +0 // Object.is equality
      87|
      88|     const repeated = targeting.collect(world, anchor.x, anchor.y, 2000…
 
-⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
 
  FAIL  packages/combat-core/tests/o2-buffer-isolation.test.ts > O2: spatial candidate buffers keep length and order > keeps a stable deterministic candidate order for saturated queries
 AssertionError: expected [ 1, 2, 3, 4, 1, 2, 3, 4 ] to deeply equal [ 1, 2, 3, 4 ]
@@ -58,5 +59,308 @@ AssertionError: expected [ 1, 2, 3, 4, 1, 2, 3, 4 ] to deeply equal [ 1, 2, 3, 4
     100|
     101|     const tighter = targeting.collect(world, anchor.x, anchor.y, 60, '…
 
-⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  packages/combat-core/tests/o2-buffer-isolation.test.ts > O2: spatial candidate buffers keep length and order > keeps the probed world identical to an undisturbed control
+AssertionError: expected [ …(5) ] to deeply equal [ …(5) ]
+
+- Expected
++ Received
+
+@@ -21,11 +21,11 @@
+      "chainAttack": undefined,
+      "conditionalAttackMode": undefined,
+      "conditionalRange": undefined,
+      "coneAttack": undefined,
+      "controlBeam": undefined,
+-     "currentAngle": -1.2720733931805044,
++     "currentAngle": -1.2720734574689032,
+      "damageReductionWhileMoving": 0,
+      "damageShareMaxTargets": undefined,
+      "damageShareRadius": undefined,
+      "damageShareRatio": undefined,
+      "defense": 3,
+@@ -44,13 +44,13 @@
+      "isFlying": false,
+      "isMoving": true,
+      "isTemporary": undefined,
+      "knockbackOnHit": undefined,
+      "lastProgressTargetId": "defender:squad-2",
+-     "lastProgressX": 152.33321845733093,
+-     "lastProgressY": 839.2749625790669,
+-     "lastTargetDistance": 501.4763556370789,
++     "lastProgressX": 152.33321844667304,
++     "lastProgressY": 839.2749625757729,
++     "lastTargetDistance": 501.47623887296913,
+      "leavesPuddle": false,
+      "lifestealMult": 0,
+      "linePierce": undefined,
+      "markOnHit": undefined,
+      "maxHp": 250,
+@@ -100,11 +100,11 @@
+      "statGrowth": undefined,
+      "statusEffects": [],
+      "statusOnHit": undefined,
+      "stealthUntilAttack": false,
+      "stealthWhileMoving": undefined,
+-     "stuckTicks": 3,
++     "stuckTicks": 4,
+      "summonCounterDamageMult": undefined,
+      "summonOwnerId": undefined,
+      "summonSourceId": undefined,
+      "supportAuras": [],
+      "supportPrograms": [],
+@@ -116,15 +116,15 @@
+      "transformState": undefined,
+      "triggerEffects": undefined,
+      "turnSpeed": 8,
+      "type": "thorn-wild-boar",
+      "velocity": {
+-       "x": 2.8045552655394754,
+-       "y": -8.462945001361973,
++       "x": 2.804554801846608,
++       "y": -8.462945144174673,
+      },
+-     "x": 152.61367398388487,
+-     "y": 838.4286680789307,
++     "x": 152.6136739268577,
++     "y": 838.4286680613554,
+    },
+    {
+      "abilityPrograms": [],
+      "accuracyPenaltyResist": undefined,
+      "actionCooldown": 0,
+@@ -146,11 +146,11 @@
+      "chainAttack": undefined,
+      "conditionalAttackMode": undefined,
+      "conditionalRange": undefined,
+      "coneAttack": undefined,
+      "controlBeam": undefined,
+-     "currentAngle": 0.0032572580541271852,
++     "currentAngle": 0.004314348677806711,
+      "damageReductionWhileMoving": 0,
+      "damageShareMaxTargets": undefined,
+      "damageShareRadius": undefined,
+      "damageShareRatio": undefined,
+      "defense": 8,
+@@ -169,13 +169,13 @@
+      "isFlying": false,
+      "isMoving": true,
+      "isTemporary": undefined,
+      "knockbackOnHit": undefined,
+      "lastProgressTargetId": "defender:squad-2",
+-     "lastProgressX": 118.92549029117465,
+-     "lastProgressY": 359.0113023069462,
+-     "lastTargetDistance": 179.65191274052086,
++     "lastProgressX": 119.00119054677603,
++     "lastProgressY": 358.8218219933158,
++     "lastTargetDistance": 179.57686786339082,
+      "leavesPuddle": false,
+      "lifestealMult": 0,
+      "linePierce": undefined,
+      "markOnHit": undefined,
+      "maxHp": 150,
+@@ -225,11 +225,11 @@
+      "statGrowth": undefined,
+      "statusEffects": [],
+      "statusOnHit": undefined,
+      "stealthUntilAttack": false,
+      "stealthWhileMoving": undefined,
+-     "stuckTicks": 3,
++     "stuckTicks": 4,
+      "summonCounterDamageMult": undefined,
+      "summonOwnerId": undefined,
+      "summonSourceId": undefined,
+      "supportAuras": [],
+      "supportPrograms": [],
+@@ -241,15 +241,15 @@
+      "transformState": undefined,
+      "triggerEffects": undefined,
+      "turnSpeed": 8,
+      "type": "dawn-oathkeeper",
+      "velocity": {
+-       "x": 6.791740521929798,
+-       "y": -1.868930612564404,
++       "x": 6.793983624379878,
++       "y": -1.8652283269817491,
+      },
+-     "x": 119.04202447122141,
+-     "y": 358.810749013533,
++     "x": 119.11262141833699,
++     "y": 358.61761422775413,
+    },
+    {
+      "abilityPrograms": [],
+      "accuracyPenaltyResist": undefined,
+      "actionCooldown": 0,
+@@ -271,11 +271,11 @@
+      "chainAttack": undefined,
+      "conditionalAttackMode": undefined,
+      "conditionalRange": undefined,
+      "coneAttack": undefined,
+      "controlBeam": undefined,
+-     "currentAngle": -0.00014242273303917774,
++     "currentAngle": -0.0003625695846713069,
+      "damageReductionWhileMoving": 0,
+      "damageShareMaxTargets": undefined,
+      "damageShareRadius": undefined,
+      "damageShareRatio": undefined,
+      "defense": 8,
+@@ -294,13 +294,13 @@
+      "isFlying": false,
+      "isMoving": true,
+      "isTemporary": undefined,
+      "knockbackOnHit": undefined,
+      "lastProgressTargetId": "defender:squad-2",
+-     "lastProgressX": 151.54364203011727,
+-     "lastProgressY": 359.6174147264058,
+-     "lastTargetDistance": 147.032809464498,
++     "lastProgressX": 151.59642861725442,
++     "lastProgressY": 359.6498672770918,
++     "lastTargetDistance": 146.97996816985668,
+      "leavesPuddle": false,
+      "lifestealMult": 0,
+      "linePierce": undefined,
+      "markOnHit": undefined,
+      "maxHp": 150,
+@@ -350,11 +350,11 @@
+      "statGrowth": undefined,
+      "statusEffects": [],
+      "statusOnHit": undefined,
+      "stealthUntilAttack": false,
+      "stealthWhileMoving": undefined,
+-     "stuckTicks": 3,
++     "stuckTicks": 4,
+      "summonCounterDamageMult": undefined,
+      "summonOwnerId": undefined,
+      "summonSourceId": undefined,
+      "supportAuras": [],
+      "supportPrograms": [],
+@@ -366,15 +366,15 @@
+      "transformState": undefined,
+      "triggerEffects": undefined,
+      "turnSpeed": 8,
+      "type": "dawn-oathkeeper",
+      "velocity": {
+-       "x": 4.926973820514897,
+-       "y": -0.05602680800173854,
++       "x": 4.926950181110074,
++       "y": -0.05456204187006486,
+      },
+-     "x": 152.01714505818467,
+-     "y": 359.6158740604622,
++     "x": 152.06951447689556,
++     "y": 359.6530176573822,
+    },
+    {
+      "abilityPrograms": [],
+      "accuracyPenaltyResist": undefined,
+      "actionCooldown": 0,
+@@ -396,11 +396,11 @@
+      "chainAttack": undefined,
+      "conditionalAttackMode": undefined,
+      "conditionalRange": undefined,
+      "coneAttack": undefined,
+      "controlBeam": undefined,
+-     "currentAngle": -0.0033899648842696277,
++     "currentAngle": -0.0033787391991604216,
+      "damageReductionWhileMoving": 0,
+      "damageShareMaxTargets": undefined,
+      "damageShareRadius": undefined,
+      "damageShareRatio": undefined,
+      "defense": 8,
+@@ -420,13 +420,13 @@
+      "isMoving": true,
+      "isNavigatingObstacle": false,
+      "isTemporary": undefined,
+      "knockbackOnHit": undefined,
+      "lastProgressTargetId": "defender:squad-2",
+-     "lastProgressX": 184.163535070321,
+-     "lastProgressY": 359.9843311615714,
+-     "lastTargetDistance": 114.41357234492806,
++     "lastProgressX": 184.19866280490942,
++     "lastProgressY": 359.9830307834923,
++     "lastTargetDistance": 114.37837718566249,
+      "leavesPuddle": false,
+      "lifestealMult": 0,
+      "linePierce": undefined,
+      "markOnHit": undefined,
+      "maxHp": 150,
+@@ -492,15 +492,15 @@
+      "transformState": undefined,
+      "triggerEffects": undefined,
+      "turnSpeed": 8,
+      "type": "dawn-oathkeeper",
+      "velocity": {
+-       "x": 2.4991984527193027,
+-       "y": 1.6158935720239445,
++       "x": 2.502024591675347,
++       "y": 1.6135422220232198,
+      },
+-     "x": 184.99528914172322,
+-     "y": 360.155518736074,
++     "x": 185.03644191342386,
++     "y": 360.1534633540807,
+    },
+    {
+      "abilityPrograms": [],
+      "accuracyPenaltyResist": undefined,
+      "actionCooldown": 0,
+@@ -522,11 +522,11 @@
+      "chainAttack": undefined,
+      "conditionalAttackMode": undefined,
+      "conditionalRange": undefined,
+      "coneAttack": undefined,
+      "controlBeam": undefined,
+-     "currentAngle": 3.138202688705524,
++     "currentAngle": 3.138213914390633,
+      "damageReductionWhileMoving": 0,
+      "damageShareMaxTargets": undefined,
+      "damageShareRadius": undefined,
+      "damageShareRatio": undefined,
+      "defense": 3,
+@@ -545,13 +545,13 @@
+      "isFlying": false,
+      "isMoving": true,
+      "isTemporary": undefined,
+      "knockbackOnHit": undefined,
+      "lastProgressTargetId": "defender:squad-1_2",
+-     "lastProgressX": 298.57645000339124,
+-     "lastProgressY": 359.59647391190623,
+-     "lastTargetDistance": 114.41357234492806,
++     "lastProgressX": 298.57638712636015,
++     "lastProgressY": 359.596576812245,
++     "lastTargetDistance": 114.37837718566249,
+      "leavesPuddle": false,
+      "lifestealMult": 0,
+      "linePierce": undefined,
+      "markOnHit": undefined,
+      "maxHp": 85,
+@@ -617,12 +617,12 @@
+      "transformState": undefined,
+      "triggerEffects": undefined,
+      "turnSpeed": 8,
+      "type": "dawn-field-chaplain",
+      "velocity": {
+-       "x": -3.85033131034007,
+-       "y": 0.27890680995842854,
++       "x": -3.8498509352436603,
++       "y": 0.27750098156505976,
+      },
+-     "x": 298.19141687235725,
+-     "y": 359.62436459290205,
++     "x": 298.19140203283575,
++     "y": 359.6243269104015,
+    },
+  ]
+
+ ❯ packages/combat-core/tests/o2-buffer-isolation.test.ts:125:44
+    123|
+    124|     // Compare the probed runtime itself, not a freshly created world.
+    125|     expect(probed.runtime.snapshotUnits()).toEqual(control.runtime.sna…
+       |                                            ^
+    126|     expect(hash(probed.runtime.snapshotUnits())).toBe(hash(control.run…
+    127|     expect(probedActions).toEqual(controlActions)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
 

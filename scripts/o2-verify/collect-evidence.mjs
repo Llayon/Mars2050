@@ -25,14 +25,18 @@ const copy = (from, to) => {
 
 mkdirSync(OUT, { recursive: true })
 const copied = []
+const SKIP_DIRECTORIES = new Set(['tmp', '.tmp', 'node_modules', '.cache'])
 
 function copyTree(fromDir, toDir, filter = () => true) {
   if (!existsSync(fromDir)) return
   for (const entry of readdirSync(fromDir, { withFileTypes: true })) {
     const from = join(fromDir, entry.name)
     const to = join(toDir, entry.name)
-    if (entry.isDirectory()) copyTree(from, to, filter)
-    else if (filter(from)) {
+    if (entry.isDirectory()) {
+      // Scratch/cache directories (tsx, npm, browser profiles) are never evidence.
+      if (SKIP_DIRECTORIES.has(entry.name)) continue
+      copyTree(from, to, filter)
+    } else if (filter(from)) {
       copy(from, to)
       copied.push(to)
     }
