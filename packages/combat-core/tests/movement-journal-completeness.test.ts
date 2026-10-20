@@ -7,6 +7,11 @@ import { compileSpawnSpecBundles } from '../src/combat.spawn-spec-compiler.js'
 import { createPathfindingMap } from '../src/combat.pathfinding.js'
 import { mapDefinitionToUnitTypeConfig } from '../src/combat.definition-mapper.js'
 import type { BattleAction, BattleInput } from '../src/contracts/index.js'
+import type { CombatCatalog } from '../src/combat.catalog.types.js'
+import type { TimeoutPolicy } from '../src/combat.result.js'
+
+/** Canonical move actions plus the legacy `sourceId` alias the wire contract still accepts. */
+type BattleActionWithLegacySource = BattleAction & { sourceId?: string }
 
 /**
  * CORE-HANDOFF regression: the replay journal must publish every committed world move
@@ -38,11 +43,12 @@ function loadMre(name: keyof typeof MRE): BattleInput {
 function stepWithProjection(input: BattleInput): StepReport {
   const rng = new PRNG(input.seed)
   const arena = input.arena
-  const catalog = {
+  const catalog: CombatCatalog = {
     unitTypes: Object.fromEntries(
       Object.entries(input.definitions).map(([key, def]) => [key, mapDefinitionToUnitTypeConfig(def)]),
     ),
-    upgrades: input.catalog?.upgrades ?? {},
+    // The zod-inferred input view marks catalog ids optional; the runtime catalog contract requires them.
+    upgrades: input.catalog?.upgrades as CombatCatalog['upgrades'],
     targetingProfiles: input.catalog?.targetingProfiles,
   }
   const runtime = createEcsCombatRuntime({
@@ -59,7 +65,15 @@ function stepWithProjection(input: BattleInput): StepReport {
 
   const obstacles = arena.obstacles
   const resources = runtime.world.resources
-  resources.set('clock', { tick: 0, dt: DT, maxTicks: input.rules.maxTicks, timeoutPolicy: input.rules.timeoutPolicy })
+  resources.set('clock', {
+    tick: 0,
+    dt: DT,
+    maxTicks: input.rules.maxTicks,
+    // Same nominal translation the public runner applies before installing the clock resource.
+    timeoutPolicy: input.rules.timeoutPolicy === 'attacker_win'
+      ? 'attacker_holds'
+      : input.rules.timeoutPolicy === 'defender_win' ? 'defender_holds' : 'draw',
+  } satisfies { tick: number; dt: number; maxTicks: number; timeoutPolicy: TimeoutPolicy })
   resources.set('rng', rng)
   resources.set('actions', [] as BattleAction[])
   resources.set('obstacles', obstacles)
@@ -76,8 +90,10 @@ function stepWithProjection(input: BattleInput): StepReport {
   const publish = (actions: BattleAction[], tick: number): void => {
     for (const action of actions) {
       if (action.type !== 'move') continue
-      const unitId = action.sourceId ?? action.unitId
+      // The wire contract also accepts a legacy `sourceId` alias for move events.
+      const unitId = (action as BattleActionWithLegacySource).sourceId ?? action.unitId
       if (!unitId || !projection.has(unitId)) continue
+      if (typeof action.toX !== 'number' || typeof action.toY !== 'number') continue
       projection.set(unitId, { x: action.toX, y: action.toY })
       const ticks = moveTicksByUnit.get(unitId) ?? []
       ticks.push(tick)

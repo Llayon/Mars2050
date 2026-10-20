@@ -11,5 +11,9 @@ export default defineConfig({
     environment: 'node',
     globals: false,
     include: ['packages/combat-core/tests/**/*.test.ts'],
+    // Full-battle regressions (both CORE-HANDOFF MREs, the dense O2 fixtures) legitimately take
+    // several seconds; the 5s default turns a loaded machine into a false red build. No assertion
+    // is relaxed: a wrong result still fails immediately, only the wall-clock budget changes.
+    testTimeout: 60_000,
   },
 })
