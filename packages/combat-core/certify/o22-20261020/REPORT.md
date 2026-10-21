@@ -369,7 +369,8 @@ runtime» проверяются на уровне поведения функц
 | Windows | Node v25.6.0 | 5/5 PASS | тот же |
 | Windows | Node v26.11.1 | 5/5 PASS | тот же |
 | Windows Chromium | Google Chrome 155.0.8059.85 | 5/5 PASS | браузерный бандл: 282 входа, **0** из workspace, `isolatedFromWorkspace=true` |
-| Linux (GitHub Actions) | Node 22 / 26 | job `verify-o22` (см. ниже) | тот же архив, пересобранный на Linux из источника |
+| Linux (GitHub Actions) | Node v22.23.3 | 5/5 PASS, ядро 41/41 файлов, `installed-vs-manifest` 912/912, оба MRE 0 расхождений | архив пересобран на Linux: `2a770704a795f5735cbde2235aa487e3f76727c488265736995a7e2dd197bf93` (содержимое то же) |
+| Linux (GitHub Actions) | Node v26.12.0 | 5/5 PASS, ядро 41/41 файлов, `installed-vs-manifest` 912/912, оба MRE 0 расхождений | тот же Linux-архив `2a770704…7bf93` |
 
 `workflow_dispatch` с этой ветки маршрутизируется в `verify-o22`, а не в старый o1: job'ы o1/o2
 явно ограничены своими ветками, потому что их источник уже не воспроизводит манифесты o1/o2.
@@ -377,10 +378,23 @@ runtime» проверяются на уровне поведения функц
 
 ### 5.1 Linux CI
 
-Заполняется после push ветки `perf/combat-core-o2-next-v1`: job `verify-o22` (Node 22 и 26) —
-`npm run test:combat:core`, затем `certify/o22-20261020/verify-archive.mjs` (пересборка архива из
-источника с идентичностью `0.1.0-o22mv.1`, сверка содержимого с манифестом 912/912, R7-матрица и
-оба MRE).
+Ветка `perf/combat-core-o2-next-v1` запушена (`7fff2abe8dcb95cdd306f377300cdaa73609c485`), workflow
+выбрал именно `verify-o22`; job'ы o1/o2 корректно пропущены (`skipped`), потому что их источник уже
+не воспроизводит их манифесты.
+
+| Job | Node | Ядро | Архив | Итог |
+| --- | --- | --- | --- | --- |
+| `Node 22 o22 archive verification` | v22.23.3 | 41/41 файлов | `installed-vs-manifest` 912/912, матрица 5/5, оба MRE 0 расхождений | **success**, `ARCHIVE-VERIFY=PASS` |
+| `Node 26 o22 archive verification` | v26.12.0 | 41/41 файлов | то же | **success**, `ARCHIVE-VERIFY=PASS` |
+| `o1 archive verification` | — | — | — | `skipped` (своя ветка) |
+| `o2 archive verification` | — | — | — | `skipped` (своя ветка) |
+
+Run: [39567784914](https://github.com/Llayon/Mars2050/actions/runs/39567784914).
+
+Байты tar на Linux отличаются от Windows-релиза (`2a770704…7bf93` против `6715905a…d4fd`) — это
+ожидаемое поведение `npm pack` (как в CORE-HANDOFF и O2), поэтому сверяется содержимое:
+`installed-vs-manifest` даёт 912/912 при `version 0.1.0-o22mv.1`, то есть Linux проверил ровно те
+файлы, которые записаны в манифесте кандидата.
 
 Хеш входного модуля установленного кандидата во всех средах один и тот же:
 `502b750f8baba5fc05246ae696bd6580bf10659d41566309091b280048a54579` (`dist/index.js`,
@@ -413,8 +427,8 @@ runtime» проверяются на уровне поведения функц
   `ab-installed` (10 + сводка), `fantasy-ab` (72 + сводка), `memory` (12 + сводка),
   `smoke-ab` (4, пробный прогон), `negative-controls`, `cross-env` (3 отчёта Node + Chromium),
   `results-equality.json`, `fantasy-*-hash.json`.
-* **Индекс**: `evidence-o22/index.json` — SHA256 каждого файла доказательств (207 файлов, 1.28 МБ),
-  без `tmp`, `node_modules` и кэшей.
+* **Индекс**: `evidence-o22/index.json` — SHA256 каждого файла доказательств (209 файлов, 1.29 МБ),
+  без `tmp`, `node_modules` и кэшей. Логи Linux CI — `evidence-o22/ci/`.
 * **Шум и неудачи сохранены намеренно**: один прогон `zerg_rush` в `ab/raw/candidate-A-zerg_rush-it1.json`
   длился 244 250 мс (процесс был вытеснен на ~4 минуты; остальные четыре — 6.3–7.9 с), он не
   выброшен и не «исправлен»; выбросы 337/4 948/404 мс в контурах B и C описаны в §3.
@@ -423,8 +437,8 @@ runtime» проверяются на уровне поведения функц
 
 ## 7. NOT_RUN и ограничения
 
-* **Linux CI** — выполняется после push в `perf/combat-core-o2-next-v1` (job `verify-o22`, Node 22
-  и 26); результаты — §5.1. До появления этого push Linux-проверки новых байтов не существовало.
+* **Linux CI** — выполнен на ветке `perf/combat-core-o2-next-v1` коммита `7fff2ab`: job `verify-o22`
+  прошёл на Node v22.23.3 и v26.12.0 (см. §5.1).
 * **Полная UI/save-приёмка Fantasy — NOT_RUN**: её выполняет агент Fantasy; `D:\Max\fantasy-battles`
   использовался только на чтение (фикстуры, esbuild, портативный Node), вендор, зависимости, флаги
   и рабочие деревья не менялись.
@@ -546,9 +560,13 @@ node scripts/o2-next-verify/collect-evidence-o22.mjs
    входы), и не падают на математически ненаблюдаемой мутации; рабочее дерево не мутировалось.
 
 Честные ограничения: выигрыш на `zerg_rush` не доказан (эффект ~1–2 % ниже разрешения среды);
-Linux CI и полная приёмка Fantasy не выполнялись; вклад GC отдельно не измерялся; первый прогон
-`npm test` имел 3 падения при перегруженной станции с несохранённым списком.
+полная UI/save-приёмка Fantasy остаётся за её агентом; вклад GC отдельно не измерялся; первый
+прогон `npm test` имел 3 падения при перегруженной станции с несохранённым списком.
 
-Остановка выполнена на локальном кандидате и отчёте: commit, push, merge, publish, deploy и
-обновление пакета в Fantasy не выполнялись. Для отправки кандидата в Linux CI нужно отдельное
-разрешение.
+Linux CI выполнен и зелёный: `verify-o22` на Node v22.23.3 и v26.12.0, `ARCHIVE-VERIFY=PASS`,
+содержимое архива 912/912. Ревизия ревью (порог времени, `block-step`, гейт контролей, маршрутизация
+CI) не изменила ни одного байта runtime: архив остался `6715905a…d4fd`, `compare-dist` 912/912.
+
+Остановка: merge, publish, deploy и обновление пакета в Fantasy не выполнялись. Ветка
+`perf/combat-core-o2-next-v1` запушена только для Linux CI; принятая `perf/combat-core-o2-v1` не
+тронута.
