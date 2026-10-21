@@ -430,8 +430,9 @@ Run: [39567784914](https://github.com/Llayon/Mars2050/actions/runs/39567784914).
   `ab-installed` (10 + сводка), `fantasy-ab` (72 + сводка), `memory` (12 + сводка),
   `smoke-ab` (4, пробный прогон), `negative-controls`, `cross-env` (3 отчёта Node + Chromium),
   `results-equality.json`, `fantasy-*-hash.json`.
-* **Индекс**: `evidence-o22/index.json` — SHA256 каждого файла доказательств (209 файлов, 1.29 МБ),
-  без `tmp`, `node_modules` и кэшей. Логи Linux CI — `evidence-o22/ci/`.
+* **Индекс**: `evidence-o22/index.json` — SHA256 каждого файла доказательств (актуальное число
+  файлов и суммарный объём — в полях `fileCount`/`totalBytes` самого индекса; он пересобирается при
+  каждом сборе), без `tmp`, `node_modules` и кэшей. Логи Linux CI — `evidence-o22/ci/`.
 * **Шум и неудачи сохранены намеренно**: один прогон `zerg_rush` в `ab/raw/candidate-A-zerg_rush-it1.json`
   длился 244 250 мс (процесс был вытеснен на ~4 минуты; остальные четыре — 6.3–7.9 с), он не
   выброшен и не «исправлен»; выбросы 337/4 948/404 мс в контурах B и C описаны в §3.
