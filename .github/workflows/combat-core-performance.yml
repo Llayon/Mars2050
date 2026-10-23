@@ -1,0 +1,186 @@
+name: combat-core performance (manual, informational)
+
+# Controlled O2 vs O2.2 comparison. Manual only: no push/pull_request trigger, so it can never block
+# a game release or a merge.
+#
+# Self-contained relative to the default branch (master): master does not contain the combat-core
+# package or its certification bundles, so everything that is version-specific is taken from the two
+# PINNED commits — the package sources (built here), the per-file manifests used for verification,
+# the frozen canonical inputs and the compare-dist helper. The only files this workflow needs in the
+# default branch are itself and scripts/o2-next-verify/perf-{worker,compare}.mjs (+ its test).
+#
+# What this workflow fixes compared to the O2.2 measurement scripts:
+#   * dependency resolution: both variants are built inside the repository tree, so `zod` resolves to
+#     the single root install. The harness reports the resolved path and FAILS if they differ.
+#   * null control: the same variant runs as both sides first, giving the harness bias in this very
+#     job and runner.
+#   * paired measurement: one job, one process per (variant, pair), order alternated per pair,
+#     cooldown between processes, medians plus per-pair ratios and deltas.
+#   * direction: every ratio is baseline / candidate, so > 1 always means the candidate is faster.
+#   * one expected result hash per scenario across every repeat (both variants and both null sides);
+#     nondeterminism fails the run even when both variants are "equally nondeterministic".
+#   * pinned environment: Node 26.11.1 and full commit SHAs, both asserted at runtime.
+#
+# Informational by design: there is no timing threshold anywhere. A slow or noisy runner does not
+# fail this job. It fails only when the stand or the result is wrong: result-hash mismatch between
+# the variants (exit 2); nondeterminism, bad parameters, content/manifest mismatch, missing module,
+# worker failure, different `zod` copies or an unexpected Node version (exit 3).
+
+on:
+  workflow_dispatch:
+    inputs:
+      o2_ref:
+        description: 'O2 baseline (0.1.0-o2mv.1): full commit SHA or ref'
+        required: true
+        default: 'a0555753aa9703bbcd09159358acf60c533ecd66'
+      o22_ref:
+        description: 'O2.2 candidate (0.1.0-o22mv.1): full commit SHA or ref'
+        required: true
+        default: 'bd5299a0b0d43274059290f32c808b929117837b'
+      pairs:
+        description: 'Measured pairs per preset (integer 1-50, 5 recommended)'
+        required: true
+        default: '5'
+      null_pairs:
+        description: 'Null-control pairs per preset (integer 1-50)'
+        required: true
+        default: '3'
+      runs:
+        description: 'Measured runs per process (integer 1-50)'
+        required: true
+        default: '5'
+      presets:
+        description: 'Comma-separated frozen presets'
+        required: true
+        default: 'massive_clash,zerg_rush'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: combat-core-performance
+  cancel-in-progress: false
+
+jobs:
+  paired:
+    name: paired O2 vs O2.2
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    env:
+      O2_REF: ${{ inputs.o2_ref }}
+      O22_REF: ${{ inputs.o22_ref }}
+      PAIRS: ${{ inputs.pairs }}
+      NULL_PAIRS: ${{ inputs.null_pairs }}
+      RUNS: ${{ inputs.runs }}
+      PRESETS: ${{ inputs.presets }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '26.11.1'
+
+      - name: Show runtime identity
+        run: |
+          node --version
+          npm --version
+
+      - name: Install dependencies (single shared tree)
+        run: npm ci --no-audit --no-fund --ignore-scripts
+
+      - name: Synthetic harness regressions (fast, no battles)
+        run: node --test scripts/o2-next-verify/perf-compare-synthetic.mjs
+
+      - name: Resolve and verify pinned commits
+        run: |
+          set -euo pipefail
+          mkdir -p .perf
+          resolve() {
+            local ref="$1" sha
+            if [[ "$ref" =~ ^[0-9a-f]{40}$ ]]; then
+              sha="$ref"
+              git cat-file -e "${sha}^{commit}" 2>/dev/null || {
+                echo "::error::pinned commit $sha is not available in this clone"; exit 3; }
+            else
+              sha="$(git rev-parse --verify --quiet "origin/$ref^{commit}" || git rev-parse --verify --quiet "$ref^{commit}")" || {
+                echo "::error::cannot resolve ref '$ref'"; exit 3; }
+            fi
+            echo "$sha"
+          }
+          O2_SHA="$(resolve "$O2_REF")"
+          O22_SHA="$(resolve "$O22_REF")"
+          {
+            echo "O2_SHA=$O2_SHA"
+            echo "O22_SHA=$O22_SHA"
+          } >> "$GITHUB_ENV"
+          echo "O2 $O2_SHA"
+          echo "O2.2 $O22_SHA"
+          node -e "console.log('node', process.version); if (process.version !== 'v26.11.1') { console.error('::error::expected Node v26.11.1'); process.exit(3) }"
+
+      - name: Build both variants and check them against their pinned manifests
+        run: |
+          set -euo pipefail
+          prepare() {
+            local id="$1" sha="$2" bundle="$3" pkg
+            pkg=".perf/variants/$id/packages/combat-core"
+            mkdir -p ".perf/variants/$id" ".perf/refs/$id"
+            git archive "$sha" packages/combat-core | tar -x -C ".perf/variants/$id"
+            git archive "$sha" "packages/combat-core/certify/$bundle" | tar -x -C ".perf/refs/$id"
+            node node_modules/typescript/bin/tsc -p "$pkg/tsconfig.json"
+            node ".perf/refs/$id/packages/combat-core/certify/$bundle/compare-dist.mjs" \
+              "$pkg/dist" \
+              ".perf/refs/$id/packages/combat-core/certify/$bundle/manifest.json" \
+              --label "$id"
+            node -e "
+              const { readFileSync } = require('node:fs');
+              const { createHash } = require('node:crypto');
+              const dir = '$pkg';
+              const pkg = JSON.parse(readFileSync(dir + '/package.json', 'utf8'));
+              const entry = readFileSync(dir + '/dist/index.js');
+              console.log('$id', pkg.name, pkg.version, createHash('sha256').update(entry).digest('hex'));
+            "
+          }
+          prepare o2 "$O2_SHA" o2-20261018
+          prepare o22 "$O22_SHA" o22-20261020
+          test -f ".perf/refs/o2/packages/combat-core/certify/o2-20261018/inputs/massive_clash.battle-input.json" || {
+            echo "::error::frozen inputs are missing from the O2 ref"; exit 3; }
+
+      - name: Paired measurement (informational timings, hard result check)
+        run: |
+          set -euo pipefail
+          node scripts/o2-next-verify/perf-compare.mjs \
+            --o2 .perf/variants/o2/packages/combat-core \
+            --o22 .perf/variants/o22/packages/combat-core \
+            --inputs .perf/refs/o2/packages/combat-core/certify/o2-20261018/inputs \
+            --presets "$PRESETS" \
+            --pairs "$PAIRS" \
+            --null-pairs "$NULL_PAIRS" \
+            --runs "$RUNS" \
+            --warmup 2 \
+            --expect-node v26.11.1 \
+            --o2-sha "$O2_SHA" \
+            --o22-sha "$O22_SHA" \
+            --out .perf
+
+      - name: Publish summary
+        if: always()
+        run: |
+          if [ -f .perf/summary.md ]; then cat .perf/summary.md >> "$GITHUB_STEP_SUMMARY"; else
+            echo "No summary produced (the harness failed before writing one)." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload raw measurements
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: combat-core-performance-${{ github.run_id }}
+          path: |
+            .perf/result.json
+            .perf/summary.md
+            .perf/raw/**
+          retention-days: 14
+          if-no-files-found: warn
