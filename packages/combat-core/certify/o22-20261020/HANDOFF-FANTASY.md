@@ -178,8 +178,9 @@ matrix scenarios are byte-identical to R7 because they never hit the silent-writ
   translation, validation and result-mapping work in the Mars domain; they are not a promise for
   Fantasy's own path.
 * **Memory.** The peak-RSS delta of the short battle (3.5–4.4 % lower in three paired processes) came
-  from the same baseline placement, so it is marked as **requiring re-verification** as well; the
-  retained-heap result (no change after an explicit full GC) does not depend on that placement.
+  from the same baseline placement, so it is marked as **requiring re-verification** as well. The
+  retained-heap result showed no change in the previous run; a controlled memory re-check was not
+  performed.
 * **Still required:** a full Fantasy UI/save acceptance run for this archive. Nothing in this handoff
   substitutes for it.
 
