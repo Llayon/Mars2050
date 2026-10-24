@@ -154,7 +154,9 @@ Linux: результаты и сырые данные — в [`CI-RUN-400418607
 ## 6. Ссылки
 
 * Исходные числа: `certify/o22-20261020/REPORT.md` §3, §4 (не изменялся).
-* Контрольные эксперименты и замеры смещения: `certify/o23-diagnostic-20261023/REPORT.md` §4.3, §4.4.
+* Контрольные эксперименты и замеры смещения: локальный отчёт O2.3
+  `packages/combat-core/certify/o23-diagnostic-20261023/REPORT.md` §4.3, §4.4 (в этот коммит не
+  включён; O2.3 закрыт как диагностика без принятого runtime-кандидата).
 * Сырые данные: `D:\Max\o2\evidence-o23\ab-controlled`, `ab-controlled-zerg9`, `null-same-tree`,
   `path-test-b`, `ab` (помечен как superseded), `D:\Max\o2\evidence-o22\ab*` (исходные прогоны O2.2,
   не изменялись).
