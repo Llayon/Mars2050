@@ -153,21 +153,33 @@ matrix scenarios are byte-identical to R7 because they never hit the silent-writ
 
 * **What the slice buys.** O2.2 removes a *fixed* per-battle cost: the one-shot ruleset identity hash
   spent 59.6 ms on the real 146 331-character canonical payload and now needs ~2.4 ms (same digest;
-  `node:crypto` needs 0.26 ms for the same text). Short battles therefore gain proportionally more
-  than long ones.
-* **Measured (Node 26.11.1, alternating paired processes, `o2mv.1` baseline):**
-  * Pure Core `massive_clash`: 14/14 pairs in favour, paired medians 1.133×–1.233×, per-pair delta
-    83–90 ms.
-  * Mars compat `simulateBattle`: 11/14 pairs, paired medians 1.098×–1.130×, per-pair delta 72–84 ms.
-  * Fantasy native corpus, four representative scenarios (9 pairs each): 27/36 pairs, paired medians
-    1.055×–1.080×, per-pair delta 5.9–16.3 ms. This is a harness measurement over the real Fantasy
-    adapter and corpus, **not** the Fantasy worker/UI path.
-  * `zerg_rush`: **no additional O2.2 speedup is proven** (0.999×/0.995×, paired 1.021/1.016 — below
-    the resolution of this station). Do not quote an O2.2 gain for long battles.
-* **Mars is not Fantasy.** The adapter speedups include unchanged translation, validation and
-  result-mapping work in the Mars domain; they are not a promise for Fantasy's own path.
-* **Memory.** Peak RSS of the short battle was 3.5–4.4 % lower in all three paired processes; retained
-  heap after an explicit full GC did not change; for `zerg_rush` no memory change is confirmed.
+  `node:crypto` needs 0.26 ms for the same text). That is a **function-level micro-measurement** on
+  this station: it bounds the hash saving at about 57 ms per battle and does not by itself prove an
+  end-to-end battle speedup.
+* **Do not quote the A/B figures as accepted numbers.** The O2.2 A/B runs placed the baseline in a
+  separate tree, so baseline and candidate resolved different `zod` copies; controlled O2.3 runs show
+  that this placement shifts timings in the candidate's favour. Every affected A/B point (contours A
+  and B, including the installed-archive run) is therefore labelled **"effect requires re-verification
+  because of environment differences"** — not a proven upper bound. See
+  [`PERFORMANCE-CORRECTION.md`](PERFORMANCE-CORRECTION.md) in this bundle for the corrected numbers,
+  the hash-vs-battle separation and the re-measurement protocol.
+* **What the original runs reported** (kept for traceability only, not for quotation): Pure Core
+  `massive_clash` paired medians 1.133×–1.233×; Mars compat 1.098×–1.130×; Fantasy native corpus
+  paired medians 1.055×–1.080×; `zerg_rush` 0.999×/0.995× with paired 1.021/1.016 — the long battle
+  showed **no proven O2.2 gain** and that part of the conclusion stands.
+* **One controlled CI measurement now exists for Pure Core** (Linux, Node 26.11.1, run `40041860713`,
+  receipt [`CI-RUN-40041860713.md`](CI-RUN-40041860713.md)): `massive_clash` 185.6 → 163.2 ms,
+  **1.137×**, 5/5 pairs, null control 1.000×; `zerg_rush` 2306.6 → 2248.2 ms, **1.026×**, 3/5 pairs,
+  null control 0.985× — the long battle is still **not proven**. This is one runner, two scenarios,
+  core only: it does not confirm a general speedup, the published Fantasy, the old Mars Compat
+  numbers, any RSS/retained-memory change, or the full Fantasy worker/UI path. A null control near 1
+  shows the harness was not visibly biased in that run; it does not prove the absence of all bias.
+* **Mars is not Fantasy.** Even if the Mars adapter figures are re-established, they include unchanged
+  translation, validation and result-mapping work in the Mars domain; they are not a promise for
+  Fantasy's own path.
+* **Memory.** The peak-RSS delta of the short battle (3.5–4.4 % lower in three paired processes) came
+  from the same baseline placement, so it is marked as **requiring re-verification** as well; the
+  retained-heap result (no change after an explicit full GC) does not depend on that placement.
 * **Still required:** a full Fantasy UI/save acceptance run for this archive. Nothing in this handoff
   substitutes for it.
 
@@ -336,7 +348,7 @@ Consumer acceptance the integrator must run (all of it **PENDING**, none of it P
 | 4 | Save/reload round-trip and runtime-identity separation (candidate result must not be replaced by SDK52 data or vice versa) |
 | 5 | All four native/free flag combinations, with the runtime each one selects |
 | 6 | Node and Chromium runs, Windows and Linux |
-| 7 | Separate timings for the direct core path and the full Fantasy worker path |
+| 7 | Separate timings for the direct core path and the full Fantasy worker path — one Pure Core CI run exists for `massive_clash`/`zerg_rush` (receipt `CI-RUN-40041860713.md`); the Fantasy worker/UI path is still pending |
 
 The four combinations follow the existing Fantasy matrix (`docs/NATIVE-SDK-FREE-DEPLOYMENT-INTEGRATION.md`
 in the Fantasy repository) and must be asserted, not assumed:
