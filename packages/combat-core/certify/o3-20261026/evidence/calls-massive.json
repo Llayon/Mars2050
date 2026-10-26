@@ -1,0 +1,16 @@
+﻿{
+  "preset": "massive_clash",
+  "node": "v26.11.1",
+  "elapsedMs": 942.4631999999992,
+  "counts": {
+    "highWord": 469832,
+    "lowWord": 243522,
+    "fromWords": 6578,
+    "replaceHighWord": 0,
+    "atan": 117668,
+    "atan2": 121761,
+    "sin": 18344,
+    "cos": 18344,
+    "reduce": 32426
+  }
+}

@@ -1,0 +1,7 @@
+{"step":"archive-identity","mode":"committed-bytes","tarball":"D:/Max/o2/evidence-o22/mars2050-combat-core-0.1.0-o22mv.1.tgz","sha256":"6715905ace79dd7108bb1a688b7c554774818187c5b52a5a886306b97373d4fd","committedSha256":"6715905ace79dd7108bb1a688b7c554774818187c5b52a5a886306b97373d4fd","expectedSha256":"6715905ace79dd7108bb1a688b7c554774818187c5b52a5a886306b97373d4fd","version":"0.1.0-o22mv.1","bytesMatchCommitted":true}
+{"step":"installed-vs-manifest","checked":912,"mismatches":0,"version":"0.1.0-o22mv.1"}
+{"step":"r7-matrix-goldens","scenarios":5,"mismatches":0,"passed":true}
+{"step":"mre-journal-completeness","file":"case-1.json","ticks":600,"living":5,"mismatches":0,"maxDelta":0.004999874781617564,"finalDelta":0.004681944031489138}
+{"step":"mre-journal-completeness","file":"case-2.json","ticks":600,"living":39,"mismatches":0,"maxDelta":0.004999928413269572,"finalDelta":0.004989877772800355}
+{"step":"summary","node":"v26.11.1","platform":"win32","sha256":"6715905ace79dd7108bb1a688b7c554774818187c5b52a5a886306b97373d4fd","version":"0.1.0-o22mv.1","failures":[]}
+ARCHIVE-VERIFY=PASS

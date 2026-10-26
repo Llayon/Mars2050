@@ -1,0 +1,192 @@
+{
+  "note": "CPU self-time shares from the sampling profiles; fantasy rows are top-100 only and therefore lower bounds for anything outside the listed nodes",
+  "profiles": {
+    "core.massive_clash": {
+      "totalMicros": 2247067,
+      "listedRows": 15,
+      "trigRows": [
+        {
+          "name": "deterministicAtan",
+          "samples": 49,
+          "share": 0.013336962438758846
+        },
+        {
+          "name": "deterministicAtan2",
+          "samples": 26,
+          "share": 0.007076755579749592
+        },
+        {
+          "name": "highWord",
+          "samples": 25,
+          "share": 0.006804572672836146
+        },
+        {
+          "name": "deterministicCos",
+          "samples": 9,
+          "share": 0.0024496461622210124
+        },
+        {
+          "name": "kernelCos",
+          "samples": 7,
+          "share": 0.001905280348394121
+        },
+        {
+          "name": "kernelSin",
+          "samples": 5,
+          "share": 0.0013609145345672292
+        },
+        {
+          "name": "deterministicSin",
+          "samples": 5,
+          "share": 0.0013609145345672292
+        },
+        {
+          "name": "reduceAngle",
+          "samples": 4,
+          "share": 0.0010887316276537834
+        },
+        {
+          "name": "fromWords",
+          "samples": 2,
+          "share": 0.0005443658138268917
+        },
+        {
+          "name": "lowWord",
+          "samples": 1,
+          "share": 0.00027218290691344586
+        }
+      ],
+      "atanFamilyShare": 0.02803483941208492,
+      "allListedTrigShare": 0.0362003266194883
+    },
+    "core.zerg_rush": {
+      "totalMicros": 11365013,
+      "listedRows": 15,
+      "trigRows": [
+        {
+          "name": "deterministicAtan",
+          "samples": 227,
+          "share": 0.01181184306379436
+        },
+        {
+          "name": "deterministicAtan2",
+          "samples": 131,
+          "share": 0.006816526173379123
+        },
+        {
+          "name": "highWord",
+          "samples": 96,
+          "share": 0.004995316890415236
+        },
+        {
+          "name": "deterministicSin",
+          "samples": 26,
+          "share": 0.0013528983244874596
+        },
+        {
+          "name": "reduceAngle",
+          "samples": 24,
+          "share": 0.001248829222603809
+        },
+        {
+          "name": "deterministicCos",
+          "samples": 21,
+          "share": 0.0010927255697783327
+        },
+        {
+          "name": "kernelCos",
+          "samples": 11,
+          "share": 0.0005723800603600791
+        },
+        {
+          "name": "kernelSin",
+          "samples": 11,
+          "share": 0.0005723800603600791
+        },
+        {
+          "name": "lowWord",
+          "samples": 11,
+          "share": 0.0005723800603600791
+        },
+        {
+          "name": "fromWords",
+          "samples": 1,
+          "share": 5.2034550941825375e-05
+        }
+      ],
+      "atanFamilyShare": 0.024248100738890624,
+      "allListedTrigShare": 0.029087313976480383
+    },
+    "fantasy.recruit-black-fang": {
+      "totalMicros": 437354,
+      "listedRows": 100,
+      "trigRows": [
+        {
+          "name": "deterministicAtan2",
+          "samples": 6,
+          "share": 0.009104704097116844
+        },
+        {
+          "name": "highWord2",
+          "samples": 4,
+          "share": 0.006069802731411229
+        },
+        {
+          "name": "deterministicAtan",
+          "samples": 4,
+          "share": 0.006069802731411229
+        },
+        {
+          "name": "lowWord",
+          "samples": 1,
+          "share": 0.0015174506828528073
+        },
+        {
+          "name": "deterministicCos2",
+          "samples": 1,
+          "share": 0.0015174506828528073
+        }
+      ],
+      "atanFamilyShare": 0.022761760242792112,
+      "allListedTrigShare": 0.024279210925644917
+    },
+    "fantasy.recruit-dawn-oathkeeper": {
+      "totalMicros": 846350,
+      "listedRows": 100,
+      "trigRows": [
+        {
+          "name": "highWord2",
+          "samples": 9,
+          "share": 0.0069498069498069494
+        },
+        {
+          "name": "deterministicAtan2",
+          "samples": 8,
+          "share": 0.006177606177606178
+        },
+        {
+          "name": "deterministicAtan",
+          "samples": 4,
+          "share": 0.003088803088803089
+        },
+        {
+          "name": "reduceAngle2",
+          "samples": 4,
+          "share": 0.003088803088803089
+        },
+        {
+          "name": "deterministicSin2",
+          "samples": 3,
+          "share": 0.0023166023166023165
+        },
+        {
+          "name": "kernelCos2",
+          "samples": 2,
+          "share": 0.0015444015444015444
+        }
+      ],
+      "atanFamilyShare": 0.016216216216216217,
+      "allListedTrigShare": 0.023166023166023165
+    }
+  }
+}

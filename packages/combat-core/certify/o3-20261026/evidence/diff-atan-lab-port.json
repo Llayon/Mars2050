@@ -1,0 +1,13 @@
+﻿{
+  "baseline": "D:/Max/Mars2050-o2/.tmp/base-o22/dist/math/trig-atan.js",
+  "candidate": "D:/Max/o3/lab/atan-v2.mjs",
+  "node": "v26.11.1",
+  "seed": 24680,
+  "recordedPairs": 57177,
+  "randomValues": 200000,
+  "randomPairs": 2000000,
+  "atanChecked": 327137,
+  "atan2Checked": 2217177,
+  "negativeControlDetected": true,
+  "result": "BIT_IDENTICAL"
+}

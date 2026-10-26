@@ -1,0 +1,6 @@
+﻿> npx tsc --noEmit
+exit=0
+(no output)
+> npx tsc -p tsconfig.test.json --noEmit
+exit=0
+(no output)

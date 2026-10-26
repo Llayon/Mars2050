@@ -1,0 +1,16 @@
+﻿{
+  "preset": "zerg_rush",
+  "node": "v26.11.1",
+  "elapsedMs": 8965.8501,
+  "counts": {
+    "highWord": 5897935,
+    "lowWord": 3415810,
+    "fromWords": 43070,
+    "replaceHighWord": 0,
+    "atan": 1702389,
+    "atan2": 1707905,
+    "sin": 130640,
+    "cos": 130640,
+    "reduce": 233744
+  }
+}

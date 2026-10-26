@@ -1,0 +1,40 @@
+{
+  "label": "o3-no-go-post-revert",
+  "date": "2026-10-26",
+  "node": "v26.11.1",
+  "platform": "win32-x64",
+  "branch": "perf/combat-core-o3-probe-v1",
+  "branchBaseCommit": "462e415",
+  "runtimeBaseCommit": "bd5299a0b0d43274059290f32c808b929117837b",
+  "compareDist": {
+    "manifestFileCount": 912,
+    "actualFileCount": 912,
+    "missingCount": 0,
+    "mismatchedCount": 0,
+    "extraCount": 0,
+    "contentIdentical": true,
+    "raw": "gates/compare-dist.json"
+  },
+  "coreTests": {
+    "files": 41,
+    "tests": 312,
+    "failed": 0,
+    "raw": "gates/core-tests.txt"
+  },
+  "typecheckRootExit": 0,
+  "typecheckTestConfigExit": 0,
+  "typecheckRaw": "gates/typecheck.txt",
+  "checkLimits": "PASS",
+  "perfHarnessSelfTests": {
+    "tests": 11,
+    "pass": 11,
+    "fail": 0,
+    "raw": "gates/perf-harness-tests.txt"
+  },
+  "fullBattleResultSha256": {
+    "massive_clash": "e319e672616911ef5d85fc37e735124c49f7b65c711b91260341b237510e1c7a",
+    "zerg_rush": "89fea02569679c9cfb6d1435d52cb43b466f2480bdf6cdc60cc55340a2b19854"
+  },
+  "trackedRuntimeDiff": false,
+  "note": "Assembled from the raw logs in gates/ during the O3.0 close-out. The core tests, check-limits and perf-harness logs were produced after the candidate was reverted; the typecheck exits were re-run on the same tree; compare-dist was re-run last."
+}
