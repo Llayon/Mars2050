@@ -109,9 +109,10 @@ baseline/candidate по парам, cooldown 1500 мс, baseline внутри т
    `ix === 0 && lowWord(x) === 0`.
 4. Внутри `atan2` для `atan(|y/x|)` переиспользуется уже прочитанный `highWord`.
 
-Ни одна формула, константа, ветка, порядок операций и публичная сигнатура не
-изменены. Кандидат собирался штатным `npm run combat:core:build`; A/B сравнивал
-`packages/combat-core` (кандидат) с `.tmp/base-o22` (принятые байты).
+Семантика формул, констант и ветвлений не изменена, порядок арифметических
+операций сохранён, публичная сигнатура та же. Кандидат собирался штатным
+`npm run combat:core:build`; A/B сравнивал `packages/combat-core` (кандидат)
+с `.tmp/base-o22` (принятые байты).
 
 ## 5. 0-ULP-эквивалентность
 
@@ -251,17 +252,21 @@ Get-FileHash D:\Max\o2\evidence-o22\mars2050-combat-core-0.1.0-o22mv.1.tgz -Algo
   --scenario recruit/dawn-oathkeeper/defender --mode cpu --warmup 2 --runs 8 `
   --out D:/Max/o3/profiles/o22-C-oathkeeper.cpuprofile
 & $node26 D:/Max/o3/lab/count-core.mjs --core D:/Max/o3/lab/dist-counter --preset zerg_rush
+& $node26 D:/Max/o3/lab/count-core.mjs --core D:/Max/o3/lab/dist-counter --preset massive_clash
 
 # 3. Кандидат: патч в лабораторную копию и 0-ULP
-Copy-Item -Recurse packages/combat-core/src D:/Max/o3/lab/ts-candidate/src
-Push-Location D:/Max/o3/lab/ts-candidate
-Copy-Item D:/Max/Mars2050-o2/packages/combat-core/certify/o3-20261026/evidence/tsconfig.atan-only.json .
+$lab = 'D:/Max/o3/lab/ts-candidate'
+Remove-Item -Recurse -Force $lab -ErrorAction SilentlyContinue
+New-Item -ItemType Directory -Force -Path $lab | Out-Null
+Copy-Item -Recurse packages/combat-core/src "$lab/src"
+Copy-Item packages/combat-core/certify/o3-20261026/evidence/tsconfig.atan-only.json $lab
+Push-Location $lab
 git apply -p3 D:/Max/Mars2050-o2/packages/combat-core/certify/o3-20261026/evidence/candidate-trig-atan.patch
-npx tsc -p tsconfig.atan-only.json
 Pop-Location
+npx tsc -p $lab/tsconfig.atan-only.json
 & $node26 packages/combat-core/certify/o3-20261026/evidence/diff-atan.mjs `
   --baseline D:/Max/Mars2050-o2/.tmp/base-o22/dist/math/trig-atan.js `
-  --candidate D:/Max/o3/lab/ts-candidate/dist/math/trig-atan.js `
+  --candidate $lab/dist/math/trig-atan.js `
   --random 2000000 --seed 24680
 
 # 4. Микробенчмарк функции
